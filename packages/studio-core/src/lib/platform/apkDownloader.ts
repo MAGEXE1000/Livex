@@ -174,10 +174,10 @@ export interface GitHubRelease {
  */
 export async function resolveApkUrl(targetVersion?: string): Promise<string> {
   const fallbackVersion = targetVersion || '3.2.0';
-  const fallbackUrl = `https://github.com/MAGEXE1000/Studio/releases/download/v${fallbackVersion}/Studio%20${fallbackVersion}.apk`;
+  const fallbackUrl = `https://github.com/MAGEXE1000/Livex/releases/download/v${fallbackVersion}/Studio%20${fallbackVersion}.apk`;
 
   try {
-    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Studio/releases');
+    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases');
     if (!res.ok) return fallbackUrl;
     const text = await res.text();
     logRawSource('github-releases', text);
@@ -232,10 +232,10 @@ export async function resolveApkUrl(targetVersion?: string): Promise<string> {
  */
 export async function resolveReleasePageUrl(targetVersion?: string): Promise<string> {
   const fallbackVersion = targetVersion || '3.2.0';
-  const defaultFallback = `https://github.com/MAGEXE1000/Studio/releases/tag/v${fallbackVersion}`;
+  const defaultFallback = `https://github.com/MAGEXE1000/Livex/releases/tag/v${fallbackVersion}`;
 
   try {
-    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Studio/releases');
+    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases');
     if (!res.ok) return defaultFallback;
     const text = await res.text();
     logRawSource('github-releases', text);
@@ -263,7 +263,7 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
       if (specificRelease && specificRelease.assets) {
         const hasApk = specificRelease.assets.some((a) => a.name.toLowerCase().endsWith('.apk'));
         if (hasApk) {
-          return `https://github.com/MAGEXE1000/Studio/releases/tag/${specificRelease.tag_name}`;
+          return `https://github.com/MAGEXE1000/Livex/releases/tag/${specificRelease.tag_name}`;
         }
       }
     }
@@ -273,7 +273,7 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
       if (release.assets) {
         const hasApk = release.assets.some((a) => a.name.toLowerCase().endsWith('.apk'));
         if (hasApk) {
-          return `https://github.com/MAGEXE1000/Studio/releases/tag/${release.tag_name}`;
+          return `https://github.com/MAGEXE1000/Livex/releases/tag/${release.tag_name}`;
         }
       }
     }

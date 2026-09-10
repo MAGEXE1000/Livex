@@ -1605,7 +1605,7 @@ Date: ${new Date().toISOString()}`}
 
               <motion.a
                 whileTap={{ scale: 0.95 }}
-                href={`https://github.com/MAGEXE1000/Studio/issues/new?title=${encodeURIComponent('Bug: [Enter short title]')}&body=${encodeURIComponent(
+                href={`https://github.com/MAGEXE1000/Livex/issues/new?title=${encodeURIComponent('Bug: [Enter short title]')}&body=${encodeURIComponent(
                   `**AFFECTED MODULE**\n- [e.g. Chordex, Drumex, Stagex, Groovex, Vocalex, Settings, Help]\n\n` +
                     `**APP VERSION**\n- v${APP_VERSION} (${Capacitor.isNativePlatform() ? 'Android/Native' : 'Web'})\n\n` +
                     `**ANDROID/OS VERSION**\n- [e.g. Android 13 / Windows 11]\n\n` +
@@ -1707,7 +1707,7 @@ Date: ${new Date().toISOString()}`}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           <motion.a
             whileTap={{ scale: 0.95 }}
-            href="https://github.com/MAGEXE1000/Studio"
+            href="https://github.com/MAGEXE1000/Livex"
             target="_blank"
             rel="noopener noreferrer"
             style={{

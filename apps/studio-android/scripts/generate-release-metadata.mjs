@@ -262,7 +262,7 @@ if (releaseType !== 'ota') {
           const redirects = fbJson.hosting.redirects;
 
           // 3. Update or insert livex-latest.apk & studio-latest.apk redirects
-          const latestDest = `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`;
+          const latestDest = `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`;
           const livexRule = {
             source: '/apk/livex-latest.apk',
             destination: latestDest,
@@ -290,7 +290,7 @@ if (releaseType !== 'ota') {
 
           // 4. Update or insert livex-:version.apk & studio-:version.apk redirect
           const livexVersionDest =
-            'https://github.com/MAGEXE1000/Studio/releases/download/v:version/livex-:version.apk';
+            'https://github.com/MAGEXE1000/Livex/releases/download/v:version/livex-:version.apk';
           const livexVersionIdx = redirects.findIndex((r) => r.source === '/apk/livex-:version.apk');
           const livexVersionRule = {
             source: '/apk/livex-:version.apk',
@@ -304,7 +304,7 @@ if (releaseType !== 'ota') {
           }
 
           const versionDest =
-            'https://github.com/MAGEXE1000/Studio/releases/download/v:version/studio-:version.apk';
+            'https://github.com/MAGEXE1000/Livex/releases/download/v:version/studio-:version.apk';
           const versionIdx = redirects.findIndex((r) => r.source === '/apk/studio-:version.apk');
           const versionRule = {
             source: '/apk/studio-:version.apk',
@@ -415,10 +415,10 @@ const androidMetadata = {
   packageName: 'com.chordex.app',
   update_type: 'apk',
   updateType: 'apk',
-  download_url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
-  apkUrl: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
+  download_url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
+  apkUrl: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
   manual_download_url: `https://studio-30f44.web.app/apk/studio-${version}.apk`,
-  fallback_download_url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
+  fallback_download_url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
   sha256: sha256,
   apkSha256: sha256,
   apkSizeBytes: apkSizeBytes,
@@ -516,6 +516,7 @@ for (const url of matches) {
   }
   if (
     (hostname === 'github.com' || hostname.endsWith('.github.com')) &&
+    !cleanUrl.startsWith('https://github.com/MAGEXE1000/Livex/releases/download/') &&
     !cleanUrl.startsWith('https://github.com/MAGEXE1000/Studio/releases/download/')
   ) {
     console.error(

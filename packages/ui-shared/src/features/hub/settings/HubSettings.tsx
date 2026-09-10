@@ -1423,7 +1423,7 @@ export function HubSettings({
   function renderDownloadAppsContent() {
     let apkVersion = '3.6.28';
     let apkSize = '13.47 MB';
-    let apkUrl = 'https://github.com/MAGEXE1000/Studio/releases/download/v3.6.28/studio-3.6.28.apk';
+    let apkUrl = 'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk';
 
     try {
       if (
@@ -3598,7 +3598,7 @@ export function HubSettings({
           ))}
 
           <motion.button
-            onClick={() => window.open('https://github.com/MAGEXE1000/Studio', '_system')}
+            onClick={() => window.open('https://github.com/MAGEXE1000/Livex', '_system')}
             whileTap={{ scale: 0.985 }}
             whileHover={{ scale: 1.006 }}
             transition={SpringPresets.soft}
@@ -4285,7 +4285,7 @@ export function HubSettings({
             >
               <button
                 onClick={() =>
-                  window.open('https://github.com/MAGEXE1000/Studio/releases', '_system')
+                  window.open('https://github.com/MAGEXE1000/Livex/releases', '_system')
                 }
                 className="btn-smooth animate-click"
                 style={{

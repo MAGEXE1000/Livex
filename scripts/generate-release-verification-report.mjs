@@ -269,7 +269,7 @@ export function generateVerificationReport(apkPath) {
     certificateFingerprint: detectedSha256,
     expectedFingerprint: EXPECTED_PROD_SHA256,
     githubTag: `v${versionName}`,
-    releaseUrl: `https://github.com/MAGEXE1000/Studio/releases/tag/v${versionName}`,
+    releaseUrl: `https://github.com/MAGEXE1000/Livex/releases/tag/v${versionName}`,
     timestamp: report.timestamp,
   };
   fs.writeFileSync(path.join(repoRoot, 'release-state.json'), JSON.stringify(stateSnapshot, null, 2) + '\n', 'utf8');

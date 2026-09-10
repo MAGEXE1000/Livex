@@ -1064,7 +1064,7 @@ function UpdateModal({
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleOpenGitHub = () => {
-    window.open('https://github.com/MAGEXE1000/Studio/releases', '_system');
+    window.open('https://github.com/MAGEXE1000/Livex/releases', '_system');
   };
 
   const hubVisTheme = useSettingsStore(

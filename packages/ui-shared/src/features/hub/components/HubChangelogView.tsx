@@ -178,7 +178,7 @@ export function ChangelogView({
       }
 
       try {
-        const res = await fetch('https://api.github.com/repos/MAGEXE1000/Studio/releases');
+        const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 

@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { fetchFirebaseReleaseMetadata } from '../release/firebase.mjs';
 
-const REPO_SLUG = 'MAGEXE1000/Studio';
+const REPO_SLUG = 'MAGEXE1000/Livex';
 
 export async function generateReleaseTimeline(options = {}) {
   const fetchFn = options.fetchFn || globalThis.fetch;

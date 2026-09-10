@@ -462,7 +462,7 @@ interface GitHubRelease {
 
 async function fetchLatestFromGitHub(signal: AbortSignal): Promise<RemoteVersionInfo | null> {
   const caller = 'fetchLatestFromGitHub';
-  const url = 'https://api.github.com/repos/MAGEXE1000/Studio/releases';
+  const url = 'https://api.github.com/repos/MAGEXE1000/Livex/releases';
   logPipelineTrace(caller, 'HTTP_REQUEST_URL', { url }, 'N/A');
 
   try {

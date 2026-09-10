@@ -120,7 +120,7 @@ export async function evaluatePreviousReleaseState(options = {}) {
       lastKnownGoodRelease: latestGithubVer || '(none)',
       brokenRelease: prevVersion,
       githubTag: `v${prevVersion} (MISSING)`,
-      apkUrl: `https://github.com/MAGEXE1000/Studio/releases/download/v${prevVersion}/studio-${prevVersion}.apk`,
+      apkUrl: `https://github.com/MAGEXE1000/Livex/releases/download/v${prevVersion}/studio-${prevVersion}.apk`,
       httpStatus: 404,
       rootCause: `Firebase metadata (v${prevVersion}) was published before GitHub Release creation.`,
       optionA: `Publish GitHub Release v${prevVersion} with studio-${prevVersion}.apk.`,
@@ -178,7 +178,7 @@ export async function evaluatePreviousReleaseState(options = {}) {
       apkUrl: apkDiscovery.url,
       httpStatus: apkDiscovery.status || 404,
       rootCause: `GitHub Release v${prevVersion} exists, but binary asset (${apkDiscovery.name}) is missing. Publication was interrupted after tag creation but before asset upload.`,
-      optionA: `Upload missing binary: 'gh release upload v${prevVersion} <path-to-apk>/${apkDiscovery.name} --repo MAGEXE1000/Studio'.`,
+      optionA: `Upload missing binary: 'gh release upload v${prevVersion} <path-to-apk>/${apkDiscovery.name} --repo MAGEXE1000/Livex'.`,
       optionB: `Rollback Firebase metadata to ${latestGithubVer || 'previous version'}.`,
       isConsistent: false,
     });

@@ -55,7 +55,7 @@ Located at Hosting root `/app-release.json`. Defines the target release file, ve
 {
   "version": "3.7.56",
   "versionCode": 184,
-  "apkUrl": "https://github.com/MAGEXE1000/Studio/releases/download/v3.7.56/studio-3.7.56.apk",
+  "apkUrl": "https://github.com/MAGEXE1000/Livex/releases/download/v3.7.56/studio-3.7.56.apk",
   "sha256": "4a7b8c...d9ef01",
   "apkSizeBytes": 14720386
 }

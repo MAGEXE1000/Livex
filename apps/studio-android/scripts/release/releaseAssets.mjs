@@ -1,4 +1,4 @@
-const REPO_SLUG = 'MAGEXE1000/Studio';
+const REPO_SLUG = 'MAGEXE1000/Livex';
 
 export async function discoverApkAsset(githubRelease, version, options = {}) {
   const fetchFn = options.fetchFn || globalThis.fetch;

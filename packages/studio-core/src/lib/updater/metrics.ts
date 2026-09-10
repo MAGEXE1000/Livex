@@ -197,7 +197,7 @@ export async function runUpdaterHealthCheck(): Promise<HealthStatus> {
   }
 
   try {
-    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Studio/releases', {
+    const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases', {
       method: 'HEAD',
     });
     githubReachable = res.ok;

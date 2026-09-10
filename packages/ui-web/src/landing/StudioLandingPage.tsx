@@ -92,7 +92,7 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
           apkUrl:
             data.apkUrl ||
             data.download_url ||
-            'https://github.com/MAGEXE1000/Studio/releases/download/v3.6.28/studio-3.6.28.apk',
+            'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk',
           apkSizeBytes: data.apkSizeBytes || 14125258,
         });
         setLoadingRelease(false);
@@ -101,7 +101,7 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
         setRelease({
           version: '3.6.28',
           apkUrl:
-            'https://github.com/MAGEXE1000/Studio/releases/download/v3.6.28/studio-3.6.28.apk',
+            'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk',
           apkSizeBytes: 14125258,
         });
         setLoadingRelease(false);

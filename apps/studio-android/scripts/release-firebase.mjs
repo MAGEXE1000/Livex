@@ -103,7 +103,7 @@ let productionVersionCode = 0;
 let productionVersion = '(none)';
 try {
   const ghListResult = spawnSync(
-    'gh', ['release', 'list', '--limit', '20', '--json', 'tagName,isLatest', '--repo', 'MAGEXE1000/Studio'],
+    'gh', ['release', 'list', '--limit', '20', '--json', 'tagName,isLatest', '--repo', 'MAGEXE1000/Livex'],
     { encoding: 'utf8', shell: false }
   );
   if (ghListResult.status === 0 && ghListResult.stdout) {
@@ -1017,7 +1017,7 @@ const runGh = (args) => {
   });
 };
 
-const viewRes = runGh(['release', 'view', tag, '--repo', 'MAGEXE1000/Studio']);
+const viewRes = runGh(['release', 'view', tag, '--repo', 'MAGEXE1000/Livex']);
 if (viewRes.status !== 0) {
   console.log(
     `release-firebase: Release ${tag} not found. Creating it pointing to target commit ${currentCommit}...`
@@ -1034,7 +1034,7 @@ if (viewRes.status !== 0) {
     '--target',
     currentCommit,
     '--repo',
-    'MAGEXE1000/Studio',
+    'MAGEXE1000/Livex',
   ];
   if (isPrerelease) {
     ghCreateArgs.push('--prerelease');
@@ -1048,7 +1048,7 @@ if (viewRes.status !== 0) {
   }
 } else {
   console.log(`release-firebase: Release ${tag} already exists. Updating notes...`);
-  runGh(['release', 'edit', tag, '--notes-file', releaseNotesFile, '--repo', 'MAGEXE1000/Studio']);
+  runGh(['release', 'edit', tag, '--notes-file', releaseNotesFile, '--repo', 'MAGEXE1000/Livex']);
 }
 
 // Step 8: Upload APK asset, SHA-256 checksum, manifest & audit log to GitHub Releases
@@ -1076,7 +1076,7 @@ const uploadRes = runGh([
   depReportPath,
   '--clobber',
   '--repo',
-  'MAGEXE1000/Studio',
+  'MAGEXE1000/Livex',
 ]);
 if (uploadRes.status !== 0) {
   console.error(
@@ -1093,7 +1093,7 @@ try {
 
 // Step 9: Verify GitHub Release asset URL returns HTTP 200 (fast backoff)
 console.log('Step 9/15: Verify GitHub Release asset URL returns HTTP 200...');
-const githubApkUrl = `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`;
+const githubApkUrl = `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`;
 
 const checkUrl = async (url) => {
   const controller = new AbortController();

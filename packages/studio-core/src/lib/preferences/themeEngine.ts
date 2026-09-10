@@ -379,11 +379,11 @@ export function getStartupAnimationThemeSpec(
       themeState: 'light',
       bgColor: '#ffffff',
       glowGradient:
-        'radial-gradient(circle, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.018) 45%, transparent 70%)',
-      logoFilter: 'brightness(0)',
-      logoOpacity: 0.9,
+        'radial-gradient(circle, rgba(0, 0, 0, 0.025) 0%, rgba(0, 0, 0, 0.008) 45%, transparent 70%)',
+      logoFilter: 'none',
+      logoOpacity: 1.0,
       sheenGradient:
-        'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.5) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.5) 54%, transparent 68%)',
+        'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.6) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.6) 54%, transparent 68%)',
       sheenBlendMode: 'screen',
     };
   }

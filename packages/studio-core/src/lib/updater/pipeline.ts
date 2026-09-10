@@ -583,7 +583,7 @@ async function executeCheckForUpdateInternal(
         mandatory: updaterSimulation.forceMandatoryUpdate,
         apkUrl:
           realRemote?.apkUrl ||
-          'https://github.com/MAGEXE1000/Studio/releases/download/v4.0.16/studio-4.0.16.apk',
+          'https://github.com/MAGEXE1000/Livex/releases/download/v4.0.16/studio-4.0.16.apk',
         apkSha256:
           realRemote?.apkSha256 ||
           '53d281dcd9f32c58d5035dd7e5424e651c24859b0ec47dded97557ac029bea17',
@@ -613,7 +613,7 @@ async function executeCheckForUpdateInternal(
         mandatory: false,
         apkUrl:
           realRemote?.apkUrl ||
-          'https://github.com/MAGEXE1000/Studio/releases/download/v3.7.54/studio-3.7.54.apk',
+          'https://github.com/MAGEXE1000/Livex/releases/download/v3.7.54/studio-3.7.54.apk',
         apkSha256:
           realRemote?.apkSha256 ||
           '456b5d19cf42cafb29d14da71885a7601d8fef566ff8f4dd756ed2d196cfe8d3',

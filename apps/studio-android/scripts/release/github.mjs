@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 
-const REPO_SLUG = 'MAGEXE1000/Studio';
+const REPO_SLUG = 'MAGEXE1000/Livex';
 const [OWNER, REPO] = REPO_SLUG.split('/');
 
 export async function fetchGitHubReleaseInfo(tag, options = {}) {

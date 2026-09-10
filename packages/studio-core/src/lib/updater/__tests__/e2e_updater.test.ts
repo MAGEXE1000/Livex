@@ -150,7 +150,7 @@ describe('E2E Updater Flow Validation (v4.3.33 to v4.3.34)', () => {
       versionName: '4.3.34',
       versionCode: 40334,
       version_code: 40334,
-      apkUrl: 'https://github.com/MAGEXE1000/Studio/releases/download/v4.3.34/studio-4.3.34.apk',
+      apkUrl: 'https://github.com/MAGEXE1000/Livex/releases/download/v4.3.34/studio-4.3.34.apk',
       apkSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       changelog: 'Dedicated E2E updater validation test release.',

@@ -123,7 +123,7 @@ The signing certificate SHA-256 fingerprint is stored as `PRODUCTION_SIGNING_SHA
 APK files published as GitHub Release assets:
 
 - Pattern: `Studio {version}.apk`
-- API: `https://api.github.com/repos/MAGEXE1000/Studio/releases`
+- API: `https://api.github.com/repos/MAGEXE1000/Livex/releases`
 
 ### Firebase Predeploy Verification
 

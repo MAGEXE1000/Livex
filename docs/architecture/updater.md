@@ -84,7 +84,7 @@ The central orchestrator managing the full update lifecycle.
 1. **Primary URL** — from `app-release.json` `download_url` field
 2. **Manual APK URL** — from `manual_download_url` field
 3. **Fallback URL** — from `fallback_download_url` field
-4. **GitHub Releases API** — dynamic lookup via `https://api.github.com/repos/MAGEXE1000/Studio/releases`
+4. **GitHub Releases API** — dynamic lookup via `https://api.github.com/repos/MAGEXE1000/Livex/releases`
 
 Each source retries 3 times with exponential backoff. HTTP Range header resume is supported.
 

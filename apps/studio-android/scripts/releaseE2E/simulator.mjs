@@ -11,19 +11,19 @@ export function simulateGitHubRelease(version = '4.3.55') {
     assets: [
       {
         name: `studio-${version}.apk`,
-        url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
+        url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
         size: 52607278,
         contentType: 'application/vnd.android.package-archive',
       },
       {
         name: `studio-${version}.sha256`,
-        url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.sha256`,
+        url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.sha256`,
         size: 64,
         contentType: 'text/plain',
       },
       {
         name: 'release-manifest.json',
-        url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/release-manifest.json`,
+        url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/release-manifest.json`,
         size: 1168,
         contentType: 'application/json',
       },
@@ -39,8 +39,8 @@ export function simulateFirebaseMetadata(version = '4.3.55', sandbox) {
     versionCode: 40355,
     packageName: 'com.chordex.app',
     updateType: 'apk',
-    download_url: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
-    apkUrl: `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`,
+    download_url: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
+    apkUrl: `https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk`,
     sha256: '032bc2a0132388558d9bbe8956ed4047e5e1dfb5d528222989d6b5cd927d1f7f',
     apkSha256: '032bc2a0132388558d9bbe8956ed4047e5e1dfb5d528222989d6b5cd927d1f7f',
     signatures: getAppVersionInfo().productionSigningSha256,

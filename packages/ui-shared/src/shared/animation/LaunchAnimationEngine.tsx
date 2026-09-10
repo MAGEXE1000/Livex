@@ -4,7 +4,10 @@ import { StartupCoordinator, getStartupAnimationThemeSpec } from '@workspace/stu
 import { triggerIntroReveal } from '../typography/StudioTitleReveal';
 import livexForm1Url from '../../assets/livex-form1.png';
 import livexForm2Url from '../../assets/livex-form2.png';
+import livexForm1LightUrl from '../../assets/livex-form1-light.png';
+import livexForm2LightUrl from '../../assets/livex-form2-light.png';
 import livexSymbolUrl from '../../assets/livex-symbol.png';
+import livexSymbolLightUrl from '../../assets/livex-symbol-light.png';
 
 // Studio Sine Wave Logo SVG path (retained for backward-compatibility)
 export const StudioSinePath = 'M 72 256 C 128 60 192 60 256 256 S 384 452 440 256';
@@ -199,8 +202,13 @@ export function LaunchAnimationEngine({
     };
   }, [stage, loopMode]);
 
-  const { bgColor, glowGradient, logoFilter, logoOpacity, sheenGradient, sheenBlendMode } =
+  const { themeMode, bgColor, glowGradient, logoFilter, logoOpacity, sheenGradient, sheenBlendMode } =
     resolveLaunchAnimationThemeConfig(isLight, isAmoled);
+
+  const isThemeLight = themeMode === 'light';
+  const form1Src = isThemeLight ? livexForm1LightUrl : livexForm1Url;
+  const form2Src = isThemeLight ? livexForm2LightUrl : livexForm2Url;
+  const symbolMaskUrl = isThemeLight ? livexSymbolLightUrl : livexSymbolUrl;
 
   // Sizing calibrated for mobile viewports (~196px standard, clamped between 160px and 220px)
   const symbolSize = Math.max(160, Math.min(220, Math.round(196 * scaleFactor)));
@@ -346,7 +354,7 @@ export function LaunchAnimationEngine({
             }}
           >
             <img
-              src={livexForm1Url}
+              src={form1Src}
               alt=""
               width={symbolSize}
               height={symbolSize}
@@ -359,8 +367,9 @@ export function LaunchAnimationEngine({
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 pointerEvents: 'none',
-                filter: logoFilter,
-                opacity: logoOpacity,
+                filter: isThemeLight ? 'none' : logoFilter,
+                opacity: isThemeLight ? 1.0 : logoOpacity,
+                imageRendering: '-webkit-optimize-contrast',
                 transform: 'translateZ(0)',
               }}
             />
@@ -392,7 +401,7 @@ export function LaunchAnimationEngine({
             }}
           >
             <img
-              src={livexForm2Url}
+              src={form2Src}
               alt=""
               width={symbolSize}
               height={symbolSize}
@@ -405,8 +414,9 @@ export function LaunchAnimationEngine({
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 pointerEvents: 'none',
-                filter: logoFilter,
-                opacity: logoOpacity,
+                filter: isThemeLight ? 'none' : logoFilter,
+                opacity: isThemeLight ? 1.0 : logoOpacity,
+                imageRendering: '-webkit-optimize-contrast',
                 transform: 'translateZ(0)',
               }}
             />
@@ -418,8 +428,8 @@ export function LaunchAnimationEngine({
               position: 'absolute',
               inset: 0,
               pointerEvents: 'none',
-              WebkitMaskImage: `url(${livexSymbolUrl})`,
-              maskImage: `url(${livexSymbolUrl})`,
+              WebkitMaskImage: `url(${symbolMaskUrl})`,
+              maskImage: `url(${symbolMaskUrl})`,
               WebkitMaskSize: 'contain',
               maskSize: 'contain',
               WebkitMaskPosition: 'center',

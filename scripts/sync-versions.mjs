@@ -402,8 +402,8 @@ if (fs.existsSync(appVersionTsPath)) {
 const firebaseJsonPath = path.join(repoRoot, 'firebase.json');
 if (fs.existsSync(firebaseJsonPath)) {
   let fbSrc = fs.readFileSync(firebaseJsonPath, 'utf8');
-  const oldDestRegex = /"destination":\s*"https:\/\/github\.com\/MAGEXE1000\/Studio\/releases\/download\/v[^/]+\/studio-[^/]+\.apk"/;
-  const newDest = `"destination": "https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk"`;
+  const oldDestRegex = /"destination":\s*"https:\/\/github\.com\/MAGEXE1000\/(?:Studio|Livex)\/releases\/download\/v[^/]+\/studio-[^/]+\.apk"/;
+  const newDest = `"destination": "https://github.com/MAGEXE1000/Livex/releases/download/v${version}/studio-${version}.apk"`;
   if (oldDestRegex.test(fbSrc)) {
     const newFbSrc = fbSrc.replace(oldDestRegex, newDest);
     const wrote = writeIfChanged(firebaseJsonPath, newFbSrc, 'firebase.json');

@@ -1,23 +1,42 @@
 import livexSymbolUrl from '../../../assets/livex-symbol.png';
+import livexSymbolLightUrl from '../../../assets/livex-symbol-light.png';
 
 export function StudioLogo({ size = 14 }: { size?: number }) {
   /* Studio / Livex — approved abstract symbol mark */
   return (
-    <img
-      src={livexSymbolUrl}
-      alt="Livex"
-      width={size}
-      height={size}
-      className="dark:filter-none dark:opacity-100 filter brightness-0 opacity-85 select-none pointer-events-none"
-      style={{
-        display: 'block',
-        flexShrink: 0,
-        width: size,
-        height: size,
-        objectFit: 'contain',
-      }}
-      draggable={false}
-    />
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcSet={livexSymbolUrl} />
+      <img
+        src={livexSymbolLightUrl}
+        alt="Livex"
+        width={size}
+        height={size}
+        className="dark:hidden select-none pointer-events-none"
+        style={{
+          flexShrink: 0,
+          width: size,
+          height: size,
+          objectFit: 'contain',
+          imageRendering: '-webkit-optimize-contrast',
+        }}
+        draggable={false}
+      />
+      <img
+        src={livexSymbolUrl}
+        alt="Livex"
+        width={size}
+        height={size}
+        className="hidden dark:block select-none pointer-events-none"
+        style={{
+          flexShrink: 0,
+          width: size,
+          height: size,
+          objectFit: 'contain',
+          imageRendering: '-webkit-optimize-contrast',
+        }}
+        draggable={false}
+      />
+    </picture>
   );
 }
 

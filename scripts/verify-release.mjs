@@ -88,7 +88,7 @@ async function verifyAll() {
       // 3. Check GitHub Release assets via gh CLI
       Promise.resolve()
         .then(() => {
-          const ghResult = spawnSync('gh', ['release', 'view', `v${version}`, '--json', 'assets', '--repo', 'MAGEXE1000/Studio'], {
+          const ghResult = spawnSync('gh', ['release', 'view', `v${version}`, '--json', 'assets', '--repo', 'MAGEXE1000/Livex'], {
             encoding: 'utf8',
             shell: process.platform === 'win32',
           });

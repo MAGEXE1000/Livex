@@ -49,14 +49,14 @@ describe('Livex Startup Animation Three-Theme Architecture', () => {
   });
 
   describe('getStartupAnimationThemeSpec', () => {
-    it('returns pure white canvas and dark emblem filter for LIGHT mode', () => {
+    it('returns pure white canvas and clean emblem spec for LIGHT mode', () => {
       const spec = getStartupAnimationThemeSpec('light');
 
       expect(spec.themeState).toBe('light');
       expect(spec.bgColor).toBe('#ffffff');
-      expect(spec.logoFilter).toBe('brightness(0)');
-      expect(spec.logoOpacity).toBe(0.9);
-      expect(spec.glowGradient).toContain('rgba(0, 0, 0, 0.06)');
+      expect(spec.logoFilter).toBe('none');
+      expect(spec.logoOpacity).toBe(1.0);
+      expect(spec.glowGradient).toContain('rgba(0, 0, 0, 0.025)');
       expect(spec.sheenBlendMode).toBe('screen');
     });
 
@@ -92,7 +92,7 @@ describe('Livex Startup Animation Three-Theme Architecture', () => {
       let spec = getStartupAnimationThemeSpec(state);
       expect(spec.themeState).toBe('light');
       expect(spec.bgColor).toBe('#ffffff');
-      expect(spec.logoFilter).toBe('brightness(0)');
+      expect(spec.logoFilter).toBe('none');
 
       // 2. Cycle to Dark
       settingsController.cycleNextTheme();
@@ -119,7 +119,7 @@ describe('Livex Startup Animation Three-Theme Architecture', () => {
       spec = getStartupAnimationThemeSpec(state);
       expect(spec.themeState).toBe('light');
       expect(spec.bgColor).toBe('#ffffff');
-      expect(spec.logoFilter).toBe('brightness(0)');
+      expect(spec.logoFilter).toBe('none');
     });
   });
 });

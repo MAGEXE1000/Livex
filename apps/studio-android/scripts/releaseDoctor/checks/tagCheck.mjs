@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 
-const REPO_SLUG = 'MAGEXE1000/Studio';
+const REPO_SLUG = 'MAGEXE1000/Livex';
 
 export async function checkGitTag(version, options = {}) {
   const execFn = options.execFn || execSync;

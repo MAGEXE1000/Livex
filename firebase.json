@@ -161,22 +161,22 @@
     "redirects": [
       {
         "source": "/apk/livex-latest.apk",
-        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v4.5.85/studio-4.5.85.apk",
+        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v4.5.85/studio-4.5.85.apk",
         "type": 302
       },
       {
         "source": "/apk/livex-:version.apk",
-        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v:version/studio-:version.apk",
+        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v:version/studio-:version.apk",
         "type": 302
       },
       {
         "source": "/apk/studio-latest.apk",
-        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v4.5.85/studio-4.5.85.apk",
+        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v4.5.85/studio-4.5.85.apk",
         "type": 302
       },
       {
         "source": "/apk/studio-:version.apk",
-        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v:version/studio-:version.apk",
+        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v:version/studio-:version.apk",
         "type": 302
       }
     ]

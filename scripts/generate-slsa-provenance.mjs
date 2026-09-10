@@ -31,17 +31,17 @@ export function generateSlsaProvenance(options = {}) {
       },
     ],
     builder: {
-      id: process.env.GITHUB_RUN_ID ? `https://github.com/MAGEXE1000/Studio/actions/runs/${process.env.GITHUB_RUN_ID}` : 'https://livex.app/builders/ci-runner-v1',
+      id: process.env.GITHUB_RUN_ID ? `https://github.com/MAGEXE1000/Livex/actions/runs/${process.env.GITHUB_RUN_ID}` : 'https://livex.app/builders/ci-runner-v1',
     },
     buildDefinition: {
       buildType: 'https://livex.app/buildtypes/android-pwa-monorepo@v1',
       externalParameters: {
-        repository: 'https://github.com/MAGEXE1000/Studio',
+        repository: 'https://github.com/MAGEXE1000/Livex',
         ref: `refs/tags/v${version}`,
         commitSha,
       },
       resolvedDependencies: [
-        { uri: 'git+https://github.com/MAGEXE1000/Studio.git', digest: { sha1: commitSha } },
+        { uri: 'git+https://github.com/MAGEXE1000/Livex.git', digest: { sha1: commitSha } },
       ],
     },
     runDetails: {

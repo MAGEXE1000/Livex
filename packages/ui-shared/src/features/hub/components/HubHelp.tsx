@@ -287,7 +287,7 @@ export function HubHelp({
   function renderDownloadAppsContent() {
     let apkVersion = '3.6.28';
     let apkSize = '13.47 MB';
-    let apkUrl = 'https://github.com/MAGEXE1000/Studio/releases/download/v3.6.28/studio-3.6.28.apk';
+    let apkUrl = 'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk';
 
     try {
       if (
