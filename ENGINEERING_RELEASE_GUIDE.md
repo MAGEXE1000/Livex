@@ -1,6 +1,6 @@
-# Studio Engineering Release Guide
+# Livex Engineering Release Guide
 
-This document is the authoritative guide to the Studio Release Infrastructure, Release State Machine, Execution Modes, E2E Release Pipeline Simulator, Release Parity Layer, diagnostic tooling, and release workflows.
+This document is the authoritative guide to the Livex Release Infrastructure, Release State Machine, Execution Modes, E2E Release Pipeline Simulator, Release Parity Layer, diagnostic tooling, and release workflows.
 
 ---
 

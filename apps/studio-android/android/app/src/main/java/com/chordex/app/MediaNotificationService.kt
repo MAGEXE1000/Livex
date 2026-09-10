@@ -47,7 +47,7 @@ data class PlaybackStatePayload(
 class MediaNotificationService : Service() {
 
     companion object {
-        private const val TAG = "StudioMediaService"
+        private const val TAG = "LivexMediaService"
         const val CHANNEL_ID = "studio_media_playback"
         const val NOTIFICATION_ID = 2001
 
@@ -74,8 +74,8 @@ class MediaNotificationService : Service() {
     private var mediaSession: MediaSessionCompat? = null
     private var isForeground = false
 
-    private var currentTitle: String = "Studio Playback"
-    private var currentArtist: String = "Studio"
+    private var currentTitle: String = "Livex Playback"
+    private var currentArtist: String = "Livex"
     private var currentAlbum: String = ""
     private var currentDurationMs: Long = 0L
     private var currentPlaybackState: Int = PlaybackStateCompat.STATE_NONE
@@ -134,7 +134,7 @@ class MediaNotificationService : Service() {
         instance = this
         createNotificationChannel()
 
-        mediaSession = MediaSessionCompat(this, "StudioMediaSession").apply {
+        mediaSession = MediaSessionCompat(this, "LivexMediaSession").apply {
             setFlags(
                 MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
@@ -183,7 +183,7 @@ class MediaNotificationService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Studio Audio Playback"
+            val name = "Livex Audio Playback"
             val descriptionText = "Playback controls and notifications for GrooveX and Drumex"
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
@@ -204,8 +204,8 @@ class MediaNotificationService : Service() {
         durationMs: Long,
         artworkUrl: String?
     ) {
-        currentTitle = title.ifEmpty { "Studio Playback" }
-        currentArtist = artist.ifEmpty { "Studio" }
+        currentTitle = title.ifEmpty { "Livex Playback" }
+        currentArtist = artist.ifEmpty { "Livex" }
         currentAlbum = album
         currentDurationMs = durationMs
 

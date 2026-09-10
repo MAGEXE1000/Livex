@@ -2,11 +2,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 // Development Live Reload URL (only active when CAPACITOR_SERVER_URL is explicitly set for local dev)
 const devServerUrl = process.env.CAPACITOR_SERVER_URL?.trim();
-const isLiveReload = !!devServerUrl && process.env.STUDIO_PRODUCTION_RELEASE !== 'true';
+const isProd = process.env.LIVEX_PRODUCTION_RELEASE === 'true' || process.env.STUDIO_PRODUCTION_RELEASE === 'true';
+const isLiveReload = !!devServerUrl && !isProd;
 
 const config: CapacitorConfig = {
   appId: 'com.chordex.app',
-  appName: 'Studio',
+  appName: 'Livex',
   webDir: '../../dist/android-web',
   android: {
     buildOptions: {

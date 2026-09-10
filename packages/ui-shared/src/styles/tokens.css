@@ -53,9 +53,14 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
 
-  --font-headline: var(--studio-font-display);
-  --font-label: var(--studio-font-body);
-  --font-sans: var(--studio-font-body);
+  /* ── Canonical Livex Typography Tokens ── */
+  --livex-font-display: var(--studio-font-display);
+  --livex-font-body: var(--studio-font-body);
+  --livex-font-mono: var(--studio-font-mono);
+
+  --font-headline: var(--livex-font-display);
+  --font-label: var(--livex-font-body);
+  --font-sans: var(--livex-font-body);
 
   --radius-compact: 12px;
   --radius-card: 16px;
@@ -270,6 +275,17 @@
   --studio-accent-soft: color-mix(in srgb, var(--studio-accent-to) 12%, transparent);
   --studio-accent-glow: 0 4px 20px color-mix(in srgb, var(--studio-accent-to) 25%, transparent);
   --studio-accent-border: color-mix(in srgb, var(--studio-accent-to) 30%, transparent);
+
+  /* ── Canonical Livex Accent Aliases ── */
+  --livex-accent-from: var(--studio-accent-from);
+  --livex-accent-to: var(--studio-accent-to);
+  --livex-accent-mid: var(--studio-accent-mid);
+  --livex-accent: var(--studio-accent);
+  --livex-accent-rgb: var(--studio-accent-rgb);
+  --livex-accent-gradient: var(--studio-accent-gradient);
+  --livex-accent-soft: var(--studio-accent-soft);
+  --livex-accent-glow: var(--studio-accent-glow);
+  --livex-accent-border: var(--studio-accent-border);
 
   --app-bg: var(--c-background, #141418);
   --app-surface-lowest: var(--c-surface-lowest, #101014);

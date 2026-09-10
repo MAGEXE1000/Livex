@@ -462,7 +462,7 @@
     "visual": "视觉"
   },
   "hub": {
-    "studio": "Studio",
+    "studio": "Livex",
     "byChordex": "by Mag",
     "changelogTitle": "更新日志",
     "justUpdatedTitle": "已更新",
@@ -476,7 +476,7 @@
     "groovexDesc": "多轨练习混音器",
     "vocalexDesc": "声乐工具与训练",
     "settingsTitle": "设置",
-    "settingsSubtitle": "Studio偏好设置",
+    "settingsSubtitle": "Livex偏好设置",
     "account": "账号",
     "login": "登录",
     "syncDevices": "跨设备同步",
@@ -826,7 +826,7 @@
     "library": "曲库",
     "preferences": "设置",
     "switchApp": "切换应用",
-    "studioHub": "Studio Hub",
+    "studioHub": "Livex Hub",
     "homeScreen": "主屏幕",
     "chordsAndSongs": "和弦与歌曲",
     "drumSheets": "鼓谱",
@@ -879,7 +879,7 @@
     "aboutGroovex": "关于Groovex",
     "aboutDesc1": "Groovex是一个多轨音乐练习工具。加载任何歌曲的音频音轨并独立控制每条音轨。",
     "aboutDesc2": "所有音频处理都在本地使用Web Audio API完成。",
-    "aboutVersion": "Studio by Mag的一部分",
+    "aboutVersion": "Livex by Mag的一部分",
     "resetAllPreferences": "重置所有设置",
     "resetDesc": "将还原所有音量级别和播放行为。无法撤销。",
     "resetToDefaults": "恢复默认设置"

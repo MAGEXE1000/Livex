@@ -45,9 +45,10 @@ android {
             def ksAlias = System.getenv("ANDROID_KEY_ALIAS")
             def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD")
  
-            if (System.getenv("STUDIO_PRODUCTION_RELEASE") == "true") {
+            def isProdRelease = System.getenv("LIVEX_PRODUCTION_RELEASE") == "true" || System.getenv("STUDIO_PRODUCTION_RELEASE") == "true"
+            if (isProdRelease) {
                 if (!ksPwd || !ksAlias || !ksKeyPwd) {
-                    throw new GradleException("Production release requested (STUDIO_PRODUCTION_RELEASE=true) but signing secrets (ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD) are missing.")
+                    throw new GradleException("Production release requested (LIVEX_PRODUCTION_RELEASE=true) but signing secrets (ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD) are missing.")
                 }
             }
  

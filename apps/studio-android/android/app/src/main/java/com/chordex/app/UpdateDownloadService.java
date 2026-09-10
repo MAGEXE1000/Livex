@@ -24,7 +24,7 @@ import java.net.URL;
 public class UpdateDownloadService extends Service {
     private static final String TAG = "UpdateDownloadService";
     private static final String CHANNEL_ID = "studio_update_download";
-    private static final String CHANNEL_NAME = "Studio update downloader";
+    private static final String CHANNEL_NAME = "Livex update downloader";
     private static final int NOTIFICATION_ID = 2026;
 
     public static UpdateDownloadService instance;

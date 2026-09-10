@@ -469,7 +469,7 @@
     "visual": "Visual"
   },
   "hub": {
-    "studio": "Studio",
+    "studio": "Livex",
     "byChordex": "by Mag",
     "changelogTitle": "Novidades",
     "justUpdatedTitle": "Atualizado",
@@ -483,7 +483,7 @@
     "groovexDesc": "Mixer de prática multipista",
     "vocalexDesc": "Ferramentas vocais e treinamento",
     "settingsTitle": "Configurações",
-    "settingsSubtitle": "Preferências do Studio",
+    "settingsSubtitle": "Preferências do Livex",
     "account": "Conta",
     "login": "Entrar",
     "syncDevices": "Sincronizar dispositivos",
@@ -836,7 +836,7 @@
     "library": "Biblioteca",
     "preferences": "Preferências",
     "switchApp": "Trocar app",
-    "studioHub": "Studio Hub",
+    "studioHub": "Livex Hub",
     "homeScreen": "Tela inicial",
     "chordsAndSongs": "Acordes e músicas",
     "drumSheets": "Partituras de bateria",
@@ -893,7 +893,7 @@
     "aboutGroovex": "Sobre o Groovex",
     "aboutDesc1": "Groovex é uma ferramenta de prática musical multipista. Carregue stems de áudio e controle cada faixa independentemente.",
     "aboutDesc2": "Todo o processamento de áudio acontece localmente usando a Web Audio API.",
-    "aboutVersion": "Parte do Studio by Mag",
+    "aboutVersion": "Parte do Livex by Mag",
     "resetAllPreferences": "Redefinir todas as preferências",
     "resetDesc": "Reverterá todos os níveis de volume e comportamentos de reprodução. Não pode ser desfeito.",
     "resetToDefaults": "Restaurar padrões"

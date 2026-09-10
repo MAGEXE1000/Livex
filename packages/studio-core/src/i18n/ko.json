@@ -462,7 +462,7 @@
     "visual": "비주얼"
   },
   "hub": {
-    "studio": "Studio",
+    "studio": "Livex",
     "byChordex": "by Mag",
     "changelogTitle": "업데이트 내역",
     "justUpdatedTitle": "업데이트됨",
@@ -476,7 +476,7 @@
     "groovexDesc": "멀티트랙 연습 믹서",
     "vocalexDesc": "보컬 도구 및 트레이닝",
     "settingsTitle": "설정",
-    "settingsSubtitle": "Studio 설정",
+    "settingsSubtitle": "Livex 설정",
     "account": "계정",
     "login": "로그인",
     "syncDevices": "기기 간 동기화",
@@ -826,7 +826,7 @@
     "library": "라이브러리",
     "preferences": "설정",
     "switchApp": "앱 전환",
-    "studioHub": "Studio Hub",
+    "studioHub": "Livex Hub",
     "homeScreen": "홈 화면",
     "chordsAndSongs": "코드 및 곡",
     "drumSheets": "드럼 악보",
@@ -879,7 +879,7 @@
     "aboutGroovex": "Groovex 정보",
     "aboutDesc1": "Groovex는 멀티트랙 음악 연습 도구입니다. 오디오 스템을 불러와 각 트랙을 독립적으로 제어하세요.",
     "aboutDesc2": "모든 오디오 처리는 Web Audio API를 사용하여 로컬에서 이루어집니다.",
-    "aboutVersion": "Studio by Mag의 일부",
+    "aboutVersion": "Livex by Mag의 일부",
     "resetAllPreferences": "모든 설정 초기화",
     "resetDesc": "모든 볼륨 레벨과 재생 동작이 기본값으로 되돌아갑니다. 취소할 수 없습니다.",
     "resetToDefaults": "기본값으로 초기화"

@@ -1,4 +1,4 @@
-# Studio Architecture Index
+# Livex Architecture Index
 
 > **Last updated:** 2026-07-29
 > **Version:** 4.3.04

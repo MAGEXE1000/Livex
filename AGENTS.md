@@ -1,6 +1,6 @@
-# Permanent Studio Platform-Scope Policy & Instructions
+# Permanent Livex Platform-Scope Policy & Instructions
 
-This document is the authoritative platform-scope policy for all developers and AI agents working on Chordex Studio. Every task must be classified and validated before making any source code modifications.
+This document is the authoritative platform-scope policy for all developers and AI agents working on Livex. Every task must be classified and validated before making any source code modifications.
 
 ---
 
@@ -110,7 +110,7 @@ pnpm scope:check --platform shared
 
 ---
 
-## 6. Studio Engineering Protocol v1.0 (Permanent Project Rule)
+## 6. Livex Engineering Protocol v1.0 (Permanent Project Rule)
 
 ### Core Principle
 

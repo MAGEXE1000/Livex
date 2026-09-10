@@ -469,7 +469,7 @@
     "visual": "Visuell"
   },
   "hub": {
-    "studio": "Studio",
+    "studio": "Livex",
     "byChordex": "by Mag",
     "changelogTitle": "Änderungsprotokoll",
     "justUpdatedTitle": "Aktualisiert",
@@ -483,7 +483,7 @@
     "groovexDesc": "Multitrack-Übungsmixer",
     "vocalexDesc": "Gesangswerkzeuge & Training",
     "settingsTitle": "Einstellungen",
-    "settingsSubtitle": "Studio-Einstellungen",
+    "settingsSubtitle": "Livex-Einstellungen",
     "account": "Konto",
     "login": "Anmelden",
     "syncDevices": "Geräte synchronisieren",
@@ -836,7 +836,7 @@
     "library": "Bibliothek",
     "preferences": "Einstellungen",
     "switchApp": "App wechseln",
-    "studioHub": "Studio Hub",
+    "studioHub": "Livex Hub",
     "homeScreen": "Startseite",
     "chordsAndSongs": "Akkorde & Songs",
     "drumSheets": "Schlagzeugblätter",
@@ -893,7 +893,7 @@
     "aboutGroovex": "Über Groovex",
     "aboutDesc1": "Groovex ist ein Multitrack-Musikübungstool. Lade Audio-Stems für Songs und steuere jede Spur unabhängig.",
     "aboutDesc2": "Alle Audioverarbeitung erfolgt lokal über die Web Audio API.",
-    "aboutVersion": "Teil von Studio by Mag",
+    "aboutVersion": "Teil von Livex by Mag",
     "resetAllPreferences": "Alle Einstellungen zurücksetzen",
     "resetDesc": "Alle Lautstärken und Wiedergabeeinstellungen werden auf Standard zurückgesetzt.",
     "resetToDefaults": "Auf Standard zurücksetzen"

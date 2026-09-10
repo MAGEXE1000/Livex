@@ -462,7 +462,7 @@
     "visual": "ビジュアル"
   },
   "hub": {
-    "studio": "Studio",
+    "studio": "Livex",
     "byChordex": "by Mag",
     "changelogTitle": "更新履歴",
     "justUpdatedTitle": "更新されました",
@@ -476,7 +476,7 @@
     "groovexDesc": "マルチトラック練習ミキサー",
     "vocalexDesc": "ボーカルツールとトレーニング",
     "settingsTitle": "設定",
-    "settingsSubtitle": "Studio設定",
+    "settingsSubtitle": "Livex設定",
     "account": "アカウント",
     "login": "ログイン",
     "syncDevices": "デバイス間で同期",
@@ -826,7 +826,7 @@
     "library": "ライブラリ",
     "preferences": "設定",
     "switchApp": "アプリ切替",
-    "studioHub": "Studio Hub",
+    "studioHub": "Livex Hub",
     "homeScreen": "ホーム画面",
     "chordsAndSongs": "コードと楽曲",
     "drumSheets": "ドラム譜",
@@ -879,7 +879,7 @@
     "aboutGroovex": "Groovexについて",
     "aboutDesc1": "Groovexはマルチトラック音楽練習ツールです。音声ステムを読み込み、各トラックを独立してコントロール。",
     "aboutDesc2": "すべてのオーディオ処理はWeb Audio APIを使用してローカルで行われます。",
-    "aboutVersion": "Studio by Magの一部",
+    "aboutVersion": "Livex by Magの一部",
     "resetAllPreferences": "すべての設定をリセット",
     "resetDesc": "すべてのボリュームレベルと再生動作がデフォルトに戻ります。元に戻せません。",
     "resetToDefaults": "デフォルトにリセット"

@@ -62,7 +62,7 @@ public class UpdateCheckWorker extends Worker {
     private static final String KEY_NOTIFICATIONS_ENABLED = "studio_update.notifications_enabled";
 
     private static final String CHANNEL_ID   = "studio_update_updates";
-    private static final String CHANNEL_NAME = "Studio updates";
+    private static final String CHANNEL_NAME = "Livex updates";
 
     public UpdateCheckWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -168,7 +168,7 @@ public class UpdateCheckWorker extends Worker {
             if (channel == null) {
                 channel = new NotificationChannel(
                     CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
-                channel.setDescription("Notifies when a new Studio update is available.");
+                channel.setDescription("Notifies when a new Livex update is available.");
                 nm.createNotificationChannel(channel);
             }
         }
@@ -200,7 +200,7 @@ public class UpdateCheckWorker extends Worker {
         String title;
         String body;
         if (true) {
-            title = isEs ? "Actualización de Sistema Studio (APK)" : "Studio Native System Update (APK)";
+            title = isEs ? "Actualización de Sistema Livex (APK)" : "Livex Native System Update (APK)";
             body = isEs 
                 ? "La versión " + version + " requiere reinstalar la APK para aplicar cambios de permisos y seguridad."
                 : "Version " + version + " requires reinstalling the APK for native system and permission fixes.";

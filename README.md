@@ -1,6 +1,6 @@
-# Chordex Studio
+# Livex
 
-A comprehensive music tools platform for musicians. Available as a web application (Netlify) and native Android application (APK via Capacitor).
+A comprehensive live & rehearsal music tools suite for musicians. Available as a responsive web application and native Android application (APK via Capacitor).
 
 ## For AI Agents
 
@@ -18,7 +18,7 @@ If you are an AI agent working on this repository, start here:
 ## Monorepo Structure
 
 ```
-Studio/
+Livex/
 ├── apps/
 │   ├── studio-web/           # Vite + React web app (Netlify)
 │   └── studio-android/       # Capacitor + Android native app (APK)

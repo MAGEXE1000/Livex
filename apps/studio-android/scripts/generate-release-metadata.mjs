@@ -261,21 +261,48 @@ if (releaseType !== 'ota') {
           fbJson.hosting.redirects = fbJson.hosting.redirects || [];
           const redirects = fbJson.hosting.redirects;
 
-          // 3. Update or insert studio-latest.apk redirect
+          // 3. Update or insert livex-latest.apk & studio-latest.apk redirects
           const latestDest = `https://github.com/MAGEXE1000/Studio/releases/download/v${version}/studio-${version}.apk`;
-          const latestIdx = redirects.findIndex((r) => r.source === '/apk/studio-latest.apk');
-          const latestRule = {
+          const livexRule = {
+            source: '/apk/livex-latest.apk',
+            destination: latestDest,
+            type: 302,
+          };
+          const studioRule = {
             source: '/apk/studio-latest.apk',
             destination: latestDest,
             type: 302,
           };
-          if (latestIdx !== -1) {
-            redirects[latestIdx] = latestRule;
+
+          const livexIdx = redirects.findIndex((r) => r.source === '/apk/livex-latest.apk');
+          if (livexIdx !== -1) {
+            redirects[livexIdx] = livexRule;
           } else {
-            redirects.unshift(latestRule);
+            redirects.unshift(livexRule);
           }
 
-          // 4. Update or insert studio-:version.apk redirect
+          const latestIdx = redirects.findIndex((r) => r.source === '/apk/studio-latest.apk');
+          if (latestIdx !== -1) {
+            redirects[latestIdx] = studioRule;
+          } else {
+            redirects.unshift(studioRule);
+          }
+
+          // 4. Update or insert livex-:version.apk & studio-:version.apk redirect
+          const livexVersionDest =
+            'https://github.com/MAGEXE1000/Studio/releases/download/v:version/livex-:version.apk';
+          const livexVersionIdx = redirects.findIndex((r) => r.source === '/apk/livex-:version.apk');
+          const livexVersionRule = {
+            source: '/apk/livex-:version.apk',
+            destination: livexVersionDest,
+            type: 302,
+          };
+          if (livexVersionIdx !== -1) {
+            redirects[livexVersionIdx] = livexVersionRule;
+          } else {
+            redirects.push(livexVersionRule);
+          }
+
           const versionDest =
             'https://github.com/MAGEXE1000/Studio/releases/download/v:version/studio-:version.apk';
           const versionIdx = redirects.findIndex((r) => r.source === '/apk/studio-:version.apk');

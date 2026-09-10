@@ -345,7 +345,7 @@ public class AppInstallerPlugin extends Plugin {
                     public void run() {
                         try {
                             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                            android.content.ClipData clip = android.content.ClipData.newPlainText("Studio Diagnostics", text);
+                            android.content.ClipData clip = android.content.ClipData.newPlainText("Livex Diagnostics", text);
                             clipboard.setPrimaryClip(clip);
                             call.resolve();
                         } catch (Exception e) {

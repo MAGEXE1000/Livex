@@ -47,6 +47,23 @@
         ]
       },
       {
+        "source": "/apk/livex-latest.apk",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/vnd.android.package-archive"
+          },
+          {
+            "key": "Content-Disposition",
+            "value": "attachment"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-store, no-cache, must-revalidate, max-age=0"
+          }
+        ]
+      },
+      {
         "source": "/apk/studio-latest.apk",
         "headers": [
           {
@@ -142,6 +159,16 @@
       }
     ],
     "redirects": [
+      {
+        "source": "/apk/livex-latest.apk",
+        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v4.5.85/studio-4.5.85.apk",
+        "type": 302
+      },
+      {
+        "source": "/apk/livex-:version.apk",
+        "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v:version/studio-:version.apk",
+        "type": 302
+      },
       {
         "source": "/apk/studio-latest.apk",
         "destination": "https://github.com/MAGEXE1000/Studio/releases/download/v4.5.85/studio-4.5.85.apk",

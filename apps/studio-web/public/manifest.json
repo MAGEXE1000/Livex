@@ -1,7 +1,7 @@
 {
-  "name": "Studio",
-  "short_name": "Studio",
-  "description": "Studio — Chordex & Drumex, your complete music toolkit",
+  "name": "Livex",
+  "short_name": "Livex",
+  "description": "Livex — Complete Live & Practice Music Suite",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
