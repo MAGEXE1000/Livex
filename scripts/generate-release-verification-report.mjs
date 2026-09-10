@@ -102,7 +102,30 @@ export function generateVerificationReport(apkPath) {
   try {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'apk-res-check-'));
     try {
-      execSync(`tar -xf "${targetApk}" -C "${tmpDir}" res`, { stdio: ['ignore', 'pipe', 'ignore'] });
+      let extracted = false;
+
+      // 1. Try unzip (standard on Linux / macOS for ZIP/APK)
+      try {
+        execSync(`unzip -q -o "${targetApk}" "res/*" -d "${tmpDir}"`, { stdio: ['ignore', 'pipe', 'ignore'] });
+        if (fs.existsSync(path.join(tmpDir, 'res'))) extracted = true;
+      } catch {}
+
+      // 2. Try jar (universal Java tool, guaranteed present after actions/setup-java)
+      if (!extracted) {
+        try {
+          execSync(`jar xf "${targetApk}" res`, { cwd: tmpDir, stdio: ['ignore', 'pipe', 'ignore'] });
+          if (fs.existsSync(path.join(tmpDir, 'res'))) extracted = true;
+        } catch {}
+      }
+
+      // 3. Try tar (Windows bsdtar natively supports zip/apk)
+      if (!extracted) {
+        try {
+          execSync(`tar -xf "${targetApk}" -C "${tmpDir}" res`, { stdio: ['ignore', 'pipe', 'ignore'] });
+          if (fs.existsSync(path.join(tmpDir, 'res'))) extracted = true;
+        } catch {}
+      }
+
       const resDir = path.join(tmpDir, 'res');
       if (fs.existsSync(resDir)) {
         const allResFiles = getFilesRecursively(resDir);
@@ -121,22 +144,30 @@ export function generateVerificationReport(apkPath) {
           }
         }
 
-        // Verify all 5 densities exist in the APK
+        // Verify all 5 densities exist in the APK (unflattened debug or AAPT2 badging density configs)
         const requiredDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
-        allDensitiesPresent = requiredDensities.every(density =>
+        const hasUnflattenedDensities = requiredDensities.every(density =>
           allResFiles.some(f => f.includes(`mipmap-${density}`) && f.endsWith('ic_launcher.png'))
         );
+        const hasBadgingDensities = ['160', '240', '320', '480', '640'].every(d =>
+          badgingOut.includes(`application-icon-${d}:`)
+        );
+        allDensitiesPresent = hasUnflattenedDensities || hasBadgingDensities;
 
-        // Verify adaptive XML exists in the APK
-        adaptiveXmlPresent = allResFiles.some(f =>
+        // Verify adaptive XML exists in the APK (unflattened or AAPT2 flattened binary XML)
+        const hasUnflattenedXml = allResFiles.some(f =>
           f.includes('mipmap-anydpi-v26') && f.endsWith('ic_launcher.xml')
         );
+        const hasFlattenedXml = applicationIcon.endsWith('.xml') && allResFiles.some(f =>
+          f.endsWith(path.basename(applicationIcon))
+        );
+        adaptiveXmlPresent = hasUnflattenedXml || hasFlattenedXml;
       }
     } finally {
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
     }
-  } catch (tarErr) {
-    console.warn(`Notice: Could not inspect internal APK tar entries: ${tarErr.message}`);
+  } catch (extractErr) {
+    console.warn(`Notice: Could not inspect internal APK resource entries: ${extractErr.message}`);
   }
 
   // 3. Verify Signatures via apksigner or keytool

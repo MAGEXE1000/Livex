@@ -183,7 +183,22 @@ async function main() {
   // Unpack and verify internal mipmaps
   const tmpExtract = fs.mkdtempSync(path.join(os.tmpdir(), 'apk-extract-'));
   try {
-    runCmd(`tar -xf "${targetApk}" -C "${tmpExtract}" res/`);
+    let extracted = false;
+    try {
+      execSync(`unzip -q -o "${targetApk}" "res/*" -d "${tmpExtract}"`, { stdio: ['ignore', 'pipe', 'ignore'] });
+      if (fs.existsSync(path.join(tmpExtract, 'res'))) extracted = true;
+    } catch {}
+    if (!extracted) {
+      try {
+        execSync(`jar xf "${targetApk}" res`, { cwd: tmpExtract, stdio: ['ignore', 'pipe', 'ignore'] });
+        if (fs.existsSync(path.join(tmpExtract, 'res'))) extracted = true;
+      } catch {}
+    }
+    if (!extracted) {
+      try {
+        runCmd(`tar -xf "${targetApk}" -C "${tmpExtract}" res/`);
+      } catch (e) {}
+    }
   } catch (e) {}
 
   let foundWaveform = false;
