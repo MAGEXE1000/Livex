@@ -6,9 +6,10 @@ import { execSync } from 'node:child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-// Run Repository-Wide Reference & Navigation Integrity Auditors first
+// Run Repository-Wide Reference, Navigation Integrity, and Launcher Icon Auditors first
 execSync('node scripts/verify-all-references.mjs', { cwd: repoRoot, stdio: 'inherit' });
 execSync('node scripts/verify-navigation-integrity.mjs', { cwd: repoRoot, stdio: 'inherit' });
+execSync('node scripts/sync-launcher-icons.mjs --verify', { cwd: repoRoot, stdio: 'inherit' });
 
 const paths = {
   rootPkg: path.join(repoRoot, 'package.json'),
