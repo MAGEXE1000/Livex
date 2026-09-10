@@ -35,6 +35,7 @@
     "sync:icons": "node scripts/sync-launcher-icons.mjs",
     "check:icons": "node scripts/sync-launcher-icons.mjs --verify",
     "test:icons": "node apps/studio-android/scripts/__tests__/launcher-icons.test.mjs",
+    "verify:device": "node scripts/verify-device-runtime-icon.mjs",
     "lint:imports": "node scripts/enforce-import-boundaries.mjs",
     "check:versions": "node scripts/verify-versions-consistency.mjs",
     "scope:check": "node scripts/enforce-platform-scope.mjs",
