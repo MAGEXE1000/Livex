@@ -1,15 +1,13 @@
-# Version 4.5.85
+# Version 4.5.86
 
 Release Date: 2026-09-10
 
 ### Added
 
-- Launcher Icon Freshness Manifest Architecture: Introduced `launcher-icons-manifest.json` tracking SHA-256 hashes of master assets and 20 generated target mipmaps/icons to ensure deterministic asset freshness across builds.
-- Automated Device Runtime Verification Tooling: Added `scripts/verify-device-runtime-icon.mjs` (`pnpm verify:device`) for comprehensive live ADB and static 15-point verification across all 6 OS and framework layers.
-- Automated Launcher Icon Regression Suite: Added `launcher-icons.test.mjs` (`pnpm test:icons`) asserting master source existence, adaptive icon XML validity, and zero legacy waveform presence.
+- Native Dedicated Light-Mode Intro Assets: Added pre-rendered subpixel antialiased light-mode intro emblem partitions (`livex-form1-light.png`, `livex-form2-light.png`, `livex-symbol-light.png`) for razor-sharp visual fidelity on high-DPI displays.
 
 ### Fixed
 
-- Release Pipeline CI Hardening: Embedded launcher icon integrity checks into `pnpm check:versions` (Preflight Job 1), fixed recursive subdirectory scanning in `generate-release-verification-report.mjs`, and enforced triple cross-artifact SHA-256 equality before atomic publication.
-- Deterministic Cross-Platform Icon Generation: Replaced Windows GDI+ generation with Node.js `sharp` (v0.35.4) using Lanczos3 resampling and strict 108dp canvas / 66dp safe-zone compliance.
-- Removed Flawed Runtime Component Mutation: Removed redundant `refreshLauncherIconCacheIfNeeded` call from `MainActivity.kt` to preserve native component immutability.
+- Intro Animation Light Mode Quality: Eliminated raster diffuse shadow halos and destructive CSS `brightness(0)` filter flattening in light mode, preventing fuzzy gray borders around the emblem.
+- Repository Migration Alignment: Systematically updated all release orchestration scripts, Firebase download redirects, verification checkers, and in-app links to `MAGEXE1000/Livex`.
+- Cross-Platform APK Extraction in CI: Supported AAPT2 flattened release icons and hardened APK asset extraction across Linux and Windows environments in `generate-release-verification-report.mjs`.
