@@ -1,14 +1,22 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execSync } from 'node:child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const EXPECTED_PROD_SHA256 = (process.env.EXPECTED_SIGNATURE_SHA256 || '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206').replace(/:/g, '').toLowerCase();
 const EXPECTED_PACKAGE_NAME = 'com.chordex.app';
+const EXPECTED_LAUNCHER_ACTIVITY = 'com.chordex.app.MainActivity';
+
+// Retired waveform hashes that must NEVER appear in the production APK
+const RETIRED_WAVEFORM_HASHES = new Set([
+  '4202380abc7816c6e6c99f6c35960861d063969315a56ecfbc0ca8da25c3e1ce',
+]);
 
 export function generateVerificationReport(apkPath) {
   const targetApk = apkPath || path.join(repoRoot, 'apps/studio-android/android/app/build/outputs/apk/release/app-release.apk');
@@ -19,7 +27,14 @@ export function generateVerificationReport(apkPath) {
   }
 
   // Resolve Android SDK tools
-  const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+  let androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+  if (!androidHome && process.platform === 'win32') {
+    const defaultWinSdk = path.join(process.env.LOCALAPPDATA || '', 'Android', 'Sdk');
+    if (fs.existsSync(defaultWinSdk)) {
+      androidHome = defaultWinSdk;
+    }
+  }
+
   let apksignerCmd = 'apksigner';
   let aaptCmd = 'aapt';
 
@@ -46,11 +61,51 @@ export function generateVerificationReport(apkPath) {
   const codeMatch = badgingOut.match(/versionCode='([^']+)'/i);
   const nameMatch = badgingOut.match(/versionName='([^']+)'/i);
 
-  const packageName = pkgMatch ? pkgMatch[1] : 'com.chordex.app';
+  const packageName = pkgMatch ? pkgMatch[1] : 'unknown';
   const versionCode = codeMatch ? parseInt(codeMatch[1], 10) : 0;
   const versionName = nameMatch ? nameMatch[1] : 'unknown';
 
-  // 2. Verify Signatures via apksigner or keytool
+  // Launcher activity verification
+  const launcherMatches = [...badgingOut.matchAll(/launchable-activity:\s*name='([^']+)'/gi)].map(m => m[1]);
+  const launchableActivity = launcherMatches[0] || 'unknown';
+  const isLauncherSingle = launcherMatches.length === 1;
+  const isLauncherCorrect = launchableActivity === EXPECTED_LAUNCHER_ACTIVITY;
+
+  // Icon resource in badging
+  const iconMatch = badgingOut.match(/application:\s*label='([^']*)'\s*icon='([^']+)'/i);
+  const applicationIcon = iconMatch ? iconMatch[2] : 'unknown';
+  const isIconDeclared = applicationIcon !== 'unknown' && applicationIcon.length > 0;
+
+  // 2. Scan APK contents for retired waveform or corrupted icon assets
+  let obsoleteAssetDetected = false;
+  let detectedObsoleteHash = '';
+  try {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'apk-res-check-'));
+    try {
+      execSync(`tar -xf "${targetApk}" -C "${tmpDir}" res`, { stdio: ['ignore', 'pipe', 'ignore'] });
+      const resDir = path.join(tmpDir, 'res');
+      if (fs.existsSync(resDir)) {
+        const files = fs.readdirSync(resDir);
+        for (const file of files) {
+          if (file.endsWith('.png')) {
+            const buf = fs.readFileSync(path.join(resDir, file));
+            const hash = crypto.createHash('sha256').update(buf).digest('hex');
+            if (RETIRED_WAVEFORM_HASHES.has(hash)) {
+              obsoleteAssetDetected = true;
+              detectedObsoleteHash = `${file}: ${hash}`;
+              break;
+            }
+          }
+        }
+      }
+    } finally {
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    }
+  } catch (tarErr) {
+    console.warn(`Notice: Could not inspect internal APK tar entries: ${tarErr.message}`);
+  }
+
+  // 3. Verify Signatures via apksigner or keytool
   let detectedSha256 = 'unknown';
   let v1Scheme = false;
   let v2Scheme = false;
@@ -68,7 +123,6 @@ export function generateVerificationReport(apkPath) {
     v3Scheme = /Verified using v3 scheme.*:\s*true/i.test(signOut);
     v4Scheme = /Verified using v4 scheme.*:\s*true/i.test(signOut);
   } else {
-    // Fallback: extract certificate fingerprint via keytool
     const keytoolRes = spawnSync('keytool', ['-printcert', '-jarfile', targetApk], { encoding: 'utf8', shell: process.platform === 'win32' });
     if (keytoolRes.status === 0 && keytoolRes.stdout) {
       const ktMatch = keytoolRes.stdout.match(/SHA256:\s*([A-Fa-f0-9:]+)/i);
@@ -80,10 +134,14 @@ export function generateVerificationReport(apkPath) {
   }
 
   const isPackageValid = packageName === EXPECTED_PACKAGE_NAME;
+  const isLauncherValid = isLauncherSingle && isLauncherCorrect;
   const isSignatureValid = detectedSha256 === EXPECTED_PROD_SHA256;
   const isSchemeValid = v1Scheme || v2Scheme || v3Scheme;
+  const isIconValid = isIconDeclared && !obsoleteAssetDetected;
 
-  const status = isPackageValid && isSignatureValid && isSchemeValid ? 'VERIFIED_PRODUCTION' : 'SECURITY_FAILURE';
+  const status = isPackageValid && isLauncherValid && isSignatureValid && isSchemeValid && isIconValid
+    ? 'VERIFIED_PRODUCTION'
+    : 'SECURITY_FAILURE';
 
   const report = {
     timestamp: new Date().toISOString(),
@@ -92,6 +150,19 @@ export function generateVerificationReport(apkPath) {
     packageName,
     versionCode,
     versionName,
+    launcherActivity: {
+      activity: launchableActivity,
+      expected: EXPECTED_LAUNCHER_ACTIVITY,
+      isSingle: isLauncherSingle,
+      isValid: isLauncherCorrect,
+    },
+    launcherIcon: {
+      resource: applicationIcon,
+      isDeclared: isIconDeclared,
+      obsoleteWaveformDetected: obsoleteAssetDetected,
+      detectedObsoleteHash: detectedObsoleteHash || null,
+      isValid: isIconValid,
+    },
     signingCertificate: {
       detectedSha256,
       expectedSha256: EXPECTED_PROD_SHA256,
@@ -105,6 +176,8 @@ export function generateVerificationReport(apkPath) {
     },
     verificationChecks: {
       packageNameCorrect: isPackageValid,
+      launcherComponentCorrect: isLauncherValid,
+      launcherIconValid: isIconValid,
       versionCodeValid: versionCode > 0,
       versionNameValid: versionName !== 'unknown',
       productionKeyMatched: isSignatureValid,
@@ -121,6 +194,8 @@ export function generateVerificationReport(apkPath) {
   const stateSnapshot = {
     resolvedVersion: versionName,
     versionCode,
+    packageName,
+    launchableActivity,
     apkFilename: path.basename(targetApk),
     apkSha: detectedSha256,
     certificateFingerprint: detectedSha256,
@@ -138,6 +213,8 @@ export function generateVerificationReport(apkPath) {
       'Single Source Version Consistency',
       'Production Keystore Fingerprint Match',
       'Manifest Package Name Verification',
+      'Single Canonical Launcher Activity Assertion',
+      'Icon Resource & Waveform Absence Assertion',
       'APK Scheme Integrity',
     ],
     artifacts: [
@@ -160,8 +237,10 @@ export function generateVerificationReport(apkPath) {
 - **Status**: \`${report.status}\`
 - **Target APK**: \`${report.apkPath}\`
 
-## Package Details
+## Package & Component Details
 - **Package Name**: \`${report.packageName}\` ${isPackageValid ? '✅' : '❌'}
+- **Launcher Activity**: \`${report.launcherActivity.activity}\` ${isLauncherValid ? '✅' : '❌'}
+- **Launcher Icon**: \`${report.launcherIcon.resource}\` ${isIconValid ? '✅ (No obsolete waveform)' : '❌'}
 - **versionCode**: \`${report.versionCode}\` ✅
 - **versionName**: \`${report.versionName}\` ✅
 
@@ -180,12 +259,17 @@ export function generateVerificationReport(apkPath) {
   fs.writeFileSync(mdPath, mdContent, 'utf8');
 
   console.log(`✓ Release Verification Report generated: ${jsonPath}`);
+  console.log(`  Package:  ${packageName} (${isPackageValid ? 'VALID' : 'INVALID'})`);
+  console.log(`  Launcher: ${launchableActivity} (${isLauncherValid ? 'VALID' : 'INVALID'})`);
+  console.log(`  Icon:     ${applicationIcon} (${isIconValid ? 'VALID' : 'INVALID'})`);
 
-  if (!isPackageValid || !isSignatureValid || !isSchemeValid) {
+  if (!isPackageValid || !isLauncherValid || !isSignatureValid || !isSchemeValid || !isIconValid) {
     console.error('✗ CRITICAL SECURITY FAILURE: Release APK failed post-signing verification checks!');
-    console.error(`  Package Name Valid: ${isPackageValid}`);
-    console.error(`  Production Key Matched: ${isSignatureValid}`);
-    console.error(`  Modern Scheme Verified: ${isSchemeValid}`);
+    console.error(`  Package Name Valid:       ${isPackageValid}`);
+    console.error(`  Launcher Component Valid: ${isLauncherValid}`);
+    console.error(`  Launcher Icon Valid:      ${isIconValid}`);
+    console.error(`  Production Key Matched:   ${isSignatureValid}`);
+    console.error(`  Modern Scheme Verified:   ${isSchemeValid}`);
     process.exit(1);
   }
 

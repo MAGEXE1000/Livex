@@ -222,7 +222,7 @@ export default memo(function StudioUpdateScreen({
     if (totalBytes && typeof totalBytes === 'number' && totalBytes > 0) {
       return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`;
     }
-    return '77.4 MB';
+    return '—';
   }, [apkSizeBytes, totalBytes]);
 
   // Format Download Progress Numbers
@@ -231,25 +231,22 @@ export default memo(function StudioUpdateScreen({
     if (downloadedBytes && typeof downloadedBytes === 'number' && downloadedBytes > 0) {
       return (downloadedBytes / (1024 * 1024)).toFixed(1);
     }
-    const total = parseFloat(formattedSize) || 77.4;
-    return ((progressPercent / 100) * total).toFixed(1);
-  }, [downloadedBytes, progressPercent, formattedSize]);
+    return '—';
+  }, [downloadedBytes]);
 
   // Transfer Speed Text
   const speedText = useMemo(() => {
     if (downloadSpeed) return downloadSpeed;
-    if (progressPercent <= 0) return '~ 5.8 MB/s';
-    return '~ 7.4 MB/s';
-  }, [downloadSpeed, progressPercent]);
+    return '—';
+  }, [downloadSpeed]);
 
   // ETA Text
   const etaText = useMemo(() => {
     if (typeof etaSeconds === 'number' && etaSeconds >= 0) {
       return `ETA ~${etaSeconds}s`;
     }
-    const rem = Math.max(1, Math.round(((100 - progressPercent) / 100) * 12));
-    return `ETA ~${rem}s`;
-  }, [etaSeconds, progressPercent]);
+    return '—';
+  }, [etaSeconds]);
 
   // Changelog parser extracting clean items
   const changelogItems = useMemo<string[]>(() => {

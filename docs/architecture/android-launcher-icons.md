@@ -6,7 +6,10 @@ This document defines the canonical launcher icon architecture for Livex/Studio 
 
 ### Core Tenets
 
-1. **Single Stable Launcher Component**:
+1. **Canonical Application Identity (`com.chordex.app`)**:
+   The application ID and namespace is permanently and exclusively `com.chordex.app`. All keystore signatures, Google Services OAuth client IDs, Firebase configurations, and release manifests are bound to this invariant. `com.livex.app` is not a valid package identity.
+
+2. **Single Stable Launcher Component**:
    The application maintains exactly one permanent launcher entry point:
    ```xml
    <activity
@@ -22,13 +25,19 @@ This document defines the canonical launcher icon architecture for Livex/Studio 
        </intent-filter>
    </activity>
    ```
-2. **Strict Prohibition of Activity Aliases for Icon Updates**:
-   Never introduce an `<activity-alias>` (e.g. `MainActivityLivex`) or mutate `PackageManager` component enabled states at runtime to force launcher cache invalidation. Such workarounds:
+
+3. **Strict Prohibition of Activity Aliases & Runtime PackageManager Mutations**:
+   Never introduce an `<activity-alias>` (e.g. `MainActivityLivex`) or mutate `PackageManager` component enabled states at runtime (`setComponentEnabledSetting`) to force launcher cache invalidation. Such workarounds:
    - Break desktop shortcuts, widgets, and app pinning on user home screens.
    - Introduce fragile native code and state management into `MainActivity.kt`.
    - Deviate from standard Android application packaging standards.
-3. **Automated Single-Source-of-Truth Generation**:
+   - Act as ineffective no-ops on modern OEM launchers (Samsung One UI, Pixel Launcher).
+
+4. **Automated Cross-Platform Single-Source-of-Truth Generation**:
    All 15 native Android density mipmaps and Web/PWA public assets are derived deterministically from single authoritative master assets using the project's synchronization tooling (`scripts/sync-launcher-icons.mjs`).
+
+5. **CI Preflight & Post-Build Integrity Enforcement**:
+   Every build and release is guarded by `pnpm check:icons` in Preflight Job 1 of `.github/workflows/release.yml` and post-packaging binary APK verification in `scripts/generate-release-verification-report.mjs`.
 
 ---
 

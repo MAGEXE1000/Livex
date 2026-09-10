@@ -187,7 +187,6 @@ class MainActivity : BridgeActivity() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         scheduleUpdateBackgroundCheck()
-        refreshLauncherIconCacheIfNeeded()
 
         if (this.bridge != null && this.bridge.webView != null) {
             val webView = this.bridge.webView
@@ -442,37 +441,6 @@ class MainActivity : BridgeActivity() {
             )
         } catch (e: Exception) {
             android.util.Log.w("MainActivity", "Update background work failed to schedule: " + e.message)
-        }
-    }
-
-    private fun refreshLauncherIconCacheIfNeeded() {
-        try {
-            val prefs = getSharedPreferences("livex_launcher_prefs", Context.MODE_PRIVATE)
-            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(packageName, 0)
-            }
-            val currentVersionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
-            val lastRefreshedVersion = prefs.getLong("last_icon_refresh_version_code", -1L)
-            if (currentVersionCode != lastRefreshedVersion) {
-                val mainComponent = ComponentName(this, MainActivity::class.java)
-                packageManager.setComponentEnabledSetting(
-                    mainComponent,
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP
-                )
-                prefs.edit().putLong("last_icon_refresh_version_code", currentVersionCode).apply()
-                android.util.Log.i("MainActivity", "Notified PackageManager to refresh launcher icon cache for versionCode $currentVersionCode")
-            }
-        } catch (e: Exception) {
-            android.util.Log.w("MainActivity", "Failed to refresh launcher icon cache: " + e.message)
         }
     }
 

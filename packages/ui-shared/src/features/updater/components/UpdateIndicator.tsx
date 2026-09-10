@@ -1011,6 +1011,52 @@ function UpdateModal({
   setInstallFailedReason: (v: string | null) => void;
 }) {
   const updater = useAppUpdate();
+
+  // ── Real-time download speed calculation (sliding window) ──
+  const speedSamplesRef = useRef<{ time: number; bytes: number }[]>([]);
+  const [computedSpeed, setComputedSpeed] = useState<string | null>(null);
+  const [computedEta, setComputedEta] = useState<number | null>(null);
+
+  useEffect(() => {
+    const bytes = updater.downloadedBytes;
+    const total = updater.totalBytes;
+    if (typeof bytes !== 'number' || bytes <= 0) return;
+
+    const now = Date.now();
+    const samples = speedSamplesRef.current;
+    samples.push({ time: now, bytes });
+
+    // Keep a 3-second sliding window
+    const windowMs = 3000;
+    while (samples.length > 1 && now - samples[0].time > windowMs) {
+      samples.shift();
+    }
+
+    if (samples.length >= 2) {
+      const oldest = samples[0];
+      const newest = samples[samples.length - 1];
+      const dtSec = (newest.time - oldest.time) / 1000;
+      if (dtSec > 0.1) {
+        const bytesPerSec = (newest.bytes - oldest.bytes) / dtSec;
+        const mbps = bytesPerSec / (1024 * 1024);
+        setComputedSpeed(`${mbps.toFixed(1)} MB/s`);
+
+        if (typeof total === 'number' && total > 0 && bytesPerSec > 0) {
+          const remaining = total - newest.bytes;
+          setComputedEta(Math.max(1, Math.round(remaining / bytesPerSec)));
+        }
+      }
+    }
+  }, [updater.downloadedBytes, updater.totalBytes]);
+
+  // Reset speed samples when download is not active
+  useEffect(() => {
+    if (updater.updateState !== 'DOWNLOAD_APK') {
+      speedSamplesRef.current = [];
+      setComputedSpeed(null);
+      setComputedEta(null);
+    }
+  }, [updater.updateState]);
   const t = useT();
   const updaterTr = (t as any)?.updater;
   const [permissionBlocked, setPermissionBlocked] = useState(false);
@@ -2556,6 +2602,10 @@ function UpdateModal({
         }
       }}
       apkSizeBytes={updater.apkSizeBytes}
+      downloadSpeed={computedSpeed ?? undefined}
+      etaSeconds={computedEta ?? undefined}
+      downloadedBytes={updater.downloadedBytes ?? undefined}
+      totalBytes={updater.totalBytes ?? undefined}
       error={updater.error || installFailedReason}
       releaseNotes={updater.releaseNotes || updater.changelog}
       progressComponent={progressComponent}

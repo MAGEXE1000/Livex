@@ -860,6 +860,8 @@ public class AppInstallerPlugin extends Plugin {
                         lastProgress = progress;
                         JSObject progressObj = new JSObject();
                         progressObj.put("progress", progress);
+                        progressObj.put("totalBytes", fileLength);
+                        progressObj.put("downloadedBytes", totalBytesRead);
                         notifyListeners("apkDownloadProgress", progressObj);
                     }
                 }

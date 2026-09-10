@@ -290,7 +290,7 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
 export async function downloadAndInstallApk(
   url: string,
   fileName?: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void
 ): Promise<void> {
   let progressListener: any = null;
 
@@ -301,7 +301,7 @@ export async function downloadAndInstallApk(
           'apkDownloadProgress',
           (status: any) => {
             if (status && typeof status.progress === 'number') {
-              onProgress(status.progress);
+              onProgress(status.progress, status.totalBytes, status.downloadedBytes);
             }
           }
         );
@@ -329,7 +329,7 @@ export async function downloadAndInstallApk(
 export async function downloadApk(
   url: string,
   fileName?: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void
 ): Promise<string> {
   let progressListener: any = null;
 

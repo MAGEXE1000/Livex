@@ -13,7 +13,7 @@ export interface DownloadOptions {
   version: string;
   manualApkUrl?: string;
   fallbackApkUrl?: string;
-  onProgress?: (progress: number) => void;
+  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void;
 }
 
 export async function downloadUpdateApk(options: DownloadOptions): Promise<string> {
@@ -46,17 +46,19 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
         );
 
         let lastUpdateTime = 0;
-        filePath = await downloadApk(sourceUrl, fileName, (percent) => {
+        filePath = await downloadApk(sourceUrl, fileName, (percent, totalBytes, downloadedBytes) => {
           resetDownloadWatchdog();
           const now = Date.now();
           if (now - lastUpdateTime >= 100 || percent === 100 || percent === 0) {
             lastUpdateTime = now;
             if (onProgress) {
-              onProgress(percent);
+              onProgress(percent, totalBytes, downloadedBytes);
             } else {
               updateGlobalState({
                 progress: Math.max(0, Math.min(1, percent / 100)),
                 statusText: `Downloading update (${Math.round(percent)}%)`,
+                downloadedBytes: downloadedBytes ?? null,
+                totalBytes: totalBytes ?? null,
               });
             }
           }

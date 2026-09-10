@@ -527,6 +527,8 @@ export let globalUpdateState: CentralizedUpdateState = {
   apkUrl: savedSession ? savedSession.apkUrl : null,
   apkSha256: savedSession ? savedSession.apkSha256 : null,
   apkSizeBytes: savedSession ? (savedSession.apkSizeBytes ?? null) : null,
+  downloadedBytes: null,
+  totalBytes: null,
   manualApkUrl: null,
   fallbackApkUrl: null,
   downloadUrl: null,

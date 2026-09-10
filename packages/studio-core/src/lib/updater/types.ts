@@ -43,6 +43,8 @@ export interface CentralizedUpdateState {
   fallbackApkUrl: string | null;
   downloadUrl: string | null;
   apkSizeBytes: number | null;
+  downloadedBytes: number | null;
+  totalBytes: number | null;
   decisionExplanation: string | null;
   // Recovery Mode fields
   consecutiveFailures: number;
