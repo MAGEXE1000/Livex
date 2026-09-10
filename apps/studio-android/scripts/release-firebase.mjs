@@ -638,6 +638,7 @@ if (!skipBuild) {
 console.log('Step 2.5/15: Verify assets freshness & integrity...');
 if (!skipBuild) {
   run('node', ['../../scripts/verify-android-assets-freshness.mjs']);
+  run('node', ['../../scripts/sync-launcher-icons.mjs', '--verify']);
 } else {
   console.log('  Skip verify: --skip-build flag is active.');
 }
@@ -960,6 +961,29 @@ if (isDryRun) {
 // ── ATOMIC PUBLICATION TRANSACTION (Executes ONLY after ALL validations pass) ──
 // =========================================================================
 console.log('\n=== STARTING ATOMIC PUBLICATION TRANSACTION ===\n');
+
+// Step 6.95: Assert Cross-Artifact SHA-256 Consistency
+console.log('Step 6.95/15: Assert Cross-Artifact SHA-256 Consistency...');
+const appReleasePath = path.join(repoRoot, 'firebase-public/app-release.json');
+if (!existsSync(appReleasePath)) {
+  console.error('release-firebase: ✗ app-release.json not found in firebase-public!');
+  process.exit(1);
+}
+const appReleaseData = JSON.parse(readFileSync(appReleasePath, 'utf8'));
+if (appReleaseData.sha256 !== localApkSha) {
+  console.error(
+    `release-firebase: ✗ Critical Consistency Failure: app-release.json SHA (${appReleaseData.sha256}) !== localApkSha (${localApkSha})!`
+  );
+  process.exit(1);
+}
+const releaseManifestData = JSON.parse(readFileSync(manifestPath, 'utf8'));
+if (releaseManifestData.artifact?.sha256 && releaseManifestData.artifact.sha256 !== localApkSha) {
+  console.error(
+    `release-firebase: ✗ Critical Consistency Failure: release-manifest.json SHA (${releaseManifestData.artifact.sha256}) !== localApkSha (${localApkSha})!`
+  );
+  process.exit(1);
+}
+console.log('release-firebase: ✓ Cross-artifact SHA-256 consistency verified across APK, app-release.json, and release-manifest.json.');
 
 // Step 7: Create GitHub Release tag if missing
 console.log('Step 7/15: Create GitHub Release tag if missing...');

@@ -93,17 +93,26 @@ Run the canonical synchronization command:
 pnpm sync:icons
 ```
 
-This automatically generates all 15 density mipmaps with high-quality bicubic resampling, computes exact 66dp safe-zone margins, and synchronizes public Web/PWA assets.
+This automatically generates all 15 density mipmaps with high-quality Lanczos3 resampling via `sharp`, computes exact 66dp safe-zone margins, generates `apps/studio-android/launcher-icons-manifest.json`, and synchronizes public Web/PWA assets.
 
-### Step 3: Verify Integrity
+### Step 3: Verify Integrity & Freshness
 
 Run the verification safeguard:
 
 ```bash
 pnpm check:icons
+pnpm test:icons
 ```
 
-This verifies that all 20 assets exist, have valid byte sizes, and match exact pixel dimensions.
+This performs an 8-point integrity check:
+1. Validates asset freshness against `launcher-icons-manifest.json` and canonical master SHA-256 hashes.
+2. Validates that all 20 assets exist and are valid PNGs.
+3. Verifies exact pixel dimensions across all density buckets.
+4. Asserts zero presence of retired legacy waveform hashes.
+5. Verifies `com.chordex.app.MainActivity` is registered as the sole launcher activity.
+6. Enforces absolute prohibition of `<activity-alias>` elements.
+7. Enforces `android:icon` and `android:roundIcon` references in `AndroidManifest.xml`.
+8. Verifies full adaptive and monochrome XML definitions in `mipmap-anydpi-v26`.
 
 ### Step 4: Normal Build & Update
 

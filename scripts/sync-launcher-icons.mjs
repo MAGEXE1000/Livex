@@ -34,6 +34,7 @@ const androidResDir = path.join(repoRoot, 'apps', 'studio-android', 'android', '
 const androidManifestPath = path.join(repoRoot, 'apps', 'studio-android', 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const androidPublicDir = path.join(repoRoot, 'apps', 'studio-android', 'public');
 const webPublicDir = path.join(repoRoot, 'apps', 'studio-web', 'public');
+const launcherIconsManifestPath = path.join(repoRoot, 'apps', 'studio-android', 'launcher-icons-manifest.json');
 
 // Android Density Matrix (108dp adaptive canvas, 48dp legacy launcher)
 const densityMatrix = [
@@ -195,10 +196,59 @@ targets.push({
 });
 
 async function runVerify() {
-  console.log('\n[VERIFY MODE] Running 7-point launcher icon & manifest integrity check...');
+  console.log('\n[VERIFY MODE] Running 8-point launcher icon, freshness & manifest integrity check...');
   let hasErrors = false;
 
-  // 1. Asset existence, PNG validity & dimension check
+  // 1. Freshness Manifest Check
+  if (!fs.existsSync(launcherIconsManifestPath)) {
+    console.error('✗ MISSING MANIFEST: ' + path.relative(repoRoot, launcherIconsManifestPath) + '. Run pnpm sync:icons to generate canonical icon manifest.');
+    hasErrors = true;
+  } else {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(launcherIconsManifestPath, 'utf8'));
+      const currentBadgeSha = getSha256(masterBadgePath);
+      const currentSymbolSha = getSha256(masterSymbolPath);
+
+      if (currentBadgeSha !== manifest.masterBadge?.sha256) {
+        console.error(`✗ STALE ICONS: Master badge has changed since icons were generated!`);
+        console.error(`  Current master badge SHA-256:  ${currentBadgeSha}`);
+        console.error(`  Recorded manifest SHA-256:     ${manifest.masterBadge?.sha256}`);
+        console.error(`  Action required: Run pnpm sync:icons to regenerate launcher assets.`);
+        hasErrors = true;
+      } else {
+        console.log('✓ Icon Freshness: Master badge asset is fresh and matches recorded manifest.');
+      }
+
+      if (currentSymbolSha !== manifest.masterSymbol?.sha256) {
+        console.error(`✗ STALE ICONS: Master symbol has changed since icons were generated!`);
+        console.error(`  Current master symbol SHA-256: ${currentSymbolSha}`);
+        console.error(`  Recorded manifest SHA-256:     ${manifest.masterSymbol?.sha256}`);
+        console.error(`  Action required: Run pnpm sync:icons to regenerate launcher assets.`);
+        hasErrors = true;
+      } else {
+        console.log('✓ Icon Freshness: Master symbol asset is fresh and matches recorded manifest.');
+      }
+
+      // Check target file hashes against manifest
+      for (const t of targets) {
+        const normRel = t.relPath.replace(/\\/g, '/');
+        const expectedSha = manifest.fileHashes?.[normRel];
+        const actualSha = getSha256(t.absPath);
+        if (!expectedSha) {
+          console.error(`✗ UNTRACKED TARGET: ${normRel} not found in manifest fileHashes.`);
+          hasErrors = true;
+        } else if (actualSha !== expectedSha) {
+          console.error(`✗ HASH MISMATCH: ${normRel} differs from manifest! Actual: ${actualSha}, Expected: ${expectedSha}`);
+          hasErrors = true;
+        }
+      }
+    } catch (parseErr) {
+      console.error('✗ INVALID MANIFEST: Failed to parse ' + path.relative(repoRoot, launcherIconsManifestPath) + ': ' + parseErr.message);
+      hasErrors = true;
+    }
+  }
+
+  // 2. Asset existence, PNG validity & dimension check
   for (const t of targets) {
     if (!fs.existsSync(t.absPath)) {
       console.error('✗ MISSING: ' + t.relPath);
@@ -217,7 +267,7 @@ async function runVerify() {
       continue;
     }
 
-    // 2. Obsolete waveform hash check
+    // 3. Obsolete waveform hash check
     const sha = getSha256(t.absPath);
     if (RETIRED_WAVEFORM_HASHES.has(sha)) {
       console.error('✗ CRITICAL REGRESSION: Retired waveform icon detected in ' + t.relPath + ' (SHA-256: ' + sha + ')');
@@ -228,7 +278,7 @@ async function runVerify() {
     console.log('✓ OK: ' + t.relPath + ' (' + dims.width + 'x' + dims.height + ', ' + dims.size + ' bytes)');
   }
 
-  // 3. AndroidManifest.xml launcher integrity
+  // 4. AndroidManifest.xml launcher integrity
   if (fs.existsSync(androidManifestPath)) {
     const manifestSrc = fs.readFileSync(androidManifestPath, 'utf8');
 
@@ -260,7 +310,7 @@ async function runVerify() {
     hasErrors = true;
   }
 
-  // 4. Adaptive icon XML configuration check
+  // 5. Adaptive icon XML configuration check
   const adaptiveXmlPath = path.join(androidResDir, 'mipmap-anydpi-v26', 'ic_launcher.xml');
   if (fs.existsSync(adaptiveXmlPath)) {
     const xml = fs.readFileSync(adaptiveXmlPath, 'utf8');
@@ -279,7 +329,7 @@ async function runVerify() {
     console.error('\n✗ Icon verification failed! Run pnpm sync:icons to regenerate.');
     process.exit(1);
   } else {
-    console.log('\n✓ All 7-point launcher icon and manifest integrity checks passed.');
+    console.log('\n✓ All 8-point launcher icon, freshness, and manifest integrity checks passed.');
     console.log('================================================================\n');
     process.exit(0);
   }
@@ -463,6 +513,31 @@ async function runGenerate() {
   }
 
   console.log('\n✓ Generated and synchronized all ' + targets.length + ' targets.');
+
+  // Write canonical launcher icon manifest
+  const manifestData = {
+    manifestVersion: '1.0.0',
+    generatedAt: new Date().toISOString(),
+    generator: sharp ? `sharp v${sharp.versions.sharp}` : 'powershell-gdi',
+    masterBadge: {
+      path: path.relative(repoRoot, masterBadgePath).replace(/\\/g, '/'),
+      sha256: getSha256(masterBadgePath),
+      width: getPngDimensions(masterBadgePath)?.width || 1024,
+      height: getPngDimensions(masterBadgePath)?.height || 1024
+    },
+    masterSymbol: {
+      path: path.relative(repoRoot, masterSymbolPath).replace(/\\/g, '/'),
+      sha256: getSha256(masterSymbolPath),
+      width: getPngDimensions(masterSymbolPath)?.width || 1024,
+      height: getPngDimensions(masterSymbolPath)?.height || 1024
+    },
+    fileHashes: {}
+  };
+  for (const t of targets) {
+    manifestData.fileHashes[t.relPath.replace(/\\/g, '/')] = getSha256(t.absPath);
+  }
+  fs.writeFileSync(launcherIconsManifestPath, JSON.stringify(manifestData, null, 2) + '\n', 'utf8');
+  console.log('✓ Wrote canonical launcher icon manifest: ' + path.relative(repoRoot, launcherIconsManifestPath));
 
   // Final verification pass
   let passCount = 0;

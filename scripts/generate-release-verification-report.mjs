@@ -79,24 +79,58 @@ export function generateVerificationReport(apkPath) {
   // 2. Scan APK contents for retired waveform or corrupted icon assets
   let obsoleteAssetDetected = false;
   let detectedObsoleteHash = '';
+  let scannedPngCount = 0;
+  let scannedMipmapCount = 0;
+  let allDensitiesPresent = false;
+  let adaptiveXmlPresent = false;
+
+  function getFilesRecursively(dir) {
+    let results = [];
+    if (!fs.existsSync(dir)) return results;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results = results.concat(getFilesRecursively(full));
+      } else if (entry.isFile()) {
+        results.push(full);
+      }
+    }
+    return results;
+  }
+
   try {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'apk-res-check-'));
     try {
       execSync(`tar -xf "${targetApk}" -C "${tmpDir}" res`, { stdio: ['ignore', 'pipe', 'ignore'] });
       const resDir = path.join(tmpDir, 'res');
       if (fs.existsSync(resDir)) {
-        const files = fs.readdirSync(resDir);
-        for (const file of files) {
-          if (file.endsWith('.png')) {
-            const buf = fs.readFileSync(path.join(resDir, file));
-            const hash = crypto.createHash('sha256').update(buf).digest('hex');
-            if (RETIRED_WAVEFORM_HASHES.has(hash)) {
-              obsoleteAssetDetected = true;
-              detectedObsoleteHash = `${file}: ${hash}`;
-              break;
-            }
+        const allResFiles = getFilesRecursively(resDir);
+        const pngFiles = allResFiles.filter(f => f.endsWith('.png'));
+        const mipmapPngFiles = pngFiles.filter(f => f.includes('mipmap'));
+        scannedPngCount = pngFiles.length;
+        scannedMipmapCount = mipmapPngFiles.length;
+
+        for (const file of pngFiles) {
+          const buf = fs.readFileSync(file);
+          const hash = crypto.createHash('sha256').update(buf).digest('hex');
+          if (RETIRED_WAVEFORM_HASHES.has(hash)) {
+            obsoleteAssetDetected = true;
+            detectedObsoleteHash = `${path.basename(path.dirname(file))}/${path.basename(file)}: ${hash}`;
+            break;
           }
         }
+
+        // Verify all 5 densities exist in the APK
+        const requiredDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+        allDensitiesPresent = requiredDensities.every(density =>
+          allResFiles.some(f => f.includes(`mipmap-${density}`) && f.endsWith('ic_launcher.png'))
+        );
+
+        // Verify adaptive XML exists in the APK
+        adaptiveXmlPresent = allResFiles.some(f =>
+          f.includes('mipmap-anydpi-v26') && f.endsWith('ic_launcher.xml')
+        );
       }
     } finally {
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
@@ -137,7 +171,7 @@ export function generateVerificationReport(apkPath) {
   const isLauncherValid = isLauncherSingle && isLauncherCorrect;
   const isSignatureValid = detectedSha256 === EXPECTED_PROD_SHA256;
   const isSchemeValid = v1Scheme || v2Scheme || v3Scheme;
-  const isIconValid = isIconDeclared && !obsoleteAssetDetected;
+  const isIconValid = isIconDeclared && !obsoleteAssetDetected && allDensitiesPresent && adaptiveXmlPresent;
 
   const status = isPackageValid && isLauncherValid && isSignatureValid && isSchemeValid && isIconValid
     ? 'VERIFIED_PRODUCTION'
@@ -159,6 +193,10 @@ export function generateVerificationReport(apkPath) {
     launcherIcon: {
       resource: applicationIcon,
       isDeclared: isIconDeclared,
+      scannedPngCount,
+      scannedMipmapCount,
+      allDensitiesPresent,
+      adaptiveXmlPresent,
       obsoleteWaveformDetected: obsoleteAssetDetected,
       detectedObsoleteHash: detectedObsoleteHash || null,
       isValid: isIconValid,
@@ -178,6 +216,8 @@ export function generateVerificationReport(apkPath) {
       packageNameCorrect: isPackageValid,
       launcherComponentCorrect: isLauncherValid,
       launcherIconValid: isIconValid,
+      allDensitiesPresent,
+      adaptiveXmlPresent,
       versionCodeValid: versionCode > 0,
       versionNameValid: versionName !== 'unknown',
       productionKeyMatched: isSignatureValid,
@@ -187,9 +227,6 @@ export function generateVerificationReport(apkPath) {
 
   const jsonPath = path.join(repoRoot, 'release-verification-report.json');
   fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
-
-  const manifestPath = path.join(repoRoot, 'release-manifest.json');
-  fs.writeFileSync(manifestPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
 
   const stateSnapshot = {
     resolvedVersion: versionName,
