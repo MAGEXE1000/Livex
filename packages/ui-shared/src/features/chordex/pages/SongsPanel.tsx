@@ -6015,30 +6015,78 @@ export default function SongsPanel() {
             data-purpose="fab-container"
           >
             <div className="flex flex-col items-end gap-2 pointer-events-auto">
-              <button
-                aria-label="Add Section"
-                data-testid="add-section-btn"
-                onClick={() => {
-                  setCustomSectionName('');
-                  setCustomSectionMode(false);
-                  setShowSectionPicker(true);
-                }}
-                className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                type="button"
-              >
-                <span
-                  className="material-symbols-rounded text-[18px]"
-                  style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                >
-                  layers
-                </span>
-                <span>Section</span>
-              </button>
+              <MorphingActionSurface
+                isOpen={showSectionPicker}
+                onOpenChange={setShowSectionPicker}
+                placement="anchor"
+                compact
+                maxWidth={240}
+                title={t.songs.addSection}
+                accentColor={accent.from}
+                customTrigger={({ open }) => (
+                  <button
+                    aria-label="Add Section"
+                    data-testid="add-section-btn"
+                    onClick={() => {
+                      setCustomSectionName('');
+                      setCustomSectionMode(false);
+                      open();
+                    }}
+                    className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                      color: 'var(--c-text-primary, #111827)',
+                    }}
+                    type="button"
+                  >
+                    <span
+                      className="material-symbols-rounded text-[18px]"
+                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                    >
+                      layers
+                    </span>
+                    <span>Section</span>
+                  </button>
+                )}
+                rows={[
+                  ...[
+                    'Verse',
+                    'Chorus',
+                    'Bridge',
+                    'Pre-Chorus',
+                    'Intro',
+                    'Outro',
+                    'Interlude',
+                    'Solo',
+                    'Hook',
+                  ].map((name) => ({
+                    id: name.toLowerCase(),
+                    label: name,
+                    icon: 'layers',
+                    onPress: () => {
+                      if (!activePreset) return;
+                      const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                      if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                      else addSection(activePreset.id, name);
+                    },
+                  })),
+                  {
+                    id: 'custom',
+                    label: 'Custom...',
+                    icon: 'edit',
+                    onPress: () => {
+                      if (!activePreset) return;
+                      const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
+                      if (name && name.trim()) {
+                        const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                        else addSection(activePreset.id, name.trim());
+                      }
+                    },
+                  },
+                ]}
+              />
 
               <button
                 aria-label="Add Chord"
@@ -6081,24 +6129,72 @@ export default function SongsPanel() {
               gap: '8px',
             }}
           >
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setCustomSectionName('');
-                setCustomSectionMode(false);
-                setShowSectionPicker(true);
-              }}
-              data-testid="add-section-btn"
-              style={{
-                flex: 1,
-                borderRadius: '9999px',
-                background: 'var(--app-surface-high)',
-                color: 'var(--c-text-secondary)',
-              }}
-              icon="layers"
-            >
-              {t.songs.addSection}
-            </Button>
+            <MorphingActionSurface
+              isOpen={showSectionPicker}
+              onOpenChange={setShowSectionPicker}
+              placement="anchor"
+              compact
+              maxWidth={240}
+              title={t.songs.addSection}
+              accentColor={accent.from}
+              customTrigger={({ open }) => (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setCustomSectionName('');
+                    setCustomSectionMode(false);
+                    open();
+                  }}
+                  data-testid="add-section-btn"
+                  style={{
+                    flex: 1,
+                    borderRadius: '9999px',
+                    background: 'var(--app-surface-high)',
+                    color: 'var(--c-text-secondary)',
+                  }}
+                  icon="layers"
+                >
+                  {t.songs.addSection}
+                </Button>
+              )}
+              rows={[
+                ...[
+                  'Verse',
+                  'Chorus',
+                  'Bridge',
+                  'Pre-Chorus',
+                  'Intro',
+                  'Outro',
+                  'Interlude',
+                  'Solo',
+                  'Hook',
+                ].map((name) => ({
+                  id: name.toLowerCase(),
+                  label: name,
+                  icon: 'layers',
+                  onPress: () => {
+                    if (!activePreset) return;
+                    const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                    if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                    else addSection(activePreset.id, name);
+                  },
+                })),
+                {
+                  id: 'custom',
+                  label: 'Custom...',
+                  icon: 'edit',
+                  onPress: () => {
+                    if (!activePreset) return;
+                    const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
+                    if (name && name.trim()) {
+                      const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                      if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                      else addSection(activePreset.id, name.trim());
+                    }
+                  },
+                },
+              ]}
+            />
             <Button
               variant="primary"
               onClick={() => {
@@ -6120,131 +6216,6 @@ export default function SongsPanel() {
               {t.songs.addChord || 'Add Chord'}
             </Button>
           </div>
-        )}
-
-        {/* Section picker sheet */}
-        {showSectionPicker && (
-          <Dialog
-            open={true}
-            onClose={() => setShowSectionPicker(false)}
-            title={t.songs.addSection}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Preset section names */}
-              {!customSectionMode && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                  {[
-                    'Verse',
-                    'Chorus',
-                    'Bridge',
-                    'Pre-Chorus',
-                    'Intro',
-                    'Outro',
-                    'Interlude',
-                    'Solo',
-                    'Hook',
-                  ].map((name) => (
-                    <button
-                      key={name}
-                      className="btn-smooth"
-                      onClick={() => {
-                        const hasSecs = !!(
-                          activePreset.sections && activePreset.sections.length > 0
-                        );
-                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                        else addSection(activePreset.id, name);
-                        setShowSectionPicker(false);
-                      }}
-                      style={{
-                        padding: '10px 6px',
-                        borderRadius: '12px',
-                        background: 'var(--c-surface-high)',
-                        color: 'var(--c-text-primary)',
-                        fontFamily: 'var(--font-headline)',
-                        fontWeight: 700,
-                        fontSize: '13px',
-                        border: '1px solid var(--c-border)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                  <button
-                    className="btn-smooth"
-                    onClick={() => setCustomSectionMode(true)}
-                    style={{
-                      padding: '10px 6px',
-                      borderRadius: '12px',
-                      background: 'var(--c-accent-from)14',
-                      color: 'var(--c-accent-from)',
-                      fontFamily: 'var(--font-headline)',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      border: '1.5px dashed var(--c-accent-from)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                      edit
-                    </span>
-                    Custom
-                  </button>
-                </div>
-              )}
-              {/* Custom name input */}
-              {customSectionMode && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    autoFocus
-                    placeholder={t.songs.sectionNamePlaceholder}
-                    value={customSectionName}
-                    onChange={(e) => setCustomSectionName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && customSectionName.trim()) {
-                        const hasSecs = !!(
-                          activePreset.sections && activePreset.sections.length > 0
-                        );
-                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                        else addSection(activePreset.id, customSectionName.trim());
-                        setShowSectionPicker(false);
-                      }
-                    }}
-                    style={{
-                      flex: 1,
-                      background: 'var(--c-surface-high)',
-                      border: '1px solid var(--c-accent-from)',
-                      borderRadius: '12px',
-                      padding: '12px 14px',
-                      color: 'var(--c-text-primary)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '14px',
-                      outline: 'none',
-                    }}
-                  />
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      if (!customSectionName.trim()) return;
-                      const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                      if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                      else addSection(activePreset.id, customSectionName.trim());
-                      setShowSectionPicker(false);
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
-              )}
-              <Button onClick={() => setShowSectionPicker(false)} style={{ width: '100%' }}>
-                Cancel
-              </Button>
-            </div>
-          </Dialog>
         )}
 
         {/* Section selector â€” pick where to add chord */}

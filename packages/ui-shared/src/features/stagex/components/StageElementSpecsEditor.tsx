@@ -651,6 +651,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                             label: tr.stagex?.specs?.delete || 'Delete Element',
                             icon: 'delete',
                             badge: 'Danger',
+                            destructive: true,
                             onPress: () => setShowDeleteConfirm(true),
                           },
                         ]}

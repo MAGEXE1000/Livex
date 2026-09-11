@@ -357,6 +357,7 @@ export default function GroovexLibrary() {
                 title={t.groovex.filter || 'Filters'}
                 subtitle="Filter library by artist and genre"
                 accentColor="var(--app-accent, #007AFF)"
+                maxWidth={340}
                 customTrigger={({ open, surfaceId }) => (
                   <motion.button
                     layoutId={surfaceId}

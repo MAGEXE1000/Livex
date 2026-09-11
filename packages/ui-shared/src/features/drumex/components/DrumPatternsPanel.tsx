@@ -479,6 +479,7 @@ const MyGrooveCard = memo(function MyGrooveCard({
                 sublabel: 'Permanently remove this custom groove',
                 icon: 'delete',
                 badge: 'Danger',
+                destructive: true,
                 onPress: onStartDelete,
               },
             ]}
