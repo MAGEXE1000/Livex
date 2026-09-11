@@ -1,0 +1,466 @@
+{
+  "timestamp": "2026-09-11T23:25:49.295Z",
+  "environment": {
+    "platform": "Mobile Web Preview (Headless Chromium on Windows)",
+    "deviceTarget": "Android Capacitor Parity Viewport",
+    "physicalDeviceConnected": false,
+    "details": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+      "hardwareConcurrency": 8,
+      "devicePixelRatio": 2.75,
+      "viewport": {
+        "width": 393,
+        "height": 851
+      },
+      "memoryMB": 112.27
+    }
+  },
+  "metricsSummary": {
+    "totalTraces": 7,
+    "appSwitch": {
+      "count": 3,
+      "avgDurationMs": 786.9,
+      "avgFps": 48.4,
+      "avgBlockingMs": 148
+    },
+    "morphOpen": {
+      "count": 1,
+      "avgDurationMs": 301.9,
+      "avgFps": 59.6,
+      "avgBlockingMs": 0
+    },
+    "morphClose": {
+      "count": 1,
+      "avgDurationMs": 326.4,
+      "avgFps": 58.2,
+      "avgBlockingMs": 0
+    },
+    "settingsChange": {
+      "count": 2,
+      "avgDurationMs": 1.9,
+      "avgBlockingMs": 0
+    },
+    "rapidRetriggers": [
+      {
+        "surfaceId": "bench-retrigger-surface",
+        "closeStartTime": 12945.5,
+        "closeEndTime": null,
+        "attemptTime": 13001.09999999404,
+        "timeSinceCloseStartMs": 55.6,
+        "timeSinceCloseEndMs": null,
+        "blockedByExitOverlay": true,
+        "notes": "Attempt occurred during exit animation (55.6ms after close start). Fixed pointerEvents:auto overlay intercepts clicks."
+      },
+      {
+        "surfaceId": "bench-retrigger-surface",
+        "closeStartTime": 12945.5,
+        "closeEndTime": 13272,
+        "attemptTime": 13272.299999982119,
+        "timeSinceCloseStartMs": 326.8,
+        "timeSinceCloseEndMs": 0.3,
+        "blockedByExitOverlay": false,
+        "notes": "Attempt occurred 0.3ms after exit animation completed. Clean reopen."
+      }
+    ]
+  },
+  "traces": [
+    {
+      "id": "app-switch-chordex-1789169140571-796",
+      "name": "app-switch",
+      "target": "chordex",
+      "startTime": 4971,
+      "endTime": 5937.5,
+      "durationMs": 966.5,
+      "frameTiming": {
+        "frameCount": 53,
+        "totalDurationMs": 966.5,
+        "measuredFps": 54.8,
+        "avgFrameDurationMs": 19.5,
+        "minFrameDurationMs": 16.3,
+        "maxFrameDurationMs": 133.3,
+        "droppedFrames60": 2,
+        "droppedFrames120": 53,
+        "frameTimes": [
+          133.3,
+          50,
+          16.7,
+          16.6,
+          16.7,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          16.7,
+          16.7,
+          16.5,
+          16.8,
+          16.6,
+          16.7,
+          16.6,
+          16.8,
+          16.6,
+          16.6,
+          16.8,
+          16.6,
+          16.7,
+          16.6,
+          16.8,
+          16.5,
+          16.8,
+          16.6,
+          16.7,
+          16.8,
+          16.8,
+          16.7,
+          16.6,
+          16.4,
+          17,
+          16.7,
+          16.6,
+          16.8,
+          16.3,
+          16.7,
+          16.8,
+          16.6,
+          16.6,
+          16.7,
+          16.6,
+          16.8,
+          16.8,
+          16.5,
+          16.8,
+          16.7,
+          16.8,
+          16.5,
+          16.5,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 4882.1,
+          "duration": 135,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 135,
+      "layoutShiftScore": 0.0007,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "chordex",
+        "destination": "chordex"
+      }
+    },
+    {
+      "id": "app-switch-drumex-1789169142287-474",
+      "name": "app-switch",
+      "target": "drumex",
+      "startTime": 6686.4,
+      "endTime": 7746.9,
+      "durationMs": 1060.5,
+      "frameTiming": {
+        "frameCount": 48,
+        "totalDurationMs": 1060.5,
+        "measuredFps": 45.3,
+        "avgFrameDurationMs": 22.57,
+        "minFrameDurationMs": 16.3,
+        "maxFrameDurationMs": 149.79,
+        "droppedFrames60": 5,
+        "droppedFrames120": 48,
+        "frameTimes": [
+          149.79,
+          16.6,
+          33.4,
+          16.7,
+          16.7,
+          16.6,
+          16.9,
+          16.6,
+          16.5,
+          16.7,
+          16.6,
+          16.7,
+          16.9,
+          16.5,
+          16.8,
+          16.8,
+          16.3,
+          17,
+          16.4,
+          33.3,
+          16.9,
+          16.4,
+          16.8,
+          16.7,
+          16.9,
+          16.5,
+          16.9,
+          16.6,
+          16.3,
+          16.7,
+          17,
+          16.6,
+          16.7,
+          16.4,
+          16.9,
+          16.8,
+          16.3,
+          116.6,
+          16.7,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          33.3,
+          16.6,
+          17.1,
+          16.3,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 6644.9,
+          "duration": 136,
+          "name": "self"
+        },
+        {
+          "startTime": 7413.3,
+          "duration": 90,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 226,
+      "layoutShiftScore": 0.013,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "drumex",
+        "destination": "drumex"
+      }
+    },
+    {
+      "id": "app-switch-hub-1789169144135-270",
+      "name": "app-switch",
+      "target": "hub",
+      "startTime": 8534.3,
+      "endTime": 8868,
+      "durationMs": 333.7,
+      "frameTiming": {
+        "frameCount": 15,
+        "totalDurationMs": 333.7,
+        "measuredFps": 45,
+        "avgFrameDurationMs": 24.44,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 83.3,
+        "droppedFrames60": 4,
+        "droppedFrames120": 15,
+        "frameTimes": [
+          83.3,
+          33.4,
+          33.3,
+          16.7,
+          33.3,
+          16.7,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          16.6
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 8487.2,
+          "duration": 83,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 83,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "hub",
+        "destination": "hub"
+      }
+    },
+    {
+      "id": "morph-open-bench-retrigger-surface-1789169148244-170",
+      "name": "morph-open",
+      "target": "bench-retrigger-surface",
+      "startTime": 12643.5,
+      "endTime": 12945.4,
+      "durationMs": 301.9,
+      "frameTiming": {
+        "frameCount": 18,
+        "totalDurationMs": 301.9,
+        "measuredFps": 59.6,
+        "avgFrameDurationMs": 16.67,
+        "minFrameDurationMs": 16.4,
+        "maxFrameDurationMs": 16.9,
+        "droppedFrames60": 0,
+        "droppedFrames120": 18,
+        "frameTimes": [
+          16.7,
+          16.7,
+          16.7,
+          16.9,
+          16.6,
+          16.5,
+          16.8,
+          16.6,
+          16.7,
+          16.8,
+          16.6,
+          16.6,
+          16.6,
+          16.6,
+          16.7,
+          16.8,
+          16.7,
+          16.4
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "morph-close-bench-retrigger-surface-1789169148546-534",
+      "name": "morph-close",
+      "target": "bench-retrigger-surface",
+      "startTime": 12945.6,
+      "endTime": 13272,
+      "durationMs": 326.4,
+      "frameTiming": {
+        "frameCount": 19,
+        "totalDurationMs": 326.4,
+        "measuredFps": 58.2,
+        "avgFrameDurationMs": 16.32,
+        "minFrameDurationMs": 10.1,
+        "maxFrameDurationMs": 17,
+        "droppedFrames60": 0,
+        "droppedFrames120": 19,
+        "frameTimes": [
+          10.1,
+          16.6,
+          16.6,
+          16.6,
+          17,
+          16.6,
+          16.5,
+          16.6,
+          17,
+          16.5,
+          16.7,
+          16.9,
+          16.5,
+          16.6,
+          16.6,
+          16.8,
+          16.7,
+          16.4,
+          16.8
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "settings-change-theme-1789169148875-739",
+      "name": "settings-change",
+      "target": "theme",
+      "startTime": 13274.3,
+      "endTime": 13275.7,
+      "durationMs": 1.4,
+      "frameTiming": {
+        "frameCount": 0,
+        "totalDurationMs": 1.4,
+        "measuredFps": 0,
+        "avgFrameDurationMs": 0,
+        "minFrameDurationMs": 0,
+        "maxFrameDurationMs": 0,
+        "droppedFrames60": 0,
+        "droppedFrames120": 0,
+        "frameTimes": []
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "settingKey": "theme",
+        "newValue": "{\"theme\":\"dark\"}",
+        "subscriberCount": 1
+      }
+    },
+    {
+      "id": "settings-change-theme-1789169149089-312",
+      "name": "settings-change",
+      "target": "theme",
+      "startTime": 13488.5,
+      "endTime": 13490.9,
+      "durationMs": 2.4,
+      "frameTiming": {
+        "frameCount": 0,
+        "totalDurationMs": 2.4,
+        "measuredFps": 0,
+        "avgFrameDurationMs": 0,
+        "minFrameDurationMs": 0,
+        "maxFrameDurationMs": 0,
+        "droppedFrames60": 0,
+        "droppedFrames120": 0,
+        "frameTimes": []
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "settingKey": "theme",
+        "newValue": "{\"theme\":\"light\"}",
+        "subscriberCount": 1
+      }
+    }
+  ],
+  "retriggerAnalysis": {
+    "attemptDuringExit": {
+      "surfaceId": "bench-retrigger-surface",
+      "closeStartTime": 12945.5,
+      "closeEndTime": null,
+      "attemptTime": 13001.09999999404,
+      "timeSinceCloseStartMs": 55.6,
+      "timeSinceCloseEndMs": null,
+      "blockedByExitOverlay": true,
+      "notes": "Attempt occurred during exit animation (55.6ms after close start). Fixed pointerEvents:auto overlay intercepts clicks."
+    },
+    "attemptAfterExit": {
+      "surfaceId": "bench-retrigger-surface",
+      "closeStartTime": 12945.5,
+      "closeEndTime": 13272,
+      "attemptTime": 13272.299999982119,
+      "timeSinceCloseStartMs": 326.8,
+      "timeSinceCloseEndMs": 0.3,
+      "blockedByExitOverlay": false,
+      "notes": "Attempt occurred 0.3ms after exit animation completed. Clean reopen."
+    }
+  }
+}

@@ -72,6 +72,7 @@ export * from './lib/preferences/accentUtils';
 export * from './lib/performanceProfiler';
 export * from './lib/performance/renderScheduler';
 export * from './lib/performance/devPerformanceMonitor';
+export * from './lib/performance/motionProfiler';
 
 // Navigation Core Foundation (Sprint 9.1)
 export * from './lib/navigation/navigationTypes';

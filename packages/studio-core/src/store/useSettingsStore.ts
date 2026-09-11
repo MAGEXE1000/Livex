@@ -6,6 +6,7 @@ import { useNavigationStore } from '../lib/navigation/useNavigationStore';
 import { detectDeviceLanguage, type Language as I18nLanguage } from '../lib/i18n';
 import { settingsRepository } from '../repositories/SettingsRepository';
 import type { Instrument } from '../data/chords';
+import { MotionProfiler } from '../lib/performance/motionProfiler';
 
 export type Theme = 'dark' | 'light' | 'system' | 'dynamic';
 export type ActivePanel = 'library' | 'preferences' | 'songs';
@@ -195,6 +196,12 @@ export const useSettingsStore = create<SettingsStore>()(
       settings: DEFAULT_SETTINGS,
 
       updateSettings: (newSettings) => {
+        let traceId: string | null = null;
+        try {
+          const keys = Object.keys(newSettings).join(',');
+          traceId = MotionProfiler.startSettingsChange(keys, newSettings);
+        } catch (_) {}
+
         set((state) => {
           const updatedSettings = { ...state.settings, ...newSettings };
 
@@ -226,6 +233,12 @@ export const useSettingsStore = create<SettingsStore>()(
             settings: updatedSettings,
           };
         });
+
+        try {
+          if (traceId) {
+            MotionProfiler.endSettingsChange(traceId, getSettingsSubscriberCount());
+          }
+        } catch (_) {}
       },
 
       updatePerApp: (apps, patch) => {
@@ -278,6 +291,19 @@ export const useSettingsStore = create<SettingsStore>()(
     }
   )
 );
+
+let settingsSubscriberCount = 0;
+const originalSettingsSubscribe = useSettingsStore.subscribe.bind(useSettingsStore);
+(useSettingsStore as any).subscribe = ((listener: any) => {
+  settingsSubscriberCount++;
+  const unsub = originalSettingsSubscribe(listener);
+  return () => {
+    settingsSubscriberCount = Math.max(0, settingsSubscriberCount - 1);
+    unsub();
+  };
+}) as any;
+
+export const getSettingsSubscriberCount = () => settingsSubscriberCount;
 
 if (typeof window !== 'undefined') {
   // Synchronously apply tokens for frame-0 rendering

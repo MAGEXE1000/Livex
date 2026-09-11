@@ -355,7 +355,7 @@ export function SharedAppShell({
               pointerEvents: isSubAppActive ? 'none' : 'auto',
               opacity: isSubAppActive && !transitionActive ? 0 : 1,
               visibility: isSubAppActive && !transitionActive ? 'hidden' : 'visible',
-              transition: 'opacity 350ms cubic-bezier(0.16, 1, 0.3, 1), visibility 350ms',
+              transition: 'opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), visibility 200ms',
             }}
           >
             {renderSidebar?.()}
@@ -371,7 +371,7 @@ export function SharedAppShell({
             )}
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {isSubAppActive && stableKey !== 'hub' && (
               <motion.div
                 key={stableKey}
@@ -379,7 +379,7 @@ export function SharedAppShell({
                 initial={{ opacity: 1, scale: 1 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98, pointerEvents: 'none' as any }}
-                transition={{ duration: 0.3 * speedScale, ease: EasingPresets.standard }}
+                transition={{ duration: 0.15 * speedScale, ease: EasingPresets.standard }}
                 style={{
                   position: 'absolute',
                   inset: 0,

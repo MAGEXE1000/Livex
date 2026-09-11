@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { BackDispatcher } from '@workspace/studio-core';
+import { BackDispatcher, MotionProfiler } from '@workspace/studio-core';
 import { activeOverlaysRegistry } from './dialogs';
 
 export interface MorphingActionRowItem {
@@ -140,6 +140,10 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   }, [isOpen]);
 
   const handleOpen = useCallback(() => {
+    try {
+      MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
+      MotionProfiler.startMorphOpen(surfaceId);
+    } catch (_) {}
     captureRect();
     setHasBeenOpened(true);
     if (isControlled) {
@@ -148,16 +152,19 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
       setInternalOpen(true);
       onOpenChange?.(true);
     }
-  }, [captureRect, isControlled, onOpenChange]);
+  }, [captureRect, isControlled, onOpenChange, surfaceId]);
 
   const handleClose = useCallback(() => {
+    try {
+      MotionProfiler.startMorphClose(surfaceId);
+    } catch (_) {}
     if (isControlled) {
       onOpenChange?.(false);
     } else {
       setInternalOpen(false);
       onOpenChange?.(false);
     }
-  }, [isControlled, onOpenChange]);
+  }, [isControlled, onOpenChange, surfaceId]);
 
   // Active overlays registry integration
   useEffect(() => {
@@ -261,28 +268,36 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   }
 
   const overlayContent = (
-    <AnimatePresence onExitComplete={() => setHasBeenOpened(false)}>
-      {isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999,
-            pointerEvents: 'auto',
-            display: placement === 'center' || placement === 'bottom' ? 'flex' : 'block',
-            alignItems: placement === 'center' ? 'center' : placement === 'bottom' ? 'flex-end' : undefined,
-            justifyContent: placement === 'center' || placement === 'bottom' ? 'center' : undefined,
-            padding:
-              placement === 'bottom'
-                ? '0 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px'
-                : placement === 'center'
-                  ? '16px'
-                  : 0,
-            boxSizing: 'border-box',
-          }}
-        >
-          {/* Backdrop */}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        pointerEvents: isOpen ? 'auto' : 'none',
+        display: placement === 'center' || placement === 'bottom' ? 'flex' : 'block',
+        alignItems: placement === 'center' ? 'center' : placement === 'bottom' ? 'flex-end' : undefined,
+        justifyContent: placement === 'center' || placement === 'bottom' ? 'center' : undefined,
+        padding:
+          placement === 'bottom'
+            ? '0 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px'
+            : placement === 'center'
+              ? '16px'
+              : 0,
+        boxSizing: 'border-box',
+      }}
+    >
+      <AnimatePresence
+        onExitComplete={() => {
+          try {
+            MotionProfiler.endMorphClose(surfaceId);
+          } catch (_) {}
+          setHasBeenOpened(false);
+        }}
+      >
+        {isOpen && (
+          /* Backdrop */
           <motion.div
+            key={`${surfaceId}-backdrop`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -296,13 +311,21 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
               WebkitBackdropFilter: isReduced ? 'none' : 'var(--surface-scrim-blur, none)',
             }}
           />
+        )}
 
-          {/* Expanded Morphing Surface */}
+        {isOpen && (
+          /* Expanded Morphing Surface */
           <motion.div
+            key={`${surfaceId}-panel`}
             layoutId={surfaceId}
             initial={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
             animate={isReduced ? { opacity: 1, scale: 1 } : undefined}
             exit={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
+            onAnimationComplete={() => {
+              try {
+                MotionProfiler.endMorphOpen(surfaceId);
+              } catch (_) {}
+            }}
             transition={{
               layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
               duration: isReduced ? 0.15 : undefined,
@@ -559,10 +582,10 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                 )}
               </motion.div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-  );
+          )}
+        </AnimatePresence>
+      </div>
+    );
 
   return (
     <>
@@ -572,8 +595,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
           ref={triggerAnchorRef}
           className="sc-morphing-anchor"
           style={{ display: 'inline-flex', verticalAlign: 'middle' }}
-          onTouchStart={captureRect}
-          onMouseDown={captureRect}
+          onTouchStart={() => {
+            try {
+              MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
+            } catch (_) {}
+            captureRect();
+          }}
+          onMouseDown={() => {
+            try {
+              MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
+            } catch (_) {}
+            captureRect();
+          }}
         >
           {customTrigger ? (
             customTrigger({

@@ -32,7 +32,7 @@ export function ApplicationTransitionEngine({
     }
     const timer = setTimeout(() => {
       setLogoFormed(true);
-    }, 350);
+    }, 50);
     return () => clearTimeout(timer);
   }, [isHub, setLogoFormed]);
 
@@ -43,7 +43,7 @@ export function ApplicationTransitionEngine({
     if (startZoom) {
       const timer = setTimeout(() => {
         completeTransition();
-      }, isHub ? 175 : 455);
+      }, isHub ? 180 : 115);
       return () => clearTimeout(timer);
     }
     return () => {};
@@ -73,8 +73,8 @@ export function ApplicationTransitionEngine({
       : { backgroundColor: 'rgba(0,0,0,0)', opacity: [1, 1, 0] };
 
   const containerTransition: any = isHub
-    ? { duration: 0.175, ease: 'easeOut' }
-    : { duration: 0.455, ease: [0.6, 0.01, 0.05, 0.95] };
+    ? { duration: 0.18, ease: 'easeOut' }
+    : { duration: 0.115, ease: [0.22, 1, 0.36, 1] };
 
   // Render progressive icons
   const renderIcon = () => {
@@ -561,10 +561,10 @@ export function ApplicationTransitionEngine({
           animate={!startZoom ? { opacity: 1, scale: 1 } : { scale: 120, opacity: [1, 1, 0] }}
           transition={
             !startZoom
-              ? { type: 'spring', stiffness: 380, damping: 26 }
+              ? { type: 'spring', stiffness: 450, damping: 28 }
               : {
-                  scale: { duration: 0.65, ease: [0.65, 0, 0.35, 1] },
-                  opacity: { duration: 0.55, times: [0, 0.45, 1], ease: 'easeOut' },
+                  scale: { duration: 0.13, ease: [0.35, 0, 0.25, 1] },
+                  opacity: { duration: 0.115, times: [0, 0.4, 1], ease: 'easeOut' },
                 }
           }
           style={{

@@ -1,0 +1,643 @@
+{
+  "timestamp": "2026-09-11T23:45:07.893Z",
+  "environment": {
+    "platform": "Mobile Web Preview (Headless Chromium on Windows)",
+    "deviceTarget": "Android Capacitor Parity Viewport",
+    "physicalDeviceConnected": false,
+    "details": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+      "hardwareConcurrency": 8,
+      "devicePixelRatio": 2.75,
+      "viewport": {
+        "width": 393,
+        "height": 851
+      },
+      "memoryMB": 113.71,
+      "initialHeapMB": 113.71,
+      "finalHeapMB": 131.27,
+      "heapDeltaMB": 17.56
+    }
+  },
+  "phaseComparison": {
+    "targetWindowMs": [
+      180,
+      220
+    ],
+    "phase0AvgDurationMs": 786.9,
+    "phase2AvgDurationMs": 235.3,
+    "latencyReductionMs": 551.6,
+    "latencyReductionPercent": 70.1,
+    "targetWindowCompliant": false
+  },
+  "metricsSummary": {
+    "totalAppSwitches": 6,
+    "avgDurationMs": 235.3,
+    "minDurationMs": 186.6,
+    "maxDurationMs": 369.6,
+    "avgFps": 36.9,
+    "totalDroppedFrames60": 12
+  },
+  "traces": [
+    {
+      "id": "app-switch-chordex-1789170302803-677",
+      "name": "app-switch",
+      "target": "chordex",
+      "startTime": 5512.7,
+      "endTime": 5715.7,
+      "durationMs": 203,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 203,
+        "measuredFps": 44.3,
+        "avgFrameDurationMs": 27.79,
+        "minFrameDurationMs": 16.5,
+        "maxFrameDurationMs": 116.6,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          116.6,
+          16.7,
+          16.7,
+          16.6,
+          16.8,
+          16.7,
+          16.5,
+          16.8,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 5427.6,
+          "duration": 135,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 135,
+      "layoutShiftScore": 0.0001,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "chordex",
+        "destination": "chordex"
+      }
+    },
+    {
+      "id": "app-switch-drumex-1789170303498-761",
+      "name": "app-switch",
+      "target": "drumex",
+      "startTime": 6208,
+      "endTime": 6449.2,
+      "durationMs": 241.2,
+      "frameTiming": {
+        "frameCount": 8,
+        "totalDurationMs": 241.2,
+        "measuredFps": 33.2,
+        "avgFrameDurationMs": 33.35,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 133.3,
+        "droppedFrames60": 2,
+        "droppedFrames120": 8,
+        "frameTimes": [
+          133.3,
+          16.7,
+          16.6,
+          33.3,
+          16.8,
+          16.7,
+          16.7,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 6159.3,
+          "duration": 128,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 128,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "drumex",
+        "destination": "drumex"
+      }
+    },
+    {
+      "id": "app-switch-hub-1789170304226-685",
+      "name": "app-switch",
+      "target": "hub",
+      "startTime": 6935.4,
+      "endTime": 7152.2,
+      "durationMs": 216.8,
+      "frameTiming": {
+        "frameCount": 6,
+        "totalDurationMs": 216.8,
+        "measuredFps": 27.7,
+        "avgFrameDurationMs": 41.67,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 133.3,
+        "droppedFrames60": 3,
+        "droppedFrames120": 6,
+        "frameTimes": [
+          133.3,
+          33.3,
+          16.7,
+          33.4,
+          16.6,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 6904.9,
+          "duration": 103,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 103,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "hub",
+        "destination": "hub"
+      }
+    },
+    {
+      "id": "app-switch-groovex-1789170305037-891",
+      "name": "app-switch",
+      "target": "groovex",
+      "startTime": 7746.2,
+      "endTime": 7932.8,
+      "durationMs": 186.6,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 186.6,
+        "measuredFps": 48.2,
+        "avgFrameDurationMs": 22.22,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 66.6,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          66.6,
+          16.6,
+          16.8,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 7710.6,
+          "duration": 73,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 73,
+      "layoutShiftScore": 0.0045,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "groovex",
+        "destination": "groovex"
+      }
+    },
+    {
+      "id": "app-switch-vocalex-1789170306411-973",
+      "name": "app-switch",
+      "target": "vocalex",
+      "startTime": 9120.7,
+      "endTime": 9490.3,
+      "durationMs": 369.6,
+      "frameTiming": {
+        "frameCount": 8,
+        "totalDurationMs": 369.6,
+        "measuredFps": 21.6,
+        "avgFrameDurationMs": 45.84,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 200,
+        "droppedFrames60": 4,
+        "droppedFrames120": 8,
+        "frameTimes": [
+          200,
+          33.3,
+          16.6,
+          33.3,
+          16.8,
+          16.7,
+          16.6,
+          33.4
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 9080.1,
+          "duration": 182,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 182,
+      "layoutShiftScore": 0.0046,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "chordex",
+        "toApp": "vocalex",
+        "destination": "vocalex"
+      }
+    },
+    {
+      "id": "app-switch-hub-1789170307265-925",
+      "name": "app-switch",
+      "target": "hub",
+      "startTime": 9974.6,
+      "endTime": 10169,
+      "durationMs": 194.4,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 194.4,
+        "measuredFps": 46.3,
+        "avgFrameDurationMs": 24.08,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 83.4,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          83.4,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.6,
+          16.8,
+          16.6,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 9934.2,
+          "duration": 105,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 105,
+      "layoutShiftScore": 0.0001,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "hub",
+        "destination": "hub"
+      }
+    }
+  ],
+  "stageBreakdowns": [
+    {
+      "app": "chordex",
+      "totalMs": 203.2,
+      "stages": {
+        "PREPARING": 33.7,
+        "LOGO_FORMATION": 44.5,
+        "ZOOM_TRANSITION": 125
+      },
+      "appPreloadedConcurrently": true
+    },
+    {
+      "app": "drumex",
+      "totalMs": 241.4,
+      "stages": {
+        "PREPARING": 63.9,
+        "LOGO_FORMATION": 50.8,
+        "ZOOM_TRANSITION": 126.7
+      },
+      "appPreloadedConcurrently": true
+    },
+    {
+      "app": "hub",
+      "totalMs": 217,
+      "stages": {
+        "PREPARING": 0,
+        "ZOOM_TRANSITION": 217
+      },
+      "appPreloadedConcurrently": true
+    },
+    {
+      "app": "groovex",
+      "totalMs": 186.8,
+      "stages": {
+        "PREPARING": 27.7,
+        "LOGO_FORMATION": 34.3,
+        "ZOOM_TRANSITION": 124.8
+      },
+      "appPreloadedConcurrently": true
+    },
+    {
+      "app": "chordex",
+      "totalMs": 226.5,
+      "stages": {
+        "PREPARING": 104.5,
+        "LOGO_FORMATION": 122
+      },
+      "appPreloadedConcurrently": false
+    },
+    {
+      "app": "vocalex",
+      "totalMs": 369.7,
+      "stages": {
+        "PREPARING": 109.7,
+        "LOGO_FORMATION": 92.2,
+        "ZOOM_TRANSITION": 167.8
+      },
+      "appPreloadedConcurrently": true
+    },
+    {
+      "app": "hub",
+      "totalMs": 194.7,
+      "stages": {
+        "PREPARING": 0.2,
+        "ZOOM_TRANSITION": 194.5
+      },
+      "appPreloadedConcurrently": true
+    }
+  ],
+  "allTraces": [
+    {
+      "id": "app-switch-chordex-1789170302803-677",
+      "name": "app-switch",
+      "target": "chordex",
+      "startTime": 5512.7,
+      "endTime": 5715.7,
+      "durationMs": 203,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 203,
+        "measuredFps": 44.3,
+        "avgFrameDurationMs": 27.79,
+        "minFrameDurationMs": 16.5,
+        "maxFrameDurationMs": 116.6,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          116.6,
+          16.7,
+          16.7,
+          16.6,
+          16.8,
+          16.7,
+          16.5,
+          16.8,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 5427.6,
+          "duration": 135,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 135,
+      "layoutShiftScore": 0.0001,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "chordex",
+        "destination": "chordex"
+      }
+    },
+    {
+      "id": "app-switch-drumex-1789170303498-761",
+      "name": "app-switch",
+      "target": "drumex",
+      "startTime": 6208,
+      "endTime": 6449.2,
+      "durationMs": 241.2,
+      "frameTiming": {
+        "frameCount": 8,
+        "totalDurationMs": 241.2,
+        "measuredFps": 33.2,
+        "avgFrameDurationMs": 33.35,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 133.3,
+        "droppedFrames60": 2,
+        "droppedFrames120": 8,
+        "frameTimes": [
+          133.3,
+          16.7,
+          16.6,
+          33.3,
+          16.8,
+          16.7,
+          16.7,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 6159.3,
+          "duration": 128,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 128,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "drumex",
+        "destination": "drumex"
+      }
+    },
+    {
+      "id": "app-switch-hub-1789170304226-685",
+      "name": "app-switch",
+      "target": "hub",
+      "startTime": 6935.4,
+      "endTime": 7152.2,
+      "durationMs": 216.8,
+      "frameTiming": {
+        "frameCount": 6,
+        "totalDurationMs": 216.8,
+        "measuredFps": 27.7,
+        "avgFrameDurationMs": 41.67,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 133.3,
+        "droppedFrames60": 3,
+        "droppedFrames120": 6,
+        "frameTimes": [
+          133.3,
+          33.3,
+          16.7,
+          33.4,
+          16.6,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 6904.9,
+          "duration": 103,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 103,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "hub",
+        "destination": "hub"
+      }
+    },
+    {
+      "id": "app-switch-groovex-1789170305037-891",
+      "name": "app-switch",
+      "target": "groovex",
+      "startTime": 7746.2,
+      "endTime": 7932.8,
+      "durationMs": 186.6,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 186.6,
+        "measuredFps": 48.2,
+        "avgFrameDurationMs": 22.22,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 66.6,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          66.6,
+          16.6,
+          16.8,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.7,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 7710.6,
+          "duration": 73,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 73,
+      "layoutShiftScore": 0.0045,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "groovex",
+        "destination": "groovex"
+      }
+    },
+    {
+      "id": "app-switch-vocalex-1789170306411-973",
+      "name": "app-switch",
+      "target": "vocalex",
+      "startTime": 9120.7,
+      "endTime": 9490.3,
+      "durationMs": 369.6,
+      "frameTiming": {
+        "frameCount": 8,
+        "totalDurationMs": 369.6,
+        "measuredFps": 21.6,
+        "avgFrameDurationMs": 45.84,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 200,
+        "droppedFrames60": 4,
+        "droppedFrames120": 8,
+        "frameTimes": [
+          200,
+          33.3,
+          16.6,
+          33.3,
+          16.8,
+          16.7,
+          16.6,
+          33.4
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 9080.1,
+          "duration": 182,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 182,
+      "layoutShiftScore": 0.0046,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "chordex",
+        "toApp": "vocalex",
+        "destination": "vocalex"
+      }
+    },
+    {
+      "id": "app-switch-hub-1789170307265-925",
+      "name": "app-switch",
+      "target": "hub",
+      "startTime": 9974.6,
+      "endTime": 10169,
+      "durationMs": 194.4,
+      "frameTiming": {
+        "frameCount": 9,
+        "totalDurationMs": 194.4,
+        "measuredFps": 46.3,
+        "avgFrameDurationMs": 24.08,
+        "minFrameDurationMs": 16.6,
+        "maxFrameDurationMs": 83.4,
+        "droppedFrames60": 1,
+        "droppedFrames120": 9,
+        "frameTimes": [
+          83.4,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.6,
+          16.8,
+          16.6,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 9934.2,
+          "duration": 105,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 105,
+      "layoutShiftScore": 0.0001,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "hub",
+        "destination": "hub"
+      }
+    }
+  ]
+}

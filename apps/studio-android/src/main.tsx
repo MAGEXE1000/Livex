@@ -8,8 +8,10 @@ import {
   NATIVE_VERSION,
   initDevToolsFramework,
   NavigationDispatcher,
+  BackDispatcher,
   useSettingsStore,
   useNavigationStore,
+  useApplicationTransitionStore,
 } from '@workspace/studio-core';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
@@ -17,9 +19,13 @@ import './index.css';
 // @ts-ignore
 window.NavigationDispatcher = NavigationDispatcher;
 // @ts-ignore
+window.BackDispatcher = BackDispatcher;
+// @ts-ignore
 window.useSettingsStore = useSettingsStore;
 // @ts-ignore
 window.useNavigationStore = useNavigationStore;
+// @ts-ignore
+window.useApplicationTransitionStore = useApplicationTransitionStore;
 const LazyEmergencyOverlay = lazy(() => import('./EmergencyDebugOverlay'));
 
 function EmergencyDebugOverlayWrapper() {

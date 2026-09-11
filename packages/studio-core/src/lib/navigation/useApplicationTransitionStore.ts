@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AppKey } from '../../store/useSettingsStore';
 import { useBottomNavigationStore } from './useBottomNavigationStore.js';
+import { MotionProfiler } from '../performance/motionProfiler';
 
 export type TransitionState =
   | 'IDLE'
@@ -60,26 +61,35 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
     set({
       state: 'PREPARING',
       launchingApp: targetApp,
-      appPreloaded: false,
+      appPreloaded: targetApp === 'hub',
       logoFormed: targetApp === 'hub',
     });
 
-    setTimeout(() => {
-      const current = get();
-      if (current.state === 'PREPARING') {
-        set({ state: 'LOGO_FORMATION' });
-        if (current.appPreloaded && current.logoFormed) {
-          get().startZoom();
+    try {
+      MotionProfiler.startAppSwitch(launchingApp || 'idle', targetApp);
+    } catch (_) {}
+
+    if (targetApp === 'hub') {
+      get().startZoom();
+    } else {
+      // Immediate advance to LOGO_FORMATION on next microtask without artificial delay
+      queueMicrotask(() => {
+        const current = get();
+        if (current.state === 'PREPARING') {
+          set({ state: 'LOGO_FORMATION' });
+          if (current.appPreloaded && current.logoFormed) {
+            get().startZoom();
+          }
         }
-      }
-    }, 20);
+      });
+    }
 
     return true;
   },
 
   setAppPreloaded: (preloaded) => {
     const { state, logoFormed } = get();
-    if (state === 'IDLE') return;
+    if (state === 'IDLE' || state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE') return;
 
     set({ appPreloaded: preloaded });
 
@@ -90,30 +100,29 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
 
   setLogoFormed: (formed) => {
     const { state, appPreloaded } = get();
-    if (state === 'IDLE') return;
+    if (state === 'IDLE' || state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE') return;
 
     set({ logoFormed: formed });
 
     if (formed) {
       if (appPreloaded && (state === 'PREPARING' || state === 'LOGO_FORMATION' || state === 'FORMATION_COMPLETE')) {
         get().startZoom();
-      } else {
+      } else if (state === 'PREPARING' || state === 'LOGO_FORMATION') {
         set({ state: 'FORMATION_COMPLETE' });
       }
     }
   },
 
   startZoom: () => {
-    const { state } = get();
+    const { state, appPreloaded } = get();
     if (state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS') return;
-    set({ state: 'FORMATION_COMPLETE' });
     
-    setTimeout(() => {
-      const current = get();
-      if (current.state === 'FORMATION_COMPLETE' && current.appPreloaded) {
-        set({ state: 'ZOOM_TRANSITION' });
-      }
-    }, 120);
+    // If destination app is already preloaded, enter zoom transition directly
+    if (appPreloaded) {
+      set({ state: 'ZOOM_TRANSITION' });
+    } else {
+      set({ state: 'FORMATION_COMPLETE' });
+    }
   },
 
   completeTransition: () => {
@@ -128,6 +137,10 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
     // Reset bottom navigation switcher states for IDLE
     const navStore = useBottomNavigationStore.getState();
     navStore.setSwitcherOpen(false);
+
+    try {
+      MotionProfiler.endAppSwitch(get().launchingApp || undefined);
+    } catch (_) {}
 
     set({
       state: 'IDLE',
@@ -146,6 +159,10 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
 
     const navStore = useBottomNavigationStore.getState();
     navStore.setSwitcherOpen(false);
+
+    try {
+      MotionProfiler.cancelAppSwitch();
+    } catch (_) {}
 
     set({
       state: 'IDLE',
