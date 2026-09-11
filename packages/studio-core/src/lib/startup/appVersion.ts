@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.87';
-export const NATIVE_VERSION_CODE = 40587;
-export const WEB_VERSION = '4.5.87';
+export const NATIVE_VERSION = '4.5.88';
+export const NATIVE_VERSION_CODE = 40588;
+export const WEB_VERSION = '4.5.88';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '16eae2ca';
+export const APP_COMMIT_SHA = '1aec7dfc';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/11/2026, 12:53:24 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/11/2026, 1:31:25 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,18 +98,9 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Global Morphing Action Surface Design System: Promoted `MorphingActionSurface` into the canonical shared standard across all Livex apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex) with fluid continuous geometry morphs, tactile press feedback, and +80ms content stagger.',
-      'Drumex Pattern Card Action Surface: Upgraded custom groove card kebab menu from a detached dropdown to an in-place morphing action surface for renaming and deleting patterns.',
-      'Stagex Element Specs Overflow Surface: Upgraded element specifications secondary actions into a morphing action surface with element-matched accent continuity, eliminating 140 lines of boilerplate DOM portal math.',
-      'Groovex Filter Control Surface: Upgraded library filter trigger button into a morphing card with instant filter query chips for artists and genres.',
-      'Vocalex Harmonizer Export Surface: Upgraded harmonizer bottom toolbar audio export into a morphing action card supporting full mix and harmony-only WAV exports.',
-      'Hub Language Selector Surface: Upgraded language selector setting pill into a morphing language picker card with disabled state indicators.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'CI Release Pipeline Repository Target: Corrected release preflight GitHub query target from legacy Studio repo to `MAGEXE1000/Livex`.',
+      'Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.',
+      'Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.',
+      'Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.',
     ],
   },
 ];
@@ -121,6 +112,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.88',
+    date: '2026-09-11',
+    highlights: [
+      'Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.',
+      'Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.',
+      'Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.',
+    ],
+  },
   {
     version: '4.5.87',
     date: '2026-09-11',
@@ -209,15 +209,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Early-Boot Inline Style Cleanup: Synchronized early boot head scripts in `apps/studio-android/index.html` and `apps/studio-web/index.html` with explicit text tokens and high-contrast surfaces, and added automatic inline style flushing in `themeEngine.ts`.',
       'WebView Native Hardware Layer: Removed experimental offscreen Compose `layerBackdrop` wrapping in `MainActivity.kt`, restoring direct hardware layer rendering with native black window background.',
       'Component Text Hierarchy & Navigation Contrast: Defined `--c-text-tertiary: var(--c-text-muted)` across the design token system and updated navigation icon/label colors to `var(--c-text-secondary)` for WCAG AA compliance.',
-    ],
-  },
-  {
-    version: '4.5.78',
-    date: '2026-09-08',
-    highlights: [
-      'Complex Motion Brand Reveal Animation: Overhauled LaunchAnimationEngine into a fluid 6-phase brand reveal sequence featuring 65° diagonal anticipation glow, non-linear petal trajectories (Form 1 ascending stem and Form 2 curved wing swoop), seam union lock-in micro-settle impulse, specular sheen ribbon sweep masked strictly to the emblem, and a serene breathing hold before dissolving into the pre-mounted Hub.',
-      'High-Contrast Launcher Icon Mipmaps: Completely regenerated Android launcher density assets (mdpi through xxxhdpi) using an optimized tone curve that lifts deep petal shadows from RGB 21 to ~75 RGB and midtones to 215 RGB, eliminating the dark silhouette/murky appearance against pure AMOLED black backgrounds and resolving perceived launcher icon caching issues.',
-      'Round Icon Squircle Elimination: Replaced round launcher mipmap assets with seamless AMOLED black circles with anti-aliased perimeter, eliminating the legacy nested squircle boundary defect.',
     ],
   },
 ];
