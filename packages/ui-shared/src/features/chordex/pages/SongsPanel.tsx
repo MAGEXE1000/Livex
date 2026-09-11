@@ -50,6 +50,7 @@ import {
   SearchBar,
 } from '../../../shared/design-system/StudioDesignSystem';
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -5012,17 +5013,41 @@ export default function SongsPanel() {
                     </Button>
                   ) : null;
                 })()}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() =>
-                    Capacitor.isNativePlatform()
-                      ? setJsonExportPreset(activePreset)
-                      : exportPresetToJSON(activePreset, 'share')
-                  }
-                  title={t.songs.exportAsJson}
-                  style={{ borderRadius: '50%', width: 34, height: 34 }}
-                  icon="data_object"
+                <MorphingActionSurface
+                  triggerVariant="icon"
+                  buttonIcon="data_object"
+                  title="Export JSON"
+                  subtitle={`Exporting ${activePreset.name}`}
+                  accentColor={accent.from}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    minHeight: 34,
+                    padding: 0,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--c-surface-high, #1e1e24)',
+                    border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+                  }}
+                  rows={[
+                    {
+                      id: 'save',
+                      label: 'Save File',
+                      sublabel: 'Save JSON chord chart to storage',
+                      icon: 'save',
+                      onPress: () => {
+                        exportPresetToJSON(activePreset, 'save');
+                      },
+                    },
+                    {
+                      id: 'share',
+                      label: 'Share File',
+                      sublabel: 'Send via Android share sheet',
+                      icon: 'share',
+                      onPress: () => {
+                        exportPresetToJSON(activePreset, 'share');
+                      },
+                    },
+                  ]}
                 />
                 <Button
                   variant="secondary"

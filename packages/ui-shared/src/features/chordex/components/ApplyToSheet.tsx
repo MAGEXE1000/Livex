@@ -1,4 +1,5 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { NavigationDispatcher } from '@workspace/studio-core';
 import {
   useChordStore,
@@ -186,5 +187,92 @@ export default function ApplyToSheet({ show, onApply, onClose }: ApplyToSheetPro
         </div>
       </div>
     </Dialog>
+  );
+}
+
+export function MorphingApplyToSurface({
+  buttonLabel = 'Apply to other apps',
+  buttonIcon = 'apps',
+  onApply,
+  accentColor,
+}: {
+  buttonLabel?: string;
+  buttonIcon?: string;
+  onApply: (apps: AppKey[]) => void;
+  accentColor?: string;
+}) {
+  const settings = useSettingsStore((s) => s.settings);
+  const t = useT();
+  const accent = resolveAccent(settings.accentColor);
+  const [selected, setSelected] = useState<Set<AppKey>>(
+    new Set(['hub', 'chordex', 'drumex', 'stagex', 'groovex', 'vocalex'])
+  );
+
+  function toggle(key: AppKey) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  return (
+    <MorphingActionSurface
+      buttonLabel={buttonLabel}
+      buttonIcon={buttonIcon}
+      title={t.applyTo.title}
+      subtitle={t.applyTo.subtitle}
+      accentColor={accentColor || accent.from}
+    >
+      {({ close }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            {APP_CARDS.map(({ key, label, Logo }) => {
+              const active = selected.has(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggle(key)}
+                  style={{
+                    width: 'calc(33.333% - 7px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '14px 6px',
+                    borderRadius: 14,
+                    background: active ? `${accent.from}18` : 'var(--c-surface-high, #1e1e24)',
+                    border: `1.5px solid ${active ? accent.from : 'var(--c-border, rgba(255,255,255,0.08))'}`,
+                    cursor: 'pointer',
+                    position: 'relative',
+                  }}
+                >
+                  <Logo size={28} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-primary)' }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              onApply(Array.from(selected));
+              close();
+            }}
+            style={{ width: '100%', marginTop: 8 }}
+          >
+            {t.applyTo.apply}
+          </Button>
+        </div>
+      )}
+    </MorphingActionSurface>
   );
 }

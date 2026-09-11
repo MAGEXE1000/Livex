@@ -18,6 +18,7 @@ import {
 } from '@workspace/studio-core';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import ChordDiagram from '../diagrams/ChordDiagram';
 import { Button } from '../../../shared/design-system/buttons';
 
@@ -983,6 +984,9 @@ export default function CustomChordBuilder({
     }, 300);
   }, [onCloseProp]);
 
+  const prefersReduced = useReducedMotion();
+  const isReduced = !!prefersReduced;
+
   const defaultFret = mode === 'find' ? -1 : 0;
   const [frets, setFrets] = useState<number[][]>(() => {
     if (editChord?.frets) return editChord.frets.map((f) => [f]);
@@ -1091,20 +1095,51 @@ export default function CustomChordBuilder({
   const modalContent = (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
       {/* Backdrop */}
-      <div
+      <motion.div
         onClick={handleClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: closing ? 0 : 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         style={{
           position: 'absolute',
           inset: 0,
           background: 'var(--surface-modal-bg, var(--app-surface-scrim, rgba(0,0,0,0.7)))',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-          animation: closing ? 'fade-out 300ms ease both' : undefined,
+          backdropFilter: isReduced ? 'none' : 'blur(6px)',
+          WebkitBackdropFilter: isReduced ? 'none' : 'blur(6px)',
         }}
       />
 
-      {/* Sheet — fixed height so switching instruments never shifts the layout */}
-      <div
+      {/* Sheet — fixed height with origin-aware morphing entry from top right when mode is 'find' */}
+      <motion.div
+        initial={
+          isReduced
+            ? { opacity: 0 }
+            : mode === 'find'
+              ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
+              : { opacity: 0, y: '100%' }
+        }
+        animate={
+          closing
+            ? (isReduced
+                ? { opacity: 0 }
+                : mode === 'find'
+                  ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
+                  : { opacity: 0, y: '100%' })
+            : {
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transformOrigin: mode === 'find' ? 'top right' : 'bottom center',
+              }
+        }
+        transition={{
+          type: 'spring',
+          stiffness: 320,
+          damping: 28,
+          mass: 0.8,
+          duration: isReduced ? 0.15 : undefined,
+        }}
         style={{
           position: 'absolute',
           bottom: 0,
@@ -1115,10 +1150,8 @@ export default function CustomChordBuilder({
           height: '82dvh',
           display: 'flex',
           flexDirection: 'column',
-          animation: closing
-            ? 'sheet-down 300ms cubic-bezier(0.16, 1, 0.3, 1) both'
-            : 'sheet-up 400ms cubic-bezier(0.16, 1, 0.3, 1) both',
           overflow: 'hidden',
+          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
         }}
       >
         {/* Drag handle */}
@@ -1139,6 +1172,28 @@ export default function CustomChordBuilder({
             }}
           />
         </div>
+
+        {/* Staggered progressive content container */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: isReduced ? 1 : 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                delay: isReduced ? 0 : 0.08,
+                duration: 0.18,
+              },
+            },
+          }}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
 
         {/* Header */}
         <div
@@ -1767,7 +1822,8 @@ export default function CustomChordBuilder({
             </>
           )}
         </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 

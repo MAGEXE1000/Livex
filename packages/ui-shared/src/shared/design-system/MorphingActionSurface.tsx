@@ -13,11 +13,16 @@ export interface MorphingActionRowItem {
 }
 
 export interface MorphingActionSurfaceProps {
-  buttonLabel: string;
+  buttonLabel?: string;
   buttonIcon?: string;
   title: string;
   subtitle?: string;
-  rows: MorphingActionRowItem[];
+  rows?: MorphingActionRowItem[];
+  children?: React.ReactNode | ((helpers: { close: () => void }) => React.ReactNode);
+  triggerVariant?: 'standard' | 'icon' | 'custom';
+  customTrigger?: (helpers: { open: () => void; isOpen: boolean; surfaceId: string }) => React.ReactNode;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
   accentColor?: string;
   reducedMotion?: boolean;
   className?: string;
@@ -32,11 +37,16 @@ export interface MorphingActionSurfaceProps {
  * staggered child entrance, outside click dismiss, and Android hardware back button integration.
  */
 export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
-  buttonLabel,
+  buttonLabel = '',
   buttonIcon,
   title,
   subtitle,
-  rows,
+  rows = [],
+  children,
+  triggerVariant = 'standard',
+  customTrigger,
+  maxWidth,
+  maxHeight,
   accentColor = 'var(--c-accent-from, #f59e0b)',
   reducedMotion = false,
   className = '',
@@ -71,53 +81,96 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     <>
       {/* 1. Closed State Trigger Button */}
       {!isOpen && (
-        <motion.button
-          layoutId={surfaceId}
-          data-testid={testId}
-          onClick={handleOpen}
-          whileTap={isReduced ? undefined : { scale: 0.94 }}
-          transition={{
-            layout: { type: 'spring', stiffness: 320, damping: 28, mass: 0.8 },
-          }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            padding: '10px 18px',
-            minHeight: 44,
-            borderRadius: 22,
-            backgroundColor: 'var(--c-surface-high, #1e1e24)',
-            border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-            color: 'var(--c-text-primary, #ffffff)',
-            fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-            touchAction: 'manipulation',
-            WebkitTapHighlightColor: 'transparent',
-            userSelect: 'none',
-            ...style,
-          }}
-          className={`sc-morphing-trigger ${className}`}
-        >
-          {buttonIcon && (
+        customTrigger ? (
+          customTrigger({ open: handleOpen, isOpen, surfaceId })
+        ) : triggerVariant === 'icon' ? (
+          <motion.button
+            layoutId={surfaceId}
+            data-testid={testId}
+            onClick={handleOpen}
+            whileTap={isReduced ? undefined : { scale: 0.94 }}
+            transition={{
+              layout: { type: 'spring', stiffness: 320, damping: 28, mass: 0.8 },
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: 'var(--c-surface-high, #1e1e24)',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+              color: 'var(--c-text-primary, #ffffff)',
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
+              ...style,
+            }}
+            className={`sc-morphing-trigger ${className}`}
+            title={title}
+            aria-label={title}
+          >
+            {buttonIcon && (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 18, color: accentColor }}
+              >
+                {buttonIcon}
+              </span>
+            )}
+          </motion.button>
+        ) : (
+          <motion.button
+            layoutId={surfaceId}
+            data-testid={testId}
+            onClick={handleOpen}
+            whileTap={isReduced ? undefined : { scale: 0.94 }}
+            transition={{
+              layout: { type: 'spring', stiffness: 320, damping: 28, mass: 0.8 },
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              minHeight: 44,
+              borderRadius: 22,
+              backgroundColor: 'var(--c-surface-high, #1e1e24)',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+              color: 'var(--c-text-primary, #ffffff)',
+              fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
+              ...style,
+            }}
+            className={`sc-morphing-trigger ${className}`}
+          >
+            {buttonIcon && (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 18, color: accentColor }}
+              >
+                {buttonIcon}
+              </span>
+            )}
+            <span>{buttonLabel}</span>
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: 18, color: accentColor }}
+              style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
             >
-              {buttonIcon}
+              expand_more
             </span>
-          )}
-          <span>{buttonLabel}</span>
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
-          >
-            expand_more
-          </span>
-        </motion.button>
+          </motion.button>
+        )
       )}
 
       {/* 2. Open State Modal Surface & Backdrop */}
@@ -164,8 +217,8 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
               style={{
                 position: 'relative',
                 width: '100%',
-                maxWidth: 380,
-                maxHeight: '85vh',
+                maxWidth: maxWidth ?? 380,
+                maxHeight: maxHeight ?? '85vh',
                 borderRadius: 24,
                 backgroundColor: 'var(--c-surface-base, #121216)',
                 border: '1px solid var(--c-border, rgba(255, 255, 255, 0.15))',
@@ -238,7 +291,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                 </button>
               </div>
 
-              {/* Rows with Staggered Fluid Entry */}
+              {/* Rows or Custom Children with Staggered Fluid Entry */}
               <motion.div
                 initial="hidden"
                 animate="visible"
@@ -260,7 +313,10 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                   gap: 6,
                 }}
               >
-                {rows.map((row) => (
+                {children ? (
+                  typeof children === 'function' ? children({ close: handleClose }) : children
+                ) : (
+                  rows.map((row) => (
                   <motion.div
                     key={row.id}
                     variants={{
@@ -354,7 +410,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                       )}
                     </div>
                   </motion.div>
-                ))}
+                )))}
               </motion.div>
             </motion.div>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { motion } from 'motion/react';
 import {
   getChordById,
   getRelatedChords,
@@ -1415,10 +1416,16 @@ export function LibraryMainView({ state }: { state: any }) {
             actions={
               <div className="flex items-center gap-2">
                 {/* Finder Tool */}
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setShowFinder(true)}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-sm active:scale-95 transition-transform touch-target-44 cursor-pointer"
+                  whileTap={{ scale: 0.94 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 25,
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
                   style={{
                     backgroundColor: 'var(--surface-card-bg, #ffffff)',
                     borderColor: 'var(--c-border, #E3E6EB)',
@@ -1433,7 +1440,7 @@ export function LibraryMainView({ state }: { state: any }) {
                     travel_explore
                   </span>
                   <span>Finder</span>
-                </button>
+                </motion.button>
               </div>
             }
           />
