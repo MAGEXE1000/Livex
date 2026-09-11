@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.86';
-export const NATIVE_VERSION_CODE = 40586;
-export const WEB_VERSION = '4.5.86';
+export const NATIVE_VERSION = '4.5.87';
+export const NATIVE_VERSION_CODE = 40587;
+export const WEB_VERSION = '4.5.87';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e8b09445';
+export const APP_COMMIT_SHA = '16eae2ca';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/10/2026, 12:19:50 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/11/2026, 12:53:24 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,18 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Native Dedicated Light-Mode Intro Assets: Added pre-rendered subpixel antialiased light-mode intro emblem partitions (`livex-form1-light.png`, `livex-form2-light.png`, `livex-symbol-light.png`) for razor-sharp visual fidelity on high-DPI displays.',
+      'Global Morphing Action Surface Design System: Promoted `MorphingActionSurface` into the canonical shared standard across all Livex apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex) with fluid continuous geometry morphs, tactile press feedback, and +80ms content stagger.',
+      'Drumex Pattern Card Action Surface: Upgraded custom groove card kebab menu from a detached dropdown to an in-place morphing action surface for renaming and deleting patterns.',
+      'Stagex Element Specs Overflow Surface: Upgraded element specifications secondary actions into a morphing action surface with element-matched accent continuity, eliminating 140 lines of boilerplate DOM portal math.',
+      'Groovex Filter Control Surface: Upgraded library filter trigger button into a morphing card with instant filter query chips for artists and genres.',
+      'Vocalex Harmonizer Export Surface: Upgraded harmonizer bottom toolbar audio export into a morphing action card supporting full mix and harmony-only WAV exports.',
+      'Hub Language Selector Surface: Upgraded language selector setting pill into a morphing language picker card with disabled state indicators.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Intro Animation Light Mode Quality: Eliminated raster diffuse shadow halos and destructive CSS `brightness(0)` filter flattening in light mode, preventing fuzzy gray borders around the emblem.',
-      'Repository Migration Alignment: Systematically updated all release orchestration scripts, Firebase download redirects, verification checkers, and in-app links to `MAGEXE1000/Livex`.',
-      'Cross-Platform APK Extraction in CI: Supported AAPT2 flattened release icons and hardened APK asset extraction across Linux and Windows environments in `generate-release-verification-report.mjs`.',
+      'CI Release Pipeline Repository Target: Corrected release preflight GitHub query target from legacy Studio repo to `MAGEXE1000/Livex`.',
     ],
   },
 ];
@@ -118,6 +121,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.87',
+    date: '2026-09-11',
+    highlights: [
+      'Global Morphing Action Surface Design System: Promoted `MorphingActionSurface` into the canonical shared standard across all Livex apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex) with fluid continuous geometry morphs, tactile press feedback, and +80ms content stagger.',
+      'Drumex Pattern Card Action Surface: Upgraded custom groove card kebab menu from a detached dropdown to an in-place morphing action surface for renaming and deleting patterns.',
+      'Stagex Element Specs Overflow Surface: Upgraded element specifications secondary actions into a morphing action surface with element-matched accent continuity, eliminating 140 lines of boilerplate DOM portal math.',
+      'Groovex Filter Control Surface: Upgraded library filter trigger button into a morphing card with instant filter query chips for artists and genres.',
+      'Vocalex Harmonizer Export Surface: Upgraded harmonizer bottom toolbar audio export into a morphing action card supporting full mix and harmony-only WAV exports.',
+      'Hub Language Selector Surface: Upgraded language selector setting pill into a morphing language picker card with disabled state indicators.',
+    ],
+  },
   {
     version: '4.5.86',
     date: '2026-09-10',
@@ -203,15 +218,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Complex Motion Brand Reveal Animation: Overhauled LaunchAnimationEngine into a fluid 6-phase brand reveal sequence featuring 65° diagonal anticipation glow, non-linear petal trajectories (Form 1 ascending stem and Form 2 curved wing swoop), seam union lock-in micro-settle impulse, specular sheen ribbon sweep masked strictly to the emblem, and a serene breathing hold before dissolving into the pre-mounted Hub.',
       'High-Contrast Launcher Icon Mipmaps: Completely regenerated Android launcher density assets (mdpi through xxxhdpi) using an optimized tone curve that lifts deep petal shadows from RGB 21 to ~75 RGB and midtones to 215 RGB, eliminating the dark silhouette/murky appearance against pure AMOLED black backgrounds and resolving perceived launcher icon caching issues.',
       'Round Icon Squircle Elimination: Replaced round launcher mipmap assets with seamless AMOLED black circles with anti-aliased perimeter, eliminating the legacy nested squircle boundary defect.',
-    ],
-  },
-  {
-    version: '4.5.77',
-    date: '2026-09-08',
-    highlights: [
-      'Livex Brand Reveal Launch Animation: Engineered a genuine brand-building intro sequence where the Livex mark is physically constructed from its two organic geometric shapes (ascending stem petal and converging wing petal) with staggered cubic-bezier interpolation ([0.16, 1, 0.3, 1]), luminous ambient white bloom, authoritative settle hold, and seamless dissolve into the pre-mounted Hub DOM.',
-      'Android Adaptive Launcher Icon Safe-Zone Compliance: Replaced all launcher icon density mipmaps (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi) ensuring the mark is strictly contained within the 66dp safe zone on a 108dp canvas with pure AMOLED black (#000000) background. Completely eliminated the legacy double-squircle clipping defect in round icons and added transparent corner margins to legacy squircle badges.',
-      'AndroidManifest Activity Icon Bindings: Explicitly bound android:icon and android:roundIcon attributes to MainActivity in AndroidManifest.xml to prevent OEM launcher caching fallbacks to stale application icons.',
     ],
   },
 ];
