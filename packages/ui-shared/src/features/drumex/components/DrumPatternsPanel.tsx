@@ -13,6 +13,7 @@ import {
 } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
@@ -367,8 +368,6 @@ const MyGrooveCard = memo(function MyGrooveCard({
   onStartRename: () => void;
   onStartDelete: () => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <article
       className="w-full rounded-2xl border shadow-soft-card overflow-hidden transition-all group flex flex-col p-3 gap-2.5 relative"
@@ -449,57 +448,41 @@ const MyGrooveCard = memo(function MyGrooveCard({
             </span>
           </button>
 
-          {/* Kebab Menu Button */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
-            style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-            aria-label="Groove options"
-          >
-            <span className="material-symbols-outlined text-lg">more_vert</span>
-          </button>
-
-          {/* Kebab Dropdown Menu */}
-          {menuOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-20 cursor-default"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div
-                className="absolute right-3.5 top-12 z-30 w-36 py-1 rounded-xl border shadow-lg flex flex-col"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onStartRename();
-                  }}
-                  className="w-full px-3 py-2 text-xs font-bold flex items-center gap-2 text-left cursor-pointer hover:bg-slate-500/10 transition-colors"
-                  style={{ color: 'var(--c-text-primary, #111827)' }}
-                >
-                  <span className="material-symbols-outlined text-base">edit</span>
-                  <span>Rename</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onStartDelete();
-                  }}
-                  className="w-full px-3 py-2 text-xs font-bold flex items-center gap-2 text-left cursor-pointer text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-base">delete</span>
-                  <span>Delete</span>
-                </button>
-              </div>
-            </>
-          )}
+          {/* Kebab Morphing Action Surface */}
+          <MorphingActionSurface
+            triggerVariant="icon"
+            buttonIcon="more_vert"
+            title={groove.name}
+            subtitle="Groove Options"
+            accentColor="var(--c-accent-from, #2563EB)"
+            style={{
+              width: 32,
+              height: 32,
+              minHeight: 32,
+              borderRadius: 16,
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+              color: 'var(--c-text-secondary, #6B7280)',
+            }}
+            rows={[
+              {
+                id: 'rename',
+                label: 'Rename',
+                sublabel: 'Change groove name or style tag',
+                icon: 'edit',
+                onPress: onStartRename,
+              },
+              {
+                id: 'delete',
+                label: 'Delete',
+                sublabel: 'Permanently remove this custom groove',
+                icon: 'delete',
+                badge: 'Danger',
+                onPress: onStartDelete,
+              },
+            ]}
+          />
         </div>
       </div>
 

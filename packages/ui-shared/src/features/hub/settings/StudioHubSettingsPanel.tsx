@@ -1,6 +1,11 @@
 import { ThemeToggle } from '../../../components/motion/theme-toggle';
 import React from 'react';
-import { useSettingsStore, settingsController, useT } from '@workspace/studio-core';
+import {
+  useSettingsStore,
+  settingsController,
+  useT,
+  resolveAccent,
+} from '@workspace/studio-core';
 import { motion } from 'motion/react';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import {
@@ -12,9 +17,10 @@ import {
 import { SettingsContentContainer } from '../../../shared/layout/StudioLayoutSystem';
 
 import {
-  LanguagePickerSheet,
   SUPPORTED_LANGUAGES,
+  AVAILABLE_LANGUAGES,
 } from '../../../shared/settings/LanguagePickerSheet';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { Button } from '../../../shared/design-system/buttons';
 import { AccentColorPicker } from './AccentColorPicker';
 
@@ -29,7 +35,8 @@ import { AccentColorPicker } from './AccentColorPicker';
 export default function StudioHubSettingsPanel() {
   const settings = useSettingsStore((s) => s.settings);
   const t = useT();
-  const [isLanguageOpen, setIsLanguageOpen] = React.useState(false);
+  const acc = resolveAccent(settings.accentColor);
+  const isSpanish = (settings.language ?? 'en') === 'es';
 
   return (
     <>
@@ -121,38 +128,62 @@ export default function StudioHubSettingsPanel() {
             label={t.settings.rows.appLanguage || 'App Language'}
             desc={t.settings.rows.appLanguageDesc || 'Change the display language for Studio'}
           >
-            <motion.button
-              data-testid="settings-language-picker-trigger"
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setIsLanguageOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '7px 14px',
-                borderRadius: 9999,
-                border: '1px solid var(--c-border)',
-                background: 'var(--app-surface-low)',
-                boxShadow: 'var(--shadow-pill)',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-                fontFamily: 'var(--studio-font-display)',
-                fontSize: 13,
-                fontWeight: 700,
-              }}
-            >
-              <span>
-                {SUPPORTED_LANGUAGES.find((l) => l.code === (settings.language ?? 'en'))?.label ||
-                  'English'}
-              </span>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 16, color: 'var(--c-text-secondary)' }}
-              >
-                expand_more
-              </span>
-            </motion.button>
+            <MorphingActionSurface
+              title={isSpanish ? 'Seleccionar idioma' : 'Select Language'}
+              subtitle={isSpanish ? 'Elige el idioma para la interfaz' : 'Choose display language'}
+              accentColor={acc.from}
+              testId="settings-language-picker-trigger"
+              customTrigger={({ open, surfaceId }) => (
+                <motion.button
+                  layoutId={surfaceId}
+                  data-testid="settings-language-picker-trigger"
+                  whileTap={{ scale: 0.94 }}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={open}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '7px 14px',
+                    borderRadius: 9999,
+                    border: '1px solid var(--c-border)',
+                    background: 'var(--app-surface-low)',
+                    boxShadow: 'var(--shadow-pill)',
+                    color: 'var(--c-text-primary)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--studio-font-display)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  <span>
+                    {SUPPORTED_LANGUAGES.find((l) => l.code === (settings.language ?? 'en'))?.label ||
+                      'English'}
+                  </span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 16, color: 'var(--c-text-secondary)' }}
+                  >
+                    expand_more
+                  </span>
+                </motion.button>
+              )}
+              rows={SUPPORTED_LANGUAGES.map(({ code, label }) => {
+                const isSelected = (settings.language ?? 'en') === code;
+                const isAvailable = AVAILABLE_LANGUAGES.has(code);
+                return {
+                  id: code,
+                  label,
+                  sublabel: isAvailable ? undefined : (isSpanish ? 'Próximamente' : 'Coming soon'),
+                  badge: isSelected ? (isSpanish ? 'Activo' : 'Active') : undefined,
+                  active: isSelected,
+                  disabled: !isAvailable,
+                  onPress: () => {
+                    settingsController.updateSettings({ language: code as any });
+                  },
+                };
+              })}
+            />
           </SettingRow>
         </SettingSection>
 
@@ -212,8 +243,6 @@ export default function StudioHubSettingsPanel() {
           </SettingRow>
         </SettingSection>
       </SettingsContentContainer>
-
-      <LanguagePickerSheet open={isLanguageOpen} onClose={() => setIsLanguageOpen(false)} />
     </>
   );
 }

@@ -12,6 +12,8 @@ import { SONG_CATALOG, getArtists, getGenres } from '../services/songCatalog';
 import type { SongMeta } from '../services/songCatalog';
 import { useGroovexStore } from '../state/useGroovexStore';
 import { StaggeredReveal } from '../../../shared/animation';
+import { motion } from 'motion/react';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 
 export default function GroovexLibrary() {
   const searchQuery = useGroovexStore(useShallow((s) => s.searchQuery));
@@ -33,7 +35,6 @@ export default function GroovexLibrary() {
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const t = useT();
   const isWebDesktop = useIsWebDesktop();
-  const [showFilters, setShowFilters] = useState(false);
   const [cachedSongIds, setCachedSongIds] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
@@ -351,63 +352,137 @@ export default function GroovexLibrary() {
                 )}
               </button>
 
-              {/* General Filter Control */}
-              <button
-                type="button"
-                id="filter-modal-btn"
-                onClick={() => setShowFilters(!showFilters)}
-                className="btn-smooth"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 13px',
-                  borderRadius: '9999px',
-                  background:
-                    showFilters || filterGenre
-                      ? 'var(--app-accent-light, rgba(0, 122, 255, 0.12))'
-                      : 'var(--app-surface)',
-                  border:
-                    showFilters || filterGenre
-                      ? '1px solid var(--app-accent, #007AFF)'
-                      : '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
-                  color:
-                    showFilters || filterGenre
-                      ? 'var(--app-accent, #007AFF)'
-                      : 'var(--c-text-secondary)',
-                  fontFamily: 'var(--studio-font-body)',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-pill)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: '16px',
-                    color:
-                      showFilters || filterGenre
-                        ? 'var(--app-accent, #007AFF)'
-                        : 'var(--c-text-muted)',
-                  }}
-                >
-                  tune
-                </span>
-                <span>{t.groovex.filter || 'FILTER'}</span>
-                {filterGenre && (
-                  <span
+              {/* Morphing Filter Surface */}
+              <MorphingActionSurface
+                title={t.groovex.filter || 'Filters'}
+                subtitle="Filter library by artist and genre"
+                accentColor="var(--app-accent, #007AFF)"
+                customTrigger={({ open, surfaceId }) => (
+                  <motion.button
+                    layoutId={surfaceId}
+                    type="button"
+                    id="filter-modal-btn"
+                    onClick={open}
+                    whileTap={{ scale: 0.94 }}
+                    className="btn-smooth"
                     style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--app-accent, #007AFF)',
-                      marginLeft: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 13px',
+                      borderRadius: '9999px',
+                      background:
+                        filterGenre || filterArtist
+                          ? 'var(--app-accent-light, rgba(0, 122, 255, 0.12))'
+                          : 'var(--app-surface)',
+                      border:
+                        filterGenre || filterArtist
+                          ? '1px solid var(--app-accent, #007AFF)'
+                          : '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
+                      color:
+                        filterGenre || filterArtist
+                          ? 'var(--app-accent, #007AFF)'
+                          : 'var(--c-text-secondary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: 'var(--shadow-pill)',
                     }}
-                  />
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{
+                        fontSize: '16px',
+                        color:
+                          filterGenre || filterArtist
+                            ? 'var(--app-accent, #007AFF)'
+                            : 'var(--c-text-muted)',
+                      }}
+                    >
+                      tune
+                    </span>
+                    <span>{t.groovex.filter || 'FILTER'}</span>
+                    {(filterGenre || filterArtist) && (
+                      <span
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--app-accent, #007AFF)',
+                          marginLeft: '2px',
+                        }}
+                      />
+                    )}
+                  </motion.button>
                 )}
-              </button>
+              >
+                {() => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '6px 2px' }}>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: 'var(--c-text-muted)',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          margin: '0 0 8px',
+                          fontFamily: 'var(--studio-font-body)',
+                        }}
+                      >
+                        {t.groovex.artist || 'Artist'}
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <FilterChip
+                          label={t.groovex.all || 'All'}
+                          active={!filterArtist}
+                          onClick={() => setFilterArtist('')}
+                        />
+                        {artists.map((a) => (
+                          <FilterChip
+                            key={a}
+                            label={a}
+                            active={filterArtist === a}
+                            onClick={() => setFilterArtist(filterArtist === a ? '' : a)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: 'var(--c-text-muted)',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          margin: '0 0 8px',
+                          fontFamily: 'var(--studio-font-body)',
+                        }}
+                      >
+                        {t.groovex.genre || 'Genre'}
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <FilterChip
+                          label={t.groovex.all || 'All'}
+                          active={!filterGenre}
+                          onClick={() => setFilterGenre('')}
+                        />
+                        {genres.map((g) => (
+                          <FilterChip
+                            key={g}
+                            label={g}
+                            active={filterGenre === g}
+                            onClick={() => setFilterGenre(filterGenre === g ? '' : g)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </MorphingActionSurface>
             </div>
 
             {/* Clear / Reset affordance */}
@@ -439,82 +514,6 @@ export default function GroovexLibrary() {
               </button>
             )}
           </div>
-
-          {/* Collapsible Filter Chips Panel */}
-          {showFilters && (
-            <div
-              style={{
-                background: 'var(--app-surface)',
-                border: '1px solid var(--c-border, rgba(0,0,0,0.08))',
-                borderRadius: '16px',
-                padding: '14px',
-                marginTop: '4px',
-                boxShadow: isLight ? '0 4px 12px rgba(0,0,0,0.04)' : '0 4px 16px rgba(0,0,0,0.3)',
-              }}
-            >
-              <div style={{ marginBottom: '12px' }}>
-                <p
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    color: 'var(--c-text-muted)',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    margin: '0 0 8px',
-                    fontFamily: 'var(--studio-font-body)',
-                  }}
-                >
-                  {t.groovex.artist || 'Artist'}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  <FilterChip
-                    label={t.groovex.all || 'All'}
-                    active={!filterArtist}
-                    onClick={() => setFilterArtist('')}
-                  />
-                  {artists.map((a) => (
-                    <FilterChip
-                      key={a}
-                      label={a}
-                      active={filterArtist === a}
-                      onClick={() => setFilterArtist(filterArtist === a ? '' : a)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    color: 'var(--c-text-muted)',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    margin: '0 0 8px',
-                    fontFamily: 'var(--studio-font-body)',
-                  }}
-                >
-                  {t.groovex.genre || 'Genre'}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  <FilterChip
-                    label={t.groovex.all || 'All'}
-                    active={!filterGenre}
-                    onClick={() => setFilterGenre('')}
-                  />
-                  {genres.map((g) => (
-                    <FilterChip
-                      key={g}
-                      label={g}
-                      active={filterGenre === g}
-                      onClick={() => setFilterGenre(filterGenre === g ? '' : g)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </section>
 
         {/* ── EMPTY STATE (STITCH POLISHED DESIGN) ── */}

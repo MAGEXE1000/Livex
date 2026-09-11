@@ -1,6 +1,8 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'motion/react';
 import { type TakeRecord, useT } from '@workspace/studio-core';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { useHarmonizerState } from './useHarmonizerState';
 import {
   HarmonizerHeader,
@@ -41,8 +43,6 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
     isBouncing,
     activeCount,
     doBounce,
-    showExport,
-    setShowExport,
   } = state;
 
   const content = (
@@ -358,101 +358,61 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
           {isBouncing ? t.vocalex.saving || 'Saving…' : t.vocalex.saveAsTake || 'Save as Take'}
         </button>
 
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowExport((v) => !v)}
-            disabled={isBouncing || activeCount === 0}
-            style={{
-              padding: '12px 14px',
-              borderRadius: 12,
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: activeCount === 0 ? 'rgba(255,255,255,0.25)' : '#fff',
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: isBouncing || activeCount === 0 ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              opacity: activeCount === 0 ? 0.5 : 1,
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-              download
-            </span>
-            {t.vocalex.export || 'Export'}
-            <span
-              className="material-symbols-outlined"
+        <MorphingActionSurface
+          title={t.vocalex.export || 'Export Track'}
+          subtitle="Bounce harmonized vocal track"
+          accentColor={accent}
+          customTrigger={({ open, surfaceId }) => (
+            <motion.button
+              layoutId={surfaceId}
+              onClick={open}
+              disabled={isBouncing || activeCount === 0}
+              whileTap={isBouncing || activeCount === 0 ? undefined : { scale: 0.94 }}
               style={{
-                fontSize: 13,
-                transform: showExport ? 'rotate(180deg)' : 'none',
-                transition: 'transform 180ms ease',
-              }}
-            >
-              expand_more
-            </span>
-          </button>
-
-          {showExport && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 'calc(100% + 8px)',
-                right: 0,
-                background: 'rgba(22,22,28,0.98)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                padding: '12px 14px',
                 borderRadius: 12,
-                overflow: 'hidden',
-                boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
-                minWidth: 200,
-                zIndex: 10,
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: activeCount === 0 ? 'rgba(255,255,255,0.25)' : '#fff',
+                fontFamily: 'var(--font-headline)',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: isBouncing || activeCount === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                opacity: activeCount === 0 ? 0.5 : 1,
               }}
             >
-              {[
-                {
-                  label: t.vocalex.fullMixWav || 'Full Mix  (WAV)',
-                  icon: 'audio_file',
-                  harmonyOnly: false,
-                },
-                {
-                  label: t.vocalex.harmonyOnlyWav || 'Harmony Only  (WAV)',
-                  icon: 'music_note',
-                  harmonyOnly: true,
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.label}
-                  onClick={() => doBounce({ harmonyOnly: opt.harmonyOnly, download: true })}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    width: '100%',
-                    padding: '12px 15px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    textAlign: 'left',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 17, color: 'rgba(255,255,255,0.4)' }}
-                  >
-                    {opt.icon}
-                  </span>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+                download
+              </span>
+              {t.vocalex.export || 'Export'}
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 13 }}
+              >
+                expand_more
+              </span>
+            </motion.button>
           )}
-        </div>
+          rows={[
+            {
+              id: 'full-mix',
+              label: t.vocalex.fullMixWav || 'Full Mix (WAV)',
+              sublabel: 'Lead vocal + all active harmonies',
+              icon: 'audio_file',
+              onPress: () => doBounce({ harmonyOnly: false, download: true }),
+            },
+            {
+              id: 'harmony-only',
+              label: t.vocalex.harmonyOnlyWav || 'Harmony Only (WAV)',
+              sublabel: 'Isolated synthetic harmonies',
+              icon: 'music_note',
+              onPress: () => doBounce({ harmonyOnly: true, download: true }),
+            },
+          ]}
+        />
       </div>
 
       <style>{`

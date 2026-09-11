@@ -9,6 +9,7 @@ export interface MorphingActionRowItem {
   icon?: string;
   badge?: string;
   active?: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }
 
@@ -28,6 +29,8 @@ export interface MorphingActionSurfaceProps {
   className?: string;
   style?: React.CSSProperties;
   testId?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -52,20 +55,35 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   className = '',
   style,
   testId,
+  isOpen: controlledIsOpen,
+  onOpenChange,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalOpen;
+
   const rawId = useId();
   const surfaceId = `morph-surface-${rawId.replace(/:/g, '')}`;
   const prefersReduced = useReducedMotion();
   const isReduced = reducedMotion || prefersReduced;
 
   const handleOpen = useCallback(() => {
-    setIsOpen(true);
-  }, []);
+    if (isControlled) {
+      onOpenChange?.(true);
+    } else {
+      setInternalOpen(true);
+      onOpenChange?.(true);
+    }
+  }, [isControlled, onOpenChange]);
 
   const handleClose = useCallback(() => {
-    setIsOpen(false);
-  }, []);
+    if (isControlled) {
+      onOpenChange?.(false);
+    } else {
+      setInternalOpen(false);
+      onOpenChange?.(false);
+    }
+  }, [isControlled, onOpenChange]);
 
   // Android Back Handler integration via BackDispatcher
   useEffect(() => {
@@ -316,39 +334,43 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                 {children ? (
                   typeof children === 'function' ? children({ close: handleClose }) : children
                 ) : (
-                  rows.map((row) => (
-                  <motion.div
-                    key={row.id}
-                    variants={{
-                      hidden: { opacity: 0, y: isReduced ? 0 : 14 },
-                      visible: {
-                        opacity: 1,
-                        y: 0,
-                        transition: { type: 'spring', stiffness: 350, damping: 25 },
-                      },
-                    }}
-                    onClick={() => {
-                      row.onPress();
-                      handleClose();
-                    }}
-                    whileTap={isReduced ? undefined : { scale: 0.97 }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 14px',
-                      borderRadius: 14,
-                      backgroundColor: row.active
-                        ? 'rgba(245, 158, 11, 0.12)'
-                        : 'var(--c-surface-high, rgba(255, 255, 255, 0.04))',
-                      border: row.active
-                        ? `1px solid ${accentColor}`
-                        : '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
-                      cursor: 'pointer',
-                      touchAction: 'manipulation',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
+                  rows.map((row) => {
+                    const isDisabled = Boolean(row.disabled);
+                    return (
+                      <motion.div
+                        key={row.id}
+                        data-disabled={isDisabled ? 'true' : undefined}
+                        variants={{
+                          hidden: { opacity: 0, y: isReduced ? 0 : 14 },
+                          visible: {
+                            opacity: isDisabled ? 0.45 : 1,
+                            y: 0,
+                            transition: { type: 'spring', stiffness: 350, damping: 25 },
+                          },
+                        }}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          row.onPress();
+                          handleClose();
+                        }}
+                        whileTap={isReduced || isDisabled ? undefined : { scale: 0.97 }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          borderRadius: 14,
+                          backgroundColor: row.active
+                            ? 'rgba(245, 158, 11, 0.12)'
+                            : 'var(--c-surface-high, rgba(255, 255, 255, 0.04))',
+                          border: row.active
+                            ? `1px solid ${accentColor}`
+                            : '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          touchAction: 'manipulation',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {row.icon && (
                         <span
@@ -410,7 +432,9 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                       )}
                     </div>
                   </motion.div>
-                )))}
+                    );
+                  })
+                )}
               </motion.div>
             </motion.div>
           </div>
