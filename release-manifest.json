@@ -2,7 +2,7 @@
   "$schema": "https://livex.app/schemas/release-manifest.v1.json",
   "manifestVersion": "1.0.0",
   "version": "4.5.23",
-  "versionCode": 40588,
+  "versionCode": 40589,
   "releaseTag": "v4.5.23",
   "buildTimestampUtc": "2026-08-11T23:34:23.633Z",
   "git": {
@@ -39,6 +39,6 @@
     "otaMetadataVersion": "4.0.0",
     "firebaseHostingChannel": "live"
   },
-  "releaseVersion": "4.5.88",
-  "versionName": "4.5.88"
+  "releaseVersion": "4.5.89",
+  "versionName": "4.5.89"
 }

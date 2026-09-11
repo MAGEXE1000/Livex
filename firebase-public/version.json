@@ -1,20 +1,20 @@
 {
   "platform": "web",
-  "version": "4.5.88",
-  "versionName": "4.5.88",
-  "versionCode": 40588,
-  "version_code": 40588,
-  "commit": "1aec7dfc",
-  "releasedAt": "9/11/2026, 1:31:25 AM CST",
-  "buildTimestamp": "9/11/2026, 1:31:25 AM CST",
+  "version": "4.5.89",
+  "versionName": "4.5.89",
+  "versionCode": 40589,
+  "version_code": 40589,
+  "commit": "d01516e7",
+  "releasedAt": "9/11/2026, 10:19:45 AM CST",
+  "buildTimestamp": "9/11/2026, 10:19:45 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.\n• Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.\n• Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.",
-  "whatsNew": "• Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.\n• Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.\n• Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.",
+  "changelog": "• Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.\n• Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.\n• Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.",
+  "whatsNew": "• Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.\n• Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.\n• Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.",
   "releaseNotes": {
-    "added": [
-      "Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.",
-      "Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.",
-      "Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion."
+    "fixed": [
+      "Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.",
+      "Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.",
+      "Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions."
     ]
   },
   "mandatory": false
