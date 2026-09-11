@@ -32,6 +32,9 @@ describe('Livex Three-State Theme Architecture', () => {
     (globalThis as any).document = {
       documentElement: mockRoot,
       body: {
+        classList: mockRoot.classList,
+        setAttribute: vi.fn(),
+        removeAttribute: vi.fn(),
         style: {
           zoom: '',
           width: '',

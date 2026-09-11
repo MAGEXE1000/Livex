@@ -3,7 +3,6 @@
 
 import { Moon, Sun, Eclipse } from 'lucide-react';
 import { useSettingsStore, settingsController } from '@workspace/studio-core';
-import { useReducedMotion } from 'motion/react';
 import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
 import { ActionSwapIcon } from './action-swap';
 import { cn } from '../../lib/utils';
@@ -30,34 +29,26 @@ export function useThemeToggle({
 }: { variant?: ThemeVariant; start?: RectStart } = {}) {
   const theme = useSettingsStore((s) => s.settings.theme);
   const amoledMode = useSettingsStore((s) => s.settings.amoledMode);
-  const reduce = useReducedMotion() ?? false;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
 
   // Canonical three-state mode — source of truth for icon + aria label.
   const themeMode: 'light' | 'dark' | 'amoled' = !mounted
     ? 'dark'
-    : theme === 'light'
+    : isLight
       ? 'light'
       : amoledMode
         ? 'amoled'
         : 'dark';
 
-  const cycleTheme = () => {
-    settingsController.cycleNextTheme();
-  };
-
   const toggle = () => {
-    if (reduce || !('startViewTransition' in document)) {
-      cycleTheme();
-      return;
-    }
-
-    (
-      document as Document & {
-        startViewTransition(cb: () => void): { finished: Promise<void> };
-      }
-    ).startViewTransition(() => cycleTheme());
+    settingsController.cycleNextTheme();
   };
 
   return { themeMode, mounted, toggle };

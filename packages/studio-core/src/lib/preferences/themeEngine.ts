@@ -56,22 +56,48 @@ export function applyThemeTokens(settings: any) {
     isLightMode = h >= start && h < end;
   }
 
-  const themeClassKey = `${activeVis.theme}|${activeVis.amoledMode}|${isLightMode}`;
+  // Canonical AMOLED resolution: only valid in non-light mode, respects global or per-app
+  const isAmoledMode = !isLightMode && (Boolean(activeVis.amoledMode) || Boolean(globalAmoled));
+
+  const themeClassKey = `${activeVis.theme}|${isAmoledMode}|${isLightMode}`;
   if (themeClassKey !== _lastThemeClassKey) {
     _lastThemeClassKey = themeClassKey;
 
-    // Update HTML theme classes
+    const effectiveThemeState: VisualThemeState = isLightMode
+      ? 'light'
+      : isAmoledMode
+        ? 'amoled'
+        : 'dark';
+
+    // Update HTML theme classes and data-theme attribute
     if (isLightMode) {
       root.classList.add('light');
-      root.classList.remove('dark');
-      root.classList.remove('amoled');
+      root.classList.remove('dark', 'amoled');
+      root.setAttribute('data-theme', 'light');
+      if (typeof document !== 'undefined' && document.body?.classList) {
+        document.body.classList.add('light');
+        document.body.classList.remove('dark', 'amoled');
+        document.body.setAttribute?.('data-theme', 'light');
+      }
     } else {
       root.classList.add('dark');
       root.classList.remove('light');
-      if (activeVis.amoledMode) {
+      if (isAmoledMode) {
         root.classList.add('amoled');
+        root.setAttribute('data-theme', 'amoled');
+        if (typeof document !== 'undefined' && document.body?.classList) {
+          document.body.classList.add('dark', 'amoled');
+          document.body.classList.remove('light');
+          document.body.setAttribute?.('data-theme', 'amoled');
+        }
       } else {
         root.classList.remove('amoled');
+        root.setAttribute('data-theme', 'dark');
+        if (typeof document !== 'undefined' && document.body?.classList) {
+          document.body.classList.add('dark');
+          document.body.classList.remove('light', 'amoled');
+          document.body.setAttribute?.('data-theme', 'dark');
+        }
       }
     }
 
@@ -317,7 +343,7 @@ export function applyThemeTokens(settings: any) {
 
   // StatusBar Sync
   const effectiveTheme = isLightMode ? 'light' : 'dark';
-  const effectiveAmoled = !isLightMode && Boolean(activeVis.amoledMode);
+  const effectiveAmoled = !isLightMode && isAmoledMode;
   const statusBarKey = `${effectiveTheme}|${effectiveAmoled}`;
   if (statusBarKey !== _lastStatusBarKey) {
     _lastStatusBarKey = statusBarKey;
@@ -356,8 +382,10 @@ export function getEffectiveThemeState(settings: any, appMode = 'hub'): VisualTh
     isLightMode = h >= start && h < end;
   }
 
+  const isAmoled = !isLightMode && (Boolean(activeVis.amoledMode) || Boolean(globalAmoled));
+
   if (isLightMode) return 'light';
-  if (activeVis.amoledMode) return 'amoled';
+  if (isAmoled) return 'amoled';
   return 'dark';
 }
 

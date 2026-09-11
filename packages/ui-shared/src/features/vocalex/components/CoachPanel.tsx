@@ -14,6 +14,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
     (activeVis.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
 
   const [subView, setSubView] = useState<'pitch' | 'practice'>('pitch');
   const vt = t.vocalex as any;
@@ -74,8 +75,8 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                 transform: subView === 'pitch' ? 'translateX(0)' : 'translateX(100%)',
                 background: isLight
                   ? '#ffffff'
-                  : activeVis.amoledMode
-                    ? '#18181b'
+                  : isAmoled
+                    ? '#000000'
                     : 'var(--surface-card-bg, rgba(255,255,255,0.14))',
                 borderRadius: 9999,
                 transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',

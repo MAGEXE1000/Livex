@@ -384,7 +384,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                 maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
                 maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
                 borderRadius: isCompact ? 16 : 24,
-                backgroundColor: 'var(--c-surface-base, #16161c)',
+                backgroundColor: 'var(--c-surface-base, var(--surface-dialog-bg, #16161c))',
                 border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
                 boxShadow: isCompact
                   ? '0 12px 32px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)'

@@ -304,6 +304,9 @@
   --c-surface-mid: #1e1e24;
   --c-surface-high: #262630;
   --c-surface-highest: #2e2e3a;
+  --c-surface-base: #16161c;
+  --surface-dialog-bg: var(--app-surface-high, #151518);
+  --surface-modal-surface: var(--app-surface-high, #151518);
 
   --c-text-primary: #f4f4f6;
   --c-text-secondary: #a1a1aa;
@@ -575,21 +578,24 @@ h4,
 :root.amoled {
   --app-bg: #000000;
   --app-surface-lowest: #000000;
-  --app-surface-low: #08080a;
-  --app-surface: #0f0f13;
-  --app-surface-high: #17171d;
-  --app-surface-highest: #202028;
+  --app-surface-low: #000000;
+  --app-surface: #000000;
+  --app-surface-high: #0a0a0e;
+  --app-surface-highest: #121218;
   --app-surface-scrim: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.95);
   --app-surface-scrim-solid: #000000;
-  --c-bg-card: #0f0f13;
+  --c-bg-card: #000000;
 
   --c-background: #000000;
   --c-surface-lowest: #000000;
-  --c-surface-low: #08080a;
-  --c-surface-mid: #0f0f13;
-  --c-surface-high: #17171d;
-  --c-surface-highest: #202028;
+  --c-surface-low: #000000;
+  --c-surface-mid: #000000;
+  --c-surface-high: #0a0a0e;
+  --c-surface-highest: #121218;
+  --c-surface-base: #000000;
+  --surface-dialog-bg: #000000;
+  --surface-modal-surface: #000000;
 
   --c-text-primary: #ffffff;
   --c-text-secondary: #a1a1aa;
@@ -601,7 +607,7 @@ h4,
   --c-surface-glass-bg: rgba(15, 15, 19, 0.88);
   --sidebar-bg: rgba(0, 0, 0, 0.7);
   --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  --popover-bg: rgba(15, 15, 19, 0.85);
+  --popover-bg: rgba(0, 0, 0, 0.92);
   --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   --profile-avatar-bg: rgba(255, 255, 255, 0.08);
   --profile-avatar-color: #ffffff;
@@ -625,16 +631,16 @@ h4,
   --shadow-pill: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.5);
   --shadow-inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 
-  --surface-card-bg: #0f0f13;
+  --surface-card-bg: #000000;
   --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --surface-card-highlight: 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  --surface-deep-bg: #08080a;
+  --surface-deep-bg: #000000;
   --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --btn-surface-bg: #17171d;
+  --btn-surface-bg: #0a0a0e;
   --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
@@ -659,6 +665,9 @@ h4,
   --c-surface-mid: #f4f4f5;
   --c-surface-high: #fafafa;
   --c-surface-highest: #ffffff;
+  --c-surface-base: #ffffff;
+  --surface-dialog-bg: #ffffff;
+  --surface-modal-surface: #ffffff;
 
   --c-text-primary: #18181b;
   --c-text-secondary: #52525b;
@@ -1851,8 +1860,8 @@ html[data-perf-mode='on'] *::after {
   --surface-glass-lens-shadow:
     0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
-  --surface-dialog-bg: var(--app-surface-high, #17171d);
-  --surface-modal-surface: var(--app-surface-high, #17171d);
+  --surface-dialog-bg: #000000;
+  --surface-modal-surface: #000000;
 }
 
 /* ===== Groovex design tokens ===== */
@@ -3089,6 +3098,45 @@ html.light .alert-dialog__dialog,
     0 20px 48px -4px rgba(0, 0, 0, 0.14),
     0 4px 12px -2px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* AMOLED Mode Dialog Adjustments */
+html.amoled .alert-dialog__dialog,
+[data-theme='amoled'] .alert-dialog__dialog,
+body.amoled .alert-dialog__dialog,
+.amoled .alert-dialog__dialog {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    0 24px 64px -8px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Morphing Action Surface Theme Overrides */
+.sc-morphing-panel {
+  background-color: var(--c-surface-base, var(--surface-dialog-bg, #16161c));
+  color: var(--c-text-primary);
+  border-color: var(--c-border);
+}
+
+html.light .sc-morphing-panel,
+[data-theme='light'] .sc-morphing-panel {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow:
+    0 20px 48px -4px rgba(0, 0, 0, 0.14),
+    0 4px 12px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.amoled .sc-morphing-panel,
+[data-theme='amoled'] .sc-morphing-panel,
+body.amoled .sc-morphing-panel,
+.amoled .sc-morphing-panel {
+  background-color: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    0 24px 64px -8px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Size modifiers */

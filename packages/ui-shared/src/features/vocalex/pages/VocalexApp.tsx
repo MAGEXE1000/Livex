@@ -75,19 +75,16 @@ export default function VocalexApp() {
   }, [activeTab]);
 
   const appKey = 'vocalex' as AppKey;
-  const activeVis = settings.perApp?.[appKey] ?? {
-    theme: 'dark' as const,
-    amoledMode: false,
-  };
   const accent = resolveAccent(settings.accentColor);
   const isLight = (() => {
-    if (activeVis.theme === 'light') return true;
-    if (activeVis.theme === 'system') {
+    const vocalexTheme = settings.perApp?.[appKey]?.theme ?? settings.theme ?? 'dark';
+    if (vocalexTheme === 'light') return true;
+    if (vocalexTheme === 'system') {
       return (
         typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches
       );
     }
-    if (activeVis.theme === 'dynamic') {
+    if (vocalexTheme === 'dynamic') {
       const h = new Date().getHours();
       const lightStart = settings.dynamicLightStart ?? 7;
       const lightEnd = settings.dynamicLightEnd ?? 20;
@@ -95,6 +92,11 @@ export default function VocalexApp() {
     }
     return false;
   })();
+  const isAmoled = !isLight && Boolean(settings.amoledMode || settings.perApp?.[appKey]?.amoledMode);
+  const activeVis = {
+    theme: settings.perApp?.[appKey]?.theme ?? settings.theme ?? 'dark',
+    amoledMode: isAmoled,
+  };
 
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
@@ -131,11 +133,9 @@ export default function VocalexApp() {
   useEffect(() => {}, []);
 
   const amoledBg = isLight
-    ? activeVis.amoledMode
-      ? 'rgba(255, 255, 255, 0.92)'
-      : 'rgba(255, 255, 255, 0.40)'
-    : activeVis.amoledMode
-      ? 'rgba(4,4,4,0.88)'
+    ? 'rgba(255, 255, 255, 0.40)'
+    : isAmoled
+      ? 'rgba(0, 0, 0, 0.95)'
       : 'rgba(26,26,30,0.72)';
 
   const durMs =

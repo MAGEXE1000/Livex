@@ -82,7 +82,7 @@ export default function TakesPanel() {
     (activeVis.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
-  const isAmoled = !!activeVis.amoledMode;
+  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
 
   const [takes, setTakes] = useState<TakeRecord[]>([]);
   const [loading, setLoading] = useState(true);

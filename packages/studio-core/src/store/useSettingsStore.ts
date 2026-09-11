@@ -198,12 +198,24 @@ export const useSettingsStore = create<SettingsStore>()(
         set((state) => {
           const updatedSettings = { ...state.settings, ...newSettings };
 
-          if (newSettings.theme || newSettings.amoledMode !== undefined) {
+          if (newSettings.theme !== undefined || newSettings.amoledMode !== undefined) {
             const updatedPerApp = { ...updatedSettings.perApp };
-            (Object.keys(updatedPerApp) as AppKey[]).forEach((app) => {
+            const allApps: AppKey[] = [
+              'hub',
+              'chordex',
+              'drumex',
+              'stagex',
+              'groovex',
+              'vocalex',
+              'devtools',
+            ];
+            allApps.forEach((app) => {
               updatedPerApp[app] = {
-                ...updatedPerApp[app],
-                ...(newSettings.theme && { theme: newSettings.theme }),
+                ...(updatedPerApp[app] || {
+                  theme: updatedSettings.theme ?? 'dark',
+                  amoledMode: false,
+                }),
+                ...(newSettings.theme !== undefined && { theme: newSettings.theme }),
                 ...(newSettings.amoledMode !== undefined && { amoledMode: newSettings.amoledMode }),
               };
             });

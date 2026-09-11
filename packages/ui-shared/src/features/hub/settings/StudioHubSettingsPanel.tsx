@@ -53,33 +53,12 @@ export default function StudioHubSettingsPanel() {
             label={t.settings.rows.themeMode || 'Theme Mode'}
             desc={t.settings.rows.themeModeDesc || 'Switch between Light, Dark, and AMOLED themes'}
           >
-            <div className="flex items-center gap-2">
-              <SegmentedControl
-                value={
-                  settings.theme === 'light' ? 'light' : settings.amoledMode ? 'amoled' : 'dark'
-                }
-                options={[
-                  {
-                    value: 'light',
-                    label: (t.settings.rows as any).themeLight || 'Light',
-                    testId: 'theme-option-light',
-                  },
-                  {
-                    value: 'dark',
-                    label: (t.settings.rows as any).themeDark || 'Dark',
-                    testId: 'theme-option-dark',
-                  },
-                  {
-                    value: 'amoled',
-                    label: (t.settings.rows as any).themeAmoled || 'AMOLED',
-                    testId: 'theme-option-amoled',
-                  },
-                ]}
-                onChange={(v) => settingsController.setThemeMode(v as 'light' | 'dark' | 'amoled')}
-                layoutId="theme-mode-control"
-              />
-              <ThemeToggle variant="circle-blur" start="bottom-up" />
-            </div>
+            <ThemeToggle
+              variant="circle-blur"
+              start="bottom-up"
+              className="w-10 h-10 rounded-full bg-[var(--c-surface-high)] border border-[var(--c-border)] text-[var(--c-text-primary)] hover:bg-[var(--c-surface-higher,var(--c-surface-high))] active:scale-95 transition-all shadow-sm flex items-center justify-center cursor-pointer"
+              iconClassName="w-5 h-5"
+            />
           </SettingRow>
         </SettingSection>
 

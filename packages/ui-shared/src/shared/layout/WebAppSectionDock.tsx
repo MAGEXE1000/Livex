@@ -253,8 +253,10 @@ export default function WebAppSectionDock({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
 
-  const amoledBg = activeVis.amoledMode
-    ? 'rgba(4, 4, 4, 0.9)'
+  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
+
+  const amoledBg = isAmoled
+    ? 'rgba(0, 0, 0, 0.95)'
     : isLight
       ? 'rgba(255, 255, 255, 0.45)'
       : 'rgba(15, 15, 20, 0.65)';

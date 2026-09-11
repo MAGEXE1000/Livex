@@ -309,7 +309,7 @@ export default function PracticePanel() {
     (activeVis.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
-  const isAmoled = !!activeVis.amoledMode;
+  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
 
   const sections = useMemo(() => buildSections(t.vocalex as any, language), [t, language]);
   const [transitioning, setTransitioning] = useState(false);

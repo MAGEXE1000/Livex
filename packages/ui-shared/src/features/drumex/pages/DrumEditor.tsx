@@ -799,7 +799,7 @@ export default function DrumEditor() {
     }
     return false;
   })();
-  const isAmoled = !isLight && (drumsVis.amoledMode ?? false);
+  const isAmoled = !isLight && Boolean(drumsVis.amoledMode || settings.amoledMode);
   // SVG/canvas colors — CSS vars can't be used directly in SVG props
   const noteColor = isLight ? '#111118' : '#ffffff';
   const staffColor = isLight ? 'rgba(9, 9, 11, 0.08)' : 'rgba(255, 255, 255, 0.05)';

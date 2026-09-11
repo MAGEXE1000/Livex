@@ -53,6 +53,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
     (activeVis.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
   const [listening, setListening] = useState(false);
   const [result, setResult] = useState<PitchResult | null>(null);
   const [history, setHistory] = useState<PitchResult[]>([]);
@@ -309,7 +310,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             maxWidth: 440,
             background: isLight
               ? '#ffffff'
-              : activeVis.amoledMode
+              : isAmoled
                 ? '#000000'
                 : 'var(--surface-card-bg, rgba(255,255,255,0.03))',
             border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
@@ -830,7 +831,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               padding: '0 16px',
               background: isLight
                 ? '#ffffff'
-                : activeVis.amoledMode
+                : isAmoled
                   ? '#000000'
                   : 'var(--app-surface-low, rgba(255,255,255,0.04))',
               border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
