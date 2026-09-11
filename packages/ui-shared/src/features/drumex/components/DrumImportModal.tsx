@@ -4,11 +4,7 @@ import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button } from '../../../shared/design-system/buttons';
 import { type DrumPattern, type KitType } from '@workspace/studio-core';
 
-export function DrumImportModal({
-  accent,
-  onImport,
-  onClose,
-}: {
+export interface DrumImportContentProps {
   accent: { from: string; to: string };
   onImport: (
     name: string,
@@ -18,8 +14,14 @@ export function DrumImportModal({
     activePatternId: string,
     kitType?: KitType | null
   ) => void;
-  onClose: () => void;
-}) {
+  onClose?: () => void;
+}
+
+export function DrumImportContent({
+  accent,
+  onImport,
+  onClose,
+}: DrumImportContentProps) {
   type Stage = 'idle' | 'preview' | 'error';
   const [stage, setStage] = useState<Stage>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -97,7 +99,7 @@ export function DrumImportModal({
   const totalBars = preview ? preview.patterns.reduce((n, p) => n + p.measures.length, 0) : 0;
 
   return (
-    <Dialog open={true} onClose={onClose} title="Import Beat">
+    <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {stage === 'idle' && (
           <div
@@ -287,7 +289,7 @@ export function DrumImportModal({
                   preview.activePatternId,
                   preview.kitType
                 );
-                onClose();
+                onClose?.();
               }}
               icon="add_circle"
               style={{ width: '100%' }}
@@ -304,6 +306,14 @@ export function DrumImportModal({
         style={{ display: 'none' }}
         onChange={handleFileInput}
       />
+    </>
+  );
+}
+
+export function DrumImportModal(props: DrumImportContentProps & { onClose: () => void }) {
+  return (
+    <Dialog open={true} onClose={props.onClose} title="Import Beat">
+      <DrumImportContent {...props} />
     </Dialog>
   );
 }

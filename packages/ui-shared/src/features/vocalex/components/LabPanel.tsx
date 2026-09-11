@@ -1,4 +1,6 @@
+import { motion } from 'motion/react';
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import {
   createLayer,
   createDefaultEffects,
@@ -843,14 +845,14 @@ function TrackChannel({
   );
 }
 
-function AddTrackSheet({
+function AddTrackContent({
   session,
   onAdd,
   onClose,
 }: {
   session: LabSession;
   onAdd: (layer: LabLayer) => void;
-  onClose: () => void;
+  onClose?: () => void;
 }) {
   const t = useT();
   const [tab, setTab] = useState<'takes' | 'file' | 'record'>('takes');
@@ -952,8 +954,7 @@ function AddTrackSheet({
   };
 
   return (
-    <Dialog open={true} onClose={onClose} title={t.vocalex.addTrack}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '10px 14px 14px' }}>
         <div
           style={{
             display: 'flex',
@@ -1217,7 +1218,6 @@ function AddTrackSheet({
           </div>
         )}
       </div>
-    </Dialog>
   );
 }
 
@@ -1236,7 +1236,6 @@ function MixerView({
   const t = useT();
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(session.name);
-  const [showAddSheet, setShowAddSheet] = useState(false);
   const [harmonizingLayer, setHarmonizingLayer] = useState<LabLayer | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -1324,7 +1323,6 @@ function MixerView({
   const addLayer = (layer: LabLayer) => {
     const newSession = { ...session, layers: [...session.layers, layer], updatedAt: Date.now() };
     saveAndNotify(newSession);
-    setShowAddSheet(false);
   };
 
   const handleDelete = async () => {
@@ -1805,28 +1803,48 @@ function MixerView({
         >
           {t.vocalex.tracks}
         </span>
-        <button
-          onClick={() => setShowAddSheet(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: 'var(--vx-input)',
-            border: 'none',
-            borderRadius: 8,
-            padding: '6px 10px',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-body)',
-            fontSize: 10,
-            fontWeight: 700,
-            color: 'var(--studio-accent)',
-          }}
+        <MorphingActionSurface
+          title={t.vocalex.addTrack}
+          subtitle="Import a vocal take or audio file"
+          accentColor="var(--studio-accent)"
+          maxWidth={380}
+          customTrigger={({ triggerProps }) => (
+            <motion.button
+              {...triggerProps}
+              data-testid="lab-header-add-track-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'var(--vx-input)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-body)',
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'var(--studio-accent)',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                add
+              </span>
+              {t.vocalex.addTrack}
+            </motion.button>
+          )}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            add
-          </span>
-          {t.vocalex.addTrack}
-        </button>
+          {({ close }) => (
+            <AddTrackContent
+              session={session}
+              onAdd={(layer) => {
+                addLayer(layer);
+                close();
+              }}
+              onClose={close}
+            />
+          )}
+        </MorphingActionSurface>
       </div>
 
       {session.layers.length === 0 ? (
@@ -1853,29 +1871,49 @@ function MixerView({
           >
             {t.vocalex.noTracksYet}
           </p>
-          <button
-            onClick={() => setShowAddSheet(true)}
-            style={{
-              marginTop: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '10px 20px',
-              borderRadius: 9999,
-              background: 'var(--studio-accent-gradient)',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 700,
-              fontSize: 13,
-              color: '#fff',
-            }}
+          <MorphingActionSurface
+            title={t.vocalex.addTrack}
+            subtitle="Import a vocal take or audio file"
+            accentColor="var(--studio-accent)"
+            maxWidth={380}
+            customTrigger={({ triggerProps }) => (
+              <motion.button
+                {...triggerProps}
+                data-testid="lab-empty-add-track-btn"
+                style={{
+                  marginTop: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 20px',
+                  borderRadius: 9999,
+                  background: 'var(--studio-accent-gradient)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-headline)',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#fff',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  add
+                </span>
+                {t.vocalex.addFirstTrack}
+              </motion.button>
+            )}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              add
-            </span>
-            {t.vocalex.addFirstTrack}
-          </button>
+            {({ close }) => (
+              <AddTrackContent
+                session={session}
+                onAdd={(layer) => {
+                  addLayer(layer);
+                  close();
+                }}
+                onClose={close}
+              />
+            )}
+          </MorphingActionSurface>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1891,10 +1929,6 @@ function MixerView({
             />
           ))}
         </div>
-      )}
-
-      {showAddSheet && (
-        <AddTrackSheet session={session} onAdd={addLayer} onClose={() => setShowAddSheet(false)} />
       )}
 
       {harmonizingLayer && (

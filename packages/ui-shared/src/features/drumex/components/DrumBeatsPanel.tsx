@@ -23,6 +23,7 @@ export interface DrumBeatsPanelProps {
   isCreateOpen?: boolean;
   onOpenCreateChange?: (open: boolean) => void;
   renderCreateForm?: (helpers: { close: () => void }) => React.ReactNode;
+  renderImportForm?: (helpers: { close: () => void }) => React.ReactNode;
 }
 
 const KIT_NAMES: Record<string, string> = {
@@ -434,6 +435,7 @@ export function DrumBeatsPanel({
   isCreateOpen,
   onOpenCreateChange,
   renderCreateForm,
+  renderImportForm,
 }: DrumBeatsPanelProps) {
   const t = useT();
 
@@ -712,21 +714,50 @@ export function DrumBeatsPanel({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={onImportSong}
-                className="px-5 py-2.5 rounded-full text-xs font-semibold border shadow-sm active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                data-purpose="empty-import-btn"
-                data-testid="empty-import-btn"
-              >
-                <span className="material-symbols-outlined text-base">upload_file</span>
-                <span>Import</span>
-              </button>
+              {renderImportForm ? (
+                <MorphingActionSurface
+                  placement="center"
+                  maxWidth={380}
+                  title="Import Beat"
+                  subtitle="Import a Drumex JSON beat file"
+                  accentColor={accent.from}
+                  customTrigger={({ triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      type="button"
+                      className="px-5 py-2.5 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-2"
+                      style={{
+                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                        borderColor: 'var(--c-border, #E3E6EB)',
+                        color: 'var(--c-text-primary, #111827)',
+                      }}
+                      data-purpose="empty-import-btn"
+                      data-testid="empty-import-btn"
+                    >
+                      <span className="material-symbols-outlined text-base">upload_file</span>
+                      <span>Import</span>
+                    </motion.button>
+                  )}
+                >
+                  {renderImportForm}
+                </MorphingActionSurface>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onImportSong}
+                  className="px-5 py-2.5 rounded-full text-xs font-semibold border shadow-sm active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                    borderColor: 'var(--c-border, #E3E6EB)',
+                    color: 'var(--c-text-primary, #111827)',
+                  }}
+                  data-purpose="empty-import-btn"
+                  data-testid="empty-import-btn"
+                >
+                  <span className="material-symbols-outlined text-base">upload_file</span>
+                  <span>Import</span>
+                </button>
+              )}
             </div>
           </section>
         ) : filteredSongs.length === 0 ? (
@@ -899,21 +930,50 @@ export function DrumBeatsPanel({
           data-purpose="floating-action-group"
         >
           {/* Secondary FAB: Import Beat JSON */}
-          <button
-            type="button"
-            onClick={onImportSong}
-            data-testid="import-beat-btn"
-            aria-label="Import Beat File"
-            title="Import Beat File"
-            className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
-            style={{
-              backgroundColor: 'var(--surface-card-bg, #ffffff)',
-              borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-text-secondary, #6B7280)',
-            }}
-          >
-            <span className="material-symbols-outlined text-xl">upload_file</span>
-          </button>
+          {renderImportForm ? (
+            <MorphingActionSurface
+              placement="center"
+              maxWidth={380}
+              title="Import Beat"
+              subtitle="Import a Drumex JSON beat file"
+              accentColor={accent.from}
+              customTrigger={({ triggerProps }) => (
+                <motion.button
+                  {...triggerProps}
+                  type="button"
+                  data-testid="import-beat-btn"
+                  aria-label="Import Beat File"
+                  title="Import Beat File"
+                  className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                    borderColor: 'var(--c-border, #E3E6EB)',
+                    color: 'var(--c-text-secondary, #6B7280)',
+                  }}
+                >
+                  <span className="material-symbols-outlined text-xl">upload_file</span>
+                </motion.button>
+              )}
+            >
+              {renderImportForm}
+            </MorphingActionSurface>
+          ) : (
+            <button
+              type="button"
+              onClick={onImportSong}
+              data-testid="import-beat-btn"
+              aria-label="Import Beat File"
+              title="Import Beat File"
+              className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
+                color: 'var(--c-text-secondary, #6B7280)',
+              }}
+            >
+              <span className="material-symbols-outlined text-xl">upload_file</span>
+            </button>
+          )}
 
           {/* Primary FAB: Create New Beat */}
           {renderCreateForm ? (

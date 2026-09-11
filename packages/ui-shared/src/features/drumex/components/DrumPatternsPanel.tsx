@@ -1,4 +1,5 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
+import { motion } from 'motion/react';
 import {
   type LibraryPattern,
   type LibraryCategory,
@@ -26,7 +27,8 @@ export interface DrumPatternsPanelProps {
   onPreviewGroove: (g: GrooveEntry) => void;
   onUseGroove: (id: string) => void;
   onAppendGroove: (id: string) => void;
-  onSaveCurrentPattern: () => void;
+  onSaveCurrentPattern?: () => void;
+  onSaveGroove?: (name: string, tag: GrooveTag | '') => void;
   onDeleteGroove: (id: string) => void;
   onRenameGroove: (id: string, name: string, tag: GrooveTag) => void;
 
@@ -530,6 +532,117 @@ const MyGrooveCard = memo(function MyGrooveCard({
   );
 });
 
+/* ──────────────────── SAVE GROOVE FORM ──────────────────── */
+export function SaveGrooveForm({
+  defaultName = '',
+  accent,
+  onSave,
+  onClose,
+}: {
+  defaultName?: string;
+  accent: { from: string; to: string; mid?: string };
+  onSave: (name: string, tag: GrooveTag | '') => void;
+  onClose?: () => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  const [tag, setTag] = useState<GrooveTag | ''>('');
+
+  useEffect(() => {
+    setName(defaultName);
+  }, [defaultName]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '10px 14px 14px' }}>
+      <div>
+        <label
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--c-text-secondary)',
+            letterSpacing: '0.05em',
+            display: 'block',
+            marginBottom: 6,
+          }}
+        >
+          NAME
+        </label>
+        <Input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Groove name…"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && name.trim()) {
+              onSave(name.trim(), tag);
+              onClose?.();
+            }
+          }}
+        />
+      </div>
+      <div>
+        <label
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--c-text-secondary)',
+            letterSpacing: '0.05em',
+            display: 'block',
+            marginBottom: 8,
+          }}
+        >
+          TAG
+        </label>
+        <div
+          className="no-scrollbar"
+          style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: '4px' }}
+        >
+          {(['', ...GROOVE_TAGS] as (GrooveTag | '')[]).map((t) => {
+            const label = t === '' ? 'None' : t;
+            const active = tag === t;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setTag(t as GrooveTag)}
+                className="btn-smooth"
+                style={{
+                  flexShrink: 0,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-headline)',
+                  cursor: 'pointer',
+                  border: active
+                    ? `1.5px solid ${accent.from}`
+                    : '1.5px solid var(--c-border)',
+                  background: active ? `${accent.from}18` : 'transparent',
+                  color: active ? accent.from : 'var(--c-text-secondary)',
+                  transition: 'all 140ms',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <Button
+        variant="primary"
+        disabled={!name.trim()}
+        onClick={() => {
+          if (!name.trim()) return;
+          onSave(name.trim(), tag);
+          onClose?.();
+        }}
+        style={{ width: '100%' }}
+      >
+        Save Groove
+      </Button>
+    </div>
+  );
+}
+
 /* ──────────────────── MAIN DRUM PATTERNS PANEL ──────────────────── */
 export function DrumPatternsPanel({
   onPreviewPattern,
@@ -540,6 +653,7 @@ export function DrumPatternsPanel({
   onUseGroove,
   onAppendGroove,
   onSaveCurrentPattern,
+  onSaveGroove,
   onDeleteGroove,
   onRenameGroove,
   previewingId,
@@ -805,40 +919,98 @@ export function DrumPatternsPanel({
         {/* My Grooves: Save Current Pattern Action Banner */}
         {isMyGroovesActive && (
           <div className="pb-3">
-            <button
-              type="button"
-              onClick={onSaveCurrentPattern}
-              data-testid="save-groove-banner-btn"
-              className="w-full p-3.5 rounded-2xl border shadow-soft-card flex items-center gap-3 transition-all active:scale-98 cursor-pointer text-left"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
+            {onSaveGroove ? (
+              <MorphingActionSurface
+                placement="center"
+                maxWidth={380}
+                title="Save to Groove Library"
+                subtitle={`Store "${activePatternName || 'Current Pattern'}" to your library`}
+                accentColor={accent.from}
+                customTrigger={({ triggerProps }) => (
+                  <motion.button
+                    {...triggerProps}
+                    type="button"
+                    data-testid="save-groove-banner-btn"
+                    className="w-full p-3.5 rounded-2xl border shadow-soft-card flex items-center gap-3 cursor-pointer text-left"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
+                      style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
+                    >
+                      <span className="material-symbols-outlined text-xl">bookmark_add</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="text-sm font-extrabold font-headline uppercase tracking-wide truncate"
+                        style={{ color: 'var(--c-text-primary, #111827)' }}
+                      >
+                        Save as Groove
+                      </div>
+                      <div
+                        className="text-[11px] font-medium tracking-normal truncate mt-0.5"
+                        style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                      >
+                        Store "{activePatternName || 'Current Pattern'}" to your library
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-xl text-slate-400">
+                      chevron_right
+                    </span>
+                  </motion.button>
+                )}
               >
-                <span className="material-symbols-outlined text-xl">bookmark_add</span>
-              </div>
-              <div className="flex-1 min-w-0">
+                {({ close }) => (
+                  <SaveGrooveForm
+                    defaultName={activePatternName || ''}
+                    accent={accent}
+                    onSave={(name, tag) => {
+                      onSaveGroove(name, tag);
+                      close();
+                    }}
+                    onClose={close}
+                  />
+                )}
+              </MorphingActionSurface>
+            ) : (
+              <button
+                type="button"
+                onClick={onSaveCurrentPattern}
+                data-testid="save-groove-banner-btn"
+                className="w-full p-3.5 rounded-2xl border shadow-soft-card flex items-center gap-3 transition-all active:scale-98 cursor-pointer text-left"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                }}
+              >
                 <div
-                  className="text-sm font-extrabold font-headline uppercase tracking-wide truncate"
-                  style={{ color: 'var(--c-text-primary, #111827)' }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
+                  style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
                 >
-                  Save as Groove
+                  <span className="material-symbols-outlined text-xl">bookmark_add</span>
                 </div>
-                <div
-                  className="text-[11px] font-medium tracking-normal truncate mt-0.5"
-                  style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                >
-                  Store "{activePatternName || 'Current Pattern'}" to your library
+                <div className="flex-1 min-w-0">
+                  <div
+                    className="text-sm font-extrabold font-headline uppercase tracking-wide truncate"
+                    style={{ color: 'var(--c-text-primary, #111827)' }}
+                  >
+                    Save as Groove
+                  </div>
+                  <div
+                    className="text-[11px] font-medium tracking-normal truncate mt-0.5"
+                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                  >
+                    Store "{activePatternName || 'Current Pattern'}" to your library
+                  </div>
                 </div>
-              </div>
-              <span className="material-symbols-outlined text-xl text-slate-400">
-                chevron_right
-              </span>
-            </button>
+                <span className="material-symbols-outlined text-xl text-slate-400">
+                  chevron_right
+                </span>
+              </button>
+            )}
           </div>
         )}
 

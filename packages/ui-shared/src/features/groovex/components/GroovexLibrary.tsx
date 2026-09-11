@@ -358,13 +358,11 @@ export default function GroovexLibrary() {
                 subtitle="Filter library by artist and genre"
                 accentColor="var(--app-accent, #007AFF)"
                 maxWidth={340}
-                customTrigger={({ open, surfaceId }) => (
+                customTrigger={({ triggerProps }) => (
                   <motion.button
-                    layoutId={surfaceId}
+                    {...triggerProps}
                     type="button"
                     id="filter-modal-btn"
-                    onClick={open}
-                    whileTap={{ scale: 0.94 }}
                     className="btn-smooth"
                     style={{
                       display: 'flex',

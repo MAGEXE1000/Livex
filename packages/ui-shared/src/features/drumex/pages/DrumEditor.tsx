@@ -109,10 +109,10 @@ import { NoteHead } from '../components/DrumNoteHeads';
 import { InstrumentRow } from '../components/InstrumentRow';
 import DrumPaperPreview, { type DrumExportConfig } from '../components/DrumPaperPreview';
 import DrumExportModal from '../components/DrumExportModal';
-import DrumImportModal from '../components/DrumImportModal';
+import DrumImportModal, { DrumImportContent } from '../components/DrumImportModal';
 import { MetronomePanel } from '../components/MetronomePanel';
 import { DrumBeatsPanel } from '../components/DrumBeatsPanel';
-import { DrumPatternsPanel } from '../components/DrumPatternsPanel';
+import { DrumPatternsPanel, SaveGrooveForm } from '../components/DrumPatternsPanel';
 import {
   drumScheduler,
   samplePool,
@@ -1175,8 +1175,7 @@ export default function DrumEditor() {
   const [openBarMenu, setOpenBarMenu] = useState<string | null>(null); // measureId
   const [flashBarId, setFlashBarId] = useState<string | null>(null); // brief highlight on paste
 
-  // ── Per-instrument FX sheet ────────────────────────────────────────────────
-  const [showFXSheet, setShowFXSheet] = useState(false);
+  // ── Per-instrument FX state ────────────────────────────────────────────────
   const [fxInst, setFxInst] = useState<DrumInstrument>('kick');
 
   // Sync instFX + instPlugins store → drumAudio module whenever they change
@@ -1202,8 +1201,7 @@ export default function DrumEditor() {
     setHumanizeVelocity(drumPrefs.humanizeVelocity);
   }, [drumPrefs.humanizeVelocity]);
 
-  // ── Quick mixer sheet + export modal + import modal ──────────────────────
-  const [showMixerSheet, setShowMixerSheet] = useState(false);
+  // ── Export modal + import modal ──────────────────────────────────────────
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportDrum, setShowImportDrum] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -1214,9 +1212,6 @@ export default function DrumEditor() {
   const [patRenameName, setPatRenameName] = useState('');
   const [grooveMenuId, setGrooveMenuId] = useState<string | null>(null);
   const [previewingGrooveId, setPreviewingGrooveId] = useState<string | null>(null);
-  const [showSaveGroove, setShowSaveGroove] = useState(false);
-  const [savGrName, setSavGrName] = useState('');
-  const [savGrTag, setSavGrTag] = useState<GrooveTag>('');
   const [grooveRenameId, setGrooveRenameId] = useState<string | null>(null);
   const [grooveRenameName, setGrooveRenameName] = useState('');
   const [grooveRenameTag, setGrooveRenameTag] = useState<GrooveTag>('');
@@ -2214,10 +2209,6 @@ export default function DrumEditor() {
         setShowImportDrum(false);
         return true;
       }
-      if (showSaveGroove) {
-        setShowSaveGroove(false);
-        return true;
-      }
 
       // 2. Forms
       if (showCreateForm) {
@@ -2230,14 +2221,6 @@ export default function DrumEditor() {
       }
 
       // 3. Sheets / Menus / Panels
-      if (showMixerSheet) {
-        setShowMixerSheet(false);
-        return true;
-      }
-      if (showFXSheet) {
-        setShowFXSheet(false);
-        return true;
-      }
       if (showBpmPanel) {
         setShowBpmPanel(false);
         return true;
@@ -2276,11 +2259,8 @@ export default function DrumEditor() {
       showClearConfirm,
       showExportModal,
       showImportDrum,
-      showSaveGroove,
       showCreateForm,
       showSaveForm,
-      showMixerSheet,
-      showFXSheet,
       showBpmPanel,
       showLoopPanel,
       showSoundCharacter,
@@ -2666,6 +2646,23 @@ export default function DrumEditor() {
       labelSt,
     ]
   );
+
+  const renderImportBeatForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <div style={{ padding: '8px 12px 14px' }}>
+        <DrumImportContent
+          accent={accent}
+          onImport={(name, artist, notes, pats, activeId, kitType) => {
+            importDrumSong(name, artist, notes, pats, activeId, kitType);
+            close?.();
+          }}
+          onClose={close}
+        />
+      </div>
+    ),
+    [accent, importDrumSong]
+  );
+
   const renderCollapsibleSection = (
     id: string,
     title: string,
@@ -3620,32 +3617,49 @@ export default function DrumEditor() {
                   </div>
 
                   {/* Save Groove */}
-                  <button
-                    onClick={() => {
-                      setSavGrName(pattern.name);
-                      setSavGrTag('');
-                      setShowSaveGroove(true);
-                    }}
-                    title="Save pattern to Groove Library"
-                    aria-label="Save pattern to Groove Library"
-                    className="btn-smooth"
-                    style={{
-                      height: 30,
-                      width: 30,
-                      borderRadius: 8,
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: accent.from,
-                    }}
+                  <MorphingActionSurface
+                    placement="anchor"
+                    maxWidth={320}
+                    title="Save to Groove Library"
+                    subtitle={`Store "${pattern.name}"`}
+                    accentColor={accent.from}
+                    customTrigger={({ triggerProps }) => (
+                      <motion.button
+                        {...triggerProps}
+                        title="Save pattern to Groove Library"
+                        aria-label="Save pattern to Groove Library"
+                        className="btn-smooth"
+                        style={{
+                          height: 30,
+                          width: 30,
+                          borderRadius: 8,
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: accent.from,
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                          bookmark
+                        </span>
+                      </motion.button>
+                    )}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                      bookmark
-                    </span>
-                  </button>
+                    {({ close }) => (
+                      <SaveGrooveForm
+                        defaultName={pattern.name}
+                        accent={accent}
+                        onSave={(name, tag) => {
+                          saveGroove(name, tag);
+                          close();
+                        }}
+                        onClose={close}
+                      />
+                    )}
+                  </MorphingActionSurface>
 
                   <div
                     style={{
@@ -4407,18 +4421,30 @@ export default function DrumEditor() {
               <div className="flex items-center gap-2.5">
                 {activeTab === 'songs' && (
                   <>
-                    <button
-                      onClick={() => setShowImportDrum(true)}
-                      className="h-7.5 px-3 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
-                      style={{
-                        background: 'var(--c-surface-low)',
-                        border: '1px solid var(--c-border)',
-                        color: 'var(--c-text-secondary)',
-                      }}
+                    <MorphingActionSurface
+                      placement="center"
+                      maxWidth={380}
+                      title="Import Beat"
+                      subtitle="Import a Drumex JSON beat file"
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
+                          type="button"
+                          className="h-7.5 px-3 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
+                          style={{
+                            background: 'var(--c-surface-low)',
+                            border: '1px solid var(--c-border)',
+                            color: 'var(--c-text-secondary)',
+                          }}
+                        >
+                          <span className="material-symbols-outlined text-[13px]">upload_file</span>
+                          <span>IMPORT</span>
+                        </motion.button>
+                      )}
                     >
-                      <span className="material-symbols-outlined text-[13px]">upload_file</span>
-                      <span>IMPORT</span>
-                    </button>
+                      {renderImportBeatForm}
+                    </MorphingActionSurface>
                     <MorphingActionSurface
                       isOpen={showCreateForm && createFormOrigin === 'topbar'}
                       onOpenChange={(open) => {
@@ -4510,6 +4536,7 @@ export default function DrumEditor() {
                             setShowCreateForm(open);
                           }}
                           renderCreateForm={renderCreateBeatForm}
+                          renderImportForm={renderImportBeatForm}
                         />
                       );
                     }
@@ -7937,10 +7964,8 @@ export default function DrumEditor() {
                             id: activeDrumSongId || undefined,
                           });
                         }}
-                        onSaveCurrentPattern={() => {
-                          setSavGrName(pattern.name);
-                          setSavGrTag('');
-                          setShowSaveGroove(true);
+                        onSaveGroove={(name, tag) => {
+                          saveGroove(name, tag);
                         }}
                         onDeleteGroove={(id) => {
                           deleteGroove(id);
@@ -7982,624 +8007,6 @@ export default function DrumEditor() {
         isAmoled={isAmoled}
         hidden={isWebDesktop || inEditor || activeTab === 'metronome'}
       />
-
-      {/* ── Save Groove sheet ────────────────────────────────────────────── */}
-      {showSaveGroove && (
-        <Dialog open={true} onClose={() => setShowSaveGroove(false)} title="Save to Groove Library">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--c-text-secondary)',
-                  letterSpacing: '0.05em',
-                  display: 'block',
-                  marginBottom: 6,
-                }}
-              >
-                NAME
-              </label>
-              <Input
-                autoFocus
-                value={savGrName}
-                onChange={(e) => setSavGrName(e.target.value)}
-                placeholder="Groove name…"
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--c-text-secondary)',
-                  letterSpacing: '0.05em',
-                  display: 'block',
-                  marginBottom: 8,
-                }}
-              >
-                TAG
-              </label>
-              <div
-                className="no-scrollbar"
-                style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: '4px' }}
-              >
-                {(['', ...GROOVE_TAGS] as (GrooveTag | '')[]).map((tag) => {
-                  const label = tag === '' ? 'None' : tag;
-                  const active = savGrTag === tag;
-                  return (
-                    <button
-                      key={label}
-                      onClick={() => setSavGrTag(tag as GrooveTag)}
-                      className="btn-smooth"
-                      style={{
-                        flexShrink: 0,
-                        padding: '6px 14px',
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-headline)',
-                        cursor: 'pointer',
-                        border: active
-                          ? '1.5px solid var(--c-accent-from)'
-                          : '1.5px solid var(--c-border)',
-                        background: active ? 'var(--c-accent-from)18' : 'transparent',
-                        color: active ? 'var(--c-accent-from)' : 'var(--c-text-secondary)',
-                        transition: 'all 140ms',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <Button
-              variant="primary"
-              disabled={!savGrName.trim()}
-              onClick={() => {
-                if (!savGrName.trim()) return;
-                saveGroove(savGrName.trim(), savGrTag);
-                setShowSaveGroove(false);
-              }}
-              style={{ width: '100%' }}
-            >
-              Save Groove
-            </Button>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── Quick Mixer sheet (EQ button in editor toolbar) ──────────────── */}
-      {showMixerSheet && inEditor && (
-        <Dialog open={true} onClose={() => setShowMixerSheet(false)} title="Pattern Mixer">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Master Volume row */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 0',
-                borderBottom: '1px solid var(--c-border)',
-                marginBottom: 2,
-              }}
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: accent.from,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-text-primary)', flex: 1 }}
-              >
-                Master
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: 'var(--c-text-secondary)',
-                  fontWeight: 700,
-                  minWidth: 36,
-                  textAlign: 'right',
-                }}
-              >
-                {(masterVolume * 100).toFixed(1)}%
-              </span>
-              <ElasticSlider
-                min={0}
-                max={1}
-                step={0.005}
-                value={masterVolume}
-                onChange={setMasterVolume}
-                accentColor={accent.from}
-                style={{ width: 110, flexShrink: 0 }}
-              />
-              <div style={{ width: 32, flexShrink: 0 }} />
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                maxHeight: '350px',
-                overflowY: 'auto',
-              }}
-              className="no-scrollbar"
-            >
-              {ALL_INSTS.map((inst, i) => {
-                const vol = volumeMap[inst] ?? 1;
-                const hidden = patternMuted.has(inst);
-                const color = INSTRUMENT_COLOR[inst] ?? accent.from;
-                return (
-                  <div
-                    key={inst}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 0',
-                      borderTop: i > 0 ? '1px solid var(--c-border)' : 'none',
-                      opacity: hidden ? 0.5 : 1,
-                      transition: 'opacity 150ms',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: hidden ? 'var(--c-text-secondary)' : 'var(--c-text-primary)',
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {INST_LABEL[inst]}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--c-text-secondary)',
-                        fontWeight: 700,
-                        minWidth: 30,
-                        textAlign: 'right',
-                      }}
-                    >
-                      {Math.round(vol * 100)}%
-                    </span>
-                    <ElasticSlider
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={vol}
-                      onChange={(v) => setVolumeForInstrument(inst, v)}
-                      accentColor={color}
-                      style={{ width: 90, flexShrink: 0 }}
-                    />
-                    <button
-                      onClick={() => togglePatternMute(pattern.id, inst)}
-                      title={hidden ? 'Show row' : 'Hide row'}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: hidden ? 'rgba(128,128,128,0.08)' : `${color}18`,
-                        border: hidden ? '1px solid var(--c-border)' : `1px solid ${color}30`,
-                        cursor: 'pointer',
-                        color: hidden ? 'var(--c-text-secondary)' : color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'all 180ms',
-                        padding: 0,
-                      }}
-                    >
-                      {hidden ? (
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                          <line x1="1" y1="1" x2="23" y2="23" />
-                        </svg>
-                      ) : (
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── Per-instrument FX sheet ──────────────────────────────────────── */}
-      {showFXSheet &&
-        inEditor &&
-        (() => {
-          const curFX: InstFX = { ...DEFAULT_INST_FX, ...(instFX[fxInst] ?? {}) };
-          const color = INSTRUMENT_COLOR[fxInst] ?? accent.from;
-          type SliderDef = {
-            key: keyof InstFX;
-            label: string;
-            min: number;
-            max: number;
-            step: number;
-            hint?: string;
-          };
-          const fxSliders: SliderDef[] = [
-            // ── Dynamics ────────────────────────────────────────────────────────
-            {
-              key: 'compress',
-              label: 'Compress',
-              min: 0,
-              max: 1,
-              step: 0.01,
-              hint: 'Squash dynamics',
-            },
-            {
-              key: 'attack',
-              label: 'Attack',
-              min: 0,
-              max: 1,
-              step: 0.01,
-              hint: '0=punchy, 1=slow build',
-            },
-            {
-              key: 'gate',
-              label: 'Gate',
-              min: 0,
-              max: 1,
-              step: 0.01,
-              hint: 'Chop the tail (tighter sound)',
-            },
-            // ── EQ (4-band) ─────────────────────────────────────────────────────
-            { key: 'eqLow', label: 'Low 80 Hz', min: -12, max: 12, step: 0.5, hint: 'Boom / thin' },
-            {
-              key: 'eqLowMid',
-              label: 'Lo-Mid 350',
-              min: -12,
-              max: 12,
-              step: 0.5,
-              hint: 'Body / mud',
-            },
-            { key: 'eqMid', label: 'Mid 2 kHz', min: -12, max: 12, step: 0.5, hint: 'Snap / honk' },
-            { key: 'eqHigh', label: 'High 10k', min: -12, max: 12, step: 0.5, hint: 'Air / sheen' },
-            // ── Space & character ────────────────────────────────────────────────
-            { key: 'reverb', label: 'Reverb', min: 0, max: 1, step: 0.01, hint: 'Room / ambience' },
-            {
-              key: 'saturate',
-              label: 'Saturate',
-              min: 0,
-              max: 1,
-              step: 0.01,
-              hint: 'Tape warmth / drive',
-            },
-          ];
-          const presets = INST_PRESETS[fxInst] ?? [];
-          return (
-            <Dialog open={true} onClose={() => setShowFXSheet(false)} title="Instrument FX">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      color: 'var(--c-text-secondary)',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    Select Instrument
-                  </span>
-                  <button
-                    onClick={() => setInstFX(fxInst, { ...DEFAULT_INST_FX })}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: 'var(--c-text-secondary)',
-                      background: 'rgba(128,128,128,0.10)',
-                      border: 'none',
-                      borderRadius: 6,
-                      padding: '4px 10px',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-headline)',
-                    }}
-                  >
-                    Reset
-                  </button>
-                </div>
-                {/* instrument chips */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 6,
-                    padding: '0 20px 12px',
-                    overflowX: 'auto',
-                    flexShrink: 0,
-                  }}
-                >
-                  {activeInstruments.map((inst) => {
-                    const isAct = inst === fxInst;
-                    const c = INSTRUMENT_COLOR[inst] ?? accent.from;
-                    const hasFX = instFX[inst] && Object.values(instFX[inst]!).some((v) => v !== 0);
-                    return (
-                      <button
-                        key={inst}
-                        onClick={() => setFxInst(inst)}
-                        style={{
-                          flexShrink: 0,
-                          padding: '5px 12px',
-                          borderRadius: 8,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          fontFamily: 'var(--font-headline)',
-                          cursor: 'pointer',
-                          background: isAct ? `${c}22` : 'var(--app-surface-high)',
-                          border: isAct ? `1.5px solid ${c}55` : '1.5px solid transparent',
-                          color: isAct ? c : 'var(--c-text-secondary)',
-                          position: 'relative',
-                          transition: 'all 130ms',
-                        }}
-                      >
-                        {INSTRUMENT_NAME[inst] ??
-                          inst.replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
-                        {hasFX && (
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: 3,
-                              right: 3,
-                              width: 5,
-                              height: 5,
-                              borderRadius: '50%',
-                              background: c,
-                              display: 'block',
-                            }}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* scrollable body */}
-                <div
-                  style={{
-                    overflowY: 'auto',
-                    flexShrink: 1,
-                    paddingBottom: 'calc(env(safe-area-inset-bottom,0px) + 24px)',
-                  }}
-                >
-                  {/* ── Character presets ────────────────────────────────── */}
-                  {presets.length > 0 && (
-                    <div style={{ padding: '0 20px 14px' }}>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 800,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: 'var(--c-text-muted)',
-                          fontFamily: 'var(--font-headline)',
-                        }}
-                      >
-                        Character
-                      </span>
-                      <div style={{ display: 'flex', gap: 7, marginTop: 8, flexWrap: 'wrap' }}>
-                        {presets.map((preset) => {
-                          const merged = { ...DEFAULT_INST_FX, ...preset.values };
-                          const isActive = Object.keys(preset.values).every(
-                            (k) =>
-                              Math.abs(
-                                (curFX[k as keyof InstFX] ?? 0) -
-                                  (preset.values[k as keyof InstFX] ?? 0)
-                              ) < 0.05
-                          );
-                          return (
-                            <button
-                              key={preset.label}
-                              onClick={() => setInstFX(fxInst, merged)}
-                              title={`Apply "${preset.label}" FX character to ${INST_LABEL[fxInst] || fxInst}`}
-                              style={{
-                                padding: '6px 14px',
-                                borderRadius: 20,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                fontFamily: 'var(--font-headline)',
-                                cursor: 'pointer',
-                                transition: 'all 140ms',
-                                background: isActive ? color : 'var(--app-surface-high)',
-                                color: isActive ? '#fff' : 'var(--c-text-secondary)',
-                                border: isActive
-                                  ? `1.5px solid ${color}`
-                                  : '1.5px solid rgba(128,128,128,0.15)',
-                              }}
-                            >
-                              {preset.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {/* ── FX sliders ──────────────────────────────────────── */}
-                  {fxSliders.map(({ key, label, min, max, step, hint }) => {
-                    const val = curFX[key] ?? 0;
-                    const isEQ =
-                      key === 'eqLow' || key === 'eqLowMid' || key === 'eqMid' || key === 'eqHigh';
-                    const dispVal = isEQ
-                      ? (val >= 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB'
-                      : `${Math.round(val * 100)}%`;
-                    const active = val !== 0;
-                    return (
-                      <div
-                        key={key}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '7px 20px',
-                          borderBottom: '1px solid rgba(128,128,128,0.06)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 7,
-                            height: 7,
-                            borderRadius: '50%',
-                            background: color,
-                            flexShrink: 0,
-                            opacity: active ? 1 : 0.22,
-                            transition: 'opacity 150ms',
-                          }}
-                        />
-                        <div style={{ width: 90, flexShrink: 0 }}>
-                          <div
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
-                              fontFamily: 'var(--font-headline)',
-                              lineHeight: 1.2,
-                            }}
-                          >
-                            {label}
-                          </div>
-                          {hint && (
-                            <div
-                              style={{
-                                fontSize: 9,
-                                color: 'var(--c-text-muted)',
-                                fontFamily: 'var(--font-headline)',
-                                letterSpacing: '0.02em',
-                              }}
-                            >
-                              {hint}
-                            </div>
-                          )}
-                        </div>
-                        <ElasticSlider
-                          min={min}
-                          max={max}
-                          step={step}
-                          value={val}
-                          onChange={(v) => setInstFX(fxInst, { ...curFX, [key]: v })}
-                          accentColor={color}
-                          style={{ flex: 1 }}
-                        />
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: active ? color : 'var(--c-text-muted)',
-                            minWidth: 58,
-                            textAlign: 'right',
-                            fontFamily: 'var(--font-headline)',
-                            transition: 'color 150ms',
-                          }}
-                        >
-                          {dispVal}
-                        </span>
-                      </div>
-                    );
-                  })}
-
-                  {/* ── Plugins section ──────────────────────────────── */}
-                  <div style={{ padding: '14px 20px 0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 800,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: 'var(--c-text-muted)',
-                          fontFamily: 'var(--font-headline)',
-                          flex: 1,
-                        }}
-                      >
-                        Plugins
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        padding: '18px 0 14px',
-                        color: 'var(--c-text-muted)',
-                        fontSize: 11.5,
-                        fontFamily: 'var(--font-headline)',
-                        fontStyle: 'italic',
-                        opacity: 0.7,
-                      }}
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ flexShrink: 0, opacity: 0.7 }}
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      Coming soon
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Dialog>
-          );
-        })()}
 
       {/* ── Export modal (full-screen) ────────────────────────────────────── */}
       {showExportModal && (

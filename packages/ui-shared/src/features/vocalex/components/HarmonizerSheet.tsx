@@ -362,12 +362,12 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
           title={t.vocalex.export || 'Export Track'}
           subtitle="Bounce harmonized vocal track"
           accentColor={accent}
-          customTrigger={({ open, surfaceId }) => (
+          customTrigger={({ triggerProps }) => (
             <motion.button
-              layoutId={surfaceId}
-              onClick={open}
+              {...triggerProps}
               disabled={isBouncing || activeCount === 0}
-              whileTap={isBouncing || activeCount === 0 ? undefined : { scale: 0.94 }}
+              onClick={isBouncing || activeCount === 0 ? undefined : triggerProps.onClick}
+              whileTap={isBouncing || activeCount === 0 ? undefined : triggerProps.whileTap}
               style={{
                 padding: '12px 14px',
                 borderRadius: 12,

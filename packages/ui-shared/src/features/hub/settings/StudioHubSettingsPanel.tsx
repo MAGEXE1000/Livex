@@ -112,13 +112,11 @@ export default function StudioHubSettingsPanel() {
               subtitle={isSpanish ? 'Elige el idioma para la interfaz' : 'Choose display language'}
               accentColor={acc.from}
               testId="settings-language-picker-trigger"
-              customTrigger={({ open, surfaceId }) => (
+              customTrigger={({ triggerProps }) => (
                 <motion.button
-                  layoutId={surfaceId}
+                  {...triggerProps}
                   data-testid="settings-language-picker-trigger"
-                  whileTap={{ scale: 0.94 }}
                   whileHover={{ scale: 1.02 }}
-                  onClick={open}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

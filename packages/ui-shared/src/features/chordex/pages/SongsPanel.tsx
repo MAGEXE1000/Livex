@@ -2519,96 +2519,6 @@ async function exportPresetToJSON(
   return true;
 }
 
-/* ──────────────────── JSON Export Action Sheet ──────────────────── */
-function JsonExportSheet({
-  preset,
-  accent,
-  onClose,
-}: {
-  preset: SongPreset;
-  accent: { from: string; to: string };
-  onClose: () => void;
-}) {
-  const [saving, setSaving] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const [saveResult, setSaveResult] = useState<'ok' | 'fail' | null>(null);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const ok = await exportPresetToJSON(preset, 'save');
-      setSaveResult(ok ? 'ok' : 'fail');
-      setTimeout(() => setSaveResult(null), 3000);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleShare = async () => {
-    setSharing(true);
-    try {
-      await exportPresetToJSON(preset, 'share');
-      onClose();
-    } finally {
-      setSharing(false);
-    }
-  };
-
-  return (
-    <Dialog open={true} onClose={onClose} title="Export JSON">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '13px',
-            color: 'var(--c-text-secondary)',
-            margin: 0,
-          }}
-        >
-          Exporting: <strong>{preset.name}</strong>
-        </p>
-
-        {saveResult && (
-          <div
-            style={{
-              textAlign: 'center',
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 700,
-              fontSize: '13px',
-              color: saveResult === 'ok' ? '#34d399' : '#f87171',
-            }}
-          >
-            {saveResult === 'ok' ? 'Saved to Downloads!' : 'Could not save — try Share instead'}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={saving || sharing}
-            loading={saving}
-            icon="save"
-            style={{ width: '100%' }}
-          >
-            Save to Device
-          </Button>
-
-          <Button
-            onClick={handleShare}
-            disabled={saving || sharing}
-            loading={sharing}
-            icon="share"
-            style={{ width: '100%' }}
-          >
-            Share
-          </Button>
-        </div>
-      </div>
-    </Dialog>
-  );
-}
-
 function resolveChordId(name: string): string | null {
   const allChords = getAllChords();
   const norm = (s: string) => s.trim().toLowerCase().replace(/\s/g, '');
@@ -4140,7 +4050,6 @@ export default function SongsPanel() {
   const [showLive, setShowLive] = useState(false);
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
-  const [jsonExportPreset, setJsonExportPreset] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const filteredPresets = useMemo(() => {
@@ -4306,10 +4215,6 @@ export default function SongsPanel() {
         setExportModal(null);
         return true;
       }
-      if (jsonExportPreset) {
-        setJsonExportPreset(null);
-        return true;
-      }
       if (showImport) {
         setShowImport(false);
         return true;
@@ -4332,7 +4237,6 @@ export default function SongsPanel() {
       showLive,
       showForm,
       exportModalPreset,
-      jsonExportPreset,
       showImport,
       showDeleteId,
       activePresetId,
@@ -5312,12 +5216,10 @@ export default function SongsPanel() {
                       maxWidth={260}
                       title="Add chord to…"
                       accentColor={accent.from}
-                      customTrigger={({ open, surfaceId }) => (
+                      customTrigger={({ triggerProps }) => (
                         <motion.button
-                          layoutId={surfaceId}
+                          {...triggerProps}
                           data-purpose="empty-add-chord-btn"
-                          whileTap={{ scale: 0.94 }}
-                          onClick={open}
                           className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer"
                           style={{
                             backgroundColor: 'var(--c-accent-from, #2563EB)',
@@ -6050,16 +5952,15 @@ export default function SongsPanel() {
                 maxWidth={240}
                 title={t.songs.addSection}
                 accentColor={accent.from}
-                customTrigger={({ open, surfaceId }) => (
+                customTrigger={({ triggerProps }) => (
                   <motion.button
-                    layoutId={surfaceId}
+                    {...triggerProps}
                     aria-label="Add Section"
                     data-testid="add-section-btn"
-                    whileTap={{ scale: 0.94 }}
                     onClick={() => {
                       setCustomSectionName('');
                       setCustomSectionMode(false);
-                      open();
+                      triggerProps.onClick();
                     }}
                     className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
                     style={{
@@ -6124,13 +6025,11 @@ export default function SongsPanel() {
                   maxWidth={260}
                   title="Add chord to…"
                   accentColor={accent.from}
-                  customTrigger={({ open, surfaceId }) => (
+                  customTrigger={({ triggerProps }) => (
                     <motion.button
-                      layoutId={surfaceId}
+                      {...triggerProps}
                       aria-label="Add Chord"
                       data-testid="add-chord-btn"
-                      whileTap={{ scale: 0.94 }}
-                      onClick={open}
                       className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                       style={{
                         backgroundColor: 'var(--c-accent-from, #2563EB)',
@@ -6337,14 +6236,6 @@ export default function SongsPanel() {
           />
         )}
 
-        {/* JSON export action sheet */}
-        {jsonExportPreset && (
-          <JsonExportSheet
-            preset={jsonExportPreset}
-            accent={accent}
-            onClose={() => setJsonExportPreset(null)}
-          />
-        )}
       </div>
     );
   };
@@ -6620,14 +6511,6 @@ export default function SongsPanel() {
             onClose={() => setExportModal(null)}
             transposeOffset={transposeOffset}
             storedCustomChords={customChords}
-          />
-        )}
-
-        {jsonExportPreset && (
-          <JsonExportSheet
-            preset={jsonExportPreset}
-            accent={accent}
-            onClose={() => setJsonExportPreset(null)}
           />
         )}
 
@@ -6918,15 +6801,6 @@ export default function SongsPanel() {
                   onClose={() => setExportModal(null)}
                   transposeOffset={transposeOffset}
                   storedCustomChords={customChords}
-                />
-              )}
-
-              {/* JSON export action sheet */}
-              {jsonExportPreset && (
-                <JsonExportSheet
-                  preset={jsonExportPreset}
-                  accent={accent}
-                  onClose={() => setJsonExportPreset(null)}
                 />
               )}
 

@@ -594,13 +594,11 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                           localizeElementName(element.name, element.type, isSpanish ? 'es' : 'en')
                         }
                         accentColor={element.color || '#8B5CF6'}
-                        customTrigger={({ open, surfaceId }) => (
+                        customTrigger={({ triggerProps }) => (
                           <motion.button
-                            layoutId={surfaceId}
+                            {...triggerProps}
                             type="button"
                             data-testid="specs-actions-menu-btn"
-                            onClick={open}
-                            whileTap={{ scale: 0.94 }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all"
                             style={{
                               background: isLight

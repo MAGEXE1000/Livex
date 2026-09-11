@@ -22,7 +22,6 @@ import { StageBottomPanelSlot } from './StageBottomPanelSlot';
 import { StageElementLibrarySurface } from './StageElementLibrarySurface';
 import { StageHistorySurface } from './StageHistorySurface';
 import { StageElementSpecsEditor } from './StageElementSpecsEditor';
-import { ExportPdfDialog } from './dialogs/ExportPdfDialog';
 import { StageCollabDialog } from './dialogs/StageCollabDialog';
 import {
   StageBridge,
@@ -31,8 +30,6 @@ import {
   injectAccentVars,
 } from '../services/StageBridgeService';
 import { useStagexStore } from '../state/useStagexStore';
-import { projectProductionDocumentData } from '../services/projectProductionDocumentData';
-import { generateProductionDocumentPdf } from '../services/generateProductionDocumentPdf';
 import SmartLoading from '../../../shared/loading/SmartLoading';
 import { resolveAccent } from '@workspace/studio-core';
 
@@ -211,22 +208,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       useBottomNavigationStore.getState().setLocked(false);
     };
   }, []);
-
-  // Export PDF Dialog state
-  const [pdfSheetOpen, setPdfSheetOpen] = useState(false);
-  const [pdfFileName, setPdfFileName] = useState('');
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const [canShareFiles, setCanShareFiles] = useState(false);
-  const [pdfSceneInfo, setPdfSceneInfo] = useState<{
-    count: number;
-    currentIdx: number;
-    names: string[];
-  }>({
-    count: 1,
-    currentIdx: 0,
-    names: ['Default'],
-  });
-  const [pdfSceneChoice, setPdfSceneChoice] = useState<'current' | 'all' | number>('current');
 
   // Collaboration state
   const [collabModalOpen, setCollabModalOpen] = useState(false);
@@ -538,14 +519,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   useEffect(() => {
     loadCustomElements();
-    if (typeof navigator !== 'undefined' && typeof navigator.canShare === 'function') {
-      try {
-        const dummyFile = new File([''], 'test.pdf', { type: 'application/pdf' });
-        setCanShareFiles(navigator.canShare({ files: [dummyFile] }));
-      } catch {
-        setCanShareFiles(false);
-      }
-    }
   }, [loadCustomElements]);
 
   // Register stage iframe with core service
@@ -583,38 +556,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     onNavigateView?.('Export');
   }, [onNavigateView]);
 
-  const openPdfSheet = useCallback(() => {
-    const defaultName = `StagePlot-${new Date().toISOString().slice(0, 10)}`;
-    setPdfFileName(defaultName);
-    const info = StageBridge.getSceneInfo(iframeRef.current);
-    if (info) setPdfSceneInfo(info);
-    setPdfSceneChoice('current');
-    setPdfSheetOpen(true);
-  }, []);
-
-  const executePdfExport = useCallback(
-    async (share: boolean) => {
-      setPdfBusy(true);
-      try {
-        StageBridge.syncCurrentProjectState(iframeRef.current);
-        const data = projectProductionDocumentData(useStagexStore.getState(), pdfSceneChoice);
-        const settings = useSettingsStore.getState().settings;
-        const pdfTheme = isAmoled ? 'amoled' : isLight ? 'light' : 'dark';
-        await generateProductionDocumentPdf(data, {
-          fileName: (pdfFileName.trim() || 'StagePlot') + '.pdf',
-          share,
-          theme: pdfTheme,
-          lang: settings.language === 'es' ? 'es' : 'en',
-        });
-        setPdfSheetOpen(false);
-      } catch (err) {
-        console.error('PDF export failed', err);
-      } finally {
-        setPdfBusy(false);
-      }
-    },
-    [pdfFileName, pdfSceneChoice, isLight, isAmoled]
-  );
 
   const preferences = useStagexStore((s) => s.preferences);
   const stageShape = preferences?.stageShape || 'rectangular';
@@ -676,7 +617,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           transitionToView={(v) =>
             v === 'Export' ? openProductionDocumentWorkflow() : onNavigateView?.(v)
           }
-          openPdfSheet={openPdfSheet}
+          openPdfSheet={openProductionDocumentWorkflow}
           collabState={collabState}
           onOpenCollab={() => setCollabModalOpen(true)}
           onOpenHistory={handleToggleHistory}
@@ -1114,27 +1055,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         accent={accent}
       />
 
-      {/* Export PDF Dialog */}
-      <ExportPdfDialog
-        open={pdfSheetOpen}
-        onClose={() => !pdfBusy && setPdfSheetOpen(false)}
-        title={tr.stagex?.pdfSheetTitle || 'Export Technical Rider & Plot'}
-        nameLabel={tr.stagex?.pdfSheetNameLabel || 'Document Name'}
-        fileName={pdfFileName}
-        setFileName={setPdfFileName}
-        busy={pdfBusy}
-        sceneInfo={pdfSceneInfo}
-        sceneChoice={pdfSceneChoice}
-        setSceneChoice={setPdfSceneChoice}
-        sceneCurrentLabel={tr.stagex?.pdfSheetSceneCurrent || 'Current Scene'}
-        sceneAllLabel={tr.stagex?.pdfSheetSceneAll || 'All Scenes'}
-        canShare={canShareFiles}
-        onSave={() => executePdfExport(false)}
-        onShare={() => executePdfExport(true)}
-        saveLabel={tr.stagex?.pdfSheetSave || 'Save PDF'}
-        shareLabel={tr.stagex?.pdfSheetShare || 'Share PDF'}
-        cancelLabel={tr.stagex?.pdfSheetCancel || 'Cancel'}
-      />
 
       {/* Collaboration Dialog */}
       <StageCollabDialog

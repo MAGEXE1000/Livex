@@ -280,15 +280,13 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
               title={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
               subtitle={isSpanish ? `${activeSectionsCount} de 7 Activas` : `${activeSectionsCount} of 7 Active`}
               accentColor="#2563eb"
-              customTrigger={({ open, surfaceId }) => (
+              customTrigger={({ triggerProps }) => (
                 <motion.button
-                  layoutId={surfaceId}
+                  {...triggerProps}
                   type="button"
                   data-testid="export-pdf-sections-btn"
-                  onClick={open}
                   aria-label={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
                   title={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
-                  whileTap={{ scale: 0.94 }}
                   style={{
                     width: 40,
                     height: 40,
@@ -367,18 +365,18 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                   : `${activeSectionsCount} of 7 Active`
               }
               accentColor="#2563eb"
-              customTrigger={({ open, surfaceId }) => (
+              customTrigger={({ triggerProps }) => (
                 <motion.button
-                  layoutId={surfaceId}
+                  {...triggerProps}
                   type="button"
                   data-testid="stage-export-btn"
-                  onClick={open}
                   disabled={isExportBusy}
+                  onClick={isExportBusy ? undefined : triggerProps.onClick}
+                  whileTap={isExportBusy ? undefined : triggerProps.whileTap}
                   aria-label={
                     isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'
                   }
                   title={isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'}
-                  whileTap={{ scale: 0.94 }}
                   style={{
                     width: 40,
                     height: 40,
