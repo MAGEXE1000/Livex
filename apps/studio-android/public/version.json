@@ -1,20 +1,24 @@
 {
   "platform": "android",
-  "version": "4.5.89",
-  "versionName": "4.5.89",
-  "versionCode": 40589,
-  "version_code": 40589,
-  "commit": "d01516e7",
-  "releasedAt": "9/11/2026, 10:19:45 AM CST",
-  "buildTimestamp": "9/11/2026, 10:19:45 AM CST",
+  "version": "4.5.90",
+  "versionName": "4.5.90",
+  "versionCode": 40590,
+  "version_code": 40590,
+  "commit": "51a09ba9",
+  "releasedAt": "9/11/2026, 2:31:29 PM CST",
+  "buildTimestamp": "9/11/2026, 2:31:29 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.\n• Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.\n• Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.",
-  "whatsNew": "• Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.\n• Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.\n• Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.",
+  "changelog": "• Native Jetpack Compose Hub Architecture: Implemented the first genuinely native Android UI vertical slice for Hub (`NativeHubView.kt`) in Jetpack Compose, featuring hardware-accelerated RenderThread execution, zero DOM tree overhead, and native 90/120 Hz display synchronization.\n• Native Morphing Quick Actions & Bottom Dock: Built an in-place morphing Quick Actions surface expanding via native spring physics, alongside a native bottom navigation dock with animated pill selection.\n• Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead.\n• Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.\n• CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists.",
+  "whatsNew": "• Native Jetpack Compose Hub Architecture: Implemented the first genuinely native Android UI vertical slice for Hub (`NativeHubView.kt`) in Jetpack Compose, featuring hardware-accelerated RenderThread execution, zero DOM tree overhead, and native 90/120 Hz display synchronization.\n• Native Morphing Quick Actions & Bottom Dock: Built an in-place morphing Quick Actions surface expanding via native spring physics, alongside a native bottom navigation dock with animated pill selection.\n• Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead.\n• Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.\n• CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists.",
   "releaseNotes": {
+    "added": [
+      "Native Jetpack Compose Hub Architecture: Implemented the first genuinely native Android UI vertical slice for Hub (`NativeHubView.kt`) in Jetpack Compose, featuring hardware-accelerated RenderThread execution, zero DOM tree overhead, and native 90/120 Hz display synchronization.",
+      "Native Morphing Quick Actions & Bottom Dock: Built an in-place morphing Quick Actions surface expanding via native spring physics, alongside a native bottom navigation dock with animated pill selection.",
+      "Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead."
+    ],
     "fixed": [
-      "Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.",
-      "Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.",
-      "Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions."
+      "Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.",
+      "CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists."
     ]
   },
   "mandatory": false
