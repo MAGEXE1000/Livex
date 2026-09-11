@@ -72,18 +72,8 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
-import com.chordex.app.hub.NativeHubBridge
-import com.chordex.app.hub.NativeHubView
-import com.chordex.app.hub.LivexTheme
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.tween
 
 class MainActivity : BridgeActivity() {
-
-    private lateinit var nativeHubBridge: NativeHubBridge
-    private var hubComposeView: ComposeView? = null
 
     companion object {
         private const val UPDATE_WORK_NAME = "studio_update_check"
@@ -204,52 +194,9 @@ class MainActivity : BridgeActivity() {
             webView.setBackgroundColor(android.graphics.Color.BLACK)
             webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
             
-            nativeHubBridge = NativeHubBridge(
-                onNavigateToWeb = { appKey ->
-                    runOnUiThread {
-                        val js = "window.dispatchEvent(new CustomEvent('native-navigate', { detail: { app: '$appKey' } }));"
-                        this.bridge?.webView?.evaluateJavascript(js, null)
-                    }
-                },
-                onThemeChangedInNative = { theme ->
-                    runOnUiThread {
-                        val js = "window.dispatchEvent(new CustomEvent('studio-set-theme', { detail: { theme: '$theme' } }));"
-                        this.bridge?.webView?.evaluateJavascript(js, null)
-                    }
-                },
-                onLanguageChangedInNative = { lang ->
-                    runOnUiThread {
-                        val js = "window.dispatchEvent(new CustomEvent('studio-set-language', { detail: { lang: '$lang' } }));"
-                        this.bridge?.webView?.evaluateJavascript(js, null)
-                    }
-                }
-            )
-
             webView.addJavascriptInterface(ThemeTransitionBridge(), "ThemeTransitionBridge")
             webView.addJavascriptInterface(LiquidGlassBridge(), "LiquidGlassBridge")
             webView.addJavascriptInterface(ExclusiveVolumeBridge(), "ExclusiveVolumeBridge")
-            webView.addJavascriptInterface(nativeHubBridge, "NativeHubBridge")
-
-            val rootView = findViewById<FrameLayout>(android.R.id.content)
-            hubComposeView = ComposeView(this).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-                setContent {
-                    val state by nativeHubBridge.state.collectAsState()
-                    AnimatedVisibility(
-                        visible = state.isVisible,
-                        enter = fadeIn(animationSpec = tween(200)),
-                        exit = fadeOut(animationSpec = tween(200))
-                    ) {
-                        LivexTheme(theme = state.theme) {
-                            NativeHubView(bridge = nativeHubBridge)
-                        }
-                    }
-                }
-            }
-            rootView.addView(hubComposeView)
 
             val webViewInitTime = android.os.SystemClock.elapsedRealtime()
             webView.post {
@@ -591,12 +538,5 @@ class MainActivity : BridgeActivity() {
             return true
         }
         return super.onKeyUp(keyCode, event)
-    }
-
-    override fun onBackPressed() {
-        if (::nativeHubBridge.isInitialized && nativeHubBridge.handleBackPressed()) {
-            return
-        }
-        super.onBackPressed()
     }
 }
