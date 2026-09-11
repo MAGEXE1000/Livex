@@ -17,7 +17,8 @@ import {
 } from '../../services/projectProductionDocumentData';
 import { generateProductionDocumentPdf } from '../../services/generateProductionDocumentPdf';
 import { StageBridge } from '../../services/StageBridgeService';
-import { SectionVisibilityPopover } from './SectionVisibilityPopover';
+import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
+import { SectionVisibilityContent } from './SectionVisibilityPopover';
 import { SaveFilenameModal } from './SaveFilenameModal';
 
 export interface StageExportPdfViewProps {
@@ -267,300 +268,179 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
         isAmoled={isAmoled}
         toolbarActions={
           <div className="flex items-center gap-1.5">
-            {/* Control 1: Sections Visibility Toggle Button */}
-            <motion.button
-              type="button"
-              data-testid="export-pdf-sections-btn"
-              onClick={() => {
-                setIsExportMenuOpen(false);
-                setIsSectionsPopoverOpen((prev) => !prev);
+            {/* Control 1: Sections Visibility Morphing Surface */}
+            <MorphingActionSurface
+              isOpen={isSectionsPopoverOpen}
+              onOpenChange={(open) => {
+                if (open) setIsExportMenuOpen(false);
+                setIsSectionsPopoverOpen(open);
               }}
-              aria-label={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
+              placement="anchor"
+              maxWidth={340}
               title={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.05 }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isSectionsPopoverOpen
-                  ? '#2563eb'
-                  : isLight
-                    ? 'rgba(0, 0, 0, 0.04)'
-                    : 'rgba(255, 255, 255, 0.06)',
-                border: isLight
-                  ? '1px solid rgba(0, 0, 0, 0.05)'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isSectionsPopoverOpen ? '#ffffff' : textPrimary,
-                cursor: 'pointer',
-                outline: 'none',
-                WebkitTapHighlightColor: 'transparent',
-                position: 'relative',
-              }}
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 21v-7" />
-                <path d="M4 10V3" />
-                <path d="M12 21v-9" />
-                <path d="M12 8V3" />
-                <path d="M20 21v-5" />
-                <path d="M20 12V3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-              {activeSectionsCount < 7 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
-                  {activeSectionsCount}
-                </span>
-              )}
-            </motion.button>
-
-            {/* Control 2: Export / Share Contextual Menu Button */}
-            <motion.button
-              type="button"
-              data-testid="stage-export-btn"
-              onClick={() => {
-                setIsSectionsPopoverOpen(false);
-                setIsExportMenuOpen((prev) => !prev);
-              }}
-              disabled={isExportBusy}
-              aria-label={
-                isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'
-              }
-              title={isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'}
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.05 }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isExportMenuOpen
-                  ? '#2563eb'
-                  : isLight
-                    ? 'rgba(0, 0, 0, 0.04)'
-                    : 'rgba(255, 255, 255, 0.06)',
-                border: isLight
-                  ? '1px solid rgba(0, 0, 0, 0.05)'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isExportMenuOpen ? '#ffffff' : textPrimary,
-                cursor: isExportBusy ? 'not-allowed' : 'pointer',
-                opacity: isExportBusy ? 0.6 : 1,
-                outline: 'none',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </motion.button>
-          </div>
-        }
-      />
-
-      {/* ── CONTEXTUAL EXPORT POPOVER MENU ────────────────────────── */}
-      <AnimatePresence>
-        {isExportMenuOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-40 bg-transparent"
-              onClick={() => setIsExportMenuOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.div
-              data-testid="export-contextual-menu"
-              initial={{ opacity: 0, y: -6, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="fixed z-50 overflow-hidden select-none"
-              style={{
-                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
-                right: 'max(var(--safe-area-inset-right, env(safe-area-inset-right, 0px)), 16px)',
-                width: 'min(300px, calc(100vw - 32px))',
-                backgroundColor: bgCard,
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: `1px solid ${borderCol}`,
-                borderRadius: '16px',
-                boxShadow: isLight
-                  ? '0 16px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06)'
-                  : '0 20px 48px rgba(0, 0, 0, 0.7), 0 2px 10px rgba(0, 0, 0, 0.4)',
-              }}
-            >
-              <div
-                className="px-4 py-2.5 border-b flex items-center justify-between"
-                style={{ borderColor: borderCol }}
-              >
-                <span
-                  className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: textDim }}
-                >
-                  {isSpanish ? 'Exportar Documento' : 'Export Document'}
-                </span>
-                <span className="text-[10px] font-mono text-blue-500 font-bold">
-                  {isSpanish
-                    ? `${activeSectionsCount} de 7 Activas`
-                    : `${activeSectionsCount} of 7 Active`}
-                </span>
-              </div>
-
-              <div className="p-1.5 flex flex-col gap-1">
-                {/* Option 1: Share Document */}
-                <button
+              subtitle={isSpanish ? `${activeSectionsCount} de 7 Activas` : `${activeSectionsCount} of 7 Active`}
+              accentColor="#2563eb"
+              customTrigger={({ open, surfaceId }) => (
+                <motion.button
+                  layoutId={surfaceId}
                   type="button"
-                  data-testid="export-menu-share-btn"
-                  onClick={handleShareDocument}
-                  disabled={isExportBusy}
-                  className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-colors cursor-pointer disabled:opacity-40"
-                  style={{ backgroundColor: 'transparent' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = hoverBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                  data-testid="export-pdf-sections-btn"
+                  onClick={open}
+                  aria-label={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
+                  title={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
+                  whileTap={{ scale: 0.94 }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isSectionsPopoverOpen
+                      ? '#2563eb'
+                      : isLight
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.05)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    color: isSectionsPopoverOpen ? '#ffffff' : textPrimary,
+                    cursor: 'pointer',
+                    outline: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                    position: 'relative',
                   }}
                 >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: isLight
-                        ? 'rgba(37, 99, 235, 0.08)'
-                        : 'rgba(37, 99, 235, 0.15)',
-                      color: '#2563eb',
-                    }}
+                  <svg
+                    width="17"
+                    height="17"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="18" cy="5" r="3" />
-                      <circle cx="6" cy="12" r="3" />
-                      <circle cx="18" cy="19" r="3" />
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className="text-[13px] font-bold"
-                      style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
-                    >
-                      {isSpanish ? 'Compartir Documento' : 'Share Document'}
-                    </div>
-                    <div className="text-[10.5px]" style={{ color: textDim }}>
-                      {isSpanish
-                        ? 'Enviar PDF mediante panel de compartir'
-                        : 'Send PDF via Android share sheet'}
-                    </div>
-                  </div>
-                </button>
+                    <path d="M4 21v-7" />
+                    <path d="M4 10V3" />
+                    <path d="M12 21v-9" />
+                    <path d="M12 8V3" />
+                    <path d="M20 21v-5" />
+                    <path d="M20 12V3" />
+                    <line x1="1" y1="14" x2="7" y2="14" />
+                    <line x1="9" y1="8" x2="15" y2="8" />
+                    <line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                  {activeSectionsCount < 7 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
+                      {activeSectionsCount}
+                    </span>
+                  )}
+                </motion.button>
+              )}
+            >
+              <SectionVisibilityContent
+                sections={sectionsConfig}
+                onToggleSection={handleToggleSection}
+                onSelectAll={handleSelectAllSections}
+                onReset={handleResetSections}
+                data={data}
+                isLight={isLight}
+                isAmoled={isAmoled}
+              />
+            </MorphingActionSurface>
 
-                {/* Option 2: Save to Downloads */}
-                <button
+            {/* Control 2: Export / Share Contextual Morphing Surface */}
+            <MorphingActionSurface
+              isOpen={isExportMenuOpen}
+              onOpenChange={(open) => {
+                if (open) setIsSectionsPopoverOpen(false);
+                setIsExportMenuOpen(open);
+              }}
+              placement="anchor"
+              compact
+              maxWidth={280}
+              title={isSpanish ? 'Exportar Documento' : 'Export Document'}
+              subtitle={
+                isSpanish
+                  ? `${activeSectionsCount} de 7 Activas`
+                  : `${activeSectionsCount} of 7 Active`
+              }
+              accentColor="#2563eb"
+              customTrigger={({ open, surfaceId }) => (
+                <motion.button
+                  layoutId={surfaceId}
                   type="button"
-                  data-testid="export-menu-save-btn"
-                  onClick={() => {
+                  data-testid="stage-export-btn"
+                  onClick={open}
+                  disabled={isExportBusy}
+                  aria-label={
+                    isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'
+                  }
+                  title={isSpanish ? 'Exportar Documento de Producción' : 'Export Production Document'}
+                  whileTap={{ scale: 0.94 }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isExportMenuOpen
+                      ? '#2563eb'
+                      : isLight
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.05)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    color: isExportMenuOpen ? '#ffffff' : textPrimary,
+                    cursor: isExportBusy ? 'not-allowed' : 'pointer',
+                    opacity: isExportBusy ? 0.6 : 1,
+                    outline: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <svg
+                    width="17"
+                    height="17"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                </motion.button>
+              )}
+              rows={[
+                {
+                  id: 'share',
+                  label: isSpanish ? 'Compartir Documento' : 'Share Document',
+                  sublabel: isSpanish ? 'Enviar a través del diálogo nativo' : 'Send via native system share sheet',
+                  icon: 'share',
+                  onPress: handleShareDocument,
+                  disabled: isExportBusy,
+                },
+                {
+                  id: 'download',
+                  label: isSpanish ? 'Guardar en Descargas' : 'Save to Downloads',
+                  sublabel: isSpanish ? 'Guardar PDF directamente en el almacenamiento' : 'Directly save PDF to device storage',
+                  icon: 'download',
+                  onPress: () => {
                     setIsExportMenuOpen(false);
                     setIsSaveModalOpen(true);
-                  }}
-                  disabled={isExportBusy}
-                  className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-colors cursor-pointer disabled:opacity-40"
-                  style={{ backgroundColor: 'transparent' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = hoverBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: isLight
-                        ? 'rgba(16, 185, 129, 0.08)'
-                        : 'rgba(16, 185, 129, 0.15)',
-                      color: '#10b981',
-                    }}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="2" x2="12" y2="15" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className="text-[13px] font-bold"
-                      style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
-                    >
-                      {isSpanish ? 'Guardar en Descargas' : 'Save to Downloads'}
-                    </div>
-                    <div className="text-[10.5px]" style={{ color: textDim }}>
-                      {isSpanish
-                        ? 'Guardar PDF directamente en el almacenamiento'
-                        : 'Directly save PDF to device storage'}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── SECTION VISIBILITY POPOVER ────────────────────────────── */}
-      <SectionVisibilityPopover
-        open={isSectionsPopoverOpen}
-        onClose={() => setIsSectionsPopoverOpen(false)}
-        sections={sectionsConfig}
-        onToggleSection={handleToggleSection}
-        onSelectAll={handleSelectAllSections}
-        onReset={handleResetSections}
-        data={data}
-        isLight={isLight}
-        isAmoled={isAmoled}
+                  },
+                  disabled: isExportBusy,
+                },
+              ]}
+            />
+          </div>
+        }
       />
 
       {/* ── SAVE FILENAME MODAL ───────────────────────────────────── */}

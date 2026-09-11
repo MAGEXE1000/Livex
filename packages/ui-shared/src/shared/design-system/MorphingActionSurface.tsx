@@ -22,7 +22,17 @@ export interface MorphingActionSurfaceProps {
   rows?: MorphingActionRowItem[];
   children?: React.ReactNode | ((helpers: { close: () => void }) => React.ReactNode);
   triggerVariant?: 'standard' | 'icon' | 'custom';
-  customTrigger?: (helpers: { open: () => void; isOpen: boolean; surfaceId: string }) => React.ReactNode;
+  customTrigger?: (helpers: {
+    open: () => void;
+    isOpen: boolean;
+    surfaceId: string;
+    triggerProps: {
+      layoutId: string;
+      onClick: () => void;
+      whileTap?: { scale: number };
+      transition?: any;
+    };
+  }) => React.ReactNode;
   /**
    * Spatial placement:
    * - 'anchor': (Default) Anchors directly adjacent to the trigger button in viewport coordinates.
@@ -178,9 +188,11 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     };
   } else if (placement === 'bottom') {
     computedPositionStyle = {
-      bottom: 16,
-      left: 16,
-      right: 16,
+      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: isCompact ? popupWidth : 'calc(100% - 32px)',
+      maxWidth: maxWidth ?? (isCompact ? popupWidth : 440),
     };
   } else {
     // placement === 'anchor'
@@ -225,7 +237,19 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
           onMouseDown={captureRect}
         >
           {customTrigger ? (
-            customTrigger({ open: handleOpen, isOpen, surfaceId })
+            customTrigger({
+              open: handleOpen,
+              isOpen,
+              surfaceId,
+              triggerProps: {
+                layoutId: surfaceId,
+                onClick: handleOpen,
+                whileTap: isReduced ? undefined : { scale: 0.94 },
+                transition: {
+                  layout: { type: 'spring', stiffness: 340, damping: 28, mass: 0.8 },
+                },
+              },
+            })
           ) : triggerVariant === 'icon' ? (
             <motion.button
               layoutId={surfaceId}

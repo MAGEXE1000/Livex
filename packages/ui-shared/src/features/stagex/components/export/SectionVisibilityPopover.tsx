@@ -210,9 +210,17 @@ function getSectionItems(isSpanish: boolean): SectionItemMeta[] {
   ];
 }
 
-export const SectionVisibilityPopover: React.FC<SectionVisibilityPopoverProps> = ({
-  open,
-  onClose,
+export interface SectionVisibilityContentProps {
+  sections: ProductionDocumentSectionsConfig;
+  onToggleSection: (key: keyof ProductionDocumentSectionsConfig) => void;
+  onSelectAll: () => void;
+  onReset: () => void;
+  data: ProductionDocumentData;
+  isLight?: boolean;
+  isAmoled?: boolean;
+}
+
+export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> = ({
   sections,
   onToggleSection,
   onSelectAll,
@@ -221,235 +229,182 @@ export const SectionVisibilityPopover: React.FC<SectionVisibilityPopoverProps> =
   isLight = false,
   isAmoled = false,
 }) => {
-  const popoverRef = useRef<HTMLDivElement | null>(null);
-
-  // Close on Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (e: PointerEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [open, onClose]);
-
   const isSpanish = (useSettingsStore((s) => s.settings.language) ?? 'en') === 'es';
   const sectionItems = useMemo(() => getSectionItems(isSpanish), [isSpanish]);
 
   const activeCount = Object.values(sections).filter(Boolean).length;
   const isAllActive = activeCount === sectionItems.length;
 
-  // Theming
-  const bgCard = isLight
-    ? 'rgba(255, 255, 255, 0.96)'
-    : isAmoled
-      ? 'rgba(10, 10, 14, 0.98)'
-      : 'rgba(20, 20, 26, 0.95)';
   const borderCol = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
   const textPrimary = isLight ? '#09090b' : '#ffffff';
-  const textSecondary = isLight ? '#52525b' : '#d4d4d8';
   const textDim = isLight ? '#a1a1aa' : '#71717a';
   const hoverBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)';
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Subtle backdrop overlay for touch-friendly dismiss */}
-          <div className="fixed inset-0 z-40 bg-transparent" onClick={onClose} aria-hidden="true" />
-
-          {/* Contextual Popover Card */}
-          <motion.div
-            ref={popoverRef}
-            data-testid="section-visibility-popover"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed z-50 overflow-hidden select-none"
-            style={{
-              top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
-              right: 'max(var(--safe-area-inset-right, env(safe-area-inset-right, 0px)), 16px)',
-              width: 'min(360px, calc(100vw - 32px))',
-              backgroundColor: bgCard,
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: `1px solid ${borderCol}`,
-              borderRadius: '16px',
-              boxShadow: isLight
-                ? '0 16px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06)'
-                : '0 20px 48px rgba(0, 0, 0, 0.7), 0 2px 10px rgba(0, 0, 0, 0.4)',
-            }}
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      {/* Header: Title, Count Badge, Quick Actions */}
+      <div
+        className="px-3 py-2 border-b flex items-center justify-between"
+        style={{ borderColor: borderCol }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[10px] font-mono font-bold tracking-wider uppercase"
+            style={{ color: textDim }}
           >
-            {/* Header: Title, Count Badge, Quick Actions */}
-            <div
-              className="px-4 py-3 border-b flex items-center justify-between"
-              style={{ borderColor: borderCol }}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: textDim }}
-                >
-                  {isSpanish ? 'Secciones del Documento' : 'Document Sections'}
-                </span>
-                <span
-                  data-testid="sections-count-badge"
-                  className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                >
-                  {isSpanish
-                    ? `${activeCount} de ${sectionItems.length}`
-                    : `${activeCount} of ${sectionItems.length}`}
-                </span>
-              </div>
+            {isSpanish ? 'Secciones' : 'Sections'}
+          </span>
+          <span
+            data-testid="sections-count-badge"
+            className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20"
+          >
+            {isSpanish
+              ? `${activeCount} de ${sectionItems.length}`
+              : `${activeCount} of ${sectionItems.length}`}
+          </span>
+        </div>
 
-              {/* Quick Actions */}
-              <div className="flex items-center gap-2 text-[11px] font-semibold">
-                <button
-                  type="button"
-                  onClick={onSelectAll}
-                  disabled={isAllActive}
-                  data-testid="sections-select-all-btn"
-                  className="hover:underline disabled:opacity-40 disabled:hover:no-underline transition-opacity cursor-pointer"
-                  style={{ color: '#2563eb' }}
-                >
-                  {isSpanish ? 'Todas' : 'All'}
-                </button>
-                <span style={{ color: borderCol }}>|</span>
-                <button
-                  type="button"
-                  onClick={onReset}
-                  data-testid="sections-reset-btn"
-                  className="hover:underline transition-opacity cursor-pointer"
-                  style={{ color: textDim }}
-                >
-                  {isSpanish ? 'Restablecer' : 'Reset'}
-                </button>
-              </div>
-            </div>
+        {/* Quick Actions */}
+        <div className="flex items-center gap-2 text-[11px] font-semibold">
+          <button
+            type="button"
+            onClick={onSelectAll}
+            disabled={isAllActive}
+            data-testid="sections-select-all-btn"
+            className="hover:underline disabled:opacity-40 disabled:hover:no-underline transition-opacity cursor-pointer"
+            style={{ color: '#2563eb' }}
+          >
+            {isSpanish ? 'Todas' : 'All'}
+          </button>
+          <span style={{ color: borderCol }}>|</span>
+          <button
+            type="button"
+            onClick={onReset}
+            data-testid="sections-reset-btn"
+            className="hover:underline transition-opacity cursor-pointer"
+            style={{ color: textDim }}
+          >
+            {isSpanish ? 'Restablecer' : 'Reset'}
+          </button>
+        </div>
+      </div>
 
-            {/* List of 7 Section Toggles */}
-            <div className="p-1.5 max-h-[360px] overflow-y-auto divide-y divide-transparent">
-              {sectionItems.map((item) => {
-                const isActive = Boolean(sections[item.key]);
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={isActive}
-                    data-testid={`section-toggle-${item.key}`}
-                    onClick={() => onToggleSection(item.key)}
-                    className="w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between gap-3 transition-colors cursor-pointer group"
-                    style={{
-                      backgroundColor: 'transparent',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = hoverBg;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      {/* Section Type Icon */}
-                      <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-                        style={{
-                          backgroundColor: isActive
-                            ? isLight
-                              ? 'rgba(37, 99, 235, 0.08)'
-                              : 'rgba(37, 99, 235, 0.15)'
-                            : isLight
-                              ? 'rgba(0, 0, 0, 0.04)'
-                              : 'rgba(255, 255, 255, 0.04)',
-                        }}
-                      >
-                        {item.icon(isActive ? '#2563eb' : textDim)}
-                      </div>
-
-                      {/* Title & Subtitle */}
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="text-[12.5px] font-bold truncate leading-snug"
-                          style={{
-                            color: isActive ? textPrimary : textDim,
-                            fontFamily: 'var(--studio-font-display)',
-                          }}
-                        >
-                          {item.title}
-                        </div>
-                        <div
-                          className="text-[10px] font-medium truncate leading-none mt-0.5"
-                          style={{ color: textDim }}
-                        >
-                          {item.getSubtitle(data)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Active State Checkmark Box */}
-                    <div
-                      className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all"
-                      style={{
-                        backgroundColor: isActive ? '#2563eb' : 'transparent',
-                        border: isActive
-                          ? '1.5px solid #2563eb'
-                          : isLight
-                            ? '1.5px solid rgba(0, 0, 0, 0.2)'
-                            : '1.5px solid rgba(255, 255, 255, 0.2)',
-                      }}
-                    >
-                      {isActive && (
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="3.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Footer Helper Note */}
-            <div
-              className="px-4 py-2 border-t text-[10px] font-mono text-center select-none"
+      {/* List of 7 Section Toggles */}
+      <div className="p-1 max-h-[320px] overflow-y-auto divide-y divide-transparent">
+        {sectionItems.map((item) => {
+          const isActive = Boolean(sections[item.key]);
+          return (
+            <button
+              key={item.key}
+              type="button"
+              role="checkbox"
+              aria-checked={isActive}
+              data-testid={`section-toggle-${item.key}`}
+              onClick={() => onToggleSection(item.key)}
+              className="w-full text-left px-2 py-1.5 rounded-xl flex items-center justify-between gap-2.5 transition-colors cursor-pointer group"
               style={{
-                borderColor: borderCol,
-                color: textDim,
-                backgroundColor: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
+                backgroundColor: 'transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = hoverBg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              {isSpanish
-                ? 'Las secciones excluidas se omiten de la vista previa y del PDF'
-                : 'Excluded sections are omitted from preview & PDF export'}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {/* Section Type Icon */}
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                  style={{
+                    backgroundColor: isActive
+                      ? isLight
+                        ? 'rgba(37, 99, 235, 0.08)'
+                        : 'rgba(37, 99, 235, 0.15)'
+                      : isLight
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.04)',
+                  }}
+                >
+                  {item.icon(isActive ? '#2563eb' : textDim)}
+                </div>
+
+                {/* Title & Subtitle */}
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="text-[12px] font-bold truncate leading-snug"
+                    style={{
+                      color: isActive ? textPrimary : textDim,
+                      fontFamily: 'var(--studio-font-display)',
+                    }}
+                  >
+                    {item.title}
+                  </div>
+                  <div
+                    className="text-[9.5px] font-medium truncate leading-none mt-0.5"
+                    style={{ color: textDim }}
+                  >
+                    {item.getSubtitle(data)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Active State Checkmark Box */}
+              <div
+                className="w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition-all"
+                style={{
+                  backgroundColor: isActive ? '#2563eb' : 'transparent',
+                  border: isActive
+                    ? '1.5px solid #2563eb'
+                    : isLight
+                      ? '1.5px solid rgba(0, 0, 0, 0.2)'
+                      : '1.5px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                {isActive && (
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Footer Helper Note */}
+      <div
+        className="px-3 py-1.5 border-t text-[9.5px] font-mono text-center select-none"
+        style={{
+          borderColor: borderCol,
+          color: textDim,
+          backgroundColor: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
+        }}
+      >
+        {isSpanish
+          ? 'Las secciones excluidas se omiten del PDF'
+          : 'Excluded sections are omitted from PDF export'}
+      </div>
+    </div>
   );
 };
+
+export const SectionVisibilityPopover: React.FC<SectionVisibilityPopoverProps> = ({
+  open,
+  onClose,
+  ...props
+}) => {
+  return (
+    <SectionVisibilityContent {...props} />
+  );
+};
+

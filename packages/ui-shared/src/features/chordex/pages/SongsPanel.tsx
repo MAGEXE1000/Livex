@@ -27,6 +27,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { SongCardGrid } from '../components/SongCardGrid';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { motion } from 'motion/react';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
@@ -4166,8 +4167,6 @@ export default function SongsPanel() {
   const [customSectionName, setCustomSectionName] = useState('');
   const [customSectionMode, setCustomSectionMode] = useState(false);
 
-  // Section selector (which section to add chord to)
-  const [showSectionSelector, setShowSectionSelector] = useState(false);
 
   // Section drag-to-reorder
   const [secDragIdx, setSecDragIdx] = useState<number | null>(null);
@@ -4286,10 +4285,6 @@ export default function SongsPanel() {
         setShowSectionPicker(false);
         return true;
       }
-      if (showSectionSelector) {
-        setShowSectionSelector(false);
-        return true;
-      }
       if (showCustomBuilder) {
         setShowCustomBuilder(false);
         return true;
@@ -4332,7 +4327,6 @@ export default function SongsPanel() {
     [
       activePanel,
       showSectionPicker,
-      showSectionSelector,
       showCustomBuilder,
       showPicker,
       showLive,
@@ -5311,28 +5305,61 @@ export default function SongsPanel() {
 
                 {/* Primary Action Buttons */}
                 <div className="flex items-center gap-2.5">
-                  <button
-                    onClick={() => {
-                      const secs = activePreset.sections;
-                      if (secs && secs.length > 0) {
-                        setShowSectionSelector(true);
-                      } else {
+                  {activePreset?.sections && activePreset.sections.length > 0 ? (
+                    <MorphingActionSurface
+                      placement="anchor"
+                      compact
+                      maxWidth={260}
+                      title="Add chord to…"
+                      accentColor={accent.from}
+                      customTrigger={({ open, surfaceId }) => (
+                        <motion.button
+                          layoutId={surfaceId}
+                          data-purpose="empty-add-chord-btn"
+                          whileTap={{ scale: 0.94 }}
+                          onClick={open}
+                          className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer"
+                          style={{
+                            backgroundColor: 'var(--c-accent-from, #2563EB)',
+                            boxShadow:
+                              '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                          }}
+                          type="button"
+                        >
+                          <span className="material-symbols-rounded text-[18px]">music_note</span>
+                          <span>{t.songs.addChord}</span>
+                        </motion.button>
+                      )}
+                      rows={activePreset.sections.map((section) => ({
+                        id: section.id,
+                        label: section.name,
+                        icon: 'layers',
+                        sublabel: `${(section.chords || []).length} chords`,
+                        onPress: () => {
+                          setPickerSectionId(section.id);
+                          setShowPicker(true);
+                        },
+                      }))}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => {
                         setPickerSectionId(null);
                         setShowPicker(true);
-                      }
-                    }}
-                    data-purpose="empty-add-chord-btn"
-                    className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--c-accent-from, #2563EB)',
-                      boxShadow:
-                        '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                    }}
-                    type="button"
-                  >
-                    <span className="material-symbols-rounded text-[18px]">music_note</span>
-                    <span>Add Chord</span>
-                  </button>
+                      }}
+                      data-purpose="empty-add-chord-btn"
+                      className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full active:scale-95 transition-all cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        boxShadow:
+                          '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                      }}
+                      type="button"
+                    >
+                      <span className="material-symbols-rounded text-[18px]">music_note</span>
+                      <span>{t.songs.addChord}</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setCustomSectionName('');
@@ -6023,16 +6050,18 @@ export default function SongsPanel() {
                 maxWidth={240}
                 title={t.songs.addSection}
                 accentColor={accent.from}
-                customTrigger={({ open }) => (
-                  <button
+                customTrigger={({ open, surfaceId }) => (
+                  <motion.button
+                    layoutId={surfaceId}
                     aria-label="Add Section"
                     data-testid="add-section-btn"
+                    whileTap={{ scale: 0.94 }}
                     onClick={() => {
                       setCustomSectionName('');
                       setCustomSectionMode(false);
                       open();
                     }}
-                    className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                    className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
                     style={{
                       backgroundColor: 'var(--surface-card-bg, #ffffff)',
                       borderColor: 'var(--c-border, #E3E6EB)',
@@ -6047,7 +6076,7 @@ export default function SongsPanel() {
                       layers
                     </span>
                     <span>Section</span>
-                  </button>
+                  </motion.button>
                 )}
                 rows={[
                   ...[
@@ -6088,29 +6117,63 @@ export default function SongsPanel() {
                 ]}
               />
 
-              <button
-                aria-label="Add Chord"
-                data-testid="add-chord-btn"
-                onClick={() => {
-                  const secs = activePreset.sections;
-                  if (secs && secs.length > 0) {
-                    setShowSectionSelector(true);
-                  } else {
+              {activePreset?.sections && activePreset.sections.length > 0 ? (
+                <MorphingActionSurface
+                  placement="anchor"
+                  compact
+                  maxWidth={260}
+                  title="Add chord to…"
+                  accentColor={accent.from}
+                  customTrigger={({ open, surfaceId }) => (
+                    <motion.button
+                      layoutId={surfaceId}
+                      aria-label="Add Chord"
+                      data-testid="add-chord-btn"
+                      whileTap={{ scale: 0.94 }}
+                      onClick={open}
+                      className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        boxShadow:
+                          '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                      }}
+                      type="button"
+                    >
+                      <span className="material-symbols-rounded text-[18px]">music_note</span>
+                      <span>+ Chord</span>
+                    </motion.button>
+                  )}
+                  rows={activePreset.sections.map((section) => ({
+                    id: section.id,
+                    label: section.name,
+                    icon: 'layers',
+                    sublabel: `${(section.chords || []).length} chords`,
+                    onPress: () => {
+                      setPickerSectionId(section.id);
+                      setShowPicker(true);
+                    },
+                  }))}
+                />
+              ) : (
+                <button
+                  aria-label="Add Chord"
+                  data-testid="add-chord-btn"
+                  onClick={() => {
                     setPickerSectionId(null);
                     setShowPicker(true);
-                  }
-                }}
-                className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                  boxShadow:
-                    '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                }}
-                type="button"
-              >
-                <span className="material-symbols-rounded text-[18px]">music_note</span>
-                <span>+ Chord</span>
-              </button>
+                  }}
+                  className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--c-accent-from, #2563EB)',
+                    boxShadow:
+                      '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                  }}
+                  type="button"
+                >
+                  <span className="material-symbols-rounded text-[18px]">music_note</span>
+                  <span>+ Chord</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -6137,25 +6200,27 @@ export default function SongsPanel() {
               maxWidth={240}
               title={t.songs.addSection}
               accentColor={accent.from}
-              customTrigger={({ open }) => (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setCustomSectionName('');
-                    setCustomSectionMode(false);
-                    open();
-                  }}
-                  data-testid="add-section-btn"
-                  style={{
-                    flex: 1,
-                    borderRadius: '9999px',
-                    background: 'var(--app-surface-high)',
-                    color: 'var(--c-text-secondary)',
-                  }}
-                  icon="layers"
-                >
-                  {t.songs.addSection}
-                </Button>
+              customTrigger={({ open, surfaceId }) => (
+                <motion.div layoutId={surfaceId} style={{ flex: 1 }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setCustomSectionName('');
+                      setCustomSectionMode(false);
+                      open();
+                    }}
+                    data-testid="add-section-btn"
+                    style={{
+                      width: '100%',
+                      borderRadius: '9999px',
+                      background: 'var(--app-surface-high)',
+                      color: 'var(--c-text-secondary)',
+                    }}
+                    icon="layers"
+                  >
+                    {t.songs.addSection}
+                  </Button>
+                </motion.div>
               )}
               rows={[
                 ...[
@@ -6195,82 +6260,58 @@ export default function SongsPanel() {
                 },
               ]}
             />
-            <Button
-              variant="primary"
-              onClick={() => {
-                const secs = activePreset.sections;
-                if (secs && secs.length > 0) {
-                  setShowSectionSelector(true);
-                } else {
+            {activePreset?.sections && activePreset.sections.length > 0 ? (
+              <MorphingActionSurface
+                placement="anchor"
+                compact
+                maxWidth={260}
+                title="Add chord to…"
+                accentColor={accent.from}
+                customTrigger={({ open, surfaceId }) => (
+                  <motion.div layoutId={surfaceId} style={{ flex: 1 }}>
+                    <Button
+                      variant="primary"
+                      onClick={open}
+                      data-testid="add-chord-btn"
+                      style={{
+                        width: '100%',
+                        borderRadius: '9999px',
+                      }}
+                      icon="music_note"
+                    >
+                      {t.songs.addChord || 'Add Chord'}
+                    </Button>
+                  </motion.div>
+                )}
+                rows={activePreset.sections.map((section) => ({
+                  id: section.id,
+                  label: section.name,
+                  icon: 'layers',
+                  sublabel: `${(section.chords || []).length} chords`,
+                  onPress: () => {
+                    setPickerSectionId(section.id);
+                    setShowPicker(true);
+                  },
+                }))}
+              />
+            ) : (
+              <Button
+                variant="primary"
+                onClick={() => {
                   setPickerSectionId(null);
                   setShowPicker(true);
-                }
-              }}
-              data-testid="add-chord-btn"
-              style={{
-                flex: 1,
-                borderRadius: '9999px',
-              }}
-              icon="music_note"
-            >
-              {t.songs.addChord || 'Add Chord'}
-            </Button>
-          </div>
-        )}
-
-        {/* Section selector â€” pick where to add chord */}
-        {showSectionSelector && activePreset.sections && (
-          <Dialog open={true} onClose={() => setShowSectionSelector(false)} title="Add chord toâ€¦">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {activePreset.sections.map((section) => (
-                  <button
-                    key={section.id}
-                    className="btn-smooth"
-                    onClick={() => {
-                      setPickerSectionId(section.id);
-                      setShowSectionSelector(false);
-                      setShowPicker(true);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '13px 16px',
-                      borderRadius: '12px',
-                      background: 'var(--c-surface-high)',
-                      border: '1px solid var(--c-border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-headline)',
-                        fontWeight: 700,
-                        fontSize: '14px',
-                        color: 'var(--c-text-primary)',
-                      }}
-                    >
-                      {section.name}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '11px',
-                        color: 'var(--c-text-secondary)',
-                      }}
-                    >
-                      {section.chords.length} chord{section.chords.length !== 1 ? 's' : ''}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <Button onClick={() => setShowSectionSelector(false)} style={{ width: '100%' }}>
-                Cancel
+                }}
+                data-testid="add-chord-btn"
+                style={{
+                  flex: 1,
+                  borderRadius: '9999px',
+                }}
+                icon="music_note"
+              >
+                {t.songs.addChord || 'Add Chord'}
               </Button>
-            </div>
-          </Dialog>
+            )}
+          </div>
         )}
 
         {showForm && (

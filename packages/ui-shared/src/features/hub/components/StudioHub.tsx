@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { subscribeIntroDone } from '../../../shared/typography/StudioTitleReveal';
 import {
@@ -1939,104 +1940,28 @@ export default function StudioHub() {
       {/* UpdateIndicator is now hoisted to AppShell so it appears on
           every screen, not just the Hub. */}
 
-      {/* 🛠️ Customizable Quick Actions Picker Modal */}
-      {shortcutPickerOpen && (
-        <div
-          className="studio-modal hide-bottom-nav"
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 10000,
-            background: 'rgba(10, 10, 12, 0.65)',
-            backdropFilter: 'blur(20px)', // token-guard-ignore
-            WebkitBackdropFilter: 'blur(20px)', // token-guard-ignore
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            animation: 'picker-fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both',
-          }}
-          onClick={() => setShortcutPickerOpen(false)}
-        >
-          <style>{`
-            @keyframes picker-fade-in {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes picker-slide-up {
-              from { transform: translateY(100%); }
-              to { transform: translateY(0); }
-            }
-          `}</style>
-
+      {/* 🛠️ Customizable Quick Actions Picker Surface */}
+      <MorphingActionSurface
+        isOpen={shortcutPickerOpen}
+        onOpenChange={setShortcutPickerOpen}
+        placement="bottom"
+        maxWidth={440}
+        maxHeight="80vh"
+        title={lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
+        subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
+        accentColor={accent.from}
+      >
+        {({ close }) => (
           <div
-            onClick={(e) => e.stopPropagation()}
             style={{
-              width: '100%',
-              maxWidth: 440,
-              background: 'var(--app-surface-low, #141418)',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              border: '1px solid var(--c-border)',
-              borderBottom: 'none',
-              padding: '16px 18px', // token-guard-ignore
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
+              padding: '10px 14px 14px 14px',
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '78vh',
-              animation: 'picker-slide-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both',
-              boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.25)',
+              maxHeight: '70vh',
+              overflowY: 'auto',
             }}
           >
-            {/* Grab handle */}
-            <div
-              style={{
-                width: 32,
-                height: 4,
-                borderRadius: 2,
-                background: 'var(--c-border)',
-                margin: '0 auto 12px',
-                opacity: 0.8,
-              }}
-            />
-
-            {/* Header with Title and Counter badge */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 2,
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily: 'var(--studio-font-display)',
-                  fontSize: 16,
-                  fontWeight: 800,
-                  color: 'var(--c-text-primary)',
-                  margin: 0,
-                }}
-              >
-                {lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
-              </h3>
-              <span
-                style={{
-                  fontSize: 'var(--font-section-label)',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 10,
-                  background:
-                    shortcuts.length >= 5 ? 'rgba(239, 68, 68, 0.12)' : 'var(--app-surface)',
-                  color: shortcuts.length >= 5 ? '#ef4444' : 'var(--c-text-secondary)',
-                  border: '1px solid var(--c-border)',
-                }}
-              >
-                {shortcuts.length}/5 {lang === 'es' ? 'activos' : 'active'}
-              </span>
-            </div>
 
             <p
               style={{
@@ -2440,19 +2365,19 @@ export default function StudioHub() {
 
             {/* Done Button */}
             <button
-              onClick={() => setShortcutPickerOpen(false)}
+              onClick={close}
               className="w-full active:scale-[0.98] transition-transform"
               style={{
                 width: '100%',
-                height: 52,
-                minHeight: 52,
-                borderRadius: 16,
+                height: 48,
+                minHeight: 48,
+                borderRadius: 14,
                 background: accent.from,
                 color: '#ffffff',
                 border: 'none',
                 fontFamily: 'var(--type-button-font, var(--studio-font-body))',
                 fontWeight: 700,
-                fontSize: 15,
+                fontSize: 14,
                 cursor: 'pointer',
                 marginTop: 14,
                 display: 'flex',
@@ -2463,14 +2388,14 @@ export default function StudioHub() {
                 letterSpacing: '-0.01em',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20, fontWeight: 700 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18, fontWeight: 700 }}>
                 check
               </span>
               {lang === 'es' ? 'Listo' : 'Done'}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </MorphingActionSurface>
       {devToast && renderDevToast()}
     </div>
   );

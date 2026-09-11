@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
@@ -877,13 +878,14 @@ export function DrumBeatsPanel({
           </button>
 
           {/* Primary FAB: Create New Beat */}
-          <button
+          <motion.button
             type="button"
             onClick={onCreateSong}
             data-testid="new-beat-btn"
             aria-label="Create New Beat"
             title="New Beat"
-            className="rounded-full text-white shadow-lg flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+            whileTap={{ scale: 0.94 }}
+            className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
             style={{
               width: '52px',
               height: '52px',
@@ -893,7 +895,7 @@ export function DrumBeatsPanel({
             }}
           >
             <span className="material-symbols-outlined text-2xl font-bold">add</span>
-          </button>
+          </motion.button>
         </aside>
       )}
     </div>
