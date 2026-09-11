@@ -21,6 +21,7 @@ export function SongCardGrid({ songs, onSelectSong }: SongCardGridProps) {
         <div
           key={song.id}
           onClick={() => onSelectSong(song)}
+          className="content-auto-row"
           style={{
             background: 'var(--c-surface-mid)',
             borderRadius: 12,

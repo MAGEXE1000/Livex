@@ -88,27 +88,24 @@ export const REDUCED_NAV_TRANSITION = {
 export const SECTION_DRILLDOWN_TRANSITION = {
   initial: {
     opacity: 0,
-    y: 18,
-    scale: 0.965,
-    clipPath: 'inset(0% 0% 0% 0% round 24px)',
+    y: 16,
+    scale: 0.98,
   },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
-    clipPath: 'inset(0% 0% 0% 0% round 0px)',
     transition: {
-      duration: 0.36,
+      duration: 0.26,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    y: 10,
-    scale: 0.98,
-    clipPath: 'inset(0% 0% 0% 0% round 16px)',
+    y: 8,
+    scale: 0.99,
     transition: {
-      duration: 0.2,
+      duration: 0.16,
       ease: [0.32, 0, 0.67, 0] as const,
     },
   },

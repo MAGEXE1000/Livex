@@ -246,22 +246,16 @@ export function BottomNavigationController() {
     };
     window.addEventListener('focusin', checkKeyboard);
     window.addEventListener('focusout', checkKeyboard);
-    window.addEventListener('click', checkKeyboard, { passive: true });
-    window.addEventListener('touchstart', checkKeyboard, { passive: true });
-    window.addEventListener('resize', checkKeyboard);
     return () => {
       window.removeEventListener('focusin', checkKeyboard);
       window.removeEventListener('focusout', checkKeyboard);
-      window.removeEventListener('click', checkKeyboard);
-      window.removeEventListener('touchstart', checkKeyboard);
-      window.removeEventListener('resize', checkKeyboard);
     };
   }, []);
 
   const [hasDOMHiddenIndicator, setHasDOMHiddenIndicator] = useState(false);
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const checkDOM = () => {
+    const updateOverlayIndicator = () => {
       const isFullscreen = !!document.fullscreenElement;
       const isLandscape = typeof window !== 'undefined' && window.innerWidth > window.innerHeight;
       const activeHistory = useNavigationStore.getState().history;
@@ -270,65 +264,22 @@ export function BottomNavigationController() {
 
       const isModalOpen =
         activeOverlaysRegistry.modals.size > 0 ||
-        activeOverlaysRegistry.sheets.size > 0 ||
-        document.querySelector('.modal-backdrop') !== null ||
-        document.querySelector('.studio-modal') !== null ||
-        document.querySelector('[role="dialog"]') !== null ||
-        document.querySelector('.studio-dialog-scaffold-root') !== null;
-      const hasHideClass =
-        document.querySelector('.hide-bottom-nav') !== null ||
-        document.querySelector('.hide-global-nav') !== null;
+        activeOverlaysRegistry.sheets.size > 0;
       setHasDOMHiddenIndicator(
-        isFullscreen || isModalOpen || hasHideClass || (isStage && isLandscape)
+        isFullscreen || isModalOpen || (isStage && isLandscape)
       );
     };
 
-    checkDOM();
+    updateOverlayIndicator();
 
-    let checkRafId: number | null = null;
-    const scheduleCheckDOM = () => {
-      if (checkRafId !== null) return;
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-        checkRafId = window.requestAnimationFrame(() => {
-          checkRafId = null;
-          checkDOM();
-        });
-      } else {
-        checkDOM();
-      }
-    };
-
-    // Event-driven reactive DOM observer replaces periodic polling loop with frame-coalesced checks
-    const observer = new MutationObserver(() => {
-      scheduleCheckDOM();
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'role'],
-    });
-
-    const unsubRegistry = activeOverlaysRegistry.subscribe(() => {
-      scheduleCheckDOM();
-    });
-
-    document.addEventListener('fullscreenchange', scheduleCheckDOM);
-    window.addEventListener('resize', scheduleCheckDOM, { passive: true });
+    const unsubRegistry = activeOverlaysRegistry.subscribe(updateOverlayIndicator);
+    document.addEventListener('fullscreenchange', updateOverlayIndicator);
+    window.addEventListener('resize', updateOverlayIndicator, { passive: true });
 
     return () => {
-      if (
-        checkRafId !== null &&
-        typeof window !== 'undefined' &&
-        typeof window.cancelAnimationFrame === 'function'
-      ) {
-        window.cancelAnimationFrame(checkRafId);
-      }
-      observer.disconnect();
       unsubRegistry();
-      document.removeEventListener('fullscreenchange', scheduleCheckDOM);
-      window.removeEventListener('resize', scheduleCheckDOM);
+      document.removeEventListener('fullscreenchange', updateOverlayIndicator);
+      window.removeEventListener('resize', updateOverlayIndicator);
     };
   }, []);
 

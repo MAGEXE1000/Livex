@@ -1238,7 +1238,7 @@ export function CategoryScreenView({
                 <article
                   key={c.id}
                   onClick={() => handleChordClick(c.id)}
-                  className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group"
+                  className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group content-auto-row"
                   style={{
                     backgroundColor: 'var(--surface-card-bg, #ffffff)',
                     borderColor: 'var(--c-border, #E3E6EB)',
@@ -1553,7 +1553,7 @@ export function LibraryMainView({ state }: { state: any }) {
                     <article
                       key={c.id}
                       onClick={() => handleChordClick(c.id)}
-                      className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group"
+                      className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group content-auto-row"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
                         borderColor: 'var(--c-border, #E3E6EB)',

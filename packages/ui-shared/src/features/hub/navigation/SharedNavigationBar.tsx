@@ -940,6 +940,7 @@ export function SharedNavigationBar({
                 mass: 0.75,
               }}
               style={{
+                contain: 'layout style',
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: '58px',

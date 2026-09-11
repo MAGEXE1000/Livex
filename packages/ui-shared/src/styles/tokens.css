@@ -1764,10 +1764,11 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-shadow:
     0 8px 24px -4px rgba(0, 0, 0, 0.35), 0 2px 6px -2px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  /* blur(20px): frosted blur allows underlying shapes/content to remain distinguishable */
-  --surface-topbar-blur: blur(20px) saturate(180%);
+  /* blur(8px): frosted blur provides depth while keeping GPU fill-rate bounded */
+  --surface-topbar-blur: blur(8px);
   --surface-topbar-fallback: rgba(18, 18, 22, 0.96);
-  --surface-float-blur: blur(20px) saturate(180%); /* shared backdrop-filter */
+  --surface-float-blur: blur(8px); /* shared backdrop-filter */
+  --surface-scrim-blur: none;
   --surface-glass-rim: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.03) 0%,
@@ -1805,8 +1806,9 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-shadow:
     0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --surface-topbar-blur: blur(20px) saturate(180%);
-  --surface-float-blur: blur(20px) saturate(180%);
+  --surface-topbar-blur: blur(8px);
+  --surface-float-blur: blur(8px);
+  --surface-scrim-blur: none;
   --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
   --surface-glass-rim: linear-gradient(
     90deg,
@@ -1840,8 +1842,9 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-shadow:
     0 10px 30px -4px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --surface-topbar-blur: blur(20px) saturate(180%);
-  --surface-float-blur: blur(20px) saturate(180%);
+  --surface-topbar-blur: none;
+  --surface-float-blur: none;
+  --surface-scrim-blur: none;
   --surface-topbar-fallback: #000000;
   --surface-glass-rim: linear-gradient(
     90deg,
@@ -2110,6 +2113,12 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
 [data-perf-mode='on'] * {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* ── Virtualization and CSS Containment for long lists ─────────────────────── */
+.content-auto-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 72px;
 }
 
 /* ── Gradient Border utilities ───────────────────────────────────────────────

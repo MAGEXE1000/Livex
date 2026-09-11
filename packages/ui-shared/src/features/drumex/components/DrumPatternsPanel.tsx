@@ -242,7 +242,7 @@ const PatternCard = memo(function PatternCard({
 }) {
   return (
     <article
-      className="w-full rounded-2xl border shadow-soft-card overflow-hidden transition-all group flex flex-col p-3 gap-2.5"
+      className="w-full rounded-2xl border shadow-soft-card overflow-hidden transition-all group flex flex-col p-3 gap-2.5 content-auto-row"
       style={{
         backgroundColor: 'var(--surface-card-bg, #ffffff)',
         borderColor: 'var(--c-border, #E3E6EB)',
@@ -372,7 +372,7 @@ const MyGrooveCard = memo(function MyGrooveCard({
 }) {
   return (
     <article
-      className="w-full rounded-2xl border shadow-soft-card overflow-hidden transition-all group flex flex-col p-3 gap-2.5 relative"
+      className="w-full rounded-2xl border shadow-soft-card overflow-hidden transition-all group flex flex-col p-3 gap-2.5 relative content-auto-row"
       style={{
         backgroundColor: 'var(--surface-card-bg, #ffffff)',
         borderColor: 'var(--c-border, #E3E6EB)',

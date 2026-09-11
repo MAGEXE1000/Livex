@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BackDispatcher } from '@workspace/studio-core';
+import { activeOverlaysRegistry } from './dialogs';
 
 export interface MorphingActionRowItem {
   id: string;
@@ -130,8 +131,17 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     }
   }, []);
 
+  const [hasBeenOpened, setHasBeenOpened] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasBeenOpened(true);
+    }
+  }, [isOpen]);
+
   const handleOpen = useCallback(() => {
     captureRect();
+    setHasBeenOpened(true);
     if (isControlled) {
       onOpenChange?.(true);
     } else {
@@ -148,6 +158,15 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
       onOpenChange?.(false);
     }
   }, [isControlled, onOpenChange]);
+
+  // Active overlays registry integration
+  useEffect(() => {
+    if (!isOpen) return;
+    activeOverlaysRegistry.register('sheet', surfaceId);
+    return () => {
+      activeOverlaysRegistry.unregister('sheet', surfaceId);
+    };
+  }, [isOpen, surfaceId]);
 
   // Android Back Handler integration via BackDispatcher
   useEffect(() => {
@@ -242,7 +261,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   }
 
   const overlayContent = (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={() => setHasBeenOpened(false)}>
       {isOpen && (
         <div
           style={{
@@ -272,9 +291,9 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: isCompact ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
-              WebkitBackdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
+              backgroundColor: isCompact ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: isReduced ? 'none' : 'var(--surface-scrim-blur, none)',
+              WebkitBackdropFilter: isReduced ? 'none' : 'var(--surface-scrim-blur, none)',
             }}
           />
 
@@ -295,8 +314,8 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
               border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
               color: 'var(--c-text-primary, #ffffff)',
               boxShadow: isCompact
-                ? '0 12px 32px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
-                : '0 20px 40px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
+                ? '0 8px 24px rgba(0, 0, 0, 0.4)'
+                : '0 12px 32px rgba(0, 0, 0, 0.5)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -661,8 +680,9 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         </span>
       )}
 
-      {/* 2. Open State Modal Surface & Backdrop via Portal */}
-      {typeof document !== 'undefined' ? createPortal(overlayContent, document.body) : overlayContent}
+      {/* 2. Open State Modal Surface & Backdrop via Portal (only mounted when active or exiting) */}
+      {(isOpen || hasBeenOpened) &&
+        (typeof document !== 'undefined' ? createPortal(overlayContent, document.body) : overlayContent)}
     </>
   );
 };

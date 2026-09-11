@@ -7,7 +7,7 @@ export interface ProgressiveBlurProps extends React.HTMLAttributes<HTMLDivElemen
 }
 
 export const ProgressiveBlur = React.forwardRef<HTMLDivElement, ProgressiveBlurProps>(
-  ({ direction = 'top', blurLayers = 8, maxBlur = 24, style, className = '', ...props }, ref) => {
+  ({ direction = 'top', blurLayers = 2, maxBlur = 12, style, className = '', ...props }, ref) => {
     // Map directions to css linear-gradient direction strings
     const gradientDir =
       {
@@ -19,13 +19,13 @@ export const ProgressiveBlur = React.forwardRef<HTMLDivElement, ProgressiveBlurP
 
     // Read performance preferences to automatically scale quality if needed
     // In low-performance/low-spec environments we reduce the layer count to prevent GPU lag
-    let activeLayers = blurLayers;
+    let activeLayers = Math.min(3, Math.max(1, blurLayers));
     if (typeof window !== 'undefined') {
       const isLowPower =
         localStorage.getItem('studio_performance_mode') === 'low' ||
         localStorage.getItem('studio_reduced_motion') === 'true';
       if (isLowPower) {
-        activeLayers = Math.min(3, blurLayers); // drop to 3 layers
+        activeLayers = 1;
       }
     }
 
