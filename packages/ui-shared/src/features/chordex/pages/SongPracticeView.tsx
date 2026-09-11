@@ -23,6 +23,7 @@ import {
 import ChordDiagram from '../diagrams/ChordDiagram';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 interface SongPracticeViewProps {
   song: SongChart;
   onClose: () => void;
@@ -1350,11 +1351,15 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
               <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--c-text-secondary)' }}>
                 {t.practice.showOverlay}
               </span>
-              <input
-                type="checkbox"
+              <LiquidSwitch
+                size="sm"
                 checked={showChordOverlay}
-                onChange={(e) => setShowChordOverlay(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: 'var(--c-accent)', cursor: 'pointer' }}
+                onChange={(checked) => {
+                  setShowChordOverlay(checked);
+                  localStorage.setItem('chordex:practice:showOverlay', String(checked));
+                }}
+                accentFrom="var(--c-accent, #f59e0b)"
+                ariaLabel={t.practice.showOverlay}
               />
             </div>
           )}

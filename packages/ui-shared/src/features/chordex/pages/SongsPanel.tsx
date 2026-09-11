@@ -49,6 +49,7 @@ import {
   Input,
   SearchBar,
 } from '../../../shared/design-system/StudioDesignSystem';
+import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -1838,37 +1839,15 @@ function ExportModal({
     }
   };
 
-  /* iOS-style toggle */
+  /* Appllama LiquidSwitch */
   const Toggle = ({ on, onChange }: { on: boolean; onChange: () => void }) => (
-    <button
-      onClick={onChange}
-      className="btn-smooth"
-      style={{
-        width: '44px',
-        height: '26px',
-        borderRadius: '13px',
-        flexShrink: 0,
-        position: 'relative',
-        background: on
-          ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-          : 'rgba(72,72,72,0.25)',
-        transition: 'background 220ms ease',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: '3px',
-          left: on ? '21px' : '3px',
-          width: '20px',
-          height: '20px',
-          borderRadius: '10px',
-          background: '#fff',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-          transition: 'left 220ms cubic-bezier(0.34,1.56,0.64,1)',
-        }}
-      />
-    </button>
+    <LiquidSwitch
+      checked={on}
+      onChange={() => onChange()}
+      size="sm"
+      accentFrom={accent.from}
+      accentTo={accent.to}
+    />
   );
 
   /* Segmented control */

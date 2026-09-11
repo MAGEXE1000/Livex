@@ -2,6 +2,7 @@ import { SpringPresets } from '@workspace/studio-core';
 import React, { memo } from 'react';
 import { motion } from 'motion/react';
 export { Toggle, type ToggleProps } from '../design-system/StudioToggle';
+export { LiquidSwitch, type LiquidSwitchProps } from '../design-system/LiquidSwitch';
 
 export const SectionHeader = memo(function SectionHeader({
   icon,

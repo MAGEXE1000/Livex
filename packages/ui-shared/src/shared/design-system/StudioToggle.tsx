@@ -1,112 +1,17 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { LiquidSwitch, type LiquidSwitchProps } from './LiquidSwitch';
 
-export interface ToggleProps {
-  checked?: boolean;
-  value?: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-  label?: string;
-  ariaLabel?: string;
-  size?: 'sm' | 'md';
-  accentFrom?: string;
-  accentTo?: string;
-  style?: React.CSSProperties;
-  className?: string;
-  testId?: string;
-  'data-testid'?: string;
-}
+export type ToggleProps = LiquidSwitchProps;
 
 /**
- * Studio Toggle — GPU-accelerated physical toggle switch component.
- * Features spring damping, tactile active glow, and optical specular highlights.
- * Maintains the existing Toggle API (value/checked + onChange(boolean)).
+ * Studio Toggle — Upgraded to Appllama LiquidSwitch.
+ * Features GPU-accelerated dual-spring damping, real-time velocity stretch,
+ * volumetric compensation, AMOLED support, and optical specular highlights.
  */
-export const Toggle: React.FC<ToggleProps> = ({
-  checked,
-  value,
-  onChange,
-  disabled = false,
-  label,
-  ariaLabel,
-  className = '',
-  style,
-  accentFrom,
-  accentTo,
-  testId,
-  'data-testid': dataTestId,
-}) => {
-  const isChecked = checked !== undefined ? checked : (value ?? false);
-  const activeColor = accentFrom || 'var(--c-accent-from, #7c3aed)';
-  const resolvedTestId = testId || dataTestId;
-
-  return (
-    <label
-      aria-label={ariaLabel || label}
-      data-testid={resolvedTestId}
-      onClick={(e) => {
-        if (disabled) return;
-        e.preventDefault();
-        onChange(!isChecked);
-      }}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        userSelect: 'none',
-        ...style,
-      }}
-      className={className}
-    >
-      <motion.div
-        data-testid={resolvedTestId ? `${resolvedTestId}-knob` : undefined}
-        whileTap={disabled ? undefined : { scale: 0.92 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-        style={{
-          width: 44,
-          height: 26,
-          borderRadius: 13,
-          backgroundColor: isChecked ? activeColor : 'rgba(128, 128, 128, 0.16)',
-          border: isChecked ? '1px solid rgba(255, 255, 255, 0.20)' : '1px solid var(--c-border)',
-          boxShadow: isChecked
-            ? `0 2px 10px ${activeColor}40, inset 0 1px 1px rgba(255, 255, 255, 0.25)`
-            : 'inset 0 1px 2px rgba(0, 0, 0, 0.25)',
-          position: 'relative',
-          transition: 'background-color 220ms ease, box-shadow 220ms ease, border-color 220ms ease',
-          padding: 2,
-          boxSizing: 'border-box',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        <motion.div
-          animate={{ x: isChecked ? 18 : 0 }}
-          transition={{ type: 'spring', stiffness: 520, damping: 30 }}
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: '#ffffff',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
-          }}
-        />
-      </motion.div>
-      {label && (
-        <span
-          style={{
-            fontSize: 13,
-            color: 'var(--c-text-primary)',
-            fontFamily: 'var(--type-body-font, var(--studio-font-body))',
-            fontWeight: 500,
-          }}
-        >
-          {label}
-        </span>
-      )}
-    </label>
-  );
+export const Toggle: React.FC<ToggleProps> = (props) => {
+  return <LiquidSwitch {...props} />;
 };
 
+export { LiquidSwitch };
 export default Toggle;
+

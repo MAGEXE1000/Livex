@@ -22,6 +22,7 @@ import {
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Button, ActionButton } from '../../../shared/design-system/buttons';
+import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 
 export function RelatedPlayBtn({
   guitar,
@@ -562,52 +563,15 @@ export function LibraryChordDetail({
 
               {/* Display Mode Switch (Notes / Intervals) */}
               {activeInstrument === 'guitar' && (
-                <div
-                  className="p-0.5 rounded-full flex text-xs font-semibold border"
-                  style={{
-                    backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                  }}
-                  data-purpose="display-mode-switch"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setDiagramDisplayMode('notes')}
-                    className="px-3 py-1 rounded-full transition-all cursor-pointer"
-                    style={{
-                      backgroundColor:
-                        diagramDisplayMode === 'notes'
-                          ? 'var(--surface-card-bg, #ffffff)'
-                          : 'transparent',
-                      color:
-                        diagramDisplayMode === 'notes'
-                          ? 'var(--c-accent-from, #2563EB)'
-                          : 'var(--c-text-secondary, #6B7280)',
-                      boxShadow:
-                        diagramDisplayMode === 'notes' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    Notes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiagramDisplayMode('intervals')}
-                    className="px-3 py-1 rounded-full transition-all cursor-pointer"
-                    style={{
-                      backgroundColor:
-                        diagramDisplayMode === 'intervals'
-                          ? 'var(--surface-card-bg, #ffffff)'
-                          : 'transparent',
-                      color:
-                        diagramDisplayMode === 'intervals'
-                          ? 'var(--c-accent-from, #2563EB)'
-                          : 'var(--c-text-secondary, #6B7280)',
-                      boxShadow:
-                        diagramDisplayMode === 'intervals' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    Intervals
-                  </button>
+                <div className="flex items-center gap-2" data-purpose="display-mode-switch">
+                  <LiquidSwitch
+                    size="sm"
+                    label={diagramDisplayMode === 'intervals' ? 'Intervals' : 'Notes'}
+                    checked={diagramDisplayMode === 'intervals'}
+                    onChange={(checked) => setDiagramDisplayMode(checked ? 'intervals' : 'notes')}
+                    accentFrom="var(--c-accent-from, #f59e0b)"
+                    ariaLabel="Toggle between Notes and Intervals display mode"
+                  />
                 </div>
               )}
             </div>

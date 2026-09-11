@@ -8,4 +8,6 @@ export * from './feedback';
 export * from './progress';
 export { Toggle, Toggle as Switch } from './StudioToggle';
 export type { ToggleProps } from './StudioToggle';
+export { LiquidSwitch, type LiquidSwitchProps } from './LiquidSwitch';
+export { MorphingActionSurface, type MorphingActionSurfaceProps, type MorphingActionRowItem } from './MorphingActionSurface';
 export { ProgressiveBlur } from './ProgressiveBlur';
