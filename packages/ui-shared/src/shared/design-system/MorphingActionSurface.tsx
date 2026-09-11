@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BackDispatcher } from '@workspace/studio-core';
 
@@ -182,221 +183,128 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
 
   if (placement === 'center') {
     computedPositionStyle = {
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
+      position: 'relative',
+      width: isCompact ? popupWidth : '100%',
+      maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
     };
   } else if (placement === 'bottom') {
     computedPositionStyle = {
-      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: isCompact ? popupWidth : 'calc(100% - 32px)',
+      position: 'relative',
+      width: isCompact ? popupWidth : '100%',
       maxWidth: maxWidth ?? (isCompact ? popupWidth : 440),
     };
   } else {
     // placement === 'anchor'
     if (effectiveRect) {
       const isRightHalf = (effectiveRect.left + effectiveRect.width / 2) > (viewportWidth / 2);
+      let clampedLeft: number | undefined;
+      let clampedRight: number | undefined;
       if (isRightHalf) {
         const desiredRight = viewportWidth - effectiveRect.right;
-        const clampedRight = Math.max(12, Math.min(viewportWidth - popupWidth - 12, desiredRight));
-        computedPositionStyle.right = clampedRight;
+        clampedRight = Math.max(12, Math.min(viewportWidth - popupWidth - 12, desiredRight));
       } else {
-        const clampedLeft = Math.max(12, Math.min(viewportWidth - popupWidth - 12, effectiveRect.left));
-        computedPositionStyle.left = clampedLeft;
+        clampedLeft = Math.max(12, Math.min(viewportWidth - popupWidth - 12, effectiveRect.left));
       }
 
       const isBottomHalf = (effectiveRect.top + effectiveRect.height / 2) > (viewportHeight / 2);
+      let clampedTop: number | undefined;
+      let clampedBottom: number | undefined;
+      let transformOrigin: string;
       if (isBottomHalf) {
         // Expand upward above the trigger button
-        computedPositionStyle.bottom = Math.max(12, viewportHeight - effectiveRect.top + 6);
-        computedPositionStyle.transformOrigin = isRightHalf ? 'bottom right' : 'bottom left';
+        clampedBottom = Math.max(12, viewportHeight - effectiveRect.top + 6);
+        transformOrigin = isRightHalf ? 'bottom right' : 'bottom left';
       } else {
         // Expand downward below the trigger button
-        computedPositionStyle.top = Math.max(12, effectiveRect.bottom + 6);
-        computedPositionStyle.transformOrigin = isRightHalf ? 'top right' : 'top left';
+        clampedTop = Math.max(12, effectiveRect.bottom + 6);
+        transformOrigin = isRightHalf ? 'top right' : 'top left';
       }
+
+      computedPositionStyle = {
+        position: 'absolute',
+        top: clampedTop,
+        bottom: clampedBottom,
+        left: clampedLeft,
+        right: clampedRight,
+        transformOrigin,
+        width: isCompact ? popupWidth : '100%',
+        maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
+      };
     } else {
       computedPositionStyle = {
+        position: 'absolute',
         top: Math.max(16, viewportHeight * 0.25),
         left: Math.max(12, (viewportWidth - popupWidth) / 2),
+        width: isCompact ? popupWidth : '100%',
+        maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
       };
     }
   }
 
-  return (
-    <>
-      {/* 1. Closed State Trigger Button */}
-      {!isOpen && (
-        <span
-          ref={triggerAnchorRef}
-          className="sc-morphing-anchor"
-          style={{ display: 'inline-flex', verticalAlign: 'middle' }}
-          onTouchStart={captureRect}
-          onMouseDown={captureRect}
+  const overlayContent = (
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            pointerEvents: 'auto',
+            display: placement === 'center' || placement === 'bottom' ? 'flex' : 'block',
+            alignItems: placement === 'center' ? 'center' : placement === 'bottom' ? 'flex-end' : undefined,
+            justifyContent: placement === 'center' || placement === 'bottom' ? 'center' : undefined,
+            padding:
+              placement === 'bottom'
+                ? '0 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px'
+                : placement === 'center'
+                  ? '16px'
+                  : 0,
+            boxSizing: 'border-box',
+          }}
         >
-          {customTrigger ? (
-            customTrigger({
-              open: handleOpen,
-              isOpen,
-              surfaceId,
-              triggerProps: {
-                layoutId: surfaceId,
-                onClick: handleOpen,
-                whileTap: isReduced ? undefined : { scale: 0.94 },
-                transition: {
-                  layout: { type: 'spring', stiffness: 340, damping: 28, mass: 0.8 },
-                },
-              },
-            })
-          ) : triggerVariant === 'icon' ? (
-            <motion.button
-              layoutId={surfaceId}
-              data-testid={testId}
-              onClick={handleOpen}
-              whileTap={isReduced ? undefined : { scale: 0.94 }}
-              transition={{
-                layout: { type: 'spring', stiffness: 340, damping: 28, mass: 0.8 },
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: 'var(--c-surface-high, #1e1e24)',
-                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                color: 'var(--c-text-primary, #ffffff)',
-                cursor: 'pointer',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                userSelect: 'none',
-                ...style,
-              }}
-              className={`sc-morphing-trigger ${className}`}
-              title={title}
-              aria-label={title}
-            >
-              {buttonIcon && (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: accentColor }}
-                >
-                  {buttonIcon}
-                </span>
-              )}
-            </motion.button>
-          ) : (
-            <motion.button
-              layoutId={surfaceId}
-              data-testid={testId}
-              onClick={handleOpen}
-              whileTap={isReduced ? undefined : { scale: 0.94 }}
-              transition={{
-                layout: { type: 'spring', stiffness: 340, damping: 28, mass: 0.8 },
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '10px 18px',
-                minHeight: 44,
-                borderRadius: 22,
-                backgroundColor: 'var(--c-surface-high, #1e1e24)',
-                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                color: 'var(--c-text-primary, #ffffff)',
-                fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                userSelect: 'none',
-                ...style,
-              }}
-              className={`sc-morphing-trigger ${className}`}
-            >
-              {buttonIcon && (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: accentColor }}
-                >
-                  {buttonIcon}
-                </span>
-              )}
-              <span>{buttonLabel}</span>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
-              >
-                expand_more
-              </span>
-            </motion.button>
-          )}
-        </span>
-      )}
-
-      {/* 2. Open State Modal Surface & Backdrop */}
-      <AnimatePresence>
-        {isOpen && (
-          <div
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            onClick={handleClose}
             style={{
-              position: 'fixed',
+              position: 'absolute',
               inset: 0,
-              zIndex: 9999,
-              pointerEvents: 'auto',
+              backgroundColor: isCompact ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
+              WebkitBackdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
             }}
-          >
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={handleClose}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundColor: isCompact ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.65)',
-                backdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
-                WebkitBackdropFilter: isReduced ? 'none' : isCompact ? 'blur(2px)' : 'blur(4px)',
-              }}
-            />
+          />
 
-            {/* Expanded Morphing Surface */}
-            <motion.div
-              layoutId={surfaceId}
-              initial={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
-              animate={isReduced ? { opacity: 1, scale: 1 } : undefined}
-              exit={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
-              transition={{
-                layout: { type: 'spring', stiffness: 340, damping: 28, mass: 0.8 },
-                duration: isReduced ? 0.15 : undefined,
-              }}
-              style={{
-                position: 'absolute',
-                width: isCompact ? popupWidth : '100%',
-                maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
-                maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
-                borderRadius: isCompact ? 16 : 24,
-                backgroundColor: 'var(--c-surface-base, var(--surface-dialog-bg, #16161c))',
-                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
-                boxShadow: isCompact
-                  ? '0 12px 32px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
-                  : '0 20px 40px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                boxSizing: 'border-box',
-                ...computedPositionStyle,
-              }}
-              className="sc-morphing-panel"
-            >
+          {/* Expanded Morphing Surface */}
+          <motion.div
+            layoutId={surfaceId}
+            initial={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
+            animate={isReduced ? { opacity: 1, scale: 1 } : undefined}
+            exit={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
+            transition={{
+              layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
+              duration: isReduced ? 0.15 : undefined,
+            }}
+            style={{
+              maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
+              borderRadius: isCompact ? 16 : 24,
+              backgroundColor: 'var(--surface-dialog-bg, #16161c)',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
+              color: 'var(--c-text-primary, #ffffff)',
+              boxShadow: isCompact
+                ? '0 12px 32px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
+                : '0 20px 40px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              ...computedPositionStyle,
+            }}
+            className="sc-morphing-panel"
+          >
               {/* Header */}
               {isCompact ? (
                 title ? (
@@ -635,6 +543,126 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
           </div>
         )}
       </AnimatePresence>
+  );
+
+  return (
+    <>
+      {/* 1. Closed State Trigger Button */}
+      {!isOpen && (
+        <span
+          ref={triggerAnchorRef}
+          className="sc-morphing-anchor"
+          style={{ display: 'inline-flex', verticalAlign: 'middle' }}
+          onTouchStart={captureRect}
+          onMouseDown={captureRect}
+        >
+          {customTrigger ? (
+            customTrigger({
+              open: handleOpen,
+              isOpen,
+              surfaceId,
+              triggerProps: {
+                layoutId: surfaceId,
+                onClick: handleOpen,
+                whileTap: isReduced ? undefined : { scale: 0.96 },
+                transition: {
+                  layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
+                },
+              },
+            })
+          ) : triggerVariant === 'icon' ? (
+            <motion.button
+              layoutId={surfaceId}
+              data-testid={testId}
+              onClick={handleOpen}
+              whileTap={isReduced ? undefined : { scale: 0.96 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: 'var(--c-surface-high, #1e1e24)',
+                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                color: 'var(--c-text-primary, #ffffff)',
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                userSelect: 'none',
+                ...style,
+              }}
+              className={`sc-morphing-trigger ${className}`}
+              title={title}
+              aria-label={title}
+            >
+              {buttonIcon && (
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 18, color: accentColor }}
+                >
+                  {buttonIcon}
+                </span>
+              )}
+            </motion.button>
+          ) : (buttonLabel || buttonIcon) ? (
+            <motion.button
+              layoutId={surfaceId}
+              data-testid={testId}
+              onClick={handleOpen}
+              whileTap={isReduced ? undefined : { scale: 0.96 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                minHeight: 44,
+                borderRadius: 22,
+                backgroundColor: 'var(--c-surface-high, #1e1e24)',
+                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                color: 'var(--c-text-primary, #ffffff)',
+                fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                userSelect: 'none',
+                ...style,
+              }}
+              className={`sc-morphing-trigger ${className}`}
+            >
+              {buttonIcon && (
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 18, color: accentColor }}
+                >
+                  {buttonIcon}
+                </span>
+              )}
+              <span>{buttonLabel}</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
+              >
+                expand_more
+              </span>
+            </motion.button>
+          ) : null}
+        </span>
+      )}
+
+      {/* 2. Open State Modal Surface & Backdrop via Portal */}
+      {typeof document !== 'undefined' ? createPortal(overlayContent, document.body) : overlayContent}
     </>
   );
 };

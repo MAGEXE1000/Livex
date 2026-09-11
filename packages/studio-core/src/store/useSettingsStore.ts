@@ -298,18 +298,32 @@ export const settingsController = {
     useSettingsStore.getState().updatePerApp(apps, patch);
   },
   setThemeMode: (mode: 'light' | 'dark' | 'amoled') => {
-    if (mode === 'light') {
-      useSettingsStore.getState().updateSettings({ theme: 'light', amoledMode: false });
-    } else if (mode === 'dark') {
-      useSettingsStore.getState().updateSettings({ theme: 'dark', amoledMode: false });
-    } else if (mode === 'amoled') {
-      useSettingsStore.getState().updateSettings({ theme: 'dark', amoledMode: true });
+    const isAmoled = mode === 'amoled';
+    const targetTheme: Theme = mode === 'light' ? 'light' : 'dark';
+
+    const currentPerApp = useSettingsStore.getState().settings.perApp;
+    let syncedPerApp = currentPerApp;
+    if (currentPerApp) {
+      syncedPerApp = { ...currentPerApp };
+      for (const key of Object.keys(syncedPerApp) as AppKey[]) {
+        syncedPerApp[key] = {
+          ...syncedPerApp[key],
+          theme: targetTheme,
+          amoledMode: isAmoled,
+        };
+      }
     }
+
+    useSettingsStore.getState().updateSettings({
+      theme: targetTheme,
+      amoledMode: isAmoled,
+      perApp: syncedPerApp,
+    });
   },
   cycleNextTheme: () => {
     const current = useSettingsStore.getState().settings;
     const currentTheme = current.theme ?? 'light';
-    const isAmoled = current.amoledMode ?? false;
+    const isAmoled = Boolean(current.amoledMode);
 
     let nextTheme: Theme = 'light';
     let nextAmoled = false;
@@ -328,9 +342,23 @@ export const settingsController = {
       nextAmoled = false;
     }
 
+    const currentPerApp = current.perApp;
+    let syncedPerApp = currentPerApp;
+    if (currentPerApp) {
+      syncedPerApp = { ...currentPerApp };
+      for (const key of Object.keys(syncedPerApp) as AppKey[]) {
+        syncedPerApp[key] = {
+          ...syncedPerApp[key],
+          theme: nextTheme,
+          amoledMode: nextAmoled,
+        };
+      }
+    }
+
     useSettingsStore.getState().updateSettings({
       theme: nextTheme,
       amoledMode: nextAmoled,
+      perApp: syncedPerApp,
     });
     return { theme: nextTheme, amoledMode: nextAmoled };
   },

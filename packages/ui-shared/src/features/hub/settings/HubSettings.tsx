@@ -530,6 +530,12 @@ export function HubSettings({
     (settings.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled =
+    !isLight &&
+    (Boolean(settings.amoledMode) ||
+      Boolean(settings.perApp?.hub?.amoledMode) ||
+      (typeof document !== 'undefined' &&
+        document.documentElement.classList.contains('amoled')));
   const updater = useAppUpdate();
   const updateSettings = useSettingsStore((state) => state.updateSettings);
   const updatePerApp = useSettingsStore((state) => state.updatePerApp);
@@ -1282,15 +1288,23 @@ export function HubSettings({
     : {
         background: isLight
           ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-          : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+          : isAmoled
+            ? '#000000'
+            : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
         borderRadius: '20px',
         overflow: 'hidden',
-        border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
-        backdropFilter: 'var(--surface-float-blur)',
-        WebkitBackdropFilter: 'var(--surface-float-blur)',
+        border: isLight
+          ? '1px solid rgba(0, 0, 0, 0.06)'
+          : isAmoled
+            ? '1px solid rgba(255, 255, 255, 0.12)'
+            : '1px solid rgba(255, 255, 255, 0.08)',
+        backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+        WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
         boxShadow: isLight
           ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-          : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+          : isAmoled
+            ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
+            : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
       };
 
   const slideAnim = slideDir === 'forward' ? 'hub-slide-in' : 'hub-slide-back';
@@ -4009,13 +4023,19 @@ export function HubSettings({
           padding: '0px',
         }
       : {
-          background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
+          background: isAmoled
+            ? '#000000'
+            : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
           borderRadius: 20,
           overflow: 'hidden',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.16)',
-          backdropFilter: 'var(--surface-float-blur)',
-          WebkitBackdropFilter: 'var(--surface-float-blur)',
+          border: isAmoled
+            ? '1px solid rgba(255, 255, 255, 0.12)'
+            : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: isAmoled
+            ? '0 4px 16px rgba(0, 0, 0, 0.8)'
+            : '0 8px 24px rgba(0, 0, 0, 0.16)',
+          backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+          WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
           padding: '20px',
         };
 
@@ -4029,13 +4049,19 @@ export function HubSettings({
           marginBottom: 20,
         }
       : {
-          background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
+          background: isAmoled
+            ? '#000000'
+            : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
           borderRadius: 20,
           overflow: 'hidden',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.16)',
-          backdropFilter: 'var(--surface-float-blur)',
-          WebkitBackdropFilter: 'var(--surface-float-blur)',
+          border: isAmoled
+            ? '1px solid rgba(255, 255, 255, 0.12)'
+            : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: isAmoled
+            ? '0 4px 16px rgba(0, 0, 0, 0.8)'
+            : '0 8px 24px rgba(0, 0, 0, 0.16)',
+          backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+          WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
           marginBottom: 20,
         };
 
@@ -4466,6 +4492,7 @@ export function HubSettings({
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
+                    background: 'var(--app-bg)',
                   }}
                 >
                   <div
@@ -4594,10 +4621,14 @@ export function HubSettings({
                                 borderRadius: 12,
                                 background: isLight
                                   ? 'rgba(0, 0, 0, 0.05)'
-                                  : 'rgba(255, 255, 255, 0.06)',
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255, 255, 255, 0.06)',
                                 border: isLight
                                   ? '1px solid rgba(0, 0, 0, 0.08)'
-                                  : '1px solid rgba(255, 255, 255, 0.10)',
+                                  : isAmoled
+                                    ? '1px solid rgba(255, 255, 255, 0.12)'
+                                    : '1px solid rgba(255, 255, 255, 0.10)',
                                 color: 'var(--c-text-secondary)',
                                 fontSize: 13,
                                 fontWeight: 650,
@@ -4631,7 +4662,9 @@ export function HubSettings({
                           style={{
                             background: isLight
                               ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                              : isAmoled
+                                ? '#000000'
+                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
                             borderRadius: 20,
                             padding: '4px',
                             display: 'flex',
@@ -4639,12 +4672,16 @@ export function HubSettings({
                             gap: 2,
                             border: isLight
                               ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: 'var(--surface-float-blur)',
+                              : isAmoled
+                                ? '1px solid rgba(255, 255, 255, 0.12)'
+                                : '1px solid rgba(255, 255, 255, 0.08)',
+                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
                             boxShadow: isLight
                               ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                              : isAmoled
+                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
+                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
                           }}
                         >
@@ -4671,13 +4708,21 @@ export function HubSettings({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.04)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.06)',
                                 border: isLight
                                   ? '1px solid rgba(0,0,0,0.06)'
-                                  : '1px solid rgba(255,255,255,0.10)',
+                                  : isAmoled
+                                    ? '1px solid rgba(255,255,255,0.12)'
+                                    : '1px solid rgba(255,255,255,0.10)',
                                 boxShadow: isLight
                                   ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                  : isAmoled
+                                    ? 'none'
+                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
                               }}
                             >
                               <span
@@ -4719,7 +4764,11 @@ export function HubSettings({
                                 width: 24,
                                 height: 24,
                                 borderRadius: '50%',
-                                background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.03)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.04)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -4760,7 +4809,9 @@ export function HubSettings({
                           style={{
                             background: isLight
                               ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                              : isAmoled
+                                ? '#000000'
+                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
                             borderRadius: 20,
                             padding: '4px',
                             display: 'flex',
@@ -4768,12 +4819,16 @@ export function HubSettings({
                             gap: 2,
                             border: isLight
                               ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: 'var(--surface-float-blur)',
+                              : isAmoled
+                                ? '1px solid rgba(255, 255, 255, 0.12)'
+                                : '1px solid rgba(255, 255, 255, 0.08)',
+                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
                             boxShadow: isLight
                               ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                              : isAmoled
+                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
+                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
                           }}
                         >
@@ -4800,13 +4855,21 @@ export function HubSettings({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.04)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.06)',
                                 border: isLight
                                   ? '1px solid rgba(0,0,0,0.06)'
-                                  : '1px solid rgba(255,255,255,0.10)',
+                                  : isAmoled
+                                    ? '1px solid rgba(255,255,255,0.12)'
+                                    : '1px solid rgba(255,255,255,0.10)',
                                 boxShadow: isLight
                                   ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                  : isAmoled
+                                    ? 'none'
+                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
                               }}
                             >
                               <AnimatedIcon
@@ -4847,7 +4910,12 @@ export function HubSettings({
                                 width: 24,
                                 height: 24,
                                 borderRadius: '50%',
-                                background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.03)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.04)',
+                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -4888,7 +4956,9 @@ export function HubSettings({
                           style={{
                             background: isLight
                               ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                              : isAmoled
+                                ? '#000000'
+                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
                             borderRadius: 20,
                             padding: '4px',
                             display: 'flex',
@@ -4896,12 +4966,16 @@ export function HubSettings({
                             gap: 2,
                             border: isLight
                               ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: 'var(--surface-float-blur)',
+                              : isAmoled
+                                ? '1px solid rgba(255, 255, 255, 0.12)'
+                                : '1px solid rgba(255, 255, 255, 0.08)',
+                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
                             boxShadow: isLight
                               ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                              : isAmoled
+                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
+                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
                           }}
                         >
@@ -4928,13 +5002,21 @@ export function HubSettings({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.04)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.06)',
                                 border: isLight
                                   ? '1px solid rgba(0,0,0,0.06)'
-                                  : '1px solid rgba(255,255,255,0.10)',
+                                  : isAmoled
+                                    ? '1px solid rgba(255,255,255,0.12)'
+                                    : '1px solid rgba(255,255,255,0.10)',
                                 boxShadow: isLight
                                   ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                  : isAmoled
+                                    ? 'none'
+                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
                               }}
                             >
                               <span
@@ -4988,7 +5070,12 @@ export function HubSettings({
                                 width: 24,
                                 height: 24,
                                 borderRadius: '50%',
-                                background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.03)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.04)',
+                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -5030,13 +5117,21 @@ export function HubSettings({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.04)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.06)',
                                 border: isLight
                                   ? '1px solid rgba(0,0,0,0.06)'
-                                  : '1px solid rgba(255,255,255,0.10)',
+                                  : isAmoled
+                                    ? '1px solid rgba(255,255,255,0.12)'
+                                    : '1px solid rgba(255,255,255,0.10)',
                                 boxShadow: isLight
                                   ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                  : isAmoled
+                                    ? 'none'
+                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
                               }}
                             >
                               <span
@@ -5078,7 +5173,12 @@ export function HubSettings({
                                 width: 24,
                                 height: 24,
                                 borderRadius: '50%',
-                                background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+                                background: isLight
+                                  ? 'rgba(0,0,0,0.03)'
+                                  : isAmoled
+                                    ? '#000000'
+                                    : 'rgba(255,255,255,0.04)',
+                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -5123,13 +5223,19 @@ export function HubSettings({
                                   justifyContent: 'center',
                                   background: isLight
                                     ? 'rgba(0,0,0,0.04)'
-                                    : 'rgba(255,255,255,0.06)',
+                                    : isAmoled
+                                      ? '#000000'
+                                      : 'rgba(255,255,255,0.06)',
                                   border: isLight
                                     ? '1px solid rgba(0,0,0,0.06)'
-                                    : '1px solid rgba(255,255,255,0.10)',
+                                    : isAmoled
+                                      ? '1px solid rgba(255,255,255,0.12)'
+                                      : '1px solid rgba(255,255,255,0.10)',
                                   boxShadow: isLight
                                     ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                    : isAmoled
+                                      ? 'none'
+                                      : 'inset 0 1px 1px rgba(255,255,255,0.15)',
                                 }}
                               >
                                 <span
@@ -5180,7 +5286,10 @@ export function HubSettings({
                                   borderRadius: '50%',
                                   background: isLight
                                     ? 'rgba(0,0,0,0.03)'
-                                    : 'rgba(255,255,255,0.04)',
+                                    : isAmoled
+                                      ? '#000000'
+                                      : 'rgba(255,255,255,0.04)',
+                                  border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',

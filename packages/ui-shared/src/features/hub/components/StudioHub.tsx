@@ -1240,32 +1240,488 @@ export default function StudioHub() {
                               {lang === 'es' ? 'Listo' : 'Done'}
                             </motion.button>
                           ) : (
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() => setShortcutPickerOpen(true)}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.10)',
-                                color: accent.from,
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '11px',
-                                fontWeight: 650,
-                                borderRadius: 9999,
-                                padding: '3px 10px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 3,
-                              }}
+                            <MorphingActionSurface
+                              isOpen={shortcutPickerOpen}
+                              onOpenChange={setShortcutPickerOpen}
+                              placement="bottom"
+                              maxWidth={440}
+                              maxHeight="80vh"
+                              title={lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
+                              subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
+                              accentColor={accent.from}
+                              customTrigger={({ open, surfaceId, triggerProps }) => (
+                                <motion.button
+                                  {...triggerProps}
+                                  onClick={open}
+                                  style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.10)',
+                                    color: accent.from,
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontSize: '11px',
+                                    fontWeight: 650,
+                                    borderRadius: 9999,
+                                    padding: '3px 10px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                  }}
+                                >
+                                  <span
+                                    className="material-symbols-outlined"
+                                    style={{ fontSize: 13, lineHeight: 1 }}
+                                  >
+                                    add
+                                  </span>
+                                  {lang === 'es' ? 'Fijar' : 'Pin'}
+                                </motion.button>
+                              )}
                             >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: 13, lineHeight: 1 }}
-                              >
-                                add
-                              </span>
-                              {lang === 'es' ? 'Fijar' : 'Pin'}
-                            </motion.button>
+                              {({ close }) => (
+                                <div
+                                  style={{
+                                    padding: '10px 14px 14px 14px',
+                                    boxSizing: 'border-box',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    maxHeight: '70vh',
+                                    overflowY: 'auto',
+                                  }}
+                                >
+                                  <p
+                                    style={{
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: 12,
+                                      color: 'var(--c-text-secondary)',
+                                      margin: '0 0 12px 0',
+                                      opacity: 0.8,
+                                    }}
+                                  >
+                                    {lang === 'es'
+                                      ? 'Arrastra para reordenar. Elige hasta 5 accesos directos.'
+                                      : 'Drag to reorder. Select up to 5 quick shortcuts.'}
+                                  </p>
+
+                                  <div
+                                    style={{
+                                      flex: 1,
+                                      overflowY: 'auto',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: 14,
+                                      paddingRight: 2,
+                                    }}
+                                    className="hide-scrollbar"
+                                  >
+                                    {/* Active Shortcuts Section */}
+                                    <div>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          marginBottom: 6,
+                                        }}
+                                      >
+                                        <h4
+                                          style={{
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontSize: 'var(--font-section-label)',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
+                                            color: 'var(--c-text-secondary)',
+                                            opacity: 0.7,
+                                            margin: 0,
+                                          }}
+                                        >
+                                          {lang === 'es' ? 'Atajos Activos' : 'Active Shortcuts'}
+                                        </h4>
+                                        {shortcuts.length > 1 && (
+                                          <span
+                                            style={{
+                                              fontSize: 10.5,
+                                              color: 'var(--c-text-secondary)',
+                                              opacity: 0.6,
+                                            }}
+                                          >
+                                            {lang === 'es' ? 'Arrastra para ordenar' : 'Drag to reorder'}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {shortcuts.length === 0 ? (
+                                          <div
+                                            style={{
+                                              fontSize: 12,
+                                              color: 'var(--c-text-secondary)',
+                                              opacity: 0.6,
+                                              padding: '10px 12px',
+                                              border: '1px dashed var(--c-border)',
+                                              borderRadius: 10,
+                                              textAlign: 'center',
+                                            }}
+                                          >
+                                            {lang === 'es'
+                                              ? 'Ninguno seleccionado. Agrega algunos abajo.'
+                                              : 'No active shortcuts. Add options below.'}
+                                          </div>
+                                        ) : (
+                                          <Reorder.Group
+                                            axis="y"
+                                            values={shortcuts}
+                                            onReorder={(newShortcuts) => {
+                                              setShortcuts(newShortcuts);
+                                              localStorage.setItem(
+                                                'studio:quick-shortcuts',
+                                                JSON.stringify(newShortcuts)
+                                              );
+                                            }}
+                                            style={{
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              gap: 6,
+                                              padding: 0,
+                                              margin: 0,
+                                              listStyle: 'none',
+                                            }}
+                                          >
+                                            {shortcuts.map((id) => {
+                                              const opt = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id);
+                                              if (!opt) return null;
+                                              return (
+                                                <Reorder.Item
+                                                  key={id}
+                                                  value={id}
+                                                  style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '7px 10px',
+                                                    background: 'var(--app-surface)',
+                                                    border: '1px solid var(--c-border)',
+                                                    borderRadius: 10,
+                                                    cursor: 'grab',
+                                                    userSelect: 'none',
+                                                    touchAction: 'none',
+                                                  }}
+                                                  whileDrag={{
+                                                    scale: 1.02,
+                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                                                    background: 'var(--app-surface-bright, var(--app-surface))',
+                                                    cursor: 'grabbing',
+                                                    zIndex: 10,
+                                                  }}
+                                                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                                >
+                                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <span
+                                                      className="material-symbols-outlined"
+                                                      style={{
+                                                        color: 'var(--c-text-secondary)',
+                                                        opacity: 0.4,
+                                                        fontSize: 16,
+                                                        cursor: 'grab',
+                                                      }}
+                                                    >
+                                                      drag_indicator
+                                                    </span>
+                                                    <div
+                                                      style={{
+                                                        width: 26,
+                                                        height: 26,
+                                                        borderRadius: 7,
+                                                        background: 'var(--app-surface-low)',
+                                                        border: '1px solid var(--c-border)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                      }}
+                                                    >
+                                                      <span
+                                                        className="material-symbols-outlined"
+                                                        style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
+                                                      >
+                                                        {opt.icon}
+                                                      </span>
+                                                    </div>
+                                                    <div
+                                                      style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        minWidth: 0,
+                                                        flex: 1,
+                                                      }}
+                                                    >
+                                                      <span
+                                                        style={{
+                                                          fontSize: 12.5,
+                                                          color: 'var(--c-text-primary)',
+                                                          fontWeight: 600,
+                                                          lineHeight: 1.2,
+                                                          overflow: 'hidden',
+                                                          textOverflow: 'ellipsis',
+                                                          whiteSpace: 'nowrap',
+                                                        }}
+                                                      >
+                                                        {lang === 'es' ? opt.titleEs : opt.titleEn}
+                                                      </span>
+                                                      <span
+                                                        style={{
+                                                          fontSize: 10.5,
+                                                          color: 'var(--c-text-secondary)',
+                                                          opacity: 0.75,
+                                                          marginTop: 1,
+                                                          overflow: 'hidden',
+                                                          textOverflow: 'ellipsis',
+                                                          whiteSpace: 'nowrap',
+                                                        }}
+                                                      >
+                                                        {lang === 'es' ? opt.descEs : opt.descEn}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+
+                                                  <button
+                                                    onClick={() => {
+                                                      const newShortcuts = shortcuts.filter((x) => x !== id);
+                                                      setShortcuts(newShortcuts);
+                                                      localStorage.setItem(
+                                                        'studio:quick-shortcuts',
+                                                        JSON.stringify(newShortcuts)
+                                                      );
+                                                    }}
+                                                    title={lang === 'es' ? 'Quitar' : 'Remove'}
+                                                    style={{
+                                                      width: 24,
+                                                      height: 24,
+                                                      borderRadius: '50%',
+                                                      background: 'rgba(239, 68, 68, 0.1)',
+                                                      border: 'none',
+                                                      color: '#ef4444',
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center',
+                                                      cursor: 'pointer',
+                                                      padding: 0,
+                                                      flexShrink: 0,
+                                                      transition: 'transform 120ms ease, background 120ms ease',
+                                                    }}
+                                                  >
+                                                    <span
+                                                      className="material-symbols-outlined"
+                                                      style={{ fontSize: 14, fontWeight: 700 }}
+                                                    >
+                                                      remove
+                                                    </span>
+                                                  </button>
+                                                </Reorder.Item>
+                                              );
+                                            })}
+                                          </Reorder.Group>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Available Shortcuts Section */}
+                                    <div>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          marginBottom: 6,
+                                        }}
+                                      >
+                                        <h4
+                                          style={{
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontSize: 'var(--font-section-label)',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
+                                            color: 'var(--c-text-secondary)',
+                                            opacity: 0.7,
+                                            margin: 0,
+                                          }}
+                                        >
+                                          {lang === 'es' ? 'Atajos Disponibles' : 'Available Shortcuts'}
+                                        </h4>
+                                        {shortcuts.length >= 5 && (
+                                          <span
+                                            style={{
+                                              fontSize: 10.5,
+                                              color: '#ef4444',
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            {lang === 'es' ? 'Máximo alcanzado' : 'Limit reached'}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {ALL_SHORTCUT_OPTIONS.filter((o) => !shortcuts.includes(o.id)).map((opt) => {
+                                          const isLimitReached = shortcuts.length >= 5;
+                                          return (
+                                            <div
+                                              key={opt.id}
+                                              style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '7px 10px',
+                                                background: 'var(--app-surface-low)',
+                                                border: '1px solid var(--c-border)',
+                                                borderRadius: 10,
+                                                opacity: isLimitReached ? 0.6 : 1,
+                                                transition: 'opacity 180ms ease',
+                                              }}
+                                            >
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div
+                                                  style={{
+                                                    width: 26,
+                                                    height: 26,
+                                                    borderRadius: 7,
+                                                    background: 'var(--app-surface)',
+                                                    border: '1px solid var(--c-border)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                  }}
+                                                >
+                                                  <span
+                                                    className="material-symbols-outlined"
+                                                    style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
+                                                  >
+                                                    {opt.icon}
+                                                  </span>
+                                                </div>
+                                                <div
+                                                  style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    minWidth: 0,
+                                                    flex: 1,
+                                                  }}
+                                                >
+                                                  <span
+                                                    style={{
+                                                      fontSize: 12.5,
+                                                      color: 'var(--c-text-primary)',
+                                                      fontWeight: 550,
+                                                      lineHeight: 1.2,
+                                                      overflow: 'hidden',
+                                                      textOverflow: 'ellipsis',
+                                                      whiteSpace: 'nowrap',
+                                                    }}
+                                                  >
+                                                    {lang === 'es' ? opt.titleEs : opt.titleEn}
+                                                  </span>
+                                                  <span
+                                                    style={{
+                                                      fontSize: 10.5,
+                                                      color: 'var(--c-text-secondary)',
+                                                      opacity: 0.75,
+                                                      marginTop: 1,
+                                                      overflow: 'hidden',
+                                                      textOverflow: 'ellipsis',
+                                                      whiteSpace: 'nowrap',
+                                                    }}
+                                                  >
+                                                    {lang === 'es' ? opt.descEs : opt.descEn}
+                                                  </span>
+                                                </div>
+                                              </div>
+
+                                              <button
+                                                disabled={isLimitReached}
+                                                onClick={() => {
+                                                  const newShortcuts = [...shortcuts, opt.id];
+                                                  setShortcuts(newShortcuts);
+                                                  localStorage.setItem(
+                                                    'studio:quick-shortcuts',
+                                                    JSON.stringify(newShortcuts)
+                                                  );
+                                                }}
+                                                title={
+                                                  isLimitReached
+                                                    ? lang === 'es'
+                                                      ? 'Máximo alcanzado'
+                                                      : 'Limit reached (5/5)'
+                                                    : lang === 'es'
+                                                      ? 'Agregar'
+                                                      : 'Add'
+                                                }
+                                                style={{
+                                                  width: 24,
+                                                  height: 24,
+                                                  borderRadius: '50%',
+                                                  background: isLimitReached ? 'transparent' : accent.from,
+                                                  border: isLimitReached ? '1px solid var(--c-border)' : 'none',
+                                                  color: isLimitReached ? 'var(--c-text-secondary)' : '#ffffff',
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  cursor: isLimitReached ? 'default' : 'pointer',
+                                                  padding: 0,
+                                                  flexShrink: 0,
+                                                  opacity: isLimitReached ? 0.4 : 1,
+                                                  transition: 'transform 120ms ease, opacity 120ms ease',
+                                                }}
+                                              >
+                                                <span
+                                                  className="material-symbols-outlined"
+                                                  style={{ fontSize: 14, fontWeight: 700 }}
+                                                >
+                                                  add
+                                                </span>
+                                              </button>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Done Button */}
+                                  <button
+                                    onClick={close}
+                                    className="w-full active:scale-[0.98] transition-transform"
+                                    style={{
+                                      width: '100%',
+                                      height: 48,
+                                      minHeight: 48,
+                                      borderRadius: 14,
+                                      background: accent.from,
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
+                                      fontWeight: 700,
+                                      fontSize: 14,
+                                      cursor: 'pointer',
+                                      marginTop: 14,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 8,
+                                      boxShadow: `0 4px 16px ${accent.from}33`,
+                                      letterSpacing: '-0.01em',
+                                    }}
+                                  >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 18, fontWeight: 700 }}>
+                                      check
+                                    </span>
+                                    {lang === 'es' ? 'Listo' : 'Done'}
+                                  </button>
+                                </div>
+                              )}
+                            </MorphingActionSurface>
                           )}
                         </div>
 
@@ -1940,462 +2396,6 @@ export default function StudioHub() {
       {/* UpdateIndicator is now hoisted to AppShell so it appears on
           every screen, not just the Hub. */}
 
-      {/* 🛠️ Customizable Quick Actions Picker Surface */}
-      <MorphingActionSurface
-        isOpen={shortcutPickerOpen}
-        onOpenChange={setShortcutPickerOpen}
-        placement="bottom"
-        maxWidth={440}
-        maxHeight="80vh"
-        title={lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
-        subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
-        accentColor={accent.from}
-      >
-        {({ close }) => (
-          <div
-            style={{
-              padding: '10px 14px 14px 14px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: '70vh',
-              overflowY: 'auto',
-            }}
-          >
-
-            <p
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 12,
-                color: 'var(--c-text-secondary)',
-                margin: '0 0 12px 0',
-                opacity: 0.8,
-              }}
-            >
-              {lang === 'es'
-                ? 'Arrastra para reordenar. Elige hasta 5 accesos directos.'
-                : 'Drag to reorder. Select up to 5 quick shortcuts.'}
-            </p>
-
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 14,
-                paddingRight: 2,
-              }}
-              className="hide-scrollbar"
-            >
-              {/* Active Shortcuts Section */}
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 6,
-                  }}
-                >
-                  <h4
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: 'var(--font-section-label)',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: 'var(--c-text-secondary)',
-                      opacity: 0.7,
-                      margin: 0,
-                    }}
-                  >
-                    {lang === 'es' ? 'Atajos Activos' : 'Active Shortcuts'}
-                  </h4>
-                  {shortcuts.length > 1 && (
-                    <span
-                      style={{
-                        fontSize: 10.5,
-                        color: 'var(--c-text-secondary)',
-                        opacity: 0.6,
-                      }}
-                    >
-                      {lang === 'es' ? 'Arrastra para ordenar' : 'Drag to reorder'}
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {shortcuts.length === 0 ? (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--c-text-secondary)',
-                        opacity: 0.6,
-                        padding: '10px 12px',
-                        border: '1px dashed var(--c-border)',
-                        borderRadius: 10,
-                        textAlign: 'center',
-                      }}
-                    >
-                      {lang === 'es'
-                        ? 'Ninguno seleccionado. Agrega algunos abajo.'
-                        : 'No active shortcuts. Add options below.'}
-                    </div>
-                  ) : (
-                    <Reorder.Group
-                      axis="y"
-                      values={shortcuts}
-                      onReorder={(newShortcuts) => {
-                        setShortcuts(newShortcuts);
-                        localStorage.setItem(
-                          'studio:quick-shortcuts',
-                          JSON.stringify(newShortcuts)
-                        );
-                      }}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 6,
-                        padding: 0,
-                        margin: 0,
-                        listStyle: 'none',
-                      }}
-                    >
-                      {shortcuts.map((id) => {
-                        const opt = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id);
-                        if (!opt) return null;
-                        return (
-                          <Reorder.Item
-                            key={id}
-                            value={id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '7px 10px',
-                              background: 'var(--app-surface)',
-                              border: '1px solid var(--c-border)',
-                              borderRadius: 10,
-                              cursor: 'grab',
-                              userSelect: 'none',
-                              touchAction: 'none',
-                            }}
-                            whileDrag={{
-                              scale: 1.02,
-                              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                              background: 'var(--app-surface-bright, var(--app-surface))',
-                              cursor: 'grabbing',
-                              zIndex: 10,
-                            }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span
-                                className="material-symbols-outlined"
-                                style={{
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.4,
-                                  fontSize: 16,
-                                  cursor: 'grab',
-                                }}
-                              >
-                                drag_indicator
-                              </span>
-                              <div
-                                style={{
-                                  width: 26,
-                                  height: 26,
-                                  borderRadius: 7,
-                                  background: 'var(--app-surface-low)',
-                                  border: '1px solid var(--c-border)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <span
-                                  className="material-symbols-outlined"
-                                  style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
-                                >
-                                  {opt.icon}
-                                </span>
-                              </div>
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  minWidth: 0,
-                                  flex: 1,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: 12.5,
-                                    color: 'var(--c-text-primary)',
-                                    fontWeight: 600,
-                                    lineHeight: 1.2,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {lang === 'es' ? opt.titleEs : opt.titleEn}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 10.5,
-                                    color: 'var(--c-text-secondary)',
-                                    opacity: 0.75,
-                                    marginTop: 1,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {lang === 'es' ? opt.descEs : opt.descEn}
-                                </span>
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                const newShortcuts = shortcuts.filter((x) => x !== id);
-                                setShortcuts(newShortcuts);
-                                localStorage.setItem(
-                                  'studio:quick-shortcuts',
-                                  JSON.stringify(newShortcuts)
-                                );
-                              }}
-                              title={lang === 'es' ? 'Quitar' : 'Remove'}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: 'none',
-                                color: '#ef4444',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                padding: 0,
-                                flexShrink: 0,
-                                transition: 'transform 120ms ease, background 120ms ease',
-                              }}
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: 14, fontWeight: 700 }}
-                              >
-                                remove
-                              </span>
-                            </button>
-                          </Reorder.Item>
-                        );
-                      })}
-                    </Reorder.Group>
-                  )}
-                </div>
-              </div>
-
-              {/* Available Shortcuts Section */}
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 6,
-                  }}
-                >
-                  <h4
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: 'var(--font-section-label)',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: 'var(--c-text-secondary)',
-                      opacity: 0.7,
-                      margin: 0,
-                    }}
-                  >
-                    {lang === 'es' ? 'Atajos Disponibles' : 'Available Shortcuts'}
-                  </h4>
-                  {shortcuts.length >= 5 && (
-                    <span
-                      style={{
-                        fontSize: 10.5,
-                        color: '#ef4444',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {lang === 'es' ? 'Máximo alcanzado' : 'Limit reached'}
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {ALL_SHORTCUT_OPTIONS.filter((o) => !shortcuts.includes(o.id)).map((opt) => {
-                    const isLimitReached = shortcuts.length >= 5;
-                    return (
-                      <div
-                        key={opt.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '7px 10px',
-                          background: 'var(--app-surface-low)',
-                          border: '1px solid var(--c-border)',
-                          borderRadius: 10,
-                          opacity: isLimitReached ? 0.6 : 1,
-                          transition: 'opacity 180ms ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div
-                            style={{
-                              width: 26,
-                              height: 26,
-                              borderRadius: 7,
-                              background: 'var(--app-surface)',
-                              border: '1px solid var(--c-border)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <span
-                              className="material-symbols-outlined"
-                              style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
-                            >
-                              {opt.icon}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              minWidth: 0,
-                              flex: 1,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: 12.5,
-                                color: 'var(--c-text-primary)',
-                                fontWeight: 550,
-                                lineHeight: 1.2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {lang === 'es' ? opt.titleEs : opt.titleEn}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 10.5,
-                                color: 'var(--c-text-secondary)',
-                                opacity: 0.75,
-                                marginTop: 1,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {lang === 'es' ? opt.descEs : opt.descEn}
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          disabled={isLimitReached}
-                          onClick={() => {
-                            const newShortcuts = [...shortcuts, opt.id];
-                            setShortcuts(newShortcuts);
-                            localStorage.setItem(
-                              'studio:quick-shortcuts',
-                              JSON.stringify(newShortcuts)
-                            );
-                          }}
-                          title={
-                            isLimitReached
-                              ? lang === 'es'
-                                ? 'Máximo alcanzado'
-                                : 'Limit reached (5/5)'
-                              : lang === 'es'
-                                ? 'Agregar'
-                                : 'Add'
-                          }
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: isLimitReached ? 'transparent' : accent.from,
-                            border: isLimitReached ? '1px solid var(--c-border)' : 'none',
-                            color: isLimitReached ? 'var(--c-text-secondary)' : '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: isLimitReached ? 'default' : 'pointer',
-                            padding: 0,
-                            flexShrink: 0,
-                            opacity: isLimitReached ? 0.4 : 1,
-                            transition: 'transform 120ms ease, opacity 120ms ease',
-                          }}
-                        >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: 14, fontWeight: 700 }}
-                          >
-                            add
-                          </span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Done Button */}
-            <button
-              onClick={close}
-              className="w-full active:scale-[0.98] transition-transform"
-              style={{
-                width: '100%',
-                height: 48,
-                minHeight: 48,
-                borderRadius: 14,
-                background: accent.from,
-                color: '#ffffff',
-                border: 'none',
-                fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                fontWeight: 700,
-                fontSize: 14,
-                cursor: 'pointer',
-                marginTop: 14,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: `0 4px 16px ${accent.from}33`,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18, fontWeight: 700 }}>
-                check
-              </span>
-              {lang === 'es' ? 'Listo' : 'Done'}
-            </button>
-          </div>
-        )}
-      </MorphingActionSurface>
       {devToast && renderDevToast()}
     </div>
   );

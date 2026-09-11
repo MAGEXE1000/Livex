@@ -1071,7 +1071,7 @@ function UpdateModal({
     (s) => s.settings.perApp?.hub?.theme ?? s.settings.theme ?? 'dark'
   );
   const isAmoledMode = useSettingsStore(
-    (s) => s.settings.perApp?.hub?.amoledMode ?? s.settings.amoledMode ?? false
+    (s) => Boolean(s.settings.amoledMode || s.settings.perApp?.hub?.amoledMode)
   );
   const dynamicLightStart = useSettingsStore((s) => s.settings.dynamicLightStart ?? 7);
   const dynamicLightEnd = useSettingsStore((s) => s.settings.dynamicLightEnd ?? 20);

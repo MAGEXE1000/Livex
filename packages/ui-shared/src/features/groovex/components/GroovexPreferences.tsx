@@ -131,7 +131,7 @@ export default function GroovexPreferences() {
   // defaultStemVolume default 0.85 -> 85%.
   const currentStemPct = Math.round(preferences.defaultStemVolume * 100);
 
-  const cardBg = isAmoled ? '#08080a' : isLight ? '#ffffff' : 'var(--app-surface, #141417)';
+  const cardBg = isAmoled ? '#000000' : isLight ? '#ffffff' : 'var(--app-surface, #141417)';
   const cardBorder = isAmoled
     ? '1px solid rgba(255, 255, 255, 0.12)'
     : isLight

@@ -509,34 +509,36 @@ export default memo(function StudioUpdateScreen({
     : isAmoled
       ? 'shadow-[0_24px_50px_-12px_rgba(0,0,0,0.9)]'
       : 'shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)]';
-  const cardBg = isLight ? 'bg-slate-50' : isAmoled ? 'bg-[#0a0a0c]' : 'bg-[#1b1b1e]';
+  const cardBg = isLight ? 'bg-slate-50' : isAmoled ? 'bg-[#000000]' : 'bg-[#1b1b1e]';
   const cardBorder = isLight
     ? 'border-black/[0.04]'
     : isAmoled
-      ? 'border-white/[0.06]'
+      ? 'border-white/[0.12]'
       : 'border-white/[0.04]';
-  const pillBg = isLight ? 'bg-slate-100' : isAmoled ? 'bg-[#121215]' : 'bg-[#202024]';
+  const pillBg = isLight ? 'bg-slate-100' : isAmoled ? 'bg-[#000000]' : 'bg-[#202024]';
   const pillBorder = isLight
     ? 'border-black/[0.06]'
     : isAmoled
-      ? 'border-white/[0.08]'
+      ? 'border-white/[0.12]'
       : 'border-white/[0.06]';
   const textPrimary = isLight ? 'text-slate-900' : 'text-white';
   const textSecondary = isLight ? 'text-slate-500' : 'text-neutral-400';
   const textTertiary = isLight ? 'text-slate-400' : 'text-neutral-500';
   const listText = isLight ? 'text-slate-700' : 'text-neutral-300';
-  const progressTrack = isLight ? 'bg-slate-200' : isAmoled ? 'bg-[#1e1e24]' : 'bg-neutral-800';
+  const progressTrack = isLight ? 'bg-slate-200' : isAmoled ? 'bg-white/[0.08]' : 'bg-neutral-800';
   const cancelBtn = isLight
     ? 'bg-black/[0.04] hover:bg-black/[0.08] active:scale-[0.98] text-slate-700 hover:text-slate-900 border-black/[0.06]'
     : isAmoled
-      ? 'bg-white/[0.06] hover:bg-white/[0.10] active:scale-[0.98] text-neutral-200 hover:text-white border-white/[0.08]'
+      ? 'bg-[#000000] hover:bg-white/[0.08] active:scale-[0.98] text-neutral-200 hover:text-white border-white/[0.12]'
       : 'bg-white/[0.05] hover:bg-white/[0.08] active:scale-[0.98] text-neutral-300 hover:text-white border-white/[0.06]';
   const laterBtn = isLight
     ? 'bg-transparent hover:bg-black/[0.04] active:scale-[0.98] text-slate-500 hover:text-slate-700'
     : 'bg-transparent hover:bg-white/[0.04] active:scale-[0.98] text-neutral-400 hover:text-neutral-200';
   const defaultIconBox = isLight
     ? 'bg-black/[0.04] border border-black/[0.08] text-slate-900'
-    : 'bg-white/[0.05] border border-white/[0.08] text-white/90';
+    : isAmoled
+      ? 'bg-[#000000] border border-white/[0.12] text-white'
+      : 'bg-white/[0.05] border border-white/[0.08] text-white/90';
   const disabledBtn = isLight
     ? 'bg-black/[0.04] text-slate-400 border border-black/[0.04]'
     : 'bg-white/[0.04] text-neutral-400 border border-white/[0.04]';

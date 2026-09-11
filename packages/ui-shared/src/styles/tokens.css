@@ -580,8 +580,8 @@ h4,
   --app-surface-lowest: #000000;
   --app-surface-low: #000000;
   --app-surface: #000000;
-  --app-surface-high: #0a0a0e;
-  --app-surface-highest: #121218;
+  --app-surface-high: #000000;
+  --app-surface-highest: #000000;
   --app-surface-scrim: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.95);
   --app-surface-scrim-solid: #000000;
@@ -591,8 +591,8 @@ h4,
   --c-surface-lowest: #000000;
   --c-surface-low: #000000;
   --c-surface-mid: #000000;
-  --c-surface-high: #0a0a0e;
-  --c-surface-highest: #121218;
+  --c-surface-high: #000000;
+  --c-surface-highest: #000000;
   --c-surface-base: #000000;
   --surface-dialog-bg: #000000;
   --surface-modal-surface: #000000;
@@ -604,20 +604,20 @@ h4,
 
   --c-border: rgba(255, 255, 255, 0.12);
 
-  --c-surface-glass-bg: rgba(15, 15, 19, 0.88);
-  --sidebar-bg: rgba(0, 0, 0, 0.7);
-  --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  --popover-bg: rgba(0, 0, 0, 0.92);
-  --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  --c-surface-glass-bg: #000000;
+  --sidebar-bg: rgba(0, 0, 0, 0.85);
+  --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+  --popover-bg: #000000;
+  --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
   --profile-avatar-bg: rgba(255, 255, 255, 0.08);
   --profile-avatar-color: #ffffff;
   --profile-avatar-border: 0 0 0 1px rgba(255, 255, 255, 0.12);
-  --hub-card-bg: rgba(255, 255, 255, 0.04);
-  --hub-card-pressed-bg: rgba(255, 255, 255, 0.08);
-  --hub-card-border: rgba(255, 255, 255, 0.1);
-  --hub-card-icon-bg: rgba(255, 255, 255, 0.08);
+  --hub-card-bg: #000000;
+  --hub-card-pressed-bg: rgba(255, 255, 255, 0.06);
+  --hub-card-border: rgba(255, 255, 255, 0.12);
+  --hub-card-icon-bg: #000000;
   --hub-card-icon-border: rgba(255, 255, 255, 0.14);
-  --control-track-bg: rgba(0, 0, 0, 0.65);
+  --control-track-bg: #000000;
 
   /* ── Canonical Soft Layered Shadow System (AMOLED Mode) ── */
   --shadow-surface-raised:
@@ -640,7 +640,7 @@ h4,
   --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --btn-surface-bg: #0a0a0e;
+  --btn-surface-bg: #000000;
   --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
@@ -2682,10 +2682,10 @@ html.web-desktop {
 html.web-desktop.amoled {
   --app-bg: #000000 !important;
   --app-surface-lowest: #000000 !important;
-  --app-surface-low: #08080a !important;
-  --app-surface: #0f0f13 !important;
-  --app-surface-high: #17171d !important;
-  --app-surface-highest: #202028 !important;
+  --app-surface-low: #000000 !important;
+  --app-surface: #000000 !important;
+  --app-surface-high: #000000 !important;
+  --app-surface-highest: #000000 !important;
   --c-text-primary: #ffffff !important;
   --c-text-secondary: #a1a1aa !important;
   --c-text-muted: #71717a !important;
@@ -3128,6 +3128,14 @@ html.light .sc-morphing-panel,
     0 4px 12px -2px rgba(0, 0, 0, 0.06) !important;
 }
 
+html.light .sc-morphing-trigger,
+[data-theme='light'] .sc-morphing-trigger {
+  background-color: var(--app-surface-highest, #ffffff) !important;
+  color: var(--c-text-primary, #18181b) !important;
+  border-color: var(--c-border, rgba(0, 0, 0, 0.1)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
 html.amoled .sc-morphing-panel,
 [data-theme='amoled'] .sc-morphing-panel,
 body.amoled .sc-morphing-panel,
@@ -3137,6 +3145,32 @@ body.amoled .sc-morphing-panel,
   box-shadow:
     0 24px 64px -8px rgba(0, 0, 0, 0.9),
     0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+html.amoled .sc-morphing-trigger,
+[data-theme='amoled'] .sc-morphing-trigger,
+body.amoled .sc-morphing-trigger,
+.amoled .sc-morphing-trigger {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure Tailwind dark background utilities collapse to pure black in AMOLED context */
+.amoled .dark\:bg-zinc-900,
+.amoled .dark\:bg-zinc-950,
+.amoled .dark\:bg-zinc-850,
+.amoled .dark\:bg-zinc-800,
+.amoled .dark\:bg-\[\#161618\],
+.amoled .dark\:bg-\[\#141418\],
+.amoled .dark\:bg-\[\#18181b\],
+.amoled .dark\:bg-\[\#0a0a0e\],
+.amoled .dark\:bg-\[\#121218\],
+[data-theme='amoled'] .dark\:bg-zinc-900,
+[data-theme='amoled'] .dark\:bg-zinc-950,
+[data-theme='amoled'] .dark\:bg-zinc-800 {
+  background-color: #000000 !important;
 }
 
 /* Size modifiers */

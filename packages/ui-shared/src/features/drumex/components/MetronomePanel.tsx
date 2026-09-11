@@ -28,10 +28,9 @@ interface MetronomePanelProps {
 }
 
 export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: MetronomePanelProps) {
-  const storeAmoled = useSettingsStore((s) => {
-    const drumexAmoled = s.settings?.perApp?.drumex?.amoledMode;
-    return drumexAmoled !== undefined ? drumexAmoled : (s.settings?.amoledMode ?? false);
-  });
+  const storeAmoled = useSettingsStore(
+    (s) => Boolean(s.settings?.amoledMode || s.settings?.perApp?.drumex?.amoledMode)
+  );
   const isAmoled = propIsAmoled ?? storeAmoled;
 
   const {

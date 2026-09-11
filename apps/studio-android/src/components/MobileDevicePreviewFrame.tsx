@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSettingsStore } from '@workspace/studio-core';
+import { ThemeToggle } from '@workspace/ui-shared';
 
 export interface DevicePreset {
   id: string;
@@ -63,30 +64,12 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
 
   const [zoomScale, setZoomScale] = useState<number>(0.92);
   const [currentTime, setCurrentTime] = useState('9:41');
-  const settings = useSettingsStore((s) => s.settings);
-  const updateSettings = useSettingsStore((s) => s.updateSettings);
-
-  const [isLightMode, setIsLightMode] = useState<boolean>(() => {
-    if (typeof document !== 'undefined') {
-      return document.documentElement.classList.contains('light');
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      if (typeof document !== 'undefined') {
-        setIsLightMode(document.documentElement.classList.contains('light'));
-      }
-    });
-    if (typeof document !== 'undefined') {
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class'],
-      });
-    }
-    return () => observer.disconnect();
-  }, []);
+  const theme = useSettingsStore((s) => s.settings.theme);
+  const isLightMode =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
 
   useEffect(() => {
     const updateTime = () => {
@@ -101,40 +84,6 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
   }, []);
 
   const activePreset = DEVICE_PRESETS.find((p) => p.id === presetId) || DEVICE_PRESETS[0];
-
-  const handleThemeChange = (theme: 'dark' | 'light' | 'amoled') => {
-    if (theme === 'amoled') {
-      updateSettings({
-        theme: 'dark',
-        perApp: {
-          ...settings.perApp,
-          hub: { ...settings.perApp?.hub, amoledMode: true },
-        },
-      });
-      document.documentElement.classList.add('dark', 'amoled');
-      document.documentElement.classList.remove('light');
-    } else if (theme === 'light') {
-      updateSettings({
-        theme: 'light',
-        perApp: {
-          ...settings.perApp,
-          hub: { ...settings.perApp?.hub, amoledMode: false },
-        },
-      });
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark', 'amoled');
-    } else {
-      updateSettings({
-        theme: 'dark',
-        perApp: {
-          ...settings.perApp,
-          hub: { ...settings.perApp?.hub, amoledMode: false },
-        },
-      });
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light', 'amoled');
-    }
-  };
 
   // If in full responsive mode, render without frame
   if (activePreset.id === 'full' || isFrameDisabledByUrl) {
@@ -152,8 +101,6 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
       </div>
     );
   }
-
-  const isAmoled = settings.perApp?.hub?.amoledMode && settings.theme !== 'light';
 
   return (
     <div
@@ -206,40 +153,13 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
 
         {/* Right: Theme Quick Toggle & Zoom */}
         <div className="flex items-center gap-2">
-          {/* Theme Switcher */}
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[11px]">
-            <button
-              onClick={() => handleThemeChange('dark')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                !isLightMode && !isAmoled
-                  ? 'bg-white/20 text-white font-bold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Dark Theme"
-            >
-              🌙 Dark
-            </button>
-            <button
-              onClick={() => handleThemeChange('light')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                isLightMode
-                  ? 'bg-white/20 text-white font-bold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Light Theme"
-            >
-              ☀️ Light
-            </button>
-            <button
-              onClick={() => handleThemeChange('amoled')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                isAmoled ? 'bg-white/20 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="AMOLED Pure Black"
-            >
-              ⚡ AMOLED
-            </button>
-          </div>
+          {/* Canonical Theme Toggle */}
+          <ThemeToggle
+            variant="circle-blur"
+            start="bottom-up"
+            className="w-8 h-8 rounded-full bg-black/40 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+            iconClassName="w-4 h-4"
+          />
 
           {/* Zoom Selector */}
           <select

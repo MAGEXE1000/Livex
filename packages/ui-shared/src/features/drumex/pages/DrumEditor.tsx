@@ -1,5 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { motion } from 'motion/react';
 import {
   BouncyAccordion,
   type BouncyAccordionItem,
@@ -1048,6 +1049,7 @@ export default function DrumEditor() {
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   // Songs panel state
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createFormOrigin, setCreateFormOrigin] = useState<'topbar' | 'empty' | 'panel'>('panel');
   const [createName, setCreateName] = useState('');
   const [createArtist, setCreateArtist] = useState('');
   const [createBpm, setCreateBpm] = useState('120');
@@ -2499,6 +2501,171 @@ export default function DrumEditor() {
     display: 'block',
     marginBottom: 6,
   };
+
+  const renderCreateBeatForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '10px 14px 14px 14px' }}>
+        {/* ── Beat info ── */}
+        <div>
+          <label style={labelSt}>Beat Title</label>
+          <Input
+            value={createName}
+            onChange={(e) => setCreateName(e.target.value)}
+            placeholder="e.g. Funky Groove"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && createName.trim()) {
+                handleCreateBeat();
+                close?.();
+              }
+            }}
+          />
+        </div>
+        <div>
+          <label style={labelSt}>Artist</label>
+          <Input
+            value={createArtist}
+            onChange={(e) => setCreateArtist(e.target.value)}
+            placeholder="e.g. The Beatmakers"
+          />
+        </div>
+
+        {/* ── BPM ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelSt}>BPM</label>
+            <Input
+              type="number"
+              min={40}
+              max={280}
+              value={createBpm}
+              onChange={(e) => setCreateBpm(e.target.value)}
+            />
+          </div>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+          >
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 42 }}>
+              {([80, 100, 120, 140] as const).map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setCreateBpm(String(b))}
+                  className="btn-smooth"
+                  style={{
+                    flex: 1,
+                    height: 34,
+                    borderRadius: 8,
+                    background:
+                      createBpm === String(b)
+                        ? 'var(--c-accent-from)22'
+                        : 'var(--c-surface-high)',
+                    border: `1px solid ${createBpm === String(b) ? 'var(--c-accent-from)44' : 'var(--c-border)'}`,
+                    cursor: 'pointer',
+                    color:
+                      createBpm === String(b)
+                        ? 'var(--c-accent-from)'
+                        : 'var(--c-text-secondary)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Drum Kit Details ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelSt}>Drum Kit</label>
+            <div
+              style={{
+                ...inputSt,
+                display: 'flex',
+                alignItems: 'center',
+                background: 'var(--c-surface-high)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text-secondary)',
+                cursor: 'default',
+              }}
+            >
+              Acoustic
+            </div>
+          </div>
+          <div>
+            <label style={labelSt}>Sound</label>
+            <div
+              style={{
+                ...inputSt,
+                display: 'flex',
+                alignItems: 'center',
+                background: 'var(--c-surface-high)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text-secondary)',
+                cursor: 'default',
+              }}
+            >
+              House Kit
+            </div>
+          </div>
+        </div>
+
+        {/* ── Notes ── */}
+        <div>
+          <label style={labelSt}>Notes</label>
+          <textarea
+            value={createNotes}
+            onChange={(e) => setCreateNotes(e.target.value)}
+            rows={2}
+            placeholder="Optional notes…"
+            style={
+              {
+                ...inputSt,
+                resize: 'none',
+                lineHeight: 1.5,
+                background: 'var(--c-surface-lowest)',
+                border: '1px solid var(--c-border)',
+              } as React.CSSProperties
+            }
+          />
+        </div>
+
+        {/* ── Actions ── */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+          <Button
+            onClick={() => {
+              setShowCreateForm(false);
+              close?.();
+            }}
+            style={{ flex: 1 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!createName.trim()}
+            onClick={() => {
+              handleCreateBeat();
+              close?.();
+            }}
+            style={{ flex: 2 }}
+          >
+            Create Beat
+          </Button>
+        </div>
+      </div>
+    ),
+    [
+      createName,
+      createArtist,
+      createBpm,
+      createNotes,
+      handleCreateBeat,
+      inputSt,
+      labelSt,
+    ]
+  );
   const renderCollapsibleSection = (
     id: string,
     title: string,
@@ -4252,20 +4419,37 @@ export default function DrumEditor() {
                       <span className="material-symbols-outlined text-[13px]">upload_file</span>
                       <span>IMPORT</span>
                     </button>
-                    <button
-                      onClick={() => setShowCreateForm(true)}
-                      className="h-7.5 px-3.5 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
-                      style={{
-                        background:
-                          'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))',
-                        border: '1px solid var(--studio-accent-border)',
-                        color: 'var(--color-on-tertiary, #ffffff)',
-                        boxShadow: 'var(--studio-accent-glow)',
+                    <MorphingActionSurface
+                      isOpen={showCreateForm && createFormOrigin === 'topbar'}
+                      onOpenChange={(open) => {
+                        setCreateFormOrigin('topbar');
+                        setShowCreateForm(open);
                       }}
+                      placement="center"
+                      maxWidth={380}
+                      title="New Beat"
+                      subtitle="Create a custom drum pattern"
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
+                          type="button"
+                          className="h-7.5 px-3.5 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
+                          style={{
+                            background:
+                              'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))',
+                            border: '1px solid var(--studio-accent-border)',
+                            color: 'var(--color-on-tertiary, #ffffff)',
+                            boxShadow: 'var(--studio-accent-glow)',
+                          }}
+                        >
+                          <span className="material-symbols-outlined text-[13px]">add</span>
+                          <span>NEW BEAT</span>
+                        </motion.button>
+                      )}
                     >
-                      <span className="material-symbols-outlined text-[13px]">add</span>
-                      <span>NEW BEAT</span>
-                    </button>
+                      {renderCreateBeatForm}
+                    </MorphingActionSurface>
                   </>
                 )}
               </div>
@@ -4306,7 +4490,10 @@ export default function DrumEditor() {
                         <DrumBeatsPanel
                           drumSongs={drumSongs}
                           onSelectSong={handleLoadSong}
-                          onCreateSong={() => setShowCreateForm(true)}
+                          onCreateSong={() => {
+                            setCreateFormOrigin('panel');
+                            setShowCreateForm(true);
+                          }}
                           onImportSong={() => setShowImportDrum(true)}
                           onDeleteSong={deleteDrumSong}
                           onUpdateSong={(id, data) => updateDrumSong(id, data)}
@@ -4317,6 +4504,12 @@ export default function DrumEditor() {
                           isAmoled={isAmoled}
                           isWebDesktop={isWebDesktop}
                           onScroll={drumScrollHide}
+                          isCreateOpen={showCreateForm && createFormOrigin === 'panel'}
+                          onOpenCreateChange={(open) => {
+                            setCreateFormOrigin('panel');
+                            setShowCreateForm(open);
+                          }}
+                          renderCreateForm={renderCreateBeatForm}
                         />
                       );
                     }
@@ -4449,19 +4642,36 @@ export default function DrumEditor() {
                                 Create your first drum beat to get started.
                               </span>
                             </div>
-                            <button
-                              onClick={() => setShowCreateForm(true)}
-                              className="py-2 px-5 rounded-lg text-[10px] font-extrabold tracking-widest uppercase transition-all cursor-pointer"
-                              style={{
-                                background:
-                                  'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))',
-                                border: '1px solid var(--studio-accent-border)',
-                                color: 'var(--color-on-tertiary, #ffffff)',
-                                boxShadow: 'var(--studio-accent-glow)',
+                            <MorphingActionSurface
+                              isOpen={showCreateForm && createFormOrigin === 'empty'}
+                              onOpenChange={(open) => {
+                                setCreateFormOrigin('empty');
+                                setShowCreateForm(open);
                               }}
+                              placement="center"
+                              maxWidth={380}
+                              title="New Beat"
+                              subtitle="Create a custom drum pattern"
+                              accentColor={accent.from}
+                              customTrigger={({ triggerProps }) => (
+                                <motion.button
+                                  {...triggerProps}
+                                  type="button"
+                                  className="py-2 px-5 rounded-lg text-[10px] font-extrabold tracking-widest uppercase transition-all cursor-pointer"
+                                  style={{
+                                    background:
+                                      'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))',
+                                    border: '1px solid var(--studio-accent-border)',
+                                    color: 'var(--color-on-tertiary, #ffffff)',
+                                    boxShadow: 'var(--studio-accent-glow)',
+                                  }}
+                                >
+                                  New Beat
+                                </motion.button>
+                              )}
                             >
-                              New Beat
-                            </button>
+                              {renderCreateBeatForm}
+                            </MorphingActionSurface>
                           </div>
                         ) : filteredSongs.length === 0 ? (
                           <div className="flex flex-col items-center justify-center p-12 text-center text-zinc-500">
@@ -8412,159 +8622,6 @@ export default function DrumEditor() {
           onClose={() => setShowImportDrum(false)}
         />
       )}
-
-      {/* ── Create Beat Surface ─────────────────────────────────────────── */}
-      <MorphingActionSurface
-        isOpen={showCreateForm}
-        onOpenChange={setShowCreateForm}
-        placement="center"
-        maxWidth={380}
-        title="New Beat"
-        subtitle="Create a custom drum pattern"
-        accentColor={accent.from}
-      >
-        {({ close }) => (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '10px 14px 14px 14px' }}>
-            {/* ── Beat info ── */}
-            <div>
-              <label style={labelSt}>Beat Title</label>
-              <Input
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-                placeholder="e.g. Funky Groove"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && createName.trim()) handleCreateBeat();
-                }}
-              />
-            </div>
-            <div>
-              <label style={labelSt}>Artist</label>
-              <Input
-                value={createArtist}
-                onChange={(e) => setCreateArtist(e.target.value)}
-                placeholder="e.g. The Beatmakers"
-              />
-            </div>
-
-            {/* ── BPM ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelSt}>BPM</label>
-                <Input
-                  type="number"
-                  min={40}
-                  max={280}
-                  value={createBpm}
-                  onChange={(e) => setCreateBpm(e.target.value)}
-                />
-              </div>
-              <div
-                style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-              >
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 42 }}>
-                  {([80, 100, 120, 140] as const).map((b) => (
-                    <button
-                      key={b}
-                      onClick={() => setCreateBpm(String(b))}
-                      className="btn-smooth"
-                      style={{
-                        flex: 1,
-                        height: 34,
-                        borderRadius: 8,
-                        background:
-                          createBpm === String(b)
-                            ? 'var(--c-accent-from)22'
-                            : 'var(--c-surface-high)',
-                        border: `1px solid ${createBpm === String(b) ? 'var(--c-accent-from)44' : 'var(--c-border)'}`,
-                        cursor: 'pointer',
-                        color:
-                          createBpm === String(b)
-                            ? 'var(--c-accent-from)'
-                            : 'var(--c-text-secondary)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Drum Kit Details ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelSt}>Drum Kit</label>
-                <div
-                  style={{
-                    ...inputSt,
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'var(--c-surface-high)',
-                    border: '1px solid var(--c-border)',
-                    color: 'var(--c-text-secondary)',
-                    cursor: 'default',
-                  }}
-                >
-                  Acoustic
-                </div>
-              </div>
-              <div>
-                <label style={labelSt}>Sound</label>
-                <div
-                  style={{
-                    ...inputSt,
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'var(--c-surface-high)',
-                    border: '1px solid var(--c-border)',
-                    color: 'var(--c-text-secondary)',
-                    cursor: 'default',
-                  }}
-                >
-                  House Kit
-                </div>
-              </div>
-            </div>
-
-            {/* ── Notes ── */}
-            <div>
-              <label style={labelSt}>Notes</label>
-              <textarea
-                value={createNotes}
-                onChange={(e) => setCreateNotes(e.target.value)}
-                rows={2}
-                placeholder="Optional notes…"
-                style={
-                  {
-                    ...inputSt,
-                    resize: 'none',
-                    lineHeight: 1.5,
-                    background: 'var(--c-surface-lowest)',
-                    border: '1px solid var(--c-border)',
-                  } as React.CSSProperties
-                }
-              />
-            </div>
-
-            {/* ── Actions ── */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <Button onClick={() => setShowCreateForm(false)} style={{ flex: 1 }}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                disabled={!createName.trim()}
-                onClick={handleCreateBeat}
-                style={{ flex: 2 }}
-              >
-                Create Beat
-              </Button>
-            </div>
-          </div>
-        )}
-      </MorphingActionSurface>
     </div>
   );
 }

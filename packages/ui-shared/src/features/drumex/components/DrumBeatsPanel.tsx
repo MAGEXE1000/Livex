@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StaggeredReveal } from '../../../shared/animation';
 
 export interface DrumBeatsPanelProps {
@@ -19,6 +20,9 @@ export interface DrumBeatsPanelProps {
   isAmoled: boolean;
   isWebDesktop: boolean;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+  isCreateOpen?: boolean;
+  onOpenCreateChange?: (open: boolean) => void;
+  renderCreateForm?: (helpers: { close: () => void }) => React.ReactNode;
 }
 
 const KIT_NAMES: Record<string, string> = {
@@ -427,6 +431,9 @@ export function DrumBeatsPanel({
   isAmoled,
   isWebDesktop,
   onScroll,
+  isCreateOpen,
+  onOpenCreateChange,
+  renderCreateForm,
 }: DrumBeatsPanelProps) {
   const t = useT();
 
@@ -658,21 +665,52 @@ export function DrumBeatsPanel({
 
             {/* Quick Action Buttons */}
             <div className="flex items-center gap-3 mt-6">
-              <button
-                type="button"
-                onClick={onCreateSong}
-                className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-                style={{
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                  boxShadow:
-                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
-                }}
-                data-purpose="empty-create-beat-btn"
-                data-testid="empty-create-beat-btn"
-              >
-                <span className="material-symbols-outlined text-base font-bold">add</span>
-                <span>Create Beat</span>
-              </button>
+              {renderCreateForm ? (
+                <MorphingActionSurface
+                  isOpen={isCreateOpen}
+                  onOpenChange={onOpenCreateChange}
+                  placement="center"
+                  maxWidth={380}
+                  title="New Beat"
+                  subtitle="Create a custom drum pattern"
+                  accentColor={accent.from}
+                  customTrigger={({ open, surfaceId, triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      type="button"
+                      className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-2"
+                      style={{
+                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        boxShadow:
+                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                      }}
+                      data-purpose="empty-create-beat-btn"
+                      data-testid="empty-create-beat-btn"
+                    >
+                      <span className="material-symbols-outlined text-base font-bold">add</span>
+                      <span>Create Beat</span>
+                    </motion.button>
+                  )}
+                >
+                  {renderCreateForm}
+                </MorphingActionSurface>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onCreateSong}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--c-accent-from, #2563EB)',
+                    boxShadow:
+                      '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                  }}
+                  data-purpose="empty-create-beat-btn"
+                  data-testid="empty-create-beat-btn"
+                >
+                  <span className="material-symbols-outlined text-base font-bold">add</span>
+                  <span>Create Beat</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -878,24 +916,57 @@ export function DrumBeatsPanel({
           </button>
 
           {/* Primary FAB: Create New Beat */}
-          <motion.button
-            type="button"
-            onClick={onCreateSong}
-            data-testid="new-beat-btn"
-            aria-label="Create New Beat"
-            title="New Beat"
-            whileTap={{ scale: 0.94 }}
-            className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
-            style={{
-              width: '52px',
-              height: '52px',
-              backgroundColor: 'var(--c-accent-from, #2563EB)',
-              boxShadow:
-                '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-            }}
-          >
-            <span className="material-symbols-outlined text-2xl font-bold">add</span>
-          </motion.button>
+          {renderCreateForm ? (
+            <MorphingActionSurface
+              isOpen={isCreateOpen}
+              onOpenChange={onOpenCreateChange}
+              placement="center"
+              maxWidth={380}
+              title="New Beat"
+              subtitle="Create a custom drum pattern"
+              accentColor={accent.from}
+              customTrigger={({ open, surfaceId, triggerProps }) => (
+                <motion.button
+                  {...triggerProps}
+                  type="button"
+                  data-testid="new-beat-btn"
+                  aria-label="Create New Beat"
+                  title="New Beat"
+                  className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    backgroundColor: 'var(--c-accent-from, #2563EB)',
+                    boxShadow:
+                      '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                  }}
+                >
+                  <span className="material-symbols-outlined text-2xl font-bold">add</span>
+                </motion.button>
+              )}
+            >
+              {renderCreateForm}
+            </MorphingActionSurface>
+          ) : (
+            <motion.button
+              type="button"
+              onClick={onCreateSong}
+              data-testid="new-beat-btn"
+              aria-label="Create New Beat"
+              title="New Beat"
+              whileTap={{ scale: 0.94 }}
+              className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+              style={{
+                width: '52px',
+                height: '52px',
+                backgroundColor: 'var(--c-accent-from, #2563EB)',
+                boxShadow:
+                  '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+              }}
+            >
+              <span className="material-symbols-outlined text-2xl font-bold">add</span>
+            </motion.button>
+          )}
         </aside>
       )}
     </div>
