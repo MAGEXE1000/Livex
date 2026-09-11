@@ -1,6 +1,6 @@
 import { SharedAppShell } from '@workspace/ui-shared/src/shared/layout/SharedAppShell';
 import { lazy, useEffect, useRef, useState } from 'react';
-import { tolgee, useSettingsStore } from '@workspace/studio-core';
+import { tolgee, useSettingsStore, useNavigationStore, NavigationDispatcher } from '@workspace/studio-core';
 
 import { TolgeeProvider } from '@tolgee/react';
 
@@ -83,6 +83,68 @@ export default function App() {
     };
     window.addEventListener('studio-intro-done', handleIntroDone);
     return () => window.removeEventListener('studio-intro-done', handleIntroDone);
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || typeof window === 'undefined') return;
+
+    const nativeBridge = (window as any).NativeHubBridge;
+
+    const syncStateToNative = () => {
+      if (!nativeBridge) return;
+      const nav = useNavigationStore.getState();
+      const currentRoute = nav.history[nav.history.length - 1];
+      const isHub = !currentRoute || currentRoute.app === 'hub';
+      const settings = useSettingsStore.getState().settings;
+
+      try {
+        nativeBridge.updateHubVisibility(isHub, currentRoute?.app || 'hub');
+        nativeBridge.updateTheme(settings.amoledMode ? 'amoled' : settings.theme);
+        nativeBridge.updateLanguage(settings.language || 'en');
+        nativeBridge.updateUserProfile(settings.hubUserName || 'Musician', '');
+      } catch (e) {
+        console.warn('NativeHubBridge sync error:', e);
+      }
+    };
+
+    syncStateToNative();
+    const unsubNav = useNavigationStore.subscribe(syncStateToNative);
+    const unsubSettings = useSettingsStore.subscribe(syncStateToNative);
+
+    const handleNativeNavigate = (e: any) => {
+      const targetApp = e.detail?.app;
+      if (targetApp) {
+        NavigationDispatcher.push({ app: targetApp });
+      }
+    };
+
+    const handleNativeTheme = (e: any) => {
+      const newTheme = e.detail?.theme;
+      if (newTheme === 'amoled') {
+        useSettingsStore.getState().updateSettings({ amoledMode: true, theme: 'dark' });
+      } else if (newTheme === 'light' || newTheme === 'dark') {
+        useSettingsStore.getState().updateSettings({ amoledMode: false, theme: newTheme });
+      }
+    };
+
+    const handleNativeLanguage = (e: any) => {
+      const newLang = e.detail?.lang;
+      if (newLang) {
+        useSettingsStore.getState().updateSettings({ language: newLang });
+      }
+    };
+
+    window.addEventListener('native-navigate', handleNativeNavigate);
+    window.addEventListener('studio-set-theme', handleNativeTheme);
+    window.addEventListener('studio-set-language', handleNativeLanguage);
+
+    return () => {
+      unsubNav();
+      unsubSettings();
+      window.removeEventListener('native-navigate', handleNativeNavigate);
+      window.removeEventListener('studio-set-theme', handleNativeTheme);
+      window.removeEventListener('studio-set-language', handleNativeLanguage);
+    };
   }, []);
 
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
