@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.90';
-export const NATIVE_VERSION_CODE = 40590;
-export const WEB_VERSION = '4.5.90';
+export const NATIVE_VERSION = '4.5.91';
+export const NATIVE_VERSION_CODE = 40591;
+export const WEB_VERSION = '4.5.91';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '51a09ba9';
+export const APP_COMMIT_SHA = 'e8be9d52';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/11/2026, 2:31:29 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/11/2026, 3:04:59 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,18 +96,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Native Jetpack Compose Hub Architecture: Implemented the first genuinely native Android UI vertical slice for Hub (`NativeHubView.kt`) in Jetpack Compose, featuring hardware-accelerated RenderThread execution, zero DOM tree overhead, and native 90/120 Hz display synchronization.',
-      'Native Morphing Quick Actions & Bottom Dock: Built an in-place morphing Quick Actions surface expanding via native spring physics, alongside a native bottom navigation dock with animated pill selection.',
-      'Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead.',
-    ],
-  },
-  {
     heading: 'Fixed',
     items: [
-      'Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.',
-      'CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists.',
+      'Canonical UI Presentation Restoration: Removed experimental native Compose Hub overlay in the Android shell, restoring complete visual and behavioral parity across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
+      'App-Specific Navigation and Design Integrity: Restored individual app layouts, authentic brand logos, bespoke typography, and floating dock navigation across all applications while preserving the canonical `MorphingActionSurface` system.',
+      'Web Audio & Shell Harmony: Maintained full Web Audio synthesis and playback capabilities in Chordex, Drumex, and Vocalex with seamless Android shell integration.',
+      'Preserved Pipeline Acceleration: Kept DOM observer reductions in BottomNavigationController, GPU-composited transform/opacity transitions in StudioPageTransition, and list virtualization containment.',
     ],
   },
 ];
@@ -119,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.91',
+    date: '2026-09-11',
+    highlights: [
+      'Canonical UI Presentation Restoration: Removed experimental native Compose Hub overlay in the Android shell, restoring complete visual and behavioral parity across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
+      'App-Specific Navigation and Design Integrity: Restored individual app layouts, authentic brand logos, bespoke typography, and floating dock navigation across all applications while preserving the canonical `MorphingActionSurface` system.',
+      'Web Audio & Shell Harmony: Maintained full Web Audio synthesis and playback capabilities in Chordex, Drumex, and Vocalex with seamless Android shell integration.',
+      'Preserved Pipeline Acceleration: Kept DOM observer reductions in BottomNavigationController, GPU-composited transform/opacity transitions in StudioPageTransition, and list virtualization containment.',
+    ],
+  },
   {
     version: '4.5.90',
     date: '2026-09-11',
@@ -208,14 +212,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Three-State Startup Animation Engine: Engineered an appearance-aware launch sequence in `LaunchAnimationEngine.tsx` that dynamically adapts canvas background and branding elements across Light (`#ffffff`), Dark (`#141418`), and AMOLED (`#000000`) appearance modes.',
       'Adaptive Livex Logo & Luminous Atmosphere: Implemented high-contrast dark Livex mark styling (`brightness(0)` at `0.90` opacity) with preserved specular sheen sweep in Light mode; calibrated subtle ambient bloom across all appearance states.',
       'Startup Background Flash Elimination: Removed hardcoded `#000000` canvas background from launch animation; synchronized frame-0 early boot CSS tokens (`html.dark`, `html.amoled`, `html.light`) and Android Day theme `styles.xml` to eliminate pre-mount visual flashes.',
-    ],
-  },
-  {
-    version: '4.5.81',
-    date: '2026-09-09',
-    highlights: [
-      'Canonical Android Launcher Identity & Architecture: Restored standard, single-activity launcher architecture on \\`com.chordex.app.MainActivity\\` with direct \\`MAIN\\`/\\`LAUNCHER\\` intent filters, completely eliminating the experimental \\`MainActivityLivex\\` activity alias and runtime component toggles.',
-      'Automated Launcher Icon Synchronization Pipeline: Built and integrated \\`scripts/sync-launcher-icons.mjs\\` (\\`pnpm sync:icons\\` / \\`pnpm check:icons\\`) to automatically derive all 15 Android density mipmaps and public Web/PWA assets with 66dp centered safe zones inside a 108dp adaptive canvas directly from canonical master assets.',
     ],
   },
 ];
