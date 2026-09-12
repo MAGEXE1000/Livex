@@ -99,7 +99,6 @@ export default defineConfig(async ({ command, mode }) => {
         'react-dom',
         'react-dom/client',
         'motion/react',
-        'framer-motion',
         'zustand',
         'zustand/middleware',
         '@capacitor/core',
@@ -146,7 +145,7 @@ export default defineConfig(async ({ command, mode }) => {
               if (id.includes('/@capacitor/')) return 'capacitor';
               if (id.includes('/@fontsource/')) return 'fonts';
               if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
-              if (id.includes('/motion/') || id.includes('/framer-motion/')) return 'motion-vendor';
+              if (id.includes('/motion/')) return 'motion-vendor';
             }
           },
         },
