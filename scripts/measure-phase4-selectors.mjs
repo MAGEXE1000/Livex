@@ -209,21 +209,6 @@ const OPTIMIZATIONS = [
   },
   {
     store: 'useSettingsStore',
-    consumer: 'ProgressionGenerator',
-    file: 'packages/ui-shared/src/features/chordex/components/ProgressionGenerator.tsx',
-    previousSelector: 'useSettingsStore((s) => s.settings)',
-    newSelector: 'useSettingsStore((s) => s.settings.preferFlats)',
-    triggeringUpdate: 'Modifying audio settings or theme',
-    relevantFieldsChanged: ['preferFlats'],
-    irrelevantFieldsChanged: ['theme', 'amoledMode', 'accentColor', 'language', 'displayDensity'],
-    renderCountBefore: 6,
-    renderCountAfter: 0,
-    renderReduction: '100%',
-    measurementMethod: 'Simulated 6 unrelated settings updates; verified preferFlats selector stability',
-    confidence: 'STRUCTURALLY VERIFIED'
-  },
-  {
-    store: 'useSettingsStore',
     consumer: 'GroovexLibrary',
     file: 'packages/ui-shared/src/features/groovex/components/GroovexLibrary.tsx',
     previousSelector: 'useSettingsStore(useShallow((s) => s.settings))',

@@ -53,7 +53,6 @@ export { default as CustomChordBuilder } from './features/chordex/components/Cus
 export { default as DisabledAccountScreen } from './features/auth/screens/DisabledAccountScreen';
 export * from './shared/icons/DownloadIcon';
 export { default as PendingDeletionScreen } from './features/auth/screens/PendingDeletionScreen';
-export { default as ProgressionGenerator } from './features/chordex/components/ProgressionGenerator';
 export * from './shared/typography/ScrollFade';
 export * from './shared/settings/SettingControls';
 export { default as StudioAuthCard } from './features/auth/components/StudioAuthCard';

@@ -17,7 +17,6 @@
 | **Services** | `studio-core/src/lib/chordService.ts`, `studio-core/src/lib/chordDetect.ts`, `studio-core/src/lib/chordAssistant.ts`, `studio-core/src/lib/transpose.ts`, `studio-core/src/lib/lyricsService.ts` |
 | **Static data** | `studio-core/src/data/chords.ts`, `studio-core/src/data/progressions.ts`, `studio-core/src/data/progressionsEs.ts`, `studio-core/src/data/songs.ts`, `studio-core/src/data/authorizedChords.ts` |
 | **Custom chord builder** | `ui-shared/src/components/CustomChordBuilder.tsx` |
-| **Progression generator** | `ui-shared/src/components/ProgressionGenerator.tsx`, `studio-core/src/lib/progressionGen.ts` |
 | **Docs** | `docs/architecture/chordex.md` |
 
 ---

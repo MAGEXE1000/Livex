@@ -315,7 +315,6 @@ export * from './lib/chordService';
 export * from './lib/chordDetect';
 export * from './lib/chordAssistant';
 export * from './lib/transpose';
-export * from './lib/progressionGen';
 export * from './lib/lyricsService';
 
 // i18n
@@ -992,10 +991,6 @@ ormalizeChart.
 
 lrclib.net API client. Exports etchLyricsOnline, LyricsResult.
 
-#### progressionGen.ts
-
-Algorithmic chord progression generator. Exports generateProgression.
-
 ---
 
 ## 7. UI Sub-Modules (ui-shared)
@@ -1081,7 +1076,6 @@ Stem-player app for multi-track song playback with mute/solo per stem.
 | **StudioSkeleton**            | `components/StudioSkeleton.tsx`                       | Skeleton loaders for each app mode                              |
 | **StageCorePanel**            | `components/StageCorePanel.tsx`                       | StageX live chord display and stage mode UI                     |
 | **SongPracticeView**          | `components/SongPracticeView.tsx`                     | Song chord chart practice view                                  |
-| **ProgressionGenerator**      | `components/ProgressionGenerator.tsx`                 | AI-style chord progression generator UI                         |
 | **CustomChordBuilder**        | `components/CustomChordBuilder.tsx`                   | Interactive custom chord diagram builder                        |
 | **LiveMode**                  | `components/LiveMode.tsx`                             | Fullscreen live performance chord display                       |
 | **ChordDiagram**              | `components/ChordDiagram.tsx`                         | Chord diagram router (guitar/piano/bass)                        |

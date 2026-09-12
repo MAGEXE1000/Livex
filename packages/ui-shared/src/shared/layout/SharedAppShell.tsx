@@ -236,7 +236,7 @@ export function SharedAppShell({
     const last = s.history[s.history.length - 1];
     if (
       last?.app === 'chordex' &&
-      ['chord', 'progression', 'promotion', 'generator'].includes(last.page || '')
+      last.page === 'chord'
     ) {
       return 'library';
     }

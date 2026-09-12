@@ -19,7 +19,6 @@ const SaxophonePracticePanel = lazy(() =>
   import('./SaxophonePracticePanel').then((m) => ({ default: m.SaxophonePracticePanel }))
 );
 const CustomChordBuilder = lazy(() => import('../components/CustomChordBuilder'));
-const ProgressionGenerator = lazy(() => import('../components/ProgressionGenerator'));
 
 export default function LibraryPanel() {
   const state = useLibraryState();
@@ -32,8 +31,6 @@ export default function LibraryPanel() {
     selectChord,
     showFinder,
     setShowFinder,
-    showGenerator,
-    setShowGenerator,
     activePracticeSong,
     setActivePracticeSong,
     accent,
@@ -169,12 +166,6 @@ export default function LibraryPanel() {
           />
         </Suspense>
       </MorphingActionSurface>
-
-      {showGenerator && (
-        <Suspense fallback={null}>
-          <ProgressionGenerator accent={accent} onClose={() => setShowGenerator(false)} />
-        </Suspense>
-      )}
 
       <AnimatePresence>
         {activePracticeSong && (

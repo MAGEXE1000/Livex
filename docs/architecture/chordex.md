@@ -33,7 +33,6 @@ The Chord of the Day / chord detail view:
 - **Next chord** suggestions via `suggestNextChord()`
 - **Progression builder** integration
 - **Find a Chord** modal (CustomChordBuilder)
-- **Progression Generator** modal
 - **Quick Categories** grid for chord type browsing
 - **Android-specific layout** using `Capacitor.isNativePlatform()` with Material 3 cards
 - **Web layout** preserved separately with existing CSS animations
@@ -112,7 +111,6 @@ Uses `useChordStore` from `@workspace/studio-core` (881 lines, 33 KB):
 | `PianoDiagram`         | ui-shared     | Piano keyboard component       |
 | `FourStringDiagram`    | ui-shared     | Bass/ukulele fretboard         |
 | `CustomChordBuilder`   | ui-shared     | Chord finder modal             |
-| `ProgressionGenerator` | ui-shared     | Progression generator modal    |
 | `@capacitor/core`      | Capacitor     | Platform detection             |
 
 ## Navigation

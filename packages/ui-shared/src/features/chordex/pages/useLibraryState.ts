@@ -124,34 +124,6 @@ export function useLibraryState() {
     setShowFinder(false);
   }, []);
 
-  const isGeneratorRoute =
-    currentRoute.app === 'chordex' &&
-    ['progression', 'promotion', 'generator'].includes(currentRoute.page || '');
-  const [showGenerator, setShowGenerator] = useState(() => isGeneratorRoute);
-
-  useEffect(() => {
-    if (isGeneratorRoute && !showGenerator) {
-      setShowGenerator(true);
-    }
-  }, [isGeneratorRoute, showGenerator]);
-
-  const setShowGeneratorSafely = useCallback(
-    (open: boolean | ((prev: boolean) => boolean)) => {
-      setShowGenerator((prev) => {
-        const next = typeof open === 'function' ? open(prev) : open;
-        if (
-          !next &&
-          currentRoute.app === 'chordex' &&
-          ['progression', 'promotion', 'generator'].includes(currentRoute.page || '')
-        ) {
-          NavigationDispatcher.replace({ app: 'chordex', page: 'library' });
-        }
-        return next;
-      });
-    },
-    [currentRoute.app, currentRoute.page]
-  );
-
   const allChords = useMemo(() => getAllChords(), []);
   const accent = resolveAccent(settings.accentColor);
 
@@ -436,8 +408,6 @@ export function useLibraryState() {
     setShowTuningMenu,
     showFinder,
     setShowFinder,
-    showGenerator,
-    setShowGenerator: setShowGeneratorSafely,
     allChords,
     accent,
     isLight,

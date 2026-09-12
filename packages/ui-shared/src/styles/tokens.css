@@ -1281,7 +1281,7 @@ html[data-perf-mode='on'] *::after {
     }
   }
   /* Bottom-sheet entrance/exit pair — slide + soft scale.
-     Used by ProgressionGenerator and any sheet that needs a clean,
+     Used by modal bottom sheets that need a clean,
      symmetric open/close (the existing `spring-in` is one-shot only). */
   @keyframes sheet-enter {
     from {

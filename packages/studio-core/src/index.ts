@@ -33,7 +33,6 @@ export * from './lib/liquidGlass';
 export * from './lib/nativePrefs';
 export * from './lib/navScroll';
 export * from './lib/permissions';
-export * from './lib/progressionGen';
 export * from './lib/pushNotifications';
 export * from './lib/security';
 export * from './lib/studioAppNavigationRegistry';
