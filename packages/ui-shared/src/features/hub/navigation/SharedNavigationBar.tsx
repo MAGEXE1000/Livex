@@ -27,6 +27,8 @@ import {
 } from '../../chordex/icons/ChordexLogo';
 import { AnimatedNavigationIcon } from './AnimatedNavigationIcon';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
 function useStartupComplete() {
   const [complete, setComplete] = useState(() => StartupCoordinator.isStartupComplete());
@@ -215,6 +217,8 @@ export function SharedNavigationBar({
   profileIcon,
 }: SharedNavigationBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const startupComplete = useStartupComplete();
   const t = useT();
   const isSpanish = (t as any).nav?.profile === 'Perfil';
@@ -1229,9 +1233,13 @@ export function SharedNavigationBar({
                     if (isEffectiveHidden) return;
                     setIsSwitcherOpen(!isSwitcherOpen);
                   }}
-                  whileTap={{ scale: 0.92 }}
-                  whileHover={{ scale: 1.04 }}
-                  transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }}
+                  whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                  whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+                  transition={
+                    prefersReduced
+                      ? { duration: 0 }
+                      : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                  }
                   style={{
                     width: '58px',
                     height: '58px',

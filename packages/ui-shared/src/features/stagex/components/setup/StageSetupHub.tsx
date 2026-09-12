@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { useStagexStore, type StagexSubView } from '../../state/useStagexStore';
+import { useHoverCapable } from '../../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 interface StageSetupHubProps {
   onSelectSubView: (view: StagexSubView) => void;
@@ -27,6 +29,8 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
@@ -123,8 +127,8 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
                 key={card.id}
                 data-testid={`setup-card-${card.id}`}
                 onClick={() => onSelectSubView(card.id)}
-                whileTap={{ scale: 0.988 }}
-                whileHover={{ y: -1 }}
+                whileTap={prefersReduced ? undefined : { scale: 0.988 }}
+                whileHover={canHover && !prefersReduced ? { y: -1 } : undefined}
                 className="w-full text-left p-5 sm:p-6 transition-all duration-200 cursor-pointer relative overflow-hidden"
                 style={{
                   borderRadius: 'var(--radius-card, 16px)',

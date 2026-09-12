@@ -7,6 +7,8 @@ import { useScrollHide, SpringPresets, useSettingsStore, useShallow } from '@wor
 import { ProgressiveBlur } from '../design-system/ProgressiveBlur';
 import { StudioLogo } from '../../features/chordex/icons/ChordexLogo';
 import { StudioHeader } from './StudioHeader';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 // Helper hook to detect responsive design states (tablets, landscape, foldables)
 export function useLayoutMetrics() {
@@ -178,6 +180,8 @@ export function SharedFloatingHeader({
   isLight: isLightProp,
   isAmoled: isAmoledProp,
 }: SharedFloatingHeaderProps) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   // Read current theme to apply warm tinted translucency
   const { theme, amoledMode } = useSettingsStore(
     useShallow((s) => ({
@@ -247,9 +251,9 @@ export function SharedFloatingHeader({
             data-testid={backBtnTestId || 'shared-floating-header-back-btn'}
             onClick={onBack}
             aria-label="Go back"
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ scale: 1.04 }}
-            transition={SpringPresets.soft}
+            whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+            whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
               width: 'var(--btn-size-md, 42px)',
               height: 'var(--btn-size-md, 42px)',

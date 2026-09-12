@@ -21,6 +21,8 @@ import {
   useTransform,
   MotionValue,
 } from 'motion/react';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 interface DockItemProps {
   id: string;
@@ -46,6 +48,7 @@ function DockItem({
   onClick,
 }: DockItemProps) {
   const ref = useRef<HTMLButtonElement>(null);
+  const canHover = useHoverCapable();
   const [isHovered, setIsHovered] = useState(false);
 
   // Proximity magnification logic
@@ -119,7 +122,7 @@ function DockItem({
         ref={ref}
         onClick={onClick}
         onKeyDown={handleKeyDown}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => canHover && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
           width: reduceMotion ? 46 : size,
@@ -157,7 +160,7 @@ function DockItem({
               'none'
             : `background-color ${DurationPresets.fast * 1000}ms cubic-bezier(${EasingPresets.standard.join(',')}), color ${DurationPresets.fast * 1000}ms cubic-bezier(${EasingPresets.standard.join(',')}), transform ${DurationPresets.fast * 1000}ms cubic-bezier(${EasingPresets.standard.join(',')})`,
         }}
-        whileHover={reduceMotion ? {} : { y: -6 }}
+        whileHover={canHover && !reduceMotion ? { y: -6 } : undefined}
         transition={SpringPresets.soft}
         aria-label={label}
         aria-current={isActive ? 'page' : undefined}
@@ -269,12 +272,14 @@ export default function WebAppSectionDock({
       ? 'rgba(255, 255, 255, 0.45)'
       : 'rgba(15, 15, 20, 0.65)';
 
-  const reduceMotion = preferences.reduceMotion;
+  const canHover = useHoverCapable();
+  const appReducedMotion = useAppReducedMotion();
+  const reduceMotion = Boolean(preferences.reduceMotion || appReducedMotion);
 
   return (
     <motion.div
       onMouseMove={(e) => {
-        if (!reduceMotion) mouseX.set(e.pageX);
+        if (!reduceMotion && canHover) mouseX.set(e.pageX);
       }}
       onMouseLeave={() => {
         if (!reduceMotion) mouseX.set(Infinity);

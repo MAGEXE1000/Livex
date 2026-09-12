@@ -1,5 +1,7 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Capacitor } from '@capacitor/core';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import {
   useAppUpdate,
   type StructuredReleaseNotes,
@@ -886,14 +888,21 @@ function ActionButton({
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
 }) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
+
   return (
     <motion.button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.96 }}
-      whileHover={disabled ? undefined : { scale: 1.015 }}
-      transition={{ duration: DurationPresets.fast, ease: EasingPresets.decelerate }}
+      whileTap={disabled || prefersReduced ? undefined : { scale: 0.96 }}
+      whileHover={disabled || !canHover || prefersReduced ? undefined : { scale: 1.015 }}
+      transition={
+        prefersReduced
+          ? { duration: 0 }
+          : { duration: DurationPresets.fast, ease: EasingPresets.decelerate }
+      }
       style={{
         ...style,
         outline: 'none',

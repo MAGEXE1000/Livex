@@ -1,6 +1,8 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/studio-core';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 // ── 2. Card ────────────────────────────────────────────────────────────────
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -9,8 +11,6 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   glass?: boolean;
   rim?: boolean;
 }
-
-const isHoverable = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   (
@@ -26,14 +26,17 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
+    const canHover = useHoverCapable();
+    const prefersReduced = useAppReducedMotion();
     const Component = (interactive ? motion.div : 'div') as any;
     const motionProps = interactive
       ? {
-          whileHover: isHoverable
-            ? { scale: 1.012, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
-            : undefined,
-          whileTap: { scale: 0.985, y: 0 },
-          transition: SpringPresets.soft,
+          whileHover:
+            canHover && !prefersReduced
+              ? { scale: 1.012, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
+              : undefined,
+          whileTap: prefersReduced ? undefined : { scale: 0.985, y: 0 },
+          transition: prefersReduced ? { duration: 0 } : SpringPresets.soft,
         }
       : {};
 
@@ -103,15 +106,18 @@ export const BentoCard = forwardRef<HTMLDivElement, BentoCardProps>(
     },
     ref
   ) => {
+    const canHover = useHoverCapable();
+    const prefersReduced = useAppReducedMotion();
     const Component = (interactive || onClick ? motion.div : 'div') as any;
     const motionProps =
       interactive || onClick
         ? {
-            whileHover: isHoverable
-              ? { scale: 1.015, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
-              : undefined,
-            whileTap: { scale: 0.985, y: 0 },
-            transition: SpringPresets.soft,
+            whileHover:
+              canHover && !prefersReduced
+                ? { scale: 1.015, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
+                : undefined,
+            whileTap: prefersReduced ? undefined : { scale: 0.985, y: 0 },
+            transition: prefersReduced ? { duration: 0 } : SpringPresets.soft,
           }
         : {};
 

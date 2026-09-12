@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/studio-core';
 import { StudioHeader as AnimatedAppHeader } from '../layout/StudioHeader';
 import { ProgressiveBlur } from './ProgressiveBlur';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 // ── 5. Toolbar ─────────────────────────────────────────────────────────────
 export interface ToolbarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -231,13 +233,15 @@ export const ListRow = forwardRef<HTMLButtonElement, ListRowProps>(
     },
     ref
   ) => {
+    const canHover = useHoverCapable();
+    const prefersReduced = useAppReducedMotion();
     const isInteractive = !!onClick;
     const Component = (isInteractive ? motion.button : 'div') as any;
     const motionProps = isInteractive
       ? {
-          whileTap: disabled ? undefined : { scale: 0.985 },
-          whileHover: disabled ? undefined : { scale: 1.006 },
-          transition: SpringPresets.soft,
+          whileTap: disabled || prefersReduced ? undefined : { scale: 0.985 },
+          whileHover: disabled || !canHover || prefersReduced ? undefined : { scale: 1.006 },
+          transition: prefersReduced ? { duration: 0 } : SpringPresets.soft,
         }
       : {};
 

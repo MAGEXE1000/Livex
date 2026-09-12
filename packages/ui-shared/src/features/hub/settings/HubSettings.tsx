@@ -15,6 +15,8 @@ import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import { ProgressiveBlur } from '../../../shared/design-system/ProgressiveBlur';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { ActionButton } from '../../../shared/design-system/StudioDesignSystem';
 import {
   SettingSection,
@@ -525,6 +527,8 @@ export function HubSettings({
   devToast?: string | null;
   renderDevToast?: () => React.ReactNode;
 }) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const settings = useSettingsStore(
     useShallow((state) => ({
       theme: state.settings.theme,
@@ -3555,9 +3559,9 @@ export function HubSettings({
             <motion.button
               key={page}
               onClick={() => navigate(page)}
-              whileTap={{ scale: 0.985 }}
-              whileHover={{ scale: 1.006 }}
-              transition={SpringPresets.soft}
+              whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+              whileHover={canHover && !prefersReduced ? { scale: 1.006 } : undefined}
+              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
               className="hover:bg-white/5 transition-colors"
               style={{
                 display: 'flex',
@@ -3627,9 +3631,9 @@ export function HubSettings({
 
           <motion.button
             onClick={() => window.open('https://github.com/MAGEXE1000/Livex', '_system')}
-            whileTap={{ scale: 0.985 }}
-            whileHover={{ scale: 1.006 }}
-            transition={SpringPresets.soft}
+            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+            whileHover={canHover && !prefersReduced ? { scale: 1.006 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             className="hover:bg-white/5 transition-colors"
             style={{
               display: 'flex',
@@ -3831,9 +3835,9 @@ export function HubSettings({
       <motion.button
         type="button"
         onClick={() => onProfile?.()}
-        whileTap={{ scale: 0.985 }}
-        whileHover={{ scale: 1.008 }}
-        transition={SpringPresets.soft}
+        whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+        whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+        transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
         className="outline-none"
         style={{
           display: 'flex',
@@ -4700,9 +4704,9 @@ export function HubSettings({
                           }}
                         >
                           <motion.div
-                            whileTap={{ scale: 0.985 }}
-                            whileHover={{ scale: 1.008 }}
-                            transition={SpringPresets.soft}
+                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                             onClick={() => navigate('appearance')}
                             style={{
                               display: 'flex',
@@ -4847,9 +4851,9 @@ export function HubSettings({
                           }}
                         >
                           <motion.div
-                            whileTap={{ scale: 0.985 }}
-                            whileHover={{ scale: 1.008 }}
-                            transition={SpringPresets.soft}
+                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                             onClick={() => navigate('help-center')}
                             style={{
                               display: 'flex',
@@ -4994,9 +4998,9 @@ export function HubSettings({
                           }}
                         >
                           <motion.div
-                            whileTap={{ scale: 0.985 }}
-                            whileHover={{ scale: 1.008 }}
-                            transition={SpringPresets.soft}
+                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                             onClick={() => navigate('updater')}
                             style={{
                               display: 'flex',
@@ -5109,9 +5113,9 @@ export function HubSettings({
                           </motion.div>
 
                           <motion.div
-                            whileTap={{ scale: 0.985 }}
-                            whileHover={{ scale: 1.008 }}
-                            transition={SpringPresets.soft}
+                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                             onClick={() => navigate('about')}
                             style={{
                               display: 'flex',
@@ -5213,9 +5217,9 @@ export function HubSettings({
 
                           {settings.developerMode && (
                             <motion.div
-                              whileTap={{ scale: 0.985 }}
-                              whileHover={{ scale: 1.008 }}
-                              transition={SpringPresets.soft}
+                              whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+                              whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+                              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                               onClick={() => navigate('developer')}
                               style={{
                                 display: 'flex',

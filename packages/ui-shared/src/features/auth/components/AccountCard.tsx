@@ -33,6 +33,8 @@ import AppSpinner from '../../../shared/loading/AppSpinner';
 import { Circle, Layers3, BadgeCheck, FlaskConical, ShieldCheck } from 'lucide-react';
 import StudioSpinner from '../../../shared/animata/progress/spinner';
 import { Loader } from '../../../components/motion/loader';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import StudioAuthCard from './StudioAuthCard';
 import { isFirebaseConfigured, type AuthUser, authRepository } from '@workspace/studio-core';
@@ -1718,6 +1720,8 @@ export function AccountSettingsPage({
   onBack: () => void;
 }) {
   const tRoot = useT();
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const t = tRoot.hub.accountSection;
   const lang = useSettingsStore((s) => s.settings.language) ?? 'en';
   const favCount = useChordStore((s) => s.favorites?.length ?? 0);
@@ -2358,9 +2362,9 @@ export function AccountSettingsPage({
       <motion.button
         type="button"
         onClick={onPress}
-        whileTap={{ scale: 0.985 }}
-        whileHover={{ scale: 1.006 }}
-        transition={SpringPresets.soft}
+        whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+        whileHover={canHover && !prefersReduced ? { scale: 1.006 } : undefined}
+        transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
         className="outline-none hover:bg-white/5 transition-colors"
         style={{
           display: 'flex',
@@ -2510,9 +2514,9 @@ export function AccountSettingsPage({
         {/* Avatar — tap to open Personal Information */}
         <motion.button
           type="button"
-          whileTap={{ scale: 0.94 }}
-          whileHover={{ scale: 1.03 }}
-          transition={SpringPresets.soft}
+          whileTap={prefersReduced ? undefined : { scale: 0.94 }}
+          whileHover={canHover && !prefersReduced ? { scale: 1.03 } : undefined}
+          transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
           onClick={() => openSheet('personal-info')}
           aria-label="Edit profile"
           style={{
@@ -2636,8 +2640,8 @@ export function AccountSettingsPage({
         >
           {/* Bento Card 1: Favorites */}
           <motion.div
-            whileHover={{ scale: 1.015 }}
-            transition={SpringPresets.soft}
+            whileHover={canHover && !prefersReduced ? { scale: 1.015 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2706,8 +2710,8 @@ export function AccountSettingsPage({
 
           {/* Bento Card 2: Progressions */}
           <motion.div
-            whileHover={{ scale: 1.015 }}
-            transition={SpringPresets.soft}
+            whileHover={canHover && !prefersReduced ? { scale: 1.015 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2776,8 +2780,8 @@ export function AccountSettingsPage({
 
           {/* Bento Card 3: Presets */}
           <motion.div
-            whileHover={{ scale: 1.015 }}
-            transition={SpringPresets.soft}
+            whileHover={canHover && !prefersReduced ? { scale: 1.015 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2849,9 +2853,13 @@ export function AccountSettingsPage({
             type="button"
             onClick={doSyncNow}
             disabled={busy || !settings.syncAcrossDevices}
-            whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.015 }}
-            transition={SpringPresets.soft}
+            whileTap={busy || !settings.syncAcrossDevices || prefersReduced ? undefined : { scale: 0.96 }}
+            whileHover={
+              busy || !settings.syncAcrossDevices || !canHover || prefersReduced
+                ? undefined
+                : { scale: 1.015 }
+            }
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -3293,9 +3301,9 @@ export function AccountSettingsPage({
                   </code>
                   <motion.button
                     type="button"
-                    whileTap={{ scale: 0.92 }}
-                    whileHover={{ scale: 1.08 }}
-                    transition={SpringPresets.soft}
+                    whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                    whileHover={canHover && !prefersReduced ? { scale: 1.08 } : undefined}
+                    transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                     onClick={() => {
                       navigator.clipboard.writeText(user.uid);
                       showToast(
@@ -3405,9 +3413,9 @@ export function AccountSettingsPage({
         <motion.button
           type="button"
           onClick={() => openSheet('signout')}
-          whileTap={{ scale: 0.975 }}
-          whileHover={{ scale: 1.01 }}
-          transition={SpringPresets.soft}
+          whileTap={prefersReduced ? undefined : { scale: 0.975 }}
+          whileHover={canHover && !prefersReduced ? { scale: 1.01 } : undefined}
+          transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
           style={{
             width: '100%',
             marginTop: 24,

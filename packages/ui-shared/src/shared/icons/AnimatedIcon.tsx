@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 
 import { ActivityIcon } from '../../components/ui/activity';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { ArrowLeftIcon } from '../../components/ui/arrow-left';
 import { ArrowRightIcon } from '../../components/ui/arrow-right';
 import { AudioLinesIcon } from '../../components/ui/audio-lines';
@@ -386,6 +388,8 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     },
     ref
   ) => {
+    const canHover = useHoverCapable();
+    const prefersReduced = useAppReducedMotion();
     const controls = useAnimation();
     const isSpinning = state === 'loading' || name === 'loader-circle' || name === 'loader';
 
@@ -595,12 +599,16 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
         }}
         animate={isSpinning ? { rotate: [0, 360] } : controls}
         initial="inactive"
-        whileHover={isSpinning ? undefined : isMatched ? undefined : getIconSpecificHover()}
+        whileHover={
+          isSpinning || isMatched || !canHover || prefersReduced
+            ? undefined
+            : getIconSpecificHover()
+        }
         variants={outerVariants}
         transition={
           isSpinning
             ? { repeat: Infinity, duration: 1.1, ease: 'linear' }
-            : isMatched
+            : isMatched || prefersReduced
               ? { duration: 0.25 }
               : { type: 'spring', stiffness: 480, damping: 26, mass: 0.75 }
         }

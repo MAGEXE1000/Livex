@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/studio-core';
 import { Loader } from '../../components/motion/loader';
 import { Button } from './buttons';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 // ── 14. Skeleton ───────────────────────────────────────────────────────────
 export interface SkeletonProps {
@@ -157,14 +159,17 @@ export function Chip({
   className = '',
   ...props
 }: ChipProps) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
+
   return (
     <motion.button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.95 }}
-      whileHover={disabled ? undefined : { scale: 1.02 }}
-      transition={SpringPresets.soft}
+      whileTap={disabled || prefersReduced ? undefined : { scale: 0.95 }}
+      whileHover={disabled || !canHover || prefersReduced ? undefined : { scale: 1.02 }}
+      transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
