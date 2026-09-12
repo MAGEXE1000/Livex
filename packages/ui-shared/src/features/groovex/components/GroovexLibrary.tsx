@@ -7,13 +7,14 @@ import {
   groovexStemRepository,
 } from '@workspace/studio-core';
 import { useShallow } from 'zustand/react/shallow';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { SONG_CATALOG, getArtists, getGenres } from '../services/songCatalog';
 import type { SongMeta } from '../services/songCatalog';
 import { useGroovexStore } from '../state/useGroovexStore';
 import { StaggeredReveal } from '../../../shared/animation';
 import { motion } from 'motion/react';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { useVirtualWindow } from '../../../shared/virtualization';
 
 export default function GroovexLibrary() {
   const searchQuery = useGroovexStore(useShallow((s) => s.searchQuery));
@@ -102,6 +103,48 @@ export default function GroovexLibrary() {
     }
     return [['', filteredSongs]] as [string, SongMeta[]][];
   }, [filteredSongs, sortBy]);
+
+  const listRef = useRef<HTMLElement>(null);
+
+  type GroovexCatalogItem =
+    | { type: 'header'; id: string; artistName: string; count: number; genre?: string }
+    | { type: 'song'; id: string; song: SongMeta; isCached: boolean };
+
+  const flatItems = useMemo<GroovexCatalogItem[]>(() => {
+    const result: GroovexCatalogItem[] = [];
+    for (const [artistName, songs] of grouped) {
+      if (artistName) {
+        result.push({
+          type: 'header',
+          id: `artist-${artistName}`,
+          artistName,
+          count: songs.length,
+          genre: songs[0]?.genre,
+        });
+      }
+      for (const song of songs) {
+        result.push({
+          type: 'song',
+          id: song.id,
+          song,
+          isCached: cachedSongIds.has(song.id) || song.hasStems,
+        });
+      }
+    }
+    return result;
+  }, [grouped, cachedSongIds]);
+
+  const getItemHeight = useCallback((item: GroovexCatalogItem) => {
+    return item.type === 'header' ? 36 : 84; // 76px card + 8px gap
+  }, []);
+
+  const { virtualItems, topSpacerHeight, bottomSpacerHeight } = useVirtualWindow({
+    items: flatItems,
+    itemHeight: getItemHeight,
+    scrollRef,
+    listRef,
+    overscan: 4,
+  });
 
   function openSong(song: SongMeta) {
     setActiveSong(song.id);
@@ -597,25 +640,36 @@ export default function GroovexLibrary() {
           </section>
         )}
 
-        {/* ── STITCH MAIN SONG LIST VIEW ── */}
-        {filteredSongs.length > 0 && (
+        {/* ── STITCH MAIN SONG LIST VIEW (VIRTUALIZED) ── */}
+        {flatItems.length > 0 && (
           <main
             id="view-main"
-            style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}
+            ref={listRef}
+            style={{
+              paddingTop: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
           >
-            {grouped.map(([artistName, songs]) => (
+            {topSpacerHeight > 0 && (
               <div
-                key={artistName || 'all'}
-                className="artist-group"
-                style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
-              >
-                {artistName && (
+                style={{ height: topSpacerHeight, flexShrink: 0 }}
+                aria-hidden="true"
+                data-purpose="virtual-top-spacer"
+              />
+            )}
+            {virtualItems.map(({ item }) => {
+              if (item.type === 'header') {
+                return (
                   <div
+                    key={item.id}
+                    className="artist-group-header"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '0 4px',
+                      padding: '8px 4px 0 4px',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -630,7 +684,7 @@ export default function GroovexLibrary() {
                           margin: 0,
                         }}
                       >
-                        {artistName}
+                        {item.artistName}
                       </h2>
                       <span
                         style={{
@@ -643,10 +697,10 @@ export default function GroovexLibrary() {
                           borderRadius: '6px',
                         }}
                       >
-                        ({songs.length})
+                        ({item.count})
                       </span>
                     </div>
-                    {songs[0]?.genre && (
+                    {item.genre && (
                       <span
                         style={{
                           fontFamily: 'var(--studio-font-body)',
@@ -655,27 +709,30 @@ export default function GroovexLibrary() {
                           color: 'var(--c-text-muted)',
                         }}
                       >
-                        {songs[0].genre}
+                        {item.genre}
                       </span>
                     )}
                   </div>
-                )}
+                );
+              }
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <StaggeredReveal staggerInterval={30}>
-                    {songs.map((song) => (
-                      <StitchSongCard
-                        key={song.id}
-                        song={song}
-                        isCached={cachedSongIds.has(song.id) || song.hasStems}
-                        onOpen={() => openSong(song)}
-                        isLight={isLight}
-                      />
-                    ))}
-                  </StaggeredReveal>
-                </div>
-              </div>
-            ))}
+              return (
+                <StitchSongCard
+                  key={item.song.id}
+                  song={item.song}
+                  isCached={item.isCached}
+                  onOpen={() => openSong(item.song)}
+                  isLight={isLight}
+                />
+              );
+            })}
+            {bottomSpacerHeight > 0 && (
+              <div
+                style={{ height: bottomSpacerHeight, flexShrink: 0 }}
+                aria-hidden="true"
+                data-purpose="virtual-bottom-spacer"
+              />
+            )}
           </main>
         )}
       </div>

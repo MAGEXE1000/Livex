@@ -3838,7 +3838,7 @@ const PresetCard = React.memo(
 
     return (
       <article
-        className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group"
+        className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row"
         style={{
           backgroundColor: 'var(--surface-card-bg, #ffffff)',
           borderColor: 'var(--c-border, #E3E6EB)',

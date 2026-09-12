@@ -61,3 +61,6 @@ export { LiquidSurfaceEngine } from './liquid/LiquidSurfaceEngine';
 
 // UI
 export { EncryptedText } from './ui/encrypted-text';
+
+// Virtualization
+export * from './virtualization';
