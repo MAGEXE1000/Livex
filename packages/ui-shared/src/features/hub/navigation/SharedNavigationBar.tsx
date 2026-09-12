@@ -348,21 +348,28 @@ export function SharedNavigationBar({
   const idealSlotWidth = isSwitcherOpen
     ? 46
     : isHub
-      ? 84
+      ? 82
       : totalSlots >= 4
-        ? 72
+        ? 60
         : totalSlots === 2
-          ? 90
-          : 78;
+          ? 88
+          : 76;
   const paddingX = isSwitcherOpen ? 6 : 8;
 
   // hasRightBubble: true when App Changer satellite button is shown (non-hub apps only)
   const hasRightBubble = showSwitcherButton;
   const satelliteWidth = 58;
   const dockGap = 8;
-  const maxScreenWidth = Math.min(windowWidth - 32, 600);
+  const edgeMargin = 6;
+  const maxScreenWidth = Math.min(windowWidth - 24, 600);
+  // Satellite button is positioned at barWidth / 2 + dockGap.
+  // To keep it strictly within the visible viewport: barWidth / 2 + dockGap + satelliteWidth <= windowWidth / 2 - edgeMargin
+  const maxBarWithSatellite = Math.max(
+    180,
+    (windowWidth / 2 - dockGap - satelliteWidth - edgeMargin) * 2
+  );
   const maxBarWidth = hasRightBubble
-    ? maxScreenWidth - (satelliteWidth + dockGap)
+    ? Math.min(maxScreenWidth, maxBarWithSatellite)
     : maxScreenWidth;
 
   const targetBarWidth = totalSlots * idealSlotWidth + paddingX * 2;
@@ -370,20 +377,37 @@ export function SharedNavigationBar({
     ? Math.min(240, maxBarWidth)
     : windowWidth < 480
       ? Math.min(180, maxBarWidth)
-      : 230;
+      : 220;
   const barWidth = Math.max(Math.min(targetBarWidth, maxBarWidth), Math.min(minBarW, maxBarWidth));
-
-  // Center dock and satellite switcher as a unified visual composition
-  const clusterOffset = showSwitcherButton ? (satelliteWidth + dockGap) / 2 : 0;
 
   const usableWidth = barWidth - paddingX * 2;
   const itemWidth = usableWidth / totalSlots;
 
-  // Symmetrical lens pill sizing and exact slot-centering
-  const horizontalGap = totalSlots >= 4 ? 6 : 8;
-  const pillWidthVal = isSwitcherOpen
-    ? Math.min(40, Math.max(32, itemWidth - 8))
-    : Math.max(36, itemWidth - horizontalGap);
+  const activeIndex = useMemo(() => {
+    const idx = currentItems.findIndex((item) => {
+      return isSwitcherOpen ? item.key === currentApp : item.isActive;
+    });
+    return idx >= 0 ? idx : 0;
+  }, [currentItems, currentApp, isSwitcherOpen]);
+
+  // Symmetrical lens pill sizing and exact slot-centering.
+  // The selected highlight dimensions are calculated independently: they fully contain
+  // the icon and label with consistent internal padding, without enlarging or shifting the navbar.
+  const pillWidthVal = useMemo(() => {
+    if (isSwitcherOpen) {
+      return Math.min(40, Math.max(32, itemWidth - 8));
+    }
+    const activeItem = currentItems[activeIndex];
+    const labelStr = typeof activeItem?.label === 'string' ? activeItem.label : '';
+    const labelLen = labelStr.length;
+    const charWidth = totalSlots >= 4 || labelLen >= 10 ? 5.8 : 6.2;
+    const contentWidth = Math.max(22, Math.round(labelLen * charWidth));
+    const desiredPillWidth = contentWidth + 18;
+    const maxPillWidth = itemWidth - (totalSlots >= 4 ? 6 : 8);
+    const minPillWidth = Math.min(38, maxPillWidth);
+    return Math.min(maxPillWidth, Math.max(minPillWidth, desiredPillWidth));
+  }, [isSwitcherOpen, currentItems, activeIndex, itemWidth, totalSlots]);
+
   const centerOffset = (itemWidth - pillWidthVal) / 2;
 
   const getPillX = useCallback(
@@ -392,13 +416,6 @@ export function SharedNavigationBar({
     },
     [centerOffset, itemWidth]
   );
-
-  const activeIndex = useMemo(() => {
-    const idx = currentItems.findIndex((item) => {
-      return isSwitcherOpen ? item.key === currentApp : item.isActive;
-    });
-    return idx >= 0 ? idx : 0;
-  }, [currentItems, currentApp, isSwitcherOpen]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // UNIFIED MOTION GRAPH ROOT ENGINE
@@ -870,7 +887,7 @@ export function SharedNavigationBar({
               className="shared-bottom-nav glass-nav"
               animate={{
                 width: barWidth,
-                x: -clusterOffset,
+                x: 0,
               }}
               transition={{
                 type: 'spring',
@@ -1158,7 +1175,7 @@ export function SharedNavigationBar({
                   pointerEvents: 'auto',
                 }}
                 animate={{
-                  x: barWidth / 2 + dockGap - clusterOffset,
+                  x: barWidth / 2 + dockGap,
                 }}
                 transition={{
                   type: 'spring',
