@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.93';
-export const NATIVE_VERSION_CODE = 40593;
-export const WEB_VERSION = '4.5.93';
+export const NATIVE_VERSION = '4.5.94';
+export const NATIVE_VERSION_CODE = 40594;
+export const WEB_VERSION = '4.5.94';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '94af6f66';
+export const APP_COMMIT_SHA = '16c2d6d4';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/12/2026, 10:59:21 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/12/2026, 12:20:26 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      "Fluid Chord Detail Foreground Morphing Popup: Replaced full-page drilldown routing when tapping chord cards with an in-place fluid foreground morphing modal surface (`MorphingActionSurface`), physically expanding from the tapped chord card's real-time bounding box over the preserved underlying Chordex screen.",
-      'Synchronous Geometry & Spatial Anchoring: Added dynamic `originRect` spatial geometry mapping with spring-driven expansion (`SPRING_PANEL`) and clean reverse collapse back to the originating chord card.',
+      "Fluid Chordex Song Action Morphs: Transformed song creation and song import flows into fluid spatial morphs using the canonical `MorphingActionSurface` system. Tapping the mobile primary FAB, secondary FAB, empty state action buttons, or desktop setlist buttons morphs directly from the button's synchronous DOM coordinates into the contextual foreground panel.",
+      'Modular Action Surface Content: Extracted `PresetFormContent` and `ImportSongContent`, enabling full JSON song importing, chord resolution, conflict management, and song creation inside spatial surfaces with smooth reverse collapse.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      "Android Hardware Back Navigation Integration: Directly integrated the chord modal surface with `BackDispatcher('modal')`, ensuring tapping the native Android back button or gesture smoothly reverses the morph back into the chord grid with zero residual DOM overlays.",
-      'Promotion and Progression Navigation Stability: Corrected sub-route panel resolution in `SharedAppShell` and restored the Progression Generator shortcut in `LibraryUI`.',
+      'Normalized Navigation Selected Highlight Geometry: Standardized the selected tab indicator bounding box and centering geometry across the shared bottom bar, eliminating horizontal jitter and label overlap across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
+      'Refined Chord Finder and Chord Detail Morph Transitions: Enhanced chord detail foreground popup transitions with tactile press feedback and stable coordinate tracking.',
+      'Generator Subsystem Pruning: Permanently pruned obsolete chord progression generator interfaces and components, removing dormant code paths.',
     ],
   },
 ];
@@ -118,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.94',
+    date: '2026-09-12',
+    highlights: [
+      "Fluid Chordex Song Action Morphs: Transformed song creation and song import flows into fluid spatial morphs using the canonical `MorphingActionSurface` system. Tapping the mobile primary FAB, secondary FAB, empty state action buttons, or desktop setlist buttons morphs directly from the button's synchronous DOM coordinates into the contextual foreground panel.",
+      'Modular Action Surface Content: Extracted `PresetFormContent` and `ImportSongContent`, enabling full JSON song importing, chord resolution, conflict management, and song creation inside spatial surfaces with smooth reverse collapse.',
+      'Normalized Navigation Selected Highlight Geometry: Standardized the selected tab indicator bounding box and centering geometry across the shared bottom bar, eliminating horizontal jitter and label overlap across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
+      'Refined Chord Finder and Chord Detail Morph Transitions: Enhanced chord detail foreground popup transitions with tactile press feedback and stable coordinate tracking.',
+      'Generator Subsystem Pruning: Permanently pruned obsolete chord progression generator interfaces and components, removing dormant code paths.',
+    ],
+  },
   {
     version: '4.5.93',
     date: '2026-09-12',
@@ -209,16 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Release Pipeline CI Hardening: Embedded launcher icon integrity checks into `pnpm check:versions` (Preflight Job 1), fixed recursive subdirectory scanning in `generate-release-verification-report.mjs`, and enforced triple cross-artifact SHA-256 equality before atomic publication.',
       'Deterministic Cross-Platform Icon Generation: Replaced Windows GDI+ generation with Node.js `sharp` (v0.35.4) using Lanczos3 resampling and strict 108dp canvas / 66dp safe-zone compliance.',
       'Removed Flawed Runtime Component Mutation: Removed redundant `refreshLauncherIconCacheIfNeeded` call from `MainActivity.kt` to preserve native component immutability.',
-    ],
-  },
-  {
-    version: '4.5.84',
-    date: '2026-09-09',
-    highlights: [
-      'Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.',
-      'Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.',
-      'CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.',
-      'Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds.',
     ],
   },
 ];

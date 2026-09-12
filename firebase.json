@@ -161,7 +161,7 @@
     "redirects": [
       {
         "source": "/apk/livex-latest.apk",
-        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v4.5.93/studio-4.5.93.apk",
+        "destination": "https://github.com/MAGEXE1000/Livex/releases/download/v4.5.94/studio-4.5.94.apk",
         "type": 302
       },
       {
