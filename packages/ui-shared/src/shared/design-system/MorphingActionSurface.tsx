@@ -4,6 +4,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BackDispatcher, MotionProfiler } from '@workspace/studio-core';
 import { activeOverlaysRegistry } from './dialogs';
 import { SPRING_PANEL, EASE_OUT } from '../../lib/ease';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+
 
 export interface MorphingActionRowItem {
   id: string;
@@ -92,7 +94,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
 
   const rawId = useId();
   const surfaceId = `morph-surface-${rawId.replace(/:/g, '')}`;
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useAppReducedMotion();
   const isReduced = reducedMotion || prefersReduced;
 
   const triggerAnchorRef = useRef<HTMLSpanElement | null>(null);

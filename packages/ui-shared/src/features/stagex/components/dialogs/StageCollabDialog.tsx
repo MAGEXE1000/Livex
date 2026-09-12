@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { NavigationDispatcher, useT, useSettingsStore } from '@workspace/studio-core';
+import { NavigationDispatcher, useT, useSettingsStore, SpringPresets } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
+
 import { Loader } from '../../../../components/motion/loader';
 import { ShareMenu } from '../../../../components/share-menu';
 import { SegmentedOtpInput } from '../SegmentedOtpInput';
@@ -52,27 +54,29 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
   const language = useSettingsStore((s) => s.settings.language) ?? 'en';
   const isSpanish = language === 'es';
 
-  if (!open) return null;
+  const prefersReduced = useAppReducedMotion();
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => !collabLoading && onClose()}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-        />
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReduced ? 0 : 0.2 }}
+            onClick={() => !collabLoading && onClose()}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+          />
 
-        {/* Modal Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
-          className="relative w-full max-w-lg overflow-hidden rounded-[28px] shadow-2xl border flex flex-col max-h-[90vh]"
+          {/* Modal Card */}
+          <motion.div
+            initial={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
+            className="relative w-full max-w-lg overflow-hidden rounded-[28px] shadow-2xl border flex flex-col max-h-[90vh]"
           style={{
             background: 'var(--c-surface-mid)',
             borderColor: 'var(--c-border)',
@@ -518,6 +522,8 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };
+

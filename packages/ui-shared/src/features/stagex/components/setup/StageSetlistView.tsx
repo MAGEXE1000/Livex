@@ -3,6 +3,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useStagexStore } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { useSettingsStore, useT, useShallow } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
+
 
 interface StageSetlistViewProps {
   onBack: () => void;
@@ -37,7 +39,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
       ? isAmoledProp
       : !isLight && Boolean(settings.amoledMode || activeVis?.amoledMode || preferences?.amoled);
 
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useAppReducedMotion();
 
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -583,7 +585,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center justify-between p-3.5 rounded-[16px] border transition-all"
+                  className="flex items-center justify-between p-3.5 rounded-[16px] border transition-colors duration-150"
                   style={{
                     backgroundColor: innerBg,
                     borderColor: innerBorder,

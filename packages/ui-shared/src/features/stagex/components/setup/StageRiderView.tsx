@@ -3,7 +3,9 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useStagexStore, type RiderNeed } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { StageSetupEmptyState } from './StageSetupEmptyState';
-import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useSettingsStore, useT, EasingPresets } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
+
 
 export interface StageRiderViewProps {
   onBack: () => void;
@@ -204,7 +206,7 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
       ? isAmoledProp
       : !isLight && Boolean(settings.amoledMode || activeVis?.amoledMode || preferences?.amoled);
 
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useAppReducedMotion();
 
   // Add requirement form state
   const [isAdding, setIsAdding] = useState(false);
@@ -643,10 +645,10 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                       }
                       transition={{
                         duration: prefersReducedMotion ? 0 : 0.22,
-                        ease: [0.2, 0, 0, 1],
+                        ease: EasingPresets.emphasized,
                       }}
                       data-testid={`rider-need-${needId}`}
-                      className="rounded-xl border p-3 space-y-3 shadow-2xs transition-all"
+                      className="rounded-xl border p-3 space-y-3 shadow-2xs transition-colors duration-150"
                       style={{
                         backgroundColor: cardBg,
                         borderColor: cardBorder,

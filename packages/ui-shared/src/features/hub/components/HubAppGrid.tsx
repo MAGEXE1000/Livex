@@ -1,6 +1,8 @@
 import React from 'react';
-import { type AppKey, NavigationDispatcher } from '@workspace/studio-core';
+import { type AppKey, NavigationDispatcher, SpringPresets } from '@workspace/studio-core';
 import { motion } from 'motion/react';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
 interface AppCardItem {
   key: AppKey;
@@ -49,6 +51,9 @@ const APP_CARDS: AppCardItem[] = [
 ];
 
 export function HubAppGrid() {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
+
   return (
     <div
       style={{
@@ -62,9 +67,9 @@ export function HubAppGrid() {
         <motion.div
           key={app.key}
           onClick={() => NavigationDispatcher.push({ app: app.key })}
-          whileHover={{ scale: 1.025, y: -2 }}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: 'spring', stiffness: 420, damping: 25 }}
+          whileHover={canHover && !prefersReduced ? { scale: 1.025, y: -2 } : undefined}
+          whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+          transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
           style={{
             background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
             borderRadius: 20,

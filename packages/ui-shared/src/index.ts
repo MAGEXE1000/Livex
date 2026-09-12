@@ -100,3 +100,4 @@ export * from './features/devtools/inspector';
 export { SharedAppShell, type SharedAppShellProps } from './shared/layout/SharedAppShell';
 export * from './components/motion';
 export { MorphingModal, type MorphingModalProps } from './components/motion/morphing-modal';
+export { useAppReducedMotion } from './hooks/useAppReducedMotion';

@@ -3,6 +3,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useStagexStore } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
+
 
 interface StageMembersViewProps {
   onBack: () => void;
@@ -114,7 +116,7 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
     isAmoledProp !== undefined
       ? isAmoledProp
       : !isLight && Boolean(settings.amoledMode || activeVis?.amoledMode || preferences?.amoled);
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useAppReducedMotion();
 
   const inputRef = useRef<HTMLInputElement>(null);
 

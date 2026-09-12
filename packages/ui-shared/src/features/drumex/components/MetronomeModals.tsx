@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import type {
-  MetronomeTimeSignature,
-  MetronomeSubdivision,
-  MetronomeTempoRampConfig,
+import {
+  type MetronomeTimeSignature,
+  type MetronomeSubdivision,
+  type MetronomeTempoRampConfig,
+  SpringPresets,
 } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
 interface TimeSignatureModalProps {
   isOpen: boolean;
@@ -69,37 +71,38 @@ export function TimeSignatureModal({
   onClose,
   isAmoled,
 }: TimeSignatureModalProps) {
-  if (!isOpen) return null;
+  const prefersReduced = useAppReducedMotion();
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        {/* Dimmed Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          {/* Dimmed Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={prefersReduced ? { duration: 0 } : { duration: 0.18 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
 
-        {/* Centered Modern Card Surface */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="time-sig-modal-title"
-          initial={{ scale: 0.94, opacity: 0, y: 8 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 6 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className={`relative w-full max-w-sm ${
-            isAmoled
-              ? 'bg-black border-white/15'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
-          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
-          onClick={(e) => e.stopPropagation()}
-        >
+          {/* Centered Modern Card Surface */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="time-sig-modal-title"
+            initial={prefersReduced ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 8 }}
+            animate={prefersReduced ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+            exit={prefersReduced ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 6 }}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
+            className={`relative w-full max-w-sm ${
+              isAmoled
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+            } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div
             className={`px-5 pt-5 pb-3 border-b ${
@@ -199,6 +202,7 @@ export function TimeSignatureModal({
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 }
@@ -271,37 +275,38 @@ export function SubdivisionModal({
   onClose,
   isAmoled,
 }: SubdivisionModalProps) {
-  if (!isOpen) return null;
+  const prefersReduced = useAppReducedMotion();
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        {/* Dimmed Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          {/* Dimmed Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={prefersReduced ? { duration: 0 } : { duration: 0.18 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
 
-        {/* Centered Modern Card Surface */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="subdivision-modal-title"
-          initial={{ scale: 0.94, opacity: 0, y: 8 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 6 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className={`relative w-full max-w-sm ${
-            isAmoled
-              ? 'bg-black border-white/15'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
-          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
-          onClick={(e) => e.stopPropagation()}
-        >
+          {/* Centered Modern Card Surface */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="subdivision-modal-title"
+            initial={prefersReduced ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 8 }}
+            animate={prefersReduced ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+            exit={prefersReduced ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 6 }}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
+            className={`relative w-full max-w-sm ${
+              isAmoled
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+            } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div
             className={`px-5 pt-5 pb-3 border-b ${
@@ -401,6 +406,7 @@ export function SubdivisionModal({
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 }
@@ -429,6 +435,7 @@ export function TempoRampModal({
   onClose,
   isAmoled,
 }: TempoRampModalProps) {
+  const prefersReduced = useAppReducedMotion();
   const [enabled, setEnabled] = React.useState(config.enabled);
   const [mode, setMode] = React.useState<'bars' | 'time'>(config.mode || 'bars');
   const [startBpm, setStartBpm] = React.useState(config.startBpm || currentBpm);
@@ -464,8 +471,6 @@ export function TempoRampModal({
     }
   }, [isOpen, config, currentBpm]);
 
-  if (!isOpen) return null;
-
   const handleSave = () => {
     onSave({
       enabled,
@@ -497,33 +502,34 @@ export function TempoRampModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        {/* Dimmed Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          {/* Dimmed Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={prefersReduced ? { duration: 0 } : { duration: 0.18 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
 
-        {/* Centered Modern Card Surface */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="tempo-ramp-modal-title"
-          initial={{ scale: 0.94, opacity: 0, y: 8 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 6 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className={`relative w-full max-w-sm ${
-            isAmoled
-              ? 'bg-black border-white/15'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
-          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]`}
-          onClick={(e) => e.stopPropagation()}
-        >
+          {/* Centered Modern Card Surface */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tempo-ramp-modal-title"
+            initial={prefersReduced ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 8 }}
+            animate={prefersReduced ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+            exit={prefersReduced ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 6 }}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
+            className={`relative w-full max-w-sm ${
+              isAmoled
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+            } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]`}
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div
             className={`px-5 pt-5 pb-3 border-b ${
@@ -584,7 +590,7 @@ export function TempoRampModal({
               >
                 <motion.div
                   animate={{ x: enabled ? 20 : 2 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  transition={prefersReduced ? { duration: 0 } : SpringPresets.snappy}
                   className="w-6 h-6 rounded-full bg-white shadow-sm"
                 />
               </button>
@@ -914,7 +920,7 @@ export function TempoRampModal({
               >
                 <motion.div
                   animate={{ x: holdFinalBpm ? 16 : 2 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  transition={prefersReduced ? { duration: 0 } : SpringPresets.snappy}
                   className="w-5 h-5 rounded-full bg-white shadow-sm"
                 />
               </button>
@@ -928,25 +934,25 @@ export function TempoRampModal({
                   : 'bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-blue-950 dark:text-blue-200'
               } text-xs flex items-start gap-2.5`}
             >
-              <span className="material-symbols-outlined text-[18px] text-[#007aff] shrink-0 mt-0.5">
+              <span className="material-symbols-outlined text-[#007aff] text-[18px] shrink-0 mt-0.5">
                 info
               </span>
-              <div className="text-xs leading-relaxed font-medium">{liveSummaryText}</div>
+              <p className="leading-relaxed">{liveSummaryText}</p>
             </div>
           </div>
 
-          {/* Footer Action */}
+          {/* Action Buttons Footer */}
           <div
             className={`p-4 border-t ${
               isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
-            } flex gap-2`}
+            } flex gap-2.5`}
           >
             <button
               type="button"
               onClick={onClose}
               className={`flex-1 py-3 rounded-2xl ${
                 isAmoled
-                  ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-300 border border-white/10'
+                  ? 'bg-[#18181b] hover:bg-[#27272a] text-zinc-300 border border-white/10'
                   : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
               } font-manrope font-bold text-xs tracking-tight transition cursor-pointer`}
             >
@@ -962,6 +968,7 @@ export function TempoRampModal({
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 }
@@ -996,37 +1003,38 @@ export function CountInModal({
   onPreviewVoice,
   onClose,
 }: CountInModalProps) {
-  if (!isOpen) return null;
+  const prefersReduced = useAppReducedMotion();
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        {/* Dimmed Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          {/* Dimmed Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={prefersReduced ? { duration: 0 } : { duration: 0.18 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
 
-        {/* Centered Modern Card Surface */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="countin-modal-title"
-          initial={{ scale: 0.94, opacity: 0, y: 8 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 6 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className={`relative w-full max-w-sm ${
-            isAmoled
-              ? 'bg-black border-white/15'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
-          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
-          onClick={(e) => e.stopPropagation()}
-        >
+          {/* Centered Modern Card Surface */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="countin-modal-title"
+            initial={prefersReduced ? { opacity: 0 } : { scale: 0.94, opacity: 0, y: 8 }}
+            animate={prefersReduced ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
+            exit={prefersReduced ? { opacity: 0 } : { scale: 0.95, opacity: 0, y: 6 }}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
+            className={`relative w-full max-w-sm ${
+              isAmoled
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+            } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div
             className={`px-5 pt-5 pb-3 border-b ${
@@ -1215,6 +1223,7 @@ export function CountInModal({
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 }

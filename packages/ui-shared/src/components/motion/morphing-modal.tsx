@@ -1,10 +1,11 @@
 'use client';
 // beui.dev/components/motion/morphing-modal
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { cn } from '../../lib/utils';
 
 export interface MorphingModalProps {
@@ -25,7 +26,8 @@ export function MorphingModal({
   className,
 }: MorphingModalProps) {
   const open = viewId !== null;
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
+
   const enterY = reduce ? 0 : placement === 'bottom' ? 40 : 20;
   const enterScale = reduce ? 1 : 0.97;
 
@@ -109,7 +111,7 @@ export function MorphingModal({
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.div
                     key={viewId}
-                    initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, filter: 'blur(4px)' }}
+                    initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
                     animate={
                       reduce
                         ? {
@@ -122,7 +124,6 @@ export function MorphingModal({
                         : {
                             opacity: 1,
                             y: 0,
-                            filter: 'blur(0px)',
                             transition: {
                               duration: 0.24,
                               ease: EASE_OUT,
@@ -141,7 +142,6 @@ export function MorphingModal({
                         : {
                             opacity: 0,
                             y: -8,
-                            filter: 'blur(4px)',
                             transition: {
                               duration: 0.16,
                               ease: EASE_OUT,
