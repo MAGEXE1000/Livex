@@ -1,17 +1,10 @@
-# Version 4.5.94
+# Version 4.5.95
 
 Release Date: 2026-09-12
 
-### Added
-
-- Fluid Chordex Song Action Morphs: Transformed song creation and song import flows into fluid spatial morphs using the canonical `MorphingActionSurface` system. Tapping the mobile primary FAB, secondary FAB, empty state action buttons, or desktop setlist buttons morphs directly from the button's synchronous DOM coordinates into the contextual foreground panel.
-- Modular Action Surface Content: Extracted `PresetFormContent` and `ImportSongContent`, enabling full JSON song importing, chord resolution, conflict management, and song creation inside spatial surfaces with smooth reverse collapse.
-
 ### Fixed
 
-- Normalized Navigation Selected Highlight Geometry: Standardized the selected tab indicator bounding box and centering geometry across the shared bottom bar, eliminating horizontal jitter and label overlap across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.
-- Refined Chord Finder and Chord Detail Morph Transitions: Enhanced chord detail foreground popup transitions with tactile press feedback and stable coordinate tracking.
-
-### Removed
-
-- Generator Subsystem Pruning: Permanently pruned obsolete chord progression generator interfaces and components, removing dormant code paths.
+- Centered & Compact Shared Bottom Navigation: Corrected shared bottom navigation geometry across all Livex applications, eliminating the -33px cluster offset to ensure the navigation bar is strictly horizontally centered relative to the viewport across expanded, scrolling, and collapsed states.
+- Drumex Compact Navigation Footprint: Restored compact slot width (60px) in Drumex, reducing container width from 304px to 256px for balanced visual parity with Hub and Chordex.
+- Independent Selected Highlight Geometry: Decoupled tab highlight pill dimensions from the navbar container into an independent content-adaptive calculation that never inflates or shifts the navbar.
+- Refined Guitar & Bass Chord Finder: Exclusively focused the Chordex Chord Finder on Guitar and Bass fretboard diagrams, removing Piano from the instrument selector, search queries, filter tabs, and detection state machine without touching global instrument preferences.
