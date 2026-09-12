@@ -368,6 +368,10 @@ export function BottomNavigationController() {
         if (sec.id === 'songs' && (activeTab === 'beats' || activePage === 'beats'))
           isActive = true;
       }
+      if (currentApp === 'groovex') {
+        if (sec.id === 'library' && (activeTab === 'rhythms' || activePage === 'rhythms' || activePage === 'player'))
+          isActive = true;
+      }
       return {
         key: sec.id,
         icon: sec.icon,

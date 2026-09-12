@@ -31,6 +31,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const TARGET_PATHS = [
   path.join(repoRoot, 'packages/ui-shared/src/features/hub/navigation'),
+  path.join(repoRoot, 'packages/ui-shared/src/features/groovex'),
   path.join(repoRoot, 'packages/ui-shared/src/shared/layout'),
   path.join(repoRoot, 'packages/ui-shared/src/navigation'),
   path.join(repoRoot, 'apps/studio-android/src'),
@@ -53,7 +54,7 @@ async function run() {
       (m) =>
         m.ruleId === '@typescript-eslint/no-use-before-define' ||
         m.ruleId === 'no-use-before-define' ||
-        (m.ruleId === 'react-hooks/rules-of-hooks' && m.severity === 2)
+        (m.ruleId === 'react-hooks/rules-of-hooks' && m.severity >= 1)
     );
 
     if (tdzErrors.length > 0) {

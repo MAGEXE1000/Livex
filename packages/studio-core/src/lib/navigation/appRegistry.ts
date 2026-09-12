@@ -17,7 +17,7 @@ export const APP_SECTIONS: Record<string, AppSection[]> = {
     { id: 'prefs', labelKey: 'drumPreferences', icon: 'sliders-horizontal' },
   ],
   groovex: [
-    { id: 'rhythms', labelKey: 'groovexRhythms', icon: 'layers' },
+    { id: 'library', labelKey: 'groovexRhythms', icon: 'layers' },
     { id: 'preferences', labelKey: 'groovexPreferences', icon: 'sliders-horizontal' },
   ],
   vocalex: [

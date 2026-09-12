@@ -51,8 +51,10 @@ export default function GroovexApp() {
 
   const view = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
-    return last?.app === 'groovex' && last.page && VIEW_ORDER.includes(last.page as GroovexView)
-      ? (last.page as GroovexView)
+    if (last?.app !== 'groovex') return initialGroovexView;
+    const page = last.page === 'rhythms' ? 'library' : last.page;
+    return page && VIEW_ORDER.includes(page as GroovexView)
+      ? (page as GroovexView)
       : initialGroovexView;
   });
 
@@ -100,8 +102,21 @@ export default function GroovexApp() {
   }
 
   function handleBack() {
-    NavigationDispatcher.pop();
+    if (NavigationDispatcher.canGoBack()) {
+      NavigationDispatcher.pop();
+    } else {
+      NavigationDispatcher.push({ app: 'groovex', page: 'library' });
+    }
   }
+
+  useBackHandler('panel', () => {
+    if (view === 'player') {
+      handleBack();
+      return true;
+    }
+    return false;
+  });
+
   const t = useT();
   const theme = useSettingsStore((s) => s.settings.theme);
   const isLight =
@@ -114,8 +129,6 @@ export default function GroovexApp() {
     if (isWebDesktop) return;
     setNavHidden(view === 'player');
   }, [view, isWebDesktop]);
-
-  useEffect(() => {}, []);
   const currentSong = SONG_CATALOG.find((s) => s.id === activeSongId);
 
   return (

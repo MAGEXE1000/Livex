@@ -116,6 +116,7 @@ export default function GroovexPlayer() {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
   const t = useT();
+  const isWebDesktop = useIsWebDesktop();
   const activeSongId = useGroovexStore((s) => s.activeSongId);
   const preferences = useGroovexStore((s) => s.preferences);
   const song = useMemo(() => SONG_CATALOG.find((s) => s.id === activeSongId), [activeSongId]);
@@ -812,25 +813,6 @@ export default function GroovexPlayer() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  if (!song) {
-    return (
-      <div
-        style={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 14,
-          color: 'var(--c-text-secondary)',
-        }}
-      >
-        <VinylLottie size={64} />
-        <p style={{ fontSize: 14, margin: 0 }}>{t.groovex.noSongSelected}</p>
-      </div>
-    );
-  }
-
   const isReady = phase === 'ready';
   const prefersReducedMotion =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -889,10 +871,28 @@ export default function GroovexPlayer() {
     };
   }, [isReady, overallProgress, prefersReducedMotion]);
 
+  if (!song) {
+    return (
+      <div
+        style={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 14,
+          color: 'var(--c-text-secondary)',
+        }}
+      >
+        <VinylLottie size={64} />
+        <p style={{ fontSize: 14, margin: 0 }}>{t.groovex.noSongSelected}</p>
+      </div>
+    );
+  }
+
   const effectiveTime = isScrubbing ? scrubVisualTime : currentTime;
   const anyLoaded = tracks.some((t) => t.loaded);
-  const isWebDesktop = useIsWebDesktop();
-  const currentKeyDisplay = transposeKey(song.key, pitchShift);
+  const currentKeyDisplay = song ? transposeKey(song.key, pitchShift) : '';
 
   return (
     <div

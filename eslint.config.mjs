@@ -130,7 +130,6 @@ export default tseslint.config(
     files: [
       'apps/studio-android/src/App.tsx',
       'apps/studio-android/src/EmergencyDebugOverlay.tsx',
-      'packages/ui-shared/src/features/groovex/components/GroovexPlayer.tsx',
       'packages/ui-web/src/landing/StudioLandingPage.tsx',
     ],
     rules: {
