@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect, useId, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useLayoutEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { BackDispatcher, MotionProfiler } from '@workspace/studio-core';
 import { activeOverlaysRegistry } from './dialogs';
+import { SPRING_PANEL, EASE_OUT } from '../../lib/ease';
 
 export interface MorphingActionRowItem {
   id: string;
@@ -113,6 +114,15 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     height: number;
   } | null>(null);
 
+  const [closeRect, setCloseRect] = useState<{
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
   const captureRect = useCallback(() => {
     if (triggerAnchorRef.current) {
       const r = triggerAnchorRef.current.getBoundingClientRect();
@@ -127,8 +137,29 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         };
         originRectRef.current = rectData;
         setOriginRect(rectData);
+        return rectData;
       }
     }
+    return null;
+  }, []);
+
+  const captureCloseRect = useCallback(() => {
+    if (triggerAnchorRef.current) {
+      const r = triggerAnchorRef.current.getBoundingClientRect();
+      if (r.width > 0 || r.height > 0) {
+        const rectData = {
+          top: r.top,
+          left: r.left,
+          right: r.right,
+          bottom: r.bottom,
+          width: r.width,
+          height: r.height,
+        };
+        setCloseRect(rectData);
+        return rectData;
+      }
+    }
+    return null;
   }, []);
 
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
@@ -158,13 +189,14 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     try {
       MotionProfiler.startMorphClose(surfaceId);
     } catch (_) {}
+    captureCloseRect();
     if (isControlled) {
       onOpenChange?.(false);
     } else {
       setInternalOpen(false);
       onOpenChange?.(false);
     }
-  }, [isControlled, onOpenChange, surfaceId]);
+  }, [captureCloseRect, isControlled, onOpenChange, surfaceId]);
 
   // Active overlays registry integration
   useEffect(() => {
@@ -185,11 +217,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     return unregister;
   }, [isOpen, handleClose]);
 
-  useEffect(() => {
-    if (isOpen && !originRectRef.current) {
-      captureRect();
+  // Synchronous bounds capture & controlled change tracking
+  const prevOpenRef = useRef(isOpen);
+  useLayoutEffect(() => {
+    if (!prevOpenRef.current && isOpen) {
+      if (!originRectRef.current && triggerAnchorRef.current) {
+        captureRect();
+      }
+    } else if (prevOpenRef.current && !isOpen) {
+      captureCloseRect();
     }
-  }, [isOpen, captureRect]);
+    prevOpenRef.current = isOpen;
+  }, [isOpen, captureRect, captureCloseRect]);
 
   // Determine compact presentation mode (defaulting to true for contextual menus)
   const isCompact = compact !== undefined
@@ -206,19 +245,42 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
 
   const effectiveRect = originRect || originRectRef.current;
   let computedPositionStyle: React.CSSProperties = {};
+  let panelInitial: any;
+  let panelAnimate: any;
+  let panelExit: any;
 
   if (placement === 'center') {
     computedPositionStyle = {
       position: 'relative',
       width: isCompact ? popupWidth : '100%',
       maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
+      transformOrigin: 'center center',
     };
+    panelInitial = isReduced
+      ? { opacity: 0 }
+      : { opacity: 0, scale: 0.92, y: 12 };
+    panelAnimate = isReduced
+      ? { opacity: 1 }
+      : { opacity: 1, scale: 1, y: 0 };
+    panelExit = isReduced
+      ? { opacity: 0 }
+      : { opacity: 0, scale: 0.92, y: 12 };
   } else if (placement === 'bottom') {
     computedPositionStyle = {
       position: 'relative',
       width: isCompact ? popupWidth : '100%',
       maxWidth: maxWidth ?? (isCompact ? popupWidth : 440),
+      transformOrigin: 'center bottom',
     };
+    panelInitial = isReduced
+      ? { opacity: 0 }
+      : { opacity: 0, y: '100%' };
+    panelAnimate = isReduced
+      ? { opacity: 1 }
+      : { opacity: 1, y: '0%' };
+    panelExit = isReduced
+      ? { opacity: 0 }
+      : { opacity: 0, y: '100%' };
   } else {
     // placement === 'anchor'
     if (effectiveRect) {
@@ -256,14 +318,56 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         width: isCompact ? popupWidth : '100%',
         maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
       };
+
+      const startScale = Math.max(0.82, Math.min(0.92, (effectiveRect.width || 44) / popupWidth + 0.7));
+      const deltaY = isBottomHalf ? 8 : -8;
+      const deltaX = isRightHalf ? 6 : -6;
+
+      panelInitial = isReduced
+        ? { opacity: 0 }
+        : {
+            opacity: 0,
+            scale: startScale,
+            x: deltaX,
+            y: deltaY,
+            borderRadius: isCompact ? 18 : 22,
+          };
+      panelAnimate = isReduced
+        ? { opacity: 1 }
+        : {
+            opacity: 1,
+            scale: 1,
+            x: 0,
+            y: 0,
+            borderRadius: isCompact ? 16 : 24,
+          };
+      panelExit = isReduced
+        ? { opacity: 0 }
+        : {
+            opacity: 0,
+            scale: startScale,
+            x: deltaX,
+            y: deltaY,
+            borderRadius: isCompact ? 18 : 22,
+          };
     } else {
       computedPositionStyle = {
         position: 'absolute',
         top: Math.max(16, viewportHeight * 0.25),
         left: Math.max(12, (viewportWidth - popupWidth) / 2),
+        transformOrigin: 'center center',
         width: isCompact ? popupWidth : '100%',
         maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
       };
+      panelInitial = isReduced
+        ? { opacity: 0 }
+        : { opacity: 0, scale: 0.92, y: 12 };
+      panelAnimate = isReduced
+        ? { opacity: 1 }
+        : { opacity: 1, scale: 1, y: 0 };
+      panelExit = isReduced
+        ? { opacity: 0 }
+        : { opacity: 0, scale: 0.92, y: 12 };
     }
   }
 
@@ -301,7 +405,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
+            transition={{ duration: isReduced ? 0.15 : 0.22, ease: EASE_OUT }}
             onClick={handleClose}
             style={{
               position: 'absolute',
@@ -317,18 +421,16 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
           /* Expanded Morphing Surface */
           <motion.div
             key={`${surfaceId}-panel`}
-            layoutId={surfaceId}
-            initial={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
-            animate={isReduced ? { opacity: 1, scale: 1 } : undefined}
-            exit={isReduced ? { opacity: 0, scale: 0.94 } : undefined}
+            initial={panelInitial}
+            animate={panelAnimate}
+            exit={panelExit}
             onAnimationComplete={() => {
               try {
                 MotionProfiler.endMorphOpen(surfaceId);
               } catch (_) {}
             }}
             transition={{
-              layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
-              duration: isReduced ? 0.15 : undefined,
+              ...(isReduced ? { duration: 0.15, ease: EASE_OUT } : SPRING_PANEL),
             }}
             style={{
               maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
@@ -441,19 +543,13 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                 </div>
               )}
 
-              {/* Rows or Custom Children with Staggered Fluid Entry */}
+              {/* Rows or Custom Children with Immediate Coherent Fluid Entry */}
               <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: {
-                      staggerChildren: isReduced ? 0 : 0.035,
-                      delayChildren: isReduced ? 0 : 0.05,
-                    },
-                  },
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: isReduced ? 0.12 : 0.15,
+                  ease: EASE_OUT,
                 }}
                 style={{
                   padding: isCompact ? '6px 6px' : '8px 12px 16px 12px',
@@ -473,20 +569,13 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                       <motion.div
                         key={row.id}
                         data-disabled={isDisabled ? 'true' : undefined}
-                        variants={{
-                          hidden: { opacity: 0, y: isReduced ? 0 : 10 },
-                          visible: {
-                            opacity: isDisabled ? 0.45 : 1,
-                            y: 0,
-                            transition: { type: 'spring', stiffness: 350, damping: 25 },
-                          },
-                        }}
+                        whileTap={isReduced || isDisabled ? undefined : { scale: 0.98 }}
+                        transition={{ duration: 0.08 }}
                         onClick={() => {
                           if (isDisabled) return;
                           row.onPress();
                           handleClose();
                         }}
-                        whileTap={isReduced || isDisabled ? undefined : { scale: 0.97 }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -504,6 +593,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                             ? '1px solid rgba(239, 68, 68, 0.2)'
                             : '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
                           cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          opacity: isDisabled ? 0.45 : 1,
                           touchAction: 'manipulation',
                           WebkitTapHighlightColor: 'transparent',
                         }}
@@ -589,129 +679,133 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
 
   return (
     <>
-      {/* 1. Closed State Trigger Button */}
-      {!isOpen && (
-        <span
-          ref={triggerAnchorRef}
-          className="sc-morphing-anchor"
-          style={{ display: 'inline-flex', verticalAlign: 'middle' }}
-          onTouchStart={() => {
-            try {
-              MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
-            } catch (_) {}
-            captureRect();
-          }}
-          onMouseDown={() => {
-            try {
-              MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
-            } catch (_) {}
-            captureRect();
-          }}
-        >
-          {customTrigger ? (
-            customTrigger({
-              open: handleOpen,
-              isOpen,
-              surfaceId,
-              triggerProps: {
-                layoutId: surfaceId,
-                onClick: handleOpen,
-                whileTap: isReduced ? undefined : { scale: 0.96 },
-                transition: {
-                  layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
-                },
+      {/* 1. Trigger Anchor & Button (Permanently mounted in DOM for layout stability & live geometry) */}
+      <span
+        ref={triggerAnchorRef}
+        className="sc-morphing-anchor"
+        aria-hidden={isOpen ? 'true' : undefined}
+        style={{
+          display: 'inline-flex',
+          verticalAlign: 'middle',
+          visibility: isOpen ? 'hidden' : 'visible',
+          pointerEvents: isOpen ? 'none' : 'auto',
+        }}
+        onTouchStart={() => {
+          try {
+            MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
+          } catch (_) {}
+          captureRect();
+        }}
+        onMouseDown={() => {
+          try {
+            MotionProfiler.recordTriggerAttempt(surfaceId, { blockedByExitOverlay: false });
+          } catch (_) {}
+          captureRect();
+        }}
+      >
+        {customTrigger ? (
+          customTrigger({
+            open: handleOpen,
+            isOpen,
+            surfaceId,
+            triggerProps: {
+              layoutId: surfaceId,
+              onClick: handleOpen,
+              whileTap: isReduced ? undefined : { scale: 0.96 },
+              transition: {
+                layout: SPRING_PANEL,
               },
-            })
-          ) : triggerVariant === 'icon' ? (
-            <motion.button
-              layoutId={surfaceId}
-              data-testid={testId}
-              onClick={handleOpen}
-              whileTap={isReduced ? undefined : { scale: 0.96 }}
-              transition={{
-                layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: 'var(--c-surface-high, #1e1e24)',
-                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                color: 'var(--c-text-primary, #ffffff)',
-                cursor: 'pointer',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                userSelect: 'none',
-                ...style,
-              }}
-              className={`sc-morphing-trigger ${className}`}
-              title={title}
-              aria-label={title}
-            >
-              {buttonIcon && (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: accentColor }}
-                >
-                  {buttonIcon}
-                </span>
-              )}
-            </motion.button>
-          ) : (buttonLabel || buttonIcon) ? (
-            <motion.button
-              layoutId={surfaceId}
-              data-testid={testId}
-              onClick={handleOpen}
-              whileTap={isReduced ? undefined : { scale: 0.96 }}
-              transition={{
-                layout: { type: 'spring', stiffness: 380, damping: 30, mass: 0.7 },
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '10px 18px',
-                minHeight: 44,
-                borderRadius: 22,
-                backgroundColor: 'var(--c-surface-high, #1e1e24)',
-                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                color: 'var(--c-text-primary, #ffffff)',
-                fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                userSelect: 'none',
-                ...style,
-              }}
-              className={`sc-morphing-trigger ${className}`}
-            >
-              {buttonIcon && (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: accentColor }}
-                >
-                  {buttonIcon}
-                </span>
-              )}
-              <span>{buttonLabel}</span>
+            },
+          })
+        ) : triggerVariant === 'icon' ? (
+          <motion.button
+            layoutId={surfaceId}
+            data-testid={testId}
+            onClick={handleOpen}
+            whileTap={isReduced ? undefined : { scale: 0.96 }}
+            transition={{
+              layout: SPRING_PANEL,
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: 'var(--c-surface-high, #1e1e24)',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+              color: 'var(--c-text-primary, #ffffff)',
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
+              ...style,
+            }}
+            className={`sc-morphing-trigger ${className}`}
+            title={title}
+            aria-label={title}
+          >
+            {buttonIcon && (
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
+                style={{ fontSize: 18, color: accentColor }}
               >
-                expand_more
+                {buttonIcon}
               </span>
-            </motion.button>
-          ) : null}
-        </span>
-      )}
+            )}
+          </motion.button>
+        ) : (buttonLabel || buttonIcon) ? (
+          <motion.button
+            layoutId={surfaceId}
+            data-testid={testId}
+            onClick={handleOpen}
+            whileTap={isReduced ? undefined : { scale: 0.96 }}
+            transition={{
+              layout: SPRING_PANEL,
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              minHeight: 44,
+              borderRadius: 22,
+              backgroundColor: 'var(--c-surface-high, #1e1e24)',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+              color: 'var(--c-text-primary, #ffffff)',
+              fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
+              ...style,
+            }}
+            className={`sc-morphing-trigger ${className}`}
+          >
+            {buttonIcon && (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 18, color: accentColor }}
+              >
+                {buttonIcon}
+              </span>
+            )}
+            <span>{buttonLabel}</span>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
+            >
+              expand_more
+            </span>
+          </motion.button>
+        ) : null}
+      </span>
 
       {/* 2. Open State Modal Surface & Backdrop via Portal (only mounted when active or exiting) */}
       {(isOpen || hasBeenOpened) &&

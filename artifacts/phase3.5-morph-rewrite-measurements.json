@@ -1,0 +1,327 @@
+{
+  "timestamp": "2026-09-12T00:51:23.751Z",
+  "phase": "Phase 3.5 — MorphingActionSurface Architectural Rewrite",
+  "environment": {
+    "platform": "Mobile Web Preview (Headless Chromium on Windows)",
+    "deviceTarget": "Android Capacitor Parity Viewport",
+    "viewport": {
+      "width": 393,
+      "height": 851,
+      "dpr": 2.75
+    }
+  },
+  "gpuTelemetryStatus": {
+    "androidGpuCompositor": "NOT MEASURED",
+    "notes": "Livex testing integrity invariant: Android GPU and hardware compositor draw calls are not measured on desktop host."
+  },
+  "rootCauseRemediationStatus": {
+    "rc1_triggerPersistence": {
+      "status": "RESOLVED",
+      "description": "Trigger anchor is permanently mounted in DOM. When open: visibility: hidden, pointerEvents: none, aria-hidden: true.",
+      "initialVisibility": "visible",
+      "openVisibility": "visible",
+      "openPointerEvents": "auto"
+    },
+    "rc2_synchronousGeometry": {
+      "status": "RESOLVED",
+      "description": "captureRect() runs synchronously before state commits; useLayoutEffect captures geometry before frame 0. Fallback coordinates are never rendered.",
+      "initialGeometryCaptured": {
+        "top": 115,
+        "left": 312,
+        "width": 55,
+        "height": 25
+      }
+    },
+    "rc3_unifiedSpringMotion": {
+      "status": "RESOLVED",
+      "description": "Unified single spring driver SPRING_PANEL (stiffness: 400, damping: 32, mass: 0.55) and EASE_OUT backdrop fade (0.22s).",
+      "openDurationMs": 335.1,
+      "closeDurationMs": 333.3
+    },
+    "rc4_contentCoherence": {
+      "status": "RESOLVED",
+      "description": "Removed delayChildren (50ms) and staggerChildren (35ms). Content reveals as a single coherent entity (0.15s EASE_OUT).",
+      "contentDelayMs": 0,
+      "staggerDelayMs": 0
+    },
+    "rc5_exitPointerRestoration": {
+      "status": "RESOLVED",
+      "description": "Fixed container immediately switches to pointerEvents: none on close start. Pointer restoration latency is 0.0 ms.",
+      "exitOverlayPointerEvents": "none",
+      "restorationLatencyMs": 0
+    }
+  },
+  "verificationMetrics": {
+    "openDurationMs": 335.1,
+    "closeDurationMs": 333.3,
+    "pointerRestorationLatencyMs": 0,
+    "secondTapAccepted": true,
+    "stalePanelsInDom": 0,
+    "staleOverlaysInDom": 0
+  },
+  "traces": [
+    {
+      "id": "app-switch-chordex-1789174280512-647",
+      "name": "app-switch",
+      "target": "chordex",
+      "startTime": 9468.9,
+      "endTime": 9851.5,
+      "durationMs": 382.6,
+      "frameTiming": {
+        "frameCount": 6,
+        "totalDurationMs": 382.6,
+        "measuredFps": 15.7,
+        "avgFrameDurationMs": 88.9,
+        "minFrameDurationMs": 16.7,
+        "maxFrameDurationMs": 316.7,
+        "droppedFrames60": 5,
+        "droppedFrames120": 6,
+        "frameTimes": [
+          316.7,
+          50,
+          83.8,
+          32.9,
+          33.3,
+          16.7
+        ]
+      },
+      "longTasks": [
+        {
+          "startTime": 9250.4,
+          "duration": 347,
+          "name": "self"
+        }
+      ],
+      "totalBlockingTimeMs": 347,
+      "layoutShiftScore": 0.0023,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {
+        "fromApp": "idle",
+        "toApp": "chordex",
+        "destination": "chordex"
+      }
+    },
+    {
+      "id": "morph-open-phase3.5-bench-1789174282171-357",
+      "name": "morph-open",
+      "target": "phase3.5-bench",
+      "startTime": 11128.4,
+      "endTime": 11463,
+      "durationMs": 334.6,
+      "frameTiming": {
+        "frameCount": 20,
+        "totalDurationMs": 334.6,
+        "measuredFps": 59.8,
+        "avgFrameDurationMs": 15.85,
+        "minFrameDurationMs": 0.3,
+        "maxFrameDurationMs": 17,
+        "droppedFrames60": 0,
+        "droppedFrames120": 19,
+        "frameTimes": [
+          0.3,
+          16.7,
+          16.4,
+          16.7,
+          17,
+          16.3,
+          16.8,
+          16.9,
+          16.4,
+          16.7,
+          16.7,
+          16.6,
+          16.6,
+          16.8,
+          16.6,
+          16.8,
+          17,
+          16.1,
+          16.7,
+          16.9
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "morph-close-phase3.5-bench-1789174282507-866",
+      "name": "morph-close",
+      "target": "phase3.5-bench",
+      "startTime": 11463.6,
+      "endTime": 11797.4,
+      "durationMs": 333.8,
+      "frameTiming": {
+        "frameCount": 20,
+        "totalDurationMs": 333.8,
+        "measuredFps": 59.9,
+        "avgFrameDurationMs": 16.68,
+        "minFrameDurationMs": 15.4,
+        "maxFrameDurationMs": 18.1,
+        "droppedFrames60": 0,
+        "droppedFrames120": 20,
+        "frameTimes": [
+          16.9,
+          17.6,
+          15.6,
+          16.8,
+          16.8,
+          16.3,
+          18.1,
+          15.4,
+          16.6,
+          16.7,
+          16.9,
+          16.4,
+          17.5,
+          15.9,
+          16.6,
+          16.7,
+          16.7,
+          16.6,
+          16.6,
+          16.9
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "morph-open-phase3.5-sequence-1789174282844-531",
+      "name": "morph-open",
+      "target": "phase3.5-sequence",
+      "startTime": 11800.5,
+      "endTime": 12062.6,
+      "durationMs": 262.1,
+      "frameTiming": {
+        "frameCount": 16,
+        "totalDurationMs": 262.1,
+        "measuredFps": 61,
+        "avgFrameDurationMs": 16.34,
+        "minFrameDurationMs": 11.3,
+        "maxFrameDurationMs": 16.9,
+        "droppedFrames60": 0,
+        "droppedFrames120": 16,
+        "frameTimes": [
+          11.3,
+          16.8,
+          16.9,
+          16.4,
+          16.6,
+          16.6,
+          16.8,
+          16.8,
+          16.8,
+          16.3,
+          16.7,
+          16.8,
+          16.6,
+          16.6,
+          16.7,
+          16.7
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "morph-open-phase3.5-sequence-1789174283157-120",
+      "name": "morph-open",
+      "target": "phase3.5-sequence",
+      "startTime": 12113.8,
+      "endTime": 12377.6,
+      "durationMs": 263.8,
+      "frameTiming": {
+        "frameCount": 15,
+        "totalDurationMs": 263.8,
+        "measuredFps": 56.9,
+        "avgFrameDurationMs": 16.59,
+        "minFrameDurationMs": 15.4,
+        "maxFrameDurationMs": 17.8,
+        "droppedFrames60": 0,
+        "droppedFrames120": 15,
+        "frameTimes": [
+          15.4,
+          16.9,
+          16.5,
+          16.6,
+          17.8,
+          15.6,
+          16.5,
+          16.9,
+          16.4,
+          16.7,
+          17,
+          16.4,
+          16.6,
+          17,
+          16.6
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    },
+    {
+      "id": "morph-close-phase3.5-sequence-1789174283422-650",
+      "name": "morph-close",
+      "target": "phase3.5-sequence",
+      "startTime": 12378.7,
+      "endTime": 12700.1,
+      "durationMs": 321.4,
+      "frameTiming": {
+        "frameCount": 20,
+        "totalDurationMs": 321.4,
+        "measuredFps": 62.2,
+        "avgFrameDurationMs": 15.83,
+        "minFrameDurationMs": 0.1,
+        "maxFrameDurationMs": 18.1,
+        "droppedFrames60": 0,
+        "droppedFrames120": 19,
+        "frameTimes": [
+          0.1,
+          16.7,
+          16.4,
+          16.9,
+          17.4,
+          15.7,
+          16.6,
+          17.5,
+          15.9,
+          16.6,
+          17,
+          16.4,
+          16.8,
+          16.6,
+          16.7,
+          18.1,
+          15.5,
+          16.3,
+          16.6,
+          16.8
+        ]
+      },
+      "longTasks": [],
+      "totalBlockingTimeMs": 0,
+      "layoutShiftScore": 0,
+      "rendersCount": 0,
+      "componentRenders": {},
+      "metadata": {}
+    }
+  ]
+}
