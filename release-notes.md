@@ -1,13 +1,17 @@
-# Version 4.5.93
+# Version 4.5.94
 
 Release Date: 2026-09-12
 
 ### Added
 
-- Fluid Chord Detail Foreground Morphing Popup: Replaced full-page drilldown routing when tapping chord cards with an in-place fluid foreground morphing modal surface (`MorphingActionSurface`), physically expanding from the tapped chord card's real-time bounding box over the preserved underlying Chordex screen.
-- Synchronous Geometry & Spatial Anchoring: Added dynamic `originRect` spatial geometry mapping with spring-driven expansion (`SPRING_PANEL`) and clean reverse collapse back to the originating chord card.
+- Fluid Chordex Song Action Morphs: Transformed song creation and song import flows into fluid spatial morphs using the canonical `MorphingActionSurface` system. Tapping the mobile primary FAB, secondary FAB, empty state action buttons, or desktop setlist buttons morphs directly from the button's synchronous DOM coordinates into the contextual foreground panel.
+- Modular Action Surface Content: Extracted `PresetFormContent` and `ImportSongContent`, enabling full JSON song importing, chord resolution, conflict management, and song creation inside spatial surfaces with smooth reverse collapse.
 
 ### Fixed
 
-- Android Hardware Back Navigation Integration: Directly integrated the chord modal surface with `BackDispatcher('modal')`, ensuring tapping the native Android back button or gesture smoothly reverses the morph back into the chord grid with zero residual DOM overlays.
-- Promotion and Progression Navigation Stability: Corrected sub-route panel resolution in `SharedAppShell` and restored the Progression Generator shortcut in `LibraryUI`.
+- Normalized Navigation Selected Highlight Geometry: Standardized the selected tab indicator bounding box and centering geometry across the shared bottom bar, eliminating horizontal jitter and label overlap across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.
+- Refined Chord Finder and Chord Detail Morph Transitions: Enhanced chord detail foreground popup transitions with tactile press feedback and stable coordinate tracking.
+
+### Removed
+
+- Generator Subsystem Pruning: Permanently pruned obsolete chord progression generator interfaces and components, removing dormant code paths.
