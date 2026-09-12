@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { NavigationDispatcher, useT, useSettingsStore, SpringPresets } from '@workspace/studio-core';
+import { NavigationDispatcher, useT, useSettingsStore, SpringPresets, BackDispatcher } from '@workspace/studio-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
+import { activeOverlaysRegistry } from '../../../../shared/design-system/dialogs';
 
 import { Loader } from '../../../../components/motion/loader';
 import { ShareMenu } from '../../../../components/share-menu';
@@ -55,6 +56,22 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
   const isSpanish = language === 'es';
 
   const prefersReduced = useAppReducedMotion();
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const id = 'stagex:collab-dialog';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      if (!collabLoading) {
+        onClose();
+      }
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [open, collabLoading, onClose]);
 
   return (
     <AnimatePresence>

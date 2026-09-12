@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { type TakeRecord, useT } from '@workspace/studio-core';
+import { type TakeRecord, useT, BackDispatcher } from '@workspace/studio-core';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import { useHarmonizerState } from './useHarmonizerState';
 import {
   HarmonizerHeader,
@@ -23,6 +24,19 @@ interface Props {
 export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onBounce }: Props) {
   const t = useT();
   const state = useHarmonizerState(take, accent, onClose, onBounce);
+
+  useEffect(() => {
+    const id = 'vocalex:harmonizer-sheet';
+    activeOverlaysRegistry.register('sheet', id);
+    const unregisterBack = BackDispatcher.register('sheet', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('sheet', id);
+      unregisterBack();
+    };
+  }, [onClose]);
 
   const {
     layers,

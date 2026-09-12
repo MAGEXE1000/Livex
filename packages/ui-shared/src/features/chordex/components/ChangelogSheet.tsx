@@ -3,7 +3,6 @@ import {
   useChordStore,
   ACCENT_COLORS,
   useT,
-  useBackHandler,
   useSettingsStore,
 } from '@workspace/studio-core';
 import React from 'react';
@@ -39,18 +38,6 @@ export default function ChangelogSheet({
     sections ?? getChangelogSections(language ?? 'en');
   void APP_CHANGELOG_SECTIONS; // keep import compatibility for any consumer relying on the re-export shape
 
-  // Register with global back stack to support closing via back swipe or back button
-  useBackHandler(
-    'sheet',
-    () => {
-      if (open) {
-        onClose();
-        return true;
-      }
-      return false;
-    },
-    [open, onClose]
-  );
 
   return (
     <Dialog open={open} onClose={onClose} title={`v${version}`}>

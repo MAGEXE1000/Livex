@@ -1,6 +1,7 @@
-import React from 'react';
-import { useT, type SongPreset } from '@workspace/studio-core';
+import React, { useEffect } from 'react';
+import { useT, type SongPreset, BackDispatcher } from '@workspace/studio-core';
 import { MorphingModal } from '../../../components/motion/morphing-modal';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 
 interface PresetPickerProps {
   accent: { from: string; to: string; mid: string };
@@ -20,6 +21,20 @@ export function PresetPickerSheet({
   onClose,
 }: PresetPickerProps) {
   const t = useT();
+
+  useEffect(() => {
+    if (closing) return undefined;
+    const id = 'chordex:preset-picker';
+    activeOverlaysRegistry.register('sheet', id);
+    const unregisterBack = BackDispatcher.register('sheet', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('sheet', id);
+      unregisterBack();
+    };
+  }, [closing, onClose]);
 
   const chordsLabel =
     chordCount === 1

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore, BackDispatcher } from '@workspace/studio-core';
+import { activeOverlaysRegistry } from '../../../../shared/design-system/dialogs';
 
 export interface SaveFilenameModalProps {
   open: boolean;
@@ -42,6 +43,22 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
       }, 50);
     }
   }, [open, defaultFileName]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const id = 'stagex:save-filename-modal';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      if (!isSaving) {
+        onClose();
+      }
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [open, isSaving, onClose]);
 
   // Close on Escape key
   useEffect(() => {

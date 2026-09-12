@@ -16,7 +16,9 @@ import {
   type DrumMeasure,
   DRUM_INSTRUMENTS,
   INSTRUMENT_COLOR,
+  BackDispatcher,
 } from '@workspace/studio-core';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import DrumPaperPreview, {
   type DrumExportConfig,
   DEFAULT_DRUM_EXPORT_CONFIG,
@@ -404,6 +406,19 @@ export function DrumExportModal({
     setClosing(true);
     setTimeout(onClose, 320);
   };
+
+  useEffect(() => {
+    const id = 'drumex:export-modal';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      handleClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [onClose]);
 
   const handlePDF = async (mode: 'save' | 'share') => {
     if (mode === 'save') setSaving(true);

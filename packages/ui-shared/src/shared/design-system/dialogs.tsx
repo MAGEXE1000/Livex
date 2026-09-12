@@ -25,6 +25,7 @@ export const activeOverlaysRegistry = {
 };
 
 import React, { useEffect } from 'react';
+import { BackDispatcher } from '@workspace/studio-core';
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -88,12 +89,17 @@ export function Dialog({
     if (open) {
       const id = Math.random().toString();
       activeOverlaysRegistry.register('modal', id);
+      const unregisterBack = BackDispatcher.register('modal', () => {
+        onClose();
+        return true;
+      });
       return () => {
         activeOverlaysRegistry.unregister('modal', id);
+        unregisterBack();
       };
     }
     return undefined;
-  }, [open]);
+  }, [open, onClose]);
 
   // Determine semantic status: if explicit status is passed, use it. Otherwise infer from isDestructive or title keywords.
   const isDestructiveInferred =
@@ -155,12 +161,17 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
     if (open) {
       const id = Math.random().toString();
       activeOverlaysRegistry.register('sheet', id);
+      const unregisterBack = BackDispatcher.register('sheet', () => {
+        onClose();
+        return true;
+      });
       return () => {
         activeOverlaysRegistry.unregister('sheet', id);
+        unregisterBack();
       };
     }
     return undefined;
-  }, [open]);
+  }, [open, onClose]);
 
   return (
     <MorphingModal
