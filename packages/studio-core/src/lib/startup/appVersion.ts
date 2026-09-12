@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.91';
-export const NATIVE_VERSION_CODE = 40591;
-export const WEB_VERSION = '4.5.91';
+export const NATIVE_VERSION = '4.5.92';
+export const NATIVE_VERSION_CODE = 40592;
+export const WEB_VERSION = '4.5.92';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e8be9d52';
+export const APP_COMMIT_SHA = '2f2efab6';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/11/2026, 3:04:59 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/12/2026, 1:28:07 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -94,17 +94,7 @@ export interface ChangelogSection {
   items: string[];
 }
 
-export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
-  {
-    heading: 'Fixed',
-    items: [
-      'Canonical UI Presentation Restoration: Removed experimental native Compose Hub overlay in the Android shell, restoring complete visual and behavioral parity across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
-      'App-Specific Navigation and Design Integrity: Restored individual app layouts, authentic brand logos, bespoke typography, and floating dock navigation across all applications while preserving the canonical `MorphingActionSurface` system.',
-      'Web Audio & Shell Harmony: Maintained full Web Audio synthesis and playback capabilities in Chordex, Drumex, and Vocalex with seamless Android shell integration.',
-      'Preserved Pipeline Acceleration: Kept DOM observer reductions in BottomNavigationController, GPU-composited transform/opacity transitions in StudioPageTransition, and list virtualization containment.',
-    ],
-  },
-];
+export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [];
 
 export interface ReleaseHistoryItem {
   version: string;
@@ -113,6 +103,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.92',
+    date: '2026-09-12',
+    highlights: [
+      'Complete Android Sub-App Code-Splitting Isolation: Converted DrumEditor, StageCorePanel, VocalexApp, GroovexApp, DevToolsApp, and UpdateIndicator to code-split dynamic imports across shared feature barrels and ui-shared root, completely eliminating all INEFFECTIVE_DYNAMIC_IMPORT warnings.',
+      'Android Initial Bundle Reduction: Reduced the initial Android JavaScript entry chunk (index.js) by 53.4% (from 1,551.87 kB to 722.59 kB raw, and by 55.1% gzipped from 357.32 kB to 160.37 kB), dramatically lowering cold-start parsing and JavaScript evaluation overhead on Android WebView.',
+      'Cold-Start Import Decoupling: Decoupled EmergencyDebugOverlay, MobileDevicePreviewFrame, and ui-android to use direct subpaths, preventing accidental evaluation of the root ui-shared barrel during application boot.',
+      'Phase 7A–7J Baseline Consolidations:Decoupled GSAP/SplitText, strengthened reduced-motion accessibility, aligned Metronome and global Dialog/Sheet with native BackDispatcher, narrowed Zustand subscriptions, and pruned stale motion build configurations.',
+    ],
+  },
   {
     version: '4.5.91',
     date: '2026-09-11',
@@ -203,15 +203,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Standard Capacitor Asset Pipeline: Established root and Android resource pipelines (`resources/` and `apps/studio-android/resources/`) fully populated with the approved high-resolution Livex master icon (1024×1024) and all 5 density mipmaps.',
       'Purged Legacy Brand Detritus: Completely removed obsolete Chordex screenshots, legacy sine-wave icon caches, and outdated branding references to establish Livex as the sole canonical brand identity.',
       'Windows Tooling Execution Stability: Deactivated non-portable Unix shell hook invocation to ensure robust script and command execution across developer environments.',
-    ],
-  },
-  {
-    version: '4.5.82',
-    date: '2026-09-09',
-    highlights: [
-      'Three-State Startup Animation Engine: Engineered an appearance-aware launch sequence in `LaunchAnimationEngine.tsx` that dynamically adapts canvas background and branding elements across Light (`#ffffff`), Dark (`#141418`), and AMOLED (`#000000`) appearance modes.',
-      'Adaptive Livex Logo & Luminous Atmosphere: Implemented high-contrast dark Livex mark styling (`brightness(0)` at `0.90` opacity) with preserved specular sheen sweep in Light mode; calibrated subtle ambient bloom across all appearance states.',
-      'Startup Background Flash Elimination: Removed hardcoded `#000000` canvas background from launch animation; synchronized frame-0 early boot CSS tokens (`html.dark`, `html.amoled`, `html.light`) and Android Day theme `styles.xml` to eliminate pre-mount visual flashes.',
     ],
   },
 ];
