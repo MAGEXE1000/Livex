@@ -964,7 +964,7 @@ export default function CustomChordBuilder({
   inMorphSurface = false,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  useScrollHide(scrollRef);
+  useScrollHide(inMorphSurface ? { current: null } : scrollRef);
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const t = useT();
   const resolvedAccent = accent ?? resolveAccent(accentColor);
@@ -975,7 +975,7 @@ export default function CustomChordBuilder({
   };
 
   const [instrument, setInstrument] = useState<Instrument>(
-    editChord?.instrument ?? (mode === 'find' ? 'bass' : 'guitar')
+    editChord?.instrument ?? 'guitar'
   );
   // Each string holds a list of active frets — allows multiple notes per string.
   // [-1] = muted, [0] = open, [n, m, ...] = multiple fret positions active.
@@ -999,7 +999,7 @@ export default function CustomChordBuilder({
   const defaultFret = mode === 'find' ? -1 : 0;
   const [frets, setFrets] = useState<number[][]>(() => {
     if (editChord?.frets) return editChord.frets.map((f) => [f]);
-    const initialInst = editChord?.instrument ?? (mode === 'find' ? 'bass' : 'guitar');
+    const initialInst = editChord?.instrument ?? 'guitar';
     const n = initialInst === 'bass' ? 4 : 6;
     return Array.from({ length: n }, () => [defaultFret]);
   });
@@ -1008,19 +1008,32 @@ export default function CustomChordBuilder({
   const [name, setName] = useState(editChord?.name ?? '');
   const [nameTouched, setNameTouched] = useState(!!editChord?.name);
 
-  // Safety: in find mode, ensure instrument is strictly bass or piano (never guitar)
+  // Safety: in find mode, ensure instrument is strictly guitar or bass (never piano)
   useEffect(() => {
-    if (mode === 'find' && instrument === 'guitar') {
-      setInstrument('bass');
-      setFrets(Array.from({ length: 4 }, () => [defaultFret]));
+    if (mode === 'find' && (instrument as string) === 'piano') {
+      setInstrument('guitar');
+      setFrets(Array.from({ length: 6 }, () => [defaultFret]));
+      setBarres([]);
+      setPianoKeys([]);
     }
   }, [mode, instrument, defaultFret]);
 
-  // Nav bar — hide while builder is open
+  // Nav bar — hide while builder is open (only when not in morph surface)
   useEffect(() => {
+    if (inMorphSurface) return;
     setNavHidden(true);
     return () => setNavHidden(false);
-  }, []);
+  }, [inMorphSurface]);
+
+  const handleClearNotes = useCallback(() => {
+    if (instrument === 'piano') {
+      setPianoKeys([]);
+    } else {
+      const n = instrument === 'bass' ? 4 : 6;
+      setFrets(Array.from({ length: n }, () => [defaultFret]));
+      setBarres([]);
+    }
+  }, [instrument, defaultFret]);
 
   // Flatten multi-fret state to a single fret per string for storage / preview diagrams.
   // Muted stays -1. Open stays 0. When multiple positive frets, take the lowest.
@@ -1148,8 +1161,8 @@ export default function CustomChordBuilder({
               >
                 {(
                   [
+                    { id: 'guitar' as const, label: instLabels.guitar, icon: 'music_note' },
                     { id: 'bass' as const, label: instLabels.bass, icon: 'graphic_eq' },
-                    { id: 'piano' as const, label: instLabels.piano, icon: 'piano' },
                   ] as const
                 ).map((inst) => {
                   const active = instrument === inst.id;
@@ -1334,7 +1347,7 @@ export default function CustomChordBuilder({
                   className="material-symbols-rounded text-[18px]"
                   style={{ color: suggested ? '#fff' : 'var(--c-text-muted)' }}
                 >
-                  {suggested ? 'music_note' : instrument === 'piano' ? 'piano' : 'graphic_eq'}
+                  {suggested ? 'music_note' : instrument === 'bass' ? 'graphic_eq' : 'music_note'}
                 </span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -1427,15 +1440,9 @@ export default function CustomChordBuilder({
               {hasAnyNote && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (instrument === 'piano') setPianoKeys([]);
-                    else {
-                      const n = instrument === 'bass' ? 4 : 6;
-                      setFrets(Array.from({ length: n }, () => [defaultFret]));
-                      setBarres([]);
-                    }
-                  }}
+                  onClick={handleClearNotes}
                   title="Clear notes"
+                  aria-label="Clear notes"
                   className="btn-smooth touch-target-44"
                   style={{
                     padding: '6px',
@@ -1449,7 +1456,7 @@ export default function CustomChordBuilder({
                     cursor: 'pointer',
                   }}
                 >
-                  <span className="material-symbols-rounded text-[18px]">restart_alt</span>
+                  <span className="material-symbols-rounded text-[18px]">delete</span>
                 </button>
               )}
             </div>
@@ -1707,14 +1714,7 @@ export default function CustomChordBuilder({
             <div style={{ display: 'flex', gap: '10px' }}>
               <Button
                 variant="secondary"
-                onClick={() => {
-                  if (instrument === 'piano') setPianoKeys([]);
-                  else {
-                    const n = instrument === 'bass' ? 4 : 6;
-                    setFrets(Array.from({ length: n }, () => [defaultFret]));
-                    setBarres([]);
-                  }
-                }}
+                onClick={handleClearNotes}
                 disabled={!hasAnyNote}
                 style={{
                   flex: 1,
@@ -1723,7 +1723,7 @@ export default function CustomChordBuilder({
                   background: hasAnyNote ? 'var(--app-surface-high)' : 'var(--app-surface)',
                   color: hasAnyNote ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
                 }}
-                icon="restart_alt"
+                icon="delete"
               >
                 Clear
               </Button>

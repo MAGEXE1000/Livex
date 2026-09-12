@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { useScrollHide, useT } from '@workspace/studio-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
@@ -38,6 +38,14 @@ export default function LibraryPanel() {
   } = state;
 
   useScrollHide(state.scrollRef);
+
+  useEffect(() => {
+    // Warm Chord Finder lazy chunk on idle to eliminate first-open pop-in
+    const timer = setTimeout(() => {
+      import('../components/CustomChordBuilder');
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (settings.instrument === 'saxophone') {
     return (
@@ -155,7 +163,14 @@ export default function LibraryPanel() {
             state.closeFinder();
           }
         }}
-        contentStyle={{ padding: 0 }}
+        contentStyle={{
+          padding: 0,
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
         <Suspense fallback={null}>
           <CustomChordBuilder
