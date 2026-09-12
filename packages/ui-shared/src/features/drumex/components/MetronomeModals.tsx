@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   type MetronomeTimeSignature,
   type MetronomeSubdivision,
   type MetronomeTempoRampConfig,
   SpringPresets,
+  BackDispatcher,
 } from '@workspace/studio-core';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 
 interface TimeSignatureModalProps {
   isOpen: boolean;
@@ -72,6 +74,20 @@ export function TimeSignatureModal({
   isAmoled,
 }: TimeSignatureModalProps) {
   const prefersReduced = useAppReducedMotion();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const id = 'metronome:time-signature';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>
@@ -277,6 +293,20 @@ export function SubdivisionModal({
 }: SubdivisionModalProps) {
   const prefersReduced = useAppReducedMotion();
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const id = 'metronome:subdivision';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -436,6 +466,20 @@ export function TempoRampModal({
   isAmoled,
 }: TempoRampModalProps) {
   const prefersReduced = useAppReducedMotion();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const id = 'metronome:tempo-ramp';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [isOpen, onClose]);
   const [enabled, setEnabled] = React.useState(config.enabled);
   const [mode, setMode] = React.useState<'bars' | 'time'>(config.mode || 'bars');
   const [startBpm, setStartBpm] = React.useState(config.startBpm || currentBpm);
@@ -1004,6 +1048,20 @@ export function CountInModal({
   onClose,
 }: CountInModalProps) {
   const prefersReduced = useAppReducedMotion();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const id = 'metronome:count-in';
+    activeOverlaysRegistry.register('modal', id);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      onClose();
+      return true;
+    });
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      unregisterBack();
+    };
+  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>

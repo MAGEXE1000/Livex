@@ -294,22 +294,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
         setIsEditingBpm(false);
         return true;
       }
-      if (showTempoRampModal) {
-        setShowTempoRampModal(false);
-        return true;
-      }
-      if (showCountInModal) {
-        setShowCountInModal(false);
-        return true;
-      }
-      if (showTimeSigModal) {
-        setShowTimeSigModal(false);
-        return true;
-      }
-      if (showSubdivisionModal) {
-        setShowSubdivisionModal(false);
-        return true;
-      }
       if (bottomBarMode !== 'normal') {
         setBottomBarMode('normal');
         return true;
@@ -340,10 +324,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     },
     [
       isEditingBpm,
-      showTempoRampModal,
-      showCountInModal,
-      showTimeSigModal,
-      showSubdivisionModal,
       bottomBarMode,
       presetFormMode,
       isPresetsOpen,
