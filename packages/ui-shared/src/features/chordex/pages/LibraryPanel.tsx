@@ -3,11 +3,15 @@ import { AnimatePresence } from 'motion/react';
 import { useScrollHide } from '@workspace/studio-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
-import { SongPracticeView } from './SongPracticeView';
-import { SaxophonePracticePanel } from './SaxophonePracticePanel';
 import { useLibraryState } from './useLibraryState';
 import { LibraryMainView, LibraryChordDetail, CategoryScreenView } from './LibraryUI';
 
+const SongPracticeView = lazy(() =>
+  import('./SongPracticeView').then((m) => ({ default: m.SongPracticeView }))
+);
+const SaxophonePracticePanel = lazy(() =>
+  import('./SaxophonePracticePanel').then((m) => ({ default: m.SaxophonePracticePanel }))
+);
 const CustomChordBuilder = lazy(() => import('../components/CustomChordBuilder'));
 const ProgressionGenerator = lazy(() => import('../components/ProgressionGenerator'));
 
@@ -32,7 +36,11 @@ export default function LibraryPanel() {
   useScrollHide(state.scrollRef);
 
   if (settings.instrument === 'saxophone') {
-    return <SaxophonePracticePanel />;
+    return (
+      <Suspense fallback={null}>
+        <SaxophonePracticePanel />
+      </Suspense>
+    );
   }
 
   return (
@@ -146,10 +154,12 @@ export default function LibraryPanel() {
             variant="drilldown"
             style={{ position: 'fixed', inset: 0, zIndex: 100000 }}
           >
-            <SongPracticeView
-              song={activePracticeSong}
-              onClose={() => setActivePracticeSong(null)}
-            />
+            <Suspense fallback={null}>
+              <SongPracticeView
+                song={activePracticeSong}
+                onClose={() => setActivePracticeSong(null)}
+              />
+            </Suspense>
           </StudioPageTransition>
         )}
       </AnimatePresence>

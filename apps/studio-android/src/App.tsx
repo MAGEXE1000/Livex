@@ -1,19 +1,16 @@
 import { SharedAppShell } from '@workspace/ui-shared/src/shared/layout/SharedAppShell';
 import { lazy, useEffect, useRef, useState } from 'react';
-import { tolgee, useSettingsStore } from '@workspace/studio-core';
+import { tolgee, useSettingsStore, useNavigationStore } from '@workspace/studio-core';
 
 import { TolgeeProvider } from '@tolgee/react';
 
 import {
-  LaunchAnimationEngine,
-  BottomNavigationController,
-  SharedNavigationBar,
   StudioHub,
-  LibraryPanel,
-  SettingsPanel,
-  SongsPanel,
-  triggerIntroReveal,
-} from '@workspace/ui-shared';
+  BottomNavigationController,
+  LaunchAnimationEngine,
+} from '@workspace/ui-shared/src/features/hub';
+import SettingsPanel from '@workspace/ui-shared/src/panels/SettingsPanel';
+import { triggerIntroReveal } from '@workspace/ui-shared/src/shared/animation/introSignal';
 
 const DrumEditor = lazy(() => import('@workspace/ui-shared/src/features/drumex/pages/DrumEditor'));
 const GroovexApp = lazy(() => import('@workspace/ui-shared/src/features/groovex/pages/GroovexApp'));
@@ -27,6 +24,11 @@ const SaxophonePracticePanel = lazy(() =>
     default: m.SaxophonePracticePanel,
   }))
 );
+const loadSongsPanel = () => import('@workspace/ui-shared/src/features/chordex/pages/SongsPanel');
+const loadLibraryPanel = () => import('@workspace/ui-shared/src/features/chordex/pages/LibraryPanel');
+
+const SongsPanel = lazy(loadSongsPanel);
+const LibraryPanel = lazy(loadLibraryPanel);
 
 import { Capacitor } from '@capacitor/core';
 import { MobileDevicePreviewFrame } from './components/MobileDevicePreviewFrame';
@@ -58,6 +60,15 @@ export default function App() {
   );
 
   const [route, setRoute] = useState('/app');
+  const routeApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+
+  useEffect(() => {
+    if (routeApp === 'chordex') {
+      void loadSongsPanel();
+      void loadLibraryPanel();
+    }
+  }, [routeApp]);
+
   const navigateTo = (path: string) => {
     if (path === '/') return; // Never route to landing page on Android
     window.history.pushState({}, '', path);

@@ -131,6 +131,9 @@ export default defineConfig(async ({ command, mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            if (id.includes('/packages/studio-core/')) {
+              return 'studio-core';
+            }
             if (id.includes('node_modules')) {
               if (
                 id.includes('/react-dom/') ||
