@@ -86,9 +86,6 @@ export { default as WebAppSectionDock } from './shared/layout/WebAppSectionDock'
 export { default as DevToolsDashboard } from './features/devtools/components/DevToolsDashboard';
 export const DevToolsApp = lazy(() => import('./features/devtools/DevToolsApp'));
 
-// BottomNav removed (architectural unification)
-export const UpdateIndicator = lazy(() => import('./features/updater/components/UpdateIndicator'));
-
 export * from './shared/layout/StudioLayoutSystem';
 export { ProgressiveBlur } from './shared/design-system/ProgressiveBlur';
 export { StudioHeader } from './shared/layout/StudioHeader';

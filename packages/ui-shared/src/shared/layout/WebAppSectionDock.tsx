@@ -203,6 +203,8 @@ export default function WebAppSectionDock({
   const vt = t.vocalex as any;
 
   const mouseX = useMotionValue(Infinity);
+  const canHover = useHoverCapable();
+  const appReducedMotion = useAppReducedMotion();
 
   const appKey = (app === 'stage' ? 'stagex' : app) as AppKey;
   const sections = APP_SECTIONS[appKey] || APP_SECTIONS[app];
@@ -272,8 +274,6 @@ export default function WebAppSectionDock({
       ? 'rgba(255, 255, 255, 0.45)'
       : 'rgba(15, 15, 20, 0.65)';
 
-  const canHover = useHoverCapable();
-  const appReducedMotion = useAppReducedMotion();
   const reduceMotion = Boolean(preferences.reduceMotion || appReducedMotion);
 
   return (
