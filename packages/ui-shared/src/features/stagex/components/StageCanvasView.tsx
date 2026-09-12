@@ -645,8 +645,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                 : isLight
                   ? '1px solid rgba(0, 0, 0, 0.08)'
                   : '1px solid rgba(255, 255, 255, 0.10)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
+              backdropFilter: 'var(--surface-float-blur)',
+              WebkitBackdropFilter: 'var(--surface-float-blur)',
               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
             }}
           >
@@ -861,8 +861,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                     boxShadow: isLandscape
                       ? '0 4px 14px rgba(236, 72, 153, 0.45)'
                       : '0 4px 16px rgba(0, 0, 0, 0.35)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
+                    backdropFilter: 'var(--surface-float-blur)',
+                    WebkitBackdropFilter: 'var(--surface-float-blur)',
                   }}
                   aria-label={
                     isLandscape
@@ -940,8 +940,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                 boxShadow: liveMode
                   ? '0 4px 14px rgba(236, 72, 153, 0.45)'
                   : '0 4px 16px rgba(0, 0, 0, 0.35)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
+                backdropFilter: 'var(--surface-float-blur)',
+                WebkitBackdropFilter: 'var(--surface-float-blur)',
               }}
               aria-label={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
               title={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
@@ -1015,8 +1015,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
             boxShadow: isLight
               ? '0 4px 16px rgba(0, 0, 0, 0.12)'
               : '0 4px 20px rgba(0, 0, 0, 0.50)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            backdropFilter: 'var(--surface-float-blur)',
+            WebkitBackdropFilter: 'var(--surface-float-blur)',
           }}
           aria-label="Edit Specs"
           title="Edit Specs"

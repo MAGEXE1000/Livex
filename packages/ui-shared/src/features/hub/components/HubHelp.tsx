@@ -896,8 +896,8 @@ export function HubHelp({
           borderRadius: '16px',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
           overflow: 'hidden',
-          backdropFilter: 'blur(30px)',
-          WebkitBackdropFilter: 'blur(30px)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
           animation: 'hub-modal-fade-in 250ms ease both',
         }}
         className="settings-desktop-layout"

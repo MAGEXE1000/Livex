@@ -57,8 +57,8 @@ export const StageBottomPanelSlot: React.FC<StageBottomPanelSlotProps> = ({
             : isLight
               ? '1px solid rgba(0, 0, 0, 0.08)'
               : '1px solid rgba(255, 255, 255, 0.10)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
           boxShadow: isLight
             ? '0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)'
             : '0 16px 40px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.40)',

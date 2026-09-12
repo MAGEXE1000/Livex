@@ -407,7 +407,6 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
           <div
             style={{
               background: 'var(--app-surface-high, var(--app-surface))',
-              backdropFilter: 'blur(10px)',
               padding: '16px',
               borderRadius: '14px',
               border: '1px solid var(--c-border)',
@@ -441,7 +440,6 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
           <div
             style={{
               background: 'var(--app-surface-high, var(--app-surface))',
-              backdropFilter: 'blur(10px)',
               padding: '16px',
               borderRadius: '14px',
               border: '1px solid var(--c-border)',
@@ -469,7 +467,6 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
           <div
             style={{
               background: 'var(--app-surface-high, var(--app-surface))',
-              backdropFilter: 'blur(10px)',
               padding: '16px',
               borderRadius: '14px',
               border: '1px solid var(--c-border)',
@@ -507,7 +504,6 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
           <div
             style={{
               background: 'var(--app-surface-high, var(--app-surface))',
-              backdropFilter: 'blur(10px)',
               padding: '16px',
               borderRadius: '14px',
               border: '1px solid var(--c-border)',
@@ -537,7 +533,6 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
             style={{
               gridColumn: '1 / -1',
               background: 'var(--app-surface-high, var(--app-surface))',
-              backdropFilter: 'blur(10px)',
               padding: '20px',
               borderRadius: '14px',
               border: '1px solid var(--c-border)',

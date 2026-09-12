@@ -1809,8 +1809,8 @@ export default function StudioHub() {
                                       border: isLight
                                         ? '1px solid rgba(255, 255, 255, 0.95)'
                                         : '1px solid rgba(255, 255, 255, 0.12)',
-                                      backdropFilter: 'blur(24px) saturate(180%)',
-                                      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                                      backdropFilter: 'var(--surface-topbar-blur)',
+                                      WebkitBackdropFilter: 'var(--surface-topbar-blur)',
                                       boxShadow: 'var(--shadow-control-raised)',
                                       display: 'flex',
                                       alignItems: 'center',

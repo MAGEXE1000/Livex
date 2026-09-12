@@ -288,8 +288,8 @@ export function Surface({
       style={{
         backgroundColor: getBg(),
         border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
-        backdropFilter: glass ? 'blur(20px) saturate(180%)' : 'none',
-        WebkitBackdropFilter: glass ? 'blur(20px) saturate(180%)' : 'none',
+        backdropFilter: glass ? 'var(--surface-topbar-blur)' : 'none',
+        WebkitBackdropFilter: glass ? 'var(--surface-topbar-blur)' : 'none',
         color: 'var(--c-text-primary)',
         boxShadow: glass
           ? 'var(--shadow-surface-raised, 0 8px 24px rgba(0, 0, 0, 0.16))'

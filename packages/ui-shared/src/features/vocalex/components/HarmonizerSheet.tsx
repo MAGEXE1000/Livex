@@ -333,8 +333,8 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
           padding: '11px 16px calc(11px + env(safe-area-inset-bottom, 0px))',
           borderTop: '1px solid rgba(255,255,255,0.07)',
           background: 'rgba(11,11,17,0.96)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
           display: 'flex',
           gap: 8,
         }}

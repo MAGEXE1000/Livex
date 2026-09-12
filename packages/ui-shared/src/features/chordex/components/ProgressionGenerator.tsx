@@ -131,8 +131,8 @@ export default function ProgressionGenerator({
       className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${closing ? 'overlay-fade-out' : 'overlay-fade-in'}`}
       style={{
         background: 'var(--surface-modal-bg, var(--app-surface-scrim, rgba(0, 0, 0, 0.65)))',
-        backdropFilter: 'blur(14px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+        backdropFilter: 'var(--surface-scrim-blur, none)',
+        WebkitBackdropFilter: 'var(--surface-scrim-blur, none)',
       }}
       onClick={requestClose}
       role="dialog"
@@ -447,8 +447,8 @@ export default function ProgressionGenerator({
                           borderRadius: 12,
                           padding: 8,
                           boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-                          backdropFilter: 'blur(20px)',
-                          WebkitBackdropFilter: 'blur(20px)',
+                          backdropFilter: 'var(--surface-float-blur)',
+                          WebkitBackdropFilter: 'var(--surface-float-blur)',
                           minWidth: 220,
                           animation: 'spring-in 160ms cubic-bezier(0.22,1,0.36,1)',
                         }}

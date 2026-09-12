@@ -2340,8 +2340,8 @@ function ExportModal({
           transform: barVisible ? 'translateY(0)' : 'translateY(110%)',
           transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'rgba(15,15,15,0.94)',
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >

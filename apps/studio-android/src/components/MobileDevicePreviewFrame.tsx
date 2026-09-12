@@ -117,7 +117,8 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
         className="w-full max-w-4xl px-4 py-2 mb-3 flex flex-wrap items-center justify-between gap-3 z-50 rounded-2xl shrink-0"
         style={{
           background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(20px)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
           border: '1px solid rgba(255, 255, 255, 0.10)',
           boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)',
         }}

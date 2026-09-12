@@ -255,8 +255,8 @@ export function Loading({ statusText = 'Loading...', overlay = false }: LoadingP
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: 'var(--surface-topbar-bg, rgba(16, 16, 20, 0.75))',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          backdropFilter: 'var(--surface-topbar-blur)',
+          WebkitBackdropFilter: 'var(--surface-topbar-blur)',
           zIndex: 1000,
         }}
       >

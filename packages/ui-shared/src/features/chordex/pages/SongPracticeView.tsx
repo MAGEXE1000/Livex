@@ -810,7 +810,8 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             background: 'rgba(15,15,20,0.92)',
             border: '1px solid rgba(255,255,255,0.08)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(16px)',
+            backdropFilter: 'var(--surface-float-blur)',
+            WebkitBackdropFilter: 'var(--surface-float-blur)',
             cursor: 'grab',
             display: 'flex',
             flexDirection: 'column',
@@ -2112,7 +2113,8 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             gap: 8,
             background: 'rgba(10,10,14,0.92)',
             borderTop: '1px solid rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(16px)',
+            backdropFilter: 'var(--surface-float-blur)',
+            WebkitBackdropFilter: 'var(--surface-float-blur)',
           }}
         >
           {/* Progress Slider */}

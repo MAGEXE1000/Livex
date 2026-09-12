@@ -3183,7 +3183,8 @@ export default function DrumEditor() {
                               borderRadius: 12,
                               padding: '16px',
                               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                              backdropFilter: 'blur(20px)',
+                              backdropFilter: 'var(--surface-float-blur)',
+                              WebkitBackdropFilter: 'var(--surface-float-blur)',
                               minWidth: 260,
                               width: 260,
                               zIndex: 999,
@@ -3611,7 +3612,8 @@ export default function DrumEditor() {
                           borderRadius: 12,
                           padding: '12px 14px',
                           boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                          backdropFilter: 'blur(20px)',
+                          backdropFilter: 'var(--surface-float-blur)',
+                          WebkitBackdropFilter: 'var(--surface-float-blur)',
                           minWidth: 190,
                           zIndex: 100,
                         }}
@@ -3802,8 +3804,8 @@ export default function DrumEditor() {
                 ? 'rgba(250,249,247,0.98)'
                 : 'rgba(14,14,17,0.98)',
             borderBottom: '1px solid rgba(128,128,128,0.10)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
+            backdropFilter: 'var(--surface-float-blur)',
+            WebkitBackdropFilter: 'var(--surface-float-blur)',
             animation: hamburgerClosing
               ? 'drumHamburgerOut 170ms cubic-bezier(0.4,0,1,1) both'
               : 'drumHamburgerIn 200ms cubic-bezier(0.22,1,0.36,1)',
@@ -5523,8 +5525,8 @@ export default function DrumEditor() {
                                                     : '0 8px 32px rgba(0,0,0,0.55)',
                                                   padding: '4px 0',
                                                   minWidth: 148,
-                                                  backdropFilter: 'blur(20px)',
-                                                  WebkitBackdropFilter: 'blur(20px)',
+                                                  backdropFilter: 'var(--surface-float-blur)',
+                                                  WebkitBackdropFilter: 'var(--surface-float-blur)',
                                                   animation:
                                                     'drumHamburgerIn 150ms cubic-bezier(0.22,1,0.36,1)',
                                                 }}
@@ -5888,8 +5890,8 @@ export default function DrumEditor() {
                                     borderRadius: 14,
                                     padding: '12px 14px',
                                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                                    backdropFilter: 'blur(20px)',
-                                    WebkitBackdropFilter: 'blur(20px)',
+                                    backdropFilter: 'var(--surface-float-blur)',
+                                    WebkitBackdropFilter: 'var(--surface-float-blur)',
                                     minWidth: 190,
                                     animation: 'drumHamburgerIn 150ms cubic-bezier(0.22,1,0.36,1)',
                                     zIndex: 80,
@@ -6066,8 +6068,8 @@ export default function DrumEditor() {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: 8,
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
+                                        backdropFilter: 'var(--surface-float-blur)',
+                                        WebkitBackdropFilter: 'var(--surface-float-blur)',
                                         boxShadow: isLight
                                           ? '0 8px 32px rgba(0,0,0,0.12)'
                                           : '0 8px 32px rgba(0,0,0,0.50)',
@@ -6398,8 +6400,8 @@ export default function DrumEditor() {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: 8,
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
+                                        backdropFilter: 'var(--surface-float-blur)',
+                                        WebkitBackdropFilter: 'var(--surface-float-blur)',
                                         boxShadow: isLight
                                           ? '0 8px 32px rgba(0,0,0,0.12)'
                                           : '0 8px 32px rgba(0,0,0,0.50)',
