@@ -64,6 +64,7 @@ export function verifyAndCleanCaches() {
 
     // 2. Verify downloaded APK version cache
     const downloadedVer = localStorage.getItem('studio:downloadedApkVersion');
+    const downloadedPath = localStorage.getItem('studio:downloadedApkPath');
     if (downloadedVer) {
       const sem = parseSemver(downloadedVer);
       if (!sem || downloadedVer === 'V' || downloadedVer === 'v') {
@@ -71,10 +72,17 @@ export function verifyAndCleanCaches() {
         localStorage.removeItem('studio:downloadedApkPath');
         releaseMetadataInspector.cacheSource =
           (releaseMetadataInspector.cacheSource || '') + ' | invalidated_apk';
+      } else if (compareSemver(APP_VERSION, downloadedVer) >= 0) {
+        localStorage.removeItem('studio:downloadedApkVersion');
+        localStorage.removeItem('studio:downloadedApkPath');
+        releaseMetadataInspector.cacheSource =
+          (releaseMetadataInspector.cacheSource || '') + ' | completed_apk';
       } else {
         releaseMetadataInspector.cacheSource =
           (releaseMetadataInspector.cacheSource || '') + ' | valid_apk';
       }
+    } else if (downloadedPath) {
+      localStorage.removeItem('studio:downloadedApkPath');
     }
 
     // 3. Verify dismissedVersions cache

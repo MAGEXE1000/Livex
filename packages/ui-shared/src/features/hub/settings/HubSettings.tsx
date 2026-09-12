@@ -1028,25 +1028,36 @@ export function HubSettings({
             try {
               const inspected = await AppInstaller.inspectApk({ filePath: apkPath });
 
-              let sizeStr = 'N/A';
-              try {
-                const { Filesystem } = await import('@capacitor/filesystem');
-                const statInfo = await Filesystem.stat({ path: apkPath });
-                sizeStr = `${(statInfo.size / (1024 * 1024)).toFixed(2)} MB (${statInfo.size} bytes)`;
-              } catch (e) {
-                console.warn('Error reading APK size:', e);
+              if (!inspected || !inspected.isValidApk) {
+                localStorage.removeItem('studio:downloadedApkPath');
+                localStorage.removeItem('studio:downloadedApkVersion');
+                setDownloadedApkDetails(null);
+                setApkEligibility(null);
+              } else {
+                let sizeStr = 'N/A';
+                try {
+                  const { Filesystem } = await import('@capacitor/filesystem');
+                  const statInfo = await Filesystem.stat({ path: apkPath });
+                  sizeStr = `${(statInfo.size / (1024 * 1024)).toFixed(2)} MB (${statInfo.size} bytes)`;
+                } catch (e) {
+                  console.warn('Error reading APK size for valid APK:', e);
+                }
+
+                setDownloadedApkDetails({
+                  ...inspected,
+                  fileSize: sizeStr,
+                  filePath: apkPath,
+                });
+
+                const eligibility = await checkApkEligibility(apkPath);
+                setApkEligibility(eligibility);
               }
-
-              setDownloadedApkDetails({
-                ...inspected,
-                fileSize: sizeStr,
-                filePath: apkPath,
-              });
-
-              const eligibility = await checkApkEligibility(apkPath);
-              setApkEligibility(eligibility);
             } catch (apkErr) {
               console.warn('Error loading downloaded APK details:', apkErr);
+              localStorage.removeItem('studio:downloadedApkPath');
+              localStorage.removeItem('studio:downloadedApkVersion');
+              setDownloadedApkDetails(null);
+              setApkEligibility(null);
             }
           } else {
             setDownloadedApkDetails(null);
@@ -1098,6 +1109,7 @@ export function HubSettings({
         await Filesystem.deleteFile({ path: filePath }).catch(() => {});
       }
       localStorage.removeItem('studio:downloadedApkPath');
+      localStorage.removeItem('studio:downloadedApkVersion');
       localStorage.removeItem('studio:downloadedBundleId');
       localStorage.removeItem('studio:downloadedVersions');
       showDevToast('Update cache cleared.');
@@ -2611,6 +2623,7 @@ export function HubSettings({
           localStorage.removeItem('studio:dismissedVersions');
           localStorage.removeItem('studio:notifiedVersions');
           localStorage.removeItem('studio:downloadedApkPath');
+          localStorage.removeItem('studio:downloadedApkVersion');
           localStorage.removeItem('studio:downloadedBundleId');
           localStorage.removeItem('studio:downloadedVersions');
           if (Capacitor.isNativePlatform()) {

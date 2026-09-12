@@ -423,8 +423,18 @@ export async function checkAndCleanCache(): Promise<boolean> {
 
   updateGlobalState({ validApkExists: valid });
 
-  if (!valid && filePath) {
-    await deleteLocalApk(ver);
+  if (!valid) {
+    if (filePath) {
+      await deleteLocalApk(ver);
+    }
+    const currentDownloadedPath = localStorage.getItem('studio:downloadedApkPath');
+    if (
+      currentDownloadedPath &&
+      (currentDownloadedPath === filePath || currentDownloadedPath.includes(`studio-update-${ver}.apk`))
+    ) {
+      localStorage.removeItem('studio:downloadedApkPath');
+      localStorage.removeItem('studio:downloadedApkVersion');
+    }
   }
 
   return valid;

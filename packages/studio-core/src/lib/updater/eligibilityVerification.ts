@@ -35,12 +35,16 @@ export async function runEligibilityCheck(
     updateDebugLogs.downloadedIsValidApk = el.downloaded?.isValidApk ?? null;
     updateDebugLogs.downloadedIsUniversalApk = el.downloaded?.isUniversalApk ?? null;
 
-    // Get file size from filesystem
-    try {
-      const { Filesystem } = await import('@capacitor/filesystem');
-      const info = await Filesystem.stat({ path: filePath });
-      updateDebugLogs.downloadedApkSize = `${(info.size / (1024 * 1024)).toFixed(2)} MB (${info.size} bytes)`;
-    } catch {
+    // Get file size from filesystem only if downloaded APK is valid
+    if (el.downloaded?.isValidApk) {
+      try {
+        const { Filesystem } = await import('@capacitor/filesystem');
+        const info = await Filesystem.stat({ path: filePath });
+        updateDebugLogs.downloadedApkSize = `${(info.size / (1024 * 1024)).toFixed(2)} MB (${info.size} bytes)`;
+      } catch {
+        updateDebugLogs.downloadedApkSize = 'N/A';
+      }
+    } else {
       updateDebugLogs.downloadedApkSize = 'N/A';
     }
     updateDebugLogs.downloadedApkSha256 = globalUpdateState.apkSha256 ?? null;
