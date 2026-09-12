@@ -2558,17 +2558,19 @@ interface ParsedImport {
   unresolvedCount: number;
 }
 
-function ImportSongModal({
+export interface ImportSongContentProps {
+  accent: { from: string; to: string; mid?: string };
+  existingPresets: SongPreset[];
+  onImport: (data: Omit<SongPreset, 'id' | 'createdAt' | 'updatedAt'>, replaceId?: string) => void;
+  onClose?: () => void;
+}
+
+export function ImportSongContent({
   accent,
   existingPresets,
   onImport,
   onClose,
-}: {
-  accent: { from: string; to: string; mid: string };
-  existingPresets: SongPreset[];
-  onImport: (data: Omit<SongPreset, 'id' | 'createdAt' | 'updatedAt'>, replaceId?: string) => void;
-  onClose: () => void;
-}) {
+}: ImportSongContentProps) {
   const t = useT();
   const isWebDesktop = useIsWebDesktop();
   const [stage, setStage] = useState<ImportStage>('idle');
@@ -2732,23 +2734,8 @@ function ImportSongModal({
     </span>
   );
 
-  const getTitle = () => {
-    switch (stage) {
-      case 'idle':
-        return t.songs.importSong;
-      case 'preview':
-        return t.songs.previewImport;
-      case 'conflict':
-        return t.songs.songAlreadyExists;
-      case 'success':
-        return t.songs.songImportedTitle;
-      case 'error':
-        return t.songs.importFailed;
-    }
-  };
-
   return (
-    <Dialog open={true} onClose={onClose} title={getTitle()}>
+    <>
       {/* ── IDLE: file picker ── */}
       {stage === 'idle' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -3202,6 +3189,25 @@ function ImportSongModal({
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+export function ImportSongModal({
+  accent,
+  existingPresets,
+  onImport,
+  onClose,
+}: ImportSongContentProps & { onClose: () => void }) {
+  const t = useT();
+  return (
+    <Dialog open={true} onClose={onClose} title={t.songs.importSong}>
+      <ImportSongContent
+        accent={accent}
+        existingPresets={existingPresets}
+        onImport={onImport}
+        onClose={onClose}
+      />
     </Dialog>
   );
 }
@@ -3684,17 +3690,21 @@ const KEYS = [
   'Bm',
 ];
 
-function PresetForm({
+export interface PresetFormContentProps {
+  initial?: FormData;
+  onSave: (d: FormData) => void;
+  onCancel: () => void;
+  accent: { from: string; to: string; mid?: string };
+  showFooterButtons?: boolean;
+}
+
+export function PresetFormContent({
   initial,
   onSave,
   onCancel,
   accent,
-}: {
-  initial?: FormData;
-  onSave: (d: FormData) => void;
-  onCancel: () => void;
-  accent: { from: string; to: string; mid: string };
-}) {
+  showFooterButtons = true,
+}: PresetFormContentProps) {
   const t = useT();
   const [form, setForm] = useState<FormData>(
     initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '' }
@@ -3722,73 +3732,104 @@ function PresetForm({
   };
 
   return (
-    <Dialog
-      open={true}
-      onClose={onCancel}
-      title={initial ? t.songs.editSong : t.songs.newSong}
-      footer={
-        <>
-          <Button onClick={onCancel}>{t.songs.cancel}</Button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '6px 4px 4px 4px' }}>
+      <Input
+        label={t.songs.songTitle}
+        value={form.name}
+        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+        placeholder="e.g. Blackbird"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && form.name.trim()) {
+            onSave(form);
+          }
+        }}
+      />
+      <Input
+        label={t.songs.artist}
+        value={form.artist}
+        onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
+        placeholder="e.g. The Beatles"
+      />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <Input
+          type="number"
+          label={t.songs.bpm}
+          min={20}
+          max={400}
+          value={form.bpm}
+          onChange={(e) => setForm((f) => ({ ...f, bpm: e.target.value }))}
+        />
+        <div>
+          <label style={labelStyle}>{t.songs.key}</label>
+          <select
+            value={form.key}
+            onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
+            style={{ ...selectStyle, cursor: 'pointer' }}
+          >
+            {KEYS.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style={labelStyle}>{t.songs.notes}</label>
+        <textarea
+          value={form.notes}
+          onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+          rows={2}
+          placeholder={t.songs.notesPlaceholder}
+          style={{ ...selectStyle, resize: 'none' }}
+        />
+      </div>
+      {showFooterButtons && (
+        <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '6px' }}>
+          <Button onClick={onCancel} style={{ flex: 1 }}>
+            {t.songs.cancel}
+          </Button>
           <Button
             variant="primary"
             disabled={!form.name.trim()}
             onClick={() => {
               if (form.name.trim()) onSave(form);
             }}
+            style={{ flex: 1 }}
           >
             {initial ? t.songs.save : t.songs.newSong}
           </Button>
-        </>
-      }
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PresetForm({
+  initial,
+  onSave,
+  onCancel,
+  accent,
+}: {
+  initial?: FormData;
+  onSave: (d: FormData) => void;
+  onCancel: () => void;
+  accent: { from: string; to: string; mid: string };
+}) {
+  const t = useT();
+  return (
+    <Dialog
+      open={true}
+      onClose={onCancel}
+      title={initial ? t.songs.editSong : t.songs.newSong}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <Input
-          label={t.songs.songTitle}
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          placeholder="e.g. Blackbird"
-        />
-        <Input
-          label={t.songs.artist}
-          value={form.artist}
-          onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
-          placeholder="e.g. The Beatles"
-        />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Input
-            type="number"
-            label={t.songs.bpm}
-            min={20}
-            max={400}
-            value={form.bpm}
-            onChange={(e) => setForm((f) => ({ ...f, bpm: e.target.value }))}
-          />
-          <div>
-            <label style={labelStyle}>{t.songs.key}</label>
-            <select
-              value={form.key}
-              onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
-              style={{ ...selectStyle, cursor: 'pointer' }}
-            >
-              {KEYS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label style={labelStyle}>{t.songs.notes}</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            rows={2}
-            placeholder={t.songs.notesPlaceholder}
-            style={{ ...selectStyle, resize: 'none' }}
-          />
-        </div>
-      </div>
+      <PresetFormContent
+        initial={initial}
+        onSave={onSave}
+        onCancel={onCancel}
+        accent={accent}
+        showFooterButtons={true}
+      />
     </Dialog>
   );
 }
@@ -4440,6 +4481,37 @@ export default function SongsPanel() {
     setShowForm(false);
     setEditingId(null);
   };
+
+  const renderCreateSongForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <PresetFormContent
+        accent={accent}
+        onSave={(formData) => {
+          handleFormSave(formData);
+          close?.();
+        }}
+        onCancel={() => close?.()}
+        showFooterButtons={true}
+      />
+    ),
+    [accent, handleFormSave]
+  );
+
+  const renderImportSongForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <div style={{ padding: '8px 14px 14px 14px' }}>
+        <ImportSongContent
+          accent={accent}
+          existingPresets={presets}
+          onImport={(data, replaceId) => {
+            handleImport(data, replaceId);
+          }}
+          onClose={() => close?.()}
+        />
+      </div>
+    ),
+    [accent, presets, handleImport]
+  );
 
   // Sync localSections from store when not dragging
   useEffect(() => {
@@ -6291,43 +6363,65 @@ export default function SongsPanel() {
               SETLIST
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setShowForm(true);
-                }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '2px',
-                }}
+              <MorphingActionSurface
+                placement="center"
+                maxWidth={400}
                 title={t.songs.newSong}
+                subtitle="Create a new chord progression"
+                accentColor={accent.from}
+                customTrigger={({ triggerProps }) => (
+                  <motion.button
+                    {...triggerProps}
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px',
+                    }}
+                    title={t.songs.newSong}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      add
+                    </span>
+                  </motion.button>
+                )}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                  add
-                </span>
-              </button>
-              <button
-                onClick={() => setShowImport(true)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--c-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '2px',
-                }}
-                title="Import"
+                {renderCreateSongForm}
+              </MorphingActionSurface>
+
+              <MorphingActionSurface
+                placement="center"
+                maxWidth={420}
+                title={t.songs.importSong}
+                subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
+                accentColor={accent.from}
+                customTrigger={({ triggerProps }) => (
+                  <motion.button
+                    {...triggerProps}
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--c-text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px',
+                    }}
+                    title="Import"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      upload_file
+                    </span>
+                  </motion.button>
+                )}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                  upload_file
-                </span>
-              </button>
+                {renderImportSongForm}
+              </MorphingActionSurface>
             </div>
           </div>
           {/* List of songs */}
@@ -6664,39 +6758,59 @@ export default function SongsPanel() {
                           button to create your first progression
                         </p>
                         <div className="flex items-center gap-2.5 mt-6">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(null);
-                              setShowForm(true);
-                            }}
-                            className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-                            style={{
-                              backgroundColor: 'var(--c-accent-from, #2563EB)',
-                              boxShadow:
-                                '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
-                            }}
-                            data-purpose="empty-create-song-btn"
+                          <MorphingActionSurface
+                            placement="center"
+                            maxWidth={400}
+                            title={t.songs.newSong}
+                            subtitle="Create a new chord progression"
+                            accentColor={accent.from}
+                            customTrigger={({ triggerProps }) => (
+                              <motion.button
+                                {...triggerProps}
+                                type="button"
+                                className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5"
+                                style={{
+                                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                                  boxShadow:
+                                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                                }}
+                                data-purpose="empty-create-song-btn"
+                              >
+                                <span className="material-symbols-rounded text-base">add</span>
+                                <span>Create Song</span>
+                              </motion.button>
+                            )}
                           >
-                            <span className="material-symbols-rounded text-base">add</span>
-                            <span>Create Song</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowImport(true)}
-                            className="px-4 py-2 rounded-full text-xs font-semibold border shadow-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-                            style={{
-                              backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                              borderColor: 'var(--c-border, #E3E6EB)',
-                              color: 'var(--c-text-primary, #111827)',
-                            }}
-                            data-purpose="empty-import-btn"
+                            {renderCreateSongForm}
+                          </MorphingActionSurface>
+
+                          <MorphingActionSurface
+                            placement="center"
+                            maxWidth={420}
+                            title={t.songs.importSong}
+                            subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
+                            accentColor={accent.from}
+                            customTrigger={({ triggerProps }) => (
+                              <motion.button
+                                {...triggerProps}
+                                type="button"
+                                className="px-4 py-2 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-1.5"
+                                style={{
+                                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                                  borderColor: 'var(--c-border, #E3E6EB)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                }}
+                                data-purpose="empty-import-btn"
+                              >
+                                <span className="material-symbols-rounded text-base">
+                                  cloud_download
+                                </span>
+                                <span>Import</span>
+                              </motion.button>
+                            )}
                           >
-                            <span className="material-symbols-rounded text-base">
-                              cloud_download
-                            </span>
-                            <span>Import</span>
-                          </button>
+                            {renderImportSongForm}
+                          </MorphingActionSurface>
                         </div>
                       </section>
                     ) : (
@@ -6832,43 +6946,62 @@ export default function SongsPanel() {
                 data-purpose="action-buttons"
               >
                 {/* Secondary FAB: Import */}
-                <button
-                  type="button"
-                  onClick={() => setShowImport(true)}
-                  data-testid="import-preset-btn"
-                  aria-label="Import or Backup Cloud"
-                  title="Import or Backup Cloud"
-                  className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
-                  style={{
-                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-secondary, #6B7280)',
-                  }}
+                <MorphingActionSurface
+                  placement="center"
+                  maxWidth={420}
+                  title={t.songs.importSong}
+                  subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
+                  accentColor={accent.from}
+                  customTrigger={({ triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      type="button"
+                      data-testid="import-preset-btn"
+                      aria-label="Import or Backup Cloud"
+                      title="Import or Backup Cloud"
+                      className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                        borderColor: 'var(--c-border, #E3E6EB)',
+                        color: 'var(--c-text-secondary, #6B7280)',
+                      }}
+                    >
+                      <span className="material-symbols-rounded text-xl">cloud_download</span>
+                    </motion.button>
+                  )}
                 >
-                  <span className="material-symbols-rounded text-xl">cloud_download</span>
-                </button>
+                  {renderImportSongForm}
+                </MorphingActionSurface>
 
                 {/* Primary FAB: Create Song */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null);
-                    setShowForm(true);
-                  }}
-                  data-testid="new-preset-btn"
-                  aria-label="Create new progression"
-                  title="Create new progression"
-                  className="rounded-full text-white shadow-lg flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
-                    boxShadow:
-                      '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-                  }}
+                <MorphingActionSurface
+                  placement="center"
+                  maxWidth={400}
+                  title={t.songs.newSong}
+                  subtitle="Create a new chord progression"
+                  accentColor={accent.from}
+                  customTrigger={({ triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      type="button"
+                      data-testid="new-preset-btn"
+                      aria-label="Create new progression"
+                      title="Create new progression"
+                      className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                      style={{
+                        width: '52px',
+                        height: '52px',
+                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        boxShadow:
+                          '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                      }}
+                    >
+                      <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                    </motion.button>
+                  )}
                 >
-                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
-                </button>
+                  {renderCreateSongForm}
+                </MorphingActionSurface>
               </aside>
             </div>
           )}
