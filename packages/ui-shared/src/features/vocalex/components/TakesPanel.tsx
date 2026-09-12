@@ -74,7 +74,13 @@ function useAnimStyle() {
 export default function TakesPanel() {
   useAnimStyle();
   const t = useT();
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const language = settings.language;
   const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
   const isLight =

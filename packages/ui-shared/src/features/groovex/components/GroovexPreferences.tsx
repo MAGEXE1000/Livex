@@ -111,7 +111,13 @@ export default function GroovexPreferences() {
     return SONG_CATALOG.find((s) => s.id === songId);
   }
 
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      perApp: s.settings.perApp,
+    }))
+  );
   const isLight =
     settings.theme === 'light' ||
     (settings.theme === 'system' &&

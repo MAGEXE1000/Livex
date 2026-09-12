@@ -7,6 +7,7 @@ import {
   useT,
   useIsWebDesktop,
   resolveAccent,
+  useShallow,
 } from '@workspace/studio-core';
 import {
   Toggle,
@@ -25,7 +26,15 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
   isLight: isLightProp,
   isAmoled: isAmoledProp,
 }) => {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      language: s.settings.language,
+    }))
+  );
   const acc = resolveAccent(settings.accentColor);
 
   const scrollRef = useRef<HTMLDivElement>(null);

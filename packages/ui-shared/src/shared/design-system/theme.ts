@@ -3,10 +3,18 @@ import {
   useSettingsStore,
   resolveAccent,
   type AppKey,
+  useShallow,
 } from '@workspace/studio-core';
 
 export function useStudioDesignSystem() {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      perApp: s.settings.perApp,
+      accentColor: s.settings.accentColor,
+    }))
+  );
   const appKey = NavigationDispatcher.currentApp() as AppKey;
   const isLight =
     settings.theme === 'light' ||

@@ -697,7 +697,16 @@ const STEM_DOWN: Partial<Record<DrumInstrument, boolean>> = {
 };
 
 export default function DrumEditor() {
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      dynamicLightStart: s.settings.dynamicLightStart,
+      dynamicLightEnd: s.settings.dynamicLightEnd,
+    }))
+  );
 
   const isWebDesktop = useIsWebDesktop();
   const [isLargeDesktop, setIsLargeDesktop] = useState(() => {
@@ -768,7 +777,65 @@ export default function DrumEditor() {
     setCymbalPack: storeSetCymbalPack,
     drumPrefs,
     updateDrumPrefs,
-  } = useDrumStore();
+  } = useDrumStore(
+    useShallow((s) => ({
+      patterns: s.patterns,
+      activePatternId: s.activePatternId,
+      soundMap: s.soundMap,
+      volumeMap: s.volumeMap,
+      masterVolume: s.masterVolume,
+      kitType: s.kitType,
+      activeInstruments: s.activeInstruments,
+      setKitType: s.setKitType,
+      toggleInstrument: s.toggleInstrument,
+      setMasterVolume: s.setMasterVolume,
+      setVolumeForInstrument: s.setVolumeForInstrument,
+      toggleHit: s.toggleHit,
+      simpleToggleHit: s.simpleToggleHit,
+      setHitVelocity: s.setHitVelocity,
+      addMeasure: s.addMeasure,
+      deleteMeasure: s.deleteMeasure,
+      clearMeasure: s.clearMeasure,
+      duplicateMeasure: s.duplicateMeasure,
+      updatePattern: s.updatePattern,
+      addBlankPattern: s.addBlankPattern,
+      duplicatePattern: s.duplicatePattern,
+      deletePattern: s.deletePattern,
+      renamePattern: s.renamePattern,
+      setActivePattern: s.setActivePattern,
+      drumSongs: s.drumSongs,
+      saveDrumSong: s.saveDrumSong,
+      createBlankDrumSong: s.createBlankDrumSong,
+      loadDrumSong: s.loadDrumSong,
+      deleteDrumSong: s.deleteDrumSong,
+      updateDrumSong: s.updateDrumSong,
+      restorePatterns: s.restorePatterns,
+      insertMeasureAfter: s.insertMeasureAfter,
+      togglePatternMute: s.togglePatternMute,
+      importDrumSong: s.importDrumSong,
+      grooves: s.grooves,
+      saveGroove: s.saveGroove,
+      deleteGroove: s.deleteGroove,
+      renameGroove: s.renameGroove,
+      loadGrooveReplace: s.loadGrooveReplace,
+      loadGrooveAppend: s.loadGrooveAppend,
+      duplicateGroove: s.duplicateGroove,
+      instFX: s.instFX,
+      setInstFX: s.setInstFX,
+      instPlugins: s.instPlugins,
+      setInstPlugins: s.setInstPlugins,
+      houseKitMic: s.houseKitMic,
+      setHouseKitMic: s.setHouseKitMic,
+      houseInstVelOverride: s.houseInstVelOverride,
+      setHouseInstVelOverride: s.setHouseInstVelOverride,
+      houseCrashModel: s.houseCrashModel,
+      setHouseCrashModel: s.setHouseCrashModel,
+      cymbalPack: s.cymbalPack,
+      setCymbalPack: s.setCymbalPack,
+      drumPrefs: s.drumPrefs,
+      updateDrumPrefs: s.updateDrumPrefs,
+    }))
+  );
 
   const pattern = useMemo(
     () => patterns.find((p) => p.id === activePatternId) ?? patterns[0] ?? defaultPattern(),

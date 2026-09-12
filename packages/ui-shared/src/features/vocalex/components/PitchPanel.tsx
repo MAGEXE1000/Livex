@@ -1,4 +1,4 @@
-import { useT, createAudioContext, useSettingsStore, resolveAccent } from '@workspace/studio-core';
+import { useT, createAudioContext, useSettingsStore, resolveAccent, useShallow } from '@workspace/studio-core';
 import { Capacitor } from '@capacitor/core';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { detectPitch, type PitchResult } from '../services/pitchYin';
@@ -44,7 +44,20 @@ function centsToNeedleRotation(cents: number): number {
 
 export default function PitchPanel({ active: panelActive = true }: { active?: boolean }) {
   const t = useT();
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      accentColor: s.settings.accentColor,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+      vocalexNoiseSuppression: s.settings.vocalexNoiseSuppression,
+      vocalexAutoGainControl: s.settings.vocalexAutoGainControl,
+      vocalexSensitivity: s.settings.vocalexSensitivity,
+      vocalexReferencePitch: s.settings.vocalexReferencePitch,
+      vocalexTolerance: s.settings.vocalexTolerance,
+      vocalexNoteNaming: s.settings.vocalexNoteNaming,
+    }))
+  );
   const language = settings.language;
   const accent = resolveAccent(settings.accentColor);
   const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };

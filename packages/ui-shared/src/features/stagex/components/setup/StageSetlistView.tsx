@@ -20,7 +20,13 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   const t = useT();
   const tr = t as any;
   const setlistTr = tr.stagex?.setup?.setlist;
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isSpanish = (settings.language ?? 'en') === 'es';
   const { setlist, addSong, removeSong, reorderSongs, preferences } = useStagexStore(
     useShallow((s) => ({

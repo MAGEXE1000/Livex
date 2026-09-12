@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore, type RiderNeed } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { StageSetupEmptyState } from './StageSetupEmptyState';
@@ -22,7 +23,13 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
 }) => {
   const t = useT();
   const tr = t as any;
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isSpanish = (settings.language ?? 'en') === 'es';
   const riderTr = tr.stagex?.setup?.rider;
 
@@ -196,7 +203,25 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
     members,
     gear,
     preferences,
-  } = useStagexStore();
+  } = useStagexStore(
+    useShallow((s) => ({
+      projectName: s.projectName,
+      elements: s.elements,
+      scenes: s.scenes,
+      currentSceneIdx: s.currentSceneIdx,
+      riderNeeds: s.riderNeeds,
+      setRiderNeeds: s.setRiderNeeds,
+      addRiderNeed: s.addRiderNeed,
+      updateRiderNeed: s.updateRiderNeed,
+      removeRiderNeed: s.removeRiderNeed,
+      riderConfig: s.riderConfig,
+      updateRiderConfig: s.updateRiderConfig,
+      riderChannels: s.riderChannels,
+      members: s.members,
+      gear: s.gear,
+      preferences: s.preferences,
+    }))
+  );
 
   const activeVis = settings.perApp?.stagex;
   const isLight =

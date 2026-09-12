@@ -1,4 +1,4 @@
-import { useT, useBackHandler, useSettingsStore } from '@workspace/studio-core';
+import { useT, useBackHandler, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 interface Tip {
@@ -301,15 +301,19 @@ function SectionView({
 export default function PracticePanel() {
   useAnimStyle();
   const t = useT();
-  const settings = useSettingsStore((s) => s.settings);
-  const language = settings.language;
-  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
+  const { language, activeVis, amoledMode } = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      activeVis: s.settings.perApp?.vocalex,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isLight =
-    activeVis.theme === 'light' ||
-    (activeVis.theme === 'system' &&
+    activeVis?.theme === 'light' ||
+    (activeVis?.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
-  const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
+  const isAmoled = !isLight && Boolean(amoledMode || activeVis?.amoledMode);
 
   const sections = useMemo(() => buildSections(t.vocalex as any, language), [t, language]);
   const [transitioning, setTransitioning] = useState(false);

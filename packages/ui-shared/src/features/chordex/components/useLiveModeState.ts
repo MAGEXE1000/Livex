@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   getChordById,
   transposeChordId,
@@ -6,6 +6,7 @@ import {
   ACCENT_COLORS,
   resolveAccent,
   useSettingsStore,
+  useShallow,
 } from '@workspace/studio-core';
 import type { SongPreset, GuitarChordData } from '@workspace/studio-core';
 
@@ -53,7 +54,12 @@ export function useLiveModeState(
   onClose: () => void,
   transposeOffset: number = 0
 ): LiveModeState {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      liveModeAnimations: s.settings.liveModeAnimations,
+    }))
+  );
   const accent = resolveAccent(settings.accentColor);
 
   const [currentIdx, setCurrentIdx] = useState(0);

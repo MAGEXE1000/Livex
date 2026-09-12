@@ -103,6 +103,7 @@ import {
   NavigationDispatcher,
   useBottomNavigationStore,
   useSettingsStore,
+  useShallow,
   DurationPresets,
   EasingPresets,
   SpringPresets,
@@ -524,7 +525,20 @@ export function HubSettings({
   devToast?: string | null;
   renderDevToast?: () => React.ReactNode;
 }) {
-  const settings = useSettingsStore((state) => state.settings);
+  const settings = useSettingsStore(
+    useShallow((state) => ({
+      theme: state.settings.theme,
+      amoledMode: state.settings.amoledMode,
+      perApp: state.settings.perApp,
+      language: state.settings.language,
+      developerMode: state.settings.developerMode,
+      swipeBackBehavior: state.settings.swipeBackBehavior,
+      hapticFeedback: state.settings.hapticFeedback,
+      highRefreshRate: state.settings.highRefreshRate,
+      lowLatencyMode: state.settings.lowLatencyMode,
+      performanceMode: state.settings.performanceMode,
+    }))
+  );
   const isLight =
     settings.theme === 'light' ||
     (settings.theme === 'system' &&

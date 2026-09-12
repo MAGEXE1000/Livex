@@ -1,4 +1,4 @@
-import { useT, resolveAccent, useSettingsStore, vocalexRepository } from '@workspace/studio-core';
+import { useT, resolveAccent, useSettingsStore, vocalexRepository, useShallow } from '@workspace/studio-core';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   SettingSection,
@@ -10,7 +10,20 @@ import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { clearTakeCache } from '../services/harmonyEngine';
 
 export default function VocalexPreferencesPanel() {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      language: s.settings.language,
+      defaultVocalexTab: s.settings.defaultVocalexTab,
+      vocalexReferencePitch: s.settings.vocalexReferencePitch,
+      vocalexSensitivity: s.settings.vocalexSensitivity,
+      vocalexNoteNaming: s.settings.vocalexNoteNaming,
+      vocalexTolerance: s.settings.vocalexTolerance,
+      vocalexNoiseSuppression: s.settings.vocalexNoiseSuppression,
+      vocalexAutoGainControl: s.settings.vocalexAutoGainControl,
+      vocalexCountIn: s.settings.vocalexCountIn,
+    }))
+  );
   const acc = resolveAccent(settings.accentColor);
   const t = useT();
   const vt = t.vocalex as any;

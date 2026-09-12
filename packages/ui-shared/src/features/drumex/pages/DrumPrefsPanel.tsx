@@ -141,7 +141,17 @@ function IconPrefs({ active }: { active: boolean }) {
 }
 
 export default function DrumPrefsPanel() {
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      dynamicLightStart: s.settings.dynamicLightStart,
+      dynamicLightEnd: s.settings.dynamicLightEnd,
+      defaultDrumTab: s.settings.defaultDrumTab,
+    }))
+  );
 
   const drumPrefs = useDrumStore((s) => s.drumPrefs);
   const updateDrumPrefs = useDrumStore((s) => s.updateDrumPrefs);

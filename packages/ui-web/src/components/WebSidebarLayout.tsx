@@ -61,7 +61,7 @@ function SidebarLabel({ children, open }: { children: React.ReactNode; open: boo
 }
 
 export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSidebar: boolean }) {
-  const settings = useSettingsStore((s) => s.settings);
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
 
   const { open, toggleSidebar } = useSidebar();
@@ -145,7 +145,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
   }, [showProfileMenu]);
 
   // Accent color resolved from global user settings
-  const accent = resolveAccent(settings.accentColor);
+  const accent = resolveAccent(accentColor);
 
   // Navigation handlers
   const handleGoToHub = (tab: 'home' | 'settings' | 'profile' | 'help') => {

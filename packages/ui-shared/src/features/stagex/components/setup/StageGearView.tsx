@@ -30,7 +30,13 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
   const t = useT();
   const tr = t as any;
   const gearTr = tr.stagex?.setup?.gear;
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isSpanish = (settings.language ?? 'en') === 'es';
 
   const GEAR_CATEGORIES = useMemo(

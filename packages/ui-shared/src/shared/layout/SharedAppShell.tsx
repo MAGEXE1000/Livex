@@ -2,6 +2,7 @@ import { activeOverlaysRegistry } from '../design-system/dialogs';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   useChordStore,
   useIsWebDesktop,
@@ -286,7 +287,15 @@ export function SharedAppShell({
     appPreloaded,
     requestTransition,
     setAppPreloaded,
-  } = useApplicationTransitionStore();
+  } = useApplicationTransitionStore(
+    useShallow((s) => ({
+      state: s.state,
+      launchingApp: s.launchingApp,
+      appPreloaded: s.appPreloaded,
+      requestTransition: s.requestTransition,
+      setAppPreloaded: s.setAppPreloaded,
+    }))
+  );
 
   const splashVisible = transitionState !== 'IDLE';
   const transitionPreviousAppModeRef = useRef<AppKey | 'hub'>(routeApp || 'hub');

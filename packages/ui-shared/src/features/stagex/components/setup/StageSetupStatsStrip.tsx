@@ -17,8 +17,7 @@ export const StageSetupStatsStrip: React.FC<StageSetupStatsStripProps> = ({
   items,
   isLight: isLightProp,
 }) => {
-  const settings = useSettingsStore((s) => s.settings);
-  const activeVis = settings.perApp?.stagex;
+  const activeVis = useSettingsStore((s) => s.settings.perApp?.stagex);
   const isLight =
     isLightProp !== undefined ? isLightProp : activeVis ? activeVis.theme === 'light' : false;
 

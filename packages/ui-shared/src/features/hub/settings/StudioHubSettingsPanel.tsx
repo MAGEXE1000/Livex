@@ -5,6 +5,7 @@ import {
   settingsController,
   useT,
   resolveAccent,
+  useShallow,
 } from '@workspace/studio-core';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
@@ -37,7 +38,18 @@ import { AccentColorPicker } from './AccentColorPicker';
 export default function StudioHubSettingsPanel() {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      language: s.settings.language,
+      displayDensity: s.settings.displayDensity,
+      fontSize: s.settings.fontSize,
+      highContrast: s.settings.highContrast,
+      hapticFeedback: s.settings.hapticFeedback,
+      highRefreshRate: s.settings.highRefreshRate,
+      performanceMode: s.settings.performanceMode,
+    }))
+  );
   const t = useT();
   const acc = resolveAccent(settings.accentColor);
   const isSpanish = (settings.language ?? 'en') === 'es';

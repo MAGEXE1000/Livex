@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { useSettingsStore, useT } from '@workspace/studio-core';
@@ -103,7 +104,13 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
   const t = useT();
   const tr = t as any;
   const membersTr = tr.stagex?.setup?.members;
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isSpanish = (settings.language ?? 'en') === 'es';
 
   const activeVis = settings.perApp?.stagex;
@@ -111,7 +118,16 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
     isLightProp !== undefined ? isLightProp : activeVis ? activeVis.theme === 'light' : false;
 
   const { members, addMember, updateMember, removeMember, elements, preferences } =
-    useStagexStore();
+    useStagexStore(
+      useShallow((s) => ({
+        members: s.members,
+        addMember: s.addMember,
+        updateMember: s.updateMember,
+        removeMember: s.removeMember,
+        elements: s.elements,
+        preferences: s.preferences,
+      }))
+    );
   const isAmoled =
     isAmoledProp !== undefined
       ? isAmoledProp

@@ -4010,7 +4010,14 @@ export default function SongsPanel() {
     app: 'hub',
   };
   const activePanel = currentRoute.app === 'chordex' ? currentRoute.page || 'library' : 'library';
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      preferFlats: s.settings.preferFlats,
+      chordAssistant: s.settings.chordAssistant,
+      assistantConflictDetection: s.settings.assistantConflictDetection,
+    }))
+  );
   const transpositions = useChordStore(useShallow((s) => s.transpositions));
   const customChords = useChordStore(useShallow((s) => s.customChords));
   const setActivePreset = useChordStore(useShallow((s) => s.setActivePreset));

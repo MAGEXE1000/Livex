@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore } from '../../state/useStagexStore';
 import {
   useBackHandler,
@@ -44,7 +45,21 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   isLight = false,
   isAmoled = false,
 }) => {
-  const store = useStagexStore();
+  const store = useStagexStore(
+    useShallow((s) => ({
+      scenes: s.scenes,
+      elements: s.elements,
+      currentSceneIdx: s.currentSceneIdx,
+      preferences: s.preferences,
+      riderNeeds: s.riderNeeds,
+      riderConfig: s.riderConfig,
+      members: s.members,
+      riderChannels: s.riderChannels,
+      setlist: s.setlist,
+      gear: s.gear,
+      projectName: s.projectName,
+    }))
+  );
   const language = useSettingsStore((s) => s.settings.language) ?? 'en';
   const isSpanish = language === 'es';
 
@@ -105,7 +120,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
 
   // Compute canonical document data projection
   const data = useMemo(() => {
-    return projectProductionDocumentData(store, pdfSceneChoice);
+    return projectProductionDocumentData(store as any, pdfSceneChoice);
   }, [store, pdfSceneChoice]);
 
   const defaultPdfFileName = useMemo(() => {

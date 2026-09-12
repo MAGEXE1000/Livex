@@ -12,6 +12,7 @@ import {
   resetNav,
   setNavHidden,
   type AppKey,
+  useShallow,
 } from '@workspace/studio-core';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
@@ -87,7 +88,16 @@ export default function StagexPanel() {
   }, [curView]);
 
   // Theme & Appearance
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      accentColor: s.settings.accentColor,
+      dynamicLightStart: s.settings.dynamicLightStart,
+      dynamicLightEnd: s.settings.dynamicLightEnd,
+    }))
+  );
   const appKey = 'stagex' as AppKey;
   const activeVis = settings.perApp?.[appKey] ?? {
     theme: settings.theme ?? ('light' as const),

@@ -100,7 +100,12 @@ function getSectionName(pct: number): string {
 }
 
 export default function GroovexPlayer() {
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isLight =
     settings.theme === 'light' ||
     (settings.theme === 'system' &&

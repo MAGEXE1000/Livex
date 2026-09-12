@@ -64,6 +64,7 @@ import {
   type PerformanceWarning,
   useSettingsStore,
   useSessionStore,
+  useShallow,
 } from '@workspace/studio-core';
 
 import { decodeReactError } from '../../../shared/feedback/ErrorBoundary';
@@ -446,7 +447,17 @@ const WarningsInspector = ({ logs, showToast, moduleFilter, appKey }: WarningsIn
 };
 
 export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props) {
-  const settings = useSettingsStore((state) => state.settings);
+  const settings = useSettingsStore(
+    useShallow((state) => ({
+      defaultDrumTab: state.settings.defaultDrumTab,
+      defaultStageView: state.settings.defaultStageView,
+      theme: state.settings.theme,
+      language: state.settings.language,
+      syncAcrossDevices: state.settings.syncAcrossDevices,
+      developerMode: state.settings.developerMode,
+      instrument: state.settings.instrument,
+    }))
+  );
 
   const mainScrollRef = useRef<HTMLDivElement | null>(null);
   useScrollHide(mainScrollRef);

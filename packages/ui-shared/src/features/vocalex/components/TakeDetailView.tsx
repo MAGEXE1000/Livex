@@ -62,7 +62,16 @@ export default function TakeDetailView({
   onUpdateTake?: (newTake: TakeRecord) => Promise<void> | void;
 }) {
   const t = useT();
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      language: s.settings.language,
+      perApp: s.settings.perApp,
+      amoledMode: s.settings.amoledMode,
+      vocalexCountIn: s.settings.vocalexCountIn,
+      vocalexNoiseSuppression: s.settings.vocalexNoiseSuppression,
+      vocalexAutoGainControl: s.settings.vocalexAutoGainControl,
+    }))
+  );
   const isSpanish = (settings.language ?? 'en') === 'es';
   const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
   const isLight =

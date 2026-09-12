@@ -23,6 +23,7 @@ import {
   useSettingsStore,
   userRepository,
   SpringPresets,
+  useShallow,
 } from '@workspace/studio-core';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
@@ -1762,7 +1763,22 @@ export function AccountSettingsPage({
     return unsub;
   }, [user, sheet]);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      syncAcrossDevices: s.settings.syncAcrossDevices,
+      privacyAnalytics: s.settings.privacyAnalytics,
+      autoBackup: s.settings.autoBackup,
+      lastExportDate: s.settings.lastExportDate,
+      syncBackendProvider: s.settings.syncBackendProvider,
+      backupFrequency: s.settings.backupFrequency,
+      privacyCrashReports: s.settings.privacyCrashReports,
+      privacyPerfReports: s.settings.privacyPerfReports,
+      backupRetention: s.settings.backupRetention,
+      autoCleanTemp: s.settings.autoCleanTemp,
+      restoreLastSession: s.settings.restoreLastSession,
+      activityHistoryEnabled: s.settings.activityHistoryEnabled,
+    }))
+  );
   const isWebDesktop = useIsWebDesktop();
   const rawActivityLog = useChordStore((s) => s.activityLog);
   const activityLog = rawActivityLog || EMPTY_ACTIVITY_LOG;

@@ -103,10 +103,10 @@ export default function GroovexApp() {
     NavigationDispatcher.pop();
   }
   const t = useT();
-  const settings = useSettingsStore((s) => s.settings);
+  const theme = useSettingsStore((s) => s.settings.theme);
   const isLight =
-    settings.theme === 'light' ||
-    (settings.theme === 'system' &&
+    theme === 'light' ||
+    (theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
 

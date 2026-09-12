@@ -9,6 +9,7 @@ import {
   type InstrumentConfig,
   NavigationDispatcher,
   type Instrument,
+  useShallow,
 } from '@workspace/studio-core';
 import React, { useRef, useMemo } from 'react';
 import {
@@ -28,7 +29,27 @@ import {
 } from '../../../shared/design-system/MorphingActionSurface';
 
 export default function ChordexPreferencesPanel() {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      language: s.settings.language,
+      tuning: s.settings.tuning,
+      instrument: s.settings.instrument,
+      leftHanded: s.settings.leftHanded,
+      showFretNumbers: s.settings.showFretNumbers,
+      showFingerNumbers: s.settings.showFingerNumbers,
+      showNoteNames: s.settings.showNoteNames,
+      showIntervals: s.settings.showIntervals,
+      showOpenStrings: s.settings.showOpenStrings,
+      showChordQualityColors: s.settings.showChordQualityColors,
+      defaultTab: s.settings.defaultTab,
+      chordAssistant: s.settings.chordAssistant,
+      assistantSmartSuggestions: s.settings.assistantSmartSuggestions,
+      assistantProgressionTips: s.settings.assistantProgressionTips,
+      assistantConflictDetection: s.settings.assistantConflictDetection,
+      assistantLearning: s.settings.assistantLearning,
+    }))
+  );
 
   const acc = resolveAccent(settings.accentColor);
 

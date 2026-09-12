@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { useSettingsStore } from '@workspace/studio-core';
 
@@ -19,14 +20,18 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
   isAmoled: isAmoledProp,
   children,
 }) => {
-  const settings = useSettingsStore((s) => s.settings);
-  const activeVis = settings.perApp?.stagex;
+  const { activeVis, amoledMode } = useSettingsStore(
+    useShallow((s) => ({
+      activeVis: s.settings.perApp?.stagex,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
   const isLight =
     isLightProp !== undefined ? isLightProp : activeVis ? activeVis.theme === 'light' : false;
   const isAmoled =
     isAmoledProp !== undefined
       ? isAmoledProp
-      : !isLight && (settings.amoledMode || activeVis?.amoledMode);
+      : !isLight && (amoledMode || activeVis?.amoledMode);
 
   return (
     <div

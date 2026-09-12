@@ -7,6 +7,7 @@ import {
   APP_SECTIONS,
   useStudioPreferences,
   useSettingsStore,
+  useShallow,
   DurationPresets,
   EasingPresets,
   SpringPresets,
@@ -186,7 +187,14 @@ export default function WebAppSectionDock({
   activeSection: string;
   onChangeSection: (sectionId: any) => void;
 }) {
-  const settings = useSettingsStore((s) => s.settings);
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+      accentColor: s.settings.accentColor,
+    }))
+  );
   const { preferences } = useStudioPreferences();
   const t = useT();
   const vt = t.vocalex as any;

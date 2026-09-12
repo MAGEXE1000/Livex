@@ -39,7 +39,15 @@ export function useLibraryState() {
 
   const recentChords = useChordStore(useShallow((s) => s.recentChords));
   const favorites = useChordStore(useShallow((s) => s.favorites));
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      instrument: s.settings.instrument,
+      accentColor: s.settings.accentColor,
+      theme: s.settings.theme,
+      tuning: s.settings.tuning,
+      bassFiveString: s.settings.bassFiveString,
+    }))
+  );
 
   const toggleFavorite = useChordStore(useShallow((s) => s.toggleFavorite));
   const addToProgression = useChordStore(useShallow((s) => s.addToProgression));

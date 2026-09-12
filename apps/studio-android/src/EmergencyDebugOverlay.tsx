@@ -202,7 +202,12 @@ export default function EmergencyDebugOverlay() {
     return null;
   }
 
-  const { settings, updateSettings } = useSettingsStore();
+  return <EmergencyDebugOverlayInner />;
+}
+
+function EmergencyDebugOverlayInner() {
+  const appMode = useSettingsStore((s) => s.settings.appMode);
+  const updateSettings = useSettingsStore((s) => s.updateSettings);
   const [isOpen, setIsOpen] = useState(false);
   const [isPanicMenuOpen, setIsPanicMenuOpen] = useState(false);
   const [isBlackScreenSimulated, setIsBlackScreenSimulated] = useState(false);
@@ -603,7 +608,7 @@ export default function EmergencyDebugOverlay() {
   const getDiagnosticsPayload = () => {
     const statePayload = (window as any).__captureBlackScreenState?.() || {};
 
-    const currentAppMode = settings.appMode || 'hub';
+    const currentAppMode = appMode || 'hub';
     const hubLayout = document.querySelector('.app-main-layout');
     const hubMounted = !!hubLayout;
     let hubVisible = false;
@@ -2008,7 +2013,7 @@ page:  (${webViewDiag.visualViewport.pageLeft}, ${webViewDiag.visualViewport.pag
   const lastCaptureTimeRef = useRef(0);
   useEffect(() => {
     const checkAndAutoCapture = () => {
-      const currentAppMode = settings.appMode || 'hub';
+      const currentAppMode = appMode || 'hub';
       if (currentAppMode !== 'hub') return;
 
       const diagnostics = getDiagnosticsPayload();
@@ -2063,7 +2068,7 @@ page:  (${webViewDiag.visualViewport.pageLeft}, ${webViewDiag.visualViewport.pag
 
     const interval = setInterval(checkAndAutoCapture, 1500);
     return () => clearInterval(interval);
-  }, [settings.appMode]);
+  }, [appMode]);
 
   // ── FORCE RECOVERY ACTIONS ──────────────────────────────────────────────
   const runRecoveryAction = (actionName: string, actionFn: () => void) => {

@@ -47,7 +47,17 @@ export default function VocalexApp() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isWebDesktop]);
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const settings = useSettingsStore(
+    useShallow((s) => ({
+      accentColor: s.settings.accentColor,
+      perApp: s.settings.perApp,
+      theme: s.settings.theme,
+      dynamicLightStart: s.settings.dynamicLightStart,
+      dynamicLightEnd: s.settings.dynamicLightEnd,
+      amoledMode: s.settings.amoledMode,
+      animationSpeed: s.settings.animationSpeed,
+    }))
+  );
   const t = useT();
   const vt = t.vocalex as any;
   // Restore last-visited Vocalex tab so a refresh / app-switch lands the
