@@ -42,7 +42,7 @@ import { ErrorBoundary } from '../feedback/ErrorBoundary';
 import { AppEntryTransition, useAnimationSpeed } from '../../shared/animation';
 import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
 import { SharedNavigationContainer } from '../../navigation/SharedNavigationContainer';
-import { ApplicationTransitionEngine } from '../../shared/animation';
+import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/animation';
 import { Toaster } from '../../components/ui/sonner';
 
 const ALL_PANELS = ['songs', 'library', 'preferences'] as const;
@@ -304,6 +304,7 @@ export function SharedAppShell({
   useEffect(() => {
     const appMode = routeApp || 'hub';
     if (appMode !== transitionPreviousAppModeRef.current) {
+      resetIntroSignal();
       const ok = requestTransition(appMode as any);
       if (ok) {
         transitionPreviousAppModeRef.current = appMode as any;
@@ -419,7 +420,20 @@ export function SharedAppShell({
                     typeof window !== 'undefined' &&
                     window.matchMedia('(prefers-color-scheme: light)').matches)
                 }
-                isAmoled={useSettingsStore.getState().settings.perApp?.[launchingApp]?.amoledMode}
+                isAmoled={
+                  !(
+                    currentTheme === 'light' ||
+                    (currentTheme === 'system' &&
+                      typeof window !== 'undefined' &&
+                      window.matchMedia('(prefers-color-scheme: light)').matches)
+                  ) &&
+                  Boolean(
+                    useSettingsStore.getState().settings.perApp?.[launchingApp]?.amoledMode !==
+                      undefined
+                      ? useSettingsStore.getState().settings.perApp?.[launchingApp]?.amoledMode
+                      : useSettingsStore.getState().settings.amoledMode
+                  )
+                }
               />
             )}
           </AnimatePresence>

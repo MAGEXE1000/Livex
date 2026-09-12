@@ -4,8 +4,19 @@
 let _introDone = false;
 const introSubscribers = new Set<() => void>();
 
+export function isIntroDone(): boolean {
+  return _introDone || (typeof window !== 'undefined' && Boolean((window as any).__introDone));
+}
+
+export function resetIntroSignal(): void {
+  _introDone = false;
+  if (typeof window !== 'undefined') {
+    (window as any).__introDone = false;
+  }
+}
+
 export function subscribeIntroDone(cb: () => void): () => void {
-  if (_introDone || (typeof window !== 'undefined' && (window as any).__introDone)) {
+  if (isIntroDone()) {
     cb();
     return () => {};
   }
@@ -20,7 +31,9 @@ export function triggerIntroReveal(): void {
   if (typeof window !== 'undefined') {
     (window as any).__introDone = true;
   }
-  for (const subscriber of introSubscribers) {
+  const subs = Array.from(introSubscribers);
+  introSubscribers.clear();
+  for (const subscriber of subs) {
     try {
       subscriber();
     } catch (_) {}

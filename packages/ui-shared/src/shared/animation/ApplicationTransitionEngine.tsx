@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { AppKey } from '@workspace/studio-core';
+import React, { useEffect } from 'react';
+import { motion } from 'motion/react';
+import { AppKey, useApplicationTransitionStore } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { triggerIntroReveal } from './introSignal';
 
 interface TransitionEngineProps {
   appKey: AppKey;
@@ -9,8 +11,6 @@ interface TransitionEngineProps {
   isLight?: boolean;
   isAmoled?: boolean;
 }
-
-import { useApplicationTransitionStore } from '@workspace/studio-core';
 
 export function ApplicationTransitionEngine({
   appKey,
@@ -22,6 +22,7 @@ export function ApplicationTransitionEngine({
   const state = useApplicationTransitionStore((s) => s.state);
   const setLogoFormed = useApplicationTransitionStore((s) => s.setLogoFormed);
   const completeTransition = useApplicationTransitionStore((s) => s.completeTransition);
+  const prefersReduced = useAppReducedMotion();
 
   const isHub = appKey === 'hub';
 
@@ -32,9 +33,9 @@ export function ApplicationTransitionEngine({
     }
     const timer = setTimeout(() => {
       setLogoFormed(true);
-    }, 50);
+    }, prefersReduced ? 150 : 780);
     return () => clearTimeout(timer);
-  }, [isHub, setLogoFormed]);
+  }, [isHub, setLogoFormed, prefersReduced]);
 
   const startZoom =
     state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE';
@@ -42,15 +43,16 @@ export function ApplicationTransitionEngine({
   useEffect(() => {
     if (startZoom) {
       const timer = setTimeout(() => {
+        triggerIntroReveal();
         completeTransition();
-      }, isHub ? 180 : 115);
+        if (onComplete) onComplete();
+      }, isHub ? 180 : 320);
       return () => clearTimeout(timer);
     }
     return () => {};
-  }, [startZoom, completeTransition, isHub]);
+  }, [startZoom, completeTransition, isHub, onComplete]);
 
-  const bgColor = isAmoled ? '#000000' : isLight ? '#f8f9fa' : '#0a0a0c';
-
+  const bgColor = isAmoled ? '#000000' : isLight ? '#ffffff' : '#141418';
   const baseColor = isLight ? '#000000' : '#ffffff';
 
   // App Specific Colors
@@ -68,13 +70,11 @@ export function ApplicationTransitionEngine({
   // Shared Animation Presets
   const containerAnimate = !startZoom
     ? { backgroundColor: bgColor, opacity: 1 }
-    : isHub
-      ? { backgroundColor: 'rgba(0,0,0,0)', opacity: 0 }
-      : { backgroundColor: 'rgba(0,0,0,0)', opacity: [1, 1, 0] };
+    : { backgroundColor: bgColor, opacity: 0 };
 
   const containerTransition: any = isHub
     ? { duration: 0.18, ease: 'easeOut' }
-    : { duration: 0.115, ease: [0.22, 1, 0.36, 1] };
+    : { duration: prefersReduced ? 0.2 : 0.32, ease: [0.4, 0, 0.2, 1] };
 
   // Render progressive icons
   const renderIcon = () => {
@@ -92,10 +92,10 @@ export function ApplicationTransitionEngine({
               height="2.5"
               rx="1"
               fill={baseColor}
-              initial={{ scaleX: 0 }}
+              initial={{ scaleX: prefersReduced ? 1 : 0 }}
               animate={{ scaleX: 1 }}
               style={{ originX: 0.5 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
+              transition={{ duration: prefersReduced ? 0 : 0.35, ease: 'easeOut' }}
             />
             {/* Vertical Strings (Line Drawing) */}
             {[2.5, 6.5, 10.5].map((xVal, idx) => (
@@ -108,9 +108,13 @@ export function ApplicationTransitionEngine({
                 stroke={baseColor}
                 strokeWidth="0.9"
                 strokeOpacity="0.35"
-                initial={{ pathLength: 0 }}
+                initial={{ pathLength: prefersReduced ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ delay: 0.15 + idx * 0.08, duration: 0.4, ease: 'easeOut' }}
+                transition={{
+                  delay: prefersReduced ? 0 : 0.15 + idx * 0.08,
+                  duration: prefersReduced ? 0 : 0.4,
+                  ease: 'easeOut',
+                }}
               />
             ))}
             {/* Horizontal Frets (Line Drawing) */}
@@ -124,9 +128,13 @@ export function ApplicationTransitionEngine({
                 stroke={baseColor}
                 strokeWidth="0.7"
                 strokeOpacity="0.28"
-                initial={{ pathLength: 0 }}
+                initial={{ pathLength: prefersReduced ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ delay: 0.3 + idx * 0.1, duration: 0.35, ease: 'easeOut' }}
+                transition={{
+                  delay: prefersReduced ? 0 : 0.3 + idx * 0.1,
+                  duration: prefersReduced ? 0 : 0.35,
+                  ease: 'easeOut',
+                }}
               />
             ))}
             {/* Chord Dots with accent color */}
@@ -141,9 +149,14 @@ export function ApplicationTransitionEngine({
                 cy={dot.cy}
                 r="2.1"
                 fill={accentColor}
-                initial={{ scale: 0 }}
+                initial={{ scale: prefersReduced ? 1 : 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: dot.delay, type: 'spring', stiffness: 350, damping: 15 }}
+                transition={{
+                  delay: prefersReduced ? 0 : dot.delay,
+                  type: 'spring',
+                  stiffness: 350,
+                  damping: 15,
+                }}
               />
             ))}
           </svg>
@@ -153,26 +166,30 @@ export function ApplicationTransitionEngine({
         return (
           <svg viewBox="0 0 16 16" fill="none" style={svgStyle}>
             {/* Concentric Rhythmic Pulses (Ripples) */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="7.5"
-              stroke={accentColor}
-              strokeWidth="0.5"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: 'easeOut' }}
-            />
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="7.5"
-              stroke={accentColor}
-              strokeWidth="0.5"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, delay: 0.4, ease: 'easeOut' }}
-            />
+            {!prefersReduced && (
+              <>
+                <motion.circle
+                  cx="8"
+                  cy="8"
+                  r="7.5"
+                  stroke={accentColor}
+                  strokeWidth="0.5"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: 'easeOut' }}
+                />
+                <motion.circle
+                  cx="8"
+                  cy="8"
+                  r="7.5"
+                  stroke={accentColor}
+                  strokeWidth="0.5"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.2, delay: 0.4, ease: 'easeOut' }}
+                />
+              </>
+            )}
             {/* Drum Rim */}
             <motion.circle
               cx="8"
@@ -180,9 +197,9 @@ export function ApplicationTransitionEngine({
               r="7"
               stroke={baseColor}
               strokeWidth="1.6"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeInOut' }}
             />
             {/* Head Ring */}
             <motion.circle
@@ -192,9 +209,13 @@ export function ApplicationTransitionEngine({
               stroke={baseColor}
               strokeWidth="0.85"
               strokeOpacity="0.5"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: 0.15, duration: 0.4, ease: 'easeInOut' }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.15,
+                duration: prefersReduced ? 0 : 0.4,
+                ease: 'easeInOut',
+              }}
             />
             {/* Tension Lugs */}
             {Array.from({ length: 6 }).map((_, i) => {
@@ -208,10 +229,10 @@ export function ApplicationTransitionEngine({
                   cy={ly}
                   r="0.95"
                   fill={baseColor}
-                  initial={{ scale: 0 }}
+                  initial={{ scale: prefersReduced ? 1 : 0 }}
                   animate={{ scale: 1 }}
                   transition={{
-                    delay: 0.3 + i * 0.05,
+                    delay: prefersReduced ? 0 : 0.3 + i * 0.05,
                     type: 'spring',
                     stiffness: 300,
                     damping: 14,
@@ -225,9 +246,14 @@ export function ApplicationTransitionEngine({
               cy="8"
               r="1.4"
               fill={accentColor}
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.55, type: 'spring', stiffness: 350, damping: 12 }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.55,
+                type: 'spring',
+                stiffness: 350,
+                damping: 12,
+              }}
             />
           </svg>
         );
@@ -241,9 +267,9 @@ export function ApplicationTransitionEngine({
               stroke={accentColor}
               strokeWidth="0.6"
               strokeOpacity="0.4"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: 0.35, duration: 0.45 }}
+              transition={{ delay: prefersReduced ? 0 : 0.35, duration: prefersReduced ? 0 : 0.45 }}
             />
             {/* Platform */}
             <motion.rect
@@ -254,10 +280,10 @@ export function ApplicationTransitionEngine({
               rx="1"
               fill={baseColor}
               fillOpacity="0.9"
-              initial={{ scaleX: 0 }}
+              initial={{ scaleX: prefersReduced ? 1 : 0 }}
               animate={{ scaleX: 1 }}
               style={{ originX: 0.5 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
+              transition={{ duration: prefersReduced ? 0 : 0.4, ease: 'easeOut' }}
             />
             {/* Left Speaker */}
             <motion.rect
@@ -268,19 +294,19 @@ export function ApplicationTransitionEngine({
               rx="0.8"
               stroke={baseColor}
               strokeWidth="1.1"
-              initial={{ scaleY: 0 }}
+              initial={{ scaleY: prefersReduced ? 1 : 0 }}
               animate={{ scaleY: 1 }}
               style={{ originY: 1 }}
-              transition={{ delay: 0.15, duration: 0.35 }}
+              transition={{ delay: prefersReduced ? 0 : 0.15, duration: prefersReduced ? 0 : 0.35 }}
             />
             <motion.circle
               cx="2.75"
               cy="6.2"
               r="0.8"
               fill={baseColor}
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.35, type: 'spring' }}
+              transition={{ delay: prefersReduced ? 0 : 0.35, type: 'spring' }}
             />
             <motion.circle
               cx="2.75"
@@ -288,9 +314,9 @@ export function ApplicationTransitionEngine({
               r="0.55"
               fill={baseColor}
               fillOpacity="0.6"
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.45, type: 'spring' }}
+              transition={{ delay: prefersReduced ? 0 : 0.45, type: 'spring' }}
             />
             {/* Right Speaker */}
             <motion.rect
@@ -301,19 +327,19 @@ export function ApplicationTransitionEngine({
               rx="0.8"
               stroke={baseColor}
               strokeWidth="1.1"
-              initial={{ scaleY: 0 }}
+              initial={{ scaleY: prefersReduced ? 1 : 0 }}
               animate={{ scaleY: 1 }}
               style={{ originY: 1 }}
-              transition={{ delay: 0.2, duration: 0.35 }}
+              transition={{ delay: prefersReduced ? 0 : 0.2, duration: prefersReduced ? 0 : 0.35 }}
             />
             <motion.circle
               cx="13.25"
               cy="6.2"
               r="0.8"
               fill={baseColor}
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.4, type: 'spring' }}
+              transition={{ delay: prefersReduced ? 0 : 0.4, type: 'spring' }}
             />
             <motion.circle
               cx="13.25"
@@ -321,9 +347,9 @@ export function ApplicationTransitionEngine({
               r="0.55"
               fill={baseColor}
               fillOpacity="0.6"
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: 'spring' }}
+              transition={{ delay: prefersReduced ? 0 : 0.5, type: 'spring' }}
             />
             {/* Center Stand & Mic Capsule (Accent) */}
             <motion.line
@@ -334,19 +360,24 @@ export function ApplicationTransitionEngine({
               stroke={baseColor}
               strokeWidth="1.1"
               strokeLinecap="round"
-              initial={{ scaleY: 0 }}
+              initial={{ scaleY: prefersReduced ? 1 : 0 }}
               animate={{ scaleY: 1 }}
               style={{ originY: 1 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
+              transition={{ delay: prefersReduced ? 0 : 0.25, duration: prefersReduced ? 0 : 0.4 }}
             />
             <motion.circle
               cx="8"
               cy="3.2"
               r="1.2"
               fill={accentColor}
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.55, type: 'spring', stiffness: 350, damping: 10 }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.55,
+                type: 'spring',
+                stiffness: 350,
+                damping: 10,
+              }}
             />
           </svg>
         );
@@ -361,9 +392,9 @@ export function ApplicationTransitionEngine({
               r="7"
               stroke={baseColor}
               strokeWidth="1.5"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeInOut' }}
             />
             {/* Inner Ring */}
             <motion.circle
@@ -372,9 +403,13 @@ export function ApplicationTransitionEngine({
               r="3"
               stroke={baseColor}
               strokeWidth="1.2"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: 0.15, duration: 0.4, ease: 'easeInOut' }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.15,
+                duration: prefersReduced ? 0 : 0.4,
+                ease: 'easeInOut',
+              }}
             />
             {/* Center Center dot */}
             <motion.circle
@@ -382,9 +417,9 @@ export function ApplicationTransitionEngine({
               cy="8"
               r="1"
               fill={accentColor}
-              initial={{ scale: 0 }}
+              initial={{ scale: prefersReduced ? 1 : 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring' }}
+              transition={{ delay: prefersReduced ? 0 : 0.3, type: 'spring' }}
             />
             {/* Audio Wave / Mixer ticks */}
             {[
@@ -402,10 +437,17 @@ export function ApplicationTransitionEngine({
                 stroke={baseColor}
                 strokeWidth="0.8"
                 strokeOpacity="0.5"
-                initial={lineProps.originY !== undefined ? { scaleY: 0 } : { scaleX: 0 }}
+                initial={
+                  lineProps.originY !== undefined
+                    ? { scaleY: prefersReduced ? 1 : 0 }
+                    : { scaleX: prefersReduced ? 1 : 0 }
+                }
                 animate={lineProps.originY !== undefined ? { scaleY: 1 } : { scaleX: 1 }}
                 style={{ originY: lineProps.originY, originX: lineProps.originX }}
-                transition={{ delay: lineProps.delay, duration: 0.3 }}
+                transition={{
+                  delay: prefersReduced ? 0 : lineProps.delay,
+                  duration: prefersReduced ? 0 : 0.3,
+                }}
               />
             ))}
             {/* Waveform graphic overlay inside outer ring */}
@@ -415,9 +457,12 @@ export function ApplicationTransitionEngine({
               strokeWidth="0.6"
               strokeLinecap="round"
               strokeOpacity="0.75"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.4,
+                duration: prefersReduced ? 0 : 0.5,
+              }}
             />
           </svg>
         );
@@ -434,32 +479,40 @@ export function ApplicationTransitionEngine({
                   width="3"
                   height="8"
                   rx="1.5"
-                  initial={{ y: 10 }}
+                  initial={{ y: prefersReduced ? 2 : 10 }}
                   animate={{ y: 2 }}
-                  transition={{ delay: 0.2, duration: 0.65, ease: 'easeInOut' }}
+                  transition={{
+                    delay: prefersReduced ? 0 : 0.2,
+                    duration: prefersReduced ? 0 : 0.65,
+                    ease: 'easeInOut',
+                  }}
                 />
               </clipPath>
             </defs>
 
             {/* Sound Wave Resonance Arcs */}
-            <motion.path
-              d="M 2.5 5 A 4 4 0 0 0 2.5 11"
-              stroke={accentColor}
-              strokeWidth="0.85"
-              strokeLinecap="round"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
-            />
-            <motion.path
-              d="M 13.5 5 A 4 4 0 0 1 13.5 11"
-              stroke={accentColor}
-              strokeWidth="0.85"
-              strokeLinecap="round"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
-            />
+            {!prefersReduced && (
+              <>
+                <motion.path
+                  d="M 2.5 5 A 4 4 0 0 0 2.5 11"
+                  stroke={accentColor}
+                  strokeWidth="0.85"
+                  strokeLinecap="round"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
+                  transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
+                />
+                <motion.path
+                  d="M 13.5 5 A 4 4 0 0 1 13.5 11"
+                  stroke={accentColor}
+                  strokeWidth="0.85"
+                  strokeLinecap="round"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
+                  transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
+                />
+              </>
+            )}
             {/* Silhouette Outline */}
             <motion.rect
               x="6.5"
@@ -469,9 +522,9 @@ export function ApplicationTransitionEngine({
               rx="1.5"
               stroke={baseColor}
               strokeWidth="1.4"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
+              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeOut' }}
             />
             {/* Filled inner area with clip path (Liquid filling) */}
             <rect
@@ -489,9 +542,13 @@ export function ApplicationTransitionEngine({
               stroke={baseColor}
               strokeWidth="1.3"
               strokeLinecap="round"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: prefersReduced ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: 0.2, duration: 0.4, ease: 'easeOut' }}
+              transition={{
+                delay: prefersReduced ? 0 : 0.2,
+                duration: prefersReduced ? 0 : 0.4,
+                ease: 'easeOut',
+              }}
             />
             {/* Stand Post */}
             <motion.line
@@ -502,10 +559,10 @@ export function ApplicationTransitionEngine({
               stroke={baseColor}
               strokeWidth="1.3"
               strokeLinecap="round"
-              initial={{ scaleY: 0 }}
+              initial={{ scaleY: prefersReduced ? 1 : 0 }}
               animate={{ scaleY: 1 }}
               style={{ originY: 0 }}
-              transition={{ delay: 0.38, duration: 0.2 }}
+              transition={{ delay: prefersReduced ? 0 : 0.38, duration: prefersReduced ? 0 : 0.2 }}
             />
             {/* Base Line */}
             <motion.line
@@ -516,10 +573,10 @@ export function ApplicationTransitionEngine({
               stroke={baseColor}
               strokeWidth="1.3"
               strokeLinecap="round"
-              initial={{ scaleX: 0 }}
+              initial={{ scaleX: prefersReduced ? 1 : 0 }}
               animate={{ scaleX: 1 }}
               style={{ originX: 0.5 }}
-              transition={{ delay: 0.44, duration: 0.25 }}
+              transition={{ delay: prefersReduced ? 0 : 0.44, duration: prefersReduced ? 0 : 0.25 }}
             />
           </svg>
         );
@@ -536,6 +593,7 @@ export function ApplicationTransitionEngine({
       transition={containerTransition}
       onAnimationComplete={() => {
         if (startZoom) {
+          triggerIntroReveal();
           completeTransition();
           if (onComplete) onComplete();
         }
@@ -557,14 +615,18 @@ export function ApplicationTransitionEngine({
     >
       {!isHub && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.75 }}
-          animate={!startZoom ? { opacity: 1, scale: 1 } : { scale: 120, opacity: [1, 1, 0] }}
+          initial={{ opacity: 0, scale: prefersReduced ? 1 : 0.75 }}
+          animate={
+            !startZoom
+              ? { opacity: 1, scale: 1 }
+              : { scale: prefersReduced ? 1 : 1.05, opacity: 0 }
+          }
           transition={
             !startZoom
               ? { type: 'spring', stiffness: 450, damping: 28 }
               : {
-                  scale: { duration: 0.13, ease: [0.35, 0, 0.25, 1] },
-                  opacity: { duration: 0.115, times: [0, 0.4, 1], ease: 'easeOut' },
+                  scale: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+                  opacity: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
                 }
           }
           style={{
