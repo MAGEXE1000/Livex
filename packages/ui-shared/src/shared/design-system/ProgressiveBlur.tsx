@@ -19,14 +19,34 @@ export const ProgressiveBlur = React.forwardRef<HTMLDivElement, ProgressiveBlurP
 
     // Read performance preferences to automatically scale quality if needed
     // In low-performance/low-spec environments we reduce the layer count to prevent GPU lag
-    let activeLayers = Math.min(3, Math.max(1, blurLayers));
-    if (typeof window !== 'undefined') {
+    let activeLayers = Math.min(2, Math.max(1, blurLayers));
+    let effectiveMaxBlur = maxBlur;
+    let isDisabled = false;
+
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const root = document.documentElement;
+      const glassTier = root.getAttribute('data-glass-tier');
+      const isPerfMode = root.getAttribute('data-perf-mode') === 'on';
+      const isAmoled = root.classList.contains('amoled');
       const isLowPower =
+        isPerfMode ||
+        glassTier === 'translucent' ||
+        glassTier === 'solid' ||
+        glassTier === 'none' ||
+        isAmoled ||
         localStorage.getItem('studio_performance_mode') === 'low' ||
         localStorage.getItem('studio_reduced_motion') === 'true';
-      if (isLowPower) {
+
+      if (glassTier === 'solid' || glassTier === 'none') {
+        isDisabled = true;
+      } else if (isLowPower) {
         activeLayers = 1;
+        effectiveMaxBlur = Math.min(maxBlur, 8);
       }
+    }
+
+    if (isDisabled) {
+      return null;
     }
 
     const layers = Array.from({ length: activeLayers });
@@ -45,7 +65,7 @@ export const ProgressiveBlur = React.forwardRef<HTMLDivElement, ProgressiveBlurP
         {...props}
       >
         {layers.map((_, index) => {
-          const blurAmount = ((index + 1) / activeLayers) * maxBlur;
+          const blurAmount = ((index + 1) / activeLayers) * effectiveMaxBlur;
           const stopPosition = ((index + 1) / activeLayers) * 100;
 
           // linear-gradient with Webkit vendor prefix compatibility

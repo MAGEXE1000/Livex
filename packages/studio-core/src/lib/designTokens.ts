@@ -72,6 +72,101 @@ export const GlassTokens = {
   boxShadow: '0 8px 20px 8px rgba(0, 0, 0, 0.40)',
 };
 
+export type GlassTier = 'none' | 'solid' | 'translucent' | 'blur';
+
+export interface GlassTierDefinition {
+  backdropFilter: string;
+  background: string;
+  border: string;
+  boxShadow: string;
+}
+
+export const GlassTierTokens: Record<
+  GlassTier,
+  { dark: GlassTierDefinition; light: GlassTierDefinition; amoled: GlassTierDefinition }
+> = {
+  none: {
+    dark: {
+      backdropFilter: 'none',
+      background: '#16161a',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+    },
+    light: {
+      backdropFilter: 'none',
+      background: '#ffffff',
+      border: '1px solid rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+    },
+    amoled: {
+      backdropFilter: 'none',
+      background: '#000000',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.6)',
+    },
+  },
+  solid: {
+    dark: {
+      backdropFilter: 'none',
+      background: '#121216',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+    },
+    light: {
+      backdropFilter: 'none',
+      background: '#f8f9fa',
+      border: '1px solid rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+    },
+    amoled: {
+      backdropFilter: 'none',
+      background: '#000000',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
+    },
+  },
+  translucent: {
+    dark: {
+      backdropFilter: 'none',
+      background: 'rgba(18, 18, 22, 0.92)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+    },
+    light: {
+      backdropFilter: 'none',
+      background: 'rgba(255, 255, 255, 0.94)',
+      border: '1px solid rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+    },
+    amoled: {
+      backdropFilter: 'none',
+      background: 'rgba(0, 0, 0, 0.95)',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+    },
+  },
+  blur: {
+    dark: {
+      backdropFilter: 'blur(8px)',
+      background: 'rgba(18, 18, 22, 0.72)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+    },
+    light: {
+      backdropFilter: 'blur(8px)',
+      background: 'rgba(255, 255, 255, 0.78)',
+      border: '1px solid rgba(0, 0, 0, 0.07)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+    },
+    amoled: {
+      backdropFilter: 'none',
+      background: 'rgba(0, 0, 0, 0.78)',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+    },
+  },
+};
+
 export const DurationPresets = {
   instant: 0,
   veryFast: 0.12, // 120ms - buttons, toggles, microinteractions

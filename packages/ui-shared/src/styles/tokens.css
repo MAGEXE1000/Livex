@@ -316,7 +316,7 @@
   --c-border: rgba(255, 255, 255, 0.08);
   --c-border-dashed: 1px dashed rgba(255, 255, 255, 0.14);
   --c-surface-glass-bg: rgba(20, 20, 25, 0.65);
-  --c-surface-glass-blur: blur(16px);
+  --c-surface-glass-blur: var(--surface-float-blur, blur(8px));
 
   --c-error: #ef4444;
   --c-error-dim: #f87171;
@@ -1752,7 +1752,10 @@ html[data-perf-mode='on'] *::after {
   --font-display-md: 32px; /* large numeric / metric displays     */
   --font-display-lg: 36px; /* full-hero titles (player, lab)      */
 
-  /* ── Floating-surface tokens — dark (default) ───────────── */
+  /* ── Glass Tiering & Floating-surface tokens — dark (default) ───────────── */
+  --glass-tier: blur;
+  --glass-blur-radius: 8px;
+  --glass-blur: blur(var(--glass-blur-radius));
   /* Alpha 0.18: translucent frosted glass with clearly visible background content.
      Lighter base opacity allows underlying elements to show through the glass
      while preserving the authentic frosted backdrop blur.                      */
@@ -1765,9 +1768,9 @@ html[data-perf-mode='on'] *::after {
     0 8px 24px -4px rgba(0, 0, 0, 0.35), 0 2px 6px -2px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   /* blur(8px): frosted blur provides depth while keeping GPU fill-rate bounded */
-  --surface-topbar-blur: blur(8px);
+  --surface-topbar-blur: var(--glass-blur);
   --surface-topbar-fallback: rgba(18, 18, 22, 0.96);
-  --surface-float-blur: blur(8px); /* shared backdrop-filter */
+  --surface-float-blur: var(--glass-blur); /* shared backdrop-filter */
   --surface-scrim-blur: none;
   --surface-glass-rim: linear-gradient(
     90deg,
@@ -1800,14 +1803,17 @@ html[data-perf-mode='on'] *::after {
 
 /* Light-theme overrides — translucent frosted white glass */
 :root.light {
+  --glass-tier: blur;
+  --glass-blur-radius: 8px;
+  --glass-blur: blur(var(--glass-blur-radius));
   --surface-float-bg: rgba(255, 255, 255, 0.78);
   --surface-topbar-bg: rgba(255, 255, 255, 0.78);
   --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.07);
   --surface-topbar-shadow:
     0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --surface-topbar-blur: blur(8px);
-  --surface-float-blur: blur(8px);
+  --surface-topbar-blur: var(--glass-blur);
+  --surface-float-blur: var(--glass-blur);
   --surface-scrim-blur: none;
   --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
   --surface-glass-rim: linear-gradient(
@@ -1836,6 +1842,9 @@ html[data-perf-mode='on'] *::after {
 
 /* AMOLED overrides — translucent near-black glass over #000 */
 :root.amoled {
+  --glass-tier: solid;
+  --glass-blur-radius: 0px;
+  --glass-blur: none;
   --surface-float-bg: rgba(0, 0, 0, 0.78);
   --surface-topbar-bg: rgba(0, 0, 0, 0.78);
   --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1865,6 +1874,67 @@ html[data-perf-mode='on'] *::after {
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
   --surface-dialog-bg: #000000;
   --surface-modal-surface: #000000;
+}
+
+/* ── Glass Tiering Overrides ───────────────────────────────────────
+   Ensures performance mode, low-power devices, and solid/translucent
+   glass tiers drop GPU backdrop-filter overhead to 0 blur passes.  */
+:root[data-perf-mode="on"],
+:root[data-glass-tier="translucent"],
+:root[data-glass-tier="none"] {
+  --glass-tier: translucent;
+  --glass-blur-radius: 0px;
+  --glass-blur: none;
+  --surface-topbar-blur: none;
+  --surface-float-blur: none;
+  --surface-scrim-blur: none;
+  --surface-float-bg: rgba(18, 18, 22, 0.92);
+  --surface-topbar-bg: rgba(18, 18, 22, 0.92);
+}
+
+:root.light[data-perf-mode="on"],
+:root.light[data-glass-tier="translucent"],
+:root.light[data-glass-tier="none"] {
+  --surface-float-bg: rgba(255, 255, 255, 0.94);
+  --surface-topbar-bg: rgba(255, 255, 255, 0.94);
+}
+
+:root[data-glass-tier="solid"] {
+  --glass-tier: solid;
+  --glass-blur-radius: 0px;
+  --glass-blur: none;
+  --surface-topbar-blur: none;
+  --surface-float-blur: none;
+  --surface-scrim-blur: none;
+  --surface-float-bg: #121216;
+  --surface-topbar-bg: #121216;
+}
+
+:root.amoled[data-glass-tier="solid"] {
+  --surface-float-bg: #000000;
+  --surface-topbar-bg: #000000;
+}
+
+:root.light[data-glass-tier="solid"] {
+  --surface-float-bg: #ffffff;
+  --surface-topbar-bg: #ffffff;
+}
+
+/* Reduced motion preference: eliminate expensive blur shaders */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --glass-blur-radius: 0px;
+    --glass-blur: none;
+    --surface-topbar-blur: none;
+    --surface-float-blur: none;
+    --surface-scrim-blur: none;
+    --surface-float-bg: rgba(18, 18, 22, 0.92);
+    --surface-topbar-bg: rgba(18, 18, 22, 0.92);
+  }
+  :root.light {
+    --surface-float-bg: rgba(255, 255, 255, 0.94);
+    --surface-topbar-bg: rgba(255, 255, 255, 0.94);
+  }
 }
 
 /* ===== Groovex design tokens ===== */
@@ -2882,8 +2952,8 @@ html.web-desktop.light .app-sub-app-container {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: var(--surface-float-blur, blur(8px));
+  -webkit-backdrop-filter: var(--surface-float-blur, blur(8px));
   mask-image: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 1) 0%,
@@ -2903,8 +2973,8 @@ html.web-desktop.light .app-sub-app-container {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: var(--surface-float-blur, blur(8px));
+  -webkit-backdrop-filter: var(--surface-float-blur, blur(8px));
   mask-image: linear-gradient(
     to top,
     rgba(0, 0, 0, 1) 0%,
@@ -2955,8 +3025,8 @@ html.web-desktop.light .app-sub-app-container {
   border-radius: 50% !important;
   background: rgba(128, 128, 128, 0.08) !important;
   border: 1.2px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: var(--surface-float-blur, blur(8px)) !important;
+  -webkit-backdrop-filter: var(--surface-float-blur, blur(8px)) !important;
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
@@ -3010,8 +3080,8 @@ html.web-desktop.light .app-sub-app-container {
 .alert-dialog__backdrop--blur,
 .alert-dialog__backdrop {
   background: var(--app-surface-scrim, rgba(0, 0, 0, 0.65));
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: var(--surface-scrim-blur, none);
+  -webkit-backdrop-filter: var(--surface-scrim-blur, none);
 }
 
 .alert-dialog__backdrop--opaque {
@@ -3090,8 +3160,8 @@ html.web-desktop.light .app-sub-app-container {
     0 24px 64px -8px rgba(0, 0, 0, 0.5),
     0 8px 24px -4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: var(--surface-float-blur, blur(20px));
-  -webkit-backdrop-filter: var(--surface-float-blur, blur(20px));
+  backdrop-filter: var(--surface-float-blur, none);
+  -webkit-backdrop-filter: var(--surface-float-blur, none);
   padding: 20px 22px;
   overflow: clip;
   box-sizing: border-box;
@@ -3471,8 +3541,8 @@ body.amoled .sc-morphing-trigger,
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.12),
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: var(--surface-float-blur, blur(8px));
+  -webkit-backdrop-filter: var(--surface-float-blur, blur(8px));
 }
 
 html.light .button--secondary {

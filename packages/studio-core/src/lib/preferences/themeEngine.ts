@@ -2,6 +2,7 @@ import { useNavigationStore } from '../navigation/useNavigationStore';
 import { Capacitor } from '@capacitor/core';
 import { syncStatusBar } from '../platform/useStatusBar';
 import { resolveAccent } from './accentUtils';
+import type { GlassTier } from '../designTokens';
 export interface ThemeConfig {
   theme: 'light' | 'dark' | 'system' | 'dynamic';
   amoledMode: boolean;
@@ -18,6 +19,7 @@ let _lastDensityKey = '';
 let _lastTypographyKey = '';
 let _lastMotionKey = '';
 let _lastPerfKey = '';
+let _lastGlassTierKey = '';
 let _lastStatusBarKey = '';
 
 export function applyThemeTokens(settings: any) {
@@ -341,6 +343,13 @@ export function applyThemeTokens(settings: any) {
     }
   }
 
+  // Glass Tier resolution
+  const glassTier = resolveGlassTier(settings, isAmoledMode);
+  if (glassTier !== _lastGlassTierKey) {
+    _lastGlassTierKey = glassTier;
+    root.setAttribute('data-glass-tier', glassTier);
+  }
+
   // StatusBar Sync
   const effectiveTheme = isLightMode ? 'light' : 'dark';
   const effectiveAmoled = !isLightMode && isAmoledMode;
@@ -349,6 +358,12 @@ export function applyThemeTokens(settings: any) {
     _lastStatusBarKey = statusBarKey;
     void syncStatusBar(effectiveTheme, effectiveAmoled);
   }
+}
+
+export function resolveGlassTier(settings: any, isAmoledMode: boolean): GlassTier {
+  if (isAmoledMode) return 'solid';
+  if (settings?.performanceMode) return 'translucent';
+  return 'blur';
 }
 
 export type VisualThemeState = 'light' | 'dark' | 'amoled';

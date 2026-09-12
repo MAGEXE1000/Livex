@@ -61,8 +61,8 @@ export function MorphingModal({
             className="absolute inset-0 pointer-events-auto"
             style={{
               background: 'var(--surface-modal-bg, var(--app-surface-scrim, rgba(0, 0, 0, 0.65)))',
-              backdropFilter: 'blur(14px) saturate(140%)',
-              WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+              backdropFilter: 'var(--surface-scrim-blur, none)',
+              WebkitBackdropFilter: 'var(--surface-scrim-blur, none)',
             }}
           />
         )}
@@ -101,8 +101,8 @@ export function MorphingModal({
                 color: 'var(--c-text-primary)',
                 boxShadow:
                   '0 24px 64px -8px rgba(0, 0, 0, 0.5), 0 8px 24px -4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'var(--surface-float-blur, blur(20px))',
-                WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
+                backdropFilter: 'var(--surface-float-blur, none)',
+                WebkitBackdropFilter: 'var(--surface-float-blur, none)',
               }}
             >
               <motion.div layout="position" className="p-5">

@@ -718,8 +718,6 @@ export function SharedNavigationBar({
             inset: 0,
             background: 'rgba(0, 0, 0, 0.4)',
             zIndex: 2000,
-            backdropFilter: 'blur(2px)',
-            WebkitBackdropFilter: 'blur(2px)',
             opacity: profileBackdropOpacity,
             pointerEvents: isProfileMenuOpen ? 'auto' : 'none',
           }}
@@ -1030,8 +1028,6 @@ export function SharedNavigationBar({
                     boxShadow: isLight
                       ? '0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)'
                       : 'var(--surface-glass-lens-shadow)',
-                    backdropFilter: 'var(--surface-float-blur)',
-                    WebkitBackdropFilter: 'var(--surface-float-blur)',
                     pointerEvents: 'none',
                     zIndex: 0,
                     skewX: dragSkewRaw,
