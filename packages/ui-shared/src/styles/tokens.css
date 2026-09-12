@@ -844,8 +844,9 @@ html,
    for white-on-accent gradient buttons that must stay white.
    ============================================================ */
 /* High-refresh-rate hints — promote frequently-animated elements to GPU
-   layers so the compositor stays in high-frequency mode on 90/120Hz screens. */
-html[data-hifps='on'] body,
+   layers so the compositor stays in high-frequency mode on 90/120Hz screens.
+   Note: Do not promote `body` with transform: translateZ(0) because it alters
+   the containing block for all position: fixed portals in mobile WebViews. */
 html[data-hifps='on'] .panel-slide,
 html[data-hifps='on'] [data-anim-target],
 html[data-hifps='on'] .sc-vtool-btn {

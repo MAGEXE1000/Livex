@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { Button, ButtonGroup } from '../../../shared/design-system/buttons';
@@ -19,6 +19,7 @@ import {
 } from '@workspace/studio-core';
 import { useProgressionState } from './useProgressionState';
 import { PresetPickerSheet } from './ProgressionPickerSheet';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 
 interface Props {
   accent: { from: string; to: string; mid: string };
@@ -75,8 +76,17 @@ export default function ProgressionGenerator({
     requestClosePicker,
   } = state;
 
+  useEffect(() => {
+    if (closing) return undefined;
+    const id = 'chordex:progression-generator';
+    activeOverlaysRegistry.register('modal', id);
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+    };
+  }, [closing]);
+
   useBackHandler(
-    'nested',
+    'modal',
     () => {
       if (swapOpenIdx !== null) {
         setSwapOpenIdx(null);

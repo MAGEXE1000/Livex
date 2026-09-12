@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   getAllChords,
   searchChords,
@@ -66,7 +66,33 @@ export function useLibraryState() {
   const [diagramDisplayMode, setDiagramDisplayMode] = useState<'notes' | 'intervals'>('notes');
 
   const [showFinder, setShowFinder] = useState(false);
-  const [showGenerator, setShowGenerator] = useState(false);
+  const isGeneratorRoute =
+    currentRoute.app === 'chordex' &&
+    ['progression', 'promotion', 'generator'].includes(currentRoute.page || '');
+  const [showGenerator, setShowGenerator] = useState(() => isGeneratorRoute);
+
+  useEffect(() => {
+    if (isGeneratorRoute && !showGenerator) {
+      setShowGenerator(true);
+    }
+  }, [isGeneratorRoute, showGenerator]);
+
+  const setShowGeneratorSafely = useCallback(
+    (open: boolean | ((prev: boolean) => boolean)) => {
+      setShowGenerator((prev) => {
+        const next = typeof open === 'function' ? open(prev) : open;
+        if (
+          !next &&
+          currentRoute.app === 'chordex' &&
+          ['progression', 'promotion', 'generator'].includes(currentRoute.page || '')
+        ) {
+          NavigationDispatcher.replace({ app: 'chordex', page: 'library' });
+        }
+        return next;
+      });
+    },
+    [currentRoute.app, currentRoute.page]
+  );
 
   const allChords = useMemo(() => getAllChords(), []);
   const accent = resolveAccent(settings.accentColor);
@@ -263,7 +289,7 @@ export function useLibraryState() {
     showFinder,
     setShowFinder,
     showGenerator,
-    setShowGenerator,
+    setShowGenerator: setShowGeneratorSafely,
     allChords,
     accent,
     isLight,

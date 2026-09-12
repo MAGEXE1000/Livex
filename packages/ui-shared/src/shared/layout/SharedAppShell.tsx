@@ -234,7 +234,10 @@ export function SharedAppShell({
 }: SharedAppShellProps) {
   const activePanel = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
-    if (last?.app === 'chordex' && last.page === 'chord') {
+    if (
+      last?.app === 'chordex' &&
+      ['chord', 'progression', 'promotion', 'generator'].includes(last.page || '')
+    ) {
       return 'library';
     }
     return last?.app === 'chordex' && last.page ? (last.page as ActivePanel) : 'library';
