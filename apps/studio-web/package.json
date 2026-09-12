@@ -35,7 +35,6 @@
     "@workspace/ui-web": "workspace:*",
     "clsx": "catalog:",
     "firebase": "12.16.0",
-    "gsap": "^3.15.0",
     "i18next": "^26.3.6",
     "jspdf": "^4.2.1",
     "lottie-react": "^2.4.1",

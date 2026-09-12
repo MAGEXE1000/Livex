@@ -29,9 +29,9 @@ export { default as StudioCountUpPercentage } from './progress/StudioCountUpPerc
 
 // Typography
 export { default as InkThemeToggle } from './typography/InkThemeToggle';
-export { default as StudioTitleReveal } from './typography/StudioTitleReveal';
 export * from './typography/ScrollFade';
 export * from './settings/SettingControls';
+export * from './animation/introSignal';
 
 // Cards
 export { default as GradientBorderCard } from './cards/GradientBorderCard';

@@ -10,10 +10,9 @@ export { default as StudioProgressBar } from './shared/progress/StudioProgressBa
 export * from './components/motion';
 export { default as InkThemeToggle } from './shared/typography/InkThemeToggle';
 export {
-  default as StudioTitleReveal,
   triggerIntroReveal,
   subscribeIntroDone,
-} from './shared/typography/StudioTitleReveal';
+} from './shared/animation/introSignal';
 export { default as StudioUpdateAuroraBackground } from './features/updater/components/StudioUpdateAuroraBackground';
 export { ErrorBoundary } from './shared/feedback/ErrorBoundary';
 export { RootAppCrashReportUI } from './shared/feedback/RootAppCrashReportUI';

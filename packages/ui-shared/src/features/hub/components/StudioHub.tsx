@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
-import { subscribeIntroDone } from '../../../shared/typography/StudioTitleReveal';
+import { subscribeIntroDone } from '../../../shared/animation/introSignal';
 import {
   useBackHandler,
   type AuthUser,
