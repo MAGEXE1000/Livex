@@ -952,6 +952,7 @@ interface Props {
   onSave?: (chord: CustomChord) => void;
   onClose: () => void;
   mode?: 'build' | 'find';
+  inMorphSurface?: boolean;
 }
 
 export default function CustomChordBuilder({
@@ -960,6 +961,7 @@ export default function CustomChordBuilder({
   onSave,
   onClose: onCloseProp,
   mode = 'build',
+  inMorphSurface = false,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
@@ -972,18 +974,24 @@ export default function CustomChordBuilder({
     bass: t.customBuilder.bass,
   };
 
-  const [instrument, setInstrument] = useState<Instrument>(editChord?.instrument ?? 'guitar');
+  const [instrument, setInstrument] = useState<Instrument>(
+    editChord?.instrument ?? (mode === 'find' ? 'bass' : 'guitar')
+  );
   // Each string holds a list of active frets — allows multiple notes per string.
   // [-1] = muted, [0] = open, [n, m, ...] = multiple fret positions active.
   // ── Closing animation ──────────────────────────────────────────────────
   const [closing, setClosing] = useState(false);
   const handleClose = useCallback(() => {
+    if (inMorphSurface) {
+      onCloseProp();
+      return;
+    }
     setClosing(true);
     setTimeout(() => {
       setClosing(false);
       onCloseProp();
     }, 300);
-  }, [onCloseProp]);
+  }, [inMorphSurface, onCloseProp]);
 
   const prefersReduced = useAppReducedMotion();
   const isReduced = !!prefersReduced;
@@ -991,13 +999,22 @@ export default function CustomChordBuilder({
   const defaultFret = mode === 'find' ? -1 : 0;
   const [frets, setFrets] = useState<number[][]>(() => {
     if (editChord?.frets) return editChord.frets.map((f) => [f]);
-    const n = editChord?.instrument === 'bass' ? 4 : 6;
+    const initialInst = editChord?.instrument ?? (mode === 'find' ? 'bass' : 'guitar');
+    const n = initialInst === 'bass' ? 4 : 6;
     return Array.from({ length: n }, () => [defaultFret]);
   });
   const [barres, setBarres] = useState<BarreDef[]>(editChord?.barres ?? []);
   const [pianoKeys, setPianoKeys] = useState<number[]>(editChord?.pianoKeys ?? []);
   const [name, setName] = useState(editChord?.name ?? '');
   const [nameTouched, setNameTouched] = useState(!!editChord?.name);
+
+  // Safety: in find mode, ensure instrument is strictly bass or piano (never guitar)
+  useEffect(() => {
+    if (mode === 'find' && instrument === 'guitar') {
+      setInstrument('bass');
+      setFrets(Array.from({ length: 4 }, () => [defaultFret]));
+    }
+  }, [mode, instrument, defaultFret]);
 
   // Nav bar — hide while builder is open
   useEffect(() => {
@@ -1093,286 +1110,191 @@ export default function CustomChordBuilder({
 
   const isEditing = !!editChord;
 
-  const modalContent = (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
-      {/* Backdrop */}
-      <motion.div
-        onClick={handleClose}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: closing ? 0 : 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+  const innerContent = (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        maxHeight: inMorphSurface ? 'calc(88vh - 56px)' : undefined,
+        overflow: 'hidden',
+        flex: 1,
+      }}
+    >
+      {/* Scrollable content */}
+      <div
+        ref={scrollRef}
+        className="no-scrollbar"
         style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'var(--surface-modal-bg, var(--app-surface-scrim, rgba(0,0,0,0.7)))',
-          backdropFilter: isReduced ? 'none' : 'blur(6px)',
-          WebkitBackdropFilter: isReduced ? 'none' : 'blur(6px)',
-        }}
-      />
-
-      {/* Sheet — fixed height with origin-aware morphing entry from top right when mode is 'find' */}
-      <motion.div
-        initial={
-          isReduced
-            ? { opacity: 0 }
-            : mode === 'find'
-              ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
-              : { opacity: 0, y: '100%' }
-        }
-        animate={
-          closing
-            ? (isReduced
-                ? { opacity: 0 }
-                : mode === 'find'
-                  ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
-                  : { opacity: 0, y: '100%' })
-            : {
-                opacity: 1,
-                scale: 1,
-                y: 0,
-                transformOrigin: mode === 'find' ? 'top right' : 'bottom center',
-              }
-        }
-        transition={{
-          type: 'spring',
-          stiffness: 320,
-          damping: 28,
-          mass: 0.8,
-          duration: isReduced ? 0.15 : undefined,
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'var(--app-bg)',
-          borderRadius: '1.5rem 1.5rem 0 0',
-          height: '82dvh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
+          flex: 1,
+          overflowY: 'auto',
+          padding: inMorphSurface ? '12px 16px 10px' : '0 16px 10px',
         }}
       >
-        {/* Drag handle */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            padding: '10px 0 2px',
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '4px',
-              borderRadius: '9999px',
-              background: 'rgba(72,72,72,0.3)',
-            }}
-          />
-        </div>
-
-        {/* Staggered progressive content container */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: isReduced ? 1 : 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                delay: isReduced ? 0 : 0.08,
-                duration: 0.18,
-              },
-            },
-          }}
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '4px 16px 10px',
-            flexShrink: 0,
-            gap: '10px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              flexShrink: 0,
-              background: `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#fff' }}>
-              {mode === 'find' ? 'search' : isEditing ? 'edit' : 'add_circle'}
-            </span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <p
-              style={{
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 900,
-                fontSize: '18px',
-                color: 'var(--c-text-primary)',
-                lineHeight: 1,
-              }}
-            >
-              {mode === 'find'
-                ? t.chordFinder.title
-                : isEditing
-                  ? t.customBuilder.titleEdit
-                  : t.customBuilder.titleNew}
-            </p>
-            <p
-              style={{
-                fontFamily: 'Inter',
-                fontSize: '11px',
-                color: 'var(--c-text-muted)',
-                marginTop: '2px',
-              }}
-            >
-              {mode === 'find'
-                ? t.chordFinder.subtitle
-                : isEditing
-                  ? t.customBuilder.subtitleEdit
-                  : t.customBuilder.subtitleNew}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            style={{ color: 'var(--c-text-secondary)', minWidth: 32 }}
-            icon="close"
-          />
-        </div>
-
-        {/* Scrollable content */}
-        <div
-          ref={scrollRef}
-          className="no-scrollbar"
-          style={{ flex: 1, overflowY: 'auto', padding: '0 16px 10px' }}
-        >
           {/* ── Instrument selector ── */}
           <div style={{ marginBottom: '14px' }}>
-            <p
-              style={{
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 700,
-                fontSize: '11px',
-                color: 'var(--c-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: '8px',
-              }}
-            >
-              {t.customBuilder.instrument}
-            </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {INSTRUMENTS.map((inst) => {
-                const active = instrument === inst.id;
-                const clipId = `img-clip-${inst.id}`;
-                return (
-                  <button
-                    key={inst.id}
-                    onClick={() => handleInstrumentChange(inst.id)}
-                    className="btn-smooth"
-                    style={{
-                      flex: 1,
-                      padding: 0,
-                      borderRadius: '14px',
-                      background: 'var(--app-surface)',
-                      border: `2px solid ${active ? resolvedAccent.from : 'rgba(72,72,72,0.14)'}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'stretch',
-                      overflow: 'hidden',
-                      transition:
-                        'border-color 220ms ease, transform 160ms ease, box-shadow 220ms ease',
-                      transform: active ? 'scale(1.05)' : 'scale(1)',
-                      boxShadow: active ? `0 6px 20px ${resolvedAccent.to}55` : 'none',
-                    }}
-                  >
-                    {/* SVG image with clipPath for crisp rounded display */}
-                    <svg
-                      viewBox="0 0 100 100"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{ display: 'block', width: '100%', height: '60px' }}
-                    >
-                      <defs>
-                        <clipPath id={clipId}>
-                          <rect width="100" height="100" rx="0" ry="0" />
-                        </clipPath>
-                        <linearGradient id={`grad-${inst.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop
-                            offset="0%"
-                            stopColor={resolvedAccent.from}
-                            stopOpacity={active ? 0.18 : 0.06}
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor={resolvedAccent.to}
-                            stopOpacity={active ? 0.1 : 0.03}
-                          />
-                        </linearGradient>
-                      </defs>
-                      {/* Dark background */}
-                      <rect width="100" height="100" fill="rgba(20,20,24,1)" />
-                      {/* Instrument photo */}
-                      <image
-                        href={inst.image}
-                        x="8"
-                        y="6"
-                        width="84"
-                        height="84"
-                        preserveAspectRatio="xMidYMid meet"
-                        clipPath={`url(#${clipId})`}
-                      />
-                      {/* Accent tint overlay when active */}
-                      <rect width="100" height="100" fill={`url(#grad-${inst.id})`} />
-                    </svg>
-                    {/* Label strip */}
-                    <div
+            {mode === 'find' ? (
+              <div
+                role="tablist"
+                aria-label={t.customBuilder.instrument}
+                style={{
+                  display: 'flex',
+                  background: 'var(--c-subtle-bg, rgba(255,255,255,0.06))',
+                  border: '1px solid var(--c-border, rgba(255,255,255,0.1))',
+                  borderRadius: '9999px',
+                  padding: '3px',
+                  gap: '4px',
+                }}
+              >
+                {(
+                  [
+                    { id: 'bass' as const, label: instLabels.bass, icon: 'graphic_eq' },
+                    { id: 'piano' as const, label: instLabels.piano, icon: 'piano' },
+                  ] as const
+                ).map((inst) => {
+                  const active = instrument === inst.id;
+                  return (
+                    <button
+                      key={inst.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => handleInstrumentChange(inst.id)}
+                      className="btn-smooth touch-target-44"
                       style={{
-                        padding: '5px 4px 6px',
+                        flex: 1,
+                        height: '38px',
+                        borderRadius: '9999px',
+                        border: 'none',
                         background: active
                           ? `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`
-                          : 'var(--app-surface)',
-                        transition: 'background 220ms ease',
-                        textAlign: 'center',
+                          : 'transparent',
+                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        fontFamily: 'var(--studio-font-body)',
+                        boxShadow: active ? `0 2px 10px ${resolvedAccent.to}40` : 'none',
+                        transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                       }}
                     >
-                      <span
+                      <span className="material-symbols-rounded text-[18px]">{inst.icon}</span>
+                      <span>{inst.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div>
+                <p
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    color: 'var(--c-text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {t.customBuilder.instrument}
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {INSTRUMENTS.map((inst) => {
+                    const active = instrument === inst.id;
+                    const clipId = `img-clip-${inst.id}`;
+                    return (
+                      <button
+                        key={inst.id}
+                        onClick={() => handleInstrumentChange(inst.id)}
+                        className="btn-smooth"
                         style={{
-                          fontFamily: 'var(--studio-font-body)',
-                          fontWeight: 800,
-                          fontSize: '10px',
-                          color: active ? '#fff' : 'var(--c-text-secondary)',
-                          letterSpacing: '0.03em',
+                          flex: 1,
+                          padding: 0,
+                          borderRadius: '14px',
+                          background: 'var(--app-surface)',
+                          border: `2px solid ${active ? resolvedAccent.from : 'rgba(72,72,72,0.14)'}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'stretch',
+                          overflow: 'hidden',
+                          transition:
+                            'border-color 220ms ease, transform 160ms ease, box-shadow 220ms ease',
+                          transform: active ? 'scale(1.05)' : 'scale(1)',
+                          boxShadow: active ? `0 6px 20px ${resolvedAccent.to}55` : 'none',
                         }}
                       >
-                        {instLabels[inst.id]}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        {/* SVG image with clipPath for crisp rounded display */}
+                        <svg
+                          viewBox="0 0 100 100"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{ display: 'block', width: '100%', height: '60px' }}
+                        >
+                          <defs>
+                            <clipPath id={clipId}>
+                              <rect width="100" height="100" rx="0" ry="0" />
+                            </clipPath>
+                            <linearGradient id={`grad-${inst.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop
+                                offset="0%"
+                                stopColor={resolvedAccent.from}
+                                stopOpacity={active ? 0.18 : 0.06}
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor={resolvedAccent.to}
+                                stopOpacity={active ? 0.1 : 0.03}
+                              />
+                            </linearGradient>
+                          </defs>
+                          {/* Dark background */}
+                          <rect width="100" height="100" fill="rgba(20,20,24,1)" />
+                          {/* Instrument photo */}
+                          <image
+                            href={inst.image}
+                            x="8"
+                            y="6"
+                            width="84"
+                            height="84"
+                            preserveAspectRatio="xMidYMid meet"
+                            clipPath={`url(#${clipId})`}
+                          />
+                          {/* Accent tint overlay when active */}
+                          <rect width="100" height="100" fill={`url(#grad-${inst.id})`} />
+                        </svg>
+                        {/* Label strip */}
+                        <div
+                          style={{
+                            padding: '5px 4px 6px',
+                            background: active
+                              ? `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`
+                              : 'var(--app-surface)',
+                            transition: 'background 220ms ease',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'var(--studio-font-body)',
+                              fontWeight: 800,
+                              fontSize: '10px',
+                              color: active ? '#fff' : 'var(--c-text-secondary)',
+                              letterSpacing: '0.03em',
+                            }}
+                          >
+                            {instLabels[inst.id]}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Chord Finder result display (find mode) ── */}
@@ -1380,28 +1302,28 @@ export default function CustomChordBuilder({
             <div
               style={{
                 marginBottom: '14px',
-                padding: '16px',
-                borderRadius: '16px',
+                padding: '10px 14px',
+                borderRadius: '14px',
                 background: suggested
-                  ? `linear-gradient(135deg, ${resolvedAccent.from}18, ${resolvedAccent.to}0a)`
-                  : 'var(--app-surface)',
-                border: `1.5px solid ${suggested ? resolvedAccent.from + '44' : 'rgba(72,72,72,0.12)'}`,
-                transition: 'all 220ms ease',
+                  ? `linear-gradient(135deg, ${resolvedAccent.from}14, ${resolvedAccent.to}08)`
+                  : 'var(--surface-card-bg, rgba(255,255,255,0.04))',
+                border: `1px solid ${suggested ? resolvedAccent.from + '38' : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                minHeight: '72px',
+                minHeight: '54px',
+                transition: 'all 220ms ease',
               }}
             >
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
                   flexShrink: 0,
                   background: suggested
                     ? `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`
-                    : 'var(--app-surface-high)',
+                    : 'var(--c-subtle-bg, rgba(255,255,255,0.08))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1409,34 +1331,55 @@ export default function CustomChordBuilder({
                 }}
               >
                 <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: '20px', color: suggested ? '#fff' : 'var(--c-text-muted)' }}
+                  className="material-symbols-rounded text-[18px]"
+                  style={{ color: suggested ? '#fff' : 'var(--c-text-muted)' }}
                 >
-                  {suggested ? 'music_note' : 'piano'}
+                  {suggested ? 'music_note' : instrument === 'piano' ? 'piano' : 'graphic_eq'}
                 </span>
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 {suggested ? (
                   <>
-                    <p
-                      style={{
-                        fontFamily: 'var(--studio-font-body)',
-                        fontWeight: 900,
-                        fontSize: '22px',
-                        color: 'var(--c-text-primary)',
-                        lineHeight: 1,
-                        letterSpacing: '-0.02em',
-                      }}
-                    >
-                      {suggested}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      <p
+                        style={{
+                          fontFamily: 'var(--studio-font-body)',
+                          fontWeight: 900,
+                          fontSize: '18px',
+                          color: 'var(--c-text-primary)',
+                          lineHeight: 1.1,
+                          letterSpacing: '-0.02em',
+                          margin: 0,
+                        }}
+                      >
+                        {suggested}
+                      </p>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          color: resolvedAccent.from,
+                          background: `${resolvedAccent.from}18`,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        Matched
+                      </span>
+                    </div>
                     {notes.length > 0 && (
                       <p
                         style={{
                           fontFamily: 'Inter',
                           fontSize: '11px',
                           color: 'var(--c-text-secondary)',
-                          marginTop: '3px',
+                          marginTop: '2px',
+                          margin: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {notes.join(' · ')}
@@ -1451,6 +1394,7 @@ export default function CustomChordBuilder({
                         fontWeight: 700,
                         fontSize: '13px',
                         color: 'var(--c-text-secondary)',
+                        margin: 0,
                       }}
                     >
                       {t.chordFinder.noMatch}
@@ -1460,7 +1404,8 @@ export default function CustomChordBuilder({
                         fontFamily: 'Inter',
                         fontSize: '11px',
                         color: 'var(--c-text-muted)',
-                        marginTop: '2px',
+                        marginTop: '1px',
+                        margin: 0,
                       }}
                     >
                       {notes.join(' · ')}
@@ -1468,35 +1413,44 @@ export default function CustomChordBuilder({
                   </>
                 ) : (
                   <p
-                    style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--c-text-muted)' }}
+                    style={{
+                      fontFamily: 'Inter',
+                      fontSize: '12px',
+                      color: 'var(--c-text-muted)',
+                      margin: 0,
+                    }}
                   >
                     {t.chordFinder.waiting}
                   </p>
                 )}
               </div>
-              {suggested && (
-                <div
+              {hasAnyNote && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (instrument === 'piano') setPianoKeys([]);
+                    else {
+                      const n = instrument === 'bass' ? 4 : 6;
+                      setFrets(Array.from({ length: n }, () => [defaultFret]));
+                      setBarres([]);
+                    }
+                  }}
+                  title="Clear notes"
+                  className="btn-smooth touch-target-44"
                   style={{
-                    flexShrink: 0,
-                    background: `${resolvedAccent.from}20`,
-                    border: `1px solid ${resolvedAccent.from}44`,
-                    borderRadius: '9999px',
-                    padding: '3px 10px',
+                    padding: '6px',
+                    borderRadius: '8px',
+                    background: 'var(--c-subtle-bg, rgba(255,255,255,0.06))',
+                    color: 'var(--c-text-muted)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
                 >
-                  <span
-                    style={{
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 800,
-                      fontSize: '10px',
-                      color: resolvedAccent.from,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                    }}
-                  >
-                    detected
-                  </span>
-                </div>
+                  <span className="material-symbols-rounded text-[18px]">restart_alt</span>
+                </button>
               )}
             </div>
           )}
@@ -1743,10 +1697,10 @@ export default function CustomChordBuilder({
         <div
           style={{
             padding: '12px 16px',
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-            borderTop: '1px solid rgba(72,72,72,0.08)',
+            paddingBottom: inMorphSurface ? '12px' : 'max(16px, env(safe-area-inset-bottom))',
+            borderTop: '1px solid var(--c-border, rgba(72,72,72,0.12))',
             flexShrink: 0,
-            background: 'var(--app-bg)',
+            background: 'var(--surface-card-bg, var(--app-bg))',
           }}
         >
           {mode === 'find' ? (
@@ -1764,7 +1718,7 @@ export default function CustomChordBuilder({
                 disabled={!hasAnyNote}
                 style={{
                   flex: 1,
-                  height: 52,
+                  height: 44,
                   borderRadius: '9999px',
                   background: hasAnyNote ? 'var(--app-surface-high)' : 'var(--app-surface)',
                   color: hasAnyNote ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
@@ -1778,10 +1732,10 @@ export default function CustomChordBuilder({
                 onClick={handleClose}
                 style={{
                   flex: 1,
-                  height: 52,
+                  height: 44,
                   borderRadius: '9999px',
                   background: `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`,
-                  boxShadow: `0 4px 24px ${resolvedAccent.to}50`,
+                  boxShadow: `0 4px 20px ${resolvedAccent.to}40`,
                 }}
               >
                 Done
@@ -1823,6 +1777,182 @@ export default function CustomChordBuilder({
             </>
           )}
         </div>
+    </div>
+  );
+
+  if (inMorphSurface) {
+    return innerContent;
+  }
+
+  const modalContent = (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
+      {/* Backdrop */}
+      <motion.div
+        onClick={handleClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: closing ? 0 : 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'var(--surface-modal-bg, var(--app-surface-scrim, rgba(0,0,0,0.7)))',
+          backdropFilter: isReduced ? 'none' : 'blur(6px)',
+          WebkitBackdropFilter: isReduced ? 'none' : 'blur(6px)',
+        }}
+      />
+
+      {/* Sheet — fixed height with origin-aware morphing entry from top right when mode is 'find' */}
+      <motion.div
+        initial={
+          isReduced
+            ? { opacity: 0 }
+            : mode === 'find'
+              ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
+              : { opacity: 0, y: '100%' }
+        }
+        animate={
+          closing
+            ? (isReduced
+                ? { opacity: 0 }
+                : mode === 'find'
+                  ? { opacity: 0, scale: 0.88, y: -24, transformOrigin: 'top right' }
+                  : { opacity: 0, y: '100%' })
+            : {
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transformOrigin: mode === 'find' ? 'top right' : 'bottom center',
+              }
+        }
+        transition={{
+          type: 'spring',
+          stiffness: 320,
+          damping: 28,
+          mass: 0.8,
+          duration: isReduced ? 0.15 : undefined,
+        }}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'var(--app-bg)',
+          borderRadius: '1.5rem 1.5rem 0 0',
+          height: '82dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
+        }}
+      >
+        {/* Drag handle */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '10px 0 2px',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              width: '36px',
+              height: '4px',
+              borderRadius: '9999px',
+              background: 'rgba(72,72,72,0.3)',
+            }}
+          />
+        </div>
+
+        {/* Staggered progressive content container */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: isReduced ? 1 : 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                delay: isReduced ? 0 : 0.08,
+                duration: 0.18,
+              },
+            },
+          }}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '4px 16px 10px',
+              flexShrink: 0,
+              gap: '10px',
+            }}
+          >
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                flexShrink: 0,
+                background: `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#fff' }}>
+                {mode === 'find' ? 'search' : isEditing ? 'edit' : 'add_circle'}
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 900,
+                  fontSize: '18px',
+                  color: 'var(--c-text-primary)',
+                  lineHeight: 1,
+                }}
+              >
+                {mode === 'find'
+                  ? t.chordFinder.title
+                  : isEditing
+                    ? t.customBuilder.titleEdit
+                    : t.customBuilder.titleNew}
+              </p>
+              <p
+                style={{
+                  fontFamily: 'Inter',
+                  fontSize: '11px',
+                  color: 'var(--c-text-muted)',
+                  marginTop: '2px',
+                }}
+              >
+                {mode === 'find'
+                  ? t.chordFinder.subtitle
+                  : isEditing
+                    ? t.customBuilder.subtitleEdit
+                    : t.customBuilder.subtitleNew}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              style={{ color: 'var(--c-text-secondary)', minWidth: 32 }}
+              icon="close"
+            />
+          </div>
+
+          {innerContent}
         </motion.div>
       </motion.div>
     </div>

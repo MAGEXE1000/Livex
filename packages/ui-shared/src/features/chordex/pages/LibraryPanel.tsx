@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { useScrollHide } from '@workspace/studio-core';
+import { useScrollHide, useT } from '@workspace/studio-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
@@ -23,6 +23,7 @@ const ProgressionGenerator = lazy(() => import('../components/ProgressionGenerat
 
 export default function LibraryPanel() {
   const state = useLibraryState();
+  const t = useT();
 
   const {
     settings,
@@ -143,12 +144,32 @@ export default function LibraryPanel() {
         })()
       )}
 
-      {/* Floating Action Modals */}
-      {showFinder && (
+      {/* Morphing Foreground Chord Finder Modal */}
+      <MorphingActionSurface
+        isOpen={showFinder}
+        originRect={state.finderOriginRect}
+        placement="center"
+        maxWidth={480}
+        maxHeight="88vh"
+        title={t.chordFinder.title}
+        subtitle={t.chordFinder.subtitle}
+        onOpenChange={(open) => {
+          if (!open) {
+            state.closeFinder();
+          }
+        }}
+        contentStyle={{ padding: 0 }}
+      >
         <Suspense fallback={null}>
-          <CustomChordBuilder accent={accent} mode="find" onClose={() => setShowFinder(false)} />
+          <CustomChordBuilder
+            accent={accent}
+            mode="find"
+            inMorphSurface={true}
+            onClose={() => state.closeFinder()}
+          />
         </Suspense>
-      )}
+      </MorphingActionSurface>
+
       {showGenerator && (
         <Suspense fallback={null}>
           <ProgressionGenerator accent={accent} onClose={() => setShowGenerator(false)} />
@@ -180,11 +201,11 @@ export default function LibraryPanel() {
         maxWidth={440}
         maxHeight="86vh"
         title={
-          state.modalChord
-            ? `${state.modalChord.name} ${state.modalChord.type ? capitalize(state.modalChord.type) : ''}`
+          state.displayModalChord
+            ? `${state.displayModalChord.name} ${state.displayModalChord.type ? capitalize(state.displayModalChord.type) : ''}`
             : undefined
         }
-        subtitle={state.modalChord ? state.modalChord.notes.join(' · ') : undefined}
+        subtitle={state.displayModalChord ? state.displayModalChord.notes.join(' · ') : undefined}
         onOpenChange={(open) => {
           if (!open) {
             state.closeModalChord();
@@ -192,9 +213,9 @@ export default function LibraryPanel() {
         }}
         contentStyle={{ padding: 0 }}
       >
-        {state.modalChord ? (
+        {state.displayModalChord ? (
           <LibraryChordDetail
-            state={{ ...state, chord: state.modalChord }}
+            state={{ ...state, chord: state.displayModalChord }}
             inModal={true}
             onBack={state.closeModalChord}
           />

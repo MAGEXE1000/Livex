@@ -1304,6 +1304,7 @@ export function LibraryMainView({ state }: { state: any }) {
     scrollRef,
     allChords,
     setShowFinder,
+    openFinder,
     setShowGenerator,
     query,
     setQuery,
@@ -1426,7 +1427,7 @@ export function LibraryMainView({ state }: { state: any }) {
                 {/* Finder Tool */}
                 <motion.button
                   type="button"
-                  onClick={() => setShowFinder(true)}
+                  onClick={(e) => (openFinder ? openFinder(e) : setShowFinder(true))}
                   whileTap={{ scale: 0.94 }}
                   transition={{
                     type: 'spring',

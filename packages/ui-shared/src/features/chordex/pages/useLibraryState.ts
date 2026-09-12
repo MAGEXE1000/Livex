@@ -77,6 +77,53 @@ export function useLibraryState() {
   }, []);
 
   const [showFinder, setShowFinder] = useState(false);
+  const [finderOriginRect, setFinderOriginRect] = useState<{
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const openFinder = useCallback((eventOrElement?: React.MouseEvent | HTMLElement | DOMRect | any) => {
+    let rect: { top: number; left: number; right: number; bottom: number; width: number; height: number } | null = null;
+    if (eventOrElement) {
+      if ('getBoundingClientRect' in eventOrElement && typeof eventOrElement.getBoundingClientRect === 'function') {
+        const r = eventOrElement.getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if ('currentTarget' in eventOrElement && eventOrElement.currentTarget && typeof (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect === 'function') {
+        const r = (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if ('target' in eventOrElement && eventOrElement.target && typeof (eventOrElement.target as HTMLElement).getBoundingClientRect === 'function') {
+        const r = (eventOrElement.target as HTMLElement).getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if (typeof eventOrElement.top === 'number' && typeof eventOrElement.left === 'number') {
+        rect = {
+          top: eventOrElement.top,
+          left: eventOrElement.left,
+          right: eventOrElement.right ?? (eventOrElement.left + eventOrElement.width),
+          bottom: eventOrElement.bottom ?? (eventOrElement.top + eventOrElement.height),
+          width: eventOrElement.width,
+          height: eventOrElement.height,
+        };
+      }
+    }
+    if (!rect && typeof document !== 'undefined') {
+      const el = document.querySelector('[data-purpose="tool-finder"]');
+      if (el) {
+        const r = el.getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      }
+    }
+    setFinderOriginRect(rect);
+    setShowFinder(true);
+  }, []);
+
+  const closeFinder = useCallback(() => {
+    setShowFinder(false);
+  }, []);
+
   const isGeneratorRoute =
     currentRoute.app === 'chordex' &&
     ['progression', 'promotion', 'generator'].includes(currentRoute.page || '');
@@ -119,6 +166,15 @@ export function useLibraryState() {
   const modalChord = useMemo(() => {
     return modalChordState?.id ? getChordById(modalChordState.id) : null;
   }, [modalChordState?.id]);
+
+  const lastActiveModalChordRef = useRef<ReturnType<typeof getChordById> | null>(null);
+  useEffect(() => {
+    if (modalChord) {
+      lastActiveModalChordRef.current = modalChord;
+    }
+  }, [modalChord]);
+
+  const displayModalChord = modalChord || lastActiveModalChordRef.current;
 
   const chord = useMemo(() => {
     if (modalChordState?.id) return getChordById(modalChordState.id);
@@ -275,6 +331,10 @@ export function useLibraryState() {
         closeModalChord();
         return true;
       }
+      if (showFinder) {
+        closeFinder();
+        return true;
+      }
       if (activePracticeSong) {
         setActivePracticeSong(null);
         return true;
@@ -303,6 +363,8 @@ export function useLibraryState() {
       activePanel,
       modalChordState,
       closeModalChord,
+      showFinder,
+      closeFinder,
       activePracticeSong,
       selectedChordId,
       categoryQuery,
@@ -399,6 +461,10 @@ export function useLibraryState() {
     setDiagramDisplayMode,
     modalChordState,
     modalChord,
+    displayModalChord,
     closeModalChord,
+    finderOriginRect,
+    openFinder,
+    closeFinder,
   };
 }
