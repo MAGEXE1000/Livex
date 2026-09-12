@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useStagexStore, type GearItem } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useSettingsStore, useT, useShallow } from '@workspace/studio-core';
 
 interface StageGearViewProps {
   onBack: () => void;
@@ -78,7 +78,15 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
     ],
     [gearTr]
   );
-  const { gear, addGearItem, updateGearItem, removeGearItem, preferences } = useStagexStore();
+  const { gear, addGearItem, updateGearItem, removeGearItem, preferences } = useStagexStore(
+    useShallow((s) => ({
+      gear: s.gear,
+      addGearItem: s.addGearItem,
+      updateGearItem: s.updateGearItem,
+      removeGearItem: s.removeGearItem,
+      preferences: s.preferences,
+    }))
+  );
   const activeVis = settings.perApp?.stagex;
   const isLight =
     isLightProp !== undefined ? isLightProp : activeVis ? activeVis.theme === 'light' : false;

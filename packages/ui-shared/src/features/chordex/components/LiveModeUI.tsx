@@ -137,7 +137,7 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
     shownChord,
     chordStyle,
   } = state;
-  const settings = useSettingsStore((s) => s.settings);
+  const liveModeAnimations = useSettingsStore((s) => s.settings.liveModeAnimations);
 
   return (
     <div
@@ -268,7 +268,7 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
                 pointerEvents: 'none',
               }}
             />
-            {settings.liveModeAnimations && (
+            {liveModeAnimations && (
               <div
                 key={`bloom-${shownIdx}`}
                 style={{

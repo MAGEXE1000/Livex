@@ -5,12 +5,19 @@ import {
   useSettingsStore,
   useBottomNavigationStore,
   NavigationDispatcher,
+  useShallow,
 } from '@workspace/studio-core';
 
 /* ── INSPECTOR ROUTE TRACER DEBUG TOOL ────────────────────────────────── */
 export function InspectorRouteTracer() {
   const history = useNavigationStore((s) => s.history);
-  const settings = useSettingsStore((state) => state.settings);
+  const { displayDensity, theme, amoledMode } = useSettingsStore(
+    useShallow((state) => ({
+      displayDensity: state.settings.displayDensity,
+      theme: state.settings.theme,
+      amoledMode: state.settings.amoledMode,
+    }))
+  );
   const isSwitcherOpen = useBottomNavigationStore((s) => s.isSwitcherOpen);
   const isProfileMenuOpen = useBottomNavigationStore((s) => s.isProfileMenuOpen);
   const isSearchOpen = useBottomNavigationStore((s) => s.isSearchOpen);
@@ -94,15 +101,15 @@ export function InspectorRouteTracer() {
   const currentSheet = activeSheetsCount > 0 ? 'Sheet' : 'None';
   const currentOverlay = isSwitcherOpen ? 'AppSwitcher' : isProfileMenuOpen ? 'ProfileMenu' : isSearchOpen ? 'Search' : 'None';
 
-  const densityMode = settings.displayDensity 
-    ? settings.displayDensity.charAt(0).toUpperCase() + settings.displayDensity.slice(1) 
+  const densityMode = displayDensity 
+    ? displayDensity.charAt(0).toUpperCase() + displayDensity.slice(1) 
     : 'Standard';
   
-  const currentTheme = settings.theme 
-    ? settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1) 
+  const currentTheme = theme 
+    ? theme.charAt(0).toUpperCase() + theme.slice(1) 
     : 'Dark';
 
-  const appearanceMode = settings.amoledMode ? 'AMOLED' : (settings.theme === 'light' ? 'Light' : 'Dark');
+  const appearanceMode = amoledMode ? 'AMOLED' : (theme === 'light' ? 'Light' : 'Dark');
 
   if (minimized) {
     return (

@@ -92,10 +92,9 @@ export function HubHelp({
   tab: HubTab;
   setTab: React.Dispatch<React.SetStateAction<HubTab>>;
 }) {
-  const settings = useSettingsStore((state) => state.settings);
   const historyLength = useNavigationStore((s) => s.history.length);
   const t = useT();
-  const lang = settings.language ?? 'en';
+  const lang = useSettingsStore((state) => state.settings.language) ?? 'en';
   const isWebDesktop = useIsWebDesktop();
 
   const getInitialHelpPage = () => {

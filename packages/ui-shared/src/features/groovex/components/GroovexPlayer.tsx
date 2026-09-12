@@ -111,7 +111,8 @@ export default function GroovexPlayer() {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
   const t = useT();
-  const { activeSongId, preferences } = useGroovexStore();
+  const activeSongId = useGroovexStore((s) => s.activeSongId);
+  const preferences = useGroovexStore((s) => s.preferences);
   const song = useMemo(() => SONG_CATALOG.find((s) => s.id === activeSongId), [activeSongId]);
 
   const engineRef = useRef<AudioEngine | null>(null);

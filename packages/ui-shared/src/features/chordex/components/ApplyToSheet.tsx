@@ -8,6 +8,7 @@ import {
   type AppKey,
   useT,
   useSettingsStore,
+  useShallow,
 } from '@workspace/studio-core';
 import React, { useState, useEffect } from 'react';
 import {
@@ -42,11 +43,15 @@ interface ApplyToSheetProps {
 }
 
 export default function ApplyToSheet({ show, onApply, onClose }: ApplyToSheetProps) {
-  const settings = useSettingsStore((s) => s.settings);
+  const { perApp, accentColor } = useSettingsStore(
+    useShallow((s) => ({
+      perApp: s.settings.perApp,
+      accentColor: s.settings.accentColor,
+    }))
+  );
   const t = useT();
   const appKey = NavigationDispatcher.currentApp() as AppKey;
-  const perApp = settings.perApp;
-  const accent = resolveAccent(settings.accentColor);
+  const accent = resolveAccent(accentColor);
 
   const [selected, setSelected] = useState<Set<AppKey>>(
     new Set(['hub', 'chordex', 'drumex', 'stagex', 'groovex', 'vocalex'])
@@ -201,9 +206,9 @@ export function MorphingApplyToSurface({
   onApply: (apps: AppKey[]) => void;
   accentColor?: string;
 }) {
-  const settings = useSettingsStore((s) => s.settings);
+  const accentColorSetting = useSettingsStore((s) => s.settings.accentColor);
   const t = useT();
-  const accent = resolveAccent(settings.accentColor);
+  const accent = resolveAccent(accentColorSetting);
   const [selected, setSelected] = useState<Set<AppKey>>(
     new Set(['hub', 'chordex', 'drumex', 'stagex', 'groovex', 'vocalex'])
   );

@@ -117,7 +117,7 @@ export function PageTransition({
   className = '',
 }: PageTransitionProps) {
   const prefersReduced = usePrefersReducedMotion();
-  const settings = useSettingsStore((s) => s.settings);
+  const animationSpeed = useSettingsStore((s) => s.settings?.animationSpeed);
 
   if (prefersReduced) {
     return (
@@ -133,24 +133,20 @@ export function PageTransition({
       if (type === 'scale') return { opacity: 0, scale: 0.96, zIndex: 1 };
       return {
         x: direction === 'forward' ? '100%' : '-30%',
-        scale: direction === 'forward' ? 1.0 : 0.96,
-        opacity: 1.0,
+        scale: direction === 'forward' ? 1.04 : 0.96,
+        opacity: 0,
         zIndex: direction === 'forward' ? 2 : 1,
       };
     },
-    animate: () => {
-      if (type === 'fade') return { opacity: 1, zIndex: 1 };
-      if (type === 'scale') return { opacity: 1, scale: 1, zIndex: 1 };
-      return {
-        x: '0%',
-        scale: 1.0,
-        opacity: 1.0,
-        zIndex: direction === 'forward' ? 2 : 1,
-      };
+    animate: {
+      x: '0%',
+      scale: 1,
+      opacity: 1,
+      zIndex: 2,
     },
     exit: () => {
-      if (type === 'fade') return { opacity: 0, zIndex: 1 };
-      if (type === 'scale') return { opacity: 0, scale: 1.04, zIndex: 1 };
+      if (type === 'fade') return { opacity: 0, zIndex: 0 };
+      if (type === 'scale') return { opacity: 0, scale: 0.96, zIndex: 0 };
       return {
         x: direction === 'forward' ? '-30%' : '100%',
         scale: direction === 'forward' ? 0.96 : 1.0,
@@ -163,7 +159,7 @@ export function PageTransition({
   const transition = AnimationCoordinator.getTransition(
     type === 'scale' ? 'spring' : 'standard',
     'normal',
-    settings?.animationSpeed
+    animationSpeed
   );
 
   return (
@@ -200,7 +196,7 @@ export function AppEntryTransition({
   className?: string;
 }) {
   const prefersReduced = usePrefersReducedMotion();
-  const settings = useSettingsStore((s) => s.settings);
+  const animationSpeed = useSettingsStore((s) => s.settings?.animationSpeed);
 
   if (prefersReduced) {
     return (
@@ -213,7 +209,7 @@ export function AppEntryTransition({
   const transition = AnimationCoordinator.getTransition(
     'spring',
     'normal',
-    settings?.animationSpeed
+    animationSpeed
   );
 
   return (

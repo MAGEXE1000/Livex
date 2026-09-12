@@ -27,10 +27,10 @@ export default function GroovexLibrary() {
   const setActiveSong = useGroovexStore(useShallow((s) => s.setActiveSong));
   const addRecentSong = useGroovexStore(useShallow((s) => s.addRecentSong));
   const recentSongs = useGroovexStore(useShallow((s) => s.recentSongs));
-  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const theme = useSettingsStore((s) => s.settings.theme);
   const isLight =
-    settings.theme === 'light' ||
-    (settings.theme === 'system' &&
+    theme === 'light' ||
+    (theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const t = useT();

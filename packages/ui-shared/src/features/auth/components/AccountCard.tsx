@@ -1705,6 +1705,8 @@ type AccountActiveSheet =
   | 'devices-sessions'
   | 'privacy-data';
 
+const EMPTY_ACTIVITY_LOG: any[] = [];
+
 export function AccountSettingsPage({
   accent,
   cardStyle,
@@ -1762,7 +1764,8 @@ export function AccountSettingsPage({
 
   const settings = useSettingsStore((s) => s.settings);
   const isWebDesktop = useIsWebDesktop();
-  const activityLog = useChordStore((s) => s.activityLog ?? []);
+  const rawActivityLog = useChordStore((s) => s.activityLog);
+  const activityLog = rawActivityLog || EMPTY_ACTIVITY_LOG;
 
   const [localUsage, setLocalUsage] = useState<string>('0 KB');
   const [clearingCache, setClearingCache] = useState(false);

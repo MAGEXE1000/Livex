@@ -962,9 +962,9 @@ export default function CustomChordBuilder({
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
-  const settings = useSettingsStore((s) => s.settings);
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const t = useT();
-  const resolvedAccent = accent ?? resolveAccent(settings.accentColor);
+  const resolvedAccent = accent ?? resolveAccent(accentColor);
   const instLabels: Record<Instrument, string> = {
     guitar: t.customBuilder.guitar,
     piano: t.customBuilder.piano,

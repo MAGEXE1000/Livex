@@ -35,7 +35,8 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
 
-  const { preferences, updatePreferences } = useStagexStore();
+  const preferences = useStagexStore((s) => s.preferences);
+  const updatePreferences = useStagexStore((s) => s.updatePreferences);
 
   const activeVis = settings.perApp?.stagex;
   const isLight =

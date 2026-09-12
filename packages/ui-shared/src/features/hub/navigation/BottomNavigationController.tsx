@@ -51,7 +51,10 @@ export function BottomNavigationController() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
 
-  const { setCollapsed, setVisible, setMotionState, setIsLight } = useBottomNavigationStore();
+  const setCollapsed = useBottomNavigationStore((s) => s.setCollapsed);
+  const setVisible = useBottomNavigationStore((s) => s.setVisible);
+  const setMotionState = useBottomNavigationStore((s) => s.setMotionState);
+  const setIsLight = useBottomNavigationStore((s) => s.setIsLight);
 
   const isSwitcherOpen = useBottomNavigationStore((s) => s.isSwitcherOpen);
   const setIsSwitcherOpen = useCallback((open: boolean) => {

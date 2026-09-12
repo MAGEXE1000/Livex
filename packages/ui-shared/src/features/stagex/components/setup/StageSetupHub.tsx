@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
-import { useT, useIsWebDesktop, useScrollHide, useSettingsStore } from '@workspace/studio-core';
+import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { useStagexStore, type StagexSubView } from '../../state/useStagexStore';
 
@@ -15,7 +15,15 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
   isLight = false,
   isAmoled = false,
 }) => {
-  const { riderNeeds, riderChannels, setlist, gear, members } = useStagexStore();
+  const { riderNeeds, riderChannels, setlist, gear, members } = useStagexStore(
+    useShallow((s) => ({
+      riderNeeds: s.riderNeeds,
+      riderChannels: s.riderChannels,
+      setlist: s.setlist,
+      gear: s.gear,
+      members: s.members,
+    }))
+  );
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();

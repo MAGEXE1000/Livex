@@ -143,7 +143,8 @@ function IconPrefs({ active }: { active: boolean }) {
 export default function DrumPrefsPanel() {
   const settings = useSettingsStore(useShallow((s) => s.settings));
 
-  const { drumPrefs, updateDrumPrefs } = useDrumStore();
+  const drumPrefs = useDrumStore((s) => s.drumPrefs);
+  const updateDrumPrefs = useDrumStore((s) => s.updateDrumPrefs);
   const t = useT();
   const dp = t.drumPrefs;
   const scrollRef = useRef<HTMLDivElement>(null);

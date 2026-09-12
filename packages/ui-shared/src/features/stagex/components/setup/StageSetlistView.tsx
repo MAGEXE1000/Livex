@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useStagexStore } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useSettingsStore, useT, useShallow } from '@workspace/studio-core';
 
 interface StageSetlistViewProps {
   onBack: () => void;
@@ -20,7 +20,15 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   const setlistTr = tr.stagex?.setup?.setlist;
   const settings = useSettingsStore((s) => s.settings);
   const isSpanish = (settings.language ?? 'en') === 'es';
-  const { setlist, addSong, removeSong, reorderSongs, preferences } = useStagexStore();
+  const { setlist, addSong, removeSong, reorderSongs, preferences } = useStagexStore(
+    useShallow((s) => ({
+      setlist: s.setlist,
+      addSong: s.addSong,
+      removeSong: s.removeSong,
+      reorderSongs: s.reorderSongs,
+      preferences: s.preferences,
+    }))
+  );
   const activeVis = settings.perApp?.stagex;
   const isLight =
     isLightProp !== undefined ? isLightProp : activeVis ? activeVis.theme === 'light' : false;

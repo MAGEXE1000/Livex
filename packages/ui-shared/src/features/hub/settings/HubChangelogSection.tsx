@@ -10,8 +10,8 @@ import {
 import { SectionHeader } from '../../../shared/settings/SettingControls';
 
 export default function HubChangelogSection() {
-  const settings = useSettingsStore((s) => s.settings);
-  const acc = resolveAccent(settings.accentColor);
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
+  const acc = resolveAccent(accentColor);
 
   const cardStyle: React.CSSProperties = {
     background: 'var(--app-surface, rgba(255, 255, 255, 0.03))',

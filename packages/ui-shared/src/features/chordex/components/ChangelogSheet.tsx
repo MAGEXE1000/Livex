@@ -34,9 +34,9 @@ export default function ChangelogSheet({
   sections,
 }: Props) {
   const t = useT();
-  const settings = useSettingsStore((s) => s.settings);
+  const language = useSettingsStore((s) => s.settings.language);
   const renderSections: ChangelogSection[] =
-    sections ?? getChangelogSections(settings.language ?? 'en');
+    sections ?? getChangelogSections(language ?? 'en');
   void APP_CHANGELOG_SECTIONS; // keep import compatibility for any consumer relying on the re-export shape
 
   // Register with global back stack to support closing via back swipe or back button

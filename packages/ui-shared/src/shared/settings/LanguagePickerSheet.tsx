@@ -29,9 +29,10 @@ interface LanguagePickerSheetProps {
 }
 
 export function LanguagePickerSheet({ open, onClose }: LanguagePickerSheetProps) {
-  const settings = useSettingsStore((s) => s.settings);
-  const acc = resolveAccent(settings.accentColor);
-  const isSpanish = (settings.language ?? 'en') === 'es';
+  const language = useSettingsStore((s) => s.settings.language);
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
+  const acc = resolveAccent(accentColor);
+  const isSpanish = (language ?? 'en') === 'es';
   const title = isSpanish ? 'Seleccionar idioma' : 'Select Language';
 
   return (
@@ -41,7 +42,7 @@ export function LanguagePickerSheet({ open, onClose }: LanguagePickerSheetProps)
         style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0' }}
       >
         {SUPPORTED_LANGUAGES.map(({ code, label }) => {
-          const isSelected = (settings.language ?? 'en') === code;
+          const isSelected = (language ?? 'en') === code;
           const isAvailable = AVAILABLE_LANGUAGES.has(code);
 
           return (

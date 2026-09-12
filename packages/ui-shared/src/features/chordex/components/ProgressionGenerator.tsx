@@ -37,7 +37,7 @@ export default function ProgressionGenerator({
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
-  const settings = useSettingsStore((s) => s.settings);
+  const preferFlats = useSettingsStore((s) => s.settings.preferFlats);
   const presets = useChordStore((s) => s.presets);
   const t = useT();
 
@@ -96,7 +96,7 @@ export default function ProgressionGenerator({
     [swapOpenIdx, savePromptOpen, presetPickerOpen, requestClose, requestClosePicker]
   );
 
-  const keyDisplay = labelKey(key, !!settings.preferFlats);
+  const keyDisplay = labelKey(key, !!preferFlats);
 
   const chipBase: React.CSSProperties = {
     height: 32,
@@ -233,7 +233,7 @@ export default function ProgressionGenerator({
                       minWidth: 36,
                     }}
                   >
-                    {labelKey(k, !!settings.preferFlats)}
+                    {labelKey(k, !!preferFlats)}
                   </button>
                 );
               })}

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 
-import { useScrollHide, SpringPresets, useSettingsStore } from '@workspace/studio-core';
+import { useScrollHide, SpringPresets, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { ProgressiveBlur } from '../design-system/ProgressiveBlur';
 import { StudioLogo } from '../../features/chordex/icons/ChordexLogo';
 import { StudioHeader } from './StudioHeader';
@@ -179,9 +179,14 @@ export function SharedFloatingHeader({
   isAmoled: isAmoledProp,
 }: SharedFloatingHeaderProps) {
   // Read current theme to apply warm tinted translucency
-  const settings = useSettingsStore((s) => s.settings);
-  const isLight = isLightProp !== undefined ? isLightProp : settings.theme === 'light';
-  const isAmoled = isAmoledProp !== undefined ? isAmoledProp : settings.amoledMode;
+  const { theme, amoledMode } = useSettingsStore(
+    useShallow((s) => ({
+      theme: s.settings.theme,
+      amoledMode: s.settings.amoledMode,
+    }))
+  );
+  const isLight = isLightProp !== undefined ? isLightProp : theme === 'light';
+  const isAmoled = isAmoledProp !== undefined ? isAmoledProp : amoledMode;
 
   return (
     <div
