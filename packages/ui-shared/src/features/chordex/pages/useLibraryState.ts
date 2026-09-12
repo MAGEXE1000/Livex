@@ -65,6 +65,17 @@ export function useLibraryState() {
   );
   const [diagramDisplayMode, setDiagramDisplayMode] = useState<'notes' | 'intervals'>('notes');
 
+  // Foreground morphing popup state (mobile) & split preview state (desktop)
+  const [modalChordState, setModalChordState] = useState<{
+    id: string;
+    originRect: { top: number; left: number; right: number; bottom: number; width: number; height: number };
+  } | null>(null);
+  const [desktopChordId, setDesktopChordId] = useState<string | null>(null);
+
+  const closeModalChord = useCallback(() => {
+    setModalChordState(null);
+  }, []);
+
   const [showFinder, setShowFinder] = useState(false);
   const isGeneratorRoute =
     currentRoute.app === 'chordex' &&
@@ -105,9 +116,16 @@ export function useLibraryState() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const modalChord = useMemo(() => {
+    return modalChordState?.id ? getChordById(modalChordState.id) : null;
+  }, [modalChordState?.id]);
+
   const chord = useMemo(() => {
-    return selectedChordId ? getChordById(selectedChordId) : null;
-  }, [selectedChordId]);
+    if (modalChordState?.id) return getChordById(modalChordState.id);
+    if (desktopChordId) return getChordById(desktopChordId);
+    if (selectedChordId) return getChordById(selectedChordId);
+    return null;
+  }, [modalChordState?.id, desktopChordId, selectedChordId]);
 
   const searchResults = useMemo(() => {
     if (!query) return [];
@@ -137,34 +155,96 @@ export function useLibraryState() {
     return getChordById('C-major') || getChordById('d-maj7') || allChords[0] || null;
   }, [allChords]);
 
-  const selectChord = useCallback(
-    (chordId: string | null) => {
-      if (chordId === null) {
-        if (isWebDesktop) {
-          NavigationDispatcher.replace({ app: 'chordex', page: 'library' });
-        } else {
-          NavigationDispatcher.pop();
-        }
-      } else {
-        if (isWebDesktop) {
-          NavigationDispatcher.replace({ app: 'chordex', page: 'chord', id: chordId });
-        } else {
-          NavigationDispatcher.push({ app: 'chordex', page: 'chord', id: chordId });
-        }
-      }
-    },
-    [isWebDesktop]
-  );
-
   const handleChordClick = useCallback(
-    (chordId: string) => {
+    (chordId: string, eventOrElement?: React.MouseEvent | HTMLElement | DOMRect | any) => {
+      // 1. Update recentChords in chord store
       useChordStore.setState((state) => {
         const recent = [chordId, ...state.recentChords.filter((id) => id !== chordId)].slice(0, 10);
         return { recentChords: recent };
       });
-      selectChord(chordId);
+
+      // 2. Desktop Web: select chord for right preview column without route change
+      if (isWebDesktop) {
+        setDesktopChordId(chordId);
+        return;
+      }
+
+      // 3. Mobile (Web Preview & Android APK): capture synchronous DOMRect and morph
+      let originRect: { top: number; left: number; right: number; bottom: number; width: number; height: number } | null = null;
+      if (eventOrElement) {
+        if ('getBoundingClientRect' in eventOrElement && typeof eventOrElement.getBoundingClientRect === 'function') {
+          const r = eventOrElement.getBoundingClientRect();
+          originRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        } else if ('currentTarget' in eventOrElement && eventOrElement.currentTarget && typeof (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect === 'function') {
+          const r = (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect();
+          originRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        } else if ('target' in eventOrElement && eventOrElement.target && typeof (eventOrElement.target as HTMLElement).getBoundingClientRect === 'function') {
+          const r = (eventOrElement.target as HTMLElement).getBoundingClientRect();
+          originRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        } else if (typeof eventOrElement.top === 'number' && typeof eventOrElement.left === 'number') {
+          originRect = {
+            top: eventOrElement.top,
+            left: eventOrElement.left,
+            right: eventOrElement.right ?? (eventOrElement.left + eventOrElement.width),
+            bottom: eventOrElement.bottom ?? (eventOrElement.top + eventOrElement.height),
+            width: eventOrElement.width,
+            height: eventOrElement.height,
+          };
+        }
+      }
+
+      // Synchronous DOM query fallback matching the tagged chord card
+      if (!originRect && typeof document !== 'undefined') {
+        const el = document.querySelector(`[data-chord-id="${chordId}"]`);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          originRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        }
+      }
+
+      // If switching chords while modal is already open (e.g. related chords), preserve origin
+      if (!originRect && modalChordState?.originRect) {
+        originRect = modalChordState.originRect;
+      }
+
+      const viewportW = typeof window !== 'undefined' ? window.innerWidth : 390;
+      const viewportH = typeof window !== 'undefined' ? window.innerHeight : 844;
+
+      setModalChordState({
+        id: chordId,
+        originRect: originRect || {
+          top: Math.round(viewportH * 0.4),
+          left: Math.round(viewportW * 0.2),
+          right: Math.round(viewportW * 0.8),
+          bottom: Math.round(viewportH * 0.6),
+          width: Math.round(viewportW * 0.6),
+          height: 120,
+        },
+      });
     },
-    [selectChord]
+    [isWebDesktop, modalChordState]
+  );
+
+  const selectChord = useCallback(
+    (chordId: string | null) => {
+      if (chordId === null) {
+        if (isWebDesktop) {
+          setDesktopChordId(null);
+        } else {
+          setModalChordState(null);
+          if (currentRoute.app === 'chordex' && currentRoute.page === 'chord') {
+            NavigationDispatcher.pop();
+          }
+        }
+      } else {
+        if (isWebDesktop) {
+          setDesktopChordId(chordId);
+        } else {
+          handleChordClick(chordId);
+        }
+      }
+    },
+    [isWebDesktop, handleChordClick, currentRoute]
   );
 
   const activePracticeSong = useMemo(() => {
@@ -191,6 +271,10 @@ export function useLibraryState() {
     'nested',
     () => {
       if (activePanel !== 'library') return false;
+      if (modalChordState) {
+        closeModalChord();
+        return true;
+      }
       if (activePracticeSong) {
         setActivePracticeSong(null);
         return true;
@@ -217,6 +301,8 @@ export function useLibraryState() {
     },
     [
       activePanel,
+      modalChordState,
+      closeModalChord,
       activePracticeSong,
       selectedChordId,
       categoryQuery,
@@ -311,5 +397,8 @@ export function useLibraryState() {
     setPreviewInstrument,
     diagramDisplayMode,
     setDiagramDisplayMode,
+    modalChordState,
+    modalChord,
+    closeModalChord,
   };
 }

@@ -2,9 +2,15 @@ import React, { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { useScrollHide } from '@workspace/studio-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
+import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import { useLibraryState } from './useLibraryState';
 import { LibraryMainView, LibraryChordDetail, CategoryScreenView } from './LibraryUI';
+
+function capitalize(str?: string): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 const SongPracticeView = lazy(() =>
   import('./SongPracticeView').then((m) => ({ default: m.SongPracticeView }))
@@ -86,7 +92,9 @@ export default function LibraryPanel() {
       ) : (
         // Mobile view - unified canonical drilldown transitions
         (() => {
-          const activeMobileView = selectedChordId
+          const isDirectChordRoute =
+            state.currentRoute?.app === 'chordex' && state.currentRoute?.page === 'chord';
+          const activeMobileView = isDirectChordRoute
             ? 'detail'
             : state.activeType
               ? 'category'
@@ -163,6 +171,35 @@ export default function LibraryPanel() {
           </StudioPageTransition>
         )}
       </AnimatePresence>
+
+      {/* Morphing Foreground Chord Detail Popup */}
+      <MorphingActionSurface
+        isOpen={Boolean(state.modalChordState)}
+        originRect={state.modalChordState?.originRect}
+        placement="center"
+        maxWidth={440}
+        maxHeight="86vh"
+        title={
+          state.modalChord
+            ? `${state.modalChord.name} ${state.modalChord.type ? capitalize(state.modalChord.type) : ''}`
+            : undefined
+        }
+        subtitle={state.modalChord ? state.modalChord.notes.join(' · ') : undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            state.closeModalChord();
+          }
+        }}
+        contentStyle={{ padding: 0 }}
+      >
+        {state.modalChord ? (
+          <LibraryChordDetail
+            state={{ ...state, chord: state.modalChord }}
+            inModal={true}
+            onBack={state.closeModalChord}
+          />
+        ) : null}
+      </MorphingActionSurface>
     </div>
   );
 }

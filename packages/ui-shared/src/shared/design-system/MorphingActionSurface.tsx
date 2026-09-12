@@ -59,6 +59,26 @@ export interface MorphingActionSurfaceProps {
   testId?: string;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Explicit external trigger geometry. When provided, allows morphing from an
+   * external element's synchronous DOMRect without requiring a child trigger.
+   */
+  originRect?: {
+    top: number;
+    left: number;
+    right?: number;
+    bottom?: number;
+    width: number;
+    height: number;
+  } | null;
+  /**
+   * Custom style for the inner children/rows container.
+   */
+  contentStyle?: React.CSSProperties;
+  /**
+   * Whether to display the header. Defaults to true if title or rows are present.
+   */
+  showHeader?: boolean;
 }
 
 /**
@@ -87,6 +107,9 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   testId,
   isOpen: controlledIsOpen,
   onOpenChange,
+  originRect: propsOriginRect,
+  contentStyle,
+  showHeader = true,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledIsOpen !== undefined;
@@ -222,7 +245,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   // Synchronous bounds capture & controlled change tracking
   const prevOpenRef = useRef(isOpen);
   useLayoutEffect(() => {
-    if (!prevOpenRef.current && isOpen) {
+    if (propsOriginRect) {
+      const rectData = {
+        top: propsOriginRect.top,
+        left: propsOriginRect.left,
+        right: propsOriginRect.right ?? (propsOriginRect.left + propsOriginRect.width),
+        bottom: propsOriginRect.bottom ?? (propsOriginRect.top + propsOriginRect.height),
+        width: propsOriginRect.width,
+        height: propsOriginRect.height,
+      };
+      originRectRef.current = rectData;
+      setOriginRect(rectData);
+    } else if (!prevOpenRef.current && isOpen) {
       if (!originRectRef.current && triggerAnchorRef.current) {
         captureRect();
       }
@@ -230,7 +264,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
       captureCloseRect();
     }
     prevOpenRef.current = isOpen;
-  }, [isOpen, captureRect, captureCloseRect]);
+  }, [isOpen, propsOriginRect, captureRect, captureCloseRect]);
 
   // Determine compact presentation mode (defaulting to true for contextual menus)
   const isCompact = compact !== undefined
@@ -252,21 +286,67 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   let panelExit: any;
 
   if (placement === 'center') {
-    computedPositionStyle = {
-      position: 'relative',
-      width: isCompact ? popupWidth : '100%',
-      maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
-      transformOrigin: 'center center',
-    };
-    panelInitial = isReduced
-      ? { opacity: 0 }
-      : { opacity: 0, scale: 0.92, y: 12 };
-    panelAnimate = isReduced
-      ? { opacity: 1 }
-      : { opacity: 1, scale: 1, y: 0 };
-    panelExit = isReduced
-      ? { opacity: 0 }
-      : { opacity: 0, scale: 0.92, y: 12 };
+    if (effectiveRect && !isReduced) {
+      const triggerCenterX = effectiveRect.left + effectiveRect.width / 2;
+      const triggerCenterY = effectiveRect.top + effectiveRect.height / 2;
+      const centerViewportX = viewportWidth / 2;
+      const centerViewportY = viewportHeight / 2;
+
+      const deltaX = Math.round(triggerCenterX - centerViewportX);
+      const deltaY = Math.round(triggerCenterY - centerViewportY);
+
+      const targetWidth = typeof maxWidth === 'number'
+        ? Math.min(maxWidth, viewportWidth - 32)
+        : (typeof maxWidth === 'string' && maxWidth.endsWith('px'))
+          ? Math.min(parseFloat(maxWidth), viewportWidth - 32)
+          : Math.min(isCompact ? 260 : 380, viewportWidth - 32);
+
+      const startScale = Math.max(0.18, Math.min(0.88, (effectiveRect.width || 80) / targetWidth));
+
+      computedPositionStyle = {
+        position: 'relative',
+        width: isCompact ? popupWidth : '100%',
+        maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
+        transformOrigin: 'center center',
+      };
+      panelInitial = {
+        opacity: 0,
+        scale: startScale,
+        x: deltaX,
+        y: deltaY,
+        borderRadius: isCompact ? 18 : 28,
+      };
+      panelAnimate = {
+        opacity: 1,
+        scale: 1,
+        x: 0,
+        y: 0,
+        borderRadius: isCompact ? 16 : 24,
+      };
+      panelExit = {
+        opacity: 0,
+        scale: startScale,
+        x: deltaX,
+        y: deltaY,
+        borderRadius: isCompact ? 18 : 28,
+      };
+    } else {
+      computedPositionStyle = {
+        position: 'relative',
+        width: isCompact ? popupWidth : '100%',
+        maxWidth: maxWidth ?? (isCompact ? popupWidth : 380),
+        transformOrigin: 'center center',
+      };
+      panelInitial = isReduced
+        ? { opacity: 0 }
+        : { opacity: 0, scale: 0.92, y: 12 };
+      panelAnimate = isReduced
+        ? { opacity: 1 }
+        : { opacity: 1, scale: 1, y: 0 };
+      panelExit = isReduced
+        ? { opacity: 0 }
+        : { opacity: 0, scale: 0.92, y: 12 };
+    }
   } else if (placement === 'bottom') {
     computedPositionStyle = {
       position: 'relative',
@@ -452,97 +532,101 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             className="sc-morphing-panel"
           >
               {/* Header */}
-              {isCompact ? (
-                title ? (
-                  <div
-                    style={{
-                      padding: '10px 14px 6px 14px',
-                      borderBottom: '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
-                    }}
-                  >
-                    <span
+              {showHeader && (
+                isCompact ? (
+                  title ? (
+                    <div
                       style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: 'var(--c-text-secondary, #9ca3af)',
+                        padding: '10px 14px 6px 14px',
+                        borderBottom: '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
                       }}
                     >
-                      {title}
-                    </span>
-                    {subtitle && (
-                      <div
+                      <span
                         style={{
                           fontSize: 11,
-                          color: 'var(--c-text-muted, #6b7280)',
-                          marginTop: 2,
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: 'var(--c-text-secondary, #9ca3af)',
                         }}
                       >
-                        {subtitle}
-                      </div>
-                    )}
-                  </div>
-                ) : null
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    padding: '20px 20px 14px 20px',
-                    borderBottom: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
-                  }}
-                >
-                  <div>
-                    <h3
+                        {title}
+                      </span>
+                      {subtitle && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--c-text-muted, #6b7280)',
+                            marginTop: 2,
+                          }}
+                        >
+                          {subtitle}
+                        </div>
+                      )}
+                    </div>
+                  ) : null
+                ) : (
+                  (title || subtitle || !children) ? (
+                    <div
                       style={{
-                        margin: 0,
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary, #ffffff)',
-                        fontFamily: 'var(--type-heading-font, var(--studio-font-display, inherit))',
-                        letterSpacing: '-0.2px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        padding: '18px 20px 14px 20px',
+                        borderBottom: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
                       }}
                     >
-                      {title}
-                    </h3>
-                    {subtitle && (
-                      <p
+                      <div>
+                        <h3
+                          style={{
+                            margin: 0,
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: 'var(--c-text-primary, #ffffff)',
+                            fontFamily: 'var(--type-heading-font, var(--studio-font-display, inherit))',
+                            letterSpacing: '-0.2px',
+                          }}
+                        >
+                          {title}
+                        </h3>
+                        {subtitle && (
+                          <p
+                            style={{
+                              margin: '4px 0 0 0',
+                              fontSize: 13,
+                              color: 'var(--c-text-secondary, var(--muted, #9ca3af))',
+                              lineHeight: '18px',
+                            }}
+                          >
+                            {subtitle}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={handleClose}
+                        aria-label="Close"
                         style={{
-                          margin: '4px 0 0 0',
-                          fontSize: 13,
-                          color: 'var(--c-text-secondary, var(--muted, #9ca3af))',
-                          lineHeight: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
+                          border: 'none',
+                          color: 'var(--c-text-secondary, #9ca3af)',
+                          cursor: 'pointer',
+                          touchAction: 'manipulation',
                         }}
                       >
-                        {subtitle}
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={handleClose}
-                    aria-label="Close"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
-                      border: 'none',
-                      color: 'var(--c-text-secondary, #9ca3af)',
-                      cursor: 'pointer',
-                      touchAction: 'manipulation',
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                      close
-                    </span>
-                  </button>
-                </div>
+                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                          close
+                        </span>
+                      </button>
+                    </div>
+                  ) : null
+                )
               )}
 
               {/* Rows or Custom Children with Immediate Coherent Fluid Entry */}
@@ -559,6 +643,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                   display: 'flex',
                   flexDirection: 'column',
                   gap: isCompact ? 3 : 6,
+                  ...contentStyle,
                 }}
               >
                 {children ? (
@@ -687,7 +772,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         className="sc-morphing-anchor"
         aria-hidden={isOpen ? 'true' : undefined}
         style={{
-          display: 'inline-flex',
+          display: (customTrigger || buttonLabel || buttonIcon) ? 'inline-flex' : 'none',
           verticalAlign: 'middle',
           visibility: isOpen ? 'hidden' : 'visible',
           pointerEvents: isOpen ? 'none' : 'auto',

@@ -348,10 +348,12 @@ export function LibraryChordDetail({
   state,
   isDefaultPreview = false,
   onBack,
+  inModal = false,
 }: {
   state: any;
   isDefaultPreview?: boolean;
   onBack?: () => void;
+  inModal?: boolean;
 }) {
   const {
     chord,
@@ -401,16 +403,18 @@ export function LibraryChordDetail({
   return (
     <div
       className="flex flex-col w-full h-full relative overflow-hidden"
-      style={{ background: 'var(--app-bg)' }}
+      style={{ background: inModal ? 'transparent' : 'var(--app-bg)' }}
       data-purpose="chord-detail-screen"
     >
-      <SharedFloatingHeader
-        title={`${chord.name} ${chord.type ? capitalize(chord.type) : ''}`}
-        onBack={!isWebDesktop ? handleBack : undefined}
-        hideBack={isWebDesktop}
-        backBtnTestId="chord-detail-back-btn"
-        isLight={isLight}
-      />
+      {!inModal && (
+        <SharedFloatingHeader
+          title={`${chord.name} ${chord.type ? capitalize(chord.type) : ''}`}
+          onBack={!isWebDesktop ? handleBack : undefined}
+          hideBack={isWebDesktop}
+          backBtnTestId="chord-detail-back-btn"
+          isLight={isLight}
+        />
+      )}
 
       <div
         className="flex-1 min-h-0 overflow-y-auto no-scrollbar w-full h-full"
@@ -421,9 +425,11 @@ export function LibraryChordDetail({
         }}
       >
         <div
-          className="w-full max-w-md mx-auto pb-28 px-4 space-y-5"
+          className={`w-full max-w-md mx-auto ${inModal ? 'pb-6 px-3 space-y-4' : 'pb-28 px-4 space-y-5'}`}
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            paddingTop: inModal
+              ? '8px'
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
           }}
           data-purpose="mobile-viewport"
         >
@@ -691,7 +697,8 @@ export function LibraryChordDetail({
                   return (
                     <article
                       key={rel.id}
-                      onClick={() => handleChordClick(rel.id)}
+                      data-chord-id={rel.id}
+                      onClick={(e) => handleChordClick(rel.id, e)}
                       className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
@@ -1082,7 +1089,7 @@ export function CategoryScreenView({
   setSelectedRootFilter: (root: string) => void;
   categoryQuery: string;
   setCategoryQuery: (q: string) => void;
-  handleChordClick: (id: string) => void;
+  handleChordClick: (id: string, eventOrElement?: any) => void;
   accent?: any;
   isLight?: boolean;
   tuning?: string;
@@ -1237,7 +1244,8 @@ export function CategoryScreenView({
               {filteredByType.map((c: any) => (
                 <article
                   key={c.id}
-                  onClick={() => handleChordClick(c.id)}
+                  data-chord-id={c.id}
+                  onClick={(e) => handleChordClick(c.id, e)}
                   className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group content-auto-row"
                   style={{
                     backgroundColor: 'var(--surface-card-bg, #ffffff)',
@@ -1580,7 +1588,8 @@ export function LibraryMainView({ state }: { state: any }) {
                   {searchResults.map((c: any) => (
                     <article
                       key={c.id}
-                      onClick={() => handleChordClick(c.id)}
+                      data-chord-id={c.id}
+                      onClick={(e) => handleChordClick(c.id, e)}
                       className="rounded-3xl p-3.5 border shadow-soft-card flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer group content-auto-row"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
@@ -1636,7 +1645,9 @@ export function LibraryMainView({ state }: { state: any }) {
               {chordOfTheDay && (
                 <section className="mb-2" data-purpose="chord-hero-card">
                   <article
-                    className="relative w-full rounded-3xl p-4 sm:p-5 border shadow-soft-card"
+                    data-chord-id={chordOfTheDay.id}
+                    onClick={(e) => handleChordClick(chordOfTheDay.id, e)}
+                    className="relative w-full rounded-3xl p-4 sm:p-5 border shadow-soft-card cursor-pointer active:scale-[0.99] transition-transform"
                     style={{
                       backgroundColor: 'var(--surface-card-bg, #ffffff)',
                       borderColor: 'var(--c-border, #E3E6EB)',
@@ -1705,7 +1716,7 @@ export function LibraryMainView({ state }: { state: any }) {
                           </span>
                         </button>
                         <button
-                          onClick={() => handleChordClick(chordOfTheDay.id)}
+                          onClick={(e) => handleChordClick(chordOfTheDay.id, e)}
                           className="px-4 py-2.5 rounded-full border text-xs font-bold tracking-tight flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
                           style={{
                             backgroundColor: 'var(--btn-surface-bg, var(--c-surface-low, #F3F4F7))',
@@ -1748,7 +1759,8 @@ export function LibraryMainView({ state }: { state: any }) {
                     {recentChordList.map((rc: any) => (
                       <div
                         key={rc.id}
-                        onClick={() => handleChordClick(rc.id)}
+                        data-chord-id={rc.id}
+                        onClick={(e) => handleChordClick(rc.id, e)}
                         className="min-w-[136px] rounded-3xl p-4 border shadow-soft-card flex flex-col justify-between cursor-pointer active:scale-95 transition-all hover:border-studio-accent/40"
                         style={{
                           backgroundColor: 'var(--surface-card-bg, #ffffff)',
