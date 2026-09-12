@@ -7,6 +7,8 @@ import {
   resolveAccent,
   useT,
 } from '@workspace/studio-core';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
 // ── COLOR MATH HELPERS ──────────────────────────────────────
 function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: number } {
@@ -104,6 +106,8 @@ function hsvToHex(h: number, s: number, v: number): string {
  * platform input, and immediate live token propagation.
  */
 export function AccentColorPicker() {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const currentAccent = useSettingsStore((s) => s.settings.accentColor || DEFAULT_ACCENT_ID);
   const theme = useSettingsStore((s) => s.settings.theme);
   const resolved = resolveAccent(currentAccent);
@@ -367,8 +371,8 @@ export function AccentColorPicker() {
 
         {currentAccent !== DEFAULT_ACCENT_ID && (
           <motion.button
-            whileTap={{ scale: 0.94 }}
-            whileHover={{ scale: 1.03 }}
+            whileTap={prefersReduced ? undefined : { scale: 0.94 }}
+            whileHover={canHover && !prefersReduced ? { scale: 1.03 } : undefined}
             onClick={handleResetDefault}
             className="btn-smooth"
             style={{
@@ -410,8 +414,8 @@ export function AccentColorPicker() {
           return (
             <motion.button
               key={preset.id}
-              whileTap={{ scale: 0.88 }}
-              whileHover={{ scale: 1.12 }}
+              whileTap={prefersReduced ? undefined : { scale: 0.88 }}
+              whileHover={canHover && !prefersReduced ? { scale: 1.12 } : undefined}
               onClick={() => handleSelectPreset(preset.id)}
               title={preset.label}
               className="btn-smooth"
@@ -440,7 +444,7 @@ export function AccentColorPicker() {
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                  transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 25 }}
                   className="material-symbols-outlined"
                   style={{
                     fontSize: 18,
@@ -459,8 +463,8 @@ export function AccentColorPicker() {
         {/* Custom Color Swatch Trigger */}
         <div style={{ position: 'relative', width: 38, height: 38 }}>
           <motion.button
-            whileTap={{ scale: 0.88 }}
-            whileHover={{ scale: 1.12 }}
+            whileTap={prefersReduced ? undefined : { scale: 0.88 }}
+            whileHover={canHover && !prefersReduced ? { scale: 1.12 } : undefined}
             onClick={togglePicker}
             title="Choose custom color"
             className="btn-smooth"
@@ -506,7 +510,7 @@ export function AccentColorPicker() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            transition={prefersReduced ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             style={{
               overflow: 'hidden',
               display: 'flex',

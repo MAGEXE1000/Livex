@@ -3,9 +3,9 @@
 
 import {
   motion,
-  useReducedMotion,
   type Transition,
 } from "motion/react";
+import { useAppReducedMotion } from "../../hooks/useAppReducedMotion";
 import { ChevronDown } from "lucide-react";
 import {
   useCallback,
@@ -271,7 +271,7 @@ export function BouncyAccordion({
   className,
   classNames,
 }: BouncyAccordionProps) {
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   const baseId = useId();
   const [activeValue, setActiveValue] = useControllableAccordionValue({
     value,

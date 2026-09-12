@@ -1,6 +1,8 @@
 import { SpringPresets } from '@workspace/studio-core';
 import React, { memo } from 'react';
 import { motion } from 'motion/react';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 export { Toggle, type ToggleProps } from '../design-system/StudioToggle';
 export { LiquidSwitch, type LiquidSwitchProps } from '../design-system/LiquidSwitch';
 
@@ -55,13 +57,15 @@ export function SettingRow({
   indent?: boolean;
   onClick?: () => void;
 }) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const isInteractive = Boolean(onClick);
   const RowWrapper = isInteractive ? motion.div : 'div';
   const motionProps = isInteractive
     ? {
-        whileTap: { scale: 0.985 },
-        whileHover: { scale: 1.006 },
-        transition: SpringPresets.soft,
+        whileTap: prefersReduced ? undefined : { scale: 0.985 },
+        whileHover: canHover && !prefersReduced ? { scale: 1.006 } : undefined,
+        transition: prefersReduced ? { duration: 0 } : SpringPresets.soft,
       }
     : {};
 
@@ -213,12 +217,14 @@ export function BentoSettingCard({
   onPress: () => void;
   delay?: number;
 }) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   return (
     <motion.button
       onClick={onPress}
-      whileTap={{ scale: 0.98 }}
-      whileHover={{ scale: 1.008 }}
-      transition={SpringPresets.soft}
+      whileTap={prefersReduced ? undefined : { scale: 0.98 }}
+      whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+      transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
       className="outline-none"
       style={{
         display: 'flex',
@@ -398,12 +404,14 @@ export function BentoSettingRow({
   onPress: () => void;
   delay?: number;
 }) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   return (
     <motion.button
       onClick={onPress}
-      whileTap={{ scale: 0.985 }}
-      whileHover={{ scale: 1.006 }}
-      transition={SpringPresets.soft}
+      whileTap={prefersReduced ? undefined : { scale: 0.985 }}
+      whileHover={canHover && !prefersReduced ? { scale: 1.006 } : undefined}
+      transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
       className="outline-none hover:bg-white/5 transition-colors"
       style={{
         display: 'flex',

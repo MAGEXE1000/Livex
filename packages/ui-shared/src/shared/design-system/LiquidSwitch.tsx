@@ -1,5 +1,6 @@
 import React, { memo, useCallback } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 export interface LiquidSwitchProps {
   checked?: boolean;
@@ -45,7 +46,7 @@ export const LiquidSwitch = memo(function LiquidSwitch({
   reducedMotion = false,
 }: LiquidSwitchProps) {
   const isChecked = checked !== undefined ? checked : (value ?? false);
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useAppReducedMotion();
   const isReduced = reducedMotion || prefersReduced;
 
   const resolvedTestId = testId || dataTestId;

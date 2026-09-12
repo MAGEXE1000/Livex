@@ -8,6 +8,8 @@ import {
 } from '@workspace/studio-core';
 import { Dialog } from '../design-system/dialogs';
 import { motion } from 'motion/react';
+import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -29,6 +31,8 @@ interface LanguagePickerSheetProps {
 }
 
 export function LanguagePickerSheet({ open, onClose }: LanguagePickerSheetProps) {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const language = useSettingsStore((s) => s.settings.language);
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const acc = resolveAccent(accentColor);
@@ -50,9 +54,9 @@ export function LanguagePickerSheet({ open, onClose }: LanguagePickerSheetProps)
               key={code}
               data-unavailable={!isAvailable ? 'true' : undefined}
               disabled={!isAvailable}
-              whileTap={isAvailable ? { scale: 0.98 } : undefined}
-              whileHover={isAvailable ? { scale: 1.008 } : undefined}
-              transition={SpringPresets.soft}
+              whileTap={isAvailable && !prefersReduced ? { scale: 0.98 } : undefined}
+              whileHover={isAvailable && canHover && !prefersReduced ? { scale: 1.008 } : undefined}
+              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
               onClick={() => {
                 if (!isAvailable) return;
                 settingsController.updateSettings({ language: code as any });

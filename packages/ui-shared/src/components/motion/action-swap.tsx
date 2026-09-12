@@ -1,7 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion, type HTMLMotionProps, type Variants } from "motion/react";
+import { AnimatePresence, motion, type HTMLMotionProps, type Variants } from "motion/react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useAppReducedMotion } from "../../hooks/useAppReducedMotion";
 import { EASE_OUT, EASE_OUT_CSS, SPRING_PRESS, SPRING_SWAP } from "../../lib/ease";
 import { cn } from "../../lib/utils";
 
@@ -163,7 +164,7 @@ export function ActionSwapText({
   animation = "blur",
   className,
 }: ActionSwapTextProps) {
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   const measureRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState<number>();
 
@@ -246,7 +247,7 @@ export function ActionSwapIcon({
   animation = "blur",
   className,
 }: ActionSwapIconProps) {
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   // Icons are single elements — cascade maps to its closest motion, roll.
   const coreAnimation: CoreAnimation =
     animation === "cascade" ? "roll" : animation;
@@ -285,7 +286,7 @@ export function ActionSwapButton({
   onClick,
   ...rest
 }: ActionSwapButtonProps) {
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   const [internalValue, setInternalValue] = useState(defaultValue ?? items[0]?.id);
   const currentValue = value ?? internalValue;
   const activeIndex = Math.max(0, items.findIndex((item) => item.id === currentValue));

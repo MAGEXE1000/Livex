@@ -2,8 +2,9 @@ import { cn } from '@workspace/studio-core';
 ('use client');
 
 import type { Variants } from 'motion/react';
-import { LazyMotion, domMin, m, useAnimation, useReducedMotion } from 'motion/react';
+import { LazyMotion, domMin, m, useAnimation } from 'motion/react';
 import { forwardRef, useCallback, useImperativeHandle, useRef, type HTMLAttributes } from 'react';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 export interface DownloadIconHandle {
   startAnimation: () => void;
@@ -41,7 +42,7 @@ const DownloadIcon = forwardRef<DownloadIconHandle, DownloadIconProps>(
     ref
   ) => {
     const controls = useAnimation();
-    const reduced = useReducedMotion();
+    const reduced = useAppReducedMotion();
     const isControlled = useRef(false);
 
     useImperativeHandle(ref, () => {

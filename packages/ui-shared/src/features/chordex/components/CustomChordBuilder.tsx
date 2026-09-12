@@ -18,7 +18,8 @@ import {
 } from '@workspace/studio-core';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import ChordDiagram from '../diagrams/ChordDiagram';
 import { Button } from '../../../shared/design-system/buttons';
 
@@ -984,7 +985,7 @@ export default function CustomChordBuilder({
     }, 300);
   }, [onCloseProp]);
 
-  const prefersReduced = useReducedMotion();
+  const prefersReduced = useAppReducedMotion();
   const isReduced = !!prefersReduced;
 
   const defaultFret = mode === 'find' ? -1 : 0;

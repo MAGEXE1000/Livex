@@ -3,6 +3,8 @@ import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { subscribeIntroDone } from '../../../shared/animation/introSignal';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import {
   useBackHandler,
   type AuthUser,
@@ -460,6 +462,8 @@ function useStartupComplete() {
 }
 
 export default function StudioHub() {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const lang = useSettingsStore((s) => s.settings.language ?? 'en');
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const theme = useSettingsStore((s) => s.settings.theme);
@@ -1166,9 +1170,9 @@ export default function StudioHub() {
                           </p>
                         </section>
                         <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.94 }}
-                          transition={{ type: 'spring', stiffness: 420, damping: 25 }}
+                          whileHover={canHover && !prefersReduced ? { scale: 1.05 } : undefined}
+                          whileTap={prefersReduced ? undefined : { scale: 0.94 }}
+                          transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 25 }}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1780,9 +1784,9 @@ export default function StudioHub() {
                                   }}
                                 >
                                   <motion.div
-                                    whileTap={isEditMode ? undefined : { scale: 0.9 }}
-                                    whileHover={isEditMode ? undefined : { scale: 1.06, y: -2 }}
-                                    transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                                    whileTap={isEditMode || prefersReduced ? undefined : { scale: 0.9 }}
+                                    whileHover={!isEditMode && canHover && !prefersReduced ? { scale: 1.06, y: -2 } : undefined}
+                                    transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 24 }}
                                     animate={
                                       isEditMode
                                         ? {
@@ -1913,9 +1917,9 @@ export default function StudioHub() {
                                 onClick={() => setShortcutPickerOpen(true)}
                               >
                                 <motion.div
-                                  whileTap={{ scale: 0.9 }}
-                                  whileHover={{ scale: 1.06, y: -2 }}
-                                  transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                                  whileTap={prefersReduced ? undefined : { scale: 0.9 }}
+                                  whileHover={canHover && !prefersReduced ? { scale: 1.06, y: -2 } : undefined}
+                                  transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 24 }}
                                   style={{
                                     width: '52px',
                                     height: '52px',
@@ -2032,9 +2036,9 @@ export default function StudioHub() {
                             <motion.button
                               key={app}
                               onClick={() => launchApp(app)}
-                              whileTap={{ scale: 0.975 }}
-                              whileHover={{ scale: 1.015, y: -1 }}
-                              transition={SpringPresets.soft}
+                              whileTap={prefersReduced ? undefined : { scale: 0.975 }}
+                              whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}
+                              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',

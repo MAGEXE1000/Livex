@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Button as HeroUIButton,
   ButtonRoot as HeroUIButtonRoot,
@@ -15,6 +15,7 @@ import { SpringPresets } from '@workspace/studio-core';
 import { AnimatedIcon } from '../icons/AnimatedIcon';
 import { EASE_OUT } from '../../lib/ease';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 export {
   HeroUIButton,
@@ -63,7 +64,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const activeLoading = loading || isLoading;
-    const reduce = useReducedMotion();
+    const reduce = useAppReducedMotion();
     const canHover = useHoverCapable();
     const [ripples, setRipples] = useState<Ripple[]>([]);
     const nextId = useRef(0);
@@ -355,7 +356,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     },
     ref
   ) => {
-    const reduce = useReducedMotion();
+    const reduce = useAppReducedMotion();
     const canHover = useHoverCapable();
 
     const getDim = () => {
@@ -468,7 +469,7 @@ export interface FloatingButtonProps extends React.ButtonHTMLAttributes<HTMLButt
 }
 
 export function FloatingButton({ icon, style, className = '', ...props }: FloatingButtonProps) {
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   const canHover = useHoverCapable();
 
   return (
@@ -553,7 +554,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   const [success, setSuccess] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
-  const reduce = useReducedMotion();
+  const reduce = useAppReducedMotion();
   const canHover = useHoverCapable();
 
   // Reset success state after a delay
@@ -819,7 +820,7 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
     { variant = 'secondary', size = 'md', icon, children, style, className = '', ...props },
     ref
   ) => {
-    const reduce = useReducedMotion();
+    const reduce = useAppReducedMotion();
     const canHover = useHoverCapable();
 
     const getColors = () => {

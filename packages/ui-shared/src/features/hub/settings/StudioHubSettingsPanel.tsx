@@ -7,6 +7,8 @@ import {
   resolveAccent,
 } from '@workspace/studio-core';
 import { motion } from 'motion/react';
+import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import {
   SettingSection,
@@ -33,6 +35,8 @@ import { AccentColorPicker } from './AccentColorPicker';
  * - Premium theme switcher animation via motion wrapper.
  */
 export default function StudioHubSettingsPanel() {
+  const canHover = useHoverCapable();
+  const prefersReduced = useAppReducedMotion();
   const settings = useSettingsStore((s) => s.settings);
   const t = useT();
   const acc = resolveAccent(settings.accentColor);
@@ -116,7 +120,8 @@ export default function StudioHubSettingsPanel() {
                 <motion.button
                   {...triggerProps}
                   data-testid="settings-language-picker-trigger"
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={canHover && !prefersReduced ? { scale: 1.02 } : undefined}
+                  whileTap={prefersReduced ? undefined : { scale: 0.98 }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
