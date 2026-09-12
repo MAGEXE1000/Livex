@@ -1,2 +1,5 @@
-export { default } from './StageCorePanel';
-export * from './StageCorePanel';
+import { lazy } from 'react';
+
+const StagexApp = lazy(() => import('./StageCorePanel'));
+export default StagexApp;
+export type { StagexPrimaryView } from './StageCorePanel';

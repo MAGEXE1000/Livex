@@ -7,7 +7,9 @@ import {
   useNavigationStore,
   getLogs,
 } from '@workspace/studio-core';
-import { ActionButton, MorphingModal, BouncyAccordion } from '@workspace/ui-shared';
+import { ActionButton } from '@workspace/ui-shared/src/shared/design-system/buttons';
+import { MorphingModal } from '@workspace/ui-shared/src/components/motion/morphing-modal';
+import { BouncyAccordion } from '@workspace/ui-shared/src/components/motion/bouncy-accordion';
 
 interface BlockerInfo {
   tag: string;

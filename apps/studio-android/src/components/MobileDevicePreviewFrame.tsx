@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSettingsStore } from '@workspace/studio-core';
-import { ThemeToggle } from '@workspace/ui-shared';
+import { ThemeToggle } from '@workspace/ui-shared/src/components/motion/theme-toggle';
 
 export interface DevicePreset {
   id: string;

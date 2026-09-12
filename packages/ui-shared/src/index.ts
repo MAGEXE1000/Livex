@@ -1,4 +1,6 @@
 // Export everything from ui-shared
+import { lazy } from 'react';
+
 export { default as AppSpinner } from './shared/loading/AppSpinner';
 export { default as ElasticSlider } from './shared/progress/ElasticSlider';
 export { default as GradientBorderCard } from './shared/cards/GradientBorderCard';
@@ -82,10 +84,10 @@ export * from './shared/ui/encrypted-text';
 export { useGroovexStore } from './features/groovex';
 export { default as WebAppSectionDock } from './shared/layout/WebAppSectionDock';
 export { default as DevToolsDashboard } from './features/devtools/components/DevToolsDashboard';
-export { default as DevToolsApp } from './features/devtools/DevToolsApp';
+export const DevToolsApp = lazy(() => import('./features/devtools/DevToolsApp'));
 
 // BottomNav removed (architectural unification)
-export { default as UpdateIndicator } from './features/updater/components/UpdateIndicator';
+export const UpdateIndicator = lazy(() => import('./features/updater/components/UpdateIndicator'));
 
 export * from './shared/layout/StudioLayoutSystem';
 export { ProgressiveBlur } from './shared/design-system/ProgressiveBlur';

@@ -1,5 +1,7 @@
-// Vocalex feature � public API barrel
-export { default as VocalexApp } from './pages/VocalexApp';
+import { lazy } from 'react';
+
+// Vocalex feature – public API barrel with code-split lazy loading
+export const VocalexApp = lazy(() => import('./pages/VocalexApp'));
 export { default as HarmonizerSheet } from './components/HarmonizerSheet';
 export { default as LabPanel } from './components/LabPanel';
 export { default as PitchPanel } from './components/PitchPanel';
