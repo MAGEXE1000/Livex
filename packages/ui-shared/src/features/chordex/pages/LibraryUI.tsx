@@ -20,6 +20,7 @@ import {
   CategoryMiniRecess,
   ChordCardMiniRecess,
 } from '../components/MiniFretboardRecess';
+import { TuningForkIcon } from '../components/tuner';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Button, ActionButton } from '../../../shared/design-system/buttons';
@@ -1472,10 +1473,10 @@ export function LibraryMainView({ state }: { state: any }) {
                   data-purpose="tool-tuner"
                 >
                   <span
-                    className="material-symbols-rounded text-[18px]"
+                    className="flex items-center justify-center text-[18px]"
                     style={{ color: 'var(--c-accent-from, #2563EB)' }}
                   >
-                    tune
+                    <TuningForkIcon size={17} />
                   </span>
                   <span>Tuner</span>
                 </motion.button>

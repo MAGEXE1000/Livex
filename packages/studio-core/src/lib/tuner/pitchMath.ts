@@ -1,4 +1,10 @@
-import type { GuitarStringTarget, PitchMetrics, TuningStatus } from './tunerTypes';
+import type {
+  InstrumentStringTarget,
+  GuitarStringTarget,
+  InstrumentTuningMode,
+  PitchMetrics,
+  TuningStatus,
+} from './tunerTypes';
 
 export const CHROMATIC_NOTE_NAMES = [
   'C',
@@ -15,7 +21,7 @@ export const CHROMATIC_NOTE_NAMES = [
   'B',
 ] as const;
 
-export const STANDARD_GUITAR_STRINGS: readonly GuitarStringTarget[] = [
+export const STANDARD_GUITAR_STRINGS: readonly InstrumentStringTarget[] = [
   { name: 'Low E', note: 'E', octave: 2, fullName: 'E2', frequency: 82.41, stringNumber: 6 },
   { name: 'A', note: 'A', octave: 2, fullName: 'A2', frequency: 110.0, stringNumber: 5 },
   { name: 'D', note: 'D', octave: 3, fullName: 'D3', frequency: 146.83, stringNumber: 4 },
@@ -23,6 +29,30 @@ export const STANDARD_GUITAR_STRINGS: readonly GuitarStringTarget[] = [
   { name: 'B', note: 'B', octave: 3, fullName: 'B3', frequency: 246.94, stringNumber: 2 },
   { name: 'High E', note: 'E', octave: 4, fullName: 'E4', frequency: 329.63, stringNumber: 1 },
 ];
+
+export const STANDARD_BASS_4_STRINGS: readonly InstrumentStringTarget[] = [
+  { name: 'E', note: 'E', octave: 1, fullName: 'E1', frequency: 41.20, stringNumber: 4 },
+  { name: 'A', note: 'A', octave: 1, fullName: 'A1', frequency: 55.00, stringNumber: 3 },
+  { name: 'D', note: 'D', octave: 2, fullName: 'D2', frequency: 73.42, stringNumber: 2 },
+  { name: 'G', note: 'G', octave: 2, fullName: 'G2', frequency: 98.00, stringNumber: 1 },
+];
+
+export const STANDARD_BASS_5_STRINGS: readonly InstrumentStringTarget[] = [
+  { name: 'Low B', note: 'B', octave: 0, fullName: 'B0', frequency: 30.87, stringNumber: 5 },
+  { name: 'E', note: 'E', octave: 1, fullName: 'E1', frequency: 41.20, stringNumber: 4 },
+  { name: 'A', note: 'A', octave: 1, fullName: 'A1', frequency: 55.00, stringNumber: 3 },
+  { name: 'D', note: 'D', octave: 2, fullName: 'D2', frequency: 73.42, stringNumber: 2 },
+  { name: 'G', note: 'G', octave: 2, fullName: 'G2', frequency: 98.00, stringNumber: 1 },
+];
+
+/**
+ * Returns canonical string targets for an instrument mode.
+ */
+export function getTargetStringsForMode(mode: InstrumentTuningMode): readonly InstrumentStringTarget[] {
+  if (mode === 'bass-4') return STANDARD_BASS_4_STRINGS;
+  if (mode === 'bass-5') return STANDARD_BASS_5_STRINGS;
+  return STANDARD_GUITAR_STRINGS;
+}
 
 /**
  * Calculate exact musical pitch metrics from frequency in Hz.
@@ -34,6 +64,8 @@ export const STANDARD_GUITAR_STRINGS: readonly GuitarStringTarget[] = [
  * @param inTuneToleranceCents Tolerance window for in-tune state in cents (default: 3.5)
  * @param isCurrentlyInTune Whether the previous consecutive frame was already in-tune (for hysteresis)
  * @param exitToleranceCents Exit window for in-tune state in cents (default: 4.5)
+ * @param mode Current instrument tuning mode
+ * @param manualTarget Optional locked manual string target
  */
 export function calculatePitchMetrics(
   frequency: number,
@@ -42,7 +74,9 @@ export function calculatePitchMetrics(
   refA4: number = 440,
   inTuneToleranceCents: number = 3.5,
   isCurrentlyInTune: boolean = false,
-  exitToleranceCents: number = 4.5
+  exitToleranceCents: number = 4.5,
+  mode: InstrumentTuningMode = 'electric',
+  manualTarget: InstrumentStringTarget | null = null
 ): PitchMetrics {
   if (frequency <= 0 || !Number.isFinite(frequency)) {
     return {
@@ -55,8 +89,10 @@ export function calculatePitchMetrics(
       confidence: 0,
       rms,
       tuningStatus: 'silent',
+      nearestString: null,
       nearestGuitarString: null,
       midiNote: 0,
+      targetStringLocked: Boolean(manualTarget),
     };
   }
 
@@ -64,17 +100,35 @@ export function calculatePitchMetrics(
   const midiNote = 12 * Math.log2(frequency / refA4) + 69;
   const roundedMidi = Math.round(midiNote);
 
-  // Exact target frequency of the closest chromatic semitone
-  const targetFrequency = refA4 * Math.pow(2, (roundedMidi - 69) / 12);
+  // If a manual string target is locked by the user, calculate cents relative to that exact target
+  let targetFrequency: number;
+  let cents: number;
+  let noteName: string;
+  let octave: number;
+  let fullName: string;
+  let activeString: InstrumentStringTarget | null;
 
-  // Mathematically exact cents deviation: cents = 1200 * log2(f / f_target)
-  const cents = 1200 * Math.log2(frequency / targetFrequency);
+  if (manualTarget) {
+    targetFrequency = manualTarget.frequency;
+    cents = 1200 * Math.log2(frequency / targetFrequency);
+    noteName = manualTarget.note;
+    octave = manualTarget.octave;
+    fullName = manualTarget.fullName;
+    activeString = manualTarget;
+  } else {
+    // AUTO Chromatic Mode: target is the nearest semitone
+    targetFrequency = refA4 * Math.pow(2, (roundedMidi - 69) / 12);
+    // Mathematically exact cents deviation: cents = 1200 * log2(f / f_target)
+    cents = 1200 * Math.log2(frequency / targetFrequency);
 
-  // Chromatic note name and octave calculation
-  const noteIdx = ((roundedMidi % 12) + 12) % 12;
-  const noteName = CHROMATIC_NOTE_NAMES[noteIdx];
-  const octave = Math.floor(roundedMidi / 12) - 1;
-  const fullName = `${noteName}${octave}`;
+    const noteIdx = ((roundedMidi % 12) + 12) % 12;
+    noteName = CHROMATIC_NOTE_NAMES[noteIdx];
+    octave = Math.floor(roundedMidi / 12) - 1;
+    fullName = `${noteName}${octave}`;
+
+    // Find nearest string in current instrument mode
+    activeString = findNearestString(frequency, mode);
+  }
 
   // Evaluate in-tune status with hysteresis
   const absCents = Math.abs(cents);
@@ -89,9 +143,6 @@ export function calculatePitchMetrics(
     tuningStatus = 'sharp';
   }
 
-  // Find nearest guitar string target
-  const nearestGuitarString = findNearestGuitarString(frequency);
-
   return {
     frequency,
     targetFrequency,
@@ -102,21 +153,29 @@ export function calculatePitchMetrics(
     confidence,
     rms,
     tuningStatus,
-    nearestGuitarString,
+    nearestString: activeString,
+    nearestGuitarString: activeString, // backward compatibility
     midiNote: roundedMidi,
+    targetStringLocked: Boolean(manualTarget),
   };
 }
 
 /**
- * Find the nearest standard guitar string for a given frequency.
+ * Find the nearest string target for any instrument mode (Guitar, Bass 4, Bass 5).
  */
-export function findNearestGuitarString(frequency: number): GuitarStringTarget | null {
+export function findNearestString(
+  frequency: number,
+  mode: InstrumentTuningMode = 'electric',
+  manualTarget: InstrumentStringTarget | null = null
+): InstrumentStringTarget | null {
+  if (manualTarget) return manualTarget;
   if (frequency <= 0 || !Number.isFinite(frequency)) return null;
 
-  let nearest: GuitarStringTarget | null = null;
+  const strings = getTargetStringsForMode(mode);
+  let nearest: InstrumentStringTarget | null = null;
   let minCentsDiff = Infinity;
 
-  for (const str of STANDARD_GUITAR_STRINGS) {
+  for (const str of strings) {
     const diff = Math.abs(1200 * Math.log2(frequency / str.frequency));
     if (diff < minCentsDiff) {
       minCentsDiff = diff;
@@ -124,9 +183,17 @@ export function findNearestGuitarString(frequency: number): GuitarStringTarget |
     }
   }
 
-  // Only bind to string if within 180 cents (approx whole tone) of the target string frequency
-  return minCentsDiff <= 180 ? nearest : null;
+  // Bind to string if within 190 cents (approx whole tone) of target string frequency
+  return minCentsDiff <= 190 ? nearest : null;
 }
+
+/**
+ * Backward-compatible helper for guitar-specific lookups.
+ */
+export function findNearestGuitarString(frequency: number): GuitarStringTarget | null {
+  return findNearestString(frequency, 'electric');
+}
+
 
 /**
  * Calculate RMS (Root Mean Square) energy of a Float32Array audio frame.

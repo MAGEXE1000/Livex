@@ -7,6 +7,7 @@ import {
   calculatePeak,
 } from './pitchMath';
 import type {
+  InstrumentStringTarget,
   InstrumentTuningMode,
   PitchMetrics,
   TunerEngineOptions,
@@ -15,8 +16,6 @@ import type {
 } from './tunerTypes';
 
 const BUFFER_SIZE = 2048;
-const MIN_GUITAR_FREQ = 60.0; // Drop C/B/D down to 60 Hz
-const MAX_GUITAR_FREQ = 1200.0; // Upper frets up to 1200 Hz
 const REQUIRED_IN_TUNE_FRAMES = 3;
 
 export class TunerAudioEngine {
@@ -24,6 +23,8 @@ export class TunerAudioEngine {
   private refA4: number;
   private inTuneToleranceCents: number;
   private exitTuneToleranceCents: number;
+  private noiseFilter: boolean = true;
+  private manualTargetString: InstrumentStringTarget | null = null;
   private onFrame?: (payload: TunerFramePayload) => void;
   private onStateChange?: (state: TunerLifecycleState) => void;
 
@@ -56,6 +57,8 @@ export class TunerAudioEngine {
     this.refA4 = options.referenceA4 ?? 440;
     this.inTuneToleranceCents = options.inTuneToleranceCents ?? 3.5;
     this.exitTuneToleranceCents = options.exitTuneToleranceCents ?? 4.5;
+    this.noiseFilter = options.noiseFilter ?? true;
+    this.manualTargetString = options.manualTargetString ?? null;
     this.onFrame = options.onFrame;
     this.onStateChange = options.onStateChange;
 
@@ -70,6 +73,33 @@ export class TunerAudioEngine {
 
   public getMode(): InstrumentTuningMode {
     return this.mode;
+  }
+
+  public setReferenceA4(freq: number) {
+    if (this.refA4 === freq || freq < 415 || freq > 466) return;
+    this.refA4 = freq;
+  }
+
+  public getReferenceA4(): number {
+    return this.refA4;
+  }
+
+  public setManualTargetString(target: InstrumentStringTarget | null) {
+    this.manualTargetString = target;
+  }
+
+  public getManualTargetString(): InstrumentStringTarget | null {
+    return this.manualTargetString;
+  }
+
+  public setNoiseFilter(enabled: boolean) {
+    if (this.noiseFilter === enabled) return;
+    this.noiseFilter = enabled;
+    this.updateAudioFilters();
+  }
+
+  public getNoiseFilter(): boolean {
+    return this.noiseFilter;
   }
 
   public getState(): TunerLifecycleState {
@@ -208,7 +238,7 @@ export class TunerAudioEngine {
   }
 
   private wireAudioGraph() {
-    if (!this.sourceNode || !this.highPassFilter || !this.notchFilter50 || !this.notchFilter60 || !this.analyser) {
+    if (!this.sourceNode || !this.highPassFilter || !this.notchFilter50 || !this.notchFilter60 || !this.analyser || !this.audioCtx) {
       return;
     }
 
@@ -221,14 +251,29 @@ export class TunerAudioEngine {
       // ignore disconnect errors on unlinked nodes
     }
 
-    if (this.mode === 'electric') {
-      // Electric mode: Source -> HighPass 65Hz -> Notch 50Hz -> Notch 60Hz -> Analyser
+    const isBass = this.mode === 'bass-4' || this.mode === 'bass-5';
+
+    if (isBass) {
+      // Bass mode: HPF at 25 Hz to permit E1 (41.2 Hz) and B0 (30.87 Hz)
+      this.highPassFilter.frequency.setValueAtTime(25, this.audioCtx.currentTime);
+      // Do NOT route through 50/60 Hz notch filters in bass mode (A1 is 55 Hz!)
       this.sourceNode.connect(this.highPassFilter);
-      this.highPassFilter.connect(this.notchFilter50);
-      this.notchFilter50.connect(this.notchFilter60);
-      this.notchFilter60.connect(this.analyser);
+      this.highPassFilter.connect(this.analyser);
+    } else if (this.mode === 'electric') {
+      // Electric guitar mode: HPF 65 Hz + optional 50/60 Hz notch hum rejection
+      this.highPassFilter.frequency.setValueAtTime(65, this.audioCtx.currentTime);
+      if (this.noiseFilter) {
+        this.sourceNode.connect(this.highPassFilter);
+        this.highPassFilter.connect(this.notchFilter50);
+        this.notchFilter50.connect(this.notchFilter60);
+        this.notchFilter60.connect(this.analyser);
+      } else {
+        this.sourceNode.connect(this.highPassFilter);
+        this.highPassFilter.connect(this.analyser);
+      }
     } else {
-      // Acoustic mode: Source -> HighPass 65Hz -> Analyser
+      // Acoustic guitar mode: HPF 65 Hz to reject thumps
+      this.highPassFilter.frequency.setValueAtTime(65, this.audioCtx.currentTime);
       this.sourceNode.connect(this.highPassFilter);
       this.highPassFilter.connect(this.analyser);
     }
@@ -258,9 +303,30 @@ export class TunerAudioEngine {
     const rms = calculateRms(this.buffer);
     const peak = calculatePeak(this.buffer);
 
+    const isBass = this.mode === 'bass-4' || this.mode === 'bass-5';
+
     // Profile-specific noise floors and clarity thresholds
-    const minRms = this.mode === 'electric' ? 0.005 : 0.010;
-    const minClarity = this.mode === 'electric' ? 0.76 : 0.81;
+    let minRms: number;
+    let minClarity: number;
+    let minFreq: number;
+    let maxFreq: number;
+
+    if (isBass) {
+      minRms = this.noiseFilter ? 0.003 : 0.0015;
+      minClarity = 0.70;
+      minFreq = 25.0; // Low B0 ~ 30.87 Hz
+      maxFreq = 450.0;
+    } else if (this.mode === 'electric') {
+      minRms = this.noiseFilter ? 0.005 : 0.002;
+      minClarity = 0.75;
+      minFreq = 60.0; // Drop D/C/B ~ 60 Hz
+      maxFreq = 1200.0;
+    } else {
+      minRms = this.noiseFilter ? 0.008 : 0.003;
+      minClarity = 0.78;
+      minFreq = 60.0;
+      maxFreq = 1200.0;
+    }
 
     // 1. Silence check: Signal below noise floor
     if (rms < minRms || peak < minRms * 1.5) {
@@ -295,7 +361,7 @@ export class TunerAudioEngine {
       return;
     }
 
-    if (rawFreq < MIN_GUITAR_FREQ || rawFreq > MAX_GUITAR_FREQ || !Number.isFinite(rawFreq)) {
+    if (rawFreq < minFreq || rawFreq > maxFreq || !Number.isFinite(rawFreq)) {
       this.consecutiveInTuneFrames = 0;
       this.currentlyInTune = false;
       this.setState('weak_signal');
@@ -303,27 +369,45 @@ export class TunerAudioEngine {
       return;
     }
 
-    // 5. Octave Error Protection for Low Guitar Strings
+    // 5. Octave Error Protection for Low Guitar & Bass Strings
     // When playing Low E (82.41 Hz) or A (110 Hz), second harmonic (164.8 Hz / 220 Hz)
     // can occasionally be tracked as f0 if fundamental is heavily attenuated.
-    // If detected frequency is near 164.8 Hz (E3) and there is subharmonic energy around 82.4 Hz,
-    // we correct to the true fundamental.
     let detectedFreq = rawFreq;
-    if (detectedFreq >= 155 && detectedFreq <= 175) {
-      // Check for Low E subharmonic candidate (82.41 Hz)
-      const periodE2 = Math.round(ctx.sampleRate / (detectedFreq / 2));
-      if (periodE2 < this.buffer.length) {
-        let diffE2 = 0;
-        let count = 0;
-        for (let i = 0; i < this.buffer.length - periodE2; i += 2) {
-          const d = this.buffer[i] - this.buffer[i + periodE2];
-          diffE2 += d * d;
-          count++;
+
+    if (!isBass) {
+      // Guitar: Check for Low E subharmonic candidate (82.41 Hz) from E3 (155-175 Hz)
+      if (detectedFreq >= 155 && detectedFreq <= 175) {
+        const periodE2 = Math.round(ctx.sampleRate / (detectedFreq / 2));
+        if (periodE2 < this.buffer.length) {
+          let diffE2 = 0;
+          let count = 0;
+          for (let i = 0; i < this.buffer.length - periodE2; i += 2) {
+            const d = this.buffer[i] - this.buffer[i + periodE2];
+            diffE2 += d * d;
+            count++;
+          }
+          const normDiff = count > 0 ? diffE2 / count : 1;
+          if (normDiff < 0.25) {
+            detectedFreq = detectedFreq / 2;
+          }
         }
-        const normDiff = count > 0 ? diffE2 / count : 1;
-        // If subharmonic has strong periodicity, correct to fundamental E2
-        if (normDiff < 0.25) {
-          detectedFreq = detectedFreq / 2;
+      }
+    } else {
+      // Bass: Check for Low E1 (41.2 Hz) from E2 (78-86 Hz) or A1 (55 Hz) from A2 (104-116 Hz)
+      if ((detectedFreq >= 78 && detectedFreq <= 86) || (detectedFreq >= 104 && detectedFreq <= 116)) {
+        const periodSub = Math.round(ctx.sampleRate / (detectedFreq / 2));
+        if (periodSub < this.buffer.length) {
+          let diff = 0;
+          let count = 0;
+          for (let i = 0; i < this.buffer.length - periodSub; i += 2) {
+            const d = this.buffer[i] - this.buffer[i + periodSub];
+            diff += d * d;
+            count++;
+          }
+          const normDiff = count > 0 ? diff / count : 1;
+          if (normDiff < 0.28) {
+            detectedFreq = detectedFreq / 2;
+          }
         }
       }
     }
@@ -336,7 +420,9 @@ export class TunerAudioEngine {
       this.refA4,
       this.inTuneToleranceCents,
       this.currentlyInTune,
-      this.exitTuneToleranceCents
+      this.exitTuneToleranceCents,
+      this.mode,
+      this.manualTargetString
     );
 
     // 7. Stable vs In-Tune state evaluation

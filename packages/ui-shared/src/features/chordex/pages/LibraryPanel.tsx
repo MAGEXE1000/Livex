@@ -192,10 +192,8 @@ export default function LibraryPanel() {
         isOpen={showTuner}
         originRect={state.tunerOriginRect}
         placement="center"
-        maxWidth={460}
-        maxHeight="86vh"
-        title="Guitar Tuner"
-        subtitle="Chromatic Instrument Tuner"
+        maxWidth={480}
+        maxHeight="90vh"
         onOpenChange={(open) => {
           if (!open) {
             state.closeTuner();

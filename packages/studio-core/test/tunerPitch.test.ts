@@ -86,7 +86,70 @@ describe('Tuner Pitch Math & Detection Calculations', () => {
     });
   });
 
-  describe('findNearestGuitarString', () => {
+  describe('Standard 4-String and 5-String Bass Notes', () => {
+    const bassStrings = [
+      { name: 'Low B', fullName: 'B0', freq: 30.87, stringNumber: 5, mode: 'bass-5' as const },
+      { name: 'E', fullName: 'E1', freq: 41.20, stringNumber: 4, mode: 'bass-4' as const },
+      { name: 'A', fullName: 'A1', freq: 55.00, stringNumber: 3, mode: 'bass-4' as const },
+      { name: 'D', fullName: 'D2', freq: 73.42, stringNumber: 2, mode: 'bass-4' as const },
+      { name: 'G', fullName: 'G2', freq: 98.00, stringNumber: 1, mode: 'bass-4' as const },
+    ];
+
+    bassStrings.forEach((str) => {
+      it(`accurately detects bass string ${str.fullName} at ${str.freq} Hz in ${str.mode}`, () => {
+        const metrics = calculatePitchMetrics(
+          str.freq,
+          1.0,
+          0.1,
+          440,
+          3.5,
+          false,
+          4.5,
+          str.mode
+        );
+        expect(metrics.fullName).toBe(str.fullName);
+        expect(Math.abs(metrics.cents)).toBeLessThan(0.15);
+        expect(metrics.tuningStatus).toBe('in_tune');
+        expect(metrics.nearestString).not.toBeNull();
+        expect(metrics.nearestString?.fullName).toBe(str.fullName);
+        expect(metrics.nearestString?.stringNumber).toBe(str.stringNumber);
+      });
+    });
+  });
+
+  describe('Manual String Target Locking', () => {
+    it('calculates cents deviation specifically relative to the locked target string', () => {
+      const lockedTarget = {
+        name: 'A',
+        note: 'A',
+        octave: 2,
+        fullName: 'A2',
+        frequency: 110.0,
+        stringNumber: 5,
+      };
+
+      // Play a detuned pitch near 108.0 Hz (~ -31.7 cents from A2)
+      const metrics = calculatePitchMetrics(
+        108.0,
+        1.0,
+        0.1,
+        440,
+        3.5,
+        false,
+        4.5,
+        'electric',
+        lockedTarget
+      );
+
+      expect(metrics.targetStringLocked).toBe(true);
+      expect(metrics.fullName).toBe('A2');
+      expect(metrics.targetFrequency).toBe(110.0);
+      expect(metrics.cents).toBeCloseTo(-31.7, 1);
+      expect(metrics.tuningStatus).toBe('flat');
+    });
+  });
+
+  describe('findNearestGuitarString & findNearestString', () => {
     it('matches Low E string when detuned by -50 cents', () => {
       // 82.41 * 2^(-50/1200) = ~80.06 Hz
       const detunedLowE = 82.41 * Math.pow(2, -50 / 1200);
