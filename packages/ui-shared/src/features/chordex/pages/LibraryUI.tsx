@@ -361,14 +361,12 @@ export function LibraryChordDetail({
     favorites,
     settings,
     toggleFavorite,
-    addToProgression,
     chordPlaying,
     setChordPlaying,
     handleChordClick,
     accent,
     isLight,
     previewInstrument,
-    setPreviewInstrument,
     diagramDisplayMode,
     setDiagramDisplayMode,
     selectChord,
@@ -384,8 +382,6 @@ export function LibraryChordDetail({
   const chordQuality = `${chord.type ? capitalize(chord.type) : 'Major'} Triad`;
 
   const activeInstrument: Instrument = previewInstrument || settings.instrument || 'guitar';
-  const baseFret = chord.guitar?.baseFret ?? 1;
-  const positionText = `${capitalize(activeInstrument)} · ${baseFret > 1 ? `Fret ${baseFret}` : 'Open Position'}`;
 
   const handlePlayChord = () => {
     if (!chord) return;
@@ -444,26 +440,9 @@ export function LibraryChordDetail({
             data-purpose="chord-detail-card"
           >
             {/* Top Header Row Inside Card */}
-            <div className="flex items-start justify-between">
-              <div className="min-w-0 pr-2">
-                <div
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase mb-1"
-                  style={{
-                    backgroundColor:
-                      'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
-                    borderColor:
-                      'color-mix(in srgb, var(--c-accent-from, #2563EB) 22%, transparent)',
-                    color: 'var(--c-accent-from, #2563EB)',
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
-                  />
-                  <span>{positionText}</span>
-                </div>
-
-                <div className="flex items-baseline gap-2 mt-1">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
                   <h2
                     data-purpose="chord-symbol"
                     className="text-4xl font-extrabold tracking-tight leading-none"
@@ -495,97 +474,45 @@ export function LibraryChordDetail({
                 </p>
               </div>
 
-              {/* Quick Action Controls */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handlePlayChord}
-                  data-purpose="chord-playback-button"
-                  aria-label={chordPlaying ? 'Stop Audio' : `Play ${chord.name} Chord`}
-                  className="w-11 h-11 rounded-full text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md"
-                  style={{
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
-                    boxShadow:
-                      '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                  }}
-                >
-                  <span className="material-symbols-rounded text-2xl">
-                    {chordPlaying ? 'stop' : 'play_arrow'}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => addToProgression(chord.id)}
-                  data-purpose="chord-add-button"
-                  aria-label="Add to progression"
-                  className="w-11 h-11 rounded-full border flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-                  style={{
-                    backgroundColor: 'var(--btn-surface-bg, var(--c-surface-low, #F3F4F7))',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  <span className="material-symbols-rounded text-xl">add</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Segmented Controls: Instrument & View Mode */}
-            <div
-              className="mt-4 pt-3 border-t flex flex-wrap items-center justify-between gap-2"
-              style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
-            >
-              {/* Instrument switch */}
-              <div
-                className="p-0.5 rounded-full flex text-xs font-semibold border"
+              {/* Play Button */}
+              <button
+                type="button"
+                onClick={handlePlayChord}
+                data-purpose="chord-playback-button"
+                aria-label={chordPlaying ? 'Stop Audio' : `Play ${chord.name} Chord`}
+                className="w-11 h-11 rounded-full text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shrink-0"
                 style={{
-                  backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
+                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                  boxShadow:
+                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
                 }}
-                data-purpose="instrument-switch"
               >
-                {(['guitar', 'piano'] as Instrument[]).map((inst) => {
-                  const isActive = activeInstrument === inst;
-                  return (
-                    <button
-                      key={inst}
-                      type="button"
-                      onClick={() => setPreviewInstrument(inst)}
-                      className="px-3 py-1 rounded-full capitalize transition-all cursor-pointer"
-                      style={{
-                        backgroundColor: isActive
-                          ? 'var(--surface-card-bg, #ffffff)'
-                          : 'transparent',
-                        color: isActive
-                          ? 'var(--c-accent-from, #2563EB)'
-                          : 'var(--c-text-secondary, #6B7280)',
-                        boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                      }}
-                    >
-                      {inst}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Display Mode Switch (Notes / Intervals) */}
-              {activeInstrument === 'guitar' && (
-                <div className="flex items-center gap-2" data-purpose="display-mode-switch">
-                  <LiquidSwitch
-                    size="sm"
-                    label={diagramDisplayMode === 'intervals' ? 'Intervals' : 'Notes'}
-                    checked={diagramDisplayMode === 'intervals'}
-                    onChange={(checked) => setDiagramDisplayMode(checked ? 'intervals' : 'notes')}
-                    accentFrom="var(--c-accent-from, #f59e0b)"
-                    ariaLabel="Toggle between Notes and Intervals display mode"
-                  />
-                </div>
-              )}
+                <span className="material-symbols-rounded text-2xl">
+                  {chordPlaying ? 'stop' : 'play_arrow'}
+                </span>
+              </button>
             </div>
+
+            {/* Display Mode Switch (Notes / Intervals) */}
+            {activeInstrument === 'guitar' && (
+              <div
+                className="mt-3.5 pt-2.5 border-t flex items-center justify-end"
+                style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
+                data-purpose="display-mode-switch"
+              >
+                <LiquidSwitch
+                  size="sm"
+                  label={diagramDisplayMode === 'intervals' ? 'Intervals' : 'Notes'}
+                  checked={diagramDisplayMode === 'intervals'}
+                  onChange={(checked) => setDiagramDisplayMode(checked ? 'intervals' : 'notes')}
+                  accentFrom="var(--c-accent-from, #f59e0b)"
+                  ariaLabel="Toggle between Notes and Intervals display mode"
+                />
+              </div>
+            )}
 
             {/* High Fidelity Clean Fretboard Diagram */}
-            <div className="mt-5 flex flex-col items-center justify-center">
+            <div className="mt-4 flex flex-col items-center justify-center">
               {activeInstrument === 'guitar' ? (
                 <DetailFretboardDiagram chordData={chord.guitar} displayMode={diagramDisplayMode} />
               ) : activeInstrument === 'bass' ? (
