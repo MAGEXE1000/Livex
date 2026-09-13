@@ -1,16 +1,15 @@
-# Version 4.5.96
+# Version 4.5.97
 
 Release Date: 2026-09-13
 
 ### Added
 
-- Canonical Plus &rarr; Menu Morph Primitive (`MorphMenu` / `PlusMenu`): Introduced in-place spatial container morph transitioning from a 40px circle trigger to an expanded contextual menu card with asymmetric cubic-bezier curves, coordinated plus rotation/exit, content entrance, and full Android `BackDispatcher` and `activeOverlaysRegistry` integration.
-- Canonical Accordion Expand Primitive (`Accordion`): Introduced high-performance compound accordion using CSS Grid `0fr` &rarr; `1fr` row interpolation, zero JavaScript height measurement loops, hardware-accelerated chevron flipping, and complete ARIA linking.
-- Professional Chromatic Guitar Tuner in Chordex: Integrated high-precision Web Audio engine using hybrid YIN / Autocorrelation pitch detection with cent-deviation needle damping, note recognition, and frequency analysis.
-- Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.
+- Professional Instrument Tuner: Added high-precision acoustic, bass, and electric chromatic tuning engine using normalized square difference pitch detection, harmonic overtone rejection, interactive instrument headstocks, and a canonical SVG tuning fork indicator.
+- Drumex Floating Action Dock: Engineered a Liquid Glass floating action surface for one-tap beat creation and multi-format MIDI/JSON file import with safe-area bottom navigation clearances.
+- Realistic Acoustic Guitar Sound Engine: Upgraded Chordex chord playback with multi-velocity studio-sampled PCM acoustic guitar buffers, physical wood body resonance filtering, and humanized strumming mechanics.
 
-### Fixed
+### Refactored
 
-- Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.
-- Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.
-- Hub FAQ Transition Polish: Migrated Hub FAQ items from abrupt React conditional mounting to the canonical `Accordion` system with smooth CSS Grid interpolation.
+- Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.
+- Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.
+- Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.

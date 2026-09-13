@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.96';
-export const NATIVE_VERSION_CODE = 40596;
-export const WEB_VERSION = '4.5.96';
+export const NATIVE_VERSION = '4.5.97';
+export const NATIVE_VERSION_CODE = 40597;
+export const WEB_VERSION = '4.5.97';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '6651e9d3';
+export const APP_COMMIT_SHA = 'bba8f409';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 9:15:46 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 11:25:59 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,18 +98,12 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Canonical Plus &rarr; Menu Morph Primitive (`MorphMenu` / `PlusMenu`): Introduced in-place spatial container morph transitioning from a 40px circle trigger to an expanded contextual menu card with asymmetric cubic-bezier curves, coordinated plus rotation/exit, content entrance, and full Android `BackDispatcher` and `activeOverlaysRegistry` integration.',
-      'Canonical Accordion Expand Primitive (`Accordion`): Introduced high-performance compound accordion using CSS Grid `0fr` &rarr; `1fr` row interpolation, zero JavaScript height measurement loops, hardware-accelerated chevron flipping, and complete ARIA linking.',
-      'Professional Chromatic Guitar Tuner in Chordex: Integrated high-precision Web Audio engine using hybrid YIN / Autocorrelation pitch detection with cent-deviation needle damping, note recognition, and frequency analysis.',
-      'Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.',
-      'Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.',
-      'Hub FAQ Transition Polish: Migrated Hub FAQ items from abrupt React conditional mounting to the canonical `Accordion` system with smooth CSS Grid interpolation.',
+      'Professional Instrument Tuner: Added high-precision acoustic, bass, and electric chromatic tuning engine using normalized square difference pitch detection, harmonic overtone rejection, interactive instrument headstocks, and a canonical SVG tuning fork indicator.',
+      'Drumex Floating Action Dock: Engineered a Liquid Glass floating action surface for one-tap beat creation and multi-format MIDI/JSON file import with safe-area bottom navigation clearances.',
+      'Realistic Acoustic Guitar Sound Engine: Upgraded Chordex chord playback with multi-velocity studio-sampled PCM acoustic guitar buffers, physical wood body resonance filtering, and humanized strumming mechanics.',
+      'Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.',
+      'Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.',
+      'Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.',
     ],
   },
 ];
@@ -121,6 +115,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.97',
+    date: '2026-09-13',
+    highlights: [
+      'Professional Instrument Tuner: Added high-precision acoustic, bass, and electric chromatic tuning engine using normalized square difference pitch detection, harmonic overtone rejection, interactive instrument headstocks, and a canonical SVG tuning fork indicator.',
+      'Drumex Floating Action Dock: Engineered a Liquid Glass floating action surface for one-tap beat creation and multi-format MIDI/JSON file import with safe-area bottom navigation clearances.',
+      'Realistic Acoustic Guitar Sound Engine: Upgraded Chordex chord playback with multi-velocity studio-sampled PCM acoustic guitar buffers, physical wood body resonance filtering, and humanized strumming mechanics.',
+      'Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.',
+      'Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.',
+      'Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.',
+    ],
+  },
   {
     version: '4.5.96',
     date: '2026-09-13',
@@ -211,18 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.',
       'Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.',
       'Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.',
-    ],
-  },
-  {
-    version: '4.5.87',
-    date: '2026-09-11',
-    highlights: [
-      'Global Morphing Action Surface Design System: Promoted `MorphingActionSurface` into the canonical shared standard across all Livex apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex) with fluid continuous geometry morphs, tactile press feedback, and +80ms content stagger.',
-      'Drumex Pattern Card Action Surface: Upgraded custom groove card kebab menu from a detached dropdown to an in-place morphing action surface for renaming and deleting patterns.',
-      'Stagex Element Specs Overflow Surface: Upgraded element specifications secondary actions into a morphing action surface with element-matched accent continuity, eliminating 140 lines of boilerplate DOM portal math.',
-      'Groovex Filter Control Surface: Upgraded library filter trigger button into a morphing card with instant filter query chips for artists and genres.',
-      'Vocalex Harmonizer Export Surface: Upgraded harmonizer bottom toolbar audio export into a morphing action card supporting full mix and harmony-only WAV exports.',
-      'Hub Language Selector Surface: Upgraded language selector setting pill into a morphing language picker card with disabled state indicators.',
     ],
   },
 ];
