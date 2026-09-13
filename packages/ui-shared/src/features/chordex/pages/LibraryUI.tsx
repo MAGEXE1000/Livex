@@ -1366,7 +1366,7 @@ export function LibraryMainView({ state }: { state: any }) {
                     stiffness: 400,
                     damping: 25,
                   }}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                  className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
                   style={{
                     color: 'var(--c-text-primary, #111827)',
                   }}
@@ -1381,6 +1381,12 @@ export function LibraryMainView({ state }: { state: any }) {
                   <span>Finder</span>
                 </motion.button>
 
+                {/* Subtle vertical separator */}
+                <div
+                  className="w-[1px] h-3.5 bg-black/10 dark:bg-white/15 self-center flex-shrink-0 mx-0.5"
+                  aria-hidden="true"
+                />
+
                 {/* Tuner Tool */}
                 <motion.button
                   type="button"
@@ -1391,7 +1397,7 @@ export function LibraryMainView({ state }: { state: any }) {
                     stiffness: 400,
                     damping: 25,
                   }}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                  className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
                   style={{
                     color: 'var(--c-text-primary, #111827)',
                   }}
