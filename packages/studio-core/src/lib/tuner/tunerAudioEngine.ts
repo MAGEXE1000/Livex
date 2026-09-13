@@ -102,6 +102,40 @@ export class TunerAudioEngine {
     return this.noiseFilter;
   }
 
+  /**
+   * Play an audible pure reference pitch tone for string tuning
+   */
+  public playReferenceTone(frequency: number, durationSeconds: number = 1.4): void {
+    try {
+      const ctx = this.audioCtx && this.audioCtx.state !== 'closed'
+        ? this.audioCtx
+        : createAudioContext();
+
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.28, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSeconds);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + durationSeconds);
+    } catch (err) {
+      console.warn('[TunerAudioEngine] playReferenceTone error:', err);
+    }
+  }
+
   public getState(): TunerLifecycleState {
     return this.state;
   }
