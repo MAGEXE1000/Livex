@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.95';
-export const NATIVE_VERSION_CODE = 40595;
-export const WEB_VERSION = '4.5.95';
+export const NATIVE_VERSION = '4.5.96';
+export const NATIVE_VERSION_CODE = 40596;
+export const WEB_VERSION = '4.5.96';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'b8562860';
+export const APP_COMMIT_SHA = '6651e9d3';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/12/2026, 1:46:38 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 9:15:46 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,12 +96,20 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Canonical Plus &rarr; Menu Morph Primitive (`MorphMenu` / `PlusMenu`): Introduced in-place spatial container morph transitioning from a 40px circle trigger to an expanded contextual menu card with asymmetric cubic-bezier curves, coordinated plus rotation/exit, content entrance, and full Android `BackDispatcher` and `activeOverlaysRegistry` integration.',
+      'Canonical Accordion Expand Primitive (`Accordion`): Introduced high-performance compound accordion using CSS Grid `0fr` &rarr; `1fr` row interpolation, zero JavaScript height measurement loops, hardware-accelerated chevron flipping, and complete ARIA linking.',
+      'Professional Chromatic Guitar Tuner in Chordex: Integrated high-precision Web Audio engine using hybrid YIN / Autocorrelation pitch detection with cent-deviation needle damping, note recognition, and frequency analysis.',
+      'Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Centered & Compact Shared Bottom Navigation: Corrected shared bottom navigation geometry across all Livex applications, eliminating the -33px cluster offset to ensure the navigation bar is strictly horizontally centered relative to the viewport across expanded, scrolling, and collapsed states.',
-      'Drumex Compact Navigation Footprint: Restored compact slot width (60px) in Drumex, reducing container width from 304px to 256px for balanced visual parity with Hub and Chordex.',
-      'Independent Selected Highlight Geometry: Decoupled tab highlight pill dimensions from the navbar container into an independent content-adaptive calculation that never inflates or shifts the navbar.',
-      'Refined Guitar & Bass Chord Finder: Exclusively focused the Chordex Chord Finder on Guitar and Bass fretboard diagrams, removing Piano from the instrument selector, search queries, filter tabs, and detection state machine without touching global instrument preferences.',
+      'Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.',
+      'Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.',
+      'Hub FAQ Transition Polish: Migrated Hub FAQ items from abrupt React conditional mounting to the canonical `Accordion` system with smooth CSS Grid interpolation.',
     ],
   },
 ];
@@ -113,6 +121,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.96',
+    date: '2026-09-13',
+    highlights: [
+      'Canonical Plus &rarr; Menu Morph Primitive (`MorphMenu` / `PlusMenu`): Introduced in-place spatial container morph transitioning from a 40px circle trigger to an expanded contextual menu card with asymmetric cubic-bezier curves, coordinated plus rotation/exit, content entrance, and full Android `BackDispatcher` and `activeOverlaysRegistry` integration.',
+      'Canonical Accordion Expand Primitive (`Accordion`): Introduced high-performance compound accordion using CSS Grid `0fr` &rarr; `1fr` row interpolation, zero JavaScript height measurement loops, hardware-accelerated chevron flipping, and complete ARIA linking.',
+      'Professional Chromatic Guitar Tuner in Chordex: Integrated high-precision Web Audio engine using hybrid YIN / Autocorrelation pitch detection with cent-deviation needle damping, note recognition, and frequency analysis.',
+      'Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.',
+      'Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.',
+      'Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.',
+    ],
+  },
   {
     version: '4.5.95',
     date: '2026-09-12',
@@ -203,16 +223,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Groovex Filter Control Surface: Upgraded library filter trigger button into a morphing card with instant filter query chips for artists and genres.',
       'Vocalex Harmonizer Export Surface: Upgraded harmonizer bottom toolbar audio export into a morphing action card supporting full mix and harmony-only WAV exports.',
       'Hub Language Selector Surface: Upgraded language selector setting pill into a morphing language picker card with disabled state indicators.',
-    ],
-  },
-  {
-    version: '4.5.86',
-    date: '2026-09-10',
-    highlights: [
-      'Native Dedicated Light-Mode Intro Assets: Added pre-rendered subpixel antialiased light-mode intro emblem partitions (`livex-form1-light.png`, `livex-form2-light.png`, `livex-symbol-light.png`) for razor-sharp visual fidelity on high-DPI displays.',
-      'Intro Animation Light Mode Quality: Eliminated raster diffuse shadow halos and destructive CSS `brightness(0)` filter flattening in light mode, preventing fuzzy gray borders around the emblem.',
-      'Repository Migration Alignment: Systematically updated all release orchestration scripts, Firebase download redirects, verification checkers, and in-app links to `MAGEXE1000/Livex`.',
-      'Cross-Platform APK Extraction in CI: Supported AAPT2 flattened release icons and hardened APK asset extraction across Linux and Windows environments in `generate-release-verification-report.mjs`.',
     ],
   },
 ];
