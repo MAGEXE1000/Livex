@@ -1,198 +1,272 @@
 import type { GuitarChordData } from '../../data/chords';
 
-const OPEN_STRINGS = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63];
+// ── Open String MIDI Constants (Standard Tuning E-A-D-G-B-e) ──────────────────
+const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // E2, A2, D3, G3, B3, E4
 
-const STRING_GAUGE = [0.052, 0.042, 0.032, 0.024, 0.016, 0.012];
+const MIDI_TO_NAME: Record<number, string> = {
+  40: 'E2', 41: 'F2', 42: 'Gb2', 43: 'G2', 44: 'Ab2', 45: 'A2', 46: 'Bb2', 47: 'B2',
+  48: 'C3', 49: 'Db3', 50: 'D3', 51: 'Eb3', 52: 'E3', 53: 'F3', 54: 'Gb3', 55: 'G3',
+  56: 'Ab3', 57: 'A3', 58: 'Bb3', 59: 'B3', 60: 'C4', 61: 'Db4', 62: 'D4', 63: 'Eb4',
+  64: 'E4', 65: 'F4', 66: 'Gb4', 67: 'G4', 68: 'Ab4', 69: 'A4', 70: 'Bb4', 71: 'B4',
+  72: 'C5', 73: 'Db5', 74: 'D5', 75: 'Eb5', 76: 'E5',
+};
+
+const NAME_TO_MIDI: Record<string, number> = {
+  E2: 40, F2: 41, Gb2: 42, G2: 43, Ab2: 44, A2: 45, Bb2: 46, B2: 47,
+  C3: 48, Db3: 49, D3: 50, Eb3: 51, E3: 52, F3: 53, Gb3: 54, G3: 55,
+  Ab3: 56, A3: 57, Bb3: 58, B3: 59, C4: 60, Db4: 61, D4: 62, Eb4: 63,
+  E4: 64, F4: 65, Gb4: 66, G4: 67, Ab4: 68, A4: 69, Bb4: 70, B4: 71,
+  C5: 72, Db5: 73, D5: 74, Eb5: 75, E5: 76,
+};
 
 let audioCtx: AudioContext | null = null;
+const decodedBufferCache = new Map<number, AudioBuffer>();
+let sampleBankPromise: Promise<Record<string, string>> | null = null;
 
-const AudioCtxClass =
-  typeof AudioContext !== 'undefined'
-    ? AudioContext
-    : typeof window !== 'undefined' && typeof (window as any).webkitAudioContext !== 'undefined'
-      ? ((window as any).webkitAudioContext as typeof AudioContext)
-      : null;
+let activeSources: AudioBufferSourceNode[] = [];
+let activeGainNodes: GainNode[] = [];
+let playbackTimeout: ReturnType<typeof setTimeout> | null = null;
 
-function getCtx(): AudioContext {
+function getCtx(): AudioContext | null {
   if (!audioCtx) {
-    if (!AudioCtxClass) throw new Error('Web Audio API not supported');
-    audioCtx = new AudioCtxClass({ sampleRate: 44100 });
+    const CtxClass =
+      typeof AudioContext !== 'undefined'
+        ? AudioContext
+        : typeof window !== 'undefined' && typeof (window as any).webkitAudioContext !== 'undefined'
+          ? ((window as any).webkitAudioContext as typeof AudioContext)
+          : null;
+    if (!CtxClass) return null;
+    audioCtx = new CtxClass({ sampleRate: 44100 });
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
   return audioCtx;
 }
 
-function noteFreq(stringIdx: number, fret: number): number {
-  return OPEN_STRINGS[stringIdx] * Math.pow(2, fret / 12);
+/**
+ * Lazy loads the 37-note base64 sample bank as an isolated chunk.
+ * Keeps initial application bundle small and startup instantaneous.
+ */
+async function getSampleBank(): Promise<Record<string, string>> {
+  if (!sampleBankPromise) {
+    sampleBankPromise = import('./guitarSampleData')
+      .then((mod) => mod.GUITAR_SAMPLE_DATA)
+      .catch((err) => {
+        sampleBankPromise = null;
+        console.warn('[guitarAudio] Failed to load guitar sample bank:', err);
+        return {};
+      });
+  }
+  return sampleBankPromise;
 }
 
-function createPluckBuffer(
+/**
+ * Decodes and caches a note buffer by MIDI pitch.
+ * Resolves exact recorded samples in range [40, 76] (E2-E5).
+ * Falls back to nearest anchor with pitch resampling outside this range.
+ */
+async function getOrDecodeNoteBuffer(
   ctx: AudioContext,
-  freq: number,
-  duration: number,
-  stringIdx: number
-): AudioBuffer {
-  const sr = ctx.sampleRate;
-  const samples = Math.ceil(sr * duration);
-  const buffer = ctx.createBuffer(1, samples, sr);
-  const data = buffer.getChannelData(0);
+  midiNote: number
+): Promise<{ buffer: AudioBuffer; playbackRate: number } | null> {
+  const clampedMidi = Math.max(40, Math.min(76, midiNote));
+  const playbackRate = Math.pow(2, (midiNote - clampedMidi) / 12);
 
-  const period = Math.round(sr / freq);
-  if (period < 2) return buffer;
-
-  const gauge = STRING_GAUGE[stringIdx];
-  const isWound = stringIdx <= 3;
-
-  for (let i = 0; i < period; i++) {
-    const phase = i / period;
-    const noise = Math.random() * 2 - 1;
-    const shaped = noise * (1 - 0.3 * Math.sin(Math.PI * phase));
-    const pluckPos = 0.13;
-    const pluckFilter = Math.sin((Math.PI * phase) / pluckPos);
-    const excitation = phase < pluckPos ? shaped * pluckFilter : shaped * 0.6;
-    data[i] = excitation;
+  let buffer = decodedBufferCache.get(clampedMidi);
+  if (buffer) {
+    return { buffer, playbackRate };
   }
 
-  const brightness = isWound ? 0.42 + stringIdx * 0.03 : 0.55 + (stringIdx - 4) * 0.08;
-  const damping = 0.9985 + (1 - gauge / 0.052) * 0.0012;
-  const blend = brightness;
+  const bank = await getSampleBank();
+  const noteName = MIDI_TO_NAME[clampedMidi];
+  const b64 = noteName ? bank[noteName] : null;
+  if (!b64) return null;
 
-  const allpass_coeff = 0.5 - 0.35 * (stringIdx / 5);
-
-  let prev_allpass = 0;
-  data[period] = damping * data[0];
-  for (let i = period + 1; i < samples; i++) {
-    const avg = blend * data[i - period] + (1 - blend) * data[i - period - 1];
-    const allpassed = allpass_coeff * avg + prev_allpass - allpass_coeff * prev_allpass;
-    prev_allpass = avg;
-    data[i] = damping * allpassed;
-  }
-
-  if (isWound) {
-    const buzzAmount = 0.015 * (gauge / 0.052);
-    for (let i = 0; i < Math.min(samples, sr * 0.15); i++) {
-      const t = i / sr;
-      data[i] += buzzAmount * Math.sin(2 * Math.PI * freq * 3.01 * t) * Math.exp(-t * 30);
+  try {
+    const binStr =
+      typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
     }
+    buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+    decodedBufferCache.set(clampedMidi, buffer);
+    return { buffer, playbackRate };
+  } catch (err) {
+    console.warn('[guitarAudio] Failed to decode sample for note', noteName, err);
+    return null;
   }
-
-  const attack = 0.003;
-  const decayRate = 1.8 + stringIdx * 0.3;
-  for (let i = 0; i < samples; i++) {
-    const t = i / sr;
-    const attackEnv = t < attack ? t / attack : 1;
-    const decayEnv = Math.exp(-t * decayRate);
-    data[i] *= attackEnv * decayEnv;
-  }
-
-  return buffer;
 }
 
-let activeSources: AudioBufferSourceNode[] = [];
-let playbackTimeout: ReturnType<typeof setTimeout> | null = null;
+/**
+ * Pre-decodes all acoustic guitar sample buffers in the background.
+ * Call on Chordex mount to eliminate first-playback decode latency.
+ */
+export async function preloadGuitarAudio(): Promise<void> {
+  const ctx = getCtx();
+  if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
 
-export function stopChordPlayback() {
-  activeSources.forEach((n) => {
+  try {
+    const bank = await getSampleBank();
+    const notes = Object.keys(bank);
+    for (const noteName of notes) {
+      const midi = NAME_TO_MIDI[noteName];
+      if (!midi || decodedBufferCache.has(midi)) continue;
+      const b64 = bank[noteName];
+      if (!b64) continue;
+      try {
+        const binStr =
+          typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) {
+          bytes[i] = binStr.charCodeAt(i);
+        }
+        const buf = await ctx.decodeAudioData(bytes.buffer.slice(0));
+        decodedBufferCache.set(midi, buf);
+      } catch {}
+    }
+  } catch {}
+}
+
+/**
+ * Checks if acoustic guitar samples are pre-decoded in memory.
+ */
+export function isGuitarAudioLoaded(): boolean {
+  return decodedBufferCache.size >= 25;
+}
+
+/**
+ * Smoothly stops in-flight chord playback with a fast 25ms anti-click ramp.
+ */
+export function stopChordPlayback(): void {
+  const ctx = audioCtx;
+  const now = ctx ? ctx.currentTime : 0;
+
+  activeGainNodes.forEach((g) => {
     try {
-      n.stop();
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(0.0001, now + 0.025);
     } catch {}
   });
+
+  const sourcesToStop = [...activeSources];
   activeSources = [];
+  activeGainNodes = [];
+
+  setTimeout(() => {
+    sourcesToStop.forEach((n) => {
+      try {
+        n.stop();
+        n.disconnect();
+      } catch {}
+    });
+  }, 35);
+
   if (playbackTimeout) {
     clearTimeout(playbackTimeout);
     playbackTimeout = null;
   }
 }
 
-export function playChord(data: GuitarChordData, volume: number = 0.65) {
+/**
+ * Plays an authentic acoustic guitar chord from fingering data.
+ * Features realistic downstrum spread, string balance, high-pass rumble filter,
+ * and transparent safety limiter for pristine acoustic realism without clipping.
+ */
+export function playChord(data: GuitarChordData, volume: number = 0.65): void {
   stopChordPlayback();
 
+  if (!data || !Array.isArray(data.frets)) return;
+
   const ctx = getCtx();
-  const now = ctx.currentTime;
+  if (!ctx) return;
 
-  const masterGain = ctx.createGain();
-  masterGain.gain.value = volume;
-
-  const bodyLo = ctx.createBiquadFilter();
-  bodyLo.type = 'peaking';
-  bodyLo.frequency.value = 240;
-  bodyLo.Q.value = 1.4;
-  bodyLo.gain.value = 4;
-
-  const bodyMid = ctx.createBiquadFilter();
-  bodyMid.type = 'peaking';
-  bodyMid.frequency.value = 420;
-  bodyMid.Q.value = 1.0;
-  bodyMid.gain.value = 2.5;
-
-  const presence = ctx.createBiquadFilter();
-  presence.type = 'peaking';
-  presence.frequency.value = 2800;
-  presence.Q.value = 0.7;
-  presence.gain.value = 1.5;
-
-  const airShelf = ctx.createBiquadFilter();
-  airShelf.type = 'highshelf';
-  airShelf.frequency.value = 8000;
-  airShelf.gain.value = -4;
-
-  const antiAlias = ctx.createBiquadFilter();
-  antiAlias.type = 'lowpass';
-  antiAlias.frequency.value = 10000;
-  antiAlias.Q.value = 0.707;
-
-  const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -20;
-  comp.knee.value = 10;
-  comp.ratio.value = 4;
-  comp.attack.value = 0.005;
-  comp.release.value = 0.15;
-
-  masterGain
-    .connect(bodyLo)
-    .connect(bodyMid)
-    .connect(presence)
-    .connect(airShelf)
-    .connect(antiAlias)
-    .connect(comp)
-    .connect(ctx.destination);
-
-  const strumBase = 0.02;
-  const strumVar = 0.01;
-  const duration = 3.0;
-
-  const stringsToPlay: { freq: number; stringIdx: number; delay: number }[] = [];
-  let strumIdx = 0;
-
+  // Identify strings to sound
+  const stringsToPlay: { stringIdx: number; midiNote: number }[] = [];
   for (let i = 0; i < 6; i++) {
     const fret = data.frets[i];
-    if (fret === -1) continue;
-    const delay = strumIdx * (strumBase + Math.random() * strumVar);
-    stringsToPlay.push({ freq: noteFreq(i, fret), stringIdx: i, delay });
-    strumIdx++;
+    if (fret === -1 || typeof fret !== 'number') continue;
+    stringsToPlay.push({ stringIdx: i, midiNote: OPEN_MIDI[i] + fret });
   }
 
-  stringsToPlay.forEach(({ freq, stringIdx, delay }) => {
-    const buf = createPluckBuffer(ctx, freq, duration, stringIdx);
-    const source = ctx.createBufferSource();
-    source.buffer = buf;
+  if (stringsToPlay.length === 0) return;
 
-    const stringGain = ctx.createGain();
-    const velocityVar = 0.82 + Math.random() * 0.18;
-    const stringBalance = stringIdx <= 2 ? 0.85 : 0.75 + (stringIdx / 5) * 0.25;
-    stringGain.gain.value = velocityVar * stringBalance;
+  // Asynchronously decode (or retrieve cached) notes and trigger playback
+  (async () => {
+    try {
+      const decodedResults = await Promise.all(
+        stringsToPlay.map(async (item) => ({
+          stringIdx: item.stringIdx,
+          sample: await getOrDecodeNoteBuffer(ctx, item.midiNote),
+        }))
+      );
 
-    source.connect(stringGain).connect(masterGain);
+      const playable = decodedResults.filter(
+        (r): r is { stringIdx: number; sample: { buffer: AudioBuffer; playbackRate: number } } =>
+          r.sample !== null
+      );
 
-    const t = now + delay;
-    source.start(t);
-    activeSources.push(source);
-  });
+      if (playable.length === 0) return;
 
-  playbackTimeout = setTimeout(
-    () => {
-      activeSources = [];
-    },
-    (duration + 0.5) * 1000
-  );
+      const now = ctx.currentTime;
+
+      // Master Output Chain:
+      // Master Gain -> Sub-rumble HPF (40Hz) -> Safety Limiter -> Destination
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = volume * 1.85;
+
+      const rumbleFilter = ctx.createBiquadFilter();
+      rumbleFilter.type = 'highpass';
+      rumbleFilter.frequency.value = 40;
+      rumbleFilter.Q.value = 0.707;
+
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -3.0;
+      limiter.knee.value = 4.0;
+      limiter.ratio.value = 8.0;
+      limiter.attack.value = 0.002;
+      limiter.release.value = 0.12;
+
+      masterGain.connect(rumbleFilter).connect(limiter).connect(ctx.destination);
+
+      // Acoustic strum timing: 16-20 ms spread per string
+      const strumBase = 0.016;
+      const strumVar = 0.004;
+
+      let strumIdx = 0;
+      for (const item of playable) {
+        const source = ctx.createBufferSource();
+        source.buffer = item.sample.buffer;
+        source.playbackRate.value = item.sample.playbackRate;
+
+        // Acoustic string weight: low strings have body mass, plain strings have clarity
+        const stringGain = ctx.createGain();
+        const baseWeight = item.stringIdx <= 2 ? 0.95 : 0.88;
+        const humanizeJitter = 0.96 + Math.random() * 0.08;
+        stringGain.gain.value = baseWeight * humanizeJitter;
+
+        source.connect(stringGain).connect(masterGain);
+
+        const startTime = now + strumIdx * (strumBase + Math.random() * strumVar);
+        source.start(startTime);
+
+        activeSources.push(source);
+        activeGainNodes.push(stringGain);
+
+        strumIdx++;
+      }
+
+      playbackTimeout = setTimeout(
+        () => {
+          activeSources = [];
+          activeGainNodes = [];
+        },
+        3500
+      );
+    } catch (err) {
+      console.warn('[guitarAudio] Playback error:', err);
+    }
+  })();
 }
+

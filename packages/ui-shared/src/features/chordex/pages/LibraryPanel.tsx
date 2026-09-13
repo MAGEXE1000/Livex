@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { useScrollHide, useT } from '@workspace/studio-core';
+import { useScrollHide, useT, preloadGuitarAudio } from '@workspace/studio-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
@@ -45,9 +45,10 @@ export default function LibraryPanel() {
   useScrollHide(state.scrollRef);
 
   useEffect(() => {
-    // Warm Chord Finder lazy chunk on idle to eliminate first-open pop-in
+    // Warm Chord Finder lazy chunk and acoustic guitar audio bank on idle
     const timer = setTimeout(() => {
       import('../components/CustomChordBuilder');
+      preloadGuitarAudio();
     }, 800);
     return () => clearTimeout(timer);
   }, []);
