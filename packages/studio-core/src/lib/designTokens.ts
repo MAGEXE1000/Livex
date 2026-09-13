@@ -178,6 +178,12 @@ export const DurationPresets = {
   // Legacy / Feature Specific
   hubTransition: 0.35,
   appTransition: 0.95,
+
+  // Canonical Interaction Primitives (Morph Menu & Accordion)
+  morphOpen: 0.35, // 350ms - in-place container spatial morph open
+  morphClose: 0.25, // 250ms - in-place container spatial morph close
+  morphFade: 0.2, // 200ms - plus exit / menu enter crossfade
+  accordion: 0.25, // 250ms - CSS grid expand/collapse and chevron flip
 };
 
 export const EasingPresets = {
@@ -187,6 +193,11 @@ export const EasingPresets = {
   accelerate: [0.32, 0.0, 0.67, 0.0] as const, // Crisp exit acceleration
   drawer: [0.32, 0.72, 0.0, 1.0] as const, // iOS sheet/drawer curve
   linear: [0.0, 0.0, 1.0, 1.0] as const,
+
+  // Canonical Interaction Primitives
+  morphOpen: [0.34, 1.25, 0.64, 1.0] as const, // Gentle overshoot curve for in-place spatial expansion
+  morphClose: [0.22, 1.0, 0.36, 1.0] as const, // Standard smooth deceleration curve for morph closure
+  accordion: [0.22, 1.0, 0.36, 1.0] as const, // Standard smooth ease for accordion grid expansion & chevron
 
   // Legacy / Feature Specific
   hubTransition: [0.22, 1.0, 0.36, 1.0] as const,

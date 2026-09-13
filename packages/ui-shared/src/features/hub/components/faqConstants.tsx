@@ -4,6 +4,12 @@ import { motion } from 'motion/react';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { Button } from '../../../shared/design-system/buttons';
 import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '../../../shared/design-system';
+import {
   useT,
   useSettingsStore,
   startDiagnosticsSession,
@@ -1300,171 +1306,163 @@ Date: ${new Date().toISOString()}
               }}
             />
 
-            {filteredFaqs.map((item, idx) => {
-              const isOpen = openIdx === item.originalIdx;
-              const isLast = idx === filteredFaqs.length - 1;
-              return (
-                <div
-                  key={item.originalIdx}
-                  style={{
-                    borderBottom: isLast ? 'none' : '1px solid var(--c-border)',
-                    transition: 'background 180ms ease',
-                  }}
-                >
-                  <button
-                    onClick={() => setOpenIdx(isOpen ? null : item.originalIdx)}
+            <Accordion
+              type="single"
+              value={openIdx !== null ? String(openIdx) : undefined}
+              onValueChange={(vals) => setOpenIdx(vals.length > 0 ? Number(vals[0]) : null)}
+              className="w-full"
+            >
+              {filteredFaqs.map((item, idx) => {
+                const isOpen = openIdx === item.originalIdx;
+                const isLast = idx === filteredFaqs.length - 1;
+                return (
+                  <AccordionItem
+                    key={item.originalIdx}
+                    value={String(item.originalIdx)}
                     style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      color: 'var(--c-text-primary)',
-                      fontSize: 13.5,
-                      fontWeight: 650,
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                      gap: 12,
-                      outline: 'none',
-                      WebkitTapHighlightColor: 'transparent',
+                      borderBottom: isLast ? 'none' : '1px solid var(--c-border)',
+                      transition: 'background 180ms ease',
                     }}
                   >
-                    <span
+                    <AccordionTrigger
                       style={{
-                        color: isOpen ? accent.from : 'var(--c-text-primary)',
-                        transition: 'color 180ms ease',
-                        lineHeight: 1.35,
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        color: 'var(--c-text-primary)',
+                        fontSize: 13.5,
+                        fontWeight: 650,
+                        fontFamily: 'var(--type-button-font, var(--studio-font-body))',
+                        gap: 12,
+                        outline: 'none',
+                        WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      {item.question}
-                    </span>
-                    <span
-                      className="material-symbols-outlined"
-                      style={{
-                        fontSize: 18,
-                        color: isOpen ? accent.from : 'var(--c-text-secondary)',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 200ms ease, color 180ms ease',
-                        flexShrink: 0,
-                      }}
-                    >
-                      expand_more
-                    </span>
-                  </button>
-                  {isOpen && (
-                    <div
-                      style={{
-                        padding: '0 16px 14px 16px',
-                        fontSize: 12.5,
-                        lineHeight: 1.55,
-                        color: 'var(--c-text-secondary)',
-                        borderTop: '1px solid var(--c-border)',
-                        paddingTop: 10,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}
-                    >
-                      <span>{item.answer}</span>
+                      <span
+                        style={{
+                          color: isOpen ? accent.from : 'var(--c-text-primary)',
+                          transition: 'color 180ms ease',
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {item.question}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div
+                        style={{
+                          padding: '0 16px 14px 16px',
+                          fontSize: 12.5,
+                          lineHeight: 1.55,
+                          color: 'var(--c-text-secondary)',
+                          borderTop: '1px solid var(--c-border)',
+                          paddingTop: 10,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                        }}
+                      >
+                        <span>{item.answer}</span>
 
-                      {/* Troubleshooter In-Answer Injectors */}
-                      {item.originalIdx === 4 && (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={runAudioTroubleshooter}
-                          disabled={audioState === 'testing'}
-                          style={{
-                            marginTop: 4,
-                            alignSelf: 'flex-start',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '6px 14px',
-                            borderRadius: '9999px',
-                            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                            color: '#ffffff',
-                            border: 'none',
-                            fontWeight: 700,
-                            fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                            fontSize: '11.5px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                          }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                            volume_up
-                          </span>
-                          {lang === 'es' ? 'Probar Motor de Audio' : 'Test Audio Engine'}
-                        </motion.button>
-                      )}
+                        {/* Troubleshooter In-Answer Injectors */}
+                        {item.originalIdx === 4 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={runAudioTroubleshooter}
+                            disabled={audioState === 'testing'}
+                            style={{
+                              marginTop: 4,
+                              alignSelf: 'flex-start',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 14px',
+                              borderRadius: '9999px',
+                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                              color: '#ffffff',
+                              border: 'none',
+                              fontWeight: 700,
+                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
+                              fontSize: '11.5px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              volume_up
+                            </span>
+                            {lang === 'es' ? 'Probar Motor de Audio' : 'Test Audio Engine'}
+                          </motion.button>
+                        )}
 
-                      {item.originalIdx === 5 && (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={runSyncTroubleshooter}
-                          disabled={syncState === 'syncing'}
-                          style={{
-                            marginTop: 4,
-                            alignSelf: 'flex-start',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '6px 14px',
-                            borderRadius: '9999px',
-                            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                            color: '#ffffff',
-                            border: 'none',
-                            fontWeight: 700,
-                            fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                            fontSize: '11.5px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                          }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                            cloud_sync
-                          </span>
-                          {lang === 'es' ? 'Forzar Sincronización' : 'Force Full Re-Sync'}
-                        </motion.button>
-                      )}
+                        {item.originalIdx === 5 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={runSyncTroubleshooter}
+                            disabled={syncState === 'syncing'}
+                            style={{
+                              marginTop: 4,
+                              alignSelf: 'flex-start',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 14px',
+                              borderRadius: '9999px',
+                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                              color: '#ffffff',
+                              border: 'none',
+                              fontWeight: 700,
+                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
+                              fontSize: '11.5px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              cloud_sync
+                            </span>
+                            {lang === 'es' ? 'Forzar Sincronización' : 'Force Full Re-Sync'}
+                          </motion.button>
+                        )}
 
-                      {item.originalIdx === 6 && (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={runCacheTroubleshooter}
-                          disabled={cacheState === 'clearing'}
-                          style={{
-                            marginTop: 4,
-                            alignSelf: 'flex-start',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '6px 14px',
-                            borderRadius: '9999px',
-                            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                            color: '#ffffff',
-                            border: 'none',
-                            fontWeight: 700,
-                            fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                            fontSize: '11.5px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                          }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                            mop
-                          </span>
-                          {lang === 'es' ? 'Vaciar Caché' : 'Wipe Caches & Temp Files'}
-                        </motion.button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        {item.originalIdx === 6 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={runCacheTroubleshooter}
+                            disabled={cacheState === 'clearing'}
+                            style={{
+                              marginTop: 4,
+                              alignSelf: 'flex-start',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 14px',
+                              borderRadius: '9999px',
+                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                              color: '#ffffff',
+                              border: 'none',
+                              fontWeight: 700,
+                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
+                              fontSize: '11.5px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              mop
+                            </span>
+                            {lang === 'es' ? 'Vaciar Caché' : 'Wipe Caches & Temp Files'}
+                          </motion.button>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </div>
         )}
       </div>

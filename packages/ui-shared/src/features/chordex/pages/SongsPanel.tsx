@@ -52,6 +52,7 @@ import {
 } from '../../../shared/design-system/StudioDesignSystem';
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { PlusMenu } from '../../../shared/design-system';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -6362,66 +6363,56 @@ export default function SongsPanel() {
             >
               SETLIST
             </span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <MorphingActionSurface
-                placement="center"
-                maxWidth={400}
-                title={t.songs.newSong}
-                subtitle="Create a new chord progression"
-                accentColor={accent.from}
-                customTrigger={({ triggerProps }) => (
-                  <motion.button
-                    {...triggerProps}
-                    type="button"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px',
-                    }}
-                    title={t.songs.newSong}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                      add
-                    </span>
-                  </motion.button>
-                )}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <PlusMenu
+                openWidth={180}
+                openHeight={100}
+                closedSize={32}
+                closedRadius={16}
+                openRadius={14}
+                triggerAriaLabel={t.songs.newSong}
+                triggerIcon={
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                    add
+                  </span>
+                }
+                style={{
+                  background: 'var(--surface-dialog-bg, #1c1c22)',
+                  borderColor: 'var(--c-border)',
+                }}
               >
-                {renderCreateSongForm}
-              </MorphingActionSurface>
-
-              <MorphingActionSurface
-                placement="center"
-                maxWidth={420}
-                title={t.songs.importSong}
-                subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
-                accentColor={accent.from}
-                customTrigger={({ triggerProps }) => (
-                  <motion.button
-                    {...triggerProps}
-                    type="button"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--c-text-secondary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px',
-                    }}
-                    title="Import"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                      upload_file
-                    </span>
-                  </motion.button>
+                {({ close }) => (
+                  <div className="flex flex-col p-1.5 gap-1 w-full h-full justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        setEditingId(null);
+                        setShowForm(true);
+                      }}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]" style={{ color: accent.from }}>
+                        add
+                      </span>
+                      <span>{t.songs.newSong}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        setShowImport(true);
+                      }}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--c-text-secondary)' }}>
+                        upload_file
+                      </span>
+                      <span>{t.songs.importSong}</span>
+                    </button>
+                  </div>
                 )}
-              >
-                {renderImportSongForm}
-              </MorphingActionSurface>
+              </PlusMenu>
             </div>
           </div>
           {/* List of songs */}

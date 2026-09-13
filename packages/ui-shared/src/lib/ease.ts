@@ -11,6 +11,8 @@ export const EASE_OUT_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
 export const EASE_SMOOTH_CSS = 'cubic-bezier(0.22, 1, 0.36, 1)';
 export const EASE_EXIT_CSS = 'cubic-bezier(0.32, 0, 0.67, 0)';
 export const EASE_DRAWER_CSS = 'cubic-bezier(0.32, 0.72, 0, 1)';
+export const EASE_MORPH_OPEN_CSS = 'cubic-bezier(0.34, 1.25, 0.64, 1)';
+export const EASE_MORPH_CLOSE_CSS = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 /** Press feedback on buttons and other tappable surfaces. */
 export const SPRING_PRESS = SpringPresets.snappy;
