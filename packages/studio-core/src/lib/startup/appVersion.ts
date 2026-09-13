@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.97';
-export const NATIVE_VERSION_CODE = 40597;
-export const WEB_VERSION = '4.5.97';
+export const NATIVE_VERSION = '4.5.98';
+export const NATIVE_VERSION_CODE = 40598;
+export const WEB_VERSION = '4.5.98';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'bba8f409';
+export const APP_COMMIT_SHA = '668c060f';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 11:25:59 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 1:09:55 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,12 +98,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Professional Instrument Tuner: Added high-precision acoustic, bass, and electric chromatic tuning engine using normalized square difference pitch detection, harmonic overtone rejection, interactive instrument headstocks, and a canonical SVG tuning fork indicator.',
-      'Drumex Floating Action Dock: Engineered a Liquid Glass floating action surface for one-tap beat creation and multi-format MIDI/JSON file import with safe-area bottom navigation clearances.',
-      'Realistic Acoustic Guitar Sound Engine: Upgraded Chordex chord playback with multi-velocity studio-sampled PCM acoustic guitar buffers, physical wood body resonance filtering, and humanized strumming mechanics.',
-      'Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.',
-      'Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.',
-      'Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.',
+      'Native Reference Tuner Redesign: Completely redesigned the Android/Capacitor chromatic tuner interface to match the high-end dark reference specification, featuring segmented instrument mode selection (Electric, Acoustic, Bass 4, Bass 5), reference pitch calibration (A4 = 440 Hz), automatic pitch detection toggle, an 11-bar chromatic scale with center emerald hourglass aura, real-time cents deviation pill indicator, and symmetrical string target cards flanking photorealistic instrument headstocks.',
+      'Audible Reference Pitch Tones: Integrated audible pure-tone Web Audio reference pitch generation directly on string target cards via interactive speaker buttons.',
+    ],
+  },
+  {
+    heading: 'Improved',
+    items: [
+      'Tuner Real-Time Rendering Performance: Isolated high-frequency cents needle and meter updates to GPU-composited direct DOM transforms (`needleRef`, `centsPillRef`, `centsTextRef`) to achieve flawless 60/120 FPS tracking without React reconciliation overhead on mobile WebViews.',
     ],
   },
 ];
@@ -115,6 +117,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.98',
+    date: '2026-09-13',
+    highlights: [
+      'Native Reference Tuner Redesign: Completely redesigned the Android/Capacitor chromatic tuner interface to match the high-end dark reference specification, featuring segmented instrument mode selection (Electric, Acoustic, Bass 4, Bass 5), reference pitch calibration (A4 = 440 Hz), automatic pitch detection toggle, an 11-bar chromatic scale with center emerald hourglass aura, real-time cents deviation pill indicator, and symmetrical string target cards flanking photorealistic instrument headstocks.',
+      'Audible Reference Pitch Tones: Integrated audible pure-tone Web Audio reference pitch generation directly on string target cards via interactive speaker buttons.',
+      'Tuner Real-Time Rendering Performance: Isolated high-frequency cents needle and meter updates to GPU-composited direct DOM transforms (`needleRef`, `centsPillRef`, `centsTextRef`) to achieve flawless 60/120 FPS tracking without React reconciliation overhead on mobile WebViews.',
+    ],
+  },
   {
     version: '4.5.97',
     date: '2026-09-13',
@@ -208,15 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.',
       'Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.',
       'Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.',
-    ],
-  },
-  {
-    version: '4.5.88',
-    date: '2026-09-11',
-    highlights: [
-      'Canonical Spatial Liquid Morph Anchoring: Enhanced `MorphingActionSurface` with touch-origin coordinate capture, dynamic quadrant expansion, viewport boundary clamping, and compact contextual presentation matching native iOS UIMenu patterns.',
-      'Chordex Add Section Morphing Surface: Replaced the detached centered Dialog modal for adding song sections with an in-place anchored morphing action surface offering quick section presets (Verse, Chorus, Bridge, etc.) and custom naming.',
-      'Semantic Destructive Action Styling: Added support for `destructive?: boolean` rows in `MorphingActionSurface` applied across Drumex groove pattern deletion and Stagex element deletion.',
     ],
   },
 ];
