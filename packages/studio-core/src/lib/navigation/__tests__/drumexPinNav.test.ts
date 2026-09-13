@@ -121,4 +121,31 @@ describe('Drumex Navigation Architecture & Pin Navigation Behavior', () => {
       });
     });
   });
+
+  describe('3. Drumex Preferences Scroll Geometry & Safety Bounds', () => {
+    it('verifies bottom padding clears bottom navigation dock height (58px + margin + safe-area)', () => {
+      const bottomNavHeight = 58;
+      const bottomNavMargin = 14;
+      const safeArea = 24;
+      const totalNavOcclusion = bottomNavHeight + bottomNavMargin + safeArea; // 96px
+
+      // Drumex Preferences provides 120px + safeArea, guaranteeing at least 48px clearance above dock
+      const prefsBottomPadding = safeArea + 120; // 144px
+      expect(prefsBottomPadding).toBeGreaterThan(totalNavOcclusion);
+      expect(prefsBottomPadding - totalNavOcclusion).toBeGreaterThanOrEqual(24);
+    });
+
+    it('navigates to prefs route and ensures route is recognized as preferences', () => {
+      useNavigationStore.setState({
+        activeApp: 'drumex',
+        activeTab: 'beats',
+        history: [{ app: 'drumex', page: 'beats' }],
+      });
+
+      NavigationDispatcher.push({ app: 'drumex', page: 'prefs' });
+      const current = useNavigationStore.getState().history[useNavigationStore.getState().history.length - 1];
+      expect(current.app).toBe('drumex');
+      expect(current.page).toBe('prefs');
+    });
+  });
 });

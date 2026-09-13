@@ -4451,6 +4451,7 @@ export default function DrumEditor() {
         <div
           style={{
             flex: 1,
+            minHeight: 0,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -4554,6 +4555,7 @@ export default function DrumEditor() {
           <div
             style={{
               flex: 1,
+              minHeight: 0,
               overflow: 'hidden',
               position: 'relative',
               display: 'flex',
@@ -8056,7 +8058,7 @@ export default function DrumEditor() {
                       />
                     );
                   case 'prefs':
-                    return <DrumPrefsPanel />;
+                    return <DrumPrefsPanel onScroll={drumScrollHide} />;
                   default:
                     return null;
                 }

@@ -140,7 +140,11 @@ function IconPrefs({ active }: { active: boolean }) {
   );
 }
 
-export default function DrumPrefsPanel() {
+export interface DrumPrefsPanelProps {
+  onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+}
+
+export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
@@ -277,8 +281,8 @@ export default function DrumPrefsPanel() {
   if (isWebDesktop) {
     return (
       <div
-        className={`flex flex-col h-full overflow-hidden p-6 ${isLight ? 'bg-zinc-50' : 'bg-[#000000]'}`}
-        style={{ fontFamily: 'var(--studio-font-body)' }}
+        className={`flex flex-col w-full h-full overflow-hidden p-6 ${isLight ? 'bg-zinc-50' : 'bg-[#000000]'}`}
+        style={{ width: '100%', height: '100%', minHeight: 0, fontFamily: 'var(--studio-font-body)' }}
       >
         {/* Category Tabs */}
         <div className="flex gap-1.5 mb-6 flex-wrap">
@@ -318,8 +322,15 @@ export default function DrumPrefsPanel() {
 
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto no-scrollbar"
-          style={{ paddingBottom: '120px' }}
+          onScroll={onScroll}
+          className="flex-1 w-full overflow-y-auto no-scrollbar"
+          style={{
+            minHeight: 0,
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorY: 'contain',
+            touchAction: 'pan-y',
+            paddingBottom: '120px',
+          }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
             {/* Column 1: Editor Behavior */}
@@ -429,23 +440,25 @@ export default function DrumPrefsPanel() {
 
   return (
     <div
-      className="app-bg"
+      className="flex flex-col w-full h-full overflow-hidden app-bg"
       style={{
-        flex: 1,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
         fontFamily: 'var(--studio-font-body)',
       }}
     >
       <div
         ref={scrollRef}
-        className="no-scrollbar"
+        onScroll={onScroll}
+        className="flex-1 w-full overflow-y-auto no-scrollbar"
         style={{
-          flex: 1,
-          overflowY: 'auto',
+          minHeight: 0,
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorY: 'contain',
+          touchAction: 'pan-y',
           padding: '0 24px',
-          paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom)) + 90px)',
+          paddingBottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 120px)',
         }}
       >
         <StudioHeader title={dp.title} subtitle={dp.subtitle} disableHorizontalPadding={true} />
