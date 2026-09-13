@@ -101,7 +101,7 @@ export function BottomNavigationController() {
       const nav = t.nav || t.navigation || {};
       if (key === 'songs') return nav.songs || 'Songs';
       if (key === 'library') return nav.library || 'Library';
-      if (key === 'settings') return nav.settings || 'Preferences';
+      if (key === 'settings') return nav.settings || 'Settings';
       if (key === 'preferences') return nav.preferences || 'Preferences';
       if (key === 'chords') return nav.chords || 'Chords';
       if (key === 'drumMetronome' || key === 'metronome') return nav.drumMetronome || 'Metronome';

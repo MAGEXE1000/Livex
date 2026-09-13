@@ -83,6 +83,7 @@ import {
   GroovexLogo,
   VocalexLogo,
 } from '../../chordex/icons/ChordexLogo';
+import { TuningForkIcon } from '../../chordex/components/tuner/TuningForkIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
 import HubSettings from '../settings/HubSettings';
 import HubHelp from './HubHelp';
@@ -165,17 +166,10 @@ function renderShortcutIcon(
   size: number = 15,
   color: string = 'var(--c-text-secondary)'
 ) {
-  if (icon === 'drum' || icon === 'blocks' || icon === 'sliders-horizontal') {
-    return <AnimatedIcon name={icon} size={size} color={color} />;
+  if (icon === 'tuning-fork' || icon === 'tuner') {
+    return <TuningForkIcon size={size} color={color} style={{ color }} />;
   }
-  return (
-    <span
-      className="material-symbols-outlined"
-      style={{ color, fontSize: typeof size === 'number' ? `${size}px` : size }}
-    >
-      {icon}
-    </span>
-  );
+  return <AnimatedIcon name={icon} size={size} color={color} />;
 }
 
 const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
@@ -191,7 +185,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'notifications',
-    icon: 'notifications',
+    icon: 'bell',
     titleEn: 'Notifications',
     titleEs: 'Notificaciones',
     descEn: 'System alerts and update logs',
@@ -200,7 +194,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'updater',
-    icon: 'system_update',
+    icon: 'refresh-cw',
     titleEn: 'Check Updates',
     titleEs: 'Buscar Actualizaciones',
     descEn: 'Check and install app updates',
@@ -210,17 +204,8 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
 
   // ── Chordex ───────────────────────────────────────
   {
-    id: 'chordex-library',
-    icon: 'menu_book',
-    titleEn: 'Chordex Library',
-    titleEs: 'Biblioteca Chordex',
-    descEn: 'Chord voicings, shapes & scales',
-    descEs: 'Acordes, digitaciones y escalas',
-    app: 'chordex',
-  },
-  {
     id: 'chordex-songs',
-    icon: 'music_note',
+    icon: 'audio-lines',
     titleEn: 'Chordex Songs',
     titleEs: 'Canciones Chordex',
     descEn: 'Song chord charts & repertoire',
@@ -228,8 +213,26 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
     app: 'chordex',
   },
   {
+    id: 'chordex-library',
+    icon: 'gallery-vertical-end',
+    titleEn: 'Chordex Library',
+    titleEs: 'Biblioteca Chordex',
+    descEn: 'Chord voicings, shapes & scales',
+    descEs: 'Acordes, digitaciones y escalas',
+    app: 'chordex',
+  },
+  {
+    id: 'chordex-tuner',
+    icon: 'tuning-fork',
+    titleEn: 'Chromatic Tuner',
+    titleEs: 'Afinador Cromático',
+    descEn: 'High-precision instrument pitch tuner',
+    descEs: 'Afinador de instrumentos de alta precisión',
+    app: 'chordex',
+  },
+  {
     id: 'chordex-practice',
-    icon: 'fitness_center',
+    icon: 'music',
     titleEn: 'Chordex Practice',
     titleEs: 'Práctica de Acordes',
     descEn: 'Train chord changes & drills',
@@ -238,15 +241,6 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
 
   // ── Drumex ────────────────────────────────────────
-  {
-    id: 'drumex-metronome',
-    icon: 'timer',
-    titleEn: 'Drumex Metronome',
-    titleEs: 'Metrónomo Drumex',
-    descEn: 'Precision tempo & click trainer',
-    descEs: 'Entrenador de tempo y claqueta',
-    app: 'drumex',
-  },
   {
     id: 'drumex-beats',
     icon: 'drum',
@@ -266,28 +260,28 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
     app: 'drumex',
   },
   {
-    id: 'drumex-preferences',
-    icon: 'sliders-horizontal',
-    titleEn: 'Drumex Preferences',
-    titleEs: 'Preferencias Drumex',
-    descEn: 'Drum kits, audio settings & defaults',
-    descEs: 'Kits de batería, audio y ajustes',
+    id: 'drumex-metronome',
+    icon: 'clock',
+    titleEn: 'Drumex Metronome',
+    titleEs: 'Metrónomo Drumex',
+    descEn: 'Precision tempo & click trainer',
+    descEs: 'Entrenador de tempo y claqueta',
     app: 'drumex',
   },
 
   // ── Stagex ────────────────────────────────────────
   {
-    id: 'stagex-rider',
-    icon: 'receipt_long',
-    titleEn: 'Stage Setup: Rider',
-    titleEs: 'Stagex: Rider Técnico',
-    descEn: 'Input channel list & technical patch',
-    descEs: 'Lista de canales y patch técnico',
+    id: 'stagex-stage',
+    icon: 'layout-panel-top',
+    titleEn: 'Stage Plot',
+    titleEs: 'Plano de Escenario',
+    descEn: 'Interactive stage placement canvas',
+    descEs: 'Distribución espacial del escenario',
     app: 'stagex',
   },
   {
     id: 'stagex-setlist',
-    icon: 'format_list_bulleted',
+    icon: 'layers',
     titleEn: 'Stage Setup: Setlist',
     titleEs: 'Stagex: Setlist en Vivo',
     descEn: 'Live show order & song durations',
@@ -295,8 +289,17 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
     app: 'stagex',
   },
   {
+    id: 'stagex-rider',
+    icon: 'file-text',
+    titleEn: 'Stage Setup: Rider',
+    titleEs: 'Stagex: Rider Técnico',
+    descEn: 'Input channel list & technical patch',
+    descEs: 'Lista de canales y patch técnico',
+    app: 'stagex',
+  },
+  {
     id: 'stagex-gear',
-    icon: 'construction',
+    icon: 'grip',
     titleEn: 'Stage Setup: Gear',
     titleEs: 'Stagex: Inventario de Equipos',
     descEn: 'Stage instruments & hardware gear',
@@ -305,36 +308,18 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'stagex-crew',
-    icon: 'group',
+    icon: 'users',
     titleEn: 'Stage Setup: Crew',
     titleEs: 'Stagex: Banda y Crew',
     descEn: 'Musicians, techs & stage roster',
     descEs: 'Músicos, técnicos y personal',
     app: 'stagex',
   },
-  {
-    id: 'stagex-preferences',
-    icon: 'tune',
-    titleEn: 'Stagex Preferences',
-    titleEs: 'Preferencias Stagex',
-    descEn: 'Stage canvas & display options',
-    descEs: 'Opciones de plano y visualización',
-    app: 'stagex',
-  },
-  {
-    id: 'stagex-stage',
-    icon: 'speaker',
-    titleEn: 'Stage Plot',
-    titleEs: 'Plano de Escenario',
-    descEn: 'Interactive stage placement canvas',
-    descEs: 'Distribución espacial del escenario',
-    app: 'stagex',
-  },
 
   // ── GrooveX ───────────────────────────────────────
   {
     id: 'groovex-library',
-    icon: 'queue_music',
+    icon: 'layers',
     titleEn: 'GrooveX Library',
     titleEs: 'Biblioteca GrooveX',
     descEn: 'Backing tracks & audio catalog',
@@ -343,7 +328,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'groovex-player',
-    icon: 'play_circle',
+    icon: 'disc',
     titleEn: 'GrooveX Player',
     titleEs: 'Reproductor GrooveX',
     descEn: 'Turntable vinyl deck player',
@@ -354,7 +339,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   // ── Vocalex ───────────────────────────────────────
   {
     id: 'vocalex-coach',
-    icon: 'mic',
+    icon: 'graduation-cap',
     titleEn: 'Vocalex Coach',
     titleEs: 'Entrenador Vocalex',
     descEn: 'Vocal warmups & pitch training',
@@ -363,7 +348,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'vocalex-takes',
-    icon: 'history',
+    icon: 'clapperboard',
     titleEn: 'Vocalex Takes',
     titleEs: 'Tomas Vocalex',
     descEn: 'Recorded vocal takes & analysis',
@@ -379,24 +364,24 @@ const SHORTCUT_LABEL_MAP: Record<string, { en: string; es: string }> = {
   updater: { en: 'Updates', es: 'Actualiz.' },
 
   // Chordex
-  'chordex-library': { en: 'Library', es: 'Biblioteca' },
   'chordex-songs': { en: 'Songs', es: 'Canciones' },
+  'chordex-library': { en: 'Library', es: 'Biblioteca' },
+  'chordex-tuner': { en: 'Tuner', es: 'Afinador' },
+  tuner: { en: 'Tuner', es: 'Afinador' },
   'chordex-practice': { en: 'Practice', es: 'Práctica' },
 
   // Drumex
-  'drumex-metronome': { en: 'Metronome', es: 'Metrónomo' },
   'drumex-beats': { en: 'Beats', es: 'Beats' },
   'drumex-patterns': { en: 'Patterns', es: 'Patrones' },
-  'drumex-preferences': { en: 'Drum Prefs', es: 'Pref. Drum' },
+  'drumex-metronome': { en: 'Metronome', es: 'Metrónomo' },
   'drumex-grooves': { en: 'Patterns', es: 'Patrones' },
 
   // Stagex
-  'stagex-rider': { en: 'Rider', es: 'Rider' },
+  'stagex-stage': { en: 'Stage Plot', es: 'Escenario' },
   'stagex-setlist': { en: 'Setlist', es: 'Setlist' },
+  'stagex-rider': { en: 'Rider', es: 'Rider' },
   'stagex-gear': { en: 'Gear', es: 'Equipos' },
   'stagex-crew': { en: 'Crew', es: 'Banda' },
-  'stagex-preferences': { en: 'Stage Prefs', es: 'Pref. Esc.' },
-  'stagex-stage': { en: 'Stage Plot', es: 'Escenario' },
 
   // GrooveX
   'groovex-library': { en: 'Library', es: 'Biblioteca' },
@@ -420,6 +405,8 @@ const SHORTCUT_LABEL_MAP: Record<string, { en: string; es: string }> = {
 const LEGACY_SHORTCUT_MAP: Record<string, string> = {
   'chords-songs': 'chordex-songs',
   'chords-practice': 'chordex-practice',
+  tuner: 'chordex-tuner',
+  'chordex-tuning': 'chordex-tuner',
   drumex: 'drumex-beats',
   'drumex-grooves': 'drumex-patterns',
   stagex: 'stagex-stage',
@@ -441,8 +428,8 @@ const LEGACY_SHORTCUT_MAP: Record<string, string> = {
 };
 
 const DEFAULT_SHORTCUTS = [
-  'chordex-practice',
   'chordex-songs',
+  'chordex-tuner',
   'drumex-metronome',
   'stagex-setlist',
   'settings',
@@ -613,7 +600,12 @@ export default function StudioHub() {
           new Set(
             parsed
               .map((id) => LEGACY_SHORTCUT_MAP[id] || id)
-              .filter((id) => ALL_SHORTCUT_OPTIONS.some((opt) => opt.id === id))
+              .filter(
+                (id) =>
+                  !id.includes('preferences') &&
+                  !id.includes('prefs') &&
+                  ALL_SHORTCUT_OPTIONS.some((opt) => opt.id === id)
+              )
           )
         ).slice(0, 5);
 
@@ -656,6 +648,10 @@ export default function StudioHub() {
       case 'chordex-songs':
         NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
         break;
+      case 'chordex-tuner':
+      case 'tuner':
+        NavigationDispatcher.push({ app: 'chordex', page: 'library', subView: 'tuner' });
+        break;
       case 'chordex-practice':
         NavigationDispatcher.push({ app: 'chordex', page: 'practice' });
         break;
@@ -670,9 +666,6 @@ export default function StudioHub() {
       case 'drumex-patterns':
       case 'drumex-grooves':
         NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
-        break;
-      case 'drumex-preferences':
-        NavigationDispatcher.push({ app: 'drumex', page: 'prefs' });
         break;
 
       // ── Stagex ────────────────────────────────────────
@@ -691,9 +684,6 @@ export default function StudioHub() {
       case 'stagex-crew':
         useStagexStore.getState().setSetupSubView('members');
         NavigationDispatcher.push({ app: 'stagex', page: 'Setup', subView: 'members' });
-        break;
-      case 'stagex-preferences':
-        NavigationDispatcher.push({ app: 'stagex', page: 'Preferences' });
         break;
       case 'stagex-stage':
         NavigationDispatcher.push({ app: 'stagex', page: 'Editor' });

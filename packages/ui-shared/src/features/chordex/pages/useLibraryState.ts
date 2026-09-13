@@ -171,7 +171,21 @@ export function useLibraryState() {
 
   const closeTuner = useCallback(() => {
     setShowTuner(false);
+    const history = useNavigationStore.getState().history;
+    const last = history[history.length - 1];
+    if (last?.app === 'chordex' && (last.page === 'tuner' || last.subView === 'tuner')) {
+      NavigationDispatcher.replace({ app: 'chordex', page: 'library' });
+    }
   }, []);
+
+  useEffect(() => {
+    if (
+      currentRoute.app === 'chordex' &&
+      (currentRoute.page === 'tuner' || currentRoute.subView === 'tuner')
+    ) {
+      setShowTuner(true);
+    }
+  }, [currentRoute.app, currentRoute.page, currentRoute.subView]);
 
   const allChords = useMemo(() => getAllChords(), []);
   const accent = resolveAccent(settings.accentColor);

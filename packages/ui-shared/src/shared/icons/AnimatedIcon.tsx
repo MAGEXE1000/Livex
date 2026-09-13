@@ -76,6 +76,7 @@ import { SlidersHorizontalIcon } from '../../components/ui/sliders-horizontal';
 import { SparklesIcon } from '../../components/ui/sparkles';
 import { UserIcon } from '../../components/ui/user';
 import { XIcon } from '../../components/ui/x';
+import { TuningForkIcon } from '../../features/chordex/components/tuner/TuningForkIcon';
 
 const localAnimatedIcons: Record<string, any> = {
   activity: ActivityIcon,
@@ -126,6 +127,9 @@ const localAnimatedIcons: Record<string, any> = {
   'sliders-horizontal': SlidersHorizontalIcon,
   slidershorizontal: SlidersHorizontalIcon,
   sparkles: SparklesIcon,
+  'tuning-fork': TuningForkIcon,
+  tuningfork: TuningForkIcon,
+  tuner: TuningForkIcon,
   user: UserIcon,
   x: XIcon,
 };
@@ -351,6 +355,14 @@ function getAnimatedIconComponent(name: string) {
     normName === 'clapperboard'
   ) {
     normName = 'clapperboard';
+  } else if (
+    normName === 'tuner' ||
+    normName === 'tuningfork' ||
+    normName === 'tuning-fork' ||
+    normName === 'afinador' ||
+    normName === 'afinar'
+  ) {
+    normName = 'tuning-fork';
   }
 
   // 1. Try local custom animated icons first

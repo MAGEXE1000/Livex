@@ -43,6 +43,8 @@ function getNormalizedIconName(key: string): string {
     return 'audio-lines';
   if (['gallery-vertical-end', 'galleryverticalend', 'library'].includes(norm))
     return 'gallery-vertical-end';
+  if (['tuning-fork', 'tuningfork', 'tuner', 'chordextuner', 'afinador', 'afinar'].includes(norm))
+    return 'tuning-fork';
 
   // Drumex
   if (['drum', 'drums', 'beats', 'drumbeats', 'drumsongs', 'drumex'].includes(norm)) return 'drum';
