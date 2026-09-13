@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StaggeredReveal } from '../../../shared/animation';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
 export interface DrumBeatsPanelProps {
   drumSongs: DrumSong[];
@@ -451,6 +452,46 @@ export function DrumBeatsPanel({
   // Delete modal state
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const reducedMotion = useAppReducedMotion();
+  const [activeCreateTrigger, setActiveCreateTrigger] = useState<'empty' | 'fab' | null>(null);
+  const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
+
+  // Hide FAB when virtual keyboard is focused on an input to avoid overlaying content
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const checkKeyboard = () => {
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const tagName = activeEl.tagName.toLowerCase();
+        const isContentInput =
+          tagName === 'input' ||
+          tagName === 'textarea' ||
+          activeEl.hasAttribute('contenteditable') ||
+          (activeEl as HTMLElement).isContentEditable;
+        setIsKeyboardFocused(Boolean(isContentInput));
+      } else {
+        setIsKeyboardFocused(false);
+      }
+    };
+    window.addEventListener('focusin', checkKeyboard);
+    window.addEventListener('focusout', checkKeyboard);
+    return () => {
+      window.removeEventListener('focusin', checkKeyboard);
+      window.removeEventListener('focusout', checkKeyboard);
+    };
+  }, []);
+
+  // Sync external isCreateOpen with active trigger
+  useEffect(() => {
+    if (isCreateOpen && !activeCreateTrigger) {
+      setActiveCreateTrigger('fab');
+    } else if (!isCreateOpen && activeCreateTrigger) {
+      setActiveCreateTrigger(null);
+    }
+  }, [isCreateOpen, activeCreateTrigger]);
+
+  const isModalOpen = Boolean(renamingSong || deletingId);
+
   // Filter & sort logic
   const filteredSongs = useMemo(() => {
     let list = [...drumSongs];
@@ -669,8 +710,15 @@ export function DrumBeatsPanel({
             <div className="flex items-center gap-3 mt-6">
               {renderCreateForm ? (
                 <MorphingActionSurface
-                  isOpen={isCreateOpen}
-                  onOpenChange={onOpenCreateChange}
+                  isOpen={isCreateOpen && activeCreateTrigger === 'empty'}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveCreateTrigger('empty');
+                    } else {
+                      setActiveCreateTrigger(null);
+                    }
+                    onOpenCreateChange?.(open);
+                  }}
                   placement="center"
                   maxWidth={380}
                   title="New Beat"
@@ -680,6 +728,10 @@ export function DrumBeatsPanel({
                     <motion.button
                       {...triggerProps}
                       type="button"
+                      onClick={() => {
+                        setActiveCreateTrigger('empty');
+                        triggerProps.onClick();
+                      }}
                       className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-2"
                       style={{
                         backgroundColor: 'var(--c-accent-from, #2563EB)',
@@ -919,116 +971,134 @@ export function DrumBeatsPanel({
         </Dialog>
       )}
 
-      {/* Floating Action Buttons (FAB Stack) - Rendered when beats exist to prevent visual competition in empty state */}
-      {drumSongs.length > 0 && (
-        <aside
-          className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
-          style={{
-            bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
-            zIndex: 40,
-          }}
-          data-purpose="floating-action-group"
-        >
-          {/* Secondary FAB: Import Beat JSON */}
-          {renderImportForm ? (
-            <MorphingActionSurface
-              placement="center"
-              maxWidth={380}
-              title="Import Beat"
-              subtitle="Import a Drumex JSON beat file"
-              accentColor={accent.from}
-              customTrigger={({ triggerProps }) => (
-                <motion.button
-                  {...triggerProps}
-                  type="button"
-                  data-testid="import-beat-btn"
-                  aria-label="Import Beat File"
-                  title="Import Beat File"
-                  className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
-                  style={{
-                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-secondary, #6B7280)',
-                  }}
-                >
-                  <span className="material-symbols-outlined text-xl">upload_file</span>
-                </motion.button>
-              )}
-            >
-              {renderImportForm}
-            </MorphingActionSurface>
-          ) : (
-            <button
-              type="button"
-              onClick={onImportSong}
-              data-testid="import-beat-btn"
-              aria-label="Import Beat File"
-              title="Import Beat File"
-              className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-secondary, #6B7280)',
-              }}
-            >
-              <span className="material-symbols-outlined text-xl">upload_file</span>
-            </button>
-          )}
+      {/* Floating Action Buttons (FAB Stack) - Visual and behavioral parity with Chordex */}
+      <AnimatePresence>
+        {!isModalOpen && !isKeyboardFocused && (
+          <motion.aside
+            initial={reducedMotion ? undefined : { opacity: 0, scale: 0.88, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reducedMotion ? undefined : { opacity: 0, scale: 0.88, y: 8 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
+            style={{
+              bottom:
+                'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
+              zIndex: 40,
+            }}
+            data-purpose="action-buttons"
+          >
+            {/* Secondary FAB: Import Beat JSON */}
+            {renderImportForm ? (
+              <MorphingActionSurface
+                placement="center"
+                maxWidth={380}
+                title="Import Beat"
+                subtitle="Import a Drumex JSON beat file"
+                accentColor={accent.from}
+                customTrigger={({ triggerProps }) => (
+                  <motion.button
+                    {...triggerProps}
+                    type="button"
+                    data-testid="import-beat-btn"
+                    aria-label="Import Beat File"
+                    title="Import Beat File"
+                    className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                      color: 'var(--c-text-secondary, #6B7280)',
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-xl">upload_file</span>
+                  </motion.button>
+                )}
+              >
+                {renderImportForm}
+              </MorphingActionSurface>
+            ) : (
+              <button
+                type="button"
+                onClick={onImportSong}
+                data-testid="import-beat-btn"
+                aria-label="Import Beat File"
+                title="Import Beat File"
+                className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                  color: 'var(--c-text-secondary, #6B7280)',
+                }}
+              >
+                <span className="material-symbols-outlined text-xl">upload_file</span>
+              </button>
+            )}
 
-          {/* Primary FAB: Create New Beat */}
-          {renderCreateForm ? (
-            <MorphingActionSurface
-              isOpen={isCreateOpen}
-              onOpenChange={onOpenCreateChange}
-              placement="center"
-              maxWidth={380}
-              title="New Beat"
-              subtitle="Create a custom drum pattern"
-              accentColor={accent.from}
-              customTrigger={({ open, surfaceId, triggerProps }) => (
-                <motion.button
-                  {...triggerProps}
-                  type="button"
-                  data-testid="new-beat-btn"
-                  aria-label="Create New Beat"
-                  title="New Beat"
-                  className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
-                    boxShadow:
-                      '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-                  }}
-                >
-                  <span className="material-symbols-outlined text-2xl font-bold">add</span>
-                </motion.button>
-              )}
-            >
-              {renderCreateForm}
-            </MorphingActionSurface>
-          ) : (
-            <motion.button
-              type="button"
-              onClick={onCreateSong}
-              data-testid="new-beat-btn"
-              aria-label="Create New Beat"
-              title="New Beat"
-              whileTap={{ scale: 0.94 }}
-              className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
-              style={{
-                width: '52px',
-                height: '52px',
-                backgroundColor: 'var(--c-accent-from, #2563EB)',
-                boxShadow:
-                  '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-              }}
-            >
-              <span className="material-symbols-outlined text-2xl font-bold">add</span>
-            </motion.button>
-          )}
-        </aside>
-      )}
+            {/* Primary FAB: Create New Beat */}
+            {renderCreateForm ? (
+              <MorphingActionSurface
+                isOpen={isCreateOpen && activeCreateTrigger === 'fab'}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setActiveCreateTrigger('fab');
+                  } else {
+                    setActiveCreateTrigger(null);
+                  }
+                  onOpenCreateChange?.(open);
+                }}
+                placement="center"
+                maxWidth={380}
+                title="New Beat"
+                subtitle="Create a custom drum pattern"
+                accentColor={accent.from}
+                customTrigger={({ open, surfaceId, triggerProps }) => (
+                  <motion.button
+                    {...triggerProps}
+                    type="button"
+                    data-testid="new-beat-btn"
+                    aria-label="Create New Beat"
+                    title="New Beat"
+                    onClick={() => {
+                      setActiveCreateTrigger('fab');
+                      triggerProps.onClick();
+                    }}
+                    className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                    style={{
+                      width: '52px',
+                      height: '52px',
+                      backgroundColor: 'var(--c-accent-from, #2563EB)',
+                      boxShadow:
+                        '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-2xl font-bold">add</span>
+                  </motion.button>
+                )}
+              >
+                {renderCreateForm}
+              </MorphingActionSurface>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={onCreateSong}
+                data-testid="new-beat-btn"
+                aria-label="Create New Beat"
+                title="New Beat"
+                whileTap={reducedMotion ? undefined : { scale: 0.94 }}
+                className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                style={{
+                  width: '52px',
+                  height: '52px',
+                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                  boxShadow:
+                    '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                }}
+              >
+                <span className="material-symbols-outlined text-2xl font-bold">add</span>
+              </motion.button>
+            )}
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
