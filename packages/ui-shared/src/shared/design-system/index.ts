@@ -11,7 +11,7 @@ export type { ToggleProps } from './StudioToggle';
 export { LiquidSwitch, type LiquidSwitchProps } from './LiquidSwitch';
 export { MorphingActionSurface, type MorphingActionSurfaceProps, type MorphingActionRowItem } from './MorphingActionSurface';
 export { ProgressiveBlur } from './ProgressiveBlur';
-export { MorphMenu, PlusMenu, PlusIcon, type MorphMenuProps } from './MorphMenu';
+export { MorphMenu, PlusMenu, PlusIcon, type MorphMenuProps, type MorphMenuRowItem } from './MorphMenu';
 export {
   Accordion,
   AccordionItem,

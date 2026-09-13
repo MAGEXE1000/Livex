@@ -52,7 +52,7 @@ import {
 } from '../../../shared/design-system/StudioDesignSystem';
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
-import { PlusMenu } from '../../../shared/design-system';
+import { MorphMenu, PlusMenu } from '../../../shared/design-system';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -4991,26 +4991,26 @@ export default function SongsPanel() {
                     </Button>
                   ) : null;
                 })()}
-                <MorphingActionSurface
-                  triggerVariant="icon"
-                  buttonIcon="data_object"
-                  title="Export JSON"
-                  subtitle={`Exporting ${activePreset.name}`}
-                  accentColor={accent.from}
+                <MorphMenu
+                  anchor="top-right"
+                  closedSize={34}
+                  closedRadius={17}
+                  openWidth={180}
+                  openHeight={108}
+                  openRadius={16}
+                  triggerAriaLabel="Export JSON"
+                  triggerIcon={
+                    <span className="material-symbols-outlined text-[18px]">data_object</span>
+                  }
                   style={{
-                    width: 34,
-                    height: 34,
-                    minHeight: 34,
-                    padding: 0,
-                    borderRadius: '50%',
                     backgroundColor: 'var(--c-surface-high, #1e1e24)',
-                    border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+                    borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
                   }}
                   rows={[
                     {
                       id: 'save',
                       label: 'Save File',
-                      sublabel: 'Save JSON chord chart to storage',
+                      sublabel: 'Save JSON to storage',
                       icon: 'save',
                       onPress: () => {
                         exportPresetToJSON(activePreset, 'save');
@@ -5019,7 +5019,7 @@ export default function SongsPanel() {
                     {
                       id: 'share',
                       label: 'Share File',
-                      sublabel: 'Send via Android share sheet',
+                      sublabel: 'Send via share sheet',
                       icon: 'share',
                       onPress: () => {
                         exportPresetToJSON(activePreset, 'share');

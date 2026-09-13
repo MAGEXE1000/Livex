@@ -17,6 +17,7 @@ import {
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
@@ -453,34 +454,33 @@ const MyGrooveCard = memo(function MyGrooveCard({
           </button>
 
           {/* Kebab Morphing Action Surface */}
-          <MorphingActionSurface
-            triggerVariant="icon"
-            buttonIcon="more_vert"
-            title={groove.name}
-            subtitle="Groove Options"
-            accentColor="var(--c-accent-from, #2563EB)"
+          <MorphMenu
+            anchor="top-right"
+            closedSize={32}
+            closedRadius={16}
+            openWidth={160}
+            openHeight={100}
+            openRadius={12}
+            triggerAriaLabel="Groove Options"
+            triggerIcon={
+              <span className="material-symbols-outlined text-[18px]">more_vert</span>
+            }
             style={{
-              width: 32,
-              height: 32,
-              minHeight: 32,
-              borderRadius: 16,
-              background: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-              color: 'var(--c-text-secondary, #6B7280)',
+              backgroundColor: 'var(--surface-dialog-bg, #1c1c22)',
+              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
             }}
             rows={[
               {
                 id: 'rename',
                 label: 'Rename',
-                sublabel: 'Change groove name or style tag',
+                sublabel: 'Change name or tag',
                 icon: 'edit',
                 onPress: onStartRename,
               },
               {
                 id: 'delete',
                 label: 'Delete',
-                sublabel: 'Permanently remove this custom groove',
+                sublabel: 'Remove groove',
                 icon: 'delete',
                 badge: 'Danger',
                 destructive: true,

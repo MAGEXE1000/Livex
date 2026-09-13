@@ -4,6 +4,7 @@ import { useBackHandler, useT, useSettingsStore } from '@workspace/studio-core';
 import { useStagexStore } from '../state/useStagexStore';
 import { STAGEX_ICON_MAP, localizeElementName } from '../constants';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import {
   StagexSpecsPicker,
   SpecsSelectorControl,
@@ -587,34 +588,31 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                     {/* Header Controls: Actions Dropdown Trigger + Close */}
                     <div className="relative flex items-center gap-1.5 flex-shrink-0">
                       {/* Secondary Actions Morphing Surface */}
-                      <MorphingActionSurface
-                        title={tr.stagex?.specs?.actions || 'Element Actions'}
-                        subtitle={
-                          element.label ||
-                          localizeElementName(element.name, element.type, isSpanish ? 'es' : 'en')
+                      <MorphMenu
+                        anchor="top-right"
+                        closedWidth={78}
+                        closedHeight={28}
+                        closedRadius={14}
+                        openWidth={180}
+                        openHeight={200}
+                        openRadius={14}
+                        triggerAriaLabel={tr.stagex?.specs?.actions || 'Actions'}
+                        triggerIcon={
+                          <span className="material-symbols-outlined text-[15px]">more_horiz</span>
                         }
-                        accentColor={element.color || '#8B5CF6'}
-                        customTrigger={({ triggerProps }) => (
-                          <motion.button
-                            {...triggerProps}
-                            type="button"
-                            data-testid="specs-actions-menu-btn"
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all"
-                            style={{
-                              background: isLight
-                                ? 'rgba(0, 0, 0, 0.05)'
-                                : 'rgba(255, 255, 255, 0.08)',
-                              color: isLight ? '#3f3f46' : '#d4d4d8',
-                              border: isLight
-                                ? '1px solid rgba(0, 0, 0, 0.06)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                            }}
-                            title={tr.stagex?.specs?.secondaryActions || 'Secondary Actions'}
-                          >
-                            <span className="material-symbols-outlined text-[15px]">more_horiz</span>
-                            <span>{tr.stagex?.specs?.actions || 'Actions'}</span>
-                          </motion.button>
-                        )}
+                        triggerLabel={tr.stagex?.specs?.actions || 'Actions'}
+                        testId="specs-actions-menu-btn"
+                        style={{
+                          background: isLight
+                            ? 'rgba(0, 0, 0, 0.05)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                          color: isLight ? '#3f3f46' : '#d4d4d8',
+                          borderColor: isLight
+                            ? 'rgba(0, 0, 0, 0.06)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
                         rows={[
                           {
                             id: 'duplicate',

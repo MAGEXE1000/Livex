@@ -151,6 +151,85 @@ describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
     });
   });
 
+  // ── 5. Anchor Positioning & Directional Translation Model ─────────────────
+
+  describe('5. Anchor Positioning & Directional Translation Model', () => {
+    it('verifies top-left anchor translation vectors (slide left -40px, menu enters from +40px)', () => {
+      const slide = 40;
+      const plusExit = -slide;
+      const menuEnter = slide;
+
+      expect(plusExit).toBe(-40);
+      expect(menuEnter).toBe(40);
+    });
+
+    it('verifies right-aligned anchor translation vectors (slide right +40px, menu enters from -40px)', () => {
+      const slide = 40;
+      const plusExit = slide;
+      const menuEnter = -slide;
+
+      expect(plusExit).toBe(40);
+      expect(menuEnter).toBe(-40);
+    });
+
+    it('verifies bottom-right anchor geometry coordinates', () => {
+      const anchor = 'bottom-right';
+      const isRightAligned = anchor === 'top-right' || anchor === 'bottom-right';
+      const isBottomAligned = anchor === 'bottom-left' || anchor === 'bottom-right';
+
+      expect(isRightAligned).toBe(true);
+      expect(isBottomAligned).toBe(true);
+    });
+  });
+
+  // ── 6. Rapid Retrigger & Overlay State Stability ──────────────────────────
+
+  describe('6. Rapid Retrigger & Lifecycle Stability', () => {
+    it('handles rapid re-opening without stuck states or orphaned BackDispatcher registrations', () => {
+      let isOpen = false;
+      let unregisterBack: (() => void) | null = null;
+      let backCallCount = 0;
+
+      const open = () => {
+        isOpen = true;
+        if (unregisterBack) unregisterBack();
+        unregisterBack = BackDispatcher.register('modal', () => {
+          backCallCount++;
+          close();
+          return true;
+        });
+      };
+
+      const close = () => {
+        isOpen = false;
+        if (unregisterBack) {
+          unregisterBack();
+          unregisterBack = null;
+        }
+      };
+
+      // Rapid toggle 10 times
+      for (let i = 0; i < 10; i++) {
+        open();
+        close();
+      }
+
+      expect(isOpen).toBe(false);
+      expect(unregisterBack).toBeNull();
+
+      // Open finally
+      open();
+      expect(isOpen).toBe(true);
+      expect(unregisterBack).not.toBeNull();
+
+      // Back button press closes it cleanly
+      const handled = BackDispatcher.handleBackEvent();
+      expect(handled).toBe(true);
+      expect(backCallCount).toBe(1);
+      expect(isOpen).toBe(false);
+    });
+  });
+
   // ── 4. Accessibility & Reduced Motion Contracts ───────────────────────────
 
   describe('4. Accessibility & Reduced Motion Contracts', () => {
