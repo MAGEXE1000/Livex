@@ -1,13 +1,14 @@
-# Version 4.5.99
+# Version 4.6.0
 
 Release Date: 2026-09-13
 
 ### Added
 
-- Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.
-- Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.
-- Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.
+- Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.
+- Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.
+- Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.
 
 ### Improved
 
-- Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.
+- Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.
+- Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.

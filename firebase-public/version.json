@@ -1,23 +1,24 @@
 {
   "platform": "web",
-  "version": "4.5.99",
-  "versionName": "4.5.99",
-  "versionCode": 40599,
-  "version_code": 40599,
-  "commit": "ddb3f429",
-  "releasedAt": "9/13/2026, 3:54:11 PM CST",
-  "buildTimestamp": "9/13/2026, 3:54:11 PM CST",
+  "version": "4.6.0",
+  "versionName": "4.6.0",
+  "versionCode": 40600,
+  "version_code": 40600,
+  "commit": "bab1858b",
+  "releasedAt": "9/13/2026, 5:30:25 PM CST",
+  "buildTimestamp": "9/13/2026, 5:30:25 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.\n• Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.\n• Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.\n• Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.",
-  "whatsNew": "• Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.\n• Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.\n• Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.\n• Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.",
+  "changelog": "• Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.\n• Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.\n• Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.\n• Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.\n• Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.",
+  "whatsNew": "• Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.\n• Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.\n• Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.\n• Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.\n• Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.",
   "releaseNotes": {
     "added": [
-      "Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.",
-      "Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.",
-      "Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner."
+      "Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.",
+      "Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.",
+      "Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions."
     ],
     "improved": [
-      "Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine."
+      "Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.",
+      "Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill."
     ]
   },
   "mandatory": false

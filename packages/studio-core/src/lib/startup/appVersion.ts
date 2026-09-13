@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.99';
-export const NATIVE_VERSION_CODE = 40599;
-export const WEB_VERSION = '4.5.99';
+export const NATIVE_VERSION = '4.6.0';
+export const NATIVE_VERSION_CODE = 40600;
+export const WEB_VERSION = '4.6.0';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'ddb3f429';
+export const APP_COMMIT_SHA = 'bab1858b';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 3:54:11 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 5:30:25 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.',
-      'Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.',
-      'Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.',
+      'Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.',
+      'Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.',
+      'Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.',
+      'Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.',
+      'Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.',
     ],
   },
 ];
@@ -118,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.0',
+    date: '2026-09-13',
+    highlights: [
+      'Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.',
+      'Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.',
+      'Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.',
+      'Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.',
+      'Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.',
+    ],
+  },
   {
     version: '4.5.99',
     date: '2026-09-13',
@@ -210,17 +222,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'App-Specific Navigation and Design Integrity: Restored individual app layouts, authentic brand logos, bespoke typography, and floating dock navigation across all applications while preserving the canonical `MorphingActionSurface` system.',
       'Web Audio & Shell Harmony: Maintained full Web Audio synthesis and playback capabilities in Chordex, Drumex, and Vocalex with seamless Android shell integration.',
       'Preserved Pipeline Acceleration: Kept DOM observer reductions in BottomNavigationController, GPU-composited transform/opacity transitions in StudioPageTransition, and list virtualization containment.',
-    ],
-  },
-  {
-    version: '4.5.90',
-    date: '2026-09-11',
-    highlights: [
-      'Native Jetpack Compose Hub Architecture: Implemented the first genuinely native Android UI vertical slice for Hub (`NativeHubView.kt`) in Jetpack Compose, featuring hardware-accelerated RenderThread execution, zero DOM tree overhead, and native 90/120 Hz display synchronization.',
-      'Native Morphing Quick Actions & Bottom Dock: Built an in-place morphing Quick Actions surface expanding via native spring physics, alongside a native bottom navigation dock with animated pill selection.',
-      'Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead.',
-      'Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.',
-      'CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists.',
     ],
   },
 ];
