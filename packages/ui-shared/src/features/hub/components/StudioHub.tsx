@@ -160,6 +160,24 @@ export interface ShortcutOption {
   app: 'hub' | 'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex';
 }
 
+function renderShortcutIcon(
+  icon: string,
+  size: number = 15,
+  color: string = 'var(--c-text-secondary)'
+) {
+  if (icon === 'drum' || icon === 'blocks' || icon === 'sliders-horizontal') {
+    return <AnimatedIcon name={icon} size={size} color={color} />;
+  }
+  return (
+    <span
+      className="material-symbols-outlined"
+      style={{ color, fontSize: typeof size === 'number' ? `${size}px` : size }}
+    >
+      {icon}
+    </span>
+  );
+}
+
 const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   // ── Global / Hub ──────────────────────────────────
   {
@@ -231,7 +249,7 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
   },
   {
     id: 'drumex-beats',
-    icon: 'grid_on',
+    icon: 'drum',
     titleEn: 'Drumex Beats',
     titleEs: 'Beats de Batería',
     descEn: 'Step sequencer drum patterns',
@@ -239,12 +257,21 @@ const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
     app: 'drumex',
   },
   {
-    id: 'drumex-grooves',
-    icon: 'album',
-    titleEn: 'Drumex Grooves',
-    titleEs: 'Grooves de Batería',
+    id: 'drumex-patterns',
+    icon: 'blocks',
+    titleEn: 'Drumex Patterns',
+    titleEs: 'Patrones Drumex',
     descEn: 'Preset rhythm library & styles',
     descEs: 'Catálogo de ritmos y estilos',
+    app: 'drumex',
+  },
+  {
+    id: 'drumex-preferences',
+    icon: 'sliders-horizontal',
+    titleEn: 'Drumex Preferences',
+    titleEs: 'Preferencias Drumex',
+    descEn: 'Drum kits, audio settings & defaults',
+    descEs: 'Kits de batería, audio y ajustes',
     app: 'drumex',
   },
 
@@ -359,7 +386,9 @@ const SHORTCUT_LABEL_MAP: Record<string, { en: string; es: string }> = {
   // Drumex
   'drumex-metronome': { en: 'Metronome', es: 'Metrónomo' },
   'drumex-beats': { en: 'Beats', es: 'Beats' },
-  'drumex-grooves': { en: 'Grooves', es: 'Grooves' },
+  'drumex-patterns': { en: 'Patterns', es: 'Patrones' },
+  'drumex-preferences': { en: 'Drum Prefs', es: 'Pref. Drum' },
+  'drumex-grooves': { en: 'Patterns', es: 'Patrones' },
 
   // Stagex
   'stagex-rider': { en: 'Rider', es: 'Rider' },
@@ -392,6 +421,7 @@ const LEGACY_SHORTCUT_MAP: Record<string, string> = {
   'chords-songs': 'chordex-songs',
   'chords-practice': 'chordex-practice',
   drumex: 'drumex-beats',
+  'drumex-grooves': 'drumex-patterns',
   stagex: 'stagex-stage',
   groovex: 'groovex-player',
   'vocalex-pitch': 'vocalex-coach',
@@ -637,8 +667,12 @@ export default function StudioHub() {
       case 'drumex-beats':
         NavigationDispatcher.push({ app: 'drumex', page: 'beats' });
         break;
+      case 'drumex-patterns':
       case 'drumex-grooves':
         NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
+        break;
+      case 'drumex-preferences':
+        NavigationDispatcher.push({ app: 'drumex', page: 'prefs' });
         break;
 
       // ── Stagex ────────────────────────────────────────
@@ -1445,12 +1479,7 @@ export default function StudioHub() {
                                                         flexShrink: 0,
                                                       }}
                                                     >
-                                                      <span
-                                                        className="material-symbols-outlined"
-                                                        style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
-                                                      >
-                                                        {opt.icon}
-                                                      </span>
+                                                      {renderShortcutIcon(opt.icon, 15)}
                                                     </div>
                                                     <div
                                                       style={{
@@ -1599,12 +1628,7 @@ export default function StudioHub() {
                                                     flexShrink: 0,
                                                   }}
                                                 >
-                                                  <span
-                                                    className="material-symbols-outlined"
-                                                    style={{ color: 'var(--c-text-secondary)', fontSize: 15 }}
-                                                  >
-                                                    {opt.icon}
-                                                  </span>
+                                                  {renderShortcutIcon(opt.icon, 15)}
                                                 </div>
                                                 <div
                                                   style={{
@@ -1832,15 +1856,7 @@ export default function StudioHub() {
                                         opacity: 0.8,
                                       }}
                                     />
-                                    <span
-                                      className="material-symbols-outlined"
-                                      style={{
-                                        color: 'var(--c-text-secondary)',
-                                        fontSize: '22px',
-                                      }}
-                                    >
-                                      {opt.icon}
-                                    </span>
+                                    {renderShortcutIcon(opt.icon, 22)}
 
                                     {isEditMode && (
                                       <button

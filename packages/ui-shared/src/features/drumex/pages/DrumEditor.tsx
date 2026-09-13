@@ -2314,7 +2314,7 @@ export default function DrumEditor() {
         NavigationDispatcher.pop();
         return true;
       }
-      if (activeTab !== 'songs') {
+      if (NavigationDispatcher.canGoBack()) {
         NavigationDispatcher.pop();
         return true;
       }
@@ -4570,11 +4570,10 @@ export default function DrumEditor() {
                         isAmoled={isAmoled}
                         onScroll={drumScrollHide}
                         onBack={() => {
-                          const history = useNavigationStore.getState().history;
-                          if (history.length > 1 && history[history.length - 2]?.app === 'drumex') {
+                          if (NavigationDispatcher.canGoBack()) {
                             NavigationDispatcher.pop();
                           } else {
-                            handleSetTab('songs');
+                            NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
                           }
                         }}
                       />

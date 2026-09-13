@@ -11,7 +11,6 @@ export const APP_SECTIONS: Record<string, AppSection[]> = {
     { id: 'preferences', labelKey: 'preferences', icon: 'sliders-horizontal' },
   ],
   drumex: [
-    { id: 'metronome', labelKey: 'drumMetronome', icon: 'timer' },
     { id: 'beats', labelKey: 'drumBeats', icon: 'drum' },
     { id: 'patterns', labelKey: 'drumPatterns', icon: 'blocks' },
     { id: 'prefs', labelKey: 'drumPreferences', icon: 'sliders-horizontal' },

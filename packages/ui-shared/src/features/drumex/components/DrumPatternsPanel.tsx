@@ -11,6 +11,8 @@ import {
   type GrooveTag,
   GROOVE_TAGS,
   DRUM_LIBRARY,
+  useT,
+  NavigationDispatcher,
 } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
@@ -664,6 +666,8 @@ export function DrumPatternsPanel({
   isWebDesktop,
   onScroll,
 }: DrumPatternsPanelProps) {
+  const t = useT();
+  const metronomeLabel = (t.drum as any)?.metronome || 'Metronome';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'All' | LibraryCategory | 'My Grooves'>(
     'All'
@@ -763,6 +767,42 @@ export function DrumPatternsPanel({
           subtitle="Pattern & groove library"
           disableHorizontalPadding={true}
           disableTopInset={isWebDesktop}
+          containerStyle={{ alignItems: 'center' }}
+          actions={
+            <motion.button
+              type="button"
+              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
+              whileTap={{ scale: 0.94 }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 25,
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
+                color: 'var(--c-text-primary, #111827)',
+              }}
+              data-purpose="tool-metronome"
+              aria-label={metronomeLabel}
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                style={{ color: accent?.from || '#f59e0b' }}
+              >
+                <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
+                <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
+                <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
+              </svg>
+              <span>{metronomeLabel}</span>
+            </motion.button>
+          }
         />
 
         {/* Filter & Search Controls */}

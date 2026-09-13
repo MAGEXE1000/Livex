@@ -125,7 +125,7 @@ describe('Shared Android Bottom Navigation Geometry & Centering', () => {
   const appTestData: Record<string, { slots: string[]; labelsEs?: string[] }> = {
     hub: { slots: ['Profile', 'Home', 'Settings'], labelsEs: ['Perfil', 'Inicio', 'Ajustes'] },
     chordex: { slots: ['Songs', 'Library', 'Preferences'], labelsEs: ['Canciones', 'Biblioteca', 'Ajustes'] },
-    drumex: { slots: ['Metronome', 'Beats', 'Patterns', 'Preferences'], labelsEs: ['Metrónomo', 'Ritmos', 'Patrones', 'Ajustes'] },
+    drumex: { slots: ['Beats', 'Patterns', 'Preferences'], labelsEs: ['Ritmos', 'Patrones', 'Ajustes'] },
     groovex: { slots: ['Rhythms', 'Preferences'], labelsEs: ['Ritmos', 'Ajustes'] },
     stagex: { slots: ['Stage', 'Setup', 'Preferences'], labelsEs: ['Escenario', 'Setup', 'Ajustes'] },
     vocalex: { slots: ['Coach', 'Takes', 'Preferences'], labelsEs: ['Coach', 'Tomas', 'Ajustes'] },
@@ -204,9 +204,9 @@ describe('Shared Android Bottom Navigation Geometry & Centering', () => {
         activeIndex: 0,
       });
 
-      // Previous broken size was 304px. New compact size is 256px.
+      // 3-slot compact size is 244px.
       expect(geom412.barWidth).toBeLessThanOrEqual(275);
-      expect(geom412.barWidth).toBe(256);
+      expect(geom412.barWidth).toBe(244);
 
       // At 390px (iPhone 13-15 / Android medium)
       const geom390 = computeBottomNavigationGeometry({
@@ -216,6 +216,7 @@ describe('Shared Android Bottom Navigation Geometry & Centering', () => {
         activeIndex: 0,
       });
       expect(geom390.barWidth).toBeLessThanOrEqual(250);
+      expect(geom390.barWidth).toBe(244);
 
       // Verify touch target remains adequate (>= 48px width per slot)
       expect(geom412.itemWidth).toBeGreaterThanOrEqual(48);
