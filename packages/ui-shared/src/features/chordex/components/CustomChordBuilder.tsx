@@ -5,6 +5,7 @@ import {
   type CustomChord,
   type BarreDef,
   setNavHidden,
+  setNavLocked,
   useScrollHide,
   type GuitarChordData,
   useT,
@@ -1021,8 +1022,12 @@ export default function CustomChordBuilder({
   // Nav bar — hide while builder is open (only when not in morph surface)
   useEffect(() => {
     if (inMorphSurface) return;
+    setNavLocked(true);
     setNavHidden(true);
-    return () => setNavHidden(false);
+    return () => {
+      setNavLocked(false);
+      setNavHidden(false);
+    };
   }, [inMorphSurface]);
 
   const handleClearNotes = useCallback(() => {

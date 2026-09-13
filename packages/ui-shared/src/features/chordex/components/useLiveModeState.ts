@@ -3,6 +3,7 @@ import {
   getChordById,
   transposeChordId,
   setNavHidden,
+  setNavLocked,
   ACCENT_COLORS,
   resolveAccent,
   useSettingsStore,
@@ -75,6 +76,7 @@ export function useLiveModeState(
   const handleClose = useCallback(() => {
     if (isExiting) return;
     setIsExiting(true);
+    setNavLocked(false);
     setNavHidden(false);
     exitTimerRef.current = setTimeout(() => onClose(), 290);
   }, [isExiting, onClose]);
@@ -87,8 +89,12 @@ export function useLiveModeState(
   );
 
   useEffect(() => {
+    setNavLocked(true);
     setNavHidden(true);
-    return () => setNavHidden(false);
+    return () => {
+      setNavLocked(false);
+      setNavHidden(false);
+    };
   }, []);
 
   const [visualStyle, setVisualStyle] = useState<VisualStyle>('both');

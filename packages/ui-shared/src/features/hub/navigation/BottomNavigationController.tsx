@@ -17,6 +17,7 @@ import {
   subscribeUserCover,
   useBackHandler,
   useShallow,
+  useChordStore,
 } from '@workspace/studio-core';
 import { SharedNavigationBar } from './SharedNavigationBar';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
@@ -406,13 +407,22 @@ export function BottomNavigationController() {
       currentRoute?.page === 'metronome' ||
       (currentRoute as any)?.tab === 'metronome' ||
       (currentRoute as any)?.subView === 'metronome');
+  const activeChordPresetId = useChordStore((s) => s.activePresetId);
+  const isChordexSong =
+    currentApp === 'chordex' &&
+    (activeTab === 'songs' || activePage === 'songs' || currentRoute?.page === 'songs') &&
+    (Boolean(activeChordPresetId) ||
+      (currentRoute as any)?.subView === 'editor' ||
+      (currentRoute as any)?.subView === 'song' ||
+      (currentRoute as any)?.subView === 'form');
   const visible =
     !hidden &&
     !isKeyboardFocused &&
     !hasDOMHiddenIndicator &&
     storeVisible &&
     !isDrumexEditor &&
-    !isDrumexMetronome;
+    !isDrumexMetronome &&
+    !isChordexSong;
 
   return (
     <NavigationAnimationProvider activeTab={activeTab} items={computedItems}>

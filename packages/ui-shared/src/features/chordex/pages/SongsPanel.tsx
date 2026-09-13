@@ -17,6 +17,7 @@ import {
   isChordOutOfKey,
   useScrollHide,
   setNavHidden,
+  setNavLocked,
   useT,
   useBackHandler,
   useIsWebDesktop,
@@ -4309,16 +4310,15 @@ export default function SongsPanel() {
   const instanceKeys = useRef<string[]>([]); // stable per-slot key so DOM nodes survive reorder
   const localChordsRef = useRef<string[]>([]); // always up-to-date chord list (avoids stale closure)
 
-  // Scroll refs for nav-hide
+  // Scroll ref for nav-hide on Songs list (never attached to editor)
   const listScrollRef = useRef<HTMLDivElement>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(listScrollRef);
-  useScrollHide(editorScrollRef);
 
   const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
   const transposeOffset = activePreset ? (transpositions[activePreset.id] ?? 0) : 0;
 
-  // Hide the nav bar in editor view or when any sheet is open
+  // Lock nav bar hidden in editor view or when any sheet/form is open
   useEffect(() => {
     const anySheetOpen =
       showForm ||
@@ -4329,8 +4329,18 @@ export default function SongsPanel() {
       showImport ||
       showCustomBuilder;
     const inEditor = !!(activePreset && !showForm);
-    setNavHidden(anySheetOpen || inEditor);
-    return () => setNavHidden(false);
+    const shouldHide = anySheetOpen || inEditor;
+    if (shouldHide) {
+      setNavLocked(true);
+      setNavHidden(true);
+    } else {
+      setNavLocked(false);
+      setNavHidden(false);
+    }
+    return () => {
+      setNavLocked(false);
+      setNavHidden(false);
+    };
   }, [
     showForm,
     showPicker,
@@ -5374,7 +5384,11 @@ export default function SongsPanel() {
             <div
               ref={editorScrollRef}
               className="flex-1 overflow-y-auto no-scrollbar"
-              style={{ padding: '0 16px 100px', position: 'relative' }}
+              style={{
+                padding:
+                  '0 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                position: 'relative',
+              }}
               data-purpose="editor-content-area"
             >
               {/* Optional Lyrics / Notes Card */}
