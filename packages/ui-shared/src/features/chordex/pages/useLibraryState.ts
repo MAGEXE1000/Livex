@@ -44,7 +44,6 @@ export function useLibraryState() {
       instrument: s.settings.instrument,
       accentColor: s.settings.accentColor,
       theme: s.settings.theme,
-      tuning: s.settings.tuning,
       bassFiveString: s.settings.bassFiveString,
       amoledMode: s.settings.amoledMode,
     }))
@@ -58,7 +57,6 @@ export function useLibraryState() {
   const [chordPlaying, setChordPlaying] = useState(false);
   const [query, setQuery] = useState('');
   const [categoryQuery, setCategoryQuery] = useState('');
-  const [showTuningMenu, setShowTuningMenu] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [selectedRootFilter, setSelectedRootFilter] = useState<string>('ALL');
   const [previewInstrument, setPreviewInstrument] = useState<Instrument>(
@@ -475,8 +473,6 @@ export function useLibraryState() {
     setQuery,
     categoryQuery,
     setCategoryQuery,
-    showTuningMenu,
-    setShowTuningMenu,
     showFinder,
     setShowFinder,
     allChords,

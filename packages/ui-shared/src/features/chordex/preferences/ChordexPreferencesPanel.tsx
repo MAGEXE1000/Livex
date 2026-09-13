@@ -23,17 +23,12 @@ import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Button } from '../../../shared/design-system/buttons';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
-import {
-  MorphingActionSurface,
-  type MorphingActionRowItem,
-} from '../../../shared/design-system/MorphingActionSurface';
 
 export default function ChordexPreferencesPanel() {
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
       language: s.settings.language,
-      tuning: s.settings.tuning,
       instrument: s.settings.instrument,
       leftHanded: s.settings.leftHanded,
       showFretNumbers: s.settings.showFretNumbers,
@@ -57,32 +52,8 @@ export default function ChordexPreferencesPanel() {
   useScrollHide(scrollRef);
   const t = useT();
 
-  const standardTuning = 'Standard (EADGBE)';
-
-  const tunings = [
-    { label: t.settings.tunings.standard, value: standardTuning },
-    { label: t.settings.tunings.dropD, value: 'Drop D (DADGBE)' },
-    { label: t.settings.tunings.openG, value: 'Open G (DGDGBD)' },
-    { label: t.settings.tunings.openD, value: 'Open D (DADF#AD)' },
-    { label: 'DADGAD', value: 'DADGAD' },
-  ];
-
   const isWebDesktop = useIsWebDesktop();
   const isSpanish = (settings.language ?? 'en') === 'es';
-
-  const morphingTuningRows: MorphingActionRowItem[] = useMemo(
-    () =>
-      tunings.map((tun) => ({
-        id: tun.value,
-        label: tun.label,
-        sublabel: tun.value,
-        icon: 'tune',
-        active: settings.tuning === tun.value,
-        badge: settings.tuning === tun.value ? (isSpanish ? 'ACTIVO' : 'ACTIVE') : undefined,
-        onPress: () => useSettingsStore.getState().updateSettings({ tuning: tun.value }),
-      })),
-    [tunings, settings.tuning, isSpanish]
-  );
 
   if (isWebDesktop) {
     return (
@@ -208,35 +179,6 @@ export default function ChordexPreferencesPanel() {
                 );
               })}
             </div>
-          </SettingSection>
-
-          {/* ── TUNING ── */}
-          <SettingSection title={t.settings.sections.tuning}>
-            <SettingRow
-              label={isSpanish ? 'Afinación del Instrumento' : 'Instrument Tuning'}
-              desc={
-                isSpanish
-                  ? 'Cambia el sistema de afinación del mástil para guitarra/bajo'
-                  : 'Change the guitar/bass fretboard tuning system'
-              }
-            >
-              <MorphingActionSurface
-                buttonLabel={
-                  tunings.find((tun) => tun.value === settings.tuning)?.label ||
-                  settings.tuning ||
-                  standardTuning
-                }
-                buttonIcon="tune"
-                title={t.settings.sections.tuning}
-                subtitle={
-                  isSpanish
-                    ? 'Selecciona el sistema de afinación del mástil'
-                    : 'Select instrument fretboard tuning system'
-                }
-                accentColor={acc.from}
-                rows={morphingTuningRows}
-              />
-            </SettingRow>
           </SettingSection>
 
           {/* ── CHORD DIAGRAM ── */}
@@ -574,23 +516,6 @@ export default function ChordexPreferencesPanel() {
             );
           })}
         </Card>
-
-        {/* ── TUNING ── */}
-        <SectionHeader icon="tune" title={t.settings.sections.tuning} />
-        <div style={{ marginBottom: 12 }}>
-          <MorphingActionSurface
-            buttonLabel={`${isSpanish ? 'Afinación:' : 'Tuning:'} ${tunings.find((t) => t.value === settings.tuning)?.label || settings.tuning || standardTuning}`}
-            buttonIcon="tune"
-            title={t.settings.sections.tuning}
-            subtitle={
-              isSpanish
-                ? 'Selecciona la afinación del mástil para guitarra/bajo'
-                : 'Change the guitar/bass fretboard tuning system'
-            }
-            accentColor={acc.from}
-            rows={morphingTuningRows}
-          />
-        </div>
 
         {/* ── CHORD DIAGRAM ── */}
         <SectionHeader icon="schema" title={t.settings.sections.chordDiagram} />

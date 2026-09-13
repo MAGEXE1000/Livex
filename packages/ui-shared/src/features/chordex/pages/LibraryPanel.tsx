@@ -144,7 +144,6 @@ export default function LibraryPanel() {
                     handleChordClick={state.handleChordClick}
                     accent={accent}
                     isLight={state.isLight}
-                    tuning={settings?.tuning}
                     scrollRef={state.scrollRef}
                   />
                 )}

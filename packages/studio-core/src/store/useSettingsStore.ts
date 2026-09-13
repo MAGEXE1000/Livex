@@ -29,7 +29,7 @@ export interface AppSettings {
   accentColor?: string;
   showNoteNames: boolean;
   showIntervals: boolean;
-  tuning: string;
+  tuning?: string;
   amoledMode: boolean;
   leftHanded: boolean;
   showFretNumbers: boolean;
@@ -120,7 +120,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   accentColor: 'blue',
   showNoteNames: true,
   showIntervals: false,
-  tuning: 'Standard (EADGBE)',
   amoledMode: false,
   leftHanded: false,
   showFretNumbers: true,

@@ -1006,7 +1006,6 @@ export function CategoryScreenView({
   handleChordClick,
   accent,
   isLight,
-  tuning = 'Standard (EADGBE)',
   scrollRef,
 }: {
   activeType: string;
@@ -1020,7 +1019,6 @@ export function CategoryScreenView({
   handleChordClick: (id: string, eventOrElement?: any) => void;
   accent?: any;
   isLight?: boolean;
-  tuning?: string;
   scrollRef?: any;
 }) {
   return (
@@ -1240,8 +1238,6 @@ export function LibraryMainView({ state }: { state: any }) {
     setQuery,
     categoryQuery,
     setCategoryQuery,
-    showTuningMenu,
-    setShowTuningMenu,
     settings,
     searchResults,
     handleChordClick,
@@ -1316,7 +1312,6 @@ export function LibraryMainView({ state }: { state: any }) {
         handleChordClick={handleChordClick}
         accent={accent}
         isLight={isLight}
-        tuning={settings?.tuning}
         scrollRef={scrollRef}
       />
     );
