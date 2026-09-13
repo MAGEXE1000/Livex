@@ -145,6 +145,61 @@ export function stopTunerReferenceAudio(): void {
   }
 }
 
+/**
+ * Converts note name with octave (e.g. 'E2', 'D#3', 'Bb1') to standard MIDI note number.
+ */
+export function noteNameToMidi(fullName: string): number {
+  if (!fullName) return 69;
+  const match = fullName.trim().match(/^([A-Ga-g])([#b]?)(-?\d+)$/);
+  if (!match) return 69;
+  const letter = match[1].toUpperCase();
+  const acc = match[2];
+  const octave = parseInt(match[3], 10);
+
+  const baseMap: Record<string, number> = {
+    C: 0,
+    D: 2,
+    E: 4,
+    F: 5,
+    G: 7,
+    A: 9,
+    B: 11,
+  };
+  let semitone = baseMap[letter] ?? 0;
+  if (acc === '#') semitone += 1;
+  else if (acc === 'b') semitone -= 1;
+
+  return (octave + 1) * 12 + semitone;
+}
+
+/**
+ * Finds the nearest recorded sample anchor within a family bank.
+ */
+function findNearestAnchor(
+  familyBank: Record<string, string>,
+  targetMidi: number
+): { noteName: string; midi: number } | null {
+  const availableNotes = Object.keys(familyBank);
+  if (availableNotes.length === 0) return null;
+
+  let bestNote = availableNotes[0];
+  let bestMidi = noteNameToMidi(bestNote);
+  let minDiff = Math.abs(targetMidi - bestMidi);
+
+  for (let i = 1; i < availableNotes.length; i++) {
+    const note = availableNotes[i];
+    const midi = noteNameToMidi(note);
+    const diff = Math.abs(targetMidi - midi);
+    if (diff < minDiff) {
+      minDiff = diff;
+      bestNote = note;
+      bestMidi = midi;
+    }
+  }
+
+  return { noteName: bestNote, midi: bestMidi };
+}
+
 export interface PlayTunerReferenceOptions {
   target: InstrumentStringTarget;
   mode: InstrumentTuningMode;
@@ -159,6 +214,8 @@ export interface PlayTunerReferenceOptions {
  * - Electric guitar (clean recorded strings)
  * - Acoustic guitar (steel string recordings)
  * - 4-string bass & 5-string bass (fingerstyle bass recordings)
+ * - Universal resampling for all alternate tunings (Drop D, DADGAD, Open G, etc.)
+ *   relative to nearest recorded anchor sample
  * - Pitch adjustment matching reference A4 (e.g. 440, 442, 432 Hz) via playbackRate
  * - Anti-click attack and smooth crossfade stopping previous tones
  */
@@ -179,7 +236,25 @@ export async function playTunerReferenceString(
   stopTunerReferenceAudio();
 
   const family = getFamilyForMode(mode);
-  const buffer = await getOrDecodeNoteBuffer(ctx, family, target.fullName);
+  const bank = await getSampleBank();
+  const familyBank = bank[family];
+  if (!familyBank) return;
+
+  const targetMidi = noteNameToMidi(target.fullName);
+  let sampleNoteName = target.fullName;
+  let pitchShiftSemitones = 0;
+
+  if (familyBank[target.fullName]) {
+    sampleNoteName = target.fullName;
+    pitchShiftSemitones = 0;
+  } else {
+    const anchor = findNearestAnchor(familyBank, targetMidi);
+    if (!anchor) return;
+    sampleNoteName = anchor.noteName;
+    pitchShiftSemitones = targetMidi - anchor.midi;
+  }
+
+  const buffer = await getOrDecodeNoteBuffer(ctx, family, sampleNoteName);
   if (!buffer) return;
 
   const now = ctx.currentTime;
@@ -187,7 +262,10 @@ export async function playTunerReferenceString(
   source.buffer = buffer;
 
   // Exact pitch adjustment relative to A4 (recorded samples are at A4=440Hz)
-  const playbackRate = Math.max(0.5, Math.min(2.0, (refA4 || 440) / 440));
+  // multiplied by semitone shift ratio 2^(semitones / 12) for alternate tunings
+  const a4Ratio = (refA4 || 440) / 440;
+  const pitchRatio = Math.pow(2, pitchShiftSemitones / 12);
+  const playbackRate = Math.max(0.25, Math.min(4.0, a4Ratio * pitchRatio));
   source.playbackRate.setValueAtTime(playbackRate, now);
 
   const gain = ctx.createGain();

@@ -76,7 +76,8 @@ export function calculatePitchMetrics(
   isCurrentlyInTune: boolean = false,
   exitToleranceCents: number = 4.5,
   mode: InstrumentTuningMode = 'electric',
-  manualTarget: InstrumentStringTarget | null = null
+  manualTarget: InstrumentStringTarget | null = null,
+  activeStrings?: readonly InstrumentStringTarget[]
 ): PitchMetrics {
   if (frequency <= 0 || !Number.isFinite(frequency)) {
     return {
@@ -126,8 +127,8 @@ export function calculatePitchMetrics(
     octave = Math.floor(roundedMidi / 12) - 1;
     fullName = `${noteName}${octave}`;
 
-    // Find nearest string in current instrument mode
-    activeString = findNearestString(frequency, mode);
+    // Find nearest string in current instrument mode or active tuning
+    activeString = findNearestString(frequency, mode, manualTarget, activeStrings);
   }
 
   // Evaluate in-tune status with hysteresis
@@ -161,17 +162,18 @@ export function calculatePitchMetrics(
 }
 
 /**
- * Find the nearest string target for any instrument mode (Guitar, Bass 4, Bass 5).
+ * Find the nearest string target for any instrument mode (Guitar, Bass 4, Bass 5) or custom active tuning.
  */
 export function findNearestString(
   frequency: number,
   mode: InstrumentTuningMode = 'electric',
-  manualTarget: InstrumentStringTarget | null = null
+  manualTarget: InstrumentStringTarget | null = null,
+  activeStrings?: readonly InstrumentStringTarget[]
 ): InstrumentStringTarget | null {
   if (manualTarget) return manualTarget;
   if (frequency <= 0 || !Number.isFinite(frequency)) return null;
 
-  const strings = getTargetStringsForMode(mode);
+  const strings = activeStrings || getTargetStringsForMode(mode);
   let nearest: InstrumentStringTarget | null = null;
   let minCentsDiff = Infinity;
 

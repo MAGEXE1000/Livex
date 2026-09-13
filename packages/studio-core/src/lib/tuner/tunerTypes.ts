@@ -4,6 +4,8 @@ export type InstrumentTuningMode = 'acoustic' | 'electric' | 'bass-4' | 'bass-5'
 
 export type TuningStatus = 'flat' | 'in_tune' | 'sharp' | 'silent' | 'weak';
 
+export type TuningCategory = 'Standard' | 'Drop / Power' | 'Open' | 'Alternate';
+
 export interface InstrumentStringTarget {
   name: string; // e.g. "Low E", "A", "D", "G", "B", "High E"
   note: string; // e.g. "E"
@@ -11,6 +13,17 @@ export interface InstrumentStringTarget {
   fullName: string; // e.g. "E2"
   frequency: number; // e.g. 82.41
   stringNumber: number; // 6, 5, 4, 3, 2, 1 (or 4, 3, 2, 1 for bass)
+}
+
+export interface InstrumentTuningDefinition {
+  id: string;
+  name: string;
+  shortName?: string;
+  instrumentCompatibility: readonly InstrumentTuningMode[];
+  instrumentFamily: InstrumentFamily;
+  category: TuningCategory;
+  strings: readonly InstrumentStringTarget[];
+  description?: string;
 }
 
 /** Backward compatibility alias for guitar-only consumers */
@@ -52,6 +65,8 @@ export interface TunerFramePayload {
 
 export interface TunerEngineOptions {
   instrumentMode: InstrumentTuningMode;
+  tuningId?: string;
+  activeTuning?: InstrumentTuningDefinition;
   referenceA4?: number; // default: 440
   inTuneToleranceCents?: number; // default: 3.5
   exitTuneToleranceCents?: number; // default: 4.5 (hysteresis)

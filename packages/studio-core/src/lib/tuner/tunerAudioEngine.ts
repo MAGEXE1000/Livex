@@ -8,12 +8,17 @@ import {
 } from './pitchMath';
 import type {
   InstrumentStringTarget,
+  InstrumentTuningDefinition,
   InstrumentTuningMode,
   PitchMetrics,
   TunerEngineOptions,
   TunerFramePayload,
   TunerLifecycleState,
 } from './tunerTypes';
+import {
+  getDefaultTuningForMode,
+  getTuningById,
+} from './tuningDefinitions';
 import {
   playTunerReferenceString,
   preloadTunerReferenceAudio,
@@ -25,6 +30,7 @@ const REQUIRED_IN_TUNE_FRAMES = 3;
 
 export class TunerAudioEngine {
   private mode: InstrumentTuningMode;
+  private activeTuning: InstrumentTuningDefinition;
   private refA4: number;
   private inTuneToleranceCents: number;
   private exitTuneToleranceCents: number;
@@ -59,6 +65,13 @@ export class TunerAudioEngine {
 
   constructor(options: TunerEngineOptions) {
     this.mode = options.instrumentMode;
+    if (options.activeTuning) {
+      this.activeTuning = options.activeTuning;
+    } else if (options.tuningId) {
+      this.activeTuning = getTuningById(options.tuningId) || getDefaultTuningForMode(this.mode);
+    } else {
+      this.activeTuning = getDefaultTuningForMode(this.mode);
+    }
     this.refA4 = options.referenceA4 ?? 440;
     this.inTuneToleranceCents = options.inTuneToleranceCents ?? 3.5;
     this.exitTuneToleranceCents = options.exitTuneToleranceCents ?? 4.5;
@@ -73,11 +86,27 @@ export class TunerAudioEngine {
   public setMode(newMode: InstrumentTuningMode) {
     if (this.mode === newMode) return;
     this.mode = newMode;
+    if (!this.activeTuning.instrumentCompatibility.includes(newMode)) {
+      this.activeTuning = getDefaultTuningForMode(newMode);
+    }
     this.updateAudioFilters();
   }
 
   public getMode(): InstrumentTuningMode {
     return this.mode;
+  }
+
+  public setTuning(tuning: InstrumentTuningDefinition | string): void {
+    const resolved = typeof tuning === 'string' ? getTuningById(tuning) : tuning;
+    if (!resolved) return;
+    this.activeTuning = resolved;
+    if (!resolved.instrumentCompatibility.includes(this.mode)) {
+      this.setMode(resolved.instrumentCompatibility[0]);
+    }
+  }
+
+  public getActiveTuning(): InstrumentTuningDefinition {
+    return this.activeTuning;
   }
 
   public setReferenceA4(freq: number) {
@@ -488,7 +517,8 @@ export class TunerAudioEngine {
       this.currentlyInTune,
       this.exitTuneToleranceCents,
       this.mode,
-      this.manualTargetString
+      this.manualTargetString,
+      this.activeTuning.strings
     );
 
     // 7. Stable vs In-Tune state evaluation

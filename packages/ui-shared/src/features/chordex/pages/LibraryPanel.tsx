@@ -215,6 +215,10 @@ export default function LibraryPanel() {
             isLight={state.isLight}
             isAmoled={state.isAmoled}
             onClose={() => state.closeTuner()}
+            onSwitchToFinder={() => {
+              state.closeTuner();
+              state.openFinder();
+            }}
           />
         </Suspense>
       </MorphingActionSurface>

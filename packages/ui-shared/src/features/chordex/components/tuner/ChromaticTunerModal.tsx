@@ -1,20 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Sliders, ChevronDown } from 'lucide-react';
 import {
   TunerAudioEngine,
-  getTargetStringsForMode,
+  getDefaultTuningForMode,
+  getTuningById,
   type InstrumentTuningMode,
   type TunerLifecycleState,
   type InstrumentStringTarget,
+  type InstrumentTuningDefinition,
 } from '@workspace/studio-core';
+import { TuningForkIcon } from './TuningForkIcon';
+import { TuningSelectorModal } from './TuningSelectorModal';
 
 interface ChromaticTunerModalProps {
   onClose: () => void;
+  onSwitchToFinder?: () => void;
   accent?: { from: string; to: string; ring?: string };
   isLight?: boolean;
   isAmoled?: boolean;
 }
 
 const REFERENCE_PITCH_OPTIONS = [440, 442, 432] as const;
+
+const STORAGE_KEY = 'chordex_tuner_settings';
 
 // 11-step chromatic tuning scale (-5 to +5) matching reference visual design
 const SCALE_BARS = [
@@ -33,17 +41,44 @@ const SCALE_BARS = [
 
 export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   onClose,
+  onSwitchToFinder,
   isLight = false,
   isAmoled = false,
 }) => {
-  // Instrument mode & tuner configuration state
-  const [instrumentMode, setInstrumentMode] = useState<InstrumentTuningMode>('electric');
+  // Load persisted settings if available
+  const initialSettings = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { mode: 'electric' as InstrumentTuningMode, tuningId: 'guitar-standard', refA4: 440 };
+    }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const mode = (parsed.mode || 'electric') as InstrumentTuningMode;
+        const tuningId = parsed.tuningId || 'guitar-standard';
+        const refA4 = parsed.refA4 || 440;
+        return { mode, tuningId, refA4 };
+      }
+    } catch {}
+    return { mode: 'electric' as InstrumentTuningMode, tuningId: 'guitar-standard', refA4: 440 };
+  }, []);
+
+  // Instrument mode & active tuning state
+  const [instrumentMode, setInstrumentMode] = useState<InstrumentTuningMode>(initialSettings.mode);
+  const [activeTuning, setActiveTuning] = useState<InstrumentTuningDefinition>(() => {
+    return (
+      getTuningById(initialSettings.tuningId) ||
+      getDefaultTuningForMode(initialSettings.mode)
+    );
+  });
+
   const [lifecycleState, setLifecycleState] = useState<TunerLifecycleState>('initial');
   const [isAuto, setIsAuto] = useState<boolean>(true);
   const [manualTarget, setManualTarget] = useState<InstrumentStringTarget | null>(null);
-  const [refA4, setRefA4] = useState<number>(440);
+  const [refA4, setRefA4] = useState<number>(initialSettings.refA4);
+  const [showTuningSelector, setShowTuningSelector] = useState<boolean>(false);
 
-  // Note display state (updated on note change or status change)
+  // Note display state
   const [activeNoteName, setActiveNoteName] = useState<string>('-');
   const [activeOctave, setActiveOctave] = useState<number | null>(null);
   const [activeString, setActiveString] = useState<InstrumentStringTarget | null>(null);
@@ -55,6 +90,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   const needleRef = useRef<HTMLDivElement>(null);
   const centsPillRef = useRef<HTMLDivElement>(null);
   const centsTextRef = useRef<HTMLSpanElement>(null);
+  const statusBadgeRef = useRef<HTMLDivElement>(null);
 
   // Target cents for smooth needle interpolation
   const currentCentsRef = useRef<number>(0);
@@ -62,10 +98,10 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   const lastActiveNoteRef = useRef<string>('-');
   const lastStatusRef = useRef<string>('silent');
 
-  // String targets for current mode
+  // Dynamic string targets derived from active tuning
   const currentStrings = useMemo(() => {
-    return getTargetStringsForMode(instrumentMode);
-  }, [instrumentMode]);
+    return activeTuning.strings;
+  }, [activeTuning]);
 
   // Split string targets: Left = lower strings (e.g. 6, 5, 4), Right = higher strings (e.g. 3, 2, 1)
   const { leftStrings, rightStrings } = useMemo(() => {
@@ -90,9 +126,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   // Direct high-performance DOM update to bypass React reconciliation at audio frame rates
   const updateNeedleDom = useCallback(
     (cents: number, _freq: number, status: string, _nearestStr: InstrumentStringTarget | null) => {
-      // Scale range is -50 to +50 cents. Clamping to bounds.
       const clamped = Math.max(-50, Math.min(50, cents));
-      // Max travel offset in px from center: in standard mobile scale width (~280px-300px), 115px reaches bar -5/+5
       const maxTravelPx = 115;
       const offsetPx = (clamped / 50) * maxTravelPx;
 
@@ -101,7 +135,8 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
         if (status === 'in_tune') {
           needleRef.current.style.backgroundColor = '#22c55e';
-          needleRef.current.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.9), 0 0 20px rgba(34, 197, 94, 0.4)';
+          needleRef.current.style.boxShadow =
+            '0 0 14px rgba(34, 197, 94, 0.95), 0 0 24px rgba(34, 197, 94, 0.5)';
           needleRef.current.style.opacity = '1';
         } else if (status === 'flat') {
           needleRef.current.style.backgroundColor = '#38bdf8';
@@ -114,7 +149,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         } else {
           needleRef.current.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
           needleRef.current.style.boxShadow = 'none';
-          needleRef.current.style.opacity = '0.4';
+          needleRef.current.style.opacity = '0.35';
         }
       }
 
@@ -131,27 +166,58 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
       if (centsPillRef.current) {
         if (status === 'in_tune') {
-          centsPillRef.current.style.backgroundColor = '#4ade80';
-          centsPillRef.current.style.color = '#052e16';
+          centsPillRef.current.style.backgroundColor = '#22c55e';
+          centsPillRef.current.style.color = '#022c22';
         } else if (status === 'flat') {
-          centsPillRef.current.style.backgroundColor = '#2563eb';
+          centsPillRef.current.style.backgroundColor = '#0284c7';
           centsPillRef.current.style.color = '#ffffff';
         } else if (status === 'sharp') {
           centsPillRef.current.style.backgroundColor = '#ea580c';
           centsPillRef.current.style.color = '#ffffff';
         } else {
           centsPillRef.current.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-          centsPillRef.current.style.color = '#9ca3af';
+          centsPillRef.current.style.color = '#94a3b8';
+        }
+      }
+
+      if (statusBadgeRef.current) {
+        if (status === 'in_tune') {
+          statusBadgeRef.current.textContent = 'IN TUNE';
+          statusBadgeRef.current.style.color = '#4ade80';
+        } else if (status === 'flat') {
+          statusBadgeRef.current.textContent = 'TOO FLAT';
+          statusBadgeRef.current.style.color = '#38bdf8';
+        } else if (status === 'sharp') {
+          statusBadgeRef.current.textContent = 'TOO SHARP';
+          statusBadgeRef.current.style.color = '#fb923c';
+        } else {
+          statusBadgeRef.current.textContent = 'LISTENING...';
+          statusBadgeRef.current.style.color = '#64748b';
         }
       }
     },
     []
   );
 
+  // Persist settings changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          mode: instrumentMode,
+          tuningId: activeTuning.id,
+          refA4,
+        })
+      );
+    } catch {}
+  }, [instrumentMode, activeTuning, refA4]);
+
   // Audio Engine Lifecycle
   useEffect(() => {
     const engine = new TunerAudioEngine({
       instrumentMode,
+      activeTuning,
       referenceA4: refA4,
       inTuneToleranceCents: 3.5,
       exitTuneToleranceCents: 4.5,
@@ -219,14 +285,29 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   // Handle instrument mode switch
   const handleModeChange = (newMode: InstrumentTuningMode) => {
     setInstrumentMode(newMode);
+    const defTuning = getDefaultTuningForMode(newMode);
+    setActiveTuning(defTuning);
     setManualTarget(null);
     setIsAuto(true);
     engineRef.current?.setMode(newMode);
+    engineRef.current?.setTuning(defTuning);
     engineRef.current?.setManualTargetString(null);
     engineRef.current?.preloadReferenceAudio(newMode);
   };
 
-  // Handle string card click (selects string and immediately plays realistic instrument reference sound)
+  // Handle tuning selection from modal
+  const handleTuningSelect = (tuning: InstrumentTuningDefinition) => {
+    setActiveTuning(tuning);
+    if (!tuning.instrumentCompatibility.includes(instrumentMode)) {
+      setInstrumentMode(tuning.instrumentCompatibility[0]);
+    }
+    setManualTarget(null);
+    setIsAuto(true);
+    engineRef.current?.setTuning(tuning);
+    engineRef.current?.setManualTargetString(null);
+  };
+
+  // Handle string card click (selects string and immediately plays authentic recorded reference sound)
   const handleStringCardClick = (target: InstrumentStringTarget) => {
     setIsAuto(false);
     setManualTarget(target);
@@ -238,13 +319,11 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   // Toggle AUTO switch
   const handleToggleAuto = () => {
     if (isAuto) {
-      // If currently auto, lock onto active string or first string
       const lockTarget = activeString || currentStrings[0];
       setIsAuto(false);
       setManualTarget(lockTarget);
       engineRef.current?.setManualTargetString(lockTarget);
     } else {
-      // Return to full AUTO detection
       setIsAuto(true);
       setManualTarget(null);
       engineRef.current?.setManualTargetString(null);
@@ -260,64 +339,65 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     engineRef.current?.setReferenceA4(nextPitch);
   };
 
-  // Theme colors matching reference dark UI
-  const bgColor = isAmoled ? '#000000' : '#07080a';
-  const cardBg = '#101218';
+  const bgColor = isAmoled ? '#000000' : '#07090e';
+  const cardBg = '#0e111a';
   const borderColor = 'rgba(255, 255, 255, 0.08)';
 
   return (
     <div
-      className="flex flex-col w-full h-full p-4 sm:p-5 select-none overflow-y-auto no-scrollbar"
+      className="flex flex-col w-full h-full p-3.5 sm:p-4 select-none overflow-y-auto no-scrollbar"
       style={{
         backgroundColor: bgColor,
         color: '#ffffff',
       }}
       data-testid="chromatic-tuner-modal"
     >
-      <div className="max-w-[440px] mx-auto w-full flex flex-col gap-3.5">
-        {/* 1. Header: Segmented Instrument Selector Pill & Circular Close Button */}
+      <div className="max-w-[440px] mx-auto w-full flex flex-col gap-3">
+        {/* 1. Header: Shared Segmented Pill (Finder & Tuner) + Close Button */}
         <div className="flex items-center justify-between gap-3">
-          {/* Instrument Selector Pill */}
+          {/* Shared Segmented Pill */}
           <div
-            className="flex items-center p-1 rounded-full border"
+            className="flex items-center p-1 rounded-full border shadow-sm"
             style={{
-              backgroundColor: '#12141a',
+              backgroundColor: '#12151f',
               borderColor,
             }}
           >
-            {(
-              [
-                { id: 'electric', label: 'Electric' },
-                { id: 'acoustic', label: 'Acoustic' },
-                { id: 'bass-4', label: 'Bass 4' },
-                { id: 'bass-5', label: 'Bass 5' },
-              ] as const
-            ).map((item) => {
-              const isSelected = instrumentMode === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleModeChange(item.id)}
-                  className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => {
+                if (onSwitchToFinder) {
+                  onSwitchToFinder();
+                } else {
+                  onClose();
+                }
+              }}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer"
+            >
+              <span className="material-symbols-rounded text-[17px] text-blue-400">
+                travel_explore
+              </span>
+              <span>Finder</span>
+            </button>
+
+            <button
+              type="button"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-950/40 cursor-default"
+            >
+              <span className="flex items-center justify-center text-cyan-200">
+                <TuningForkIcon size={15} />
+              </span>
+              <span>Tuner</span>
+            </button>
           </div>
 
-          {/* Circular Close Button */}
+          {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full border transition-all active:scale-95 cursor-pointer text-zinc-400 hover:text-white"
+            className="flex items-center justify-center w-9 h-9 rounded-full border transition-all active:scale-95 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/40"
             style={{
-              backgroundColor: '#181a20',
+              backgroundColor: '#12151f',
               borderColor,
             }}
             aria-label="Close Tuner"
@@ -326,44 +406,100 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </button>
         </div>
 
-        {/* 2. Sub-Row Controls: A4 Reference Pitch Pill | Auto Switch */}
-        <div className="flex items-center justify-center gap-3 py-0.5">
-          {/* A4 Reference Pitch Pill */}
-          <button
-            type="button"
-            onClick={handleCycleRefA4}
-            className="px-3.5 py-1 rounded-full border text-xs text-zinc-300 font-medium transition-all hover:text-white cursor-pointer active:scale-95"
-            style={{
-              backgroundColor: '#12141a',
-              borderColor,
-            }}
-            title="Cycle Reference A4 pitch (440, 442, 432 Hz)"
-          >
-            A4 = {refA4} Hz
-          </button>
-
-          {/* Vertical Divider */}
-          <div className="w-[1px] h-4 bg-white/10" />
-
-          {/* Auto Toggle Switch */}
-          <div
-            className="flex items-center gap-2 cursor-pointer select-none"
-            onClick={handleToggleAuto}
-          >
-            <span className="text-xs text-zinc-300 font-medium">Auto</span>
+        {/* 2. Controls Sub-Header: Instrument Selector & Dedicated Tuning Button */}
+        <div className="flex flex-col gap-2">
+          {/* Instrument Mode Tabs */}
+          <div className="flex items-center justify-between gap-2">
             <div
-              className={`w-11 h-6 rounded-full p-0.5 transition-colors border flex items-center ${
-                isAuto ? 'bg-[#1b1e26] border-white/20' : 'bg-zinc-800 border-zinc-700'
+              className="flex items-center p-1 rounded-xl border flex-1"
+              style={{
+                backgroundColor: '#12151f',
+                borderColor,
+              }}
+            >
+              {(
+                [
+                  { id: 'electric', label: 'Electric' },
+                  { id: 'acoustic', label: 'Acoustic' },
+                  { id: 'bass-4', label: 'Bass 4' },
+                  { id: 'bass-5', label: 'Bass 5' },
+                ] as const
+              ).map((item) => {
+                const isSelected = instrumentMode === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleModeChange(item.id)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center truncate ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tuning Selector Button + Reference Pitch + Auto */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Tuning Selector Modal Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowTuningSelector(true)}
+              className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-xl border transition-all cursor-pointer active:scale-98"
+              style={{
+                backgroundColor: '#12151f',
+                borderColor: 'rgba(6, 182, 212, 0.35)',
+              }}
+              title="Open tuning selection"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Sliders className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                <span className="text-xs font-bold text-white truncate tracking-wide">
+                  {activeTuning.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-mono text-cyan-300/80 flex-shrink-0">
+                <span>{activeTuning.strings.map((s) => s.note).join(' ')}</span>
+                <ChevronDown className="w-3 h-3 text-cyan-400" />
+              </div>
+            </button>
+
+            {/* A4 Reference Pitch */}
+            <button
+              type="button"
+              onClick={handleCycleRefA4}
+              className="px-2.5 py-1.5 rounded-xl border text-[11px] text-slate-300 font-medium transition-all hover:text-white cursor-pointer active:scale-95 flex-shrink-0 font-mono"
+              style={{
+                backgroundColor: '#12151f',
+                borderColor,
+              }}
+              title="Cycle Reference A4 pitch (440, 442, 432 Hz)"
+            >
+              A4 = {refA4}
+            </button>
+
+            {/* Auto Switch */}
+            <button
+              type="button"
+              onClick={handleToggleAuto}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer select-none text-[11px] font-semibold flex-shrink-0 ${
+                isAuto
+                  ? 'border-cyan-500/40 bg-cyan-950/30 text-cyan-300'
+                  : 'border-slate-800 bg-[#12151f] text-slate-400'
               }`}
             >
+              <span>Auto</span>
               <div
-                className={`w-5 h-5 rounded-full shadow-md transition-transform duration-200 ${
-                  isAuto
-                    ? 'translate-x-5 bg-[#8e95a5]'
-                    : 'translate-x-0 bg-zinc-500'
+                className={`w-2 h-2 rounded-full ${
+                  isAuto ? 'bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]' : 'bg-slate-600'
                 }`}
               />
-            </div>
+            </button>
           </div>
         </div>
 
@@ -399,6 +535,15 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
               <span>FLAT</span>
               <span className="text-base font-normal">♭</span>
             </div>
+
+            {/* Status Live Indicator Badge */}
+            <div
+              ref={statusBadgeRef}
+              className="text-[10px] font-bold uppercase tracking-widest text-slate-500 font-mono transition-colors"
+            >
+              LISTENING...
+            </div>
+
             <div className="text-[#f97316] font-black text-xs sm:text-sm tracking-wider flex items-center gap-1">
               <span>SHARP</span>
               <span className="text-base font-normal">♯</span>
@@ -409,7 +554,6 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           <div className="relative w-full max-w-[320px] mx-auto pt-3 pb-1">
             {/* Center Emerald Hourglass Glow Beam */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-              {/* Radial background blur */}
               <div
                 className="w-28 h-12 rounded-full blur-md opacity-70"
                 style={{
@@ -417,7 +561,6 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                     'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.6) 0%, rgba(34, 197, 94, 0.15) 55%, transparent 80%)',
                 }}
               />
-              {/* Hourglass beam polygon */}
               <svg
                 className="absolute h-9 w-24 opacity-60"
                 viewBox="0 0 100 50"
@@ -487,29 +630,35 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
             </div>
           </div>
 
-          {/* Detected Note Name (Large Bold Centered) */}
-          <div className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2.5 mb-1.5">
-            {activeNoteName !== '-'
-              ? `${activeNoteName}${activeOctave !== null ? activeOctave : ''}`
-              : '-'}
+          {/* Detected Note Name (Large Bold Centered with Subscript Octave) */}
+          <div className="flex items-baseline justify-center mt-2.5 mb-1.5">
+            <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+              {activeNoteName}
+            </span>
+            {activeOctave !== null && activeNoteName !== '-' && (
+              <span className="text-xl sm:text-2xl font-bold text-slate-400 ml-1 font-mono">
+                {activeOctave}
+              </span>
+            )}
           </div>
 
           {/* Deviation Cents Pill (e.g. 0 Green Pill) */}
           <div
             ref={centsPillRef}
-            className="px-3.5 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[36px]"
+            className="px-3.5 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[38px] shadow-sm"
             style={{
-              backgroundColor: tuningStatus === 'in_tune' ? '#4ade80' : 'rgba(255, 255, 255, 0.08)',
-              color: tuningStatus === 'in_tune' ? '#052e16' : '#9ca3af',
+              backgroundColor:
+                tuningStatus === 'in_tune' ? '#22c55e' : 'rgba(255, 255, 255, 0.08)',
+              color: tuningStatus === 'in_tune' ? '#022c22' : '#94a3b8',
             }}
           >
             <span ref={centsTextRef}>0</span>
           </div>
         </div>
 
-        {/* 4. Lower Section: Instrument Headstock Graphic flanked by String Cards */}
+        {/* 4. Lower Section: Photorealistic Headstock Graphic Flanked by Dynamic String Cards */}
         <div className="relative flex items-center justify-between gap-1 sm:gap-2 mt-1 px-0.5">
-          {/* Left Column: Lower Strings (Strings 6, 5, 4 for 6-string guitar) */}
+          {/* Left Column: Lower Strings (e.g. 6, 5, 4 for 6-string guitar) */}
           <div className="flex flex-col gap-2.5 z-10 w-[118px] sm:w-[130px] flex-shrink-0">
             {leftStrings.map((str) => {
               const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
@@ -518,16 +667,16 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
               return (
                 <div
-                  key={str.fullName}
+                  key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
                   onClick={() => handleStringCardClick(str)}
                   className={`flex items-center justify-between px-3 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
                     isInTune
-                      ? 'border-emerald-500/80 bg-emerald-500/10 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
+                      ? 'border-emerald-500/80 bg-emerald-500/15 shadow-[0_0_12px_rgba(34,197,94,0.3)]'
                       : isManualLocked
-                        ? 'border-blue-500/80 bg-blue-500/15 ring-1 ring-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                        ? 'border-cyan-500/80 bg-cyan-500/15 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
                         : isDetected
-                          ? 'border-blue-500/50 bg-blue-500/10'
-                          : 'border-white/[0.06] bg-[#101218] hover:border-white/[0.12]'
+                          ? 'border-blue-500/60 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
+                          : 'border-white/[0.08] bg-[#101218] hover:border-white/[0.16]'
                   }`}
                   role="button"
                   tabIndex={0}
@@ -543,7 +692,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                     <span className="text-sm font-extrabold text-white leading-tight">
                       {str.fullName}
                     </span>
-                    <span className="text-[10px] font-mono text-[#8a919e] leading-tight mt-0.5">
+                    <span className="text-[10px] font-mono text-slate-400 leading-tight mt-0.5">
                       {str.frequency.toFixed(1)} Hz
                     </span>
                   </div>
@@ -552,17 +701,17 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
             })}
           </div>
 
-          {/* Center Column: Photorealistic Headstock Graphic */}
-          <div className="relative flex-1 flex items-center justify-center h-48 sm:h-52 overflow-visible pointer-events-none">
+          {/* Center Column: Photorealistic Headstock Graphic (Scaled to h-64 sm:h-72) */}
+          <div className="relative flex-1 flex items-center justify-center h-64 sm:h-72 max-h-[280px] overflow-visible pointer-events-none">
             <img
               src={headstockImgSrc}
               alt={`${instrumentMode} headstock`}
-              className="max-h-48 sm:max-h-52 w-auto object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] filter brightness-100 contrast-105 select-none"
+              className="max-h-64 sm:max-h-72 w-auto object-contain drop-shadow-[0_6px_25px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105 select-none"
               loading="eager"
             />
           </div>
 
-          {/* Right Column: Higher Strings (Strings 3, 2, 1 for 6-string guitar - Mirrored layout) */}
+          {/* Right Column: Higher Strings (e.g. 3, 2, 1 for 6-string guitar - Mirrored layout) */}
           <div className="flex flex-col gap-2.5 z-10 w-[118px] sm:w-[130px] flex-shrink-0">
             {rightStrings.map((str) => {
               const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
@@ -571,16 +720,16 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
               return (
                 <div
-                  key={str.fullName}
+                  key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
                   onClick={() => handleStringCardClick(str)}
                   className={`flex items-center justify-between px-3 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
                     isInTune
-                      ? 'border-emerald-500/80 bg-emerald-500/10 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
+                      ? 'border-emerald-500/80 bg-emerald-500/15 shadow-[0_0_12px_rgba(34,197,94,0.3)]'
                       : isManualLocked
-                        ? 'border-blue-500/80 bg-blue-500/15 ring-1 ring-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                        ? 'border-cyan-500/80 bg-cyan-500/15 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
                         : isDetected
-                          ? 'border-blue-500/50 bg-blue-500/10'
-                          : 'border-white/[0.06] bg-[#101218] hover:border-white/[0.12]'
+                          ? 'border-blue-500/60 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
+                          : 'border-white/[0.08] bg-[#101218] hover:border-white/[0.16]'
                   }`}
                   role="button"
                   tabIndex={0}
@@ -591,7 +740,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                     <span className="text-sm font-extrabold text-white leading-tight">
                       {str.fullName}
                     </span>
-                    <span className="text-[10px] font-mono text-[#8a919e] leading-tight mt-0.5">
+                    <span className="text-[10px] font-mono text-slate-400 leading-tight mt-0.5">
                       {str.frequency.toFixed(1)} Hz
                     </span>
                   </div>
@@ -606,6 +755,16 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 5. Dedicated Tuning Selection Modal */}
+      <TuningSelectorModal
+        isOpen={showTuningSelector}
+        activeMode={instrumentMode}
+        activeTuningId={activeTuning.id}
+        onSelectTuning={handleTuningSelect}
+        onClose={() => setShowTuningSelector(false)}
+        onModeChange={handleModeChange}
+      />
     </div>
   );
 };

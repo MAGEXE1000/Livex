@@ -1353,7 +1353,14 @@ export function LibraryMainView({ state }: { state: any }) {
             disableHorizontalPadding={true}
             disableTopInset={true}
             actions={
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center p-0.5 rounded-full border shadow-sm"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                }}
+                data-purpose="tool-segmented-control"
+              >
                 {/* Finder Tool */}
                 <motion.button
                   type="button"
@@ -1364,16 +1371,14 @@ export function LibraryMainView({ state }: { state: any }) {
                     stiffness: 400,
                     damping: 25,
                   }}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
                   style={{
-                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
                     color: 'var(--c-text-primary, #111827)',
                   }}
                   data-purpose="tool-finder"
                 >
                   <span
-                    className="material-symbols-rounded text-[18px]"
+                    className="material-symbols-rounded text-[17px]"
                     style={{ color: 'var(--c-accent-from, #2563EB)' }}
                   >
                     travel_explore
@@ -1391,19 +1396,17 @@ export function LibraryMainView({ state }: { state: any }) {
                     stiffness: 400,
                     damping: 25,
                   }}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors"
                   style={{
-                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
                     color: 'var(--c-text-primary, #111827)',
                   }}
                   data-purpose="tool-tuner"
                 >
                   <span
-                    className="flex items-center justify-center text-[18px]"
+                    className="flex items-center justify-center text-[17px]"
                     style={{ color: 'var(--c-accent-from, #2563EB)' }}
                   >
-                    <TuningForkIcon size={17} />
+                    <TuningForkIcon size={16} />
                   </span>
                   <span>Tuner</span>
                 </motion.button>

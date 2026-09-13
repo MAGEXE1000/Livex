@@ -218,6 +218,30 @@ describe('Tuner Realistic Reference Audio Engine', () => {
 
       expect(mockCtx.createBufferSource).toHaveBeenCalled();
     });
+
+    it('universally resamples alternate tunings (e.g. Drop D D2) relative to nearest recorded anchor', async () => {
+      const dropDString6 = {
+        name: 'Drop D',
+        note: 'D',
+        octave: 2,
+        fullName: 'D2',
+        frequency: 73.42,
+        stringNumber: 6,
+      };
+
+      await playTunerReferenceString({
+        target: dropDString6,
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(mockCtx.createBufferSource).toHaveBeenCalled();
+      const lastSource = mockCtx.createBufferSource.mock.results[0].value as MockBufferSourceNode;
+      // D2 is 2 semitones below E2 anchor (38 - 40 = -2), so playbackRate = 2^(-2/12) ≈ 0.8909
+      const expectedRate = Math.pow(2, -2 / 12);
+      expect(lastSource.playbackRate.value).toBeCloseTo(expectedRate, 3);
+    });
   });
 
   describe('TunerAudioEngine Integration', () => {
