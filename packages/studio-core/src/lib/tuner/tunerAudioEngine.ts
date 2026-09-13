@@ -1,0 +1,498 @@
+import { Capacitor } from '@capacitor/core';
+import { PitchDetector } from 'pitchy';
+import { createAudioContext } from '../audioContextOptions';
+import {
+  calculatePitchMetrics,
+  calculateRms,
+  calculatePeak,
+} from './pitchMath';
+import type {
+  InstrumentTuningMode,
+  PitchMetrics,
+  TunerEngineOptions,
+  TunerFramePayload,
+  TunerLifecycleState,
+} from './tunerTypes';
+
+const BUFFER_SIZE = 2048;
+const MIN_GUITAR_FREQ = 60.0; // Drop C/B/D down to 60 Hz
+const MAX_GUITAR_FREQ = 1200.0; // Upper frets up to 1200 Hz
+const REQUIRED_IN_TUNE_FRAMES = 3;
+
+export class TunerAudioEngine {
+  private mode: InstrumentTuningMode;
+  private refA4: number;
+  private inTuneToleranceCents: number;
+  private exitTuneToleranceCents: number;
+  private onFrame?: (payload: TunerFramePayload) => void;
+  private onStateChange?: (state: TunerLifecycleState) => void;
+
+  private state: TunerLifecycleState = 'initial';
+  private audioCtx: AudioContext | null = null;
+  private stream: MediaStream | null = null;
+  private sourceNode: MediaStreamAudioSourceNode | null = null;
+  private highPassFilter: BiquadFilterNode | null = null;
+  private notchFilter50: BiquadFilterNode | null = null;
+  private notchFilter60: BiquadFilterNode | null = null;
+  private analyser: AnalyserNode | null = null;
+
+  private detector: PitchDetector<Float32Array> | null = null;
+  private buffer: Float32Array = new Float32Array(BUFFER_SIZE);
+
+  private rafId: number = 0;
+  private isRunning: boolean = false;
+  private isPaused: boolean = false;
+  private wasRunningBeforeBackground: boolean = false;
+
+  private consecutiveInTuneFrames: number = 0;
+  private currentlyInTune: boolean = false;
+  private prevPeak: number = 0;
+  private transientCooldownFrames: number = 0;
+  private appStateListenerRemover?: () => void;
+  private visibilityListener?: () => void;
+
+  constructor(options: TunerEngineOptions) {
+    this.mode = options.instrumentMode;
+    this.refA4 = options.referenceA4 ?? 440;
+    this.inTuneToleranceCents = options.inTuneToleranceCents ?? 3.5;
+    this.exitTuneToleranceCents = options.exitTuneToleranceCents ?? 4.5;
+    this.onFrame = options.onFrame;
+    this.onStateChange = options.onStateChange;
+
+    this.setupLifecycleListeners();
+  }
+
+  public setMode(newMode: InstrumentTuningMode) {
+    if (this.mode === newMode) return;
+    this.mode = newMode;
+    this.updateAudioFilters();
+  }
+
+  public getMode(): InstrumentTuningMode {
+    return this.mode;
+  }
+
+  public getState(): TunerLifecycleState {
+    return this.state;
+  }
+
+  private setState(newState: TunerLifecycleState) {
+    if (this.state === newState) return;
+    this.state = newState;
+    this.onStateChange?.(newState);
+  }
+
+  public async start(): Promise<boolean> {
+    if (this.isRunning) return true;
+    this.setState('requesting_permission');
+
+    try {
+      // 1. Native Capacitor permission check
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { AppInstaller } = await import('../apkDownloader');
+          const check = await AppInstaller.checkPermissions();
+          if (check.microphone !== 'granted') {
+            const req = await AppInstaller.requestPermissions({ aliases: ['microphone'] });
+            if (req.microphone !== 'granted') {
+              this.setState('permission_denied');
+              this.emitFrame(null, 'Microphone permission denied.');
+              return false;
+            }
+          }
+        } catch (capErr) {
+          console.warn('[TunerAudioEngine] Capacitor permission check fallback:', capErr);
+        }
+      }
+
+      // 2. Web / WebView getUserMedia stream acquisition
+      if (!navigator.mediaDevices?.getUserMedia) {
+        this.setState('no_microphone');
+        this.emitFrame(null, 'Microphone API is not supported in this environment.');
+        return false;
+      }
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+      } catch (err: unknown) {
+        console.debug('[TunerAudioEngine] Unconstrained getUserMedia fallback...');
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (fallbackErr: unknown) {
+          const e = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
+          if (
+            e.name === 'NotAllowedError' ||
+            e.name === 'PermissionDeniedError' ||
+            e.message.includes('permission')
+          ) {
+            this.setState('permission_denied');
+            this.emitFrame(null, 'Microphone permission was denied by user.');
+          } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+            this.setState('no_microphone');
+            this.emitFrame(null, 'No audio recording device found.');
+          } else {
+            this.setState('permission_permanently_denied');
+            this.emitFrame(null, e.message);
+          }
+          return false;
+        }
+      }
+
+      this.stream = stream;
+      this.setState('permission_granted');
+
+      // 3. Initialize AudioContext and Web Audio Graph
+      const ctx = createAudioContext();
+      this.audioCtx = ctx;
+
+      const source = ctx.createMediaStreamSource(stream);
+      this.sourceNode = source;
+
+      // High-pass filter at 65 Hz to reject sub-audio body thumps and handling noise
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.setValueAtTime(65, ctx.currentTime);
+      hp.Q.setValueAtTime(0.707, ctx.currentTime);
+      this.highPassFilter = hp;
+
+      // 50 Hz and 60 Hz notch filters for electric guitar pickup hum rejection
+      const n50 = ctx.createBiquadFilter();
+      n50.type = 'notch';
+      n50.frequency.setValueAtTime(50, ctx.currentTime);
+      n50.Q.setValueAtTime(6.0, ctx.currentTime);
+      this.notchFilter50 = n50;
+
+      const n60 = ctx.createBiquadFilter();
+      n60.type = 'notch';
+      n60.frequency.setValueAtTime(60, ctx.currentTime);
+      n60.Q.setValueAtTime(6.0, ctx.currentTime);
+      this.notchFilter60 = n60;
+
+      // Analyser Node
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = BUFFER_SIZE;
+      analyser.smoothingTimeConstant = 0.0; // Raw time domain samples
+      this.analyser = analyser;
+
+      // Wire up graph according to current instrument mode
+      this.wireAudioGraph();
+
+      // Pitch detector initialization
+      this.detector = PitchDetector.forFloat32Array(BUFFER_SIZE);
+
+      this.isRunning = true;
+      this.isPaused = false;
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.prevPeak = 0;
+      this.transientCooldownFrames = 0;
+
+      // Start processing loop
+      this.setState('no_signal');
+      this.loop();
+
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.setState('permission_denied');
+      this.emitFrame(null, msg);
+      return false;
+    }
+  }
+
+  private wireAudioGraph() {
+    if (!this.sourceNode || !this.highPassFilter || !this.notchFilter50 || !this.notchFilter60 || !this.analyser) {
+      return;
+    }
+
+    try {
+      this.sourceNode.disconnect();
+      this.highPassFilter.disconnect();
+      this.notchFilter50.disconnect();
+      this.notchFilter60.disconnect();
+    } catch {
+      // ignore disconnect errors on unlinked nodes
+    }
+
+    if (this.mode === 'electric') {
+      // Electric mode: Source -> HighPass 65Hz -> Notch 50Hz -> Notch 60Hz -> Analyser
+      this.sourceNode.connect(this.highPassFilter);
+      this.highPassFilter.connect(this.notchFilter50);
+      this.notchFilter50.connect(this.notchFilter60);
+      this.notchFilter60.connect(this.analyser);
+    } else {
+      // Acoustic mode: Source -> HighPass 65Hz -> Analyser
+      this.sourceNode.connect(this.highPassFilter);
+      this.highPassFilter.connect(this.analyser);
+    }
+  }
+
+  private updateAudioFilters() {
+    if (this.isRunning && this.audioCtx) {
+      this.wireAudioGraph();
+    }
+  }
+
+  private loop = () => {
+    if (!this.isRunning || this.isPaused) return;
+
+    this.analyzeFrame();
+    this.rafId = requestAnimationFrame(this.loop);
+  };
+
+  private analyzeFrame() {
+    const analyser = this.analyser;
+    const ctx = this.audioCtx;
+    const detector = this.detector;
+    if (!analyser || !ctx || !detector) return;
+
+    analyser.getFloatTimeDomainData(this.buffer);
+
+    const rms = calculateRms(this.buffer);
+    const peak = calculatePeak(this.buffer);
+
+    // Profile-specific noise floors and clarity thresholds
+    const minRms = this.mode === 'electric' ? 0.005 : 0.010;
+    const minClarity = this.mode === 'electric' ? 0.76 : 0.81;
+
+    // 1. Silence check: Signal below noise floor
+    if (rms < minRms || peak < minRms * 1.5) {
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.prevPeak = peak;
+      this.setState('no_signal');
+      this.emitFrame(null);
+      return;
+    }
+
+    // 2. Pluck transient detection: Sudden sharp rise in amplitude
+    if (peak > this.prevPeak * 2.8 && peak > 0.08) {
+      this.transientCooldownFrames = 2; // Blank 2 frames (~33ms) to avoid pick scrape noise
+    }
+    this.prevPeak = peak;
+
+    if (this.transientCooldownFrames > 0) {
+      this.transientCooldownFrames--;
+      return;
+    }
+
+    // 3. Pitch detection using Pitchy (MPM/YIN)
+    const [rawFreq, clarity] = detector.findPitch(this.buffer, ctx.sampleRate);
+
+    // 4. Clarity and frequency bounds validation
+    if (clarity < minClarity) {
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.setState('weak_signal');
+      this.emitFrame(null);
+      return;
+    }
+
+    if (rawFreq < MIN_GUITAR_FREQ || rawFreq > MAX_GUITAR_FREQ || !Number.isFinite(rawFreq)) {
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.setState('weak_signal');
+      this.emitFrame(null);
+      return;
+    }
+
+    // 5. Octave Error Protection for Low Guitar Strings
+    // When playing Low E (82.41 Hz) or A (110 Hz), second harmonic (164.8 Hz / 220 Hz)
+    // can occasionally be tracked as f0 if fundamental is heavily attenuated.
+    // If detected frequency is near 164.8 Hz (E3) and there is subharmonic energy around 82.4 Hz,
+    // we correct to the true fundamental.
+    let detectedFreq = rawFreq;
+    if (detectedFreq >= 155 && detectedFreq <= 175) {
+      // Check for Low E subharmonic candidate (82.41 Hz)
+      const periodE2 = Math.round(ctx.sampleRate / (detectedFreq / 2));
+      if (periodE2 < this.buffer.length) {
+        let diffE2 = 0;
+        let count = 0;
+        for (let i = 0; i < this.buffer.length - periodE2; i += 2) {
+          const d = this.buffer[i] - this.buffer[i + periodE2];
+          diffE2 += d * d;
+          count++;
+        }
+        const normDiff = count > 0 ? diffE2 / count : 1;
+        // If subharmonic has strong periodicity, correct to fundamental E2
+        if (normDiff < 0.25) {
+          detectedFreq = detectedFreq / 2;
+        }
+      }
+    }
+
+    // 6. Calculate exact metrics
+    const metrics = calculatePitchMetrics(
+      detectedFreq,
+      clarity,
+      rms,
+      this.refA4,
+      this.inTuneToleranceCents,
+      this.currentlyInTune,
+      this.exitTuneToleranceCents
+    );
+
+    // 7. Stable vs In-Tune state evaluation
+    if (metrics.tuningStatus === 'in_tune') {
+      this.consecutiveInTuneFrames++;
+      if (this.consecutiveInTuneFrames >= REQUIRED_IN_TUNE_FRAMES) {
+        this.currentlyInTune = true;
+        this.setState('in_tune');
+      } else {
+        this.setState('stable_pitch');
+      }
+    } else {
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.setState('stable_pitch');
+    }
+
+    this.emitFrame(metrics);
+  }
+
+  private emitFrame(metrics: PitchMetrics | null, error?: string) {
+    this.onFrame?.({
+      state: this.state,
+      metrics,
+      error,
+    });
+  }
+
+  private setupLifecycleListeners() {
+    // 1. Native Capacitor appStateChange
+    if (Capacitor.isNativePlatform()) {
+      import('@capacitor/app')
+        .then(({ App }) => {
+          const listener = App.addListener('appStateChange', ({ isActive }) => {
+            if (!isActive) {
+              this.wasRunningBeforeBackground = this.isRunning;
+              this.pause();
+            } else if (this.wasRunningBeforeBackground) {
+              this.resume();
+            }
+          });
+          this.appStateListenerRemover = () => {
+            listener.then((l) => l.remove()).catch(() => {});
+          };
+        })
+        .catch(() => {});
+    }
+
+    // 2. Web document visibilitychange
+    if (typeof document !== 'undefined') {
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          this.wasRunningBeforeBackground = this.isRunning;
+          this.pause();
+        } else if (this.wasRunningBeforeBackground) {
+          this.resume();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      this.visibilityListener = () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }
+
+  public pause() {
+    if (!this.isRunning || this.isPaused) return;
+    this.isPaused = true;
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = 0;
+    }
+    if (this.audioCtx && this.audioCtx.state === 'running') {
+      this.audioCtx.suspend().catch(() => {});
+    }
+    this.setState('no_signal');
+    this.emitFrame(null);
+  }
+
+  public resume() {
+    if (!this.isRunning || !this.isPaused) return;
+    this.isPaused = false;
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume().catch(() => {});
+    }
+    this.loop();
+  }
+
+  public stop() {
+    this.isRunning = false;
+    this.isPaused = false;
+    this.wasRunningBeforeBackground = false;
+
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = 0;
+    }
+
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      this.stream = null;
+    }
+
+    if (this.sourceNode) {
+      try {
+        this.sourceNode.disconnect();
+      } catch {}
+      this.sourceNode = null;
+    }
+
+    if (this.highPassFilter) {
+      try {
+        this.highPassFilter.disconnect();
+      } catch {}
+      this.highPassFilter = null;
+    }
+
+    if (this.notchFilter50) {
+      try {
+        this.notchFilter50.disconnect();
+      } catch {}
+      this.notchFilter50 = null;
+    }
+
+    if (this.notchFilter60) {
+      try {
+        this.notchFilter60.disconnect();
+      } catch {}
+      this.notchFilter60 = null;
+    }
+
+    if (this.analyser) {
+      try {
+        this.analyser.disconnect();
+      } catch {}
+      this.analyser = null;
+    }
+
+    if (this.audioCtx) {
+      this.audioCtx.close().catch(() => {});
+      this.audioCtx = null;
+    }
+
+    this.consecutiveInTuneFrames = 0;
+    this.currentlyInTune = false;
+    this.setState('initial');
+    this.emitFrame(null);
+  }
+
+  public destroy() {
+    this.stop();
+    this.appStateListenerRemover?.();
+    this.visibilityListener?.();
+    this.onFrame = undefined;
+    this.onStateChange = undefined;
+  }
+}

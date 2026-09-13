@@ -46,6 +46,7 @@ export function useLibraryState() {
       theme: s.settings.theme,
       tuning: s.settings.tuning,
       bassFiveString: s.settings.bassFiveString,
+      amoledMode: s.settings.amoledMode,
     }))
   );
 
@@ -124,6 +125,54 @@ export function useLibraryState() {
     setShowFinder(false);
   }, []);
 
+  const [showTuner, setShowTuner] = useState(false);
+  const [tunerOriginRect, setTunerOriginRect] = useState<{
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const openTuner = useCallback((eventOrElement?: React.MouseEvent | HTMLElement | DOMRect | any) => {
+    let rect: { top: number; left: number; right: number; bottom: number; width: number; height: number } | null = null;
+    if (eventOrElement) {
+      if ('getBoundingClientRect' in eventOrElement && typeof eventOrElement.getBoundingClientRect === 'function') {
+        const r = eventOrElement.getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if ('currentTarget' in eventOrElement && eventOrElement.currentTarget && typeof (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect === 'function') {
+        const r = (eventOrElement.currentTarget as HTMLElement).getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if ('target' in eventOrElement && eventOrElement.target && typeof (eventOrElement.target as HTMLElement).getBoundingClientRect === 'function') {
+        const r = (eventOrElement.target as HTMLElement).getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      } else if (typeof eventOrElement.top === 'number' && typeof eventOrElement.left === 'number') {
+        rect = {
+          top: eventOrElement.top,
+          left: eventOrElement.left,
+          right: eventOrElement.right ?? (eventOrElement.left + eventOrElement.width),
+          bottom: eventOrElement.bottom ?? (eventOrElement.top + eventOrElement.height),
+          width: eventOrElement.width,
+          height: eventOrElement.height,
+        };
+      }
+    }
+    if (!rect && typeof document !== 'undefined') {
+      const el = document.querySelector('[data-purpose="tool-tuner"]');
+      if (el) {
+        const r = el.getBoundingClientRect();
+        rect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      }
+    }
+    setTunerOriginRect(rect);
+    setShowTuner(true);
+  }, []);
+
+  const closeTuner = useCallback(() => {
+    setShowTuner(false);
+  }, []);
+
   const allChords = useMemo(() => getAllChords(), []);
   const accent = resolveAccent(settings.accentColor);
 
@@ -132,6 +181,8 @@ export function useLibraryState() {
     (settings.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
+
+  const isAmoled = !isLight && Boolean(settings.amoledMode);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -303,6 +354,10 @@ export function useLibraryState() {
         closeModalChord();
         return true;
       }
+      if (showTuner) {
+        closeTuner();
+        return true;
+      }
       if (showFinder) {
         closeFinder();
         return true;
@@ -335,6 +390,8 @@ export function useLibraryState() {
       activePanel,
       modalChordState,
       closeModalChord,
+      showTuner,
+      closeTuner,
       showFinder,
       closeFinder,
       activePracticeSong,
@@ -436,5 +493,11 @@ export function useLibraryState() {
     finderOriginRect,
     openFinder,
     closeFinder,
+    showTuner,
+    setShowTuner,
+    tunerOriginRect,
+    openTuner,
+    closeTuner,
+    isAmoled,
   };
 }

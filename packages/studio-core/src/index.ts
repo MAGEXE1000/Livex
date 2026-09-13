@@ -117,3 +117,4 @@ export * from './lib/stageCollaboration/CollaborationService';
 export * from './lib/stageCollaboration/CollabDiagnostics';
 export * from './lib/search/searchService';
 export * from './lib/audio/mediaSessionCoordinator';
+export * from './lib/tuner/index';

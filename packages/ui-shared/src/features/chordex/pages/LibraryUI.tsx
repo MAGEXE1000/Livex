@@ -1305,6 +1305,9 @@ export function LibraryMainView({ state }: { state: any }) {
     allChords,
     setShowFinder,
     openFinder,
+    showTuner,
+    setShowTuner,
+    openTuner,
     query,
     setQuery,
     categoryQuery,
@@ -1448,6 +1451,33 @@ export function LibraryMainView({ state }: { state: any }) {
                     travel_explore
                   </span>
                   <span>Finder</span>
+                </motion.button>
+
+                {/* Tuner Tool */}
+                <motion.button
+                  type="button"
+                  onClick={(e) => (openTuner ? openTuner(e) : setShowTuner?.(true))}
+                  whileTap={{ scale: 0.94 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 25,
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                    borderColor: 'var(--c-border, #E3E6EB)',
+                    color: 'var(--c-text-primary, #111827)',
+                  }}
+                  data-purpose="tool-tuner"
+                >
+                  <span
+                    className="material-symbols-rounded text-[18px]"
+                    style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                  >
+                    tune
+                  </span>
+                  <span>Tuner</span>
                 </motion.button>
               </div>
             }

@@ -19,6 +19,9 @@ const SaxophonePracticePanel = lazy(() =>
   import('./SaxophonePracticePanel').then((m) => ({ default: m.SaxophonePracticePanel }))
 );
 const CustomChordBuilder = lazy(() => import('../components/CustomChordBuilder'));
+const ChromaticTunerModal = lazy(() =>
+  import('../components/tuner/ChromaticTunerModal').then((m) => ({ default: m.ChromaticTunerModal }))
+);
 
 export default function LibraryPanel() {
   const state = useLibraryState();
@@ -31,6 +34,8 @@ export default function LibraryPanel() {
     selectChord,
     showFinder,
     setShowFinder,
+    showTuner,
+    setShowTuner,
     activePracticeSong,
     setActivePracticeSong,
     accent,
@@ -178,6 +183,39 @@ export default function LibraryPanel() {
             mode="find"
             inMorphSurface={true}
             onClose={() => state.closeFinder()}
+          />
+        </Suspense>
+      </MorphingActionSurface>
+
+      {/* Morphing Foreground Chromatic Guitar Tuner Modal */}
+      <MorphingActionSurface
+        isOpen={showTuner}
+        originRect={state.tunerOriginRect}
+        placement="center"
+        maxWidth={460}
+        maxHeight="86vh"
+        title="Guitar Tuner"
+        subtitle="Chromatic Instrument Tuner"
+        onOpenChange={(open) => {
+          if (!open) {
+            state.closeTuner();
+          }
+        }}
+        contentStyle={{
+          padding: 0,
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Suspense fallback={null}>
+          <ChromaticTunerModal
+            accent={accent}
+            isLight={state.isLight}
+            isAmoled={state.isAmoled}
+            onClose={() => state.closeTuner()}
           />
         </Suspense>
       </MorphingActionSurface>
