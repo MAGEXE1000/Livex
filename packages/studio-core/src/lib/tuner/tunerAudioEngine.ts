@@ -14,6 +14,11 @@ import type {
   TunerFramePayload,
   TunerLifecycleState,
 } from './tunerTypes';
+import {
+  playTunerReferenceString,
+  preloadTunerReferenceAudio,
+  stopTunerReferenceAudio,
+} from './tunerReferenceAudio';
 
 const BUFFER_SIZE = 2048;
 const REQUIRED_IN_TUNE_FRAMES = 3;
@@ -100,6 +105,33 @@ export class TunerAudioEngine {
 
   public getNoiseFilter(): boolean {
     return this.noiseFilter;
+  }
+
+  /**
+   * Play realistic recorded reference instrument string audio for a target string
+   */
+  public async playStringReference(
+    target: InstrumentStringTarget,
+    mode?: InstrumentTuningMode
+  ): Promise<void> {
+    const activeMode = mode || this.mode;
+    return playTunerReferenceString({
+      target,
+      mode: activeMode,
+      refA4: this.refA4,
+      audioCtx: this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined,
+    });
+  }
+
+  /**
+   * Preload reference audio samples for fast playback on card tap
+   */
+  public preloadReferenceAudio(mode?: InstrumentTuningMode): void {
+    const activeMode = mode || this.mode;
+    preloadTunerReferenceAudio(
+      activeMode,
+      this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined
+    );
   }
 
   /**
@@ -601,6 +633,8 @@ export class TunerAudioEngine {
       this.audioCtx.close().catch(() => {});
       this.audioCtx = null;
     }
+
+    stopTunerReferenceAudio();
 
     this.consecutiveInTuneFrames = 0;
     this.currentlyInTune = false;

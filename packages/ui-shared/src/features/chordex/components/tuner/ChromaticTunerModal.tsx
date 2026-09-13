@@ -31,23 +31,6 @@ const SCALE_BARS = [
   { step: 5,  label: '+5', color: '#ef4444', isCenter: false },
 ] as const;
 
-// Speaker icon component with sound waves
-const SpeakerIcon: React.FC<{ size?: number; className?: string }> = ({
-  size = 18,
-  className = 'text-blue-500',
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className={className}
-    aria-hidden="true"
-  >
-    <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zm-2.5-1.23L6.5 6H3c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h3.5l5 4c.67.54 1.5.06 1.5-.8V2.8c0-.86-.83-1.34-1.5-.8zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-  </svg>
-);
-
 export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   onClose,
   isLight = false,
@@ -222,6 +205,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     });
 
     engineRef.current = engine;
+    engine.preloadReferenceAudio(instrumentMode);
     engine.start().catch((err) => {
       console.warn('[ChromaticTunerModal] Engine start error:', err);
     });
@@ -239,22 +223,16 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     setIsAuto(true);
     engineRef.current?.setMode(newMode);
     engineRef.current?.setManualTargetString(null);
+    engineRef.current?.preloadReferenceAudio(newMode);
   };
 
-  // Handle string card click (toggle manual lock / auto detection)
+  // Handle string card click (selects string and immediately plays realistic instrument reference sound)
   const handleStringCardClick = (target: InstrumentStringTarget) => {
-    if (!isAuto && manualTarget?.fullName === target.fullName) {
-      // Toggle back to AUTO
-      setIsAuto(true);
-      setManualTarget(null);
-      engineRef.current?.setManualTargetString(null);
-    } else {
-      // Lock target to this string
-      setIsAuto(false);
-      setManualTarget(target);
-      setActiveString(target);
-      engineRef.current?.setManualTargetString(target);
-    }
+    setIsAuto(false);
+    setManualTarget(target);
+    setActiveString(target);
+    engineRef.current?.setManualTargetString(target);
+    engineRef.current?.playStringReference(target, instrumentMode);
   };
 
   // Toggle AUTO switch
@@ -280,12 +258,6 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     const nextPitch = REFERENCE_PITCH_OPTIONS[nextIndex];
     setRefA4(nextPitch);
     engineRef.current?.setReferenceA4(nextPitch);
-  };
-
-  // Play reference pitch tone for string
-  const handlePlayTone = (e: React.MouseEvent, frequency: number) => {
-    e.stopPropagation();
-    engineRef.current?.playReferenceTone(frequency);
   };
 
   // Theme colors matching reference dark UI
@@ -548,7 +520,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                 <div
                   key={str.fullName}
                   onClick={() => handleStringCardClick(str)}
-                  className={`flex items-center justify-between px-2.5 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
+                  className={`flex items-center justify-between px-3 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
                     isInTune
                       ? 'border-emerald-500/80 bg-emerald-500/10 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
                       : isManualLocked
@@ -557,6 +529,9 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                           ? 'border-blue-500/50 bg-blue-500/10'
                           : 'border-white/[0.06] bg-[#101218] hover:border-white/[0.12]'
                   }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
                 >
                   {/* Circular Number Badge */}
                   <div className="w-7 h-7 rounded-full bg-[#1c1f28] text-white font-bold text-xs flex items-center justify-center border border-white/[0.08] flex-shrink-0">
@@ -564,7 +539,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                   </div>
 
                   {/* Note Name & Frequency */}
-                  <div className="flex flex-col items-start px-1.5 flex-1 min-w-0">
+                  <div className="flex flex-col items-end px-1.5 flex-1 min-w-0">
                     <span className="text-sm font-extrabold text-white leading-tight">
                       {str.fullName}
                     </span>
@@ -572,17 +547,6 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                       {str.frequency.toFixed(1)} Hz
                     </span>
                   </div>
-
-                  {/* Reference Pitch Speaker Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => handlePlayTone(e, str.frequency)}
-                    className="p-1 text-blue-500 hover:text-blue-400 active:scale-90 transition-transform cursor-pointer flex-shrink-0"
-                    title={`Play ${str.fullName} reference pitch`}
-                    aria-label={`Play ${str.fullName} reference tone`}
-                  >
-                    <SpeakerIcon size={18} />
-                  </button>
                 </div>
               );
             })}
@@ -609,7 +573,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                 <div
                   key={str.fullName}
                   onClick={() => handleStringCardClick(str)}
-                  className={`flex items-center justify-between px-2.5 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
+                  className={`flex items-center justify-between px-3 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
                     isInTune
                       ? 'border-emerald-500/80 bg-emerald-500/10 shadow-[0_0_12px_rgba(34,197,94,0.25)]'
                       : isManualLocked
@@ -618,20 +582,12 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                           ? 'border-blue-500/50 bg-blue-500/10'
                           : 'border-white/[0.06] bg-[#101218] hover:border-white/[0.12]'
                   }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
                 >
-                  {/* Reference Pitch Speaker Button (Mirrored on left of right card) */}
-                  <button
-                    type="button"
-                    onClick={(e) => handlePlayTone(e, str.frequency)}
-                    className="p-1 text-blue-500 hover:text-blue-400 active:scale-90 transition-transform cursor-pointer flex-shrink-0"
-                    title={`Play ${str.fullName} reference pitch`}
-                    aria-label={`Play ${str.fullName} reference tone`}
-                  >
-                    <SpeakerIcon size={18} />
-                  </button>
-
                   {/* Note Name & Frequency (Mirrored on right) */}
-                  <div className="flex flex-col items-end px-1.5 flex-1 min-w-0">
+                  <div className="flex flex-col items-start px-1.5 flex-1 min-w-0">
                     <span className="text-sm font-extrabold text-white leading-tight">
                       {str.fullName}
                     </span>
