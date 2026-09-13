@@ -562,6 +562,7 @@ h4,
   --acc-collapse: 250ms;
   --acc-chevron: 250ms;
   --acc-ease: var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  --acc-blur: 2px;
 
   --sidebar-hover-bg: rgba(255, 255, 255, 0.04);
   --sidebar-active-bg: rgba(255, 255, 255, 0.07);
@@ -3897,34 +3898,41 @@ html.light .button--secondary {
   grid-template-rows: 0fr;
   transition:
     grid-template-rows
-    var(--acc-collapse)
-    var(--acc-ease);
+    var(--acc-collapse, 250ms)
+    var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.t-acc[data-open="true"] .t-acc-panel {
+.t-acc[data-open="true"] .t-acc-panel,
+[aria-expanded="true"] + .t-acc-panel {
   grid-template-rows: 1fr;
   transition:
     grid-template-rows
-    var(--acc-expand)
-    var(--acc-ease);
+    var(--acc-expand, 250ms)
+    var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .t-acc-panel-inner {
   overflow: hidden;
   min-height: 0;
   opacity: 0;
-  filter: blur(var(--morph-blur, 2px));
+  filter: blur(var(--acc-blur, 2px));
   transition:
-    opacity var(--acc-collapse) var(--acc-ease),
-    filter var(--acc-collapse) var(--acc-ease);
+    opacity var(--acc-collapse, 250ms) var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter var(--acc-collapse, 250ms) var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.t-acc[data-open="true"] .t-acc-panel-inner {
+.t-acc[data-open="true"] .t-acc-panel-inner,
+[aria-expanded="true"] + .t-acc-panel .t-acc-panel-inner {
   opacity: 1;
   filter: blur(0);
   transition:
-    opacity var(--acc-expand) var(--acc-ease),
-    filter var(--acc-expand) var(--acc-ease);
+    opacity var(--acc-expand, 250ms) var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter var(--acc-expand, 250ms) var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.t-acc-trigger:focus-visible {
+  outline: 2px solid var(--accent-color, #3b82f6);
+  outline-offset: -2px;
 }
 
 .t-acc-chevron {
@@ -3935,19 +3943,20 @@ html.light .button--secondary {
   transform-origin: center;
   transition:
     transform
-    var(--acc-chevron)
-    var(--acc-ease);
+    var(--acc-chevron, 250ms)
+    var(--acc-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .t-acc-chevron path {
   vector-effect: non-scaling-stroke;
 }
 
-.t-acc[data-open="true"] .t-acc-chevron {
+.t-acc[data-open="true"] .t-acc-chevron,
+[aria-expanded="true"] .t-acc-chevron {
   transform: scaleY(-1);
 }
 
-/* Reduced Motion Override */
+/* Reduced Motion & Low-Perf Overrides */
 @media (prefers-reduced-motion: reduce) {
   .t-morph,
   .t-morph-plus,
@@ -3958,6 +3967,9 @@ html.light .button--secondary {
   .t-acc-panel-inner,
   .t-acc-chevron {
     transition: none !important;
+  }
+  .t-acc-panel-inner {
+    filter: none !important;
   }
 }
 
@@ -3970,5 +3982,10 @@ html.light .button--secondary {
 [data-reduced-motion="true"] .t-acc-panel-inner,
 [data-reduced-motion="true"] .t-acc-chevron {
   transition: none !important;
+}
+
+[data-reduced-motion="true"] .t-acc-panel-inner,
+[data-perf-mode="on"] .t-acc-panel-inner {
+  filter: none !important;
 }
 

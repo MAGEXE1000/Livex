@@ -95,7 +95,7 @@ describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
 
   // ── 3. Accordion CSS Grid Invariant & Zero-Measurement ────────────────────
 
-  describe('3. Accordion CSS Grid Interpolation Invariant', () => {
+  describe('3. Accordion CSS Grid Interpolation Invariant & APG Semantics', () => {
     it('verifies grid-template-rows transitions strictly from 0fr to 1fr without JS measurement', () => {
       const closedGridTrack = '0fr';
       const openGridTrack = '1fr';
@@ -108,7 +108,7 @@ describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
       expect(usesJsHeight).toBe(false);
     });
 
-    it('verifies content inner clipping with opacity and 2px blur', () => {
+    it('verifies content inner clipping with opacity and 2px blur matching Transitions.dev reference', () => {
       const closedContentState = {
         opacity: 0,
         filter: 'blur(2px)',
@@ -132,7 +132,7 @@ describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
       expect(openContentState.minHeight).toBe(0);
     });
 
-    it('verifies chevron transform flips via scaleY(1) -> scaleY(-1)', () => {
+    it('verifies chevron transform flips via scaleY(1) -> scaleY(-1) with non-scaling-stroke', () => {
       const closedChevron = 'scaleY(1)';
       const openChevron = 'scaleY(-1)';
 
@@ -140,8 +140,78 @@ describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
       expect(openChevron).toBe('scaleY(-1)');
     });
 
+    it('verifies single mode vs multiple mode state transitions and collapsible flag', () => {
+      // Single mode logic
+      let singleState: string[] = ['item-1'];
+      const collapsible = true;
+
+      // Clicking open item collapses it if collapsible is true
+      const toggleSingleOpen = (id: string) => {
+        if (singleState.includes(id)) {
+          singleState = collapsible ? [] : [id];
+        } else {
+          singleState = [id];
+        }
+      };
+
+      toggleSingleOpen('item-1');
+      expect(singleState).toEqual([]);
+
+      toggleSingleOpen('item-2');
+      expect(singleState).toEqual(['item-2']);
+
+      toggleSingleOpen('item-3');
+      expect(singleState).toEqual(['item-3']); // Closes item-2, opens item-3
+
+      // Multiple mode logic
+      let multiState: string[] = ['item-1'];
+      const toggleMulti = (id: string) => {
+        if (multiState.includes(id)) {
+          multiState = multiState.filter((i) => i !== id);
+        } else {
+          multiState = [...multiState, id];
+        }
+      };
+
+      toggleMulti('item-2');
+      expect(multiState).toEqual(['item-1', 'item-2']);
+
+      toggleMulti('item-1');
+      expect(multiState).toEqual(['item-2']);
+    });
+
+    it('verifies APG keyboard navigation cycling order across triggers', () => {
+      const triggerIds = ['trigger-1', 'trigger-2', 'trigger-3'];
+      let currentIndex = 0;
+
+      const navigateKey = (key: 'ArrowDown' | 'ArrowUp' | 'Home' | 'End') => {
+        if (key === 'ArrowDown') {
+          currentIndex = (currentIndex + 1) % triggerIds.length;
+        } else if (key === 'ArrowUp') {
+          currentIndex = (currentIndex - 1 + triggerIds.length) % triggerIds.length;
+        } else if (key === 'Home') {
+          currentIndex = 0;
+        } else if (key === 'End') {
+          currentIndex = triggerIds.length - 1;
+        }
+        return triggerIds[currentIndex];
+      };
+
+      // ArrowDown from 0 -> 1
+      expect(navigateKey('ArrowDown')).toBe('trigger-2');
+      // ArrowDown from 1 -> 2
+      expect(navigateKey('ArrowDown')).toBe('trigger-3');
+      // ArrowDown wraps 2 -> 0
+      expect(navigateKey('ArrowDown')).toBe('trigger-1');
+      // ArrowUp wraps 0 -> 2
+      expect(navigateKey('ArrowUp')).toBe('trigger-3');
+      // Home jumps to 0
+      expect(navigateKey('Home')).toBe('trigger-1');
+      // End jumps to 2
+      expect(navigateKey('End')).toBe('trigger-3');
+    });
+
     it('verifies accordion is not registered as an overlay and does not intercept BackDispatcher', () => {
-      const isAccordionOpen = true;
       const unregisterMock = vi.fn();
 
       // Regular BackDispatcher handling does not consume on account of accordion

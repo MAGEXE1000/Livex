@@ -127,6 +127,7 @@ export function Accordion({
       }}
     >
       <div
+        data-accordion-root="true"
         className={`flex flex-col w-full ${className}`}
         style={style}
         data-reduced-motion={prefersReduced ? 'true' : undefined}
@@ -222,10 +223,39 @@ export function AccordionTrigger({
   showChevron = true,
   className = '',
   onClick,
+  onKeyDown,
   ...props
 }: AccordionTriggerProps) {
   const { toggleItem } = useAccordionContext();
   const { id, isOpen, triggerId, panelId, disabled } = useAccordionItemContext();
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+      const trigger = e.currentTarget;
+      const accordion = trigger.closest('[data-accordion-root="true"]');
+      if (accordion) {
+        const triggers = Array.from(
+          accordion.querySelectorAll<HTMLButtonElement>('button[id^="acc-trigger-"]:not(:disabled)')
+        );
+        const index = triggers.indexOf(trigger);
+        if (index !== -1) {
+          e.preventDefault();
+          if (e.key === 'ArrowDown') {
+            const next = triggers[(index + 1) % triggers.length];
+            next?.focus();
+          } else if (e.key === 'ArrowUp') {
+            const prev = triggers[(index - 1 + triggers.length) % triggers.length];
+            prev?.focus();
+          } else if (e.key === 'Home') {
+            triggers[0]?.focus();
+          } else if (e.key === 'End') {
+            triggers[triggers.length - 1]?.focus();
+          }
+        }
+      }
+    }
+    onKeyDown?.(e);
+  };
 
   return (
     <button
@@ -240,7 +270,8 @@ export function AccordionTrigger({
         }
         onClick?.(e);
       }}
-      className={`flex w-full items-center justify-between py-3.5 px-4 text-left font-medium outline-none transition-colors select-none ${
+      onKeyDown={handleKeyDown}
+      className={`t-acc-trigger flex w-full items-center justify-between py-3.5 px-4 text-left font-medium outline-none transition-colors select-none ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       } ${className}`}
       {...props}
@@ -279,6 +310,7 @@ export function AccordionContent({
       role="region"
       aria-labelledby={triggerId}
       aria-hidden={!isOpen}
+      inert={!isOpen ? true : undefined}
       className="t-acc-panel w-full"
     >
       <div
