@@ -1,12 +1,13 @@
-# Version 4.5.98
+# Version 4.5.99
 
 Release Date: 2026-09-13
 
 ### Added
 
-- Native Reference Tuner Redesign: Completely redesigned the Android/Capacitor chromatic tuner interface to match the high-end dark reference specification, featuring segmented instrument mode selection (Electric, Acoustic, Bass 4, Bass 5), reference pitch calibration (A4 = 440 Hz), automatic pitch detection toggle, an 11-bar chromatic scale with center emerald hourglass aura, real-time cents deviation pill indicator, and symmetrical string target cards flanking photorealistic instrument headstocks.
-- Audible Reference Pitch Tones: Integrated audible pure-tone Web Audio reference pitch generation directly on string target cards via interactive speaker buttons.
+- Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.
+- Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.
+- Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.
 
 ### Improved
 
-- Tuner Real-Time Rendering Performance: Isolated high-frequency cents needle and meter updates to GPU-composited direct DOM transforms (`needleRef`, `centsPillRef`, `centsTextRef`) to achieve flawless 60/120 FPS tracking without React reconciliation overhead on mobile WebViews.
+- Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.

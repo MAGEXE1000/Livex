@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.98';
-export const NATIVE_VERSION_CODE = 40598;
-export const WEB_VERSION = '4.5.98';
+export const NATIVE_VERSION = '4.5.99';
+export const NATIVE_VERSION_CODE = 40599;
+export const WEB_VERSION = '4.5.99';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '668c060f';
+export const APP_COMMIT_SHA = 'ddb3f429';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 1:09:55 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 3:54:11 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,14 +98,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Native Reference Tuner Redesign: Completely redesigned the Android/Capacitor chromatic tuner interface to match the high-end dark reference specification, featuring segmented instrument mode selection (Electric, Acoustic, Bass 4, Bass 5), reference pitch calibration (A4 = 440 Hz), automatic pitch detection toggle, an 11-bar chromatic scale with center emerald hourglass aura, real-time cents deviation pill indicator, and symmetrical string target cards flanking photorealistic instrument headstocks.',
-      'Audible Reference Pitch Tones: Integrated audible pure-tone Web Audio reference pitch generation directly on string target cards via interactive speaker buttons.',
+      'Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.',
+      'Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.',
+      'Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Tuner Real-Time Rendering Performance: Isolated high-frequency cents needle and meter updates to GPU-composited direct DOM transforms (`needleRef`, `centsPillRef`, `centsTextRef`) to achieve flawless 60/120 FPS tracking without React reconciliation overhead on mobile WebViews.',
+      'Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.',
     ],
   },
 ];
@@ -117,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.99',
+    date: '2026-09-13',
+    highlights: [
+      'Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.',
+      'Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.',
+      'Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.',
+      'Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.',
+    ],
+  },
   {
     version: '4.5.98',
     date: '2026-09-13',
@@ -210,15 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Native LivexTheme Engine: Added native Compose theme tokens with dedicated support for Light, Dark, and pure `#000000` AMOLED rendering with zero GPU blur fill-rate overhead.',
       'Global Navigation Latency: Removed full-DOM MutationObserver on document.body and redundant touch listeners in BottomNavigationController, reducing idle script execution and interaction jitter.',
       'CSS and Transition Optimization: Replaced clipPath inset transitions with GPU-composited transform/opacity animations in StudioPageTransition, and enabled CSS list virtualization containment across long chord and pattern lists.',
-    ],
-  },
-  {
-    version: '4.5.89',
-    date: '2026-09-11',
-    highlights: [
-      'Three-State Theme Architecture Harmonization: Synchronized Light, Dark, and AMOLED themes across all surfaces, dialogs, modals, and sub-apps (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex), ensuring true black `#000000` is strictly respected without dark gray fallbacks.',
-      'Streamlined Studio Hub Appearance Controls: Removed the redundant segmented control pill from the theme setting row, retaining the compact animated `ThemeToggle` icon as the sole interactive control.',
-      'Instantaneous Theme Transitions: Eliminated thread-blocking `startViewTransition` snapshot delays on Android WebView and mobile runtimes, achieving fluid 120Hz native color transitions.',
     ],
   },
 ];
