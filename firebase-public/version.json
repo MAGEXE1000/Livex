@@ -8,8 +8,16 @@
   "releasedAt": "9/14/2026, 9:04:42 AM CST",
   "buildTimestamp": "9/14/2026, 9:04:42 AM CST",
   "updateMode": "refresh",
-  "changelog": "",
-  "whatsNew": "",
-  "releaseNotes": {},
+  "changelog": "• Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.\n• Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.\n• Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.",
+  "whatsNew": "• Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.\n• Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.\n• Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.",
+  "releaseNotes": {
+    "improved": [
+      "Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls."
+    ],
+    "fixed": [
+      "Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.",
+      "Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck."
+    ]
+  },
   "mandatory": false
 }

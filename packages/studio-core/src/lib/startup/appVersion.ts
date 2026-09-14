@@ -96,25 +96,16 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Circular Tuner Note Controls: Compact circular string indicator controls displaying target note, octave, and calibrated reference frequency with tactile response.',
-      'Real-Time Download Speed & Size Telemetry: Live byte-level tracking displaying downloaded megabytes against total package size (`X MB / Y MB`) and transfer speed (`MB/s` or `KB/s`) during the update download phase.',
-    ],
-  },
-  {
     heading: 'Improved',
     items: [
-      'Instant Update Autodetection on App Launch: Differentiated app foreground and resume lifecycle events from background polling with a 15-second debounce, immediately discovering new releases when opening the app.',
-      'Tuner Two-Column Spatial Hierarchy: Balanced string card columns flanking the photorealistic headstock graphic to maximize peg alignment and prevent touch target overlap.',
-      'Smooth Tuning Selection Transitions: Fluid modal transition between quick tuning presets and grouped tuning library categories.',
+      'Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Startup Pipeline Cancellation Race: Resolved issue where concurrent app initialization steps incremented pipeline counters and aborted active update checks with `PipelineCancelledError`.',
-      'Missing APK Download Progress Metrics: Restored `totalBytes` and `downloadedBytes` parameter propagation in `apkDownloader.ts` to populate global update state during downloads.',
+      'Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.',
+      'Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.',
     ],
   },
 ];
@@ -126,6 +117,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.5',
+    date: '2026-09-14',
+    highlights: [
+      'Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.',
+      'Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.',
+      'Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.',
+    ],
+  },
   {
     version: '4.6.4',
     date: '2026-09-14',
@@ -224,16 +224,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.',
       'Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.',
       'Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.',
-    ],
-  },
-  {
-    version: '4.5.95',
-    date: '2026-09-12',
-    highlights: [
-      'Centered & Compact Shared Bottom Navigation: Corrected shared bottom navigation geometry across all Livex applications, eliminating the -33px cluster offset to ensure the navigation bar is strictly horizontally centered relative to the viewport across expanded, scrolling, and collapsed states.',
-      'Drumex Compact Navigation Footprint: Restored compact slot width (60px) in Drumex, reducing container width from 304px to 256px for balanced visual parity with Hub and Chordex.',
-      'Independent Selected Highlight Geometry: Decoupled tab highlight pill dimensions from the navbar container into an independent content-adaptive calculation that never inflates or shifts the navbar.',
-      'Refined Guitar & Bass Chord Finder: Exclusively focused the Chordex Chord Finder on Guitar and Bass fretboard diagrams, removing Piano from the instrument selector, search queries, filter tabs, and detection state machine without touching global instrument preferences.',
     ],
   },
 ];
