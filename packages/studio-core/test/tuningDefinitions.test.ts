@@ -41,17 +41,16 @@ describe('Tuning Definitions & Registry', () => {
       expect(ids).toContain('bass4-half-step-down');
     });
 
-    it('provides tunings for 5-string bass', () => {
-      const tunings = getTuningsForMode('bass-5');
-      expect(tunings.length).toBeGreaterThanOrEqual(3);
-      const ids = tunings.map((t) => t.id);
-      expect(ids).toContain('bass5-standard');
-      expect(ids).toContain('bass5-drop-a');
+    it('resolves legacy bass-5 IDs via aliases to bass-4 tunings', () => {
+      expect(getTuningById('bass5-standard')?.id).toBe('bass4-standard');
+      expect(getTuningById('bass5-drop-a')?.id).toBe('bass4-drop-d');
+      expect(getTuningById('bass5-half-step-down')?.id).toBe('bass4-half-step-down');
+      expect(getTuningById('bass5-high-c')?.id).toBe('bass4-standard');
     });
   });
 
   describe('Category Groupings', () => {
-    it('groups guitar tunings into Standard, Drop / Power, Open, and Alternate', () => {
+    it('groups guitar tunings into Standard, Drop, Down-Tuned, and Open', () => {
       const grouped = getTuningsByCategory('electric');
       for (const cat of TUNING_CATEGORIES) {
         expect(grouped[cat]).toBeDefined();
@@ -59,13 +58,13 @@ describe('Tuning Definitions & Registry', () => {
       }
 
       expect(grouped['Standard'][0].id).toBe('guitar-standard');
-      expect(grouped['Drop / Power'].some((t) => t.id === 'guitar-drop-d')).toBe(true);
+      expect(grouped['Drop'].some((t) => t.id === 'guitar-drop-d')).toBe(true);
+      expect(grouped['Down-Tuned'].some((t) => t.id === 'guitar-d-standard')).toBe(true);
       expect(grouped['Open'].some((t) => t.id === 'guitar-open-g')).toBe(true);
-      expect(grouped['Alternate'].some((t) => t.id === 'guitar-dadgad')).toBe(true);
     });
   });
 
-  describe('Drop D Specific Targets & Calculations', () => {
+  describe('Alternate Tunings Specific Targets & Calculations', () => {
     it('has string 6 tuned to D2 at ~73.42 Hz in Drop D', () => {
       const dropD = getTuningById('guitar-drop-d');
       expect(dropD).toBeDefined();
@@ -78,10 +77,10 @@ describe('Tuning Definitions & Registry', () => {
       expect(string6!.frequency).toBeCloseTo(73.42, 1);
     });
 
-    it('identifies D2 as nearest string in calculatePitchMetrics when Drop D strings are active', () => {
+    it('identifies D2 as nearest string and calculates cents against D2 target frequency when Drop D is active', () => {
       const dropD = getTuningById('guitar-drop-d')!;
-      // D2 is ~73.42 Hz
-      const metrics = calculatePitchMetrics(
+      // Exact D2 target is ~73.42 Hz
+      const inTuneMetrics = calculatePitchMetrics(
         73.42,
         1.0,
         0.1,
@@ -94,11 +93,58 @@ describe('Tuning Definitions & Registry', () => {
         dropD.strings
       );
 
-      expect(metrics.fullName).toBe('D2');
-      expect(metrics.tuningStatus).toBe('in_tune');
-      expect(metrics.nearestString).not.toBeNull();
-      expect(metrics.nearestString!.stringNumber).toBe(6);
-      expect(metrics.nearestString!.fullName).toBe('D2');
+      expect(inTuneMetrics.fullName).toBe('D2');
+      expect(inTuneMetrics.targetFrequency).toBeCloseTo(73.42, 1);
+      expect(inTuneMetrics.tuningStatus).toBe('in_tune');
+      expect(Math.abs(inTuneMetrics.cents)).toBeLessThan(1.0);
+      expect(inTuneMetrics.nearestString).not.toBeNull();
+      expect(inTuneMetrics.nearestString!.stringNumber).toBe(6);
+      expect(inTuneMetrics.nearestString!.fullName).toBe('D2');
+
+      // Sharp by 1 Hz (74.42 Hz) evaluates against D2 (73.42 Hz) target
+      const sharpMetrics = calculatePitchMetrics(
+        74.42,
+        1.0,
+        0.1,
+        440,
+        3.5,
+        false,
+        4.5,
+        'electric',
+        null,
+        dropD.strings
+      );
+      expect(sharpMetrics.fullName).toBe('D2');
+      expect(sharpMetrics.targetFrequency).toBeCloseTo(73.42, 1);
+      expect(sharpMetrics.cents).toBeGreaterThan(15);
+      expect(sharpMetrics.tuningStatus).toBe('sharp');
+    });
+
+    it('verifies D Standard targets on electric guitar (D2 G2 C3 F3 A3 D4)', () => {
+      const dStd = getTuningById('guitar-d-standard')!;
+      expect(dStd).toBeDefined();
+      expect(dStd.strings.map((s) => s.fullName)).toEqual(['D2', 'G2', 'C3', 'F3', 'A3', 'D4']);
+      expect(dStd.strings[0].frequency).toBeCloseTo(73.42, 1); // D2
+      expect(dStd.strings[5].frequency).toBeCloseTo(293.66, 1); // D4
+    });
+
+    it('verifies Drop C targets on electric guitar (C2 G2 C3 F3 A3 D4)', () => {
+      const dropC = getTuningById('guitar-drop-c')!;
+      expect(dropC).toBeDefined();
+      expect(dropC.strings.map((s) => s.fullName)).toEqual(['C2', 'G2', 'C3', 'F3', 'A3', 'D4']);
+      expect(dropC.strings[0].frequency).toBeCloseTo(65.41, 1); // C2
+    });
+
+    it('verifies 4-string bass standard (E1 A1 D2 G2) and Drop D (D1 A1 D2 G2)', () => {
+      const bassStd = getTuningById('bass4-standard')!;
+      expect(bassStd).toBeDefined();
+      expect(bassStd.strings.map((s) => s.fullName)).toEqual(['E1', 'A1', 'D2', 'G2']);
+      expect(bassStd.strings[0].frequency).toBeCloseTo(41.20, 1);
+
+      const bassDropD = getTuningById('bass4-drop-d')!;
+      expect(bassDropD).toBeDefined();
+      expect(bassDropD.strings.map((s) => s.fullName)).toEqual(['D1', 'A1', 'D2', 'G2']);
+      expect(bassDropD.strings[0].frequency).toBeCloseTo(36.71, 1);
     });
   });
 

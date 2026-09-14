@@ -57,7 +57,10 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         const parsed = JSON.parse(raw);
         const rawMode = parsed.mode || 'electric';
         const mode = (rawMode === 'bass-5' ? 'bass-4' : rawMode) as InstrumentTuningMode;
-        const tuningId = parsed.tuningId || 'guitar-standard';
+        let tuningId = parsed.tuningId || 'guitar-standard';
+        if (typeof tuningId === 'string' && tuningId.startsWith('bass5-')) {
+          tuningId = 'bass4-standard';
+        }
         const refA4 = parsed.refA4 || 440;
         return { mode, tuningId, refA4 };
       }

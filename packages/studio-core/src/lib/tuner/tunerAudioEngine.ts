@@ -346,7 +346,7 @@ export class TunerAudioEngine {
       // ignore disconnect errors on unlinked nodes
     }
 
-    const isBass = this.mode === 'bass-4' || this.mode === 'bass-5';
+    const isBass = this.mode === 'bass-4';
 
     if (isBass) {
       // Bass mode: HPF at 25 Hz to permit E1 (41.2 Hz) and B0 (30.87 Hz)
@@ -398,7 +398,7 @@ export class TunerAudioEngine {
     const rms = calculateRms(this.buffer);
     const peak = calculatePeak(this.buffer);
 
-    const isBass = this.mode === 'bass-4' || this.mode === 'bass-5';
+    const isBass = this.mode === 'bass-4';
 
     // Profile-specific noise floors and clarity thresholds
     let minRms: number;

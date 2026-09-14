@@ -86,9 +86,8 @@ describe('Tuner Pitch Math & Detection Calculations', () => {
     });
   });
 
-  describe('Standard 4-String and 5-String Bass Notes', () => {
+  describe('Standard 4-String Bass Notes', () => {
     const bassStrings = [
-      { name: 'Low B', fullName: 'B0', freq: 30.87, stringNumber: 5, mode: 'bass-5' as const },
       { name: 'E', fullName: 'E1', freq: 41.20, stringNumber: 4, mode: 'bass-4' as const },
       { name: 'A', fullName: 'A1', freq: 55.00, stringNumber: 3, mode: 'bass-4' as const },
       { name: 'D', fullName: 'D2', freq: 73.42, stringNumber: 2, mode: 'bass-4' as const },

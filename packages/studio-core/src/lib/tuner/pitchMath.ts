@@ -37,20 +37,11 @@ export const STANDARD_BASS_4_STRINGS: readonly InstrumentStringTarget[] = [
   { name: 'G', note: 'G', octave: 2, fullName: 'G2', frequency: 98.00, stringNumber: 1 },
 ];
 
-export const STANDARD_BASS_5_STRINGS: readonly InstrumentStringTarget[] = [
-  { name: 'Low B', note: 'B', octave: 0, fullName: 'B0', frequency: 30.87, stringNumber: 5 },
-  { name: 'E', note: 'E', octave: 1, fullName: 'E1', frequency: 41.20, stringNumber: 4 },
-  { name: 'A', note: 'A', octave: 1, fullName: 'A1', frequency: 55.00, stringNumber: 3 },
-  { name: 'D', note: 'D', octave: 2, fullName: 'D2', frequency: 73.42, stringNumber: 2 },
-  { name: 'G', note: 'G', octave: 2, fullName: 'G2', frequency: 98.00, stringNumber: 1 },
-];
-
 /**
  * Returns canonical string targets for an instrument mode.
  */
 export function getTargetStringsForMode(mode: InstrumentTuningMode): readonly InstrumentStringTarget[] {
   if (mode === 'bass-4') return STANDARD_BASS_4_STRINGS;
-  if (mode === 'bass-5') return STANDARD_BASS_5_STRINGS;
   return STANDARD_GUITAR_STRINGS;
 }
 
@@ -110,25 +101,34 @@ export function calculatePitchMetrics(
   let activeString: InstrumentStringTarget | null;
 
   if (manualTarget) {
-    targetFrequency = manualTarget.frequency;
+    const scale = refA4 / 440;
+    targetFrequency = Number((manualTarget.frequency * scale).toFixed(2));
     cents = 1200 * Math.log2(frequency / targetFrequency);
     noteName = manualTarget.note;
     octave = manualTarget.octave;
     fullName = manualTarget.fullName;
     activeString = manualTarget;
   } else {
-    // AUTO Chromatic Mode: target is the nearest semitone
-    targetFrequency = refA4 * Math.pow(2, (roundedMidi - 69) / 12);
-    // Mathematically exact cents deviation: cents = 1200 * log2(f / f_target)
-    cents = 1200 * Math.log2(frequency / targetFrequency);
+    // AUTO Mode: First check if frequency matches a string in the active tuning
+    activeString = findNearestString(frequency, mode, null, activeStrings);
 
-    const noteIdx = ((roundedMidi % 12) + 12) % 12;
-    noteName = CHROMATIC_NOTE_NAMES[noteIdx];
-    octave = Math.floor(roundedMidi / 12) - 1;
-    fullName = `${noteName}${octave}`;
+    if (activeString) {
+      const scale = refA4 / 440;
+      targetFrequency = Number((activeString.frequency * scale).toFixed(2));
+      cents = 1200 * Math.log2(frequency / targetFrequency);
+      noteName = activeString.note;
+      octave = activeString.octave;
+      fullName = activeString.fullName;
+    } else {
+      // Fallback Chromatic Mode: target is the nearest 12-TET semitone
+      targetFrequency = refA4 * Math.pow(2, (roundedMidi - 69) / 12);
+      cents = 1200 * Math.log2(frequency / targetFrequency);
 
-    // Find nearest string in current instrument mode or active tuning
-    activeString = findNearestString(frequency, mode, manualTarget, activeStrings);
+      const noteIdx = ((roundedMidi % 12) + 12) % 12;
+      noteName = CHROMATIC_NOTE_NAMES[noteIdx];
+      octave = Math.floor(roundedMidi / 12) - 1;
+      fullName = `${noteName}${octave}`;
+    }
   }
 
   // Evaluate in-tune status with hysteresis
@@ -162,7 +162,7 @@ export function calculatePitchMetrics(
 }
 
 /**
- * Find the nearest string target for any instrument mode (Guitar, Bass 4, Bass 5) or custom active tuning.
+ * Find the nearest string target for any instrument mode or custom active tuning.
  */
 export function findNearestString(
   frequency: number,
@@ -185,8 +185,8 @@ export function findNearestString(
     }
   }
 
-  // Bind to string if within 190 cents (approx whole tone) of target string frequency
-  return minCentsDiff <= 190 ? nearest : null;
+  // Bind to string if within 220 cents (approx whole tone+) of target string frequency
+  return minCentsDiff <= 220 ? nearest : null;
 }
 
 /**

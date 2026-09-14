@@ -35,7 +35,7 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
   onModeChange,
 }) => {
   const [selectedMode, setSelectedMode] = useState<InstrumentTuningMode>(
-    activeMode === 'bass-5' ? 'bass-4' : activeMode
+    (activeMode as unknown) === 'bass-5' ? 'bass-4' : activeMode
   );
 
   const handleTabChange = (mode: InstrumentTuningMode) => {

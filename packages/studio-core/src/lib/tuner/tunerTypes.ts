@@ -1,10 +1,10 @@
 export type InstrumentFamily = 'guitar' | 'bass';
 
-export type InstrumentTuningMode = 'acoustic' | 'electric' | 'bass-4' | 'bass-5';
+export type InstrumentTuningMode = 'acoustic' | 'electric' | 'bass-4';
 
 export type TuningStatus = 'flat' | 'in_tune' | 'sharp' | 'silent' | 'weak';
 
-export type TuningCategory = 'Standard' | 'Drop / Power' | 'Open' | 'Alternate';
+export type TuningCategory = 'Standard' | 'Drop' | 'Down-Tuned' | 'Open';
 
 export interface InstrumentStringTarget {
   name: string; // e.g. "Low E", "A", "D", "G", "B", "High E"

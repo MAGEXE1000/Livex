@@ -9,7 +9,6 @@ import { TUNER_SAMPLE_DATA } from '../src/lib/tuner/tunerSampleData';
 import {
   STANDARD_GUITAR_STRINGS,
   STANDARD_BASS_4_STRINGS,
-  STANDARD_BASS_5_STRINGS,
   getTargetStringsForMode,
 } from '../src/lib/tuner/pitchMath';
 import { TunerAudioEngine } from '../src/lib/tuner/tunerAudioEngine';
@@ -80,7 +79,6 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       expect(getFamilyForMode('acoustic')).toBe('acoustic');
       expect(getFamilyForMode('electric')).toBe('electric');
       expect(getFamilyForMode('bass-4')).toBe('bass');
-      expect(getFamilyForMode('bass-5')).toBe('bass');
     });
   });
 
@@ -103,8 +101,8 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       }
     });
 
-    it('contains valid realistic recordings for all 4-string and 5-string bass strings', () => {
-      const bassStrings = ['B0', 'E1', 'A1', 'D2', 'G2'];
+    it('contains valid realistic recordings for all 4-string bass strings', () => {
+      const bassStrings = ['E1', 'A1', 'D2', 'G2'];
       for (const note of bassStrings) {
         const b64 = TUNER_SAMPLE_DATA['bass']?.[note];
         expect(b64, `Missing bass sample for ${note}`).toBeDefined();
@@ -113,7 +111,7 @@ describe('Tuner Realistic Reference Audio Engine', () => {
     });
 
     it('all target strings from pitchMath map to available samples in tunerSampleData', () => {
-      const modes = ['acoustic', 'electric', 'bass-4', 'bass-5'] as const;
+      const modes = ['acoustic', 'electric', 'bass-4'] as const;
       for (const mode of modes) {
         const family = getFamilyForMode(mode);
         const strings = getTargetStringsForMode(mode);
@@ -133,7 +131,7 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       expect(mockCtx.decodeAudioData).toHaveBeenCalled();
     });
 
-    it('preloads bass samples for bass-4 and bass-5 modes', async () => {
+    it('preloads bass samples for bass-4 mode', async () => {
       await preloadTunerReferenceAudio('bass-4', mockCtx as any);
       expect(mockCtx.decodeAudioData).toHaveBeenCalled();
     });
@@ -207,11 +205,11 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       expect(firstGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.0001, expect.any(Number));
     });
 
-    it('can play 5-string bass Low B (B0) reference recording', async () => {
-      const lowB = STANDARD_BASS_5_STRINGS[0]; // B0
+    it('can play 4-string bass Low E (E1) reference recording', async () => {
+      const lowE = STANDARD_BASS_4_STRINGS[0]; // E1
       await playTunerReferenceString({
-        target: lowB,
-        mode: 'bass-5',
+        target: lowE,
+        mode: 'bass-4',
         refA4: 440,
         audioCtx: mockCtx as any,
       });

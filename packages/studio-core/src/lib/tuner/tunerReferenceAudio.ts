@@ -46,7 +46,7 @@ async function getSampleBank(): Promise<Record<string, Record<string, string>>> 
  * Resolves instrument family key from tuning mode.
  */
 export function getFamilyForMode(mode: InstrumentTuningMode): 'acoustic' | 'electric' | 'bass' {
-  if (mode === 'bass-4' || mode === 'bass-5') return 'bass';
+  if (mode === 'bass-4') return 'bass';
   if (mode === 'acoustic') return 'acoustic';
   return 'electric';
 }
