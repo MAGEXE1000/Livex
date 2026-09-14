@@ -138,19 +138,14 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
                             }`}
                           >
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="text-sm font-semibold tracking-wide">
                                 <span
-                                  className={`text-sm font-semibold tracking-wide ${
+                                  className={
                                     isCurrentActive ? 'text-cyan-300 font-bold' : 'text-white'
-                                  }`}
+                                  }
                                 >
                                   {tuning.name}
                                 </span>
-                                {tuning.description && (
-                                  <span className="text-[11px] text-slate-400 font-mono">
-                                    ({tuning.description})
-                                  </span>
-                                )}
                               </div>
 
                               <div className="text-[11px] font-mono text-slate-400 tracking-wider mt-0.5">

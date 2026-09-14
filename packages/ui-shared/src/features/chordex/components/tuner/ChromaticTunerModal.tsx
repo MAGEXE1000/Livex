@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sliders, ChevronDown, Volume2 } from 'lucide-react';
+import { Sliders, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   TunerAudioEngine,
@@ -11,6 +11,7 @@ import {
   type InstrumentTuningDefinition,
 } from '@workspace/studio-core';
 import { TuningSelectorModal } from './TuningSelectorModal';
+import { getInstrumentGeometry } from './instrumentPegGeometry';
 
 interface ChromaticTunerModalProps {
   onClose: () => void;
@@ -103,25 +104,8 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     return activeTuning.strings;
   }, [activeTuning]);
 
-  // Split string targets: Left = lower strings (e.g. 6, 5, 4), Right = higher strings (e.g. 3, 2, 1)
-  const { leftStrings, rightStrings } = useMemo(() => {
-    const half = Math.ceil(currentStrings.length / 2);
-    return {
-      leftStrings: currentStrings.slice(0, half),
-      rightStrings: currentStrings.slice(half),
-    };
-  }, [currentStrings]);
-
-  // Headstock image asset matching instrument mode
-  const headstockImgSrc = useMemo(() => {
-    if (instrumentMode === 'acoustic') {
-      return '/instruments/headstock-acoustic.webp';
-    }
-    if (instrumentMode === 'bass-4' || instrumentMode === 'bass-5') {
-      return '/instruments/headstock-bass.webp';
-    }
-    return '/instruments/headstock-stratocaster.webp';
-  }, [instrumentMode]);
+  // Instrument geometry definition (physical peg coordinates, headstock placement, and canonical asset)
+  const geometry = useMemo(() => getInstrumentGeometry(instrumentMode), [instrumentMode]);
 
   // Direct high-performance DOM update to bypass React reconciliation at audio frame rates
   const updateNeedleDom = useCallback(
@@ -353,58 +337,54 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
       data-testid="chromatic-tuner-modal"
     >
       <div className="max-w-[440px] mx-auto w-full flex flex-col gap-2.5">
-        {/* 1. Header: Clean Instrument Selector + Circular Close Button */}
-        <div className="flex items-center justify-between gap-2.5">
-          {/* Unified Instrument Mode Tabs */}
-          <div
-            className="flex items-center p-1 rounded-full border flex-1"
-            style={{
-              backgroundColor: '#0c0f17',
-              borderColor,
-            }}
-          >
-            {(
-              [
-                { id: 'electric', label: 'Electric' },
-                { id: 'acoustic', label: 'Acoustic' },
-                { id: 'bass-4', label: 'Bass 4' },
-                { id: 'bass-5', label: 'Bass 5' },
-              ] as const
-            ).map((item) => {
-              const isSelected = instrumentMode === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleModeChange(item.id)}
-                  className={`flex-1 py-1.5 px-1 rounded-full text-xs font-semibold transition-all cursor-pointer text-center truncate ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-sm font-bold'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Close Button */}
+        {/* 1. Header: Title "Tuner" on left + Circular Close Button on right */}
+        <div className="flex items-center justify-between px-0.5 pt-0.5">
+          <span className="text-base sm:text-lg font-bold text-white tracking-wide">Tuner</span>
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full border transition-all active:scale-95 cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/40 flex-shrink-0"
-            style={{
-              backgroundColor: '#0c0f17',
-              borderColor,
-            }}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-[#0c0f17] text-slate-400 hover:text-white transition-all active:scale-95 cursor-pointer flex-shrink-0"
             aria-label="Close Tuner"
           >
-            <span className="material-symbols-rounded text-lg">close</span>
+            <span className="material-symbols-rounded text-base">close</span>
           </button>
         </div>
 
-        {/* 2. Secondary Controls: Tuning Selector Button + Unified Reference/Auto Capsule */}
+        {/* 2. Full-Width Segmented Instrument Selector */}
+        <div
+          className="flex items-center p-1 rounded-full border w-full"
+          style={{
+            backgroundColor: '#0c0f17',
+            borderColor,
+          }}
+        >
+          {(
+            [
+              { id: 'electric', label: 'Electric' },
+              { id: 'acoustic', label: 'Acoustic' },
+              { id: 'bass-4', label: 'Bass 4' },
+              { id: 'bass-5', label: 'Bass 5' },
+            ] as const
+          ).map((item) => {
+            const isSelected = instrumentMode === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleModeChange(item.id)}
+                className={`flex-1 py-1.5 px-1 rounded-full text-xs font-semibold transition-all cursor-pointer text-center truncate ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 3. Secondary Controls: Tuning Selector Button + Unified Reference/Auto Capsule */}
         <div className="flex items-center justify-between gap-2">
           {/* Tuning Selector Trigger */}
           <button
@@ -646,131 +626,128 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </div>
         </div>
 
-        {/* 4. Lower Section: Photorealistic Headstock Graphic Flanked by Dynamic String Cards */}
-        <div className="relative flex items-center justify-between gap-1 sm:gap-2 mt-2 px-0.5">
-          {/* Left Column: Lower Strings (e.g. 6, 5, 4 for 6-string guitar) */}
-          <div className="flex flex-col gap-2.5 z-10 w-[114px] sm:w-[126px] flex-shrink-0">
-            {leftStrings.map((str) => {
-              const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
-              const isDetected = isAuto && activeString?.fullName === str.fullName;
-              const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
-
-              return (
-                <div
-                  key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
-                  onClick={() => handleStringCardClick(str)}
-                  className={`flex items-center justify-between px-2.5 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
-                    isInTune
-                      ? 'border-emerald-500/80 bg-emerald-500/15 shadow-[0_0_12px_rgba(34,197,94,0.3)]'
-                      : isManualLocked
-                        ? 'border-cyan-500/80 bg-cyan-500/15 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                        : isDetected
-                          ? 'border-blue-500/60 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
-                          : 'border-white/[0.08] bg-[#0c0f17] hover:border-white/[0.16]'
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
-                >
-                  {/* Circular Number Badge (outer edge) */}
-                  <div className="w-7 h-7 rounded-full bg-[#181c26] text-white font-bold text-xs flex items-center justify-center border border-white/[0.08] flex-shrink-0">
-                    {str.stringNumber}
-                  </div>
-
-                  {/* Note Name & Frequency */}
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={`${activeTuning.id}-${str.fullName}`}
-                      initial={{ opacity: 0.5, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0.5, scale: 0.95 }}
-                      transition={{ duration: 0.14 }}
-                      className="flex flex-col items-center px-1 flex-1 min-w-0"
-                    >
-                      <span className="text-sm font-extrabold text-white leading-tight">
-                        {str.fullName}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400 leading-tight mt-0.5">
-                        {str.frequency.toFixed(1)} Hz
-                      </span>
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Speaker Reference Audio Icon (inner edge facing headstock) */}
-                  <div className="w-6 h-6 flex items-center justify-center text-blue-400 flex-shrink-0">
-                    <Volume2 className="w-4 h-4" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Center Column: Photorealistic Headstock Graphic (Significantly Larger & Responsive) */}
-          <div className="relative flex-1 flex items-center justify-center h-80 sm:h-96 max-h-[350px] sm:max-h-[420px] overflow-visible pointer-events-none px-1">
+        {/* 4. Lower Section: Photorealistic Headstock Graphic with Physical Peg-Aligned String Cards */}
+        <div
+          className="relative w-full h-[370px] sm:h-[400px] overflow-hidden rounded-2xl select-none my-1"
+          style={{ backgroundColor: '#000000' }}
+        >
+          {/* Canonical Headstock Graphic (Scaled to Full Container Height) */}
+          <div
+            className={`absolute top-0 bottom-0 pointer-events-none flex items-center ${
+              geometry.headstockPosition === 'right'
+                ? 'right-[-10px] sm:right-2 w-[58%] sm:w-[54%] justify-end'
+                : 'inset-x-0 justify-center'
+            }`}
+          >
             <img
-              src={headstockImgSrc}
+              src={geometry.assetSrc}
               alt={`${instrumentMode} headstock`}
-              className="h-full w-auto max-h-[350px] sm:max-h-[420px] object-contain object-top drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
+              className="h-full w-auto object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
               loading="eager"
             />
           </div>
 
-          {/* Right Column: Higher Strings (e.g. 3, 2, 1 for 6-string guitar - Mirrored layout) */}
-          <div className="flex flex-col gap-2.5 z-10 w-[114px] sm:w-[126px] flex-shrink-0">
-            {rightStrings.map((str) => {
-              const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
-              const isDetected = isAuto && activeString?.fullName === str.fullName;
-              const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
+          {/* Peg-Aligned Dynamic String Cards */}
+          {currentStrings.map((str) => {
+            const peg = geometry.pegs.find((p) => p.stringNumber === str.stringNumber);
+            if (!peg) return null;
 
-              return (
-                <div
-                  key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
-                  onClick={() => handleStringCardClick(str)}
-                  className={`flex items-center justify-between px-2.5 py-2 rounded-2xl border transition-all cursor-pointer active:scale-95 ${
-                    isInTune
-                      ? 'border-emerald-500/80 bg-emerald-500/15 shadow-[0_0_12px_rgba(34,197,94,0.3)]'
-                      : isManualLocked
-                        ? 'border-cyan-500/80 bg-cyan-500/15 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                        : isDetected
-                          ? 'border-blue-500/60 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
-                          : 'border-white/[0.08] bg-[#0c0f17] hover:border-white/[0.16]'
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
-                >
-                  {/* Speaker Reference Audio Icon (inner edge facing headstock) */}
-                  <div className="w-6 h-6 flex items-center justify-center text-blue-400 flex-shrink-0">
-                    <Volume2 className="w-4 h-4" />
-                  </div>
+            const isLeft = peg.side === 'left';
+            const isSingleSided = geometry.headstockPosition === 'right';
+            const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
+            const isDetected = isAuto && activeString?.fullName === str.fullName;
+            const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
 
-                  {/* Note Name & Frequency */}
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={`${activeTuning.id}-${str.fullName}`}
-                      initial={{ opacity: 0.5, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0.5, scale: 0.95 }}
-                      transition={{ duration: 0.14 }}
-                      className="flex flex-col items-center px-1 flex-1 min-w-0"
-                    >
-                      <span className="text-sm font-extrabold text-white leading-tight">
-                        {str.fullName}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400 leading-tight mt-0.5">
-                        {str.frequency.toFixed(1)} Hz
-                      </span>
-                    </motion.div>
-                  </AnimatePresence>
+            const cardWidthClass = isSingleSided
+              ? 'w-[122px] xs:w-[128px] sm:w-[134px]'
+              : 'w-[104px] xs:w-[110px] sm:w-[118px]';
 
-                  {/* Circular Number Badge (outer edge) */}
-                  <div className="w-7 h-7 rounded-full bg-[#181c26] text-white font-bold text-xs flex items-center justify-center border border-white/[0.08] flex-shrink-0">
-                    {str.stringNumber}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            return (
+              <div
+                key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
+                onClick={() => handleStringCardClick(str)}
+                style={{
+                  position: 'absolute',
+                  top: `${peg.topPct}%`,
+                  transform: 'translateY(-50%)',
+                  left: isLeft ? '6px' : undefined,
+                  right: !isLeft ? '6px' : undefined,
+                }}
+                className={`${cardWidthClass} h-7 sm:h-8 flex items-center justify-between px-2 rounded-full border transition-all cursor-pointer active:scale-95 z-10 select-none ${
+                  isInTune
+                    ? 'border-emerald-500/80 bg-emerald-500/15 shadow-[0_0_12px_rgba(34,197,94,0.3)]'
+                    : isManualLocked
+                      ? 'border-cyan-500/80 bg-cyan-500/15 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                      : isDetected
+                        ? 'border-blue-500/60 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
+                        : 'border-white/[0.08] bg-[#0c0f17] hover:border-white/[0.16]'
+                }`}
+                role="button"
+                tabIndex={0}
+                aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
+              >
+                {isLeft ? (
+                  <>
+                    {/* Circular Number Badge (outer edge) */}
+                    <div className="w-5 h-5 rounded-full bg-[#181c26] text-white font-bold text-[10px] flex items-center justify-center border border-white/[0.08] flex-shrink-0">
+                      {str.stringNumber}
+                    </div>
+
+                    {/* Note Name & Frequency */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={`${activeTuning.id}-${str.fullName}`}
+                        initial={{ opacity: 0.5, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0.5, scale: 0.95 }}
+                        transition={{ duration: 0.14 }}
+                        className="flex flex-col items-center px-1 flex-1 min-w-0"
+                      >
+                        <span className="text-xs font-black text-white leading-none">
+                          {str.fullName}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400 leading-none mt-0.5">
+                          {str.frequency.toFixed(1)} Hz
+                        </span>
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Directional Chevron pointing toward peg */}
+                    <ChevronRight className="w-3 h-3 text-slate-500 stroke-[2.5] flex-shrink-0" />
+                  </>
+                ) : (
+                  <>
+                    {/* Directional Chevron pointing toward peg */}
+                    <ChevronLeft className="w-3 h-3 text-slate-500 stroke-[2.5] flex-shrink-0" />
+
+                    {/* Note Name & Frequency */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={`${activeTuning.id}-${str.fullName}`}
+                        initial={{ opacity: 0.5, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0.5, scale: 0.95 }}
+                        transition={{ duration: 0.14 }}
+                        className="flex flex-col items-center px-1 flex-1 min-w-0"
+                      >
+                        <span className="text-xs font-black text-white leading-none">
+                          {str.fullName}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400 leading-none mt-0.5">
+                          {str.frequency.toFixed(1)} Hz
+                        </span>
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Circular Number Badge (outer edge) */}
+                    <div className="w-5 h-5 rounded-full bg-[#181c26] text-white font-bold text-[10px] flex items-center justify-center border border-white/[0.08] flex-shrink-0">
+                      {str.stringNumber}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
