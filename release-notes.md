@@ -1,14 +1,15 @@
-# Version 4.6.0
+# Version 4.6.1
 
 Release Date: 2026-09-13
 
 ### Added
 
-- Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.
-- Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.
-- Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.
+- Physical Tuning Peg Alignment: Implemented a reusable geometry system aligning string controls with physical tuning pegs across Electric Guitar (6 left), Acoustic Guitar (3+3 symmetrical), Bass 4 (4 cloverleaf left), and Bass 5 (2 left, 3 right).
+- Directional Spatial Cueing: Subtle directional chevrons (`›` and `‹`) pointing toward the physical pegs without artificial connecting lines.
+- AMOLED True Black Purity: Eliminated blue/gray background surfaces behind the instrument stage in favor of pure `#000000` AMOLED black.
 
 ### Improved
 
-- Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.
-- Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.
+- Streamlined Controls Hierarchy: Structured the top control area with prominent "Tuner" title and close button, full-width segmented instrument selector, and compact secondary controls (`Tuning` trigger and unified `A4 | Auto` capsule).
+- Simplified Tuning Selection Menu: Removed verbose parenthetical descriptions and redundant pills in favor of clean tuning names, monospace target note previews (`E  A  D  G  B  E`), and checkmarks.
+- Responsive Headstock Scaling: Enlarged headstock visualization with proportional scaling across small and tall Android displays.

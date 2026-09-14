@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.0';
-export const NATIVE_VERSION_CODE = 40600;
-export const WEB_VERSION = '4.6.0';
+export const NATIVE_VERSION = '4.6.1';
+export const NATIVE_VERSION_CODE = 40601;
+export const WEB_VERSION = '4.6.1';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'bab1858b';
+export const APP_COMMIT_SHA = '4158e8f1';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 5:30:25 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 7:24:13 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,16 +98,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Refined AMOLED Android Tuner UI: Rebalanced control hierarchy with instrument mode selection (Electric, Acoustic, Bass 4, Bass 5) prominent in the top bar, consolidated secondary tuning trigger and unified A4 reference / Auto detection toggle capsule.',
-      'Symmetrical String Cards with Reference Audio: Restored inward-facing interactive speaker icons on string cards flanking the enlarged photorealistic headstock graphic, enabling instant authentic reference audio playback.',
-      'Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.',
+      'Physical Tuning Peg Alignment: Implemented a reusable geometry system aligning string controls with physical tuning pegs across Electric Guitar (6 left), Acoustic Guitar (3+3 symmetrical), Bass 4 (4 cloverleaf left), and Bass 5 (2 left, 3 right).',
+      'Directional Spatial Cueing: Subtle directional chevrons (`›` and `‹`) pointing toward the physical pegs without artificial connecting lines.',
+      'AMOLED True Black Purity: Eliminated blue/gray background surfaces behind the instrument stage in favor of pure `#000000` AMOLED black.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.',
-      'Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.',
+      'Streamlined Controls Hierarchy: Structured the top control area with prominent "Tuner" title and close button, full-width segmented instrument selector, and compact secondary controls (`Tuning` trigger and unified `A4 | Auto` capsule).',
+      'Simplified Tuning Selection Menu: Removed verbose parenthetical descriptions and redundant pills in favor of clean tuning names, monospace target note previews (`E  A  D  G  B  E`), and checkmarks.',
+      'Responsive Headstock Scaling: Enlarged headstock visualization with proportional scaling across small and tall Android displays.',
     ],
   },
 ];
@@ -119,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.1',
+    date: '2026-09-13',
+    highlights: [
+      'Physical Tuning Peg Alignment: Implemented a reusable geometry system aligning string controls with physical tuning pegs across Electric Guitar (6 left), Acoustic Guitar (3+3 symmetrical), Bass 4 (4 cloverleaf left), and Bass 5 (2 left, 3 right).',
+      'Directional Spatial Cueing: Subtle directional chevrons (`›` and `‹`) pointing toward the physical pegs without artificial connecting lines.',
+      'AMOLED True Black Purity: Eliminated blue/gray background surfaces behind the instrument stage in favor of pure `#000000` AMOLED black.',
+      'Streamlined Controls Hierarchy: Structured the top control area with prominent "Tuner" title and close button, full-width segmented instrument selector, and compact secondary controls (`Tuning` trigger and unified `A4 | Auto` capsule).',
+      'Simplified Tuning Selection Menu: Removed verbose parenthetical descriptions and redundant pills in favor of clean tuning names, monospace target note previews (`E  A  D  G  B  E`), and checkmarks.',
+      'Responsive Headstock Scaling: Enlarged headstock visualization with proportional scaling across small and tall Android displays.',
+    ],
+  },
   {
     version: '4.6.0',
     date: '2026-09-13',
@@ -212,16 +225,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Android Initial Bundle Reduction: Reduced the initial Android JavaScript entry chunk (index.js) by 53.4% (from 1,551.87 kB to 722.59 kB raw, and by 55.1% gzipped from 357.32 kB to 160.37 kB), dramatically lowering cold-start parsing and JavaScript evaluation overhead on Android WebView.',
       'Cold-Start Import Decoupling: Decoupled EmergencyDebugOverlay, MobileDevicePreviewFrame, and ui-android to use direct subpaths, preventing accidental evaluation of the root ui-shared barrel during application boot.',
       'Phase 7A–7J Baseline Consolidations:Decoupled GSAP/SplitText, strengthened reduced-motion accessibility, aligned Metronome and global Dialog/Sheet with native BackDispatcher, narrowed Zustand subscriptions, and pruned stale motion build configurations.',
-    ],
-  },
-  {
-    version: '4.5.91',
-    date: '2026-09-11',
-    highlights: [
-      'Canonical UI Presentation Restoration: Removed experimental native Compose Hub overlay in the Android shell, restoring complete visual and behavioral parity across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
-      'App-Specific Navigation and Design Integrity: Restored individual app layouts, authentic brand logos, bespoke typography, and floating dock navigation across all applications while preserving the canonical `MorphingActionSurface` system.',
-      'Web Audio & Shell Harmony: Maintained full Web Audio synthesis and playback capabilities in Chordex, Drumex, and Vocalex with seamless Android shell integration.',
-      'Preserved Pipeline Acceleration: Kept DOM observer reductions in BottomNavigationController, GPU-composited transform/opacity transitions in StudioPageTransition, and list virtualization containment.',
     ],
   },
 ];
