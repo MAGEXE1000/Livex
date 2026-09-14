@@ -67,7 +67,7 @@ function testManifestFreshness() {
     checkedCount++;
   }
 
-  assert.ok(checkedCount >= 20, `At least 20 target assets must be verified, got ${checkedCount}`);
+  assert.ok(checkedCount >= 15, `At least 15 target assets must be verified, got ${checkedCount}`);
   console.log(`✓ PASS: Freshness manifest verified (${checkedCount} assets validated against canonical master)`);
 }
 
@@ -92,13 +92,13 @@ function testManifestInvariants() {
   assert.equal(src.includes('<activity-alias'), false, 'Prohibited <activity-alias> elements must NOT exist');
   assert.equal(src.includes('android:name=".MainActivity"'), true, '.MainActivity must be declared');
   assert.equal(src.includes('android:icon="@mipmap/ic_launcher"'), true, 'android:icon must be @mipmap/ic_launcher');
-  assert.equal(src.includes('android:roundIcon="@mipmap/ic_launcher_round"'), true, 'android:roundIcon must be @mipmap/ic_launcher_round');
+  assert.equal(src.includes('android:roundIcon='), false, 'android:roundIcon must NOT be present to prevent OEM launcher caching fragmentation');
 
   const gradlePath = path.join(repoRoot, 'apps/studio-android/android/app/build.gradle');
   const gradleSrc = fs.readFileSync(gradlePath, 'utf8');
   assert.equal(gradleSrc.includes('applicationId "com.chordex.app"'), true, 'build.gradle applicationId must be com.chordex.app');
 
-  console.log('✓ PASS: AndroidManifest and Gradle invariants verified (com.chordex.app, .MainActivity, no aliases)');
+  console.log('✓ PASS: AndroidManifest and Gradle invariants verified (com.chordex.app, .MainActivity, no aliases, no roundIcon)');
 }
 
 // Test 5: Adaptive Icon XML Configuration
@@ -106,14 +106,11 @@ function testAdaptiveIconXml() {
   console.log('\n[Test 5] Adaptive Icon XML Configuration');
   const anyDpiDir = path.join(repoRoot, 'apps/studio-android/android/app/src/main/res/mipmap-anydpi-v26');
   const icLauncher = fs.readFileSync(path.join(anyDpiDir, 'ic_launcher.xml'), 'utf8');
-  const icLauncherRound = fs.readFileSync(path.join(anyDpiDir, 'ic_launcher_round.xml'), 'utf8');
 
-  for (const xml of [icLauncher, icLauncherRound]) {
-    assert.equal(xml.includes('<adaptive-icon'), true, 'Must define <adaptive-icon>');
-    assert.equal(xml.includes('android:drawable="@color/ic_launcher_background"'), true, 'Must reference background color');
-    assert.equal(xml.includes('android:drawable="@mipmap/ic_launcher_foreground"'), true, 'Must reference foreground mipmap');
-    assert.equal(xml.includes('<monochrome'), true, 'Must define monochrome adaptive layer');
-  }
+  assert.equal(icLauncher.includes('<adaptive-icon'), true, 'Must define <adaptive-icon>');
+  assert.equal(icLauncher.includes('android:drawable="@color/ic_launcher_background"'), true, 'Must reference background color');
+  assert.equal(icLauncher.includes('android:drawable="@mipmap/ic_launcher_foreground"'), true, 'Must reference foreground mipmap');
+  assert.equal(icLauncher.includes('<monochrome'), true, 'Must define monochrome adaptive layer');
 
   console.log('✓ PASS: Adaptive icon XML configuration verified for full API 26-35+ compatibility');
 }
