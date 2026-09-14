@@ -1,23 +1,25 @@
 {
   "platform": "android",
-  "version": "4.6.2",
-  "versionName": "4.6.2",
-  "versionCode": 40602,
-  "version_code": 40602,
-  "commit": "ec682cf0",
-  "releasedAt": "9/13/2026, 9:26:13 PM CST",
-  "buildTimestamp": "9/13/2026, 9:26:13 PM CST",
+  "version": "4.6.3",
+  "versionName": "4.6.3",
+  "versionCode": 40603,
+  "version_code": 40603,
+  "commit": "8bf829b6",
+  "releasedAt": "9/13/2026, 11:08:16 PM CST",
+  "buildTimestamp": "9/13/2026, 11:08:16 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.\n• Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.\n• Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.\n• Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.",
-  "whatsNew": "• Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.\n• Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.\n• Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.\n• Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.",
+  "changelog": "• Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.\n• Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right.\n• Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.\n• Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.\n• Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.\n• Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly \"Bass\", eliminating deprecated \"Bass 4\" naming.",
+  "whatsNew": "• Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.\n• Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right.\n• Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.\n• Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.\n• Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.\n• Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly \"Bass\", eliminating deprecated \"Bass 4\" naming.",
   "releaseNotes": {
     "added": [
-      "Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.",
-      "Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input."
+      "Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.",
+      "Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right."
     ],
     "improved": [
-      "Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.",
-      "Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation."
+      "Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.",
+      "Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.",
+      "Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.",
+      "Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly \"Bass\", eliminating deprecated \"Bass 4\" naming."
     ]
   },
   "mandatory": false

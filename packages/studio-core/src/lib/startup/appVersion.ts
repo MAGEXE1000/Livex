@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.2';
-export const NATIVE_VERSION_CODE = 40602;
-export const WEB_VERSION = '4.6.2';
+export const NATIVE_VERSION = '4.6.3';
+export const NATIVE_VERSION_CODE = 40603;
+export const WEB_VERSION = '4.6.3';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'ec682cf0';
+export const APP_COMMIT_SHA = '8bf829b6';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 9:26:13 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 11:08:16 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.',
-      'Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.',
+      'Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.',
+      'Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.',
-      'Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.',
+      'Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.',
+      'Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.',
+      'Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.',
+      'Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly "Bass", eliminating deprecated "Bass 4" naming.',
     ],
   },
 ];
@@ -118,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.3',
+    date: '2026-09-14',
+    highlights: [
+      'Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.',
+      'Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right.',
+      'Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.',
+      'Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.',
+      'Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.',
+      'Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly "Bass", eliminating deprecated "Bass 4" naming.',
+    ],
+  },
   {
     version: '4.6.2',
     date: '2026-09-13',
@@ -213,16 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Normalized Navigation Selected Highlight Geometry: Standardized the selected tab indicator bounding box and centering geometry across the shared bottom bar, eliminating horizontal jitter and label overlap across Hub, Chordex, Drumex, Stagex, Groovex, and Vocalex.',
       'Refined Chord Finder and Chord Detail Morph Transitions: Enhanced chord detail foreground popup transitions with tactile press feedback and stable coordinate tracking.',
       'Generator Subsystem Pruning: Permanently pruned obsolete chord progression generator interfaces and components, removing dormant code paths.',
-    ],
-  },
-  {
-    version: '4.5.93',
-    date: '2026-09-12',
-    highlights: [
-      "Fluid Chord Detail Foreground Morphing Popup: Replaced full-page drilldown routing when tapping chord cards with an in-place fluid foreground morphing modal surface (`MorphingActionSurface`), physically expanding from the tapped chord card's real-time bounding box over the preserved underlying Chordex screen.",
-      'Synchronous Geometry & Spatial Anchoring: Added dynamic `originRect` spatial geometry mapping with spring-driven expansion (`SPRING_PANEL`) and clean reverse collapse back to the originating chord card.',
-      "Android Hardware Back Navigation Integration: Directly integrated the chord modal surface with `BackDispatcher('modal')`, ensuring tapping the native Android back button or gesture smoothly reverses the morph back into the chord grid with zero residual DOM overlays.",
-      'Promotion and Progression Navigation Stability: Corrected sub-route panel resolution in `SharedAppShell` and restored the Progression Generator shortcut in `LibraryUI`.',
     ],
   },
 ];
