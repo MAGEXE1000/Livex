@@ -1,7 +1,7 @@
 import type { InstrumentStringTarget, InstrumentTuningMode } from './tunerTypes';
 import { createAudioContext } from '../audioContextOptions';
 
-let internalAudioCtx: AudioContext | null = null;
+let playbackAudioCtx: AudioContext | null = null;
 const decodedBufferCache = new Map<string, AudioBuffer>();
 let sampleBankPromise: Promise<Record<string, Record<string, string>>> | null = null;
 
@@ -9,20 +9,48 @@ let activeSources: AudioBufferSourceNode[] = [];
 let activeGainNodes: GainNode[] = [];
 let playbackTimeout: ReturnType<typeof setTimeout> | null = null;
 
-function getFallbackCtx(): AudioContext | null {
+export interface ActiveReferencePlayback {
+  target: InstrumentStringTarget;
+  frequency: number;
+  mode: InstrumentTuningMode;
+  startTime: number;
+  duration: number;
+}
+
+let activePlaybackInfo: ActiveReferencePlayback | null = null;
+
+/**
+ * Returns currently active reference playback metadata, or null if no reference sound is playing.
+ */
+export function getActiveReferencePlayback(): ActiveReferencePlayback | null {
+  return activePlaybackInfo;
+}
+
+/**
+ * Returns whether a reference string sound is currently sounding.
+ */
+export function isReferencePlaybackActive(): boolean {
+  return activePlaybackInfo !== null;
+}
+
+/**
+ * Provides a dedicated, isolated AudioContext for reference string playback.
+ * Strictly decoupled from microphone capture AudioContext to prevent any audio feedback or loopback.
+ */
+export function getPlaybackAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
 
-  if (!internalAudioCtx || internalAudioCtx.state === 'closed') {
+  if (!playbackAudioCtx || playbackAudioCtx.state === 'closed') {
     try {
-      internalAudioCtx = createAudioContext();
+      playbackAudioCtx = createAudioContext();
     } catch {
-      internalAudioCtx = null;
+      playbackAudioCtx = null;
     }
   }
-  if (internalAudioCtx && internalAudioCtx.state === 'suspended') {
-    internalAudioCtx.resume().catch(() => {});
+  if (playbackAudioCtx && playbackAudioCtx.state === 'suspended') {
+    playbackAudioCtx.resume().catch(() => {});
   }
-  return internalAudioCtx;
+  return playbackAudioCtx;
 }
 
 /**
@@ -94,7 +122,7 @@ export async function preloadTunerReferenceAudio(
   mode: InstrumentTuningMode,
   audioCtx?: AudioContext
 ): Promise<void> {
-  const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getFallbackCtx();
+  const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getPlaybackAudioContext();
   if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
 
   const family = getFamilyForMode(mode);
@@ -116,7 +144,8 @@ export async function preloadTunerReferenceAudio(
  * Smoothly stops in-flight reference playback with a fast 25ms anti-click ramp.
  */
 export function stopTunerReferenceAudio(): void {
-  const ctx = internalAudioCtx;
+  activePlaybackInfo = null;
+  const ctx = playbackAudioCtx;
   const now = ctx ? ctx.currentTime : 0;
 
   activeGainNodes.forEach((g) => {
@@ -213,7 +242,7 @@ export interface PlayTunerReferenceOptions {
  * Supports:
  * - Electric guitar (clean recorded strings)
  * - Acoustic guitar (steel string recordings)
- * - 4-string bass & 5-string bass (fingerstyle bass recordings)
+ * - 4-string bass (fingerstyle bass recordings)
  * - Universal resampling for all alternate tunings (Drop D, DADGAD, Open G, etc.)
  *   relative to nearest recorded anchor sample
  * - Pitch adjustment matching reference A4 (e.g. 440, 442, 432 Hz) via playbackRate
@@ -225,7 +254,7 @@ export async function playTunerReferenceString(
   const { target, mode, refA4 = 440, volume = 0.8, audioCtx } = options;
   if (!target || !target.fullName) return;
 
-  const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getFallbackCtx();
+  const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getPlaybackAudioContext();
   if (!ctx) return;
 
   if (ctx.state === 'suspended') {
@@ -287,6 +316,16 @@ export async function playTunerReferenceString(
   activeSources.push(source);
   activeGainNodes.push(gain);
 
+  // Track active reference playback metadata for engine discrimination
+  const targetFrequency = Number((target.frequency * a4Ratio).toFixed(2));
+  activePlaybackInfo = {
+    target,
+    frequency: targetFrequency,
+    mode,
+    startTime: Date.now(),
+    duration: ringDuration,
+  };
+
   source.start(now);
   source.stop(now + ringDuration);
 
@@ -297,5 +336,17 @@ export async function playTunerReferenceString(
     } catch {}
     activeSources = activeSources.filter((s) => s !== source);
     activeGainNodes = activeGainNodes.filter((g) => g !== gain);
+    if (activeSources.length === 0) {
+      activePlaybackInfo = null;
+    }
   };
+
+  if (playbackTimeout) {
+    clearTimeout(playbackTimeout);
+  }
+  playbackTimeout = setTimeout(() => {
+    if (activeSources.length === 0) {
+      activePlaybackInfo = null;
+    }
+  }, (ringDuration + 0.1) * 1000);
 }

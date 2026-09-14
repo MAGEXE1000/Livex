@@ -4,6 +4,8 @@ import {
   preloadTunerReferenceAudio,
   playTunerReferenceString,
   stopTunerReferenceAudio,
+  getActiveReferencePlayback,
+  isReferencePlaybackActive,
 } from '../src/lib/tuner/tunerReferenceAudio';
 import { TUNER_SAMPLE_DATA } from '../src/lib/tuner/tunerSampleData';
 import {
@@ -242,7 +244,7 @@ describe('Tuner Realistic Reference Audio Engine', () => {
     });
   });
 
-  describe('TunerAudioEngine Integration', () => {
+  describe('TunerAudioEngine Integration & Audio Separation', () => {
     it('exposes playStringReference and preloadReferenceAudio on TunerAudioEngine instance', async () => {
       const engine = new TunerAudioEngine({
         instrumentMode: 'electric',
@@ -258,5 +260,94 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       // Clean destroy
       engine.destroy();
     });
+
+    it('tracks active reference playback metadata during string playback and clears on stop', async () => {
+      const lowE = STANDARD_GUITAR_STRINGS[0]; // E2 at 82.41 Hz
+      expect(isReferencePlaybackActive()).toBe(false);
+      expect(getActiveReferencePlayback()).toBeNull();
+
+      await playTunerReferenceString({
+        target: lowE,
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+      const active = getActiveReferencePlayback();
+      expect(active).not.toBeNull();
+      expect(active?.target.fullName).toBe('E2');
+      expect(active?.frequency).toBeCloseTo(82.41, 1);
+      expect(active?.mode).toBe('electric');
+
+      stopTunerReferenceAudio();
+      expect(isReferencePlaybackActive()).toBe(false);
+      expect(getActiveReferencePlayback()).toBeNull();
+    });
+
+    it('scales active reference target frequency dynamically with refA4', async () => {
+      const stringA2 = STANDARD_GUITAR_STRINGS[1]; // A2 (110.0 Hz at A440)
+      await playTunerReferenceString({
+        target: stringA2,
+        mode: 'acoustic',
+        refA4: 442,
+        audioCtx: mockCtx as any,
+      });
+
+      const active = getActiveReferencePlayback();
+      expect(active).not.toBeNull();
+      // 110 * (442 / 440) = 110.5 Hz
+      expect(active?.frequency).toBeCloseTo(110.5, 1);
+
+      stopTunerReferenceAudio();
+    });
+
+    it('accurately tracks 4-string bass Drop D reference playback (D1 at 36.71 Hz)', async () => {
+      const bassDropD = {
+        name: 'Drop D',
+        note: 'D',
+        octave: 1,
+        fullName: 'D1',
+        frequency: 36.71,
+        stringNumber: 4,
+      };
+
+      await playTunerReferenceString({
+        target: bassDropD,
+        mode: 'bass-4',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      const active = getActiveReferencePlayback();
+      expect(active).not.toBeNull();
+      expect(active?.target.fullName).toBe('D1');
+      expect(active?.frequency).toBeCloseTo(36.71, 1);
+
+      stopTunerReferenceAudio();
+    });
+
+    it('handles rapid sequential string taps without audio corruption or stale state', async () => {
+      const strings = STANDARD_GUITAR_STRINGS.slice(0, 3);
+
+      for (const str of strings) {
+        await playTunerReferenceString({
+          target: str,
+          mode: 'electric',
+          refA4: 440,
+          audioCtx: mockCtx as any,
+        });
+
+        const active = getActiveReferencePlayback();
+        expect(active?.target.fullName).toBe(str.fullName);
+      }
+
+      // Final active matches the last tapped string
+      expect(getActiveReferencePlayback()?.target.fullName).toBe(strings[2].fullName);
+
+      stopTunerReferenceAudio();
+      expect(isReferencePlaybackActive()).toBe(false);
+    });
   });
 });
+

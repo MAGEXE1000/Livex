@@ -23,6 +23,8 @@ import {
   playTunerReferenceString,
   preloadTunerReferenceAudio,
   stopTunerReferenceAudio,
+  getActiveReferencePlayback,
+  getPlaybackAudioContext,
 } from './tunerReferenceAudio';
 
 const BUFFER_SIZE = 2048;
@@ -148,7 +150,6 @@ export class TunerAudioEngine {
       target,
       mode: activeMode,
       refA4: this.refA4,
-      audioCtx: this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined,
     });
   }
 
@@ -157,10 +158,7 @@ export class TunerAudioEngine {
    */
   public preloadReferenceAudio(mode?: InstrumentTuningMode): void {
     const activeMode = mode || this.mode;
-    preloadTunerReferenceAudio(
-      activeMode,
-      this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined
-    );
+    preloadTunerReferenceAudio(activeMode);
   }
 
   /**
@@ -168,9 +166,7 @@ export class TunerAudioEngine {
    */
   public playReferenceTone(frequency: number, durationSeconds: number = 1.4): void {
     try {
-      const ctx = this.audioCtx && this.audioCtx.state !== 'closed'
-        ? this.audioCtx
-        : createAudioContext();
+      const ctx = getPlaybackAudioContext() || createAudioContext();
 
       if (ctx.state === 'suspended') {
         ctx.resume();
@@ -241,7 +237,7 @@ export class TunerAudioEngine {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: false,
+            echoCancellation: true,
             noiseSuppression: false,
             autoGainControl: false,
           },
@@ -462,6 +458,26 @@ export class TunerAudioEngine {
       this.setState('weak_signal');
       this.emitFrame(null);
       return;
+    }
+
+    // 4b. Self-Playback Rejection:
+    // If a reference string sound is currently playing from the speaker, ensure that acoustic
+    // speaker bleed into the microphone is never reported as user instrument input.
+    const activeRef = getActiveReferencePlayback();
+    if (activeRef && Number.isFinite(rawFreq) && rawFreq > 0) {
+      const refFreq = activeRef.frequency;
+      const centsDiff = Math.abs(1200 * Math.log2(rawFreq / refFreq));
+      const octaveDiff = Math.abs(1200 * Math.log2(rawFreq / (2 * refFreq)));
+
+      // If the detected pitch is matching the tuner's active reference tone (within 45 cents)
+      if (centsDiff <= 45 || octaveDiff <= 45) {
+        // Suppress self-playback so the speaker output is never reported as user instrument input
+        this.consecutiveInTuneFrames = 0;
+        this.currentlyInTune = false;
+        this.setState('no_signal');
+        this.emitFrame(null);
+        return;
+      }
     }
 
     // 5. Octave Error Protection for Low Guitar & Bass Strings
