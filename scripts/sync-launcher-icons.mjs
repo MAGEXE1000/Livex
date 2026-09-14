@@ -108,7 +108,7 @@ if (!fs.existsSync(masterSymbolPath)) {
 // Compile list of expected targets
 const targets = [];
 
-// 1. Android Native Mipmaps (15 files)
+// 1. Android Native Mipmaps (10 files)
 for (const item of densityMatrix) {
   const dir = path.join(androidResDir, 'mipmap-' + item.density);
   targets.push({
@@ -123,15 +123,6 @@ for (const item of densityMatrix) {
   });
   targets.push({
     category: 'Android Mipmap (' + item.density + ')',
-    relPath: path.relative(repoRoot, path.join(dir, 'ic_launcher_round.png')),
-    absPath: path.join(dir, 'ic_launcher_round.png'),
-    source: masterBadgePath,
-    width: item.round,
-    height: item.round,
-    isRound: true,
-    isForeground: false
-  });
-  targets.push({
     category: 'Android Mipmap (' + item.density + ')',
     relPath: path.relative(repoRoot, path.join(dir, 'ic_launcher_foreground.png')),
     absPath: path.join(dir, 'ic_launcher_foreground.png'),
@@ -290,12 +281,12 @@ async function runVerify() {
       console.log('✓ Manifest Invariant: No <activity-alias> elements found.');
     }
 
-    // Ensure android:icon and android:roundIcon point to mipmap/ic_launcher
-    if (!manifestSrc.includes('android:icon="@mipmap/ic_launcher"') || !manifestSrc.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
-      console.error('✗ Manifest Invariant: android:icon or android:roundIcon not configured with @mipmap/ic_launcher.');
+    // Ensure android:icon points to mipmap/ic_launcher
+    if (!manifestSrc.includes('android:icon="@mipmap/ic_launcher"')) {
+      console.error('✗ Manifest Invariant: android:icon not configured with @mipmap/ic_launcher.');
       hasErrors = true;
     } else {
-      console.log('✓ Manifest Invariant: android:icon and roundIcon configured to @mipmap/ic_launcher.');
+      console.log('✓ Manifest Invariant: android:icon configured to @mipmap/ic_launcher. (roundIcon intentionally omitted)');
     }
 
     // Ensure MainActivity is the launchable activity
