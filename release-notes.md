@@ -1,12 +1,11 @@
-# Version 4.6.5
+# Version 4.6.6
 
 Release Date: 2026-09-14
 
-### Fixed
-
-- Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.
-- Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.
-
 ### Improved
 
-- Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.
+- Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.
+
+### Fixed
+
+- Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.
