@@ -157,7 +157,6 @@ export class UpdatePipelineCoordinatorClass {
     trigger: string,
     reason: string
   ): Promise<CentralizedUpdateState> {
-    const pipelineId = ++this.activePipelineId;
     if (this.currentPromise && this.currentRequest) {
       if (!isManual || this.currentRequest.isManual) {
         this.coalescedEventCount++;
@@ -166,6 +165,8 @@ export class UpdatePipelineCoordinatorClass {
         this.cancelledPipelineCount++;
       }
     }
+
+    const pipelineId = ++this.activePipelineId;
 
     let resolveFn!: (value: CentralizedUpdateState) => void;
     let rejectFn!: (reason: any) => void;
@@ -478,7 +479,22 @@ async function executeCheckForUpdateInternal(
 
   if (!isManual) {
     const now = Date.now();
-    if (now - lastCheckedTime < MIN_AUTO_CHECK_INTERVAL_MS) {
+    const isAppEntryTrigger = [
+      'startup',
+      'app_boot_complete',
+      'app launch initial check',
+      'appStateChange',
+      'resume',
+      'foreground',
+      'queued_lifecycle',
+      'pageshow',
+      'visibilitychange',
+    ].includes(trigger);
+
+    // App entry and foreground resume checks run with a short 15s debounce to prevent event storms,
+    // while periodic background polling adheres to MIN_AUTO_CHECK_INTERVAL_MS (15 min).
+    const minInterval = isAppEntryTrigger ? 15 * 1000 : MIN_AUTO_CHECK_INTERVAL_MS;
+    if (now - lastCheckedTime < minInterval) {
       return globalUpdateState;
     }
   }
@@ -888,6 +904,7 @@ async function executeCheckForUpdateInternal(
       }
     }
 
+    lastCheckedTime = Date.now();
     const duration = Date.now() - startTime;
     logDetailedJsTrace(
       'checkForUpdate',
@@ -936,7 +953,6 @@ async function executeCheckForUpdateInternal(
     }
     return globalUpdateState;
   } finally {
-    lastCheckedTime = Date.now();
     setActivePipelineContext(null);
   }
 }

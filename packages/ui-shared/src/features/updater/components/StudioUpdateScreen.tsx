@@ -216,11 +216,11 @@ export default memo(function StudioUpdateScreen({
 
   // Format Package Size
   const formattedSize = useMemo(() => {
-    if (apkSizeBytes && typeof apkSizeBytes === 'number' && apkSizeBytes > 0) {
-      return `${(apkSizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-    if (totalBytes && typeof totalBytes === 'number' && totalBytes > 0) {
-      return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`;
+    const total =
+      (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
+      (typeof apkSizeBytes === 'number' && apkSizeBytes > 0 ? apkSizeBytes : null);
+    if (total) {
+      return `${(total / (1024 * 1024)).toFixed(1)} MB`;
     }
     return '—';
   }, [apkSizeBytes, totalBytes]);
@@ -228,17 +228,29 @@ export default memo(function StudioUpdateScreen({
   // Format Download Progress Numbers
   const progressPercent = Math.min(100, Math.max(0, Math.round(progress * 100)));
   const downloadedMB = useMemo(() => {
-    if (downloadedBytes && typeof downloadedBytes === 'number' && downloadedBytes > 0) {
-      return (downloadedBytes / (1024 * 1024)).toFixed(1);
+    const total =
+      (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
+      (typeof apkSizeBytes === 'number' && apkSizeBytes > 0 ? apkSizeBytes : null);
+    const bytes =
+      typeof downloadedBytes === 'number' && downloadedBytes > 0
+        ? downloadedBytes
+        : total && progress > 0
+          ? progress * total
+          : null;
+    if (bytes !== null && bytes >= 0) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
-    return '—';
-  }, [downloadedBytes]);
+    return '0.0 MB';
+  }, [downloadedBytes, totalBytes, apkSizeBytes, progress]);
 
   // Transfer Speed Text
   const speedText = useMemo(() => {
     if (downloadSpeed) return downloadSpeed;
+    if (normalizedState === 'downloading' && progress > 0 && progress < 1) {
+      return 'Calculating speed…';
+    }
     return '—';
-  }, [downloadSpeed]);
+  }, [downloadSpeed, normalizedState, progress]);
 
   // ETA Text
   const etaText = useMemo(() => {

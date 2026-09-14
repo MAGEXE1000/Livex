@@ -345,7 +345,7 @@ export async function downloadApk(
           'apkDownloadProgress',
           (status: any) => {
             if (status && typeof status.progress === 'number') {
-              onProgress(status.progress);
+              onProgress(status.progress, status.totalBytes, status.downloadedBytes);
             }
           }
         );

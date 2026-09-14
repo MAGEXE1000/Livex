@@ -1027,8 +1027,16 @@ function UpdateModal({
   const [computedEta, setComputedEta] = useState<number | null>(null);
 
   useEffect(() => {
-    const bytes = updater.downloadedBytes;
-    const total = updater.totalBytes;
+    const total =
+      (typeof updater.totalBytes === 'number' && updater.totalBytes > 0 ? updater.totalBytes : null) ??
+      (typeof updater.apkSizeBytes === 'number' && updater.apkSizeBytes > 0 ? updater.apkSizeBytes : null);
+    const bytes =
+      typeof updater.downloadedBytes === 'number' && updater.downloadedBytes > 0
+        ? updater.downloadedBytes
+        : total && typeof updater.progress === 'number' && updater.progress > 0
+          ? Math.round(updater.progress * total)
+          : null;
+
     if (typeof bytes !== 'number' || bytes <= 0) return;
 
     const now = Date.now();
@@ -1047,8 +1055,15 @@ function UpdateModal({
       const dtSec = (newest.time - oldest.time) / 1000;
       if (dtSec > 0.1) {
         const bytesPerSec = (newest.bytes - oldest.bytes) / dtSec;
-        const mbps = bytesPerSec / (1024 * 1024);
-        setComputedSpeed(`${mbps.toFixed(1)} MB/s`);
+        if (bytesPerSec >= 1024 * 1024) {
+          const mbps = bytesPerSec / (1024 * 1024);
+          setComputedSpeed(`${mbps.toFixed(1)} MB/s`);
+        } else if (bytesPerSec >= 1024) {
+          const kbps = Math.round(bytesPerSec / 1024);
+          setComputedSpeed(`${kbps} KB/s`);
+        } else if (bytesPerSec > 0) {
+          setComputedSpeed(`${Math.round(bytesPerSec)} B/s`);
+        }
 
         if (typeof total === 'number' && total > 0 && bytesPerSec > 0) {
           const remaining = total - newest.bytes;
@@ -1056,7 +1071,7 @@ function UpdateModal({
         }
       }
     }
-  }, [updater.downloadedBytes, updater.totalBytes]);
+  }, [updater.downloadedBytes, updater.totalBytes, updater.apkSizeBytes, updater.progress]);
 
   // Reset speed samples when download is not active
   useEffect(() => {

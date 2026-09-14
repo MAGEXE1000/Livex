@@ -451,6 +451,7 @@ export function logPipelineTrace(caller: string, stage: string, input: any, outp
 interface GitHubReleaseAsset {
   name: string;
   browser_download_url: string;
+  size?: number;
 }
 
 interface GitHubRelease {
@@ -574,6 +575,7 @@ async function fetchLatestFromGitHub(signal: AbortSignal): Promise<RemoteVersion
         Object.keys(extractedNotes.releaseNotes).length > 0
           ? extractedNotes.releaseNotes
           : undefined,
+      apkSizeBytes: typeof apkAsset.size === 'number' && apkAsset.size > 0 ? apkAsset.size : undefined,
     };
 
     logPipelineTrace(caller, 'RELEASE_METADATA_OBJECT', { source: 'github' }, info);

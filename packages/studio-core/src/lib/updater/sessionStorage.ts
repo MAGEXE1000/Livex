@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { NATIVE_VERSION, NATIVE_VERSION_CODE } from '../appVersion';
 /**
  * updater/sessionStorage.ts
  *
@@ -72,10 +73,13 @@ export async function getNativeVersion(): Promise<string | null> {
   try {
     const { AppInstaller } = await import('../apkDownloader');
     const info = await AppInstaller.getInstalledAppInfo();
-    releaseMetadataInspector.rawVersionName = info.versionName;
-    return info.versionName;
+    if (info && typeof info.versionName === 'string' && info.versionName.trim().length > 0) {
+      releaseMetadataInspector.rawVersionName = info.versionName;
+      return info.versionName;
+    }
+    return NATIVE_VERSION;
   } catch (e) {
-    return null;
+    return NATIVE_VERSION;
   }
 }
 
@@ -84,8 +88,11 @@ export async function getNativeVersionCode(): Promise<number | null> {
   try {
     const { AppInstaller } = await import('../apkDownloader');
     const info = await AppInstaller.getInstalledAppInfo();
-    return info.versionCode;
+    if (info && typeof info.versionCode === 'number' && info.versionCode > 0) {
+      return info.versionCode;
+    }
+    return NATIVE_VERSION_CODE;
   } catch (e) {
-    return null;
+    return NATIVE_VERSION_CODE;
   }
 }

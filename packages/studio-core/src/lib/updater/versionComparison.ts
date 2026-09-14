@@ -1,4 +1,4 @@
-import { APP_VERSION, compareSemver, parseSemver } from '../appVersion';
+import { APP_VERSION, NATIVE_VERSION_CODE, compareSemver, parseSemver } from '../appVersion';
 import { RemoteVersionInfo } from './releaseMetadata';
 import { Capacitor } from '@capacitor/core';
 
@@ -96,19 +96,25 @@ export function compareVersions(
   let isUpgrade = false;
   let isUpToDate = false;
 
+  const effectiveLocalCode =
+    localVersionCode !== undefined && localVersionCode !== null
+      ? localVersionCode
+      : Capacitor.isNativePlatform()
+        ? NATIVE_VERSION_CODE
+        : null;
+
   // Verify consistency between version code and version name
   let hasInconsistency = false;
   if (
-    localVersionCode !== undefined &&
-    localVersionCode !== null &&
+    effectiveLocalCode !== null &&
     remote.versionCode !== undefined &&
     remote.versionCode !== null
   ) {
-    if (remote.versionCode > localVersionCode && nameComparison < 0) {
+    if (remote.versionCode > effectiveLocalCode && nameComparison < 0) {
       hasInconsistency = true;
-    } else if (remote.versionCode < localVersionCode && nameComparison > 0) {
+    } else if (remote.versionCode < effectiveLocalCode && nameComparison > 0) {
       hasInconsistency = true;
-    } else if (remote.versionCode === localVersionCode && nameComparison !== 0) {
+    } else if (remote.versionCode === effectiveLocalCode && nameComparison !== 0) {
       hasInconsistency = true;
     }
   }
@@ -120,37 +126,25 @@ export function compareVersions(
       isDowngrade: false,
       isUpgrade: false,
       isUpToDate: false,
-      explanation: `Inconsistent remote metadata: Remote version is "${remote.version}" (code ${remote.versionCode}) but local version is "${localVersionName}" (code ${localVersionCode}). This represents an inconsistent release configuration.`,
+      explanation: `Inconsistent remote metadata: Remote version is "${remote.version}" (code ${remote.versionCode}) but local version is "${localVersionName}" (code ${effectiveLocalCode}). This represents an inconsistent release configuration.`,
       details,
     };
   }
 
   if (
-    localVersionCode !== undefined &&
-    localVersionCode !== null &&
+    effectiveLocalCode !== null &&
     remote.versionCode !== undefined &&
     remote.versionCode !== null
   ) {
-    if (remote.versionCode > localVersionCode) {
+    if (remote.versionCode > effectiveLocalCode) {
       isUpgrade = true;
-    } else if (remote.versionCode < localVersionCode) {
+    } else if (remote.versionCode < effectiveLocalCode) {
       isDowngrade = true;
     } else {
       isUpToDate = true;
     }
-  } else if (Capacitor.isNativePlatform() && (localVersionCode === undefined || localVersionCode === null)) {
-    // On native, a missing local versionCode means the Capacitor bridge hasn't responded yet.
-    // Defer the check rather than falling through to semver which could give false results.
-    return {
-      updateAvailable: false,
-      isDowngrade: false,
-      isUpgrade: false,
-      isUpToDate: false,
-      explanation: 'Native versionCode not yet available from Capacitor bridge. Deferring update check.',
-      details,
-    };
   } else {
-    // Fallback (web only): no versionCode available, use semver comparison
+    // Fallback: no versionCode available, use semver comparison
     isDowngrade = nameComparison < 0;
     isUpgrade = nameComparison > 0;
     isUpToDate = nameComparison === 0;

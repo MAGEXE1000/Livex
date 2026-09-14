@@ -51,14 +51,22 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
           const now = Date.now();
           if (now - lastUpdateTime >= 100 || percent === 100 || percent === 0) {
             lastUpdateTime = now;
+            const effectiveTotal =
+              (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
+              globalUpdateState.apkSizeBytes ??
+              null;
+            const effectiveDownloaded =
+              (typeof downloadedBytes === 'number' && downloadedBytes > 0 ? downloadedBytes : null) ??
+              (effectiveTotal && percent > 0 ? Math.round((percent / 100) * effectiveTotal) : null);
+
             if (onProgress) {
-              onProgress(percent, totalBytes, downloadedBytes);
+              onProgress(percent, effectiveTotal ?? undefined, effectiveDownloaded ?? undefined);
             } else {
               updateGlobalState({
                 progress: Math.max(0, Math.min(1, percent / 100)),
                 statusText: `Downloading update (${Math.round(percent)}%)`,
-                downloadedBytes: downloadedBytes ?? null,
-                totalBytes: totalBytes ?? null,
+                downloadedBytes: effectiveDownloaded,
+                totalBytes: effectiveTotal,
               });
             }
           }

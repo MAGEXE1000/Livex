@@ -379,9 +379,6 @@ class StartupCoordinatorClass {
         } catch (_) {}
       }
       this.flushQueuedEvents();
-
-      // Automatic update check during application startup initialization
-      void this.triggerUpdateCheck('startup', 'app launch initial check');
     });
     if (!p5Success || this.currentRunId !== runId) return;
 
