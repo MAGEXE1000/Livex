@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.1';
-export const NATIVE_VERSION_CODE = 40601;
-export const WEB_VERSION = '4.6.1';
+export const NATIVE_VERSION = '4.6.2';
+export const NATIVE_VERSION_CODE = 40602;
+export const WEB_VERSION = '4.6.2';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '4158e8f1';
+export const APP_COMMIT_SHA = 'ec682cf0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/13/2026, 7:24:13 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/13/2026, 9:26:13 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,17 +98,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Physical Tuning Peg Alignment: Implemented a reusable geometry system aligning string controls with physical tuning pegs across Electric Guitar (6 left), Acoustic Guitar (3+3 symmetrical), Bass 4 (4 cloverleaf left), and Bass 5 (2 left, 3 right).',
-      'Directional Spatial Cueing: Subtle directional chevrons (`›` and `‹`) pointing toward the physical pegs without artificial connecting lines.',
-      'AMOLED True Black Purity: Eliminated blue/gray background surfaces behind the instrument stage in favor of pure `#000000` AMOLED black.',
+      'Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.',
+      'Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Streamlined Controls Hierarchy: Structured the top control area with prominent "Tuner" title and close button, full-width segmented instrument selector, and compact secondary controls (`Tuning` trigger and unified `A4 | Auto` capsule).',
-      'Simplified Tuning Selection Menu: Removed verbose parenthetical descriptions and redundant pills in favor of clean tuning names, monospace target note previews (`E  A  D  G  B  E`), and checkmarks.',
-      'Responsive Headstock Scaling: Enlarged headstock visualization with proportional scaling across small and tall Android displays.',
+      'Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.',
+      'Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.',
     ],
   },
 ];
@@ -120,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.2',
+    date: '2026-09-13',
+    highlights: [
+      'Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.',
+      'Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.',
+      'Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.',
+      'Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.',
+    ],
+  },
   {
     version: '4.6.1',
     date: '2026-09-13',
@@ -215,16 +223,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Synchronous Geometry & Spatial Anchoring: Added dynamic `originRect` spatial geometry mapping with spring-driven expansion (`SPRING_PANEL`) and clean reverse collapse back to the originating chord card.',
       "Android Hardware Back Navigation Integration: Directly integrated the chord modal surface with `BackDispatcher('modal')`, ensuring tapping the native Android back button or gesture smoothly reverses the morph back into the chord grid with zero residual DOM overlays.",
       'Promotion and Progression Navigation Stability: Corrected sub-route panel resolution in `SharedAppShell` and restored the Progression Generator shortcut in `LibraryUI`.',
-    ],
-  },
-  {
-    version: '4.5.92',
-    date: '2026-09-12',
-    highlights: [
-      'Complete Android Sub-App Code-Splitting Isolation: Converted DrumEditor, StageCorePanel, VocalexApp, GroovexApp, DevToolsApp, and UpdateIndicator to code-split dynamic imports across shared feature barrels and ui-shared root, completely eliminating all INEFFECTIVE_DYNAMIC_IMPORT warnings.',
-      'Android Initial Bundle Reduction: Reduced the initial Android JavaScript entry chunk (index.js) by 53.4% (from 1,551.87 kB to 722.59 kB raw, and by 55.1% gzipped from 357.32 kB to 160.37 kB), dramatically lowering cold-start parsing and JavaScript evaluation overhead on Android WebView.',
-      'Cold-Start Import Decoupling: Decoupled EmergencyDebugOverlay, MobileDevicePreviewFrame, and ui-android to use direct subpaths, preventing accidental evaluation of the root ui-shared barrel during application boot.',
-      'Phase 7A–7J Baseline Consolidations:Decoupled GSAP/SplitText, strengthened reduced-motion accessibility, aligned Metronome and global Dialog/Sheet with native BackDispatcher, narrowed Zustand subscriptions, and pruned stale motion build configurations.',
     ],
   },
 ];
