@@ -82,6 +82,8 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   const [manualTarget, setManualTarget] = useState<InstrumentStringTarget | null>(null);
   const [refA4, setRefA4] = useState<number>(initialSettings.refA4);
   const [showTuningSelector, setShowTuningSelector] = useState<boolean>(false);
+  const [triggerRect, setTriggerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const tuningBtnRef = useRef<HTMLButtonElement>(null);
 
   // Note display state
   const [activeNoteName, setActiveNoteName] = useState<string>('-');
@@ -370,8 +372,15 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         <div className="flex items-stretch gap-2 w-full px-0.5">
           {/* Left: Tuning Selector Trigger */}
           <button
+            ref={tuningBtnRef}
             type="button"
-            onClick={() => setShowTuningSelector(true)}
+            onClick={() => {
+              if (tuningBtnRef.current) {
+                const r = tuningBtnRef.current.getBoundingClientRect();
+                setTriggerRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+              }
+              setShowTuningSelector(true);
+            }}
             className="flex-1 h-11 flex items-center justify-between px-3 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 transition-all cursor-pointer active:scale-98 min-w-0"
             title="Open tuning selection"
           >
@@ -534,45 +543,40 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           className="relative w-full flex-1 min-h-0 overflow-hidden select-none"
           style={{ backgroundColor: '#000000' }}
         >
-          {/* Canonical Headstock Graphic (Scaled to Full Stage Height, extending down) */}
+          {/* Canonical Headstock Graphic (Medium-large scale, right-aligned, breathing room) */}
           <AnimatePresence mode="wait">
             <motion.div
               key={geometry.mode}
-              initial={{ opacity: 0, scale: 0.97 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
+              exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.16, ease: 'easeOut' }}
-              className={`absolute top-0 bottom-0 pointer-events-none flex ${
+              className={`absolute top-2 bottom-0 pointer-events-none flex ${
                 geometry.headstockPosition === 'right'
-                  ? 'right-[-25px] xs:right-[-12px] sm:right-0 justify-end'
+                  ? 'right-[-8px] xs:right-0 justify-end'
                   : 'inset-x-0 justify-center'
               }`}
             >
               <img
                 src={geometry.assetSrc}
                 alt={`${instrumentMode} headstock`}
-                className="h-full w-auto max-w-none object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
+                className="h-[90%] max-h-[480px] w-auto max-w-none object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
                 loading="eager"
               />
             </motion.div>
           </AnimatePresence>
 
-          {/* Peg-Aligned Dynamic String Cards */}
+          {/* Peg-Aligned Dynamic String Controls (Minimal circular note buttons) */}
           <AnimatePresence>
             {currentStrings.map((str) => {
               const peg = geometry.pegs.find((p) => p.stringNumber === str.stringNumber);
               if (!peg) return null;
 
               const isLeft = peg.side === 'left';
-              const isSingleSided = geometry.headstockPosition === 'right';
               const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
               const isDetected = isAuto && activeString?.fullName === str.fullName;
               const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
-
-              // Large comfortable tap targets
-              const cardWidthClass = isSingleSided
-                ? 'w-[154px] xs:w-[162px] sm:w-[172px]'
-                : 'w-[112px] xs:w-[118px] sm:w-[126px]';
+              const isCurrentActive = isManualLocked || isDetected;
 
               return (
                 <motion.div
@@ -582,62 +586,64 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: isLeft ? -10 : 10 }}
                   transition={{ duration: 0.14, ease: 'easeOut' }}
-                  onClick={() => handleStringCardClick(str)}
                   style={{
                     position: 'absolute',
                     top: `${peg.topPct}%`,
                     transform: 'translateY(-50%)',
-                    left: isLeft ? '8px' : undefined,
-                    right: !isLeft ? '8px' : undefined,
+                    left: isLeft ? '16px' : undefined,
+                    right: !isLeft ? '16px' : undefined,
                   }}
-                  className={`${cardWidthClass} h-11 xs:h-12 flex items-center justify-between px-2.5 rounded-full border transition-all cursor-pointer active:scale-95 z-10 select-none ${
-                    isInTune
-                      ? 'border-emerald-500/90 bg-[#0d2218] shadow-[0_0_14px_rgba(34,197,94,0.35)]'
-                      : isManualLocked
-                        ? 'border-white/25 bg-[#1e2026] ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
-                        : isDetected
-                          ? 'border-white/20 bg-[#18191f] shadow-[0_0_8px_rgba(255,255,255,0.06)]'
-                          : 'border-white/10 bg-[#121316] hover:border-white/20'
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
+                  className="flex items-center gap-2 z-10 select-none"
                 >
-                  {/* Circular Number Badge */}
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
-                      isInTune
-                        ? 'bg-[#122b1e] text-emerald-400 border border-emerald-500/40'
-                        : 'bg-[#1e2026] text-zinc-300 border border-white/10'
-                    }`}
-                  >
-                    {str.stringNumber}
-                  </div>
-
-                  {/* Note Name & Frequency */}
-                  <div className="flex flex-col items-center px-1 flex-1 min-w-0">
-                    <span
-                      className={`text-sm xs:text-base font-bold leading-tight tracking-tight transition-colors ${
-                        isInTune ? 'text-emerald-400' : 'text-white'
-                      }`}
-                    >
-                      {str.fullName}
-                    </span>
-                    <span
-                      className={`text-[9.5px] xs:text-[10.5px] font-mono leading-tight mt-0.5 transition-colors ${
-                        isInTune ? 'text-emerald-300/80' : 'text-zinc-400'
-                      }`}
-                    >
-                      {str.frequency.toFixed(1)} Hz
-                    </span>
-                  </div>
-
-                  {/* Directional Chevron > */}
-                  <ChevronRight
-                    className={`w-4 h-4 stroke-[2.5] flex-shrink-0 transition-colors ${
-                      isInTune ? 'text-emerald-400' : 'text-zinc-500'
-                    }`}
-                  />
+                  {isLeft ? (
+                    <>
+                      {/* Secondary String Number on outer side */}
+                      <span className="w-3 text-center text-xs font-semibold text-zinc-400 select-none">
+                        {str.stringNumber}
+                      </span>
+                      {/* Large Circular Note Control */}
+                      <button
+                        type="button"
+                        onClick={() => handleStringCardClick(str)}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all cursor-pointer active:scale-90 ${
+                          isInTune
+                            ? 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
+                            : isCurrentActive
+                              ? 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
+                              : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
+                        }`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`String ${str.stringNumber}: Note ${str.note}`}
+                      >
+                        {str.note}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Large Circular Note Control */}
+                      <button
+                        type="button"
+                        onClick={() => handleStringCardClick(str)}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all cursor-pointer active:scale-90 ${
+                          isInTune
+                            ? 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
+                            : isCurrentActive
+                              ? 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
+                              : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
+                        }`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`String ${str.stringNumber}: Note ${str.note}`}
+                      >
+                        {str.note}
+                      </button>
+                      {/* Secondary String Number on outer side */}
+                      <span className="w-3 text-center text-xs font-semibold text-zinc-400 select-none">
+                        {str.stringNumber}
+                      </span>
+                    </>
+                  )}
                 </motion.div>
               );
             })}
@@ -645,7 +651,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         </div>
       </div>
 
-      {/* 5. Dedicated Tuning Selection Modal */}
+      {/* 5. Dedicated Compact Tuning Selection Modal */}
       <TuningSelectorModal
         isOpen={showTuningSelector}
         activeMode={instrumentMode}
@@ -653,6 +659,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         onSelectTuning={handleTuningSelect}
         onClose={() => setShowTuningSelector(false)}
         onModeChange={handleModeChange}
+        triggerRect={triggerRect}
       />
     </div>
   );
