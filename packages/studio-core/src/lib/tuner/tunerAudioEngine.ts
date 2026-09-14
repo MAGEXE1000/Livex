@@ -237,37 +237,54 @@ export class TunerAudioEngine {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
+            echoCancellation: false,
             noiseSuppression: false,
             autoGainControl: false,
           },
         });
       } catch (err: unknown) {
-        console.debug('[TunerAudioEngine] Unconstrained getUserMedia fallback...');
+        console.debug('[TunerAudioEngine] Fallback getUserMedia attempt...');
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (fallbackErr: unknown) {
-          const e = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
-          if (
-            e.name === 'NotAllowedError' ||
-            e.name === 'PermissionDeniedError' ||
-            e.message.includes('permission')
-          ) {
-            this.setState('permission_denied');
-            this.emitFrame(null, 'Microphone permission was denied by user.');
-          } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-            this.setState('no_microphone');
-            this.emitFrame(null, 'No audio recording device found.');
-          } else {
-            this.setState('permission_permanently_denied');
-            this.emitFrame(null, e.message);
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            },
+          });
+        } catch {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          } catch (fallbackErr: unknown) {
+            const e = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
+            if (
+              e.name === 'NotAllowedError' ||
+              e.name === 'PermissionDeniedError' ||
+              e.message.includes('permission')
+            ) {
+              this.setState('permission_denied');
+              this.emitFrame(null, 'Microphone permission was denied by user.');
+            } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+              this.setState('no_microphone');
+              this.emitFrame(null, 'No audio recording device found.');
+            } else {
+              this.setState('permission_permanently_denied');
+              this.emitFrame(null, e.message);
+            }
+            return false;
           }
-          return false;
         }
       }
 
       this.stream = stream;
       this.setState('permission_granted');
+
+      // Guarantee normal Android media volume behavior (prevent VoIP / call audio routing)
+      if (typeof window !== 'undefined' && (window as any).AudioModeBridge?.ensureNormalMode) {
+        try {
+          (window as any).AudioModeBridge.ensureNormalMode();
+        } catch {}
+      }
 
       // 3. Initialize AudioContext and Web Audio Graph
       const ctx = createAudioContext();
@@ -681,6 +698,13 @@ export class TunerAudioEngine {
     }
 
     stopTunerReferenceAudio();
+
+    // Restore normal Android media volume behavior
+    if (typeof window !== 'undefined' && (window as any).AudioModeBridge?.ensureNormalMode) {
+      try {
+        (window as any).AudioModeBridge.ensureNormalMode();
+      } catch {}
+    }
 
     this.consecutiveInTuneFrames = 0;
     this.currentlyInTune = false;

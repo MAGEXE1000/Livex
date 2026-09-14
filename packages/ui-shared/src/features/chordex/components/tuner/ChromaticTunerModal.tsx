@@ -560,7 +560,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
               <img
                 src={geometry.assetSrc}
                 alt={`${instrumentMode} headstock`}
-                className="h-[90%] max-h-[480px] w-auto max-w-none object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
+                className="w-[358px] max-w-none h-auto object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
                 loading="eager"
               />
             </motion.div>

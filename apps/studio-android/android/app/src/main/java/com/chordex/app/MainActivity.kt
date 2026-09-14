@@ -126,6 +126,28 @@ class MainActivity : BridgeActivity() {
         }
     }
 
+    inner class AudioModeBridge {
+        @JavascriptInterface
+        fun ensureNormalMode() {
+            runOnUiThread {
+                volumeControlStream = android.media.AudioManager.STREAM_MUSIC
+                ensureNormalAudioMode()
+            }
+        }
+    }
+
+    fun ensureNormalAudioMode() {
+        try {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+            if (audioManager != null && audioManager.mode != android.media.AudioManager.MODE_NORMAL) {
+                audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                android.util.Log.i("LivexAudio", "Enforced AudioManager.MODE_NORMAL")
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("LivexAudio", "Failed to enforce normal audio mode: ${e.message}")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         handleIncomingIntent(intent)
 
@@ -150,6 +172,8 @@ class MainActivity : BridgeActivity() {
         registerPlugin(AppInstallerPlugin::class.java)
         registerPlugin(NativeMediaPlugin::class.java)
         super.onCreate(savedInstanceState)
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
+        ensureNormalAudioMode()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -197,6 +221,7 @@ class MainActivity : BridgeActivity() {
             webView.addJavascriptInterface(ThemeTransitionBridge(), "ThemeTransitionBridge")
             webView.addJavascriptInterface(LiquidGlassBridge(), "LiquidGlassBridge")
             webView.addJavascriptInterface(ExclusiveVolumeBridge(), "ExclusiveVolumeBridge")
+            webView.addJavascriptInterface(AudioModeBridge(), "AudioModeBridge")
 
             val webViewInitTime = android.os.SystemClock.elapsedRealtime()
             webView.post {
@@ -489,6 +514,8 @@ class MainActivity : BridgeActivity() {
 
     override fun onResume() {
         super.onResume()
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
+        ensureNormalAudioMode()
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onResume", "MainActivity entered onResume")
     }
 
