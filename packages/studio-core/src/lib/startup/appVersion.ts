@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.5';
-export const NATIVE_VERSION_CODE = 40605;
-export const WEB_VERSION = '4.6.5';
+export const NATIVE_VERSION = '4.6.6';
+export const NATIVE_VERSION_CODE = 40606;
+export const WEB_VERSION = '4.6.6';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '20d15f77';
+export const APP_COMMIT_SHA = 'f4f20708';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/14/2026, 9:04:42 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/14/2026, 12:43:46 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,14 +98,13 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Instrument Graphic Vertical Composition: Anchored instrument graphics at the top edge (`object-top`) with a standardized width to maintain strict peg alignment with flanking circular note controls.',
+      'Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Android Audio Routing & Media Volume Control: Resolved issue where opening the Tuner forced Android into call/communication audio mode (`STREAM_VOICE_CALL`). Configured `AudioManager.STREAM_MUSIC` as the window volume control stream, ensured normal audio mode via native bridge, and disabled Web Audio DSP constraints (`echoCancellation`, `noiseSuppression`, `autoGainControl`) for uncolored acoustic frequency analysis.',
-      'Continuous Instrument Fretboard Layout: Extended the Stratocaster, Acoustic, and Bass fretboard graphic assets with mathematically spaced frets and wood grain, seamlessly filling the bottom viewport stage without empty black space beneath the neck.',
+      'Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.',
     ],
   },
 ];
@@ -117,6 +116,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.6',
+    date: '2026-09-14',
+    highlights: [
+      'Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.',
+      'Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.',
+    ],
+  },
   {
     version: '4.6.5',
     date: '2026-09-14',
@@ -212,18 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.',
       'Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.',
       'Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.',
-    ],
-  },
-  {
-    version: '4.5.96',
-    date: '2026-09-13',
-    highlights: [
-      'Canonical Plus &rarr; Menu Morph Primitive (`MorphMenu` / `PlusMenu`): Introduced in-place spatial container morph transitioning from a 40px circle trigger to an expanded contextual menu card with asymmetric cubic-bezier curves, coordinated plus rotation/exit, content entrance, and full Android `BackDispatcher` and `activeOverlaysRegistry` integration.',
-      'Canonical Accordion Expand Primitive (`Accordion`): Introduced high-performance compound accordion using CSS Grid `0fr` &rarr; `1fr` row interpolation, zero JavaScript height measurement loops, hardware-accelerated chevron flipping, and complete ARIA linking.',
-      'Professional Chromatic Guitar Tuner in Chordex: Integrated high-precision Web Audio engine using hybrid YIN / Autocorrelation pitch detection with cent-deviation needle damping, note recognition, and frequency analysis.',
-      'Chordex Setlist Canonical Morph Adoption: Converted Setlist desktop header action controls to the canonical `PlusMenu` morphing trigger, streamlining song creation and JSON import flows.',
-      'Restored Drumex Preferences Scrolling: Enforced explicit flex bounding and touch-scrolling constraints on `DrumPrefsPanel` mobile and desktop surfaces, ensuring bottom settings cards and controls are fully scrollable and clear of the bottom navigation dock.',
-      'Drumex Navigation & Pin Stack Repair: Simplified Drumex navigation routing and repaired the pin back stack, eliminating dead-end navigation loops on Android.',
     ],
   },
 ];
