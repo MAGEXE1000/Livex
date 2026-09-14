@@ -13,18 +13,18 @@ export interface InstrumentGeometryDefinition {
   readonly pegs: readonly PegTargetDefinition[];
 }
 
-export const INSTRUMENT_GEOMETRIES: Record<InstrumentTuningMode, InstrumentGeometryDefinition> = {
+export const INSTRUMENT_GEOMETRIES: Record<string, InstrumentGeometryDefinition> = {
   electric: {
     mode: 'electric',
     headstockPosition: 'right',
     assetSrc: '/instruments/headstock-stratocaster.webp',
     pegs: [
-      { stringNumber: 6, side: 'left', topPct: 13.5 },
-      { stringNumber: 5, side: 'left', topPct: 21.5 },
-      { stringNumber: 4, side: 'left', topPct: 29.5 },
-      { stringNumber: 3, side: 'left', topPct: 37.5 },
-      { stringNumber: 2, side: 'left', topPct: 45.5 },
-      { stringNumber: 1, side: 'left', topPct: 53.5 },
+      { stringNumber: 6, side: 'left', topPct: 14.0 },
+      { stringNumber: 5, side: 'left', topPct: 22.0 },
+      { stringNumber: 4, side: 'left', topPct: 30.0 },
+      { stringNumber: 3, side: 'left', topPct: 38.0 },
+      { stringNumber: 2, side: 'left', topPct: 46.0 },
+      { stringNumber: 1, side: 'left', topPct: 54.0 },
     ],
   },
   acoustic: {
@@ -49,18 +49,6 @@ export const INSTRUMENT_GEOMETRIES: Record<InstrumentTuningMode, InstrumentGeome
       { stringNumber: 3, side: 'left', topPct: 27.5 },
       { stringNumber: 2, side: 'left', topPct: 41.0 },
       { stringNumber: 1, side: 'left', topPct: 54.0 },
-    ],
-  },
-  'bass-5': {
-    mode: 'bass-5',
-    headstockPosition: 'center',
-    assetSrc: '/instruments/headstock-bass.webp',
-    pegs: [
-      { stringNumber: 5, side: 'left', topPct: 22.0 },
-      { stringNumber: 4, side: 'left', topPct: 42.0 },
-      { stringNumber: 3, side: 'right', topPct: 21.0 },
-      { stringNumber: 2, side: 'right', topPct: 35.0 },
-      { stringNumber: 1, side: 'right', topPct: 50.0 },
     ],
   },
 };
