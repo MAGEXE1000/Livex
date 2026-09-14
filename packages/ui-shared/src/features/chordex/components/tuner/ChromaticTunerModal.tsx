@@ -318,17 +318,44 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
   return (
     <div
-      className="flex flex-col w-full h-full p-3.5 sm:p-4 select-none overflow-y-auto no-scrollbar"
+      className="flex flex-col w-full h-full px-3 pt-3 pb-0 select-none overflow-hidden"
       style={{
         backgroundColor: bgColor,
         color: '#ffffff',
       }}
       data-testid="chromatic-tuner-modal"
     >
-      <div className="max-w-[440px] mx-auto w-full flex flex-col gap-2.5 flex-1">
-        {/* 1. Header: Title "Tuner" on left + Circular Close Button on right */}
-        <div className="flex items-center justify-between px-0.5 pt-0.5">
-          <span className="text-base sm:text-lg font-bold text-white tracking-wide">Tuner</span>
+      <div className="max-w-[440px] mx-auto w-full flex flex-col gap-2.5 flex-1 h-full min-h-0">
+        {/* 1. Header: Integrated Instrument Selector on Left + Close Button on Right */}
+        <div className="flex items-center justify-between gap-3 w-full px-0.5 pt-0.5">
+          {/* Segmented Instrument Selector */}
+          <div className="flex items-center p-0.5 rounded-full border border-white/10 bg-[#141518] w-full max-w-[270px] xs:max-w-[290px]">
+            {(
+              [
+                { id: 'electric', label: 'Electric' },
+                { id: 'acoustic', label: 'Acoustic' },
+                { id: 'bass-4', label: 'Bass' },
+              ] as const
+            ).map((item) => {
+              const isSelected = instrumentMode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleModeChange(item.id)}
+                  className={`flex-1 py-1.5 px-2 rounded-full text-xs font-semibold transition-all cursor-pointer text-center truncate ${
+                    isSelected
+                      ? 'bg-[#272930] text-white shadow-sm font-bold border border-white/15'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Circular Close Button on Upper Right */}
           <button
             type="button"
             onClick={onClose}
@@ -339,61 +366,34 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </button>
         </div>
 
-        {/* 2. Full-Width Segmented Instrument Selector */}
-        <div className="flex items-center p-1 rounded-full border border-white/10 bg-[#141518] w-full">
-          {(
-            [
-              { id: 'electric', label: 'Electric' },
-              { id: 'acoustic', label: 'Acoustic' },
-              { id: 'bass-4', label: 'Bass 4' },
-            ] as const
-          ).map((item) => {
-            const isSelected = instrumentMode === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleModeChange(item.id)}
-                className={`flex-1 py-1.5 px-1 rounded-full text-xs font-semibold transition-all cursor-pointer text-center truncate ${
-                  isSelected
-                    ? 'bg-[#23262d] text-white shadow-sm font-bold border border-white/10'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 3. Secondary Controls: Tuning Selector Pill + A4 Pill + Auto Pill */}
-        <div className="flex items-center gap-2 w-full">
+        {/* 2. Secondary Controls Row: Tuning Selector + A4 Pitch + Auto Switch */}
+        <div className="flex items-stretch gap-2 w-full px-0.5">
           {/* Left: Tuning Selector Trigger */}
           <button
             type="button"
             onClick={() => setShowTuningSelector(true)}
-            className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-full border border-white/10 bg-[#141518] transition-all cursor-pointer active:scale-98 min-w-0"
+            className="flex-1 h-11 flex items-center justify-between px-3 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 transition-all cursor-pointer active:scale-98 min-w-0"
             title="Open tuning selection"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Sliders className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+            <div className="flex items-center gap-2 min-w-0">
+              <Sliders className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
               <div className="flex flex-col items-start min-w-0">
                 <span className="text-xs font-bold text-white truncate tracking-wide leading-tight">
                   {activeTuning.name}
                 </span>
-                <span className="text-[9px] font-mono text-cyan-400/90 leading-tight">
+                <span className="text-[10px] font-mono text-zinc-400 leading-tight tracking-wider">
                   {activeTuning.strings.map((s) => s.note).join(' ')}
                 </span>
               </div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 ml-1" />
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 ml-1.5" />
           </button>
 
-          {/* Right: Reference Pitch Pill */}
+          {/* Middle: Reference Pitch Pill */}
           <button
             type="button"
             onClick={handleCycleRefA4}
-            className="flex items-center justify-center px-3 py-2 rounded-full border border-white/10 bg-[#141518] text-xs font-mono font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0 hover:border-white/20"
+            className="h-11 flex items-center justify-center px-3.5 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 text-xs font-mono font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
             title="Cycle Reference A4 pitch (440, 442, 432 Hz)"
           >
             A4 = {refA4} Hz
@@ -403,11 +403,15 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           <button
             type="button"
             onClick={handleToggleAuto}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-[#141518] text-xs font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0 hover:border-white/20"
+            className="h-11 flex items-center gap-2 px-3 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 text-xs font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
             title="Toggle Auto string detection"
           >
-            <span className="text-white font-medium">Auto</span>
-            <div className="w-7 h-4 rounded-full p-0.5 transition-colors flex items-center bg-[#2a2b30]">
+            <span className="text-white font-medium text-xs">Auto</span>
+            <div
+              className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
+                isAuto ? 'bg-blue-600' : 'bg-[#2a2b30]'
+              }`}
+            >
               <div
                 className={`w-3 h-3 rounded-full bg-white transition-transform ${
                   isAuto ? 'translate-x-3 shadow-sm' : 'translate-x-0'
@@ -435,13 +439,17 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </div>
         )}
 
-        {/* 4. Compact Chromatic Tuning Indicator (FLAT ♭, 11-Bars, SHARP ♯, Cents Pill) */}
-        <div className="relative flex flex-col items-center pt-2 pb-1 w-full max-w-[340px] mx-auto select-none">
+        {/* 3. Compact Chromatic Tuning Indicator (FLAT ♭, 11-Bars, SHARP ♯, Cents Pill) */}
+        <div className="relative flex flex-col items-center pt-1 pb-0.5 w-full max-w-[340px] mx-auto select-none">
           {/* Top Label Row: FLAT ♭ and SHARP ♯ */}
           <div className="w-full flex items-center justify-between px-1">
             <div className="text-[#38bdf8] font-black text-xs sm:text-sm tracking-wider flex items-center gap-1">
               <span>FLAT</span>
               <span className="text-base font-normal">♭</span>
+            </div>
+
+            <div className="text-[10px] tracking-widest text-zinc-400 font-semibold uppercase">
+              {tuningStatus === 'in_tune' ? 'IN TUNE' : 'LISTENING...'}
             </div>
 
             <div className="text-[#f97316] font-black text-xs sm:text-sm tracking-wider flex items-center gap-1">
@@ -451,48 +459,30 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           </div>
 
           {/* 11-Bar Chromatic Meter Container */}
-          <div className="relative w-full mx-auto pt-2.5 pb-1">
-            {/* Center Emerald Hourglass Glow Beam */}
+          <div className="relative w-full mx-auto pt-1.5 pb-1">
+            {/* Center Emerald Glow Beam */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
               <div
-                className="w-28 h-12 rounded-full blur-md opacity-70"
+                className="w-24 h-10 rounded-full blur-md opacity-60"
                 style={{
                   background:
-                    'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.6) 0%, rgba(34, 197, 94, 0.15) 55%, transparent 80%)',
+                    'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.5) 0%, rgba(34, 197, 94, 0.1) 55%, transparent 80%)',
                 }}
               />
-              <svg
-                className="absolute h-9 w-24 opacity-60"
-                viewBox="0 0 100 50"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="beamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#4ade80" stopOpacity="0.75" />
-                    <stop offset="50%" stopColor="#22c55e" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#4ade80" stopOpacity="0.75" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M 15 0 L 85 0 C 70 25 70 25 85 50 L 15 50 C 30 25 30 25 15 0 Z"
-                  fill="url(#beamGrad)"
-                  filter="blur(1.5px)"
-                />
-              </svg>
             </div>
 
             {/* The 11 Vertical Indicator Bars */}
-            <div className="relative flex items-end justify-between px-2 h-9 z-10">
+            <div className="relative flex items-end justify-between px-2 h-7 z-10">
               {SCALE_BARS.map((bar) => {
-                const heightClass = bar.isCenter ? 'h-8' : 'h-[22px]';
+                const heightClass = bar.isCenter ? 'h-7' : 'h-[18px]';
                 const shadow = bar.isCenter
-                  ? '0 0 10px rgba(34, 197, 94, 0.9)'
+                  ? '0 0 8px rgba(34, 197, 94, 0.8)'
                   : undefined;
 
                 return (
                   <div
                     key={bar.step}
-                    className={`w-[3.5px] rounded-full transition-all ${heightClass}`}
+                    className={`w-[3px] rounded-full transition-all ${heightClass}`}
                     style={{
                       backgroundColor: bar.color,
                       boxShadow: shadow,
@@ -504,7 +494,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
               {/* Moving Needle Indicator (Smooth GPU-composited transform) */}
               <div
                 ref={needleRef}
-                className="absolute top-0 bottom-1 w-[3px] rounded-full pointer-events-none transition-transform duration-75 ease-out z-20"
+                className="absolute top-0 bottom-0.5 w-[3px] rounded-full pointer-events-none transition-transform duration-75 ease-out z-20"
                 style={{
                   left: '50%',
                   transform: 'translateX(-50%)',
@@ -516,11 +506,11 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
             </div>
 
             {/* Numeric Labels Below Bars (-5 to +5) */}
-            <div className="relative flex items-center justify-between px-1 mt-1 z-10 text-[10px] font-mono text-zinc-500 font-semibold">
+            <div className="relative flex items-center justify-between px-1 mt-1 z-10 text-[9px] font-mono text-zinc-500 font-semibold">
               {SCALE_BARS.map((bar) => (
                 <span
                   key={bar.step}
-                  className={`w-[3.5px] text-center flex items-center justify-center ${
+                  className={`w-[3px] text-center flex items-center justify-center ${
                     bar.isCenter ? 'text-zinc-400 font-bold' : ''
                   }`}
                 >
@@ -533,112 +523,125 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           {/* Deviation Cents Pill Directly Below 0 (e.g. 0) */}
           <div
             ref={centsPillRef}
-            className="mt-1 px-3.5 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[38px] border border-white/10 bg-[#141518] text-zinc-300 shadow-sm"
+            className="mt-0.5 px-3 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[36px] border border-white/10 bg-[#141518] text-zinc-300 shadow-sm"
           >
             <span ref={centsTextRef}>0</span>
           </div>
         </div>
 
-        {/* 5. Lower Section: Photorealistic Headstock Graphic with Physical Peg-Aligned String Cards */}
+        {/* 4. Lower Section: Photorealistic Headstock Graphic with Physical Peg-Aligned String Cards */}
         <div
-          className="relative w-full flex-1 min-h-[440px] sm:min-h-[480px] overflow-hidden rounded-2xl select-none my-1"
+          className="relative w-full flex-1 min-h-0 overflow-hidden select-none"
           style={{ backgroundColor: '#000000' }}
         >
-          {/* Canonical Headstock Graphic (Scaled to Full Container Height) */}
-          <div
-            className={`absolute top-0 bottom-0 pointer-events-none flex items-center ${
-              geometry.headstockPosition === 'right'
-                ? instrumentMode === 'electric'
-                  ? 'right-[-12px] sm:right-2 w-[58%] sm:w-[54%] justify-end'
-                  : 'right-[-8px] sm:right-4 w-[58%] sm:w-[54%] justify-end'
-                : 'inset-x-0 justify-center'
-            }`}
-          >
-            <img
-              src={geometry.assetSrc}
-              alt={`${instrumentMode} headstock`}
-              className="h-full w-auto object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
-              loading="eager"
-            />
-          </div>
+          {/* Canonical Headstock Graphic (Scaled to Full Stage Height, extending down) */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={geometry.mode}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className={`absolute top-0 bottom-0 pointer-events-none flex ${
+                geometry.headstockPosition === 'right'
+                  ? 'right-[-25px] xs:right-[-12px] sm:right-0 justify-end'
+                  : 'inset-x-0 justify-center'
+              }`}
+            >
+              <img
+                src={geometry.assetSrc}
+                alt={`${instrumentMode} headstock`}
+                className="h-full w-auto max-w-none object-contain object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
+                loading="eager"
+              />
+            </motion.div>
+          </AnimatePresence>
 
           {/* Peg-Aligned Dynamic String Cards */}
-          {currentStrings.map((str) => {
-            const peg = geometry.pegs.find((p) => p.stringNumber === str.stringNumber);
-            if (!peg) return null;
+          <AnimatePresence>
+            {currentStrings.map((str) => {
+              const peg = geometry.pegs.find((p) => p.stringNumber === str.stringNumber);
+              if (!peg) return null;
 
-            const isLeft = peg.side === 'left';
-            const isSingleSided = geometry.headstockPosition === 'right';
-            const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
-            const isDetected = isAuto && activeString?.fullName === str.fullName;
-            const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
+              const isLeft = peg.side === 'left';
+              const isSingleSided = geometry.headstockPosition === 'right';
+              const isManualLocked = !isAuto && manualTarget?.fullName === str.fullName;
+              const isDetected = isAuto && activeString?.fullName === str.fullName;
+              const isInTune = (isManualLocked || isDetected) && tuningStatus === 'in_tune';
 
-            const cardWidthClass = isSingleSided
-              ? 'w-[140px] xs:w-[146px] sm:w-[152px]'
-              : 'w-[108px] xs:w-[112px] sm:w-[120px]';
+              // Large comfortable tap targets
+              const cardWidthClass = isSingleSided
+                ? 'w-[154px] xs:w-[162px] sm:w-[172px]'
+                : 'w-[112px] xs:w-[118px] sm:w-[126px]';
 
-            return (
-              <div
-                key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
-                onClick={() => handleStringCardClick(str)}
-                style={{
-                  position: 'absolute',
-                  top: `${peg.topPct}%`,
-                  transform: 'translateY(-50%)',
-                  left: isLeft ? '8px' : undefined,
-                  right: !isLeft ? '8px' : undefined,
-                }}
-                className={`${cardWidthClass} h-9 sm:h-10 flex items-center justify-between px-2.5 rounded-full border transition-all cursor-pointer active:scale-95 z-10 select-none ${
-                  isInTune
-                    ? 'border-emerald-500/90 bg-[#0d2218] shadow-[0_0_14px_rgba(34,197,94,0.35)]'
-                    : isManualLocked
-                      ? 'border-cyan-500/80 bg-cyan-950/40 ring-1 ring-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                      : isDetected
-                        ? 'border-blue-500/60 bg-blue-950/30 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
-                        : 'border-white/10 bg-[#141518] hover:border-white/20'
-                }`}
-                role="button"
-                tabIndex={0}
-                aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
-              >
-                {/* Circular Number Badge */}
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
+              return (
+                <motion.div
+                  key={`${activeTuning.id}-${str.stringNumber}-${str.fullName}`}
+                  layout
+                  initial={{ opacity: 0, x: isLeft ? -10 : 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: isLeft ? -10 : 10 }}
+                  transition={{ duration: 0.14, ease: 'easeOut' }}
+                  onClick={() => handleStringCardClick(str)}
+                  style={{
+                    position: 'absolute',
+                    top: `${peg.topPct}%`,
+                    transform: 'translateY(-50%)',
+                    left: isLeft ? '8px' : undefined,
+                    right: !isLeft ? '8px' : undefined,
+                  }}
+                  className={`${cardWidthClass} h-11 xs:h-12 flex items-center justify-between px-2.5 rounded-full border transition-all cursor-pointer active:scale-95 z-10 select-none ${
                     isInTune
-                      ? 'bg-[#122b1e] text-emerald-400 border border-emerald-500/40'
-                      : 'bg-[#1e2026] text-zinc-300 border border-white/10'
+                      ? 'border-emerald-500/90 bg-[#0d2218] shadow-[0_0_14px_rgba(34,197,94,0.35)]'
+                      : isManualLocked
+                        ? 'border-white/25 bg-[#1e2026] ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                        : isDetected
+                          ? 'border-white/20 bg-[#18191f] shadow-[0_0_8px_rgba(255,255,255,0.06)]'
+                          : 'border-white/10 bg-[#121316] hover:border-white/20'
                   }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`String ${str.stringNumber}: ${str.fullName}, ${str.frequency.toFixed(1)} Hz`}
                 >
-                  {str.stringNumber}
-                </div>
-
-                {/* Note Name & Frequency */}
-                <div className="flex flex-col items-center px-1 flex-1 min-w-0">
-                  <span
-                    className={`text-xs sm:text-sm font-bold leading-tight tracking-tight transition-colors ${
-                      isInTune ? 'text-emerald-400' : 'text-white'
+                  {/* Circular Number Badge */}
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
+                      isInTune
+                        ? 'bg-[#122b1e] text-emerald-400 border border-emerald-500/40'
+                        : 'bg-[#1e2026] text-zinc-300 border border-white/10'
                     }`}
                   >
-                    {str.fullName}
-                  </span>
-                  <span
-                    className={`text-[9px] sm:text-[10px] font-mono leading-tight mt-0.5 transition-colors ${
-                      isInTune ? 'text-emerald-300/80' : 'text-zinc-400'
-                    }`}
-                  >
-                    {str.frequency.toFixed(1)} Hz
-                  </span>
-                </div>
+                    {str.stringNumber}
+                  </div>
 
-                {/* Directional Chevron > */}
-                <ChevronRight
-                  className={`w-3.5 h-3.5 stroke-[2.5] flex-shrink-0 transition-colors ${
-                    isInTune ? 'text-emerald-400' : 'text-zinc-600'
-                  }`}
-                />
-              </div>
-            );
-          })}
+                  {/* Note Name & Frequency */}
+                  <div className="flex flex-col items-center px-1 flex-1 min-w-0">
+                    <span
+                      className={`text-sm xs:text-base font-bold leading-tight tracking-tight transition-colors ${
+                        isInTune ? 'text-emerald-400' : 'text-white'
+                      }`}
+                    >
+                      {str.fullName}
+                    </span>
+                    <span
+                      className={`text-[9.5px] xs:text-[10.5px] font-mono leading-tight mt-0.5 transition-colors ${
+                        isInTune ? 'text-emerald-300/80' : 'text-zinc-400'
+                      }`}
+                    >
+                      {str.frequency.toFixed(1)} Hz
+                    </span>
+                  </div>
+
+                  {/* Directional Chevron > */}
+                  <ChevronRight
+                    className={`w-4 h-4 stroke-[2.5] flex-shrink-0 transition-colors ${
+                      isInTune ? 'text-emerald-400' : 'text-zinc-500'
+                    }`}
+                  />
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
 

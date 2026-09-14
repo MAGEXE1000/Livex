@@ -23,7 +23,7 @@ export interface TuningSelectorModalProps {
 const INSTRUMENT_TABS: { id: InstrumentTuningMode; label: string }[] = [
   { id: 'electric', label: 'Electric' },
   { id: 'acoustic', label: 'Acoustic' },
-  { id: 'bass-4', label: 'Bass 4' },
+  { id: 'bass-4', label: 'Bass' },
 ];
 
 export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({

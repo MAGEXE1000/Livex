@@ -43,8 +43,9 @@ export interface MorphingActionSurfaceProps {
    * - 'anchor': (Default) Anchors directly adjacent to the trigger button in viewport coordinates.
    * - 'center': Centered modal presentation.
    * - 'bottom': Anchored to the bottom edge like a sheet.
+   * - 'sheet': Full-width bottom sheet extending flush to the bottom edge.
    */
-  placement?: 'anchor' | 'center' | 'bottom';
+  placement?: 'anchor' | 'center' | 'bottom' | 'sheet';
   /**
    * Whether to render in compact contextual popup mode (iOS-style UIMenu footprint).
    * Defaults to true when placement is 'anchor'.
@@ -347,11 +348,11 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         ? { opacity: 0 }
         : { opacity: 0, scale: 0.92, y: 12 };
     }
-  } else if (placement === 'bottom') {
+  } else if (placement === 'bottom' || placement === 'sheet') {
     computedPositionStyle = {
       position: 'relative',
       width: isCompact ? popupWidth : '100%',
-      maxWidth: maxWidth ?? (isCompact ? popupWidth : 440),
+      maxWidth: maxWidth ?? (isCompact ? popupWidth : (placement === 'sheet' ? 480 : 440)),
       transformOrigin: 'center bottom',
     };
     panelInitial = isReduced
@@ -460,15 +461,17 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         inset: 0,
         zIndex: 99999,
         pointerEvents: isOpen ? 'auto' : 'none',
-        display: placement === 'center' || placement === 'bottom' ? 'flex' : 'block',
-        alignItems: placement === 'center' ? 'center' : placement === 'bottom' ? 'flex-end' : undefined,
-        justifyContent: placement === 'center' || placement === 'bottom' ? 'center' : undefined,
+        display: placement === 'center' || placement === 'bottom' || placement === 'sheet' ? 'flex' : 'block',
+        alignItems: placement === 'center' ? 'center' : (placement === 'bottom' || placement === 'sheet') ? 'flex-end' : undefined,
+        justifyContent: placement === 'center' || placement === 'bottom' || placement === 'sheet' ? 'center' : undefined,
         padding:
-          placement === 'bottom'
-            ? '0 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px'
-            : placement === 'center'
-              ? '16px'
-              : 0,
+          placement === 'sheet'
+            ? 0
+            : placement === 'bottom'
+              ? '0 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px'
+              : placement === 'center'
+                ? '16px'
+                : 0,
         boxSizing: 'border-box',
       }}
     >
@@ -516,9 +519,11 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             }}
             style={{
               maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
-              borderRadius: isCompact ? 16 : 24,
-              backgroundColor: 'var(--surface-dialog-bg, #16161c)',
+              height: placement === 'sheet' ? (maxHeight ?? 'calc(100dvh - 76px)') : undefined,
+              borderRadius: placement === 'sheet' ? '28px 28px 0 0' : (isCompact ? 16 : 24),
+              backgroundColor: placement === 'sheet' ? '#000000' : 'var(--surface-dialog-bg, #16161c)',
               border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
+              borderBottom: placement === 'sheet' ? 'none' : undefined,
               color: 'var(--c-text-primary, #ffffff)',
               boxShadow: isCompact
                 ? '0 8px 24px rgba(0, 0, 0, 0.4)'

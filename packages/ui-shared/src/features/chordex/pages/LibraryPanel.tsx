@@ -191,9 +191,9 @@ export default function LibraryPanel() {
       <MorphingActionSurface
         isOpen={showTuner}
         originRect={state.tunerOriginRect}
-        placement="center"
+        placement="sheet"
         maxWidth={480}
-        maxHeight="90vh"
+        maxHeight="calc(100dvh - 72px)"
         onOpenChange={(open) => {
           if (!open) {
             state.closeTuner();
