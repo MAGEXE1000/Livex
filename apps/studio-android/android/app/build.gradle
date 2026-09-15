@@ -10,8 +10,8 @@ android {
         applicationId "com.chordex.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 40607
-        versionName "4.6.7"
+        versionCode 40608
+        versionName "4.6.8"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -93,26 +93,8 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
-    // implementation project(':capacitor-cordova-android-plugins')
-    // Explicit dependency to guarantee GoogleSignIn is in the APK.
-    // The capacitor-firebase/authentication plugin transitively pulls
-    // play-services-auth, but in some build setups the class
-    // com.google.android.gms.auth.api.signin.GoogleSignIn fails to
-    // resolve at runtime (NoClassDefFoundError) unless declared here.
     implementation "com.google.android.gms:play-services-auth:$playServicesAuthVersion"
     implementation "com.google.firebase:firebase-auth:$firebaseAuthVersion"
-    // Required by OtaCheckWorker — the periodic WorkManager job that
-    // polls version.json in the background and posts a notification
-    // when a new bundle is available, even with the app closed.
-    implementation "androidx.work:work-runtime:2.9.1"
-    implementation "com.google.guava:listenablefuture:1.0"
-    // Compile-time stub for com.google.common.util.concurrent.ListenableFuture.
-    // The androidx.work Worker base class exposes ListenableFuture in its
-    // public API surface, so javac needs the class on the classpath even
-    // though our subclass never references it directly. Without this the
-    // build fails with "cannot access ListenableFuture". The :1.0 stub is
-    // the official Google-recommended fix and is ~1 KB.
-    implementation "com.google.guava:guava:33.2.1-android"
     implementation "androidx.security:security-crypto:1.0.0"
     
     // Jetpack Compose & InkFlow transition

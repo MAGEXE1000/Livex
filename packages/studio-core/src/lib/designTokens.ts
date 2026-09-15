@@ -204,6 +204,7 @@ export const EasingPresets = {
   appTransition: [0.65, 0.0, 0.35, 1.0] as const,
 
   // Backward compatibility for standard motion configs
+  /** @deprecated Use SpringPresets.soft or SpringPresets.snappy instead */
   spring: {
     type: 'spring' as const,
     stiffness: 420,

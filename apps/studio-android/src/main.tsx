@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { TolgeeProvider } from '@tolgee/react';
 import App from './App';
 import {
   tolgee,
@@ -16,16 +15,23 @@ import {
 import { Capacitor } from '@capacitor/core';
 import './index.css';
 
-// @ts-ignore
-window.NavigationDispatcher = NavigationDispatcher;
-// @ts-ignore
-window.BackDispatcher = BackDispatcher;
-// @ts-ignore
-window.useSettingsStore = useSettingsStore;
-// @ts-ignore
-window.useNavigationStore = useNavigationStore;
-// @ts-ignore
-window.useApplicationTransitionStore = useApplicationTransitionStore;
+if (
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' &&
+    ((window as any).__studio_debug_mode === true ||
+      localStorage.getItem('studio_debug_mode') === 'true'))
+) {
+  // @ts-ignore
+  window.NavigationDispatcher = NavigationDispatcher;
+  // @ts-ignore
+  window.BackDispatcher = BackDispatcher;
+  // @ts-ignore
+  window.useSettingsStore = useSettingsStore;
+  // @ts-ignore
+  window.useNavigationStore = useNavigationStore;
+  // @ts-ignore
+  window.useApplicationTransitionStore = useApplicationTransitionStore;
+}
 const LazyEmergencyOverlay = lazy(() => import('./EmergencyDebugOverlay'));
 
 function EmergencyDebugOverlayWrapper() {

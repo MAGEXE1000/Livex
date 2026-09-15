@@ -1,7 +1,7 @@
 # Livex Architecture Index
 
-> **Last updated:** 2026-07-29
-> **Version:** 4.3.04
+> **Last updated:** 2026-09-14
+> **Version:** 4.6.8
 > **Scope:** Full monorepo — all apps, packages, and lib layers
 > **Purpose:** Permanent, read-only reference. Do NOT modify application behavior to satisfy this document.
 
@@ -152,25 +152,27 @@ None (leaf node).
 | ------------------- | ------------------------------- |
 | **Package name**    | @workspace/studio-android       |
 | **Version**         | 4.0.4                           |
-| **Entry point**     | pps/studio-android/src/main.tsx |
+| **Entry point**     |  pps/studio-android/src/main.tsx |
 | **Deployment**      | Capacitor → Gradle → signed APK |
 | **Build tool**      | Vite 7 + cap sync android       |
 | **Ownership scope** | APK                             |
 
 #### Purpose
 
-The native Android application rendered inside a Capacitor WebView. Has access to native Capacitor plugins (filesystem, status bar, notifications, screen orientation). Contains its own OTA updater pipeline (native APK downloader + PackageInstaller). Shares all business logic with the web app via shared packages.
+The native Android application rendered inside a Capacitor WebView. Has access to native Capacitor plugins (filesystem, status bar, notifications, screen orientation). Contains its own APK updater pipeline (native APK downloader + PackageInstaller; deprecated background OTA poller permanently removed). Shares all business logic with the web app via shared packages.
 
 #### Main Files
 
-| File                     | Role                                                                                   |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| src/main.tsx             | React DOM root, mirrors web entry                                                      |
-| src/App.tsx              | Root component; mirrors web App.tsx with native-only paths (APK updater, back-handler) |
-| ite.config.ts            | Vite config for Android                                                                |
-| capacitor.config.ts      | Capacitor config: appId, server URL, plugin settings                                   |
-| ndroid/                  | Native Android project (Gradle, AndroidManifest, Kotlin)                               |
-| scripts/sync-version.mjs | Prebuild hook: stamps public/version.json                                              |
+| File                                        | Role                                                                                   |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| src/main.tsx                                | React DOM root, mounts App and isolated EmergencyDebugOverlay root                     |
+| src/App.tsx                                 | Root component, sets up SharedAppShell and registers window.__preloadUIModules         |
+| src/EmergencyDebugOverlay.tsx               | Emergency recovery and diagnostic dashboard (lazy chunk, ~203 KB)                      |
+| src/components/MobileDevicePreviewFrame.tsx | Viewport frame for browser preview (pnpm dev:mobile)                                   |
+| vite.config.ts                              | Vite config for Android build target                                                   |
+| capacitor.config.ts                         | Capacitor config: appId, server URL, plugin settings                                   |
+| android/                                    | Native Android project (Gradle, AndroidManifest, Kotlin bridges, InkFlow)              |
+| scripts/sync-version.mjs                    | Prebuild hook: stamps public/version.json                                              |
 
 #### Imports (workspace)
 
@@ -381,39 +383,24 @@ Cross-platform React component library consumed by both studio-web and studio-an
 
 #### Main Files
 
-| File                                         | Role                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------- |
-| src/index.ts                                 | Public barrel — all component exports                                           |
-| src/components/StudioHub.tsx                 | Master navigation shell (~337 KB); renders drill-down layouts for all app modes |
-| src/components/SharedNavigationContainer.tsx | CSS-animation panel switcher (no Framer dependency)                             |
-| src/components/AppAnimationSystem.tsx        | Framer Motion presets, AnimationCoordinator, AppEntryTransition, PageTransition |
-| src/components/StudioLayoutSystem.tsx        | Layout primitives: SettingsScaffold, SettingsSection, DrillDownLayout           |
-| src/components/SmartLoading.tsx              | Async loading gate with skeleton fallback and timeout                           |
-| src/components/ErrorBoundary.tsx             | React Error Boundary with recovery UI                                           |
-| src/components/BottomNav.tsx                 | Mobile bottom navigation bar with LiquidGlass effect                            |
-| src/components/DevToolsDashboard.tsx         | Full-screen developer overlay (~183 KB)                                         |
-| src/components/UpdateIndicator.tsx           | Morphing update banner/pill (~88 KB)                                            |
-| src/components/UpdateDiagnosticsSheet.tsx    | Update diagnostics sheet (~48 KB)                                               |
-| src/components/AccountCard.tsx               | Full account management UI (~249 KB)                                            |
-| src/components/StageCorePanel.tsx            | Stage mode layout (~114 KB)                                                     |
-| src/components/SongPracticeView.tsx          | Song practice / chord-chart view (~69 KB)                                       |
-| src/components/CustomChordBuilder.tsx        | Custom chord diagram builder (~49 KB)                                           |
-| src/components/StudioDesignSystem.tsx        | Design tokens, color palettes, button primitives                                |
-| src/components/WebDesignSystem.tsx           | Web-specific toolbar/button components                                          |
-| src/components/StudioSkeleton.tsx            | Skeleton loading shapes for each app mode                                       |
-| src/panels/ChordPanel.tsx                    | Chordex chord workspace panel (~45 KB)                                          |
-| src/panels/DrumEditor.tsx                    | Drumex sequencer editor (~338 KB)                                               |
-| src/panels/DrumPrefsPanel.tsx                | Drumex preferences panel (~16 KB)                                               |
-| src/panels/LibraryPanel.tsx                  | Chord library browser (~91 KB)                                                  |
-| src/panels/SettingsPanel.tsx                 | Global settings panel (~29 KB)                                                  |
-| src/panels/SongsPanel.tsx                    | Song management panel (~191 KB)                                                 |
-| src/groovex/                                 | Groovex stem-player feature module (see §7.3)                                   |
-| src/vocalex/                                 | Vocalex vocal training feature module (see §7.2)                                |
-| src/components/animata/                      | Animata animation components                                                    |
-| src/components/kokonutui/                    | KokonutUI components                                                            |
-| src/components/lottie/                       | Lottie animation wrappers                                                       |
-| src/components/ui/                           | Generic UI primitives                                                           |
-| src/components/updater-diagnostics/          | Updater diagnostics page and clipboard utility                                  |
+| File                                                    | Role                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| src/index.ts                                            | Public barrel — all component exports                                           |
+| src/shared/layout/SharedAppShell.tsx                    | Core application layout shell orchestrating Hub, bottom nav, and sub-apps       |
+| src/features/hub/components/StudioHub.tsx               | Master navigation shell (~337 KB); renders drill-down layouts for all app modes |
+| src/features/chordex/                                   | Chordex workspace, library, practice, and song panels                           |
+| src/features/drumex/DrumEditor.tsx                      | Drumex sequencer editor (~338 KB)                                               |
+| src/features/groovex/                                   | Groovex stem-player feature module                                              |
+| src/features/vocalex/                                   | Vocalex vocal training feature module                                           |
+| src/features/stagex/                                    | Stage mode layout, components, and PDF export                                   |
+| src/features/devtools/DevToolsDashboard.tsx             | Full-screen developer overlay (~183 KB)                                         |
+| src/features/updater/UpdateIndicator.tsx                | Morphing update banner/pill (~88 KB)                                            |
+| src/features/updater/StudioUpdateScreen.tsx             | Dedicated native updater screen                                                 |
+| src/features/auth/AccountCard.tsx                       | Full account management UI (~249 KB)                                            |
+| src/shared/animation/                                   | LaunchAnimationEngine, PageTransition, motion components                         |
+| src/shared/layout/                                      | SharedAppShell, SubAppScaffold, ScreenScaffold, navigation containers           |
+| src/shared/design-system/                               | Design tokens, glass surfaces, buttons, and visual primitives                   |
+| src/components/ui/                                      | Generic UI primitives (dialogs, buttons, tooltips)                               |
 
 #### Imports
 
@@ -530,22 +517,23 @@ export { default as StudioLandingPage } from './landing/StudioLandingPage';
 
 #### Purpose
 
-Android-only component overrides and re-exports. Currently thin — primarily re-exports a subset of ui-shared components and provides an Android-specific StageCorePanel override.
+Android-only component re-exports and runtime verification. Serves as a facade re-exporting key navigation and updater surfaces from ui-shared, plus providing an Android-specific HTML5 Canvas DOM paint verification watchdog.
 
 #### Main Files
 
-| File                              | Role                                  |
-| --------------------------------- | ------------------------------------- |
-| src/index.ts                      | Public barrel                         |
-| src/components/StageCorePanel.tsx | Android-specific Stage panel override |
-| src/watchdog/paintVerification.ts | HTML5 Canvas DOM paint verification   |
+| File                              | Role                                              |
+| --------------------------------- | ------------------------------------------------- |
+| src/index.ts                      | Public barrel — re-exports from ui-shared         |
+| src/watchdog/paintVerification.ts | HTML5 Canvas DOM paint verification watchdog      |
 
 #### Exports
 
 ```typescript
-export { SharedNavigationBar, UpdateIndicator, UpdateDiagnosticsSheet, StudioUpdateScreen } from '@workspace/ui-shared';
-export { default as StageCorePanel } from './components/StageCorePanel';
+export { SharedNavigationBar } from '@workspace/ui-shared/src/features/hub/navigation/SharedNavigationBar';
+export { default as UpdateIndicator } from '@workspace/ui-shared/src/features/updater/components/UpdateIndicator';
+export { default as StudioUpdateScreen } from '@workspace/ui-shared/src/features/updater/components/StudioUpdateScreen';
 export { runPaintVerification } from './watchdog/paintVerification';
+export type { PaintVerificationResult } from './watchdog/paintVerification';
 ```
 
 #### Dependencies

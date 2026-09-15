@@ -54,7 +54,6 @@ export interface SharedAppShellProps {
   renderSidebar?: () => React.ReactNode;
   renderBottomNav?: () => React.ReactNode;
   renderLaunchOverlay?: () => React.ReactNode;
-  renderEmergencyOverlay?: () => React.ReactNode;
 
   hubElement: React.ReactNode;
   subApps: {
@@ -228,7 +227,6 @@ export function SharedAppShell({
   renderSidebar,
   renderBottomNav,
   renderLaunchOverlay,
-  renderEmergencyOverlay,
   hubElement,
   subApps,
 }: SharedAppShellProps) {
@@ -255,14 +253,9 @@ export function SharedAppShell({
   useEffect(() => {
     BackDispatcher.initialize();
 
-    const unsub = StartupCoordinator.subscribe((phases) => {
-      // Monitor startup progress if needed
-    });
-
     void StartupCoordinator.run(() => {});
 
     return () => {
-      unsub();
       StartupCoordinator.cancel('app_unmounted');
     };
   }, []);
@@ -299,6 +292,18 @@ export function SharedAppShell({
       setAppPreloaded: s.setAppPreloaded,
     }))
   );
+
+  const amoledMode = useSettingsStore((state) => state.settings.amoledMode);
+  const perAppAmoled = useSettingsStore((state) =>
+    launchingApp ? state.settings.perApp?.[launchingApp]?.amoledMode : undefined
+  );
+  const isTransitionLight =
+    currentTheme === 'light' ||
+    (currentTheme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isTransitionAmoled =
+    !isTransitionLight && Boolean(perAppAmoled !== undefined ? perAppAmoled : amoledMode);
 
   const splashVisible = transitionState !== 'IDLE';
   const transitionPreviousAppModeRef = useRef<AppKey | 'hub'>(routeApp || 'hub');
@@ -417,26 +422,8 @@ export function SharedAppShell({
                 appKey={launchingApp}
                 preloaded={appPreloaded}
                 onComplete={() => {}}
-                isLight={
-                  currentTheme === 'light' ||
-                  (currentTheme === 'system' &&
-                    typeof window !== 'undefined' &&
-                    window.matchMedia('(prefers-color-scheme: light)').matches)
-                }
-                isAmoled={
-                  !(
-                    currentTheme === 'light' ||
-                    (currentTheme === 'system' &&
-                      typeof window !== 'undefined' &&
-                      window.matchMedia('(prefers-color-scheme: light)').matches)
-                  ) &&
-                  Boolean(
-                    useSettingsStore.getState().settings.perApp?.[launchingApp]?.amoledMode !==
-                      undefined
-                      ? useSettingsStore.getState().settings.perApp?.[launchingApp]?.amoledMode
-                      : useSettingsStore.getState().settings.amoledMode
-                  )
-                }
+                isLight={isTransitionLight}
+                isAmoled={isTransitionAmoled}
               />
             )}
           </AnimatePresence>
@@ -444,7 +431,6 @@ export function SharedAppShell({
         </Suspense>
       </ErrorBoundary>
       {renderLaunchOverlay?.()}
-      {renderEmergencyOverlay?.()}
       {developerMode && isInspectorEnabled && showRouteTracer && (
         <Suspense fallback={null}>
           <InspectorRouteTracer />

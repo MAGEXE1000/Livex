@@ -41,15 +41,12 @@ export const useNavigationStore = create<NavigationStore>()(
       activeHandlers: [],
 
       setHistory: (history) => {
-        const prev = useNavigationStore.getState().history;
         set({ history });
       },
       setTransition: (transitionType, isTransitioning) => {
-        const store = useNavigationStore.getState();
         set({ transitionType, isTransitioning });
       },
       setGestureState: (gestureState, predictiveProgress) => {
-        const store = useNavigationStore.getState();
         set({ gestureState, predictiveProgress });
       },
       registerHandler: (id, priority, fn) => {

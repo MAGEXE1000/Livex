@@ -164,9 +164,6 @@ importers:
 
   .:
     dependencies:
-      firebase-admin:
-        specifier: ^14.2.0
-        version: 14.2.0(supports-color@7.2.0)
       lucide-animated:
         specifier: ^1.0.5
         version: 1.0.5(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
@@ -195,6 +192,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^7.1.1
         version: 7.1.1(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
+      firebase-admin:
+        specifier: ^14.2.0
+        version: 14.2.0(supports-color@7.2.0)
       globals:
         specifier: ^17.7.0
         version: 17.7.0

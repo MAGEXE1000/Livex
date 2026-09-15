@@ -28,7 +28,12 @@ export interface StageExportPdfViewProps {
   isAmoled?: boolean;
 }
 
-if (typeof window !== 'undefined') {
+if (
+  typeof window !== 'undefined' &&
+  (import.meta.env.DEV ||
+    (window as any).__studio_debug_mode === true ||
+    localStorage.getItem('studio_debug_mode') === 'true')
+) {
   (window as any).NavigationDispatcher = NavigationDispatcher;
   (window as any).useSessionStore = useSessionStore;
   (window as any).__stagexTestApi = {

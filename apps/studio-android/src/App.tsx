@@ -53,13 +53,8 @@ export default function App() {
   const isAmoled = !isLight && Boolean(hubAmoled !== undefined ? hubAmoled : globalAmoled);
   const isDev = import.meta.env.DEV || !Capacitor.isNativePlatform();
   const [showLaunchOverlay, setShowLaunchOverlay] = useState(!isDev);
-  const initialPresetRef = useRef<any>(
-    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'default'
-      : 'default'
-  );
+  const initialPresetRef = useRef<any>('default');
 
-  const [route, setRoute] = useState('/app');
   const routeApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
 
   useEffect(() => {
@@ -68,12 +63,6 @@ export default function App() {
       void loadLibraryPanel();
     }
   }, [routeApp]);
-
-  const navigateTo = (path: string) => {
-    if (path === '/') return; // Never route to landing page on Android
-    window.history.pushState({}, '', path);
-    setRoute(path);
-  };
 
   useEffect(() => {
     if (isDev) {
@@ -87,14 +76,6 @@ export default function App() {
       }
     }
   }, [isDev]);
-
-  useEffect(() => {
-    const handleIntroDone = () => {
-      // Preflight checks
-    };
-    window.addEventListener('studio-intro-done', handleIntroDone);
-    return () => window.removeEventListener('studio-intro-done', handleIntroDone);
-  }, []);
 
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
   /* Note: SharedNavigationBar is rendered via BottomNavigationController */

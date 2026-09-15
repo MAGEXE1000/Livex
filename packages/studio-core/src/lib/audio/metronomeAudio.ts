@@ -1,5 +1,4 @@
 import { createAudioContext } from './audioContextOptions';
-import { VOICE_COUNT_BASE64 } from './metronomeVoiceData';
 
 export type MetronomeTimeSignature = '4/4' | '3/4' | '6/8' | '2/4' | '5/4' | '7/8' | '9/8' | '12/8';
 export type MetronomeSubdivision = '1/4' | '1/8' | '1/16' | '1/32' | '3let' | '6let';
@@ -190,6 +189,7 @@ export class MetronomeAudioEngine {
   private async preloadVoiceBuffers() {
     if (!this._ctx || typeof this._ctx.decodeAudioData !== 'function') return;
     const ctx = this._ctx;
+    const { VOICE_COUNT_BASE64 } = await import('./metronomeVoiceData');
     for (let i = 1; i <= 12; i++) {
       if (this._voiceBuffers.has(i)) continue;
       const b64 = VOICE_COUNT_BASE64[i];

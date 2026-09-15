@@ -57,7 +57,7 @@ export const useBottomNavigationStore = create<BottomNavigationStore>((set, get)
   isSearchOpen: false,
   items: [],
   isLight: false,
-  debugLog: true,
+  debugLog: false,
   isLocked: false,
 
   setLocked: (isLocked: boolean) => {

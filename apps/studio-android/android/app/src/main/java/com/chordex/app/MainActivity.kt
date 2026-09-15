@@ -17,17 +17,10 @@ import android.webkit.WebChromeClient
 import android.widget.FrameLayout
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkManager
 import com.getcapacitor.BridgeActivity
 import com.getcapacitor.BridgeWebChromeClient
 import com.getcapacitor.JSObject
 import java.io.File
-import java.util.concurrent.TimeUnit
-
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,8 +69,6 @@ import com.kyant.backdrop.effects.vibrancy
 class MainActivity : BridgeActivity() {
 
     companion object {
-        private const val UPDATE_WORK_NAME = "studio_update_check"
-        
         @JvmField
         var lastSharedFile: JSObject? = null
         
@@ -216,7 +207,6 @@ class MainActivity : BridgeActivity() {
 
         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-        scheduleUpdateBackgroundCheck()
 
         if (this.bridge != null && this.bridge.webView != null) {
             val webView = this.bridge.webView
@@ -453,25 +443,6 @@ class MainActivity : BridgeActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
-    }
-
-    private fun scheduleUpdateBackgroundCheck() {
-        try {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-            val request = PeriodicWorkRequest.Builder(
-                    UpdateCheckWorker::class.java, 15, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                UPDATE_WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
-                request
-            )
-        } catch (e: Exception) {
-            android.util.Log.w("MainActivity", "Update background work failed to schedule: " + e.message)
         }
     }
 
