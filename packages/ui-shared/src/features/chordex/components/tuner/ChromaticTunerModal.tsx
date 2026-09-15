@@ -248,16 +248,30 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     });
 
     engineRef.current = engine;
-    engine.preloadReferenceAudio(instrumentMode);
+    // Defer heavy sample bank evaluation and audio decoding until after the 350ms opening spring settles
+    const preloadTimer = setTimeout(() => {
+      engine.preloadReferenceAudio(instrumentMode);
+    }, 400);
+
     engine.start().catch((err) => {
       console.warn('[ChromaticTunerModal] Engine start error:', err);
     });
 
     return () => {
+      clearTimeout(preloadTimer);
       engine.destroy();
       engineRef.current = null;
     };
   }, []);
+
+  // Pause audio analysis when tuning selector sub-modal is open to eliminate background CPU load
+  useEffect(() => {
+    if (showTuningSelector) {
+      engineRef.current?.pause();
+    } else if (engineRef.current) {
+      engineRef.current.resume();
+    }
+  }, [showTuningSelector]);
 
   // Handle instrument mode switch
   const handleModeChange = (newMode: InstrumentTuningMode) => {

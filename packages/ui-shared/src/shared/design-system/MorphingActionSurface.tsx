@@ -140,15 +140,6 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     height: number;
   } | null>(null);
 
-  const [closeRect, setCloseRect] = useState<{
-    top: number;
-    left: number;
-    right: number;
-    bottom: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
   const captureRect = useCallback(() => {
     if (triggerAnchorRef.current) {
       const r = triggerAnchorRef.current.getBoundingClientRect();
@@ -163,25 +154,6 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         };
         originRectRef.current = rectData;
         setOriginRect(rectData);
-        return rectData;
-      }
-    }
-    return null;
-  }, []);
-
-  const captureCloseRect = useCallback(() => {
-    if (triggerAnchorRef.current) {
-      const r = triggerAnchorRef.current.getBoundingClientRect();
-      if (r.width > 0 || r.height > 0) {
-        const rectData = {
-          top: r.top,
-          left: r.left,
-          right: r.right,
-          bottom: r.bottom,
-          width: r.width,
-          height: r.height,
-        };
-        setCloseRect(rectData);
         return rectData;
       }
     }
@@ -215,14 +187,13 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
     try {
       MotionProfiler.startMorphClose(surfaceId);
     } catch (_) {}
-    captureCloseRect();
     if (isControlled) {
       onOpenChange?.(false);
     } else {
       setInternalOpen(false);
       onOpenChange?.(false);
     }
-  }, [captureCloseRect, isControlled, onOpenChange, surfaceId]);
+  }, [isControlled, onOpenChange, surfaceId]);
 
   // Active overlays registry integration
   useEffect(() => {
@@ -256,16 +227,13 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         height: propsOriginRect.height,
       };
       originRectRef.current = rectData;
-      setOriginRect(rectData);
     } else if (!prevOpenRef.current && isOpen) {
       if (!originRectRef.current && triggerAnchorRef.current) {
         captureRect();
       }
-    } else if (prevOpenRef.current && !isOpen) {
-      captureCloseRect();
     }
     prevOpenRef.current = isOpen;
-  }, [isOpen, propsOriginRect, captureRect, captureCloseRect]);
+  }, [isOpen, propsOriginRect, captureRect]);
 
   // Determine compact presentation mode (defaulting to true for contextual menus)
   const isCompact = compact !== undefined
@@ -280,7 +248,16 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 390;
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 844;
 
-  const effectiveRect = originRect || originRectRef.current;
+  const effectiveRect = propsOriginRect
+    ? {
+        top: propsOriginRect.top,
+        left: propsOriginRect.left,
+        right: propsOriginRect.right ?? (propsOriginRect.left + propsOriginRect.width),
+        bottom: propsOriginRect.bottom ?? (propsOriginRect.top + propsOriginRect.height),
+        width: propsOriginRect.width,
+        height: propsOriginRect.height,
+      }
+    : (originRect || originRectRef.current);
   let computedPositionStyle: React.CSSProperties = {};
   let panelInitial: any;
   let panelAnimate: any;
@@ -315,21 +292,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
         scale: startScale,
         x: deltaX,
         y: deltaY,
-        borderRadius: isCompact ? 18 : 28,
       };
       panelAnimate = {
         opacity: 1,
         scale: 1,
         x: 0,
         y: 0,
-        borderRadius: isCompact ? 16 : 24,
       };
       panelExit = {
         opacity: 0,
         scale: startScale,
         x: deltaX,
         y: deltaY,
-        borderRadius: isCompact ? 18 : 28,
       };
     } else {
       computedPositionStyle = {
@@ -413,7 +387,6 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             scale: startScale,
             x: deltaX,
             y: deltaY,
-            borderRadius: isCompact ? 18 : 22,
           };
       panelAnimate = isReduced
         ? { opacity: 1 }
@@ -422,7 +395,6 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             scale: 1,
             x: 0,
             y: 0,
-            borderRadius: isCompact ? 16 : 24,
           };
       panelExit = isReduced
         ? { opacity: 0 }
@@ -431,7 +403,6 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             scale: startScale,
             x: deltaX,
             y: deltaY,
-            borderRadius: isCompact ? 18 : 22,
           };
     } else {
       computedPositionStyle = {
@@ -532,6 +503,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
+              willChange: 'transform, opacity',
               ...computedPositionStyle,
             }}
             className="sc-morphing-panel"

@@ -139,9 +139,15 @@ class MainActivity : BridgeActivity() {
     fun ensureNormalAudioMode() {
         try {
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
-            if (audioManager != null && audioManager.mode != android.media.AudioManager.MODE_NORMAL) {
-                audioManager.mode = android.media.AudioManager.MODE_NORMAL
-                android.util.Log.i("LivexAudio", "Enforced AudioManager.MODE_NORMAL")
+            if (audioManager != null) {
+                val currentMode = audioManager.mode
+                // Do not collide with an active cellular phone call or VoIP communication session (e.g. WhatsApp, Meet, Zoom)
+                if (currentMode != android.media.AudioManager.MODE_IN_CALL &&
+                    currentMode != android.media.AudioManager.MODE_IN_COMMUNICATION &&
+                    currentMode != android.media.AudioManager.MODE_NORMAL) {
+                    audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                    android.util.Log.i("LivexAudio", "Enforced AudioManager.MODE_NORMAL (previous mode: $currentMode)")
+                }
             }
         } catch (e: Exception) {
             android.util.Log.w("LivexAudio", "Failed to enforce normal audio mode: ${e.message}")

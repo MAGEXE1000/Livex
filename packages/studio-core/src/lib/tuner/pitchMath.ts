@@ -198,6 +198,23 @@ export function findNearestGuitarString(frequency: number): GuitarStringTarget |
 
 
 /**
+ * Combined single-pass calculation of RMS energy and Peak amplitude.
+ * Reduces 2,048 memory array accesses and CPU branch operations per frame.
+ */
+export function calculateRmsAndPeak(buffer: Float32Array): { rms: number; peak: number } {
+  let sumSq = 0;
+  let max = 0;
+  const len = buffer.length;
+  for (let i = 0; i < len; i++) {
+    const sample = buffer[i];
+    sumSq += sample * sample;
+    const abs = Math.abs(sample);
+    if (abs > max) max = abs;
+  }
+  return { rms: Math.sqrt(sumSq / len), peak: max };
+}
+
+/**
  * Calculate RMS (Root Mean Square) energy of a Float32Array audio frame.
  */
 export function calculateRms(buffer: Float32Array): number {
