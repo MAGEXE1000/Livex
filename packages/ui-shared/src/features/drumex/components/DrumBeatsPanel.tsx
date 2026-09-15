@@ -6,6 +6,7 @@ import { Button, Input } from '../../../shared/design-system/StudioDesignSystem'
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StaggeredReveal } from '../../../shared/animation';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
+import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
 export interface DrumBeatsPanelProps {
   drumSongs: DrumSong[];
@@ -553,31 +554,19 @@ export function DrumBeatsPanel({
       data-purpose="beats-screen"
     >
       <main
-        className="w-full max-w-md mx-auto pb-32 px-4 pt-3 space-y-4 flex flex-col min-h-[calc(100vh-var(--safe-area-inset-top,0px)-var(--safe-area-inset-bottom,0px)-80px)]"
-        style={{
-          paddingTop:
-            'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px))',
-        }}
+        className={
+          'w-full flex flex-col pb-32 space-y-4 ' +
+          (isWebDesktop ? 'max-w-5xl mx-auto px-6 pt-6' : 'max-w-md mx-auto px-4')
+        }
         data-purpose="mobile-viewport"
       >
-        {/* Header Titles */}
-        <header className="pt-2 px-1 flex-shrink-0" data-purpose="header-titles">
-          <h1
-            className="text-3xl font-extrabold tracking-tight leading-tight"
-            style={{
-              fontFamily: 'var(--font-headline)',
-              color: 'var(--c-text-primary, #111827)',
-            }}
-          >
-            Beats
-          </h1>
-          <p
-            className="text-xs font-medium tracking-normal mt-0.5"
-            style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-          >
-            Your drum songs &amp; arrangements
-          </p>
-        </header>
+        {/* Canonical Studio Header */}
+        <StudioHeader
+          title="Beats"
+          subtitle="Your drum songs & arrangements"
+          disableHorizontalPadding={true}
+          disableTopInset={isWebDesktop}
+        />
 
         {/* Capsule Search Bar */}
         <div className="relative flex items-center flex-shrink-0" data-purpose="search-box">
@@ -671,14 +660,14 @@ export function DrumBeatsPanel({
 
         {/* Content Area: Empty State, Search Empty State, or Beats List */}
         {drumSongs.length === 0 ? (
-          /* Canonical Empty State: Balanced & Centered in available content region */
+          /* Canonical Empty State: Balanced & Centered matching Chordex */
           <section
-            className="flex-1 flex flex-col items-center justify-center text-center px-4 py-8 my-auto"
+            className="flex flex-col items-center justify-center text-center px-4 py-16"
             data-purpose="empty-state"
           >
             {/* Musical Drum Icon Container */}
             <div
-              className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5 border shadow-soft-card"
+              className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
               style={{
                 backgroundColor:
                   'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
@@ -686,11 +675,11 @@ export function DrumBeatsPanel({
                 color: 'var(--c-accent-from, #2563EB)',
               }}
             >
-              <span className="material-symbols-outlined text-4xl select-none">album</span>
+              <span className="material-symbols-outlined text-3xl select-none">album</span>
             </div>
 
             <h2
-              className="text-2xl font-bold tracking-tight"
+              className="text-xl font-bold tracking-tight"
               style={{
                 fontFamily: 'var(--font-headline)',
                 color: 'var(--c-text-primary, #111827)',
@@ -700,14 +689,18 @@ export function DrumBeatsPanel({
             </h2>
 
             <p
-              className="text-sm font-normal max-w-[260px] mt-1.5 leading-relaxed"
+              className="text-xs font-normal max-w-[240px] mt-1.5 leading-relaxed"
               style={{ color: 'var(--c-text-secondary, #6B7280)' }}
             >
-              Tap the '+' button to create your first drum beat or import a preset
+              Tap the{' '}
+              <span className="font-semibold" style={{ color: 'var(--c-text-primary)' }}>
+                '+'
+              </span>{' '}
+              button to create your first drum beat or import a preset
             </p>
 
             {/* Quick Action Buttons */}
-            <div className="flex items-center gap-3 mt-6">
+            <div className="flex items-center gap-2.5 mt-6">
               {renderCreateForm ? (
                 <MorphingActionSurface
                   isOpen={isCreateOpen && activeCreateTrigger === 'empty'}
@@ -732,7 +725,7 @@ export function DrumBeatsPanel({
                         setActiveCreateTrigger('empty');
                         triggerProps.onClick();
                       }}
-                      className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-2"
+                      className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5"
                       style={{
                         backgroundColor: 'var(--c-accent-from, #2563EB)',
                         boxShadow:
@@ -752,7 +745,7 @@ export function DrumBeatsPanel({
                 <button
                   type="button"
                   onClick={onCreateSong}
-                  className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                   style={{
                     backgroundColor: 'var(--c-accent-from, #2563EB)',
                     boxShadow:
@@ -777,11 +770,11 @@ export function DrumBeatsPanel({
                     <motion.button
                       {...triggerProps}
                       type="button"
-                      className="px-5 py-2.5 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-2"
+                      className="px-3.5 py-2 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-1.5"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
                         borderColor: 'var(--c-border, #E3E6EB)',
-                        color: 'var(--c-text-primary, #111827)',
+                        color: 'var(--c-text-secondary, #6B7280)',
                       }}
                       data-purpose="empty-import-btn"
                       data-testid="empty-import-btn"
@@ -797,11 +790,11 @@ export function DrumBeatsPanel({
                 <button
                   type="button"
                   onClick={onImportSong}
-                  className="px-5 py-2.5 rounded-full text-xs font-semibold border shadow-sm active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold border shadow-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                   style={{
                     backgroundColor: 'var(--surface-card-bg, #ffffff)',
                     borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-primary, #111827)',
+                    color: 'var(--c-text-secondary, #6B7280)',
                   }}
                   data-purpose="empty-import-btn"
                   data-testid="empty-import-btn"
@@ -815,7 +808,7 @@ export function DrumBeatsPanel({
         ) : filteredSongs.length === 0 ? (
           /* Search Empty State */
           <section
-            className="flex-1 flex flex-col items-center justify-center text-center px-4 py-12 my-auto"
+            className="flex flex-col items-center justify-center text-center px-4 py-16"
             data-purpose="search-empty-state"
           >
             <div
