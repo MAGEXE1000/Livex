@@ -1,6 +1,5 @@
 import { useT, resolveAccent, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { useState } from 'react';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import PitchPanel from './PitchPanel';
 import PracticePanel from './PracticePanel';
 
@@ -42,7 +41,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           maxWidth: 440,
           margin: '0 auto',
           padding:
-            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px) var(--page-header-inset-h, var(--page-inset-h, 20px)) 0',
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px) var(--page-header-inset-h, var(--page-inset-h, 20px)) 8px',
           boxSizing: 'border-box',
           flexShrink: 0,
         }}
@@ -52,7 +51,6 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            marginBottom: '8px',
           }}
         >
           <div
@@ -165,49 +163,6 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             </button>
           </div>
         </div>
-
-        {/* 2. Page title and short description (canonical StudioHeader) */}
-        <StudioHeader
-          title={
-            subView === 'pitch'
-              ? vt.tabMonitor || (settings.language === 'es' ? 'Monitor de Voz' : 'Vocal Monitor')
-              : vt.tabExercises ||
-                (settings.language === 'es' ? 'Ejercicios Vocales' : 'Vocal Exercises')
-          }
-          subtitle={
-            subView === 'pitch'
-              ? vt.coachSubtitle ||
-                (settings.language === 'es'
-                  ? 'Detección y afinación vocal en tiempo real.'
-                  : 'Real-time pitch detection and tuning.')
-              : vt.tipsSubtitle ||
-                (settings.language === 'es'
-                  ? 'Técnicas vocales para mejorar tu voz.'
-                  : 'Vocal techniques to improve your voice.')
-          }
-          disableTopInset={true}
-          disableHorizontalPadding={true}
-          titleStyle={{
-            fontFamily: 'var(--type-title-font, var(--studio-font-display))',
-            fontSize: 'var(--type-title-size, 22px)',
-            lineHeight: 'var(--type-title-lh, 28px)',
-            fontWeight: 'var(--type-title-weight, 700)',
-            letterSpacing: 'var(--type-title-tracking, -0.7px)',
-          }}
-          subtitleStyle={{
-            fontFamily: 'var(--type-meta-font, var(--studio-font-body))',
-            fontSize: 'var(--type-metadata-size, 12.5px)',
-            lineHeight: 'var(--type-metadata-lh, 16px)',
-            letterSpacing: 'var(--type-metadata-tracking, 0.15px)',
-            color: 'var(--c-text-secondary)',
-            marginTop: '2px',
-          }}
-          containerStyle={{
-            paddingTop: '0px',
-            paddingBottom: '2px',
-            marginBottom: '6px',
-          }}
-        />
       </div>
 
       {/* View Content */}

@@ -104,45 +104,27 @@ export default function VocalexPreferencesPanel() {
 
   return (
     <div
-      className="w-full no-scrollbar"
       style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding:
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+        minHeight: '100%',
         boxSizing: 'border-box',
-        padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
-        paddingBottom:
-          'calc(var(--bottom-nav-height, 58px) + env(safe-area-inset-bottom, 14px) + 24px)',
       }}
     >
-      <div style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
-        {/* Header */}
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        {/* Canonical Vocalex Page Header */}
         <StudioHeader
-          title={vt.settingsTitle || (isSpanish ? 'Ajustes de Vocalex' : 'Vocalex Settings')}
+          title={isSpanish ? 'Preferencias' : 'Preferences'}
           subtitle={
             isSpanish
               ? 'Configuración de afinación, audio y grabación'
               : 'Configure pitch detection, audio DSP, and recording behaviors.'
           }
-          disableTopInset={true}
           disableHorizontalPadding={true}
-          titleStyle={{
-            fontFamily: 'var(--type-title-font, var(--studio-font-display))',
-            fontSize: 'var(--type-title-size, 22px)',
-            lineHeight: 'var(--type-title-lh, 28px)',
-            fontWeight: 'var(--type-title-weight, 700)',
-            letterSpacing: 'var(--type-title-tracking, -0.7px)',
-          }}
-          subtitleStyle={{
-            fontFamily: 'var(--type-meta-font, var(--studio-font-body))',
-            fontSize: 'var(--type-metadata-size, 12.5px)',
-            lineHeight: 'var(--type-metadata-lh, 16px)',
-            letterSpacing: 'var(--type-metadata-tracking, 0.15px)',
-            color: 'var(--c-text-secondary)',
-            marginTop: '2px',
-          }}
-          containerStyle={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
-            paddingBottom: '4px',
-            marginBottom: '10px',
-          }}
+          containerStyle={{ marginBottom: '8px' }}
         />
 
         {/* Transient Feedback Banner */}
@@ -187,6 +169,7 @@ export default function VocalexPreferencesPanel() {
                 ? 'Elige qué pantalla se activa al abrir Vocalex.'
                 : 'Choose which screen activates when Vocalex launches.')
             }
+            layout="stacked"
           >
             <SegmentedControl<'coach' | 'takes' | 'preferences'>
               value={startTab}
@@ -196,6 +179,7 @@ export default function VocalexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
               layoutId="vocalex-start-tab"
+              fullWidth
               options={[
                 { value: 'coach', label: vt.navCoach || 'Coach', testId: 'vocalex-start-coach' },
                 { value: 'takes', label: vt.tabTakes || 'Takes', testId: 'vocalex-start-takes' },
@@ -227,38 +211,50 @@ export default function VocalexPreferencesPanel() {
                 ? 'Frecuencia de afinación estándar de concierto.'
                 : 'Concert standard tuning frequency.')
             }
+            layout="stacked"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                gap: 8,
+                flexWrap: 'wrap',
+              }}
+            >
               {/* Preset buttons */}
-              {[432, 440, 442].map((hz) => {
-                const isSelected = refPitch === hz;
-                return (
-                  <button
-                    key={hz}
-                    type="button"
-                    onClick={() => handleSetRefPitch(hz)}
-                    style={{
-                      padding: '5px 10px',
-                      borderRadius: 9999,
-                      fontSize: 11.5,
-                      fontFamily: 'var(--studio-font-mono)',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      border: isSelected
-                        ? `1px solid ${acc.from}`
-                        : '1px solid var(--c-border, rgba(128,128,128,0.18))',
-                      background: isSelected
-                        ? `${acc.from}20`
-                        : 'var(--control-track-bg, rgba(0, 0, 0, 0.15))',
-                      color: isSelected ? acc.from : 'var(--c-text-secondary)',
-                      boxShadow: isSelected ? 'var(--shadow-control-raised)' : 'none',
-                      transition: 'all 150ms ease',
-                    }}
-                  >
-                    {hz}
-                  </button>
-                );
-              })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {[432, 440, 442].map((hz) => {
+                  const isSelected = refPitch === hz;
+                  return (
+                    <button
+                      key={hz}
+                      type="button"
+                      onClick={() => handleSetRefPitch(hz)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 9999,
+                        fontSize: 11.5,
+                        fontFamily: 'var(--studio-font-mono)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: isSelected
+                          ? `1px solid ${acc.from}`
+                          : '1px solid var(--c-border, rgba(128,128,128,0.18))',
+                        background: isSelected
+                          ? `${acc.from}20`
+                          : 'var(--control-track-bg, rgba(0, 0, 0, 0.15))',
+                        color: isSelected ? acc.from : 'var(--c-text-secondary)',
+                        boxShadow: isSelected ? 'var(--shadow-control-raised)' : 'none',
+                        transition: 'all 150ms ease',
+                      }}
+                    >
+                      {hz}
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Stepper Display */}
               <div
@@ -270,7 +266,6 @@ export default function VocalexPreferencesPanel() {
                   borderRadius: 9999,
                   padding: '3px 6px',
                   gap: 4,
-                  marginLeft: 4,
                   boxShadow: 'var(--shadow-inset-soft)',
                 }}
               >
@@ -348,6 +343,7 @@ export default function VocalexPreferencesPanel() {
                 ? 'Capacidad de respuesta y velocidad de seguimiento del tono.'
                 : 'Responsiveness and pitch tracking speed.')
             }
+            layout="stacked"
           >
             <SegmentedControl<'smooth' | 'normal' | 'fast'>
               value={sensitivity}
@@ -357,6 +353,7 @@ export default function VocalexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
               layoutId="vocalex-sensitivity"
+              fullWidth
               options={[
                 {
                   value: 'smooth',
@@ -386,6 +383,7 @@ export default function VocalexPreferencesPanel() {
                 ? 'Muestra las notas con letras estándar o Solfeo.'
                 : 'Display pitch notation as standard letters or Solfège.')
             }
+            layout="stacked"
           >
             <SegmentedControl<'standard' | 'solfege'>
               value={noteNaming}
@@ -395,6 +393,7 @@ export default function VocalexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
               layoutId="vocalex-naming"
+              fullWidth
               options={[
                 {
                   value: 'standard',
@@ -422,6 +421,7 @@ export default function VocalexPreferencesPanel() {
                 ? 'Margen objetivo para la zona verde de afinación correcta.'
                 : 'Target window for the green in-tune zone.')
             }
+            layout="stacked"
           >
             <SegmentedControl<number>
               value={tolerance}
@@ -431,6 +431,7 @@ export default function VocalexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
               layoutId="vocalex-tolerance"
+              fullWidth
               options={[
                 {
                   value: 3,
@@ -470,7 +471,9 @@ export default function VocalexPreferencesPanel() {
             }
           >
             <Toggle
-              checked={noiseSuppression}
+              size="sm"
+              style={{ minHeight: 'auto' }}
+              value={noiseSuppression}
               onChange={(checked) =>
                 useSettingsStore.getState().updateSettings({ vocalexNoiseSuppression: checked })
               }
@@ -493,7 +496,9 @@ export default function VocalexPreferencesPanel() {
             }
           >
             <Toggle
-              checked={autoGainControl}
+              size="sm"
+              style={{ minHeight: 'auto' }}
+              value={autoGainControl}
               onChange={(checked) =>
                 useSettingsStore.getState().updateSettings({ vocalexAutoGainControl: checked })
               }
@@ -513,6 +518,7 @@ export default function VocalexPreferencesPanel() {
                 ? 'Tiempo de preparación antes de que el micrófono empiece a grabar.'
                 : 'Preparation countdown before microphone starts capturing.')
             }
+            layout="stacked"
           >
             <SegmentedControl<number>
               value={countIn}
@@ -522,6 +528,7 @@ export default function VocalexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
               layoutId="vocalex-countin"
+              fullWidth
               options={[
                 {
                   value: 0,

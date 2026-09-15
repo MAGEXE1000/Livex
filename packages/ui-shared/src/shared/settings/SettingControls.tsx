@@ -44,19 +44,27 @@ export const SectionHeader = memo(function SectionHeader({
   );
 });
 
+export interface SettingRowProps {
+  label: string;
+  desc?: string;
+  children?: React.ReactNode;
+  indent?: boolean;
+  onClick?: () => void;
+  layout?: 'row' | 'stacked';
+  className?: string;
+  style?: React.CSSProperties;
+}
+
 export function SettingRow({
   label,
   desc,
   children,
   indent,
   onClick,
-}: {
-  label: string;
-  desc?: string;
-  children?: React.ReactNode;
-  indent?: boolean;
-  onClick?: () => void;
-}) {
+  layout = 'row',
+  className = '',
+  style,
+}: SettingRowProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
   const isInteractive = Boolean(onClick);
@@ -69,19 +77,22 @@ export function SettingRow({
       }
     : {};
 
+  const isStacked = layout === 'stacked';
+
   return (
     <RowWrapper
       {...(motionProps as any)}
       onClick={onClick}
-      className={`flex items-center justify-between gap-4 ${isInteractive ? 'cursor-pointer sc-setting-row-interactive' : ''}`}
+      className={`${isStacked ? 'flex flex-col gap-2.5' : 'flex items-center justify-between gap-4'} ${isInteractive ? 'cursor-pointer sc-setting-row-interactive' : ''} ${className}`}
       style={{
         padding: '14px 16px',
         paddingLeft: indent ? 'calc(16px * 1.75)' : '16px',
         borderBottom: '1px solid var(--track, var(--c-border))',
         boxSizing: 'border-box',
+        ...style,
       }}
     >
-      <div className="flex-1 min-w-0">
+      <div className={`${isStacked ? 'w-full' : 'flex-1'} min-w-0`}>
         <p
           style={{
             fontSize: indent ? 'var(--type-meta-size, 12px)' : 'var(--type-body-size, 14.5px)',
@@ -115,9 +126,24 @@ export function SettingRow({
           </p>
         )}
       </div>
-      {children && <div className="flex-none">{children}</div>}
+      {children && (
+        <div className={isStacked ? 'w-full flex items-center justify-end' : 'flex-none'}>
+          {children}
+        </div>
+      )}
     </RowWrapper>
   );
+}
+
+export interface SegmentedControlProps<T extends string | number> {
+  value: T;
+  options: { value: T; label: string; testId?: string }[];
+  onChange: (v: T) => void;
+  accentFrom?: string;
+  accentTo?: string;
+  layoutId?: string;
+  fullWidth?: boolean;
+  style?: React.CSSProperties;
 }
 
 export function SegmentedControl<T extends string | number>({
@@ -127,14 +153,9 @@ export function SegmentedControl<T extends string | number>({
   accentFrom = 'var(--studio-accent-from, #679cff)',
   accentTo = 'var(--studio-accent-to, #007aff)',
   layoutId = 'segmented-control-active',
-}: {
-  value: T;
-  options: { value: T; label: string; testId?: string }[];
-  onChange: (v: T) => void;
-  accentFrom?: string;
-  accentTo?: string;
-  layoutId?: string;
-}) {
+  fullWidth = false,
+  style,
+}: SegmentedControlProps<T>) {
   return (
     <div
       style={{
@@ -145,6 +166,9 @@ export function SegmentedControl<T extends string | number>({
         position: 'relative',
         border: '1px solid var(--track, var(--c-border))',
         boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0, 0, 0, 0.20))',
+        width: fullWidth ? '100%' : undefined,
+        boxSizing: 'border-box',
+        ...style,
       }}
     >
       {options.map((opt) => {
@@ -157,7 +181,8 @@ export function SegmentedControl<T extends string | number>({
             onClick={() => onChange(opt.value)}
             className="relative outline-none cursor-pointer"
             style={{
-              padding: '7px 15px',
+              flex: fullWidth ? 1 : undefined,
+              padding: fullWidth ? '7px 8px' : '7px 15px',
               borderRadius: '9999px',
               fontFamily: 'var(--type-body-font, var(--studio-font-body, "Inter", sans-serif))',
               fontSize: '12px',
@@ -170,6 +195,7 @@ export function SegmentedControl<T extends string | number>({
               border: 'none',
               transition: 'color 200ms cubic-bezier(0.2, 0, 0, 1)',
               zIndex: 10,
+              whiteSpace: 'nowrap',
             }}
           >
             {active && (
