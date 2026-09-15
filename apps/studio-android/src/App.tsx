@@ -97,6 +97,7 @@ export default function App() {
   }, []);
 
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
+  /* Note: SharedNavigationBar is rendered via BottomNavigationController */
 
   const appShell = (
     <SharedAppShell

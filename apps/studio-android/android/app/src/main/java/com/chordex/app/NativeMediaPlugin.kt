@@ -69,7 +69,7 @@ class NativeMediaPlugin : Plugin() {
         val durationMs = call.getLong("duration") ?: 0L
         val artworkUrl = call.getString("artworkUrl")
 
-        val service = ensureService()
+        val service = MediaNotificationService.instance
         if (service != null) {
             service.updateMetadata(title, artist, album, durationMs, artworkUrl)
         } else {
@@ -90,7 +90,12 @@ class NativeMediaPlugin : Plugin() {
         val positionMs = call.getLong("position") ?: 0L
         val speed = call.getFloat("speed") ?: 1.0f
 
-        val service = ensureService()
+        val isPlaying = state.equals("playing", ignoreCase = true)
+        var service = MediaNotificationService.instance
+        if (service == null && isPlaying) {
+            service = ensureService()
+        }
+
         if (service != null) {
             service.updatePlaybackState(state, positionMs, speed)
         } else {
@@ -105,6 +110,8 @@ class NativeMediaPlugin : Plugin() {
 
     @PluginMethod
     fun stopSession(call: PluginCall) {
+        MediaNotificationService.pendingMetadata = null
+        MediaNotificationService.pendingPlaybackState = null
         MediaNotificationService.instance?.stopForegroundService()
         call.resolve()
     }

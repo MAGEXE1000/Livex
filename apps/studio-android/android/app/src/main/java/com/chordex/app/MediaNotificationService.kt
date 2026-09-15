@@ -153,6 +153,12 @@ class MediaNotificationService : Service() {
             pendingPlaybackState = null
         }
 
+        // Defensive guard: Ensure Android foreground service contract is met if started as foreground service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isForeground) {
+            val notification = buildNotification()
+            startForegroundCompat(notification)
+        }
+
         Log.i(TAG, "MediaNotificationService created and MediaSessionCompat initialized.")
     }
 
@@ -479,13 +485,18 @@ class MediaNotificationService : Service() {
 
     fun stopForegroundService() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE)
+            if (isForeground) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
+                isForeground = false
             } else {
-                @Suppress("DEPRECATION")
-                stopForeground(true)
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(NOTIFICATION_ID)
             }
-            isForeground = false
             mediaSession?.isActive = false
             stopSelf()
         } catch (e: Exception) {

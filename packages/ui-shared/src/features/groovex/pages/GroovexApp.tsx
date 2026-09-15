@@ -115,7 +115,7 @@ export default function GroovexApp() {
       return true;
     }
     return false;
-  });
+  }, [view]);
 
   const t = useT();
   const theme = useSettingsStore((s) => s.settings.theme);

@@ -292,6 +292,7 @@ export default function GroovexPlayer() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      sessionIdRef.current++;
       destroyEngine(engine);
       engineRef.current = null;
       if (typeof window !== 'undefined' && (window as any).__groovexEngine === engine) {
