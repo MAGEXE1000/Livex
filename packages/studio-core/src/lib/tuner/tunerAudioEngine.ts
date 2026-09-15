@@ -24,6 +24,7 @@ import {
   playTunerReferenceString,
   preloadTunerReferenceAudio,
   stopTunerReferenceAudio,
+  playDrumReferenceSound,
   getActiveReferencePlayback,
   getPlaybackAudioContext,
 } from './tunerReferenceAudio';
@@ -198,6 +199,13 @@ export class TunerAudioEngine {
     }
   }
 
+  /**
+   * Play an audible calibrated drum reference tone for acoustic drum tuning
+   */
+  public playDrumReference(frequency: number, durationSeconds: number = 2.0): void {
+    playDrumReferenceSound(frequency, durationSeconds);
+  }
+
   public getState(): TunerLifecycleState {
     return this.state;
   }
@@ -365,8 +373,15 @@ export class TunerAudioEngine {
     }
 
     const isBass = this.mode === 'bass-4';
+    const isDrum = this.mode === 'drum';
 
-    if (isBass) {
+    if (isDrum) {
+      // Drum mode: HPF at 30 Hz to capture kick drum (45-55 Hz) while eliminating desk thumps
+      // Do NOT route through 50/60 Hz notch filters (kick & floor tom fundamentals reside around 50-90 Hz!)
+      this.highPassFilter.frequency.setValueAtTime(30, this.audioCtx.currentTime);
+      this.sourceNode.connect(this.highPassFilter);
+      this.highPassFilter.connect(this.analyser);
+    } else if (isBass) {
       // Bass mode: HPF at 25 Hz to permit E1 (41.2 Hz) and B0 (30.87 Hz)
       this.highPassFilter.frequency.setValueAtTime(25, this.audioCtx.currentTime);
       // Do NOT route through 50/60 Hz notch filters in bass mode (A1 is 55 Hz!)
@@ -426,7 +441,12 @@ export class TunerAudioEngine {
     let minFreq: number;
     let maxFreq: number;
 
-    if (isBass) {
+    if (this.mode === 'drum') {
+      minRms = this.noiseFilter ? 0.0025 : 0.0012;
+      minClarity = 0.65;
+      minFreq = 35.0; // Kick drum down to ~45 Hz
+      maxFreq = 500.0; // High snare tension reaches ~270 Hz, harmonics up to 450 Hz
+    } else if (isBass) {
       minRms = this.noiseFilter ? 0.003 : 0.0015;
       minClarity = 0.70;
       minFreq = 25.0; // Low B0 ~ 30.87 Hz

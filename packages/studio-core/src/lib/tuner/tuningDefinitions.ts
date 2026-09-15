@@ -4,6 +4,7 @@ import type {
   InstrumentTuningMode,
   TuningCategory,
 } from './tunerTypes';
+import { DRUM_PARTS, getDrumStringTarget } from './drumTuningModels';
 
 const SEMITONES: Record<string, number> = {
   C: 0,
@@ -47,6 +48,7 @@ function str(
 
 const GUITAR_MODES: readonly InstrumentTuningMode[] = ['electric', 'acoustic'];
 const BASS_4_MODES: readonly InstrumentTuningMode[] = ['bass-4'];
+const DRUM_MODES: readonly InstrumentTuningMode[] = ['drum'];
 
 export const CANONICAL_TUNINGS: readonly InstrumentTuningDefinition[] = [
   // ─── GUITAR (ELECTRIC & ACOUSTIC) ───────────────────────────────────────
@@ -304,6 +306,17 @@ export const CANONICAL_TUNINGS: readonly InstrumentTuningDefinition[] = [
       str('High F', 'F', 2, 1),
     ],
   },
+  // ─── DRUMS ──────────────────────────────────────────────────────────────
+  {
+    id: 'drum-standard',
+    name: 'Kit Estándar',
+    shortName: 'Drums',
+    instrumentCompatibility: DRUM_MODES,
+    instrumentFamily: 'drum',
+    category: 'Standard',
+    description: 'Afinación estándar de batería acústica (Tarola 242Hz / B3)',
+    strings: DRUM_PARTS.map((p) => getDrumStringTarget(p, 'normal')),
+  },
 ];
 
 /**
@@ -333,6 +346,11 @@ export function getTuningsForMode(
 export function getDefaultTuningForMode(
   mode: InstrumentTuningMode
 ): InstrumentTuningDefinition {
+  if (mode === 'drum') {
+    return (
+      CANONICAL_TUNINGS.find((t) => t.id === 'drum-standard') || CANONICAL_TUNINGS[0]
+    );
+  }
   if (mode === 'bass-4') {
     return (
       CANONICAL_TUNINGS.find((t) => t.id === 'bass4-standard') || CANONICAL_TUNINGS[0]

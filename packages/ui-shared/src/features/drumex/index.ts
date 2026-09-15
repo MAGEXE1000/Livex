@@ -4,3 +4,5 @@ import { lazy } from 'react';
 export const DrumEditor = lazy(() => import('./pages/DrumEditor'));
 export { default as DrumPrefsPanel } from './pages/DrumPrefsPanel';
 export { MetronomePanel } from './components/MetronomePanel';
+export { DrumTunerModal } from './components/tuner';
+

@@ -110,6 +110,7 @@ import { InstrumentRow } from '../components/InstrumentRow';
 import DrumPaperPreview, { type DrumExportConfig } from '../components/DrumPaperPreview';
 import DrumExportModal from '../components/DrumExportModal';
 import DrumImportModal, { DrumImportContent } from '../components/DrumImportModal';
+import { DrumTunerModal } from '../components/tuner/DrumTunerModal';
 import { MetronomePanel } from '../components/MetronomePanel';
 import { DrumBeatsPanel } from '../components/DrumBeatsPanel';
 import { DrumPatternsPanel, SaveGrooveForm } from '../components/DrumPatternsPanel';
@@ -1268,10 +1269,30 @@ export default function DrumEditor() {
     setHumanizeVelocity(drumPrefs.humanizeVelocity);
   }, [drumPrefs.humanizeVelocity]);
 
-  // ── Export modal + import modal ──────────────────────────────────────────
+  // ── Export modal + import modal + tuner modal ────────────────────────────
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportDrum, setShowImportDrum] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDrumTuner, setShowDrumTuner] = useState(false);
+
+  const isTunerPage = useNavigationStore((s) => {
+    const last = s.history[s.history.length - 1];
+    return last?.app === 'drumex' && last.page === 'tuner';
+  });
+
+  useEffect(() => {
+    if (isTunerPage) {
+      setShowDrumTuner(true);
+    }
+  }, [isTunerPage]);
+
+  const handleCloseTuner = useCallback(() => {
+    setShowDrumTuner(false);
+    const last = useNavigationStore.getState().history.slice(-1)[0];
+    if (last?.app === 'drumex' && last.page === 'tuner') {
+      NavigationDispatcher.pop();
+    }
+  }, []);
 
   // ── Groove Library state ──────────────────────────────────────────────────
   const [grooveFilter, setGrooveFilter] = useState<GrooveTag>('');
@@ -2266,6 +2287,10 @@ export default function DrumEditor() {
       // 1. Confirmations and Modals
       if (showClearConfirm) {
         setShowClearConfirm(false);
+        return true;
+      }
+      if (showDrumTuner) {
+        handleCloseTuner();
         return true;
       }
       if (showExportModal) {
@@ -4515,6 +4540,21 @@ export default function DrumEditor() {
                     >
                       {renderImportBeatForm}
                     </MorphingActionSurface>
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowDrumTuner(true)}
+                      whileTap={{ scale: 0.95 }}
+                      className="h-7.5 px-3 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
+                      style={{
+                        background: 'var(--c-surface-low)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text-secondary)',
+                      }}
+                      title="Afinador de Batería"
+                    >
+                      <span className="material-symbols-outlined text-[13px] text-emerald-400">tune</span>
+                      <span>TUNER</span>
+                    </motion.button>
                     <MorphingActionSurface
                       isOpen={showCreateForm && createFormOrigin === 'topbar'}
                       onOpenChange={(open) => {
@@ -8099,6 +8139,33 @@ export default function DrumEditor() {
           onClose={() => setShowImportDrum(false)}
         />
       )}
+
+      {/* ── Drum Tuner Modal (sheet) ───────────────────────────────────────── */}
+      <MorphingActionSurface
+        isOpen={showDrumTuner}
+        placement="sheet"
+        maxWidth={480}
+        maxHeight="calc(100dvh - 72px)"
+        onOpenChange={(open) => {
+          if (!open) handleCloseTuner();
+        }}
+        contentStyle={{
+          padding: 0,
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#000000',
+        }}
+      >
+        <DrumTunerModal
+          onClose={handleCloseTuner}
+          accent={accent}
+          isLight={isLight}
+          isAmoled={isAmoled}
+        />
+      </MorphingActionSurface>
     </div>
   );
 }

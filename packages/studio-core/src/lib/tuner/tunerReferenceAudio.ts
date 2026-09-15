@@ -350,3 +350,85 @@ export async function playTunerReferenceString(
     }
   }, (ringDuration + 0.1) * 1000);
 }
+
+/**
+ * Play a resonant drum reference tone calibrated to the exact fundamental frequency.
+ * Integrates with active playback tracking to ensure microphone self-playback rejection.
+ */
+export function playDrumReferenceSound(
+  frequency: number,
+  duration: number = 2.0,
+  volume: number = 0.35
+): void {
+  const ctx = getPlaybackAudioContext();
+  if (!ctx) return;
+
+  stopTunerReferenceAudio();
+
+  const now = ctx.currentTime;
+
+  // Primary fundamental oscillator (sine wave)
+  const osc1 = ctx.createOscillator();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(frequency, now);
+
+  // Body overtone (subtle harmonic simulating cylindrical drumhead mode)
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(frequency * 1.5, now);
+
+  const gain1 = ctx.createGain();
+  // Percussive strike envelope (3ms linear attack, natural drum decay)
+  gain1.gain.setValueAtTime(0.0001, now);
+  gain1.gain.linearRampToValueAtTime(volume, now + 0.004);
+  gain1.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+  const gain2 = ctx.createGain();
+  // Overtone decays faster than fundamental
+  gain2.gain.setValueAtTime(0.0001, now);
+  gain2.gain.linearRampToValueAtTime(volume * 0.22, now + 0.004);
+  gain2.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.45);
+
+  osc1.connect(gain1);
+  osc2.connect(gain2);
+  gain1.connect(ctx.destination);
+  gain2.connect(ctx.destination);
+
+  activeGainNodes.push(gain1, gain2);
+
+  activePlaybackInfo = {
+    target: {
+      name: 'Drum',
+      note: '',
+      octave: 0,
+      fullName: `${frequency}Hz`,
+      frequency,
+      stringNumber: 1,
+    },
+    frequency,
+    mode: 'drum',
+    startTime: Date.now(),
+    duration,
+  };
+
+  osc1.start(now);
+  osc2.start(now);
+  osc1.stop(now + duration);
+  osc2.stop(now + duration);
+
+  osc1.onended = () => {
+    try {
+      osc1.disconnect();
+      osc2.disconnect();
+      gain1.disconnect();
+      gain2.disconnect();
+    } catch {}
+    activePlaybackInfo = null;
+  };
+
+  if (playbackTimeout) clearTimeout(playbackTimeout);
+  playbackTimeout = setTimeout(() => {
+    activePlaybackInfo = null;
+  }, (duration + 0.1) * 1000);
+}
+

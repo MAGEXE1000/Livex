@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.8';
-export const NATIVE_VERSION_CODE = 40608;
-export const WEB_VERSION = '4.6.8';
+export const NATIVE_VERSION = '4.6.9';
+export const NATIVE_VERSION_CODE = 40609;
+export const WEB_VERSION = '4.6.9';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f105bea2';
+export const APP_COMMIT_SHA = '6b9d4ccb';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/14/2026, 10:40:12 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/15/2026, 11:39:17 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,18 +96,14 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Added',
     items: [
-      'Background Power & Resource Efficiency: Permanently eliminated deprecated native background OTA polling worker, reducing idle battery and network consumption across all Android devices while stripping redundant WorkManager and Guava dependencies from the APK.',
-      'Production Security Surface Hardening: Gated internal state dispatcher bindings and test diagnostic APIs on development and authenticated debug flags.',
-      'Audio Asset Parsing Latency: Code-split metronome count-in voice sample table into on-demand dynamic chunks, reducing main-thread parse time on startup.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Shell Reactivity & Theme Propagation: Fixed non-reactive setting access pattern in SharedAppShell, ensuring AMOLED mode and theme transitions re-render immediately.',
-      'Navigation Store Debug Cleanup: Removed dormant debug reads and vestigial handlers across core navigation state stores.',
+      'Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14", Tom 1 10", Tom 2 12", Piso 16", Bombo 22") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).',
+      'Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.',
+      'Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.',
+      'High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.',
+      'Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.',
+      'Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.',
     ],
   },
 ];
@@ -119,6 +115,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.9',
+    date: '2026-09-15',
+    highlights: [
+      'Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14", Tom 1 10", Tom 2 12", Piso 16", Bombo 22") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).',
+      'Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.',
+      'Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.',
+      'High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.',
+      'Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.',
+      'Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.',
+    ],
+  },
   {
     version: '4.6.8',
     date: '2026-09-14',
@@ -212,16 +220,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Grouped-List Tuning Selection Modal: Overhauled the tuning selection screen into a sleek, typography-led grouped list with clear category headers, unified instrument tabs, and smooth 160ms slide-up/fade motion transitions.',
       'Polished Tuning Transition Animations: Integrated lightweight GPU-composited layout transitions on tuning selection, target note sequence updates, and string card frequency metrics without blocking pitch detection.',
       'Canonical Finder/Tuner Navigation Divider: Added a subtle low-contrast vertical divider and balanced equal-width segments to the canonical Chord Library navigation pill.',
-    ],
-  },
-  {
-    version: '4.5.99',
-    date: '2026-09-13',
-    highlights: [
-      'Expanded Tuning Selection System: Integrated a dedicated full-featured tuning selection modal with grouped categories (Standard, Drop / Power, Open, Alternate) across Guitar (Electric and Acoustic), 4-String Bass, and 5-String Bass, complete with string pitch targets and active checkmark badges.',
-      'Universal Web Audio Soundfont Resampling: Implemented intelligent nearest-anchor playback resampling across all 24+ alternate and drop tunings, dynamically pitch-shifting recorded string samples without audio artifacts or bundle bloat.',
-      'Shared Segmented Finder and Tuner Navigation: Unified chord library and tuner navigation using a synchronized segmented pill control with smooth cross-transitions between Chord Finder and Chromatic Tuner.',
-      'Autonomous Tuner Architecture & Preferences Streamlining: Permanently removed obsolete tuning preference options from Livex Settings and Chordex Preferences across Desktop and Mobile surfaces, keeping tuning state management strictly self-contained within the Chromatic Tuner engine.',
     ],
   },
 ];

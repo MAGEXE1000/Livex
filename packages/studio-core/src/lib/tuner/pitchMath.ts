@@ -5,6 +5,7 @@ import type {
   PitchMetrics,
   TuningStatus,
 } from './tunerTypes';
+import { DRUM_PARTS, getDrumStringTarget } from './drumTuningModels';
 
 export const CHROMATIC_NOTE_NAMES = [
   'C',
@@ -41,6 +42,7 @@ export const STANDARD_BASS_4_STRINGS: readonly InstrumentStringTarget[] = [
  * Returns canonical string targets for an instrument mode.
  */
 export function getTargetStringsForMode(mode: InstrumentTuningMode): readonly InstrumentStringTarget[] {
+  if (mode === 'drum') return DRUM_PARTS.map((p) => getDrumStringTarget(p, 'normal'));
   if (mode === 'bass-4') return STANDARD_BASS_4_STRINGS;
   return STANDARD_GUITAR_STRINGS;
 }

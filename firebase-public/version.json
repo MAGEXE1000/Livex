@@ -1,24 +1,23 @@
 {
   "platform": "web",
-  "version": "4.6.8",
-  "versionName": "4.6.8",
-  "versionCode": 40608,
-  "version_code": 40608,
-  "commit": "f105bea2",
-  "releasedAt": "9/14/2026, 10:40:12 PM CST",
-  "buildTimestamp": "9/14/2026, 10:40:12 PM CST",
+  "version": "4.6.9",
+  "versionName": "4.6.9",
+  "versionCode": 40609,
+  "version_code": 40609,
+  "commit": "6b9d4ccb",
+  "releasedAt": "9/15/2026, 11:39:17 AM CST",
+  "buildTimestamp": "9/15/2026, 11:39:17 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Background Power & Resource Efficiency: Permanently eliminated deprecated native background OTA polling worker, reducing idle battery and network consumption across all Android devices while stripping redundant WorkManager and Guava dependencies from the APK.\n• Production Security Surface Hardening: Gated internal state dispatcher bindings and test diagnostic APIs on development and authenticated debug flags.\n• Audio Asset Parsing Latency: Code-split metronome count-in voice sample table into on-demand dynamic chunks, reducing main-thread parse time on startup.\n• Shell Reactivity & Theme Propagation: Fixed non-reactive setting access pattern in SharedAppShell, ensuring AMOLED mode and theme transitions re-render immediately.\n• Navigation Store Debug Cleanup: Removed dormant debug reads and vestigial handlers across core navigation state stores.",
-  "whatsNew": "• Background Power & Resource Efficiency: Permanently eliminated deprecated native background OTA polling worker, reducing idle battery and network consumption across all Android devices while stripping redundant WorkManager and Guava dependencies from the APK.\n• Production Security Surface Hardening: Gated internal state dispatcher bindings and test diagnostic APIs on development and authenticated debug flags.\n• Audio Asset Parsing Latency: Code-split metronome count-in voice sample table into on-demand dynamic chunks, reducing main-thread parse time on startup.\n• Shell Reactivity & Theme Propagation: Fixed non-reactive setting access pattern in SharedAppShell, ensuring AMOLED mode and theme transitions re-render immediately.\n• Navigation Store Debug Cleanup: Removed dormant debug reads and vestigial handlers across core navigation state stores.",
+  "changelog": "• Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14\", Tom 1 10\", Tom 2 12\", Piso 16\", Bombo 22\") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).\n• Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.\n• Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.\n• High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.\n• Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.\n• Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.",
+  "whatsNew": "• Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14\", Tom 1 10\", Tom 2 12\", Piso 16\", Bombo 22\") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).\n• Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.\n• Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.\n• High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.\n• Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.\n• Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.",
   "releaseNotes": {
-    "improved": [
-      "Background Power & Resource Efficiency: Permanently eliminated deprecated native background OTA polling worker, reducing idle battery and network consumption across all Android devices while stripping redundant WorkManager and Guava dependencies from the APK.",
-      "Production Security Surface Hardening: Gated internal state dispatcher bindings and test diagnostic APIs on development and authenticated debug flags.",
-      "Audio Asset Parsing Latency: Code-split metronome count-in voice sample table into on-demand dynamic chunks, reducing main-thread parse time on startup."
-    ],
-    "fixed": [
-      "Shell Reactivity & Theme Propagation: Fixed non-reactive setting access pattern in SharedAppShell, ensuring AMOLED mode and theme transitions re-render immediately.",
-      "Navigation Store Debug Cleanup: Removed dormant debug reads and vestigial handlers across core navigation state stores."
+    "added": [
+      "Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14\", Tom 1 10\", Tom 2 12\", Piso 16\", Bombo 22\") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).",
+      "Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.",
+      "Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.",
+      "High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.",
+      "Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.",
+      "Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance."
     ]
   },
   "mandatory": false

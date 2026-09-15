@@ -1,6 +1,6 @@
-export type InstrumentFamily = 'guitar' | 'bass';
+export type InstrumentFamily = 'guitar' | 'bass' | 'drum';
 
-export type InstrumentTuningMode = 'acoustic' | 'electric' | 'bass-4';
+export type InstrumentTuningMode = 'acoustic' | 'electric' | 'bass-4' | 'drum';
 
 export type TuningStatus = 'flat' | 'in_tune' | 'sharp' | 'silent' | 'weak';
 
