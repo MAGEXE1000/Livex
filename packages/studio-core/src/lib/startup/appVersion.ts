@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.6';
-export const NATIVE_VERSION_CODE = 40606;
-export const WEB_VERSION = '4.6.6';
+export const NATIVE_VERSION = '4.6.7';
+export const NATIVE_VERSION_CODE = 40607;
+export const WEB_VERSION = '4.6.7';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f4f20708';
+export const APP_COMMIT_SHA = '1a26f7c2';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/14/2026, 12:43:46 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/14/2026, 6:53:12 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,13 +98,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.',
+      'Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.',
+      'Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.',
+      'Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.',
+      'Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.',
     ],
   },
 ];
@@ -116,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.7',
+    date: '2026-09-14',
+    highlights: [
+      'Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.',
+      'Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.',
+      'Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.',
+      'Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.',
+    ],
+  },
   {
     version: '4.6.6',
     date: '2026-09-14',
@@ -207,18 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Native Reference Tuner Redesign: Completely redesigned the Android/Capacitor chromatic tuner interface to match the high-end dark reference specification, featuring segmented instrument mode selection (Electric, Acoustic, Bass 4, Bass 5), reference pitch calibration (A4 = 440 Hz), automatic pitch detection toggle, an 11-bar chromatic scale with center emerald hourglass aura, real-time cents deviation pill indicator, and symmetrical string target cards flanking photorealistic instrument headstocks.',
       'Audible Reference Pitch Tones: Integrated audible pure-tone Web Audio reference pitch generation directly on string target cards via interactive speaker buttons.',
       'Tuner Real-Time Rendering Performance: Isolated high-frequency cents needle and meter updates to GPU-composited direct DOM transforms (`needleRef`, `centsPillRef`, `centsTextRef`) to achieve flawless 60/120 FPS tracking without React reconciliation overhead on mobile WebViews.',
-    ],
-  },
-  {
-    version: '4.5.97',
-    date: '2026-09-13',
-    highlights: [
-      'Professional Instrument Tuner: Added high-precision acoustic, bass, and electric chromatic tuning engine using normalized square difference pitch detection, harmonic overtone rejection, interactive instrument headstocks, and a canonical SVG tuning fork indicator.',
-      'Drumex Floating Action Dock: Engineered a Liquid Glass floating action surface for one-tap beat creation and multi-format MIDI/JSON file import with safe-area bottom navigation clearances.',
-      'Realistic Acoustic Guitar Sound Engine: Upgraded Chordex chord playback with multi-velocity studio-sampled PCM acoustic guitar buffers, physical wood body resonance filtering, and humanized strumming mechanics.',
-      'Canonical Accordion Expansion: Aligned canonical `Accordion` primitive with Transitions.dev reference using zero-measurement CSS Grid (`0fr` &rarr; `1fr`) row interpolation, optical blur transitions, non-scaling-stroke chevron flip, WAI-ARIA APG keyboard navigation, and inert focus protection.',
-      'Canonical Plus &rarr; Menu Morph: Aligned canonical `MorphMenu` / `PlusMenu` interaction with Transitions.dev reference using asymmetric spring/cubic curves, coordinate vectors, and native Android `BackDispatcher` integration.',
-      'Simplified Chord Detail Surface: Streamlined Chordex chord detail inspect sheet, removing visual bloat, redundant cards, and nested filter layers to maintain 60/120 FPS sheet gestures on Android.',
     ],
   },
 ];

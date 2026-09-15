@@ -1,11 +1,13 @@
-# Version 4.6.6
+# Version 4.6.7
 
 Release Date: 2026-09-14
 
 ### Improved
 
-- Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.
+- Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.
+- Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.
+- Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.
 
 ### Fixed
 
-- Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.
+- Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.

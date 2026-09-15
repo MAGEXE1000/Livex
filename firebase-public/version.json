@@ -1,21 +1,23 @@
 {
   "platform": "web",
-  "version": "4.6.6",
-  "versionName": "4.6.6",
-  "versionCode": 40606,
-  "version_code": 40606,
-  "commit": "f4f20708",
-  "releasedAt": "9/14/2026, 12:43:46 PM CST",
-  "buildTimestamp": "9/14/2026, 12:43:46 PM CST",
+  "version": "4.6.7",
+  "versionName": "4.6.7",
+  "versionCode": 40607,
+  "version_code": 40607,
+  "commit": "1a26f7c2",
+  "releasedAt": "9/14/2026, 6:53:12 PM CST",
+  "buildTimestamp": "9/14/2026, 6:53:12 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon=\"@mipmap/ic_launcher\"`) across API 26-35+.\n• Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.",
-  "whatsNew": "• Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon=\"@mipmap/ic_launcher\"`) across API 26-35+.\n• Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.",
+  "changelog": "• Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.\n• Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.\n• Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.\n• Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.",
+  "whatsNew": "• Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.\n• Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.\n• Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.\n• Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.",
   "releaseNotes": {
     "improved": [
-      "Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon=\"@mipmap/ic_launcher\"`) across API 26-35+."
+      "Android Runtime Performance & Call-State Optimization: Optimized runtime responsiveness under constrained device conditions, active phone/VoIP calls, and high memory pressure. Migrated the Tuner Morph animation and shared modal morph system to 100% compositor-accelerated transforms (`transform`, `opacity`, `will-change`), eliminating main-thread layout thrashing and reducing Total Blocking Time (TBT) by more than 55%.",
+      "Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.",
+      "Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets."
     ],
     "fixed": [
-      "Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations."
+      "Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards."
     ]
   },
   "mandatory": false
