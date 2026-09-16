@@ -97,7 +97,7 @@ export function ScrollMorphHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: '9999px',
+          borderRadius: '24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -176,6 +176,7 @@ export function ScrollMorphHeader({
               outline: 'none',
               WebkitTapHighlightColor: 'transparent',
               flexShrink: 0,
+              transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             <svg
@@ -196,7 +197,7 @@ export function ScrollMorphHeader({
           <div style={{ width: 42, height: 42, flexShrink: 0 }} />
         )}
 
-        {/* Continuous Morphing Title (Left-aligned -> Centered) */}
+        {/* Continuous Morphing Title (Centered throughout) */}
         <div
           ref={titleRef}
           data-testid="scroll-morph-header-title"
@@ -209,8 +210,8 @@ export function ScrollMorphHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingLeft: toolbarActions ? '104px' : '56px',
-            paddingRight: toolbarActions ? '104px' : '56px',
+            paddingLeft: toolbarActions ? '96px' : '52px',
+            paddingRight: toolbarActions ? '96px' : '52px',
             pointerEvents: 'none',
             zIndex: 1,
             willChange: 'transform',
@@ -231,11 +232,11 @@ export function ScrollMorphHeader({
               <span
                 data-testid={titleTestId}
                 style={{
-                  fontSize: 'var(--type-title-size, 21px)',
+                  fontSize: 'var(--type-title-size, 19px)',
                   lineHeight: '1.2',
                   fontWeight: 700,
                   color: 'var(--c-text-primary)',
-                  letterSpacing: 'var(--type-title-tracking, -0.7px)',
+                  letterSpacing: 'var(--type-title-tracking, -0.4px)',
                   fontFamily:
                     'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                   whiteSpace: 'nowrap',
@@ -267,11 +268,11 @@ export function ScrollMorphHeader({
             <span
               data-testid={titleTestId}
               style={{
-                fontSize: 'var(--type-title-size, 21px)',
-                lineHeight: 'var(--type-title-lh, 28px)',
+                fontSize: 'var(--type-title-size, 19px)',
+                lineHeight: 'var(--type-title-lh, 26px)',
                 fontWeight: 700,
                 color: 'var(--c-text-primary)',
-                letterSpacing: 'var(--type-title-tracking, -0.7px)',
+                letterSpacing: 'var(--type-title-tracking, -0.4px)',
                 fontFamily:
                   'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                 whiteSpace: 'nowrap',
@@ -296,12 +297,13 @@ export function ScrollMorphHeader({
               zIndex: 2,
               pointerEvents: 'auto',
               flexShrink: 0,
+              transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             {toolbarActions}
           </div>
         ) : (
-          <div style={{ width: 40, height: 40, flexShrink: 0 }} />
+          <div style={{ width: 42, height: 42, flexShrink: 0 }} />
         )}
       </header>
     </div>

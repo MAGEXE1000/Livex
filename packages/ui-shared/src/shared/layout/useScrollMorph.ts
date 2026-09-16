@@ -40,39 +40,53 @@ export function useScrollMorph({
   const rafId = useRef<number | null>(null);
   const lastP = useRef<number>(-1);
   const metricsRef = useRef<{
-    deltaX: number;
-    containerWidth: number;
-    titleWidth: number;
+    expandedWidth: number;
+    compactWidth: number;
+    expandedHeight: number;
+    compactHeight: number;
   }>({
-    deltaX: 90,
-    containerWidth: 360,
-    titleWidth: 120,
+    expandedWidth: 360,
+    compactWidth: 296,
+    expandedHeight: 58,
+    compactHeight: 48,
   });
 
   // Calculate layout geometry outside the active scroll frame to avoid layout thrashing
   const updateMetrics = useCallback(() => {
     const headerEl = headerRef.current;
     const titleEl = titleRef.current;
-    if (!headerEl || !titleEl) return;
+    if (!headerEl) return;
 
-    const containerWidth = headerEl.offsetWidth || 360;
-    // Measure actual text/child width rather than the full-width wrapper (left: 0, right: 0)
-    const textEl = (titleEl.firstElementChild as HTMLElement) || titleEl;
-    const titleWidth = textEl.offsetWidth || 120;
+    const parentEl = headerEl.parentElement;
+    const parentWidth = parentEl?.offsetWidth || window.innerWidth || 360;
 
-    // Center of title when centered in container = containerWidth / 2
-    // Left edge of centered title = (containerWidth - titleWidth) / 2
-    // Target left edge when expanded = expandedLeftInset (or 52 if back button exists, else 16)
-    const leftTarget = expandedLeftInset !== undefined ? expandedLeftInset : 52;
-    const centerLeft = (containerWidth - titleWidth) / 2;
-    const deltaX = Math.max(0, centerLeft - leftTarget);
+    // Base expanded width: fills available container with standard page insets (e.g. 16px/24px each side)
+    const expandedWidth = Math.min(parentWidth - 32, 680);
+    const expandedHeight = 58;
+    const compactHeight = 48;
+
+    // Calculate content width for title + left button + right actions
+    const textEl = (titleEl?.firstElementChild as HTMLElement) || titleEl;
+    const titleWidth = textEl?.offsetWidth || 120;
+    // Left back button (~42px) + title + right balance/actions (~42px) + generous padding (~36px)
+    const minContentWidth = 42 + titleWidth + 42 + 36;
+
+    // Compact pill width: contracts inward gracefully while preserving content breathing room
+    // On mobile (~360px): contracts by ~64px (e.g. 358px -> 294px).
+    // On tablet (~600px): contracts into an elegant ~360px floating capsule.
+    const targetCompression = Math.max(56, Math.min(84, expandedWidth * 0.18));
+    const compactWidth = Math.max(
+      minContentWidth,
+      Math.min(expandedWidth - targetCompression, 380)
+    );
 
     metricsRef.current = {
-      deltaX,
-      containerWidth,
-      titleWidth,
+      expandedWidth,
+      compactWidth,
+      expandedHeight,
+      compactHeight,
     };
-  }, [expandedLeftInset, headerRef, titleRef]);
+  }, [headerRef, titleRef]);
 
   // Direct DOM style applicator — zero React re-renders during active scrolling
   const applyMorph = useCallback(
@@ -80,17 +94,47 @@ export function useScrollMorph({
       const headerEl = headerRef.current;
       const titleEl = titleRef.current;
 
-      if (!headerEl || !titleEl) return;
+      if (!headerEl) return;
 
-      const { deltaX } = metricsRef.current;
+      const { expandedWidth, compactWidth, expandedHeight, compactHeight } = metricsRef.current;
 
-      // ── Title transformation (Left -> Center) ──────────────────────────
-      // Compositor-only: translate3d + subtle scale.
-      // Liquid Glass material remains persistent across all frames.
-      const currentX = (1 - p) * -deltaX;
-      const currentScale = 1 - p * 0.16; // 1.0 (expanded ~21px) -> 0.84 (compact ~17.6px)
-      titleEl.style.transform = `translate3d(${currentX.toFixed(2)}px, 0, 0) scale(${currentScale.toFixed(3)})`;
-      titleEl.style.transformOrigin = 'center center';
+      // ── 1. Geometry: Horizontal compression (Left/right edges move inward) ──
+      const currentWidth = expandedWidth - p * (expandedWidth - compactWidth);
+      headerEl.style.width = `${currentWidth.toFixed(1)}px`;
+      headerEl.style.maxWidth = '100%';
+
+      // ── 2. Geometry: Vertical compression (Top/bottom dimensions compress) ──
+      const currentHeight = expandedHeight - p * (expandedHeight - compactHeight);
+      headerEl.style.height = `${currentHeight.toFixed(1)}px`;
+
+      // ── 3. Geometry: Vertical position (Snug floating placement) ───────────
+      const currentTranslateY = -p * 2;
+      headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
+
+      // ── 4. Geometry: Corner curvature (Progressively more rounded) ─────────
+      // Starts at a smooth 24px rounded surface and tightens to 9999px capsule pill
+      if (p >= 0.7) {
+        headerEl.style.borderRadius = '9999px';
+      } else {
+        const currentRadius = 24 + p * 30;
+        headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
+      }
+
+      // ── 5. Internal spacing compression ───────────────────────────────────
+      const currentPaddingH = 10 - p * 4; // 10px -> 6px
+      headerEl.style.paddingLeft = `${currentPaddingH.toFixed(1)}px`;
+      headerEl.style.paddingRight = `${currentPaddingH.toFixed(1)}px`;
+
+      // Child button scale property for back button and action items
+      headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.08).toFixed(3));
+
+      // ── 6. Title typography scale (Dead-centered throughout) ───────────────
+      // Title is centered in the surface across all frames: zero horizontal translation
+      if (titleEl) {
+        const currentScale = 1 - p * 0.14; // 1.0 (expanded ~20px) -> 0.86 (compact ~17.2px)
+        titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
+        titleEl.style.transformOrigin = 'center center';
+      }
     },
     [headerRef, titleRef]
   );

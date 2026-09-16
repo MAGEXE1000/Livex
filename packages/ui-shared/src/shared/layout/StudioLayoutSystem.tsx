@@ -248,7 +248,7 @@ export function SharedFloatingHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: '9999px',
+          borderRadius: morphActive ? '24px' : '9999px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -327,6 +327,7 @@ export function SharedFloatingHeader({
               outline: 'none',
               WebkitTapHighlightColor: 'transparent',
               flexShrink: 0,
+              transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             <svg
@@ -360,8 +361,8 @@ export function SharedFloatingHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingLeft: toolbarActions ? '104px' : '56px',
-            paddingRight: toolbarActions ? '104px' : '56px',
+            paddingLeft: toolbarActions ? '96px' : '52px',
+            paddingRight: toolbarActions ? '96px' : '52px',
             pointerEvents: 'none',
             zIndex: 1,
             willChange: 'transform',
@@ -382,11 +383,11 @@ export function SharedFloatingHeader({
               <span
                 data-testid={titleTestId}
                 style={{
-                  fontSize: morphActive ? 'var(--type-title-size, 21px)' : '15.5px',
+                  fontSize: 'var(--type-title-size, 19px)',
                   lineHeight: '1.2',
                   fontWeight: 700,
                   color: 'var(--c-text-primary)',
-                  letterSpacing: morphActive ? 'var(--type-title-tracking, -0.7px)' : '-0.01em',
+                  letterSpacing: 'var(--type-title-tracking, -0.4px)',
                   fontFamily:
                     'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                   whiteSpace: 'nowrap',
@@ -421,11 +422,11 @@ export function SharedFloatingHeader({
                 (title === 'Production Document' ? 'production-document-title' : undefined)
               }
               style={{
-                fontSize: morphActive ? 'var(--type-title-size, 21px)' : 'var(--type-section-size, 19px)',
-                lineHeight: morphActive ? 'var(--type-title-lh, 28px)' : 'var(--type-section-lh, 24px)',
-                fontWeight: morphActive ? 700 : 600,
+                fontSize: 'var(--type-title-size, 19px)',
+                lineHeight: 'var(--type-title-lh, 26px)',
+                fontWeight: 700,
                 color: 'var(--c-text-primary)',
-                letterSpacing: morphActive ? 'var(--type-title-tracking, -0.7px)' : 'var(--type-section-tracking, 0.6px)',
+                letterSpacing: 'var(--type-title-tracking, -0.4px)',
                 fontFamily:
                   'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                 whiteSpace: 'nowrap',
@@ -450,12 +451,13 @@ export function SharedFloatingHeader({
               zIndex: 2,
               pointerEvents: 'auto',
               flexShrink: 0,
+              transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             {toolbarActions}
           </div>
         ) : (
-          <div style={{ width: 40, height: 40, flexShrink: 0 }} />
+          <div style={{ width: 42, height: 42, flexShrink: 0 }} />
         )}
       </header>
     </div>
