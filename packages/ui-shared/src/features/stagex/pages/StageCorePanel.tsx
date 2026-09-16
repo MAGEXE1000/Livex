@@ -14,7 +14,10 @@ import {
   type AppKey,
   useShallow,
 } from '@workspace/studio-core';
+import { motion } from 'motion/react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
+import { UNIFIED_NAV_TRANSITION } from '../../../components/StudioPageTransition';
+import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { StageCanvasView } from '../components/StageCanvasView';
@@ -28,6 +31,7 @@ const VIEW_ORDER: readonly StagexPrimaryView[] = ['Editor', 'Setup', 'Preference
 
 export default function StagexPanel() {
   const isWebDesktop = useIsWebDesktop();
+  const prefersReduced = useAppReducedMotion();
   const t = useT();
   const tr = t as any;
 
@@ -240,12 +244,32 @@ export default function StagexPanel() {
             </SharedNavigationContainer>
 
             {/* Persistent Canvas View: kept mounted with display: none when not in Editor to avoid reloads */}
-            <div
+            <motion.div
+              data-testid="stagex-stage-transition-container"
               className="w-full h-full absolute inset-0"
+              initial={prefersReduced ? false : UNIFIED_NAV_TRANSITION.initial}
+              animate={curView === 'Editor' ? 'enter' : 'idle'}
+              variants={{
+                idle: {
+                  opacity: 0,
+                  y: prefersReduced ? 0 : 6,
+                  scale: prefersReduced ? 1 : 0.995,
+                  transition: { duration: 0 },
+                },
+                enter: prefersReduced
+                  ? {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: { duration: 0 },
+                    }
+                  : UNIFIED_NAV_TRANSITION.animate,
+              }}
               style={{
                 display: curView === 'Editor' ? 'flex' : 'none',
                 zIndex: curView === 'Editor' ? 1 : -1,
                 visibility: curView === 'Editor' ? 'visible' : 'hidden',
+                willChange: curView === 'Editor' ? 'transform, opacity' : 'auto',
               }}
             >
               <StageCanvasView
@@ -257,7 +281,7 @@ export default function StagexPanel() {
                 setLiveMode={setLiveMode}
                 onNavigateView={navigate}
               />
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
