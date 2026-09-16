@@ -27,13 +27,14 @@ export interface UseScrollMorphOptions {
 }
 
 /**
- * Calculates Hermite smoothstep normalized morph progress in [0, 1].
- * Uses cubic S-curve: 3t^2 - 2t^3 with zero slope at endpoints.
+ * Calculates Hermite smootherstep normalized morph progress in [0, 1].
+ * Uses 5th-order polynomial: 6t^5 - 15t^4 + 10t^3 with zero 1st and 2nd derivatives at endpoints.
+ * Provides organic physical acceleration and settling with zero overshoot or oscillation.
  */
 function calculateMorphProgress(scrollTop: number, startOffset: number, morphDistance: number): number {
   const y = Math.max(0, scrollTop);
   const rawT = Math.min(1, Math.max(0, (y - startOffset) / morphDistance));
-  return rawT * rawT * (3 - 2 * rawT);
+  return rawT * rawT * rawT * (rawT * (rawT * 6 - 15) + 10);
 }
 
 export function useScrollMorph({
@@ -57,8 +58,8 @@ export function useScrollMorph({
     compactHeight: number;
   }>({
     expandedWidth: 360,
-    compactWidth: 296,
-    expandedHeight: 58,
+    compactWidth: 236,
+    expandedHeight: 56,
     compactHeight: 48,
   });
 
@@ -73,22 +74,25 @@ export function useScrollMorph({
 
     // Base expanded width: fills available container with standard page insets (e.g. 16px/24px each side)
     const expandedWidth = Math.min(parentWidth - 32, 680);
-    const expandedHeight = 58;
+    const expandedHeight = 56;
     const compactHeight = 48;
 
     // Calculate content width for title + left button + right actions
     const textEl = (titleEl?.firstElementChild as HTMLElement) || titleEl;
-    const titleWidth = textEl?.offsetWidth || 120;
-    // Left back button (~42px) + title + right balance/actions (~42px) + generous padding (~36px)
-    const minContentWidth = 42 + titleWidth + 42 + 36;
+    const titleWidth = textEl?.offsetWidth || 110;
 
-    // Compact pill width: contracts inward gracefully while preserving content breathing room
-    // On mobile (~360px): contracts by ~64px (e.g. 358px -> 294px).
-    // On tablet (~600px): contracts into an elegant ~360px floating capsule.
-    const targetCompression = Math.max(56, Math.min(84, expandedWidth * 0.18));
+    // Inspect right action controls if present
+    const actionsEl = headerEl.querySelector('div:last-child') as HTMLElement | null;
+    const actionsWidth = actionsEl && actionsEl.offsetWidth > 44 ? actionsEl.offsetWidth : 38;
+    const minContentWidth = 38 + titleWidth + actionsWidth + 24;
+
+    // Compact pill width: contracts gracefully into an elegant floating capsule
+    // On mobile (~360-390px): contracts to ~220px-248px (matching OpenDesign reference)
+    // On tablet (~600px+): contracts into an elegant ~260px-300px floating capsule
+    const targetCompression = Math.max(72, expandedWidth * 0.35);
     const compactWidth = Math.max(
       minContentWidth,
-      Math.min(expandedWidth - targetCompression, 380)
+      Math.min(expandedWidth - targetCompression, 252)
     );
 
     metricsRef.current = {
@@ -125,18 +129,19 @@ export function useScrollMorph({
 
       // ── 4. Geometry: Corner curvature (Continuous monotonic rounding) ──────
       // Starts at smooth 18px and smoothly tightens to 24px (exact capsule radius for 48px height)
-      // At p >= 0.98, clamps to 9999px capsule pill with zero visual step jump
-      if (p >= 0.98) {
+      // At p >= 0.96, clamps to 9999px capsule pill with zero visual step jump
+      if (p >= 0.96) {
         headerEl.style.borderRadius = '9999px';
       } else {
         const currentRadius = 18 + p * 6;
         headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
       }
 
-      // ── 5. Internal spacing compression ───────────────────────────────────
-      const currentPaddingH = 10 - p * 4; // 10px -> 6px
-      headerEl.style.paddingLeft = `${currentPaddingH.toFixed(1)}px`;
-      headerEl.style.paddingRight = `${currentPaddingH.toFixed(1)}px`;
+      // ── 5. Internal spacing compression (Tight back-button inset) ─────────
+      const currentPaddingLeft = 4 - p * 1.5; // 4px -> 2.5px
+      const currentPaddingRight = 8 - p * 3;  // 8px -> 5px
+      headerEl.style.paddingLeft = `${currentPaddingLeft.toFixed(1)}px`;
+      headerEl.style.paddingRight = `${currentPaddingRight.toFixed(1)}px`;
 
       // Child button scale property for back button and action items
       headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.08).toFixed(3));
@@ -156,8 +161,8 @@ export function useScrollMorph({
           glassEl.style.visibility = 'hidden';
         } else {
           glassEl.style.visibility = 'visible';
-          // Smooth progressive emergence curve
-          const surfaceAlpha = Math.min(1, Math.pow(p, 1.1));
+          // Smooth progressive emergence curve (material emerges early, then stabilizes)
+          const surfaceAlpha = Math.min(1, Math.pow(p, 0.9));
           glassEl.style.opacity = surfaceAlpha.toFixed(3);
         }
       }

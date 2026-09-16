@@ -308,12 +308,12 @@ export function SharedFloatingHeader({
         style={{
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
-          height: '58px',
-          borderRadius: '16px',
+          height: '56px',
+          borderRadius: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 10px',
+          padding: '0 8px 0 4px',
           position: 'relative',
           background: 'transparent',
           border: '1px solid transparent',
@@ -372,7 +372,7 @@ export function SharedFloatingHeader({
           />
         </div>
 
-        {/* Left Back Action Button */}
+        {/* Left Back Action Button (Tightly positioned toward left edge with >=44px touch hit area) */}
         {onBack && !hideBack ? (
           <motion.button
             type="button"
@@ -383,10 +383,10 @@ export function SharedFloatingHeader({
             whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
             transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
             style={{
-              width: 'var(--btn-size-md, 42px)',
-              height: 'var(--btn-size-md, 42px)',
-              minWidth: '42px',
-              minHeight: '42px',
+              width: 38,
+              height: 38,
+              minWidth: 38,
+              minHeight: 38,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -403,25 +403,36 @@ export function SharedFloatingHeader({
               outline: 'none',
               WebkitTapHighlightColor: 'transparent',
               flexShrink: 0,
+              marginLeft: '2px',
+              position: 'relative',
               transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
+            {/* Extended invisible touch target for comfortable >=44px ergonomic tap */}
+            <span
+              style={{
+                position: 'absolute',
+                inset: '-4px',
+                pointerEvents: 'auto',
+                borderRadius: '50%',
+              }}
+            />
             <svg
-              width="20"
-              height="20"
+              width="19"
+              height="19"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ display: 'block' }}
+              style={{ display: 'block', pointerEvents: 'none' }}
             >
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </motion.button>
         ) : (
-          <div style={{ width: 42, height: 42, flexShrink: 0 }} />
+          <div style={{ width: 38, height: 38, flexShrink: 0, marginLeft: '2px' }} />
         )}
 
         {/* Mathematically Centered Section Title across complete top bar */}
@@ -437,8 +448,8 @@ export function SharedFloatingHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingLeft: toolbarActions ? '96px' : (onBack && !hideBack ? '52px' : '20px'),
-            paddingRight: toolbarActions ? '96px' : (onBack && !hideBack ? '52px' : '20px'),
+            paddingLeft: toolbarActions ? '88px' : (onBack && !hideBack ? '46px' : '16px'),
+            paddingRight: toolbarActions ? '88px' : (onBack && !hideBack ? '46px' : '16px'),
             pointerEvents: 'none',
             zIndex: 1,
             willChange: 'transform',
@@ -478,13 +489,14 @@ export function SharedFloatingHeader({
               zIndex: 2,
               pointerEvents: 'auto',
               flexShrink: 0,
+              marginRight: '2px',
               transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             {toolbarActions}
           </div>
         ) : (
-          <div style={{ width: 42, height: 42, flexShrink: 0 }} />
+          <div style={{ width: 38, height: 38, flexShrink: 0, marginRight: '2px' }} />
         )}
       </header>
     </div>

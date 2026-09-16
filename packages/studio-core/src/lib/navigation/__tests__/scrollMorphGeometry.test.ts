@@ -21,8 +21,8 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
 
   it('verifies continuous horizontal compression and symmetric inward edge displacement', () => {
     const expandedWidth = 358; // Mobile screen width within page insets
-    const compactWidth = 294;  // Target compact floating pill width
-    const totalCompression = expandedWidth - compactWidth; // 64px
+    const compactWidth = 236;  // Refined compact floating pill width (OpenDesign proportion)
+    const totalCompression = expandedWidth - compactWidth; // 122px
 
     const calcWidth = (p: number) => expandedWidth - p * totalCompression;
     const calcInwardEdge = (p: number) => (expandedWidth - calcWidth(p)) / 2;
@@ -32,12 +32,12 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     expect(calcInwardEdge(0)).toBe(0);
 
     // At p = 0.5 (halfway):
-    expect(calcWidth(0.5)).toBe(326);
-    expect(calcInwardEdge(0.5)).toBe(16); // Left and right edges moved inward by 16px each
+    expect(calcWidth(0.5)).toBe(297);
+    expect(calcInwardEdge(0.5)).toBe(30.5); // Left and right edges moved inward symmetrically
 
     // At p = 1.0 (settled compact pill):
-    expect(calcWidth(1.0)).toBe(294);
-    expect(calcInwardEdge(1.0)).toBe(32); // Left and right edges moved inward by 32px each
+    expect(calcWidth(1.0)).toBe(236);
+    expect(calcInwardEdge(1.0)).toBe(61); // Left and right edges moved inward by 61px each
 
     // Strictly monotonic decreasing width
     for (let p = 0.05; p <= 1.0; p += 0.05) {
@@ -47,16 +47,16 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   });
 
   it('verifies continuous vertical compression and snug position transform', () => {
-    const expandedHeight = 58;
+    const expandedHeight = 56;
     const compactHeight = 48;
 
     const calcHeight = (p: number) => expandedHeight - p * (expandedHeight - compactHeight);
     const calcTranslateY = (p: number) => (p === 0 ? 0 : -p * 2);
 
-    expect(calcHeight(0)).toBe(58);
+    expect(calcHeight(0)).toBe(56);
     expect(calcTranslateY(0)).toBe(0);
 
-    expect(calcHeight(0.5)).toBe(53);
+    expect(calcHeight(0.5)).toBe(52);
     expect(calcTranslateY(0.5)).toBe(-1);
 
     expect(calcHeight(1.0)).toBe(48);
@@ -68,7 +68,7 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   });
 
   it('verifies progressive corner curvature increase from soft (18px) to full capsule (24px / 9999px)', () => {
-    const calcRadius = (p: number) => (p >= 0.98 ? 9999 : 18 + p * 6);
+    const calcRadius = (p: number) => (p >= 0.96 ? 9999 : 18 + p * 6);
 
     // At p = 0: 18px soft surface
     expect(calcRadius(0)).toBe(18);
@@ -79,8 +79,8 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     // At p = 0.9: 23.4px
     expect(calcRadius(0.9)).toBeCloseTo(23.4, 1);
 
-    // At p >= 0.98: 9999px (full capsule pill)
-    expect(calcRadius(0.98)).toBe(9999);
+    // At p >= 0.96: 9999px (full capsule pill)
+    expect(calcRadius(0.96)).toBe(9999);
     expect(calcRadius(1.0)).toBe(9999);
 
     // Monotonic curvature progression
@@ -89,19 +89,19 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies cubic Hermite smoothstep easing for physical material condensation', () => {
-    const smoothstep = (t: number) => t * t * (3 - 2 * t);
+  it('verifies quintic Hermite smootherstep easing for physical material condensation', () => {
+    const smootherstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 
-    expect(smoothstep(0)).toBe(0);
-    expect(smoothstep(0.5)).toBe(0.5);
-    expect(smoothstep(1)).toBe(1);
+    expect(smootherstep(0)).toBe(0);
+    expect(smootherstep(0.5)).toBe(0.5);
+    expect(smootherstep(1)).toBe(1);
 
-    // Zero slope at endpoints (soft ease-in and soft ease-out)
-    expect(smoothstep(0.1)).toBeLessThan(0.1); // Ease in: 0.028 < 0.1
-    expect(smoothstep(0.9)).toBeGreaterThan(0.9); // Ease out: 0.972 > 0.9
+    // Zero 1st & 2nd derivative at endpoints (ultra-gentle ease-in and soft deceleration settling)
+    expect(smootherstep(0.1)).toBeLessThan(0.01); // 0.00856 < 0.01
+    expect(smootherstep(0.9)).toBeGreaterThan(0.99); // 0.99144 > 0.99
 
     for (let t = 0.05; t <= 1.0; t += 0.05) {
-      expect(smoothstep(t)).toBeGreaterThan(smoothstep(t - 0.05));
+      expect(smootherstep(t)).toBeGreaterThan(smootherstep(t - 0.05));
     }
   });
 
