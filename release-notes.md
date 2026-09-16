@@ -1,13 +1,11 @@
-# Version 4.6.14
+# Version 4.6.15
 
-Release Date: 2026-09-15
+Release Date: 2026-09-16
 
 ### Fixed
-- Immediate Floating Header Elimination: Transformed page headers to render State A (transparent, unformed glass, centered page title resting directly on background) at scroll position 0, eliminating premature floating capsule appearance.
-- Chromatic Aberration Artifact Removal: Removed hardcoded cyan/rose-red chromatic fringe overlays in favor of pure SVG turbulence glass refraction (`dpawlikowski/liquid-glass`).
-- Subtitle Clutter Cleanup: Removed all secondary descriptive text beneath page titles across all screens.
+- Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.
+- Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.
 
 ### Improved
-- Cross-App Canonical Header Unification: Fully standardized centered-title and scroll-formed Liquid Glass top bar across Chordex (Library, Songs, Saxophone Practice, Preferences), Drumex (Beats, Patterns, Preferences), Stagex (Setup Hub, Preferences), Groovex, and Vocalex (Takes, Preferences).
-- Dead-Center Title Invariant: Relocated contextual quick-actions (Finder/Tuner in Chordex Library, Metronome/Drum Tuner in Drumex Patterns) to dedicated body rows, guaranteeing 100% mathematical dead-centering of titles with zero collision or lateral offset.
-- Navigation Dispatcher Safety: Standardized on `NavigationDispatcher.canGoBack()` before popping history across all subviews.
+- OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.
+- Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale="2"` and `baseFrequency="0.04 0.04"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.
