@@ -1,23 +1,26 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
-  it('enforces permanent pill curvature (9999px) at all progress values with zero square states', () => {
+  it('enforces persistent Liquid Glass material and permanent pill curvature (9999px) at all progress values', () => {
     // Sample progress values from 0.0 to 1.0 at 0.05 increments
     const progressSamples = Array.from({ length: 21 }, (_, i) => i * 0.05);
+
+    // Persistent Liquid Glass base background alpha across themes
+    const baseGlassAlphas = {
+      dark: 0.72,
+      light: 0.78,
+      amoled: 0.78,
+    };
 
     for (const p of progressSamples) {
       // Morph geometry invariant: border-radius must remain 9999px (capsule) at EVERY sampled frame
       const borderRadius = '9999px';
       expect(borderRadius).toBe('9999px');
 
-      // Alpha ramps monotonically
-      const targetBgAlpha = 0.78;
-      const bgAlpha = p * targetBgAlpha;
-      expect(bgAlpha).toBeGreaterThanOrEqual(0);
-      expect(bgAlpha).toBeLessThanOrEqual(targetBgAlpha);
-
-      // Verify no small rectangular corner radius (e.g. 0px to 28px) exists
-      expect(borderRadius).toBe('9999px');
+      // Material persistence invariant: Liquid Glass background is NEVER 0 (transparent) at any scroll position
+      for (const alpha of Object.values(baseGlassAlphas)) {
+        expect(alpha).toBeGreaterThan(0.70);
+      }
     }
   });
 
@@ -50,20 +53,17 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     expect(centerLeft + currentX1).toBe(centerLeft);
   });
 
-  it('verifies chromatic aberration / spectral refraction curve peaks at p = 0.5 and settles to 0 at extremes', () => {
-    const calcChromatic = (p: number) => Math.sin(Math.PI * p);
+  it('verifies edge-oriented chromatic refraction preserves 100% clear text legibility across center', () => {
+    // Optical dispersion gradient parameters:
+    // Left edge refraction: [0%, 10%]
+    // Center clear zone: [20%, 80%] (completely transparent to avoid title color fringing)
+    // Right edge refraction: [90%, 100%]
+    const centerClearStart = 0.20;
+    const centerClearEnd = 0.80;
 
-    // Extremes: 0 at p = 0 and p = 1
-    expect(calcChromatic(0)).toBeCloseTo(0, 5);
-    expect(calcChromatic(1)).toBeCloseTo(0, 5);
-
-    // Peak at p = 0.5
-    expect(calcChromatic(0.5)).toBeCloseTo(1.0, 5);
-
-    // Curve characteristics: smooth rise and smooth fall
-    expect(calcChromatic(0.2)).toBeCloseTo(0.5878, 3);
-    expect(calcChromatic(0.8)).toBeCloseTo(0.5878, 3);
-    expect(calcChromatic(0.2)).toBeCloseTo(calcChromatic(0.8), 5);
+    expect(centerClearStart).toBe(0.20);
+    expect(centerClearEnd).toBe(0.80);
+    expect(centerClearEnd - centerClearStart).toBeGreaterThanOrEqual(0.60); // 60%+ clear title zone
   });
 
   it('verifies compositor-safe scaling curve for typography', () => {

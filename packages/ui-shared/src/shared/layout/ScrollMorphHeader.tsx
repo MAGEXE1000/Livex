@@ -103,16 +103,18 @@ export function ScrollMorphHeader({
           justifyContent: 'space-between',
           padding: '0 10px',
           position: 'relative',
-          background: 'transparent',
-          border: '1px solid transparent',
+          background: 'var(--surface-topbar-bg)',
+          border: 'var(--surface-topbar-border)',
+          backdropFilter: 'var(--surface-topbar-blur)',
+          WebkitBackdropFilter: 'var(--surface-topbar-blur)',
+          boxShadow: 'var(--surface-topbar-shadow)',
           boxSizing: 'border-box',
           pointerEvents: 'auto',
           userSelect: 'none',
-          willChange: 'transform, opacity, backdrop-filter',
           contain: 'paint layout',
         }}
       >
-        {/* Specular Rim Highlight (Settles at p = 1.0) */}
+        {/* Subtle Specular Top Curvature Response */}
         <div
           ref={specularRef}
           style={{
@@ -120,14 +122,16 @@ export function ScrollMorphHeader({
             inset: 0,
             borderRadius: 'inherit',
             background: isLight
-              ? 'radial-gradient(ellipse 80% 65% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)'
-              : 'radial-gradient(ellipse 80% 65% at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 100%)',
+              ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)'
+              : isAmoled
+              ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
+              : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
             pointerEvents: 'none',
-            opacity: 0,
+            opacity: 1,
           }}
         />
 
-        {/* Subtle Chromatic Aberration & Spectral Refraction Peak Layer */}
+        {/* Edge-Oriented Chromatic Refraction & Dispersion (confined to curved ends, crystal-clear center) */}
         <div
           ref={spectralRef}
           style={{
@@ -135,10 +139,9 @@ export function ScrollMorphHeader({
             inset: 0,
             borderRadius: 'inherit',
             background:
-              'radial-gradient(ellipse 65% 55% at 24% 45%, rgba(16, 185, 129, 0.32) 0%, rgba(56, 189, 248, 0.20) 34%, rgba(244, 63, 94, 0.12) 65%, transparent 100%)',
+              'linear-gradient(90deg, rgba(56, 189, 248, 0.13) 0%, rgba(56, 189, 248, 0.03) 10%, transparent 20%, transparent 80%, rgba(244, 63, 94, 0.03) 90%, rgba(244, 63, 94, 0.11) 100%)',
             pointerEvents: 'none',
-            opacity: 0,
-            willChange: 'opacity, transform',
+            opacity: isAmoled ? 0.35 : 1,
           }}
         />
 

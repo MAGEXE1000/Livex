@@ -79,81 +79,20 @@ export function useScrollMorph({
     (p: number) => {
       const headerEl = headerRef.current;
       const titleEl = titleRef.current;
-      const specEl = spectralRef?.current;
-      const rimEl = specularRef?.current;
 
       if (!headerEl || !titleEl) return;
 
       const { deltaX } = metricsRef.current;
 
-      // ── 1. Title transformation (Left -> Center) ──────────────────────────
-      // Compositor-only: translate3d + subtle scale
+      // ── Title transformation (Left -> Center) ──────────────────────────
+      // Compositor-only: translate3d + subtle scale.
+      // Liquid Glass material remains persistent across all frames.
       const currentX = (1 - p) * -deltaX;
       const currentScale = 1 - p * 0.16; // 1.0 (expanded ~21px) -> 0.84 (compact ~17.6px)
       titleEl.style.transform = `translate3d(${currentX.toFixed(2)}px, 0, 0) scale(${currentScale.toFixed(3)})`;
       titleEl.style.transformOrigin = 'center center';
-
-      // ── 2. Chromatic aberration / Spectral refraction peak ─────────────────
-      // Peaks at progress = 0.5 via sin(PI * p), settles to 0 at p = 0 and p = 1
-      const pSpectral = Math.sin(Math.PI * p);
-
-      if (specEl) {
-        specEl.style.opacity = (pSpectral * 0.72).toFixed(3);
-        specEl.style.transform = `translate3d(${((0.5 - p) * 16).toFixed(1)}px, 0, 0) scale(${(0.92 + p * 0.08).toFixed(3)})`;
-      }
-
-      if (pSpectral > 0.08) {
-        const disp = (pSpectral * 1.4).toFixed(1);
-        const alpha = (pSpectral * 0.45).toFixed(2);
-        titleEl.style.textShadow = `-${disp}px 0 rgba(239, 68, 68, ${alpha}), ${disp}px 0 rgba(56, 189, 248, ${alpha})`;
-      } else {
-        titleEl.style.textShadow = 'none';
-      }
-
-      // ── 3. Header surface morph (Direct Pill — Zero Square State) ──────────
-      // The surface maintains full pill curvature (9999px) at ALL frames (p in [0, 1]).
-      // At p=0, background and border are 100% transparent.
-      // As p > 0, the glass surface that materializes is already a fully rounded pill.
-      const targetBgAlpha = isLight ? 0.82 : isAmoled ? 0.88 : 0.78;
-      const targetBorderAlpha = isLight ? 0.08 : 0.10;
-      const bgAlpha = (p * targetBgAlpha).toFixed(3);
-      const borderAlpha = (p * targetBorderAlpha).toFixed(3);
-      const blurPx = (p * 18).toFixed(1);
-      const shadowAlpha = (p * 0.28).toFixed(3);
-
-      headerEl.style.borderRadius = '9999px';
-
-      if (p > 0.03) {
-        const blurValue = `blur(${blurPx}px) saturate(${(100 + p * 80).toFixed(0)}%)`;
-        headerEl.style.backdropFilter = blurValue;
-        headerEl.style.setProperty('-webkit-backdrop-filter', blurValue);
-      } else {
-        headerEl.style.backdropFilter = 'none';
-        headerEl.style.setProperty('-webkit-backdrop-filter', 'none');
-      }
-
-      if (isLight) {
-        headerEl.style.backgroundColor = `rgba(255, 255, 255, ${bgAlpha})`;
-        headerEl.style.borderColor = `rgba(0, 0, 0, ${borderAlpha})`;
-      } else if (isAmoled) {
-        headerEl.style.backgroundColor = `rgba(0, 0, 0, ${bgAlpha})`;
-        headerEl.style.borderColor = `rgba(255, 255, 255, ${borderAlpha})`;
-      } else {
-        headerEl.style.backgroundColor = `rgba(18, 18, 22, ${bgAlpha})`;
-        headerEl.style.borderColor = `rgba(255, 255, 255, ${borderAlpha})`;
-      }
-
-      headerEl.style.boxShadow =
-        p > 0.05
-          ? `0 ${(p * 8).toFixed(1)}px ${(p * 24).toFixed(1)}px rgba(0, 0, 0, ${shadowAlpha}), 0 1px 3px rgba(0, 0, 0, ${(p * 0.14).toFixed(3)})`
-          : 'none';
-
-      // ── 4. Specular rim highlight ─────────────────────────────────────────
-      if (rimEl) {
-        rimEl.style.opacity = p.toFixed(2);
-      }
     },
-    [headerRef, titleRef, spectralRef, specularRef, isLight, isAmoled]
+    [headerRef, titleRef]
   );
 
   useEffect(() => {
