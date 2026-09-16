@@ -20,6 +20,7 @@ import { MorphingActionSurface } from '../../../shared/design-system/MorphingAct
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { StaggeredReveal } from '../../../shared/animation';
 import { SharedFloatingHeader, ContextualActionPill } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { SlidersHorizontal } from 'lucide-react';
 
 export interface DrumPatternsPanelProps {
@@ -669,6 +670,7 @@ export function DrumPatternsPanel({
 }: DrumPatternsPanelProps) {
   const t = useT();
   const patternsScrollRef = useRef<HTMLDivElement>(null);
+  useOverscrollSpring({ scrollContainerRef: patternsScrollRef });
   const metronomeLabel = (t.drum as any)?.metronome || 'Metronome';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'All' | LibraryCategory | 'My Grooves'>(

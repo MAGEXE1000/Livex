@@ -10,6 +10,7 @@ import { StudioHeader } from './StudioHeader';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { useScrollMorph } from './useScrollMorph';
+import { useOverscrollSpring } from './useOverscrollSpring';
 export * from './ContextualActionPill';
 
 // Helper hook to detect responsive design states (tablets, landscape, foldables)
@@ -515,6 +516,8 @@ export function SettingsScaffold({
   const titleRef = React.useRef<HTMLDivElement | null>(null);
   const largeTitleRef = React.useRef<HTMLHeadingElement | null>(null);
 
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
+
   return (
     <div
       style={{
@@ -545,6 +548,7 @@ export function SettingsScaffold({
       {/* Continuous Scrolling View with safe area top and bottom insets */}
       <div
         ref={scrollRef}
+        data-purpose="settings-scaffold-container"
         style={{
           flex: 1,
           overflowY: 'auto',

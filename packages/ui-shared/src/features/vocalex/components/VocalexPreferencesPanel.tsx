@@ -8,10 +8,12 @@ import {
 } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { clearTakeCache } from '../services/harmonyEngine';
 
 export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => void } = {}) {
   const prefsScrollRef = useRef<HTMLDivElement>(null);
+  useOverscrollSpring({ scrollContainerRef: prefsScrollRef });
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
@@ -123,6 +125,7 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
 
       <div
         ref={prefsScrollRef}
+        data-purpose="vocalex-preferences-scroll-container"
         style={{
           display: 'flex',
           flexDirection: 'column',

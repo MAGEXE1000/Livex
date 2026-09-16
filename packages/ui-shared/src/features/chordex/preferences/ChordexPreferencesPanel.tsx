@@ -22,6 +22,7 @@ import { IconSongs, IconLibrary, IconSettings } from '../../hub/icons/NavIcons';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { Button } from '../../../shared/design-system/buttons';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
 
@@ -51,6 +52,7 @@ export default function ChordexPreferencesPanel() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
   const t = useT();
 
   const isWebDesktop = useIsWebDesktop();

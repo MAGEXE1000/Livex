@@ -15,6 +15,7 @@ import { clearTakeCache } from '../services/harmonyEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 
 import TakeDetailView from './TakeDetailView';
 
@@ -91,6 +92,7 @@ export default function TakesPanel() {
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
   const takesScrollRef = useRef<HTMLDivElement>(null);
+  useOverscrollSpring({ scrollContainerRef: takesScrollRef });
 
   const [takes, setTakes] = useState<TakeRecord[]>([]);
   const [loading, setLoading] = useState(true);

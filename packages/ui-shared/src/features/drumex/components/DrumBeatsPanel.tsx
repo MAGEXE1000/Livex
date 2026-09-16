@@ -8,6 +8,7 @@ import { StaggeredReveal } from '../../../shared/animation';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 
 export interface DrumBeatsPanelProps {
   drumSongs: DrumSong[];
@@ -442,6 +443,7 @@ export function DrumBeatsPanel({
 }: DrumBeatsPanelProps) {
   const t = useT();
   const beatsScrollRef = useRef<HTMLDivElement>(null);
+  useOverscrollSpring({ scrollContainerRef: beatsScrollRef });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [kitFilter, setKitFilter] = useState<string>('all');

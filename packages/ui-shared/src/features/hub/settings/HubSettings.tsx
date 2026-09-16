@@ -29,6 +29,7 @@ import {
   SettingsContentContainer,
   SharedFloatingHeader,
 } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import {
@@ -892,6 +893,7 @@ export function HubSettings({
   // and restore it on the next paint after the new page is in the DOM.
   const localScrollRef = useRef<HTMLDivElement | null>(null);
   useScrollHide(localScrollRef);
+  useOverscrollSpring({ scrollContainerRef: localScrollRef });
   const pageScrollPositions = useRef<Record<string, number>>({});
   const pendingRestoreRef = useRef<string | null>(null);
   function snapshotScroll(forPage: SettingsPageId) {
@@ -4537,6 +4539,7 @@ export function HubSettings({
 
                   <div
                     ref={localScrollRef}
+                    data-purpose="hub-settings-scroll-container"
                     style={{
                       flex: 1,
                       overflowY: 'auto',

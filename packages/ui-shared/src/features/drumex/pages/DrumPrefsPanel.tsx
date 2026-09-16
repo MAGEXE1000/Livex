@@ -15,6 +15,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Toggle, SectionHeader, SettingRow } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
 import { AnimatedNavigationIcon } from '../../hub/navigation/AnimatedNavigationIcon';
 
@@ -165,6 +166,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
   const dp = t.drumPrefs;
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   useEffect(() => {
     resetNav();

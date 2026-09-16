@@ -16,6 +16,7 @@ import { motion } from 'motion/react';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { useVirtualWindow } from '../../../shared/virtualization';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 
 export default function GroovexLibrary() {
   const searchQuery = useGroovexStore(useShallow((s) => s.searchQuery));
@@ -45,6 +46,7 @@ export default function GroovexLibrary() {
   const [cachedSongIds, setCachedSongIds] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   // Read local offline stem cache from IndexedDB
   useEffect(() => {

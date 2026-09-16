@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';
 import { useStagexStore, type StagexSubView } from '../../state/useStagexStore';
 import { useHoverCapable } from '../../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
@@ -35,6 +36,7 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   const currentLang = useSettingsStore((s) => s.settings.language);
   const isSpanish = currentLang === 'es';

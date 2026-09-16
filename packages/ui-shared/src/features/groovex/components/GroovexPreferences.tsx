@@ -14,6 +14,7 @@ import { SONG_CATALOG } from '../services/songCatalog';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 
 // Canonical conversions for Master Gain:
 // Range: -24 dB to +6 dB, with 0 dB at center position (50%).
@@ -53,6 +54,7 @@ export default function GroovexPreferences() {
   const updatePreferences = useGroovexStore((s) => s.updatePreferences);
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   const [cacheInfo, setCacheInfo] = useState({ totalBytes: 0, songCount: 0, stemCount: 0 });
   const [songCaches, setSongCaches] = useState<SongCacheInfo[]>([]);

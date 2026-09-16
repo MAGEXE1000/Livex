@@ -18,6 +18,7 @@ import {
 } from '../../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';
 
 export interface StagePreferencesViewProps {
   isLight?: boolean;
@@ -43,6 +44,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   const t = useT();
   const tr = t as any;

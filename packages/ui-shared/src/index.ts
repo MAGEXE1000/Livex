@@ -87,6 +87,7 @@ export const DevToolsApp = lazy(() => import('./features/devtools/DevToolsApp'))
 
 export * from './shared/layout/StudioLayoutSystem';
 export * from './shared/layout/useScrollMorph';
+export * from './shared/layout/useOverscrollSpring';
 export * from './shared/layout/ScrollMorphHeader';
 export { ProgressiveBlur } from './shared/design-system/ProgressiveBlur';
 export { StudioHeader } from './shared/layout/StudioHeader';

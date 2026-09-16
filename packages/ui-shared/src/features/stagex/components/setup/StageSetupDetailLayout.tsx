@@ -1,6 +1,7 @@
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
+import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';
 import { useSettingsStore } from '@workspace/studio-core';
 
 export interface StageSetupDetailLayoutProps {
@@ -34,6 +35,7 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
       : !isLight && (amoledMode || activeVis?.amoledMode);
 
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  useOverscrollSpring({ scrollContainerRef: scrollRef });
 
   return (
     <div
