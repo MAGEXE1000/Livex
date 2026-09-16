@@ -492,7 +492,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
               maxHeight: maxHeight ?? (isCompact ? '70vh' : '85vh'),
               height: placement === 'sheet' ? (maxHeight ?? 'calc(100dvh - 76px)') : undefined,
               borderRadius: placement === 'sheet' ? '28px 28px 0 0' : (isCompact ? 16 : 24),
-              backgroundColor: placement === 'sheet' ? '#000000' : 'var(--surface-dialog-bg, #16161c)',
+              backgroundColor: placement === 'sheet' ? 'var(--app-bg, #141418)' : 'var(--surface-dialog-bg, #16161c)',
               border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
               borderBottom: placement === 'sheet' ? 'none' : undefined,
               color: 'var(--c-text-primary, #ffffff)',

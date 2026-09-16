@@ -8183,7 +8183,6 @@ export default function DrumEditor() {
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#000000',
         }}
       >
         <DrumTunerModal

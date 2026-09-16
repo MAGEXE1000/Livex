@@ -5,6 +5,9 @@ import {
   TunerAudioEngine,
   getDefaultTuningForMode,
   getTuningById,
+  useSettingsStore,
+  getEffectiveThemeState,
+  resolveAccent,
   type InstrumentTuningMode,
   type TunerLifecycleState,
   type InstrumentStringTarget,
@@ -43,9 +46,24 @@ const SCALE_BARS = [
 export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
   onClose,
   onSwitchToFinder,
-  isLight = false,
-  isAmoled = false,
+  accent: propAccent,
+  isLight: propIsLight,
+  isAmoled: propIsAmoled,
 }) => {
+  const settings = useSettingsStore((s) => s.settings);
+  const themeState = getEffectiveThemeState(settings, 'chordex');
+  const isLight = propIsLight ?? (themeState === 'light');
+  const isAmoled = propIsAmoled ?? (themeState === 'amoled');
+  const effectiveAccent = useMemo(
+    () => propAccent || resolveAccent(settings?.accentColor),
+    [propAccent, settings?.accentColor]
+  );
+
+  const isLightRef = useRef(isLight);
+  isLightRef.current = isLight;
+  const isAmoledRef = useRef(isAmoled);
+  isAmoledRef.current = isAmoled;
+
   // Load persisted settings if available
   const initialSettings = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -136,7 +154,9 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           needleRef.current.style.boxShadow = '0 0 10px rgba(249, 115, 22, 0.8)';
           needleRef.current.style.opacity = '1';
         } else {
-          needleRef.current.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
+          needleRef.current.style.backgroundColor = isLightRef.current
+            ? 'rgba(0, 0, 0, 0.25)'
+            : 'rgba(255, 255, 255, 0.25)';
           needleRef.current.style.boxShadow = 'none';
           needleRef.current.style.opacity = '0.35';
         }
@@ -167,14 +187,44 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           centsPillRef.current.style.color = '#ffffff';
           centsPillRef.current.style.borderColor = 'rgba(249, 115, 22, 0.5)';
         } else {
-          centsPillRef.current.style.backgroundColor = '#141518';
-          centsPillRef.current.style.color = '#d4d4d8';
-          centsPillRef.current.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          centsPillRef.current.style.backgroundColor = isLightRef.current
+            ? 'rgba(0, 0, 0, 0.05)'
+            : isAmoledRef.current
+              ? '#000000'
+              : '#141518';
+          centsPillRef.current.style.color = isLightRef.current ? '#52525b' : '#d4d4d8';
+          centsPillRef.current.style.borderColor = isLightRef.current
+            ? 'rgba(0, 0, 0, 0.1)'
+            : isAmoledRef.current
+              ? 'rgba(255, 255, 255, 0.15)'
+              : 'rgba(255, 255, 255, 0.1)';
         }
       }
     },
     []
   );
+
+  // Sync idle needle and pill styles immediately when theme changes while silent
+  useEffect(() => {
+    if (centsPillRef.current && lastStatusRef.current === 'silent') {
+      centsPillRef.current.style.backgroundColor = isLight
+        ? 'rgba(0, 0, 0, 0.05)'
+        : isAmoled
+          ? '#000000'
+          : '#141518';
+      centsPillRef.current.style.color = isLight ? '#52525b' : '#d4d4d8';
+      centsPillRef.current.style.borderColor = isLight
+        ? 'rgba(0, 0, 0, 0.1)'
+        : isAmoled
+          ? 'rgba(255, 255, 255, 0.15)'
+          : 'rgba(255, 255, 255, 0.1)';
+    }
+    if (needleRef.current && lastStatusRef.current === 'silent') {
+      needleRef.current.style.backgroundColor = isLight
+        ? 'rgba(0, 0, 0, 0.25)'
+        : 'rgba(255, 255, 255, 0.25)';
+    }
+  }, [isLight, isAmoled]);
 
   // Persist settings changes
   useEffect(() => {
@@ -330,14 +380,12 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
     engineRef.current?.setReferenceA4(nextPitch);
   };
 
-  const bgColor = '#000000';
-
   return (
     <div
       className="flex flex-col w-full h-full px-3 pt-3 pb-0 select-none overflow-hidden"
       style={{
-        backgroundColor: bgColor,
-        color: '#ffffff',
+        backgroundColor: isAmoled ? '#000000' : isLight ? 'var(--app-bg, #f4f4f5)' : 'var(--app-bg, #141418)',
+        color: isLight ? 'var(--c-text-primary, #18181b)' : 'var(--c-text-primary, #f4f4f6)',
       }}
       data-testid="chromatic-tuner-modal"
     >
@@ -345,7 +393,15 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         {/* 1. Header: Integrated Instrument Selector on Left + Close Button on Right */}
         <div className="flex items-center justify-between gap-3 w-full px-0.5 pt-0.5">
           {/* Segmented Instrument Selector */}
-          <div className="flex items-center p-0.5 rounded-full border border-white/10 bg-[#141518] w-full max-w-[270px] xs:max-w-[290px]">
+          <div
+            className={`flex items-center p-0.5 rounded-full border w-full max-w-[270px] xs:max-w-[290px] transition-colors ${
+              isLight
+                ? 'border-black/10 bg-black/[0.04]'
+                : isAmoled
+                  ? 'border-white/12 bg-black'
+                  : 'border-white/10 bg-[#141518]'
+            }`}
+          >
             {(
               [
                 { id: 'electric', label: 'Electric' },
@@ -361,8 +417,12 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                   onClick={() => handleModeChange(item.id)}
                   className={`flex-1 py-1.5 px-2 rounded-full text-xs font-semibold transition-all cursor-pointer text-center truncate ${
                     isSelected
-                      ? 'bg-[#272930] text-white shadow-sm font-bold border border-white/15'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? isLight
+                        ? 'bg-white text-zinc-900 shadow-sm font-bold border border-black/5'
+                        : 'bg-[#272930] text-white shadow-sm font-bold border border-white/15'
+                      : isLight
+                        ? 'text-zinc-500 hover:text-zinc-900'
+                        : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   {item.label}
@@ -375,7 +435,13 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-[#141518] text-zinc-400 hover:text-white transition-all active:scale-95 cursor-pointer flex-shrink-0"
+            className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all active:scale-95 cursor-pointer flex-shrink-0 ${
+              isLight
+                ? 'border-black/10 bg-black/[0.04] text-zinc-600 hover:text-zinc-900 hover:bg-black/[0.08]'
+                : isAmoled
+                  ? 'border-white/12 bg-black text-zinc-400 hover:text-white hover:border-white/25'
+                  : 'border-white/10 bg-[#141518] text-zinc-400 hover:text-white hover:border-white/20'
+            }`}
             aria-label="Close Tuner"
           >
             <span className="material-symbols-rounded text-base">close</span>
@@ -395,28 +461,44 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
               }
               setShowTuningSelector(true);
             }}
-            className="flex-1 h-11 flex items-center justify-between px-3 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 transition-all cursor-pointer active:scale-98 min-w-0"
+            className={`flex-1 h-11 flex items-center justify-between px-3 rounded-2xl border transition-all cursor-pointer active:scale-98 min-w-0 ${
+              isLight
+                ? 'border-black/10 bg-black/[0.04] hover:bg-black/[0.07] hover:border-black/15'
+                : isAmoled
+                  ? 'border-white/12 bg-black hover:border-white/25'
+                  : 'border-white/10 bg-[#141518] hover:border-white/20'
+            }`}
             title="Open tuning selection"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Sliders className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
+              <Sliders className={`w-3.5 h-3.5 flex-shrink-0 ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`} />
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-xs font-bold text-white truncate tracking-wide leading-tight">
+                <span className={`text-xs font-bold truncate tracking-wide leading-tight ${
+                  isLight ? 'text-zinc-900' : 'text-white'
+                }`}>
                   {activeTuning.name}
                 </span>
-                <span className="text-[10px] font-mono text-zinc-400 leading-tight tracking-wider">
+                <span className={`text-[10px] font-mono leading-tight tracking-wider ${
+                  isLight ? 'text-zinc-500' : 'text-zinc-400'
+                }`}>
                   {activeTuning.strings.map((s) => s.note).join(' ')}
                 </span>
               </div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 ml-1.5" />
+            <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 ml-1.5 ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`} />
           </button>
 
           {/* Middle: Reference Pitch Pill */}
           <button
             type="button"
             onClick={handleCycleRefA4}
-            className="h-11 flex items-center justify-center px-3.5 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 text-xs font-mono font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
+            className={`h-11 flex items-center justify-center px-3.5 rounded-2xl border text-xs font-mono font-medium transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
+              isLight
+                ? 'border-black/10 bg-black/[0.04] text-zinc-900 hover:bg-black/[0.07] hover:border-black/15'
+                : isAmoled
+                  ? 'border-white/12 bg-black text-white hover:border-white/25'
+                  : 'border-white/10 bg-[#141518] text-white hover:border-white/20'
+            }`}
             title="Cycle Reference A4 pitch (440, 442, 432 Hz)"
           >
             A4 = {refA4} Hz
@@ -426,14 +508,21 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           <button
             type="button"
             onClick={handleToggleAuto}
-            className="h-11 flex items-center gap-2 px-3 rounded-2xl border border-white/10 bg-[#141518] hover:border-white/20 text-xs font-medium text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
+            className={`h-11 flex items-center gap-2 px-3 rounded-2xl border text-xs font-medium transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
+              isLight
+                ? 'border-black/10 bg-black/[0.04] text-zinc-900 hover:bg-black/[0.07] hover:border-black/15'
+                : isAmoled
+                  ? 'border-white/12 bg-black text-white hover:border-white/25'
+                  : 'border-white/10 bg-[#141518] text-white hover:border-white/20'
+            }`}
             title="Toggle Auto string detection"
           >
-            <span className="text-white font-medium text-xs">Auto</span>
+            <span className={`font-medium text-xs ${isLight ? 'text-zinc-900' : 'text-white'}`}>Auto</span>
             <div
               className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
-                isAuto ? 'bg-blue-600' : 'bg-[#2a2b30]'
+                !isAuto ? (isLight ? 'bg-zinc-300' : 'bg-[#2a2b30]') : ''
               }`}
+              style={isAuto ? { backgroundColor: effectiveAccent.from } : undefined}
             >
               <div
                 className={`w-3 h-3 rounded-full bg-white transition-transform ${
@@ -446,10 +535,32 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
         {/* Permission Denied Alert Banner */}
         {lifecycleState === 'permission_denied' && (
-          <div className="flex flex-col items-center justify-center p-4 rounded-2xl border bg-red-500/10 border-red-500/20 text-center">
-            <span className="material-symbols-rounded text-2xl text-red-400 mb-1">mic_off</span>
-            <h4 className="text-xs font-semibold text-red-300">Microphone Access Denied</h4>
-            <p className="text-[11px] text-red-200/80 mb-2 max-w-xs">
+          <div
+            className={`flex flex-col items-center justify-center p-4 rounded-2xl border text-center ${
+              isLight
+                ? 'bg-red-50 border-red-200'
+                : 'bg-red-500/10 border-red-500/20'
+            }`}
+          >
+            <span
+              className={`material-symbols-rounded text-2xl mb-1 ${
+                isLight ? 'text-red-600' : 'text-red-400'
+              }`}
+            >
+              mic_off
+            </span>
+            <h4
+              className={`text-xs font-semibold ${
+                isLight ? 'text-red-900' : 'text-red-300'
+              }`}
+            >
+              Microphone Access Denied
+            </h4>
+            <p
+              className={`text-[11px] mb-2 max-w-xs ${
+                isLight ? 'text-red-700' : 'text-red-200/80'
+              }`}
+            >
               {errorMessage || 'Grant microphone permission to enable chromatic pitch detection.'}
             </p>
             <button
@@ -466,16 +577,28 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         <div className="relative flex flex-col items-center pt-1 pb-0.5 w-full max-w-[340px] mx-auto select-none">
           {/* Top Label Row: FLAT ♭ and SHARP ♯ */}
           <div className="w-full flex items-center justify-between px-1">
-            <div className="text-[#38bdf8] font-black text-xs sm:text-sm tracking-wider flex items-center gap-1">
+            <div
+              className={`font-black text-xs sm:text-sm tracking-wider flex items-center gap-1 ${
+                isLight ? 'text-sky-600' : 'text-[#38bdf8]'
+              }`}
+            >
               <span>FLAT</span>
               <span className="text-base font-normal">♭</span>
             </div>
 
-            <div className="text-[10px] tracking-widest text-zinc-400 font-semibold uppercase">
+            <div
+              className={`text-[10px] tracking-widest font-semibold uppercase ${
+                isLight ? 'text-zinc-500' : 'text-zinc-400'
+              }`}
+            >
               {tuningStatus === 'in_tune' ? 'IN TUNE' : 'LISTENING...'}
             </div>
 
-            <div className="text-[#f97316] font-black text-xs sm:text-sm tracking-wider flex items-center gap-1">
+            <div
+              className={`font-black text-xs sm:text-sm tracking-wider flex items-center gap-1 ${
+                isLight ? 'text-amber-600' : 'text-[#f97316]'
+              }`}
+            >
               <span>SHARP</span>
               <span className="text-base font-normal">♯</span>
             </div>
@@ -486,10 +609,12 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
             {/* Center Emerald Glow Beam */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
               <div
-                className="w-24 h-10 rounded-full blur-md opacity-60"
+                className="w-24 h-10 rounded-full blur-md"
                 style={{
-                  background:
-                    'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.5) 0%, rgba(34, 197, 94, 0.1) 55%, transparent 80%)',
+                  background: isLight
+                    ? 'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.05) 55%, transparent 80%)'
+                    : 'radial-gradient(ellipse at center, rgba(34, 197, 94, 0.5) 0%, rgba(34, 197, 94, 0.1) 55%, transparent 80%)',
+                  opacity: isLight ? 0.45 : 0.6,
                 }}
               />
             </div>
@@ -529,12 +654,20 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
             </div>
 
             {/* Numeric Labels Below Bars (-5 to +5) */}
-            <div className="relative flex items-center justify-between px-1 mt-1 z-10 text-[9px] font-mono text-zinc-500 font-semibold">
+            <div
+              className={`relative flex items-center justify-between px-1 mt-1 z-10 text-[9px] font-mono font-semibold ${
+                isLight ? 'text-zinc-500' : 'text-zinc-500'
+              }`}
+            >
               {SCALE_BARS.map((bar) => (
                 <span
                   key={bar.step}
                   className={`w-[3px] text-center flex items-center justify-center ${
-                    bar.isCenter ? 'text-zinc-400 font-bold' : ''
+                    bar.isCenter
+                      ? isLight
+                        ? 'text-zinc-800 font-bold'
+                        : 'text-zinc-300 font-bold'
+                      : ''
                   }`}
                 >
                   {bar.label}
@@ -546,7 +679,13 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
           {/* Deviation Cents Pill Directly Below 0 (e.g. 0) */}
           <div
             ref={centsPillRef}
-            className="mt-0.5 px-3 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[36px] border border-white/10 bg-[#141518] text-zinc-300 shadow-sm"
+            className={`mt-0.5 px-3 py-0.5 rounded-full text-xs font-bold font-mono inline-flex items-center justify-center transition-colors min-w-[36px] border shadow-sm ${
+              isLight
+                ? 'border-black/10 bg-black/[0.05] text-zinc-600'
+                : isAmoled
+                  ? 'border-white/15 bg-black text-zinc-300'
+                  : 'border-white/10 bg-[#141518] text-zinc-300'
+            }`}
           >
             <span ref={centsTextRef}>0</span>
           </div>
@@ -554,8 +693,10 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
 
         {/* 4. Lower Section: Photorealistic Headstock Graphic with Physical Peg-Aligned String Cards */}
         <div
-          className="relative w-full flex-1 min-h-0 overflow-hidden select-none"
-          style={{ backgroundColor: '#000000' }}
+          className={`relative w-full flex-1 min-h-0 overflow-hidden select-none ${
+            isLight ? 'rounded-2xl bg-black border border-black/10 shadow-inner' : ''
+          }`}
+          style={{ backgroundColor: isAmoled ? '#000000' : isLight ? '#000000' : 'transparent' }}
         >
           {/* Canonical Headstock Graphic (Medium-large scale, right-aligned, breathing room) */}
           <AnimatePresence mode="wait">
@@ -574,7 +715,11 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
               <img
                 src={geometry.assetSrc}
                 alt={`${instrumentMode} headstock`}
-                className="w-[358px] max-w-none h-auto object-top drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)] filter brightness-105 contrast-105 select-none"
+                className={`w-[358px] max-w-none h-auto object-top filter brightness-105 contrast-105 select-none ${
+                  isLight
+                    ? 'drop-shadow-[0_10px_24px_rgba(0,0,0,0.18)]'
+                    : 'drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)]'
+                }`}
                 loading="eager"
               />
             </motion.div>
@@ -612,7 +757,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                   {isLeft ? (
                     <>
                       {/* Secondary String Number on outer side */}
-                      <span className="w-3 text-center text-xs font-semibold text-zinc-400 select-none">
+                      <span className="w-3 text-center text-xs font-semibold select-none text-zinc-400">
                         {str.stringNumber}
                       </span>
                       {/* Large Circular Note Control */}
@@ -621,10 +766,18 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                         onClick={() => handleStringCardClick(str)}
                         className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all cursor-pointer active:scale-90 ${
                           isInTune
-                            ? 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
+                            ? isLight
+                              ? 'border-2 border-emerald-600 bg-emerald-100 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
+                              : 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
                             : isCurrentActive
-                              ? 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
-                              : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
+                              ? isLight
+                                ? 'border-2 border-emerald-600 bg-emerald-50 text-emerald-950 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                                : 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
+                              : isLight
+                                ? 'border border-black/10 bg-white/95 text-zinc-900 shadow-sm hover:border-black/20 hover:bg-white'
+                                : isAmoled
+                                  ? 'border border-white/20 bg-black text-white hover:border-white/35 hover:bg-[#121214]'
+                                  : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
                         }`}
                         role="button"
                         tabIndex={0}
@@ -641,10 +794,18 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                         onClick={() => handleStringCardClick(str)}
                         className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all cursor-pointer active:scale-90 ${
                           isInTune
-                            ? 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
+                            ? isLight
+                              ? 'border-2 border-emerald-600 bg-emerald-100 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
+                              : 'border-2 border-emerald-500 bg-[#0d2218] text-emerald-400 shadow-[0_0_16px_rgba(34,197,94,0.6)]'
                             : isCurrentActive
-                              ? 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
-                              : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
+                              ? isLight
+                                ? 'border-2 border-emerald-600 bg-emerald-50 text-emerald-950 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                                : 'border-2 border-emerald-500/90 bg-emerald-950/40 text-white shadow-[0_0_14px_rgba(34,197,94,0.4)]'
+                              : isLight
+                                ? 'border border-black/10 bg-white/95 text-zinc-900 shadow-sm hover:border-black/20 hover:bg-white'
+                                : isAmoled
+                                  ? 'border border-white/20 bg-black text-white hover:border-white/35 hover:bg-[#121214]'
+                                  : 'border border-white/15 bg-[#141518] text-white hover:border-white/25 hover:bg-[#1a1b20]'
                         }`}
                         role="button"
                         tabIndex={0}
@@ -653,7 +814,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
                         {str.note}
                       </button>
                       {/* Secondary String Number on outer side */}
-                      <span className="w-3 text-center text-xs font-semibold text-zinc-400 select-none">
+                      <span className="w-3 text-center text-xs font-semibold select-none text-zinc-400">
                         {str.stringNumber}
                       </span>
                     </>
@@ -674,6 +835,9 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         onClose={() => setShowTuningSelector(false)}
         onModeChange={handleModeChange}
         triggerRect={triggerRect}
+        isLight={isLight}
+        isAmoled={isAmoled}
+        accent={effectiveAccent}
       />
     </div>
   );
