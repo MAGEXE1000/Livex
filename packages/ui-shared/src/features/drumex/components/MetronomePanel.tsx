@@ -561,7 +561,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       {/* ── Top Navigation Header (Canonical SharedFloatingHeader) ────────── */}
       <SharedFloatingHeader
         title="METRONOME"
-        subtitle={activePreset ? activePreset.name : `${SOUND_LABELS[sound]} • ${timeSignature}`}
         onBack={onBack}
         scrollContainerRef={mainScrollRef}
       />

@@ -563,7 +563,6 @@ export function DrumBeatsPanel({
         {/* Canonical Studio Header */}
         <StudioHeader
           title="Beats"
-          subtitle="Your drum songs & arrangements"
           disableHorizontalPadding={true}
           disableTopInset={isWebDesktop}
         />

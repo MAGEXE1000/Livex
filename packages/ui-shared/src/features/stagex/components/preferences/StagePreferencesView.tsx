@@ -137,7 +137,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
           paddingTop: isWebDesktop ? '20px' : '0',
         }}
       >
-        <StudioHeader title={title} subtitle={subtitle} />
+        <StudioHeader title={title} />
 
         <div className="px-6 max-w-3xl mx-auto">
           {/* ── 1. DISPLAY & OVERLAYS ── */}

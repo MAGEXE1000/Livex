@@ -118,7 +118,7 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
           paddingTop: isWebDesktop ? '20px' : '0',
         }}
       >
-        <StudioHeader title={title} subtitle={subtitle} />
+        <StudioHeader title={title} />
 
         <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pb-12">
           <div className="flex flex-col gap-4">

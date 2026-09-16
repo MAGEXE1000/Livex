@@ -461,7 +461,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
           paddingBottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 120px)',
         }}
       >
-        <StudioHeader title={dp.title} subtitle={dp.subtitle} disableHorizontalPadding={true} />
+        <StudioHeader title={dp.title} disableHorizontalPadding={true} />
 
         <SectionHeader icon="edit_note" title={dp.editorBehavior} />
         <Card style={{ padding: 0, overflow: 'hidden' }}>

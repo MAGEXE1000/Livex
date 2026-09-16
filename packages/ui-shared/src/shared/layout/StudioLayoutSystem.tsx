@@ -188,6 +188,50 @@ export interface SharedFloatingHeaderProps {
   startOffset?: number;
 }
 
+// ── Livex Liquid Glass SVG Filter (Displacement mapping via feTurbulence & feDisplacementMap) ──
+export function LivexLiquidGlassFilter() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="0"
+      height="0"
+      style={{
+        position: 'absolute',
+        width: 0,
+        height: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+      }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <filter
+        id="livex-liquid-glass-filter"
+        x="-20%"
+        y="-20%"
+        width="140%"
+        height="140%"
+        colorInterpolationFilters="sRGB"
+      >
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.008"
+          numOctaves="2"
+          seed="7"
+          result="noise"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="noise"
+          scale="10"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </svg>
+  );
+}
+
 export function SharedFloatingHeader({
   title,
   subtitle,
@@ -203,8 +247,8 @@ export function SharedFloatingHeader({
   isAmoled: isAmoledProp,
   scrollContainerRef,
   enableMorph = true,
-  morphDistance = 80,
-  startOffset = 0,
+  morphDistance = 74,
+  startOffset = 6,
 }: SharedFloatingHeaderProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -223,7 +267,7 @@ export function SharedFloatingHeader({
   const actualHeaderRef = headerBgRef || fallbackHeaderRef;
   const actualTitleRef = titleRef || fallbackTitleRef;
 
-  const spectralRef = React.useRef<HTMLDivElement | null>(null);
+  const glassSurfaceRef = React.useRef<HTMLDivElement | null>(null);
   const specularRef = React.useRef<HTMLDivElement | null>(null);
 
   const morphActive = Boolean(enableMorph && scrollContainerRef);
@@ -232,8 +276,7 @@ export function SharedFloatingHeader({
     scrollContainerRef: scrollContainerRef || { current: null },
     headerRef: actualHeaderRef,
     titleRef: actualTitleRef,
-    spectralRef,
-    specularRef,
+    glassSurfaceRef,
     morphDistance,
     startOffset,
     enabled: morphActive,
@@ -246,7 +289,7 @@ export function SharedFloatingHeader({
     <div
       style={{
         position: 'absolute',
-        top: 'calc(env(safe-area-inset-top, 0px) + 10px)',
+        top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
         left: 0,
         right: 0,
         display: 'flex',
@@ -258,6 +301,7 @@ export function SharedFloatingHeader({
         boxSizing: 'border-box',
       }}
     >
+      <LivexLiquidGlassFilter />
       <header
         ref={actualHeaderRef}
         data-testid="shared-floating-header"
@@ -265,53 +309,56 @@ export function SharedFloatingHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: morphActive ? '24px' : '9999px',
+          borderRadius: '16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 10px',
           position: 'relative',
-          background: 'var(--surface-topbar-bg)',
-          border: 'var(--surface-topbar-border)',
-          backdropFilter: 'var(--surface-topbar-blur)',
-          WebkitBackdropFilter: 'var(--surface-topbar-blur)',
-          boxShadow: 'var(--surface-topbar-shadow)',
+          background: 'transparent',
+          border: '1px solid transparent',
           boxSizing: 'border-box',
           pointerEvents: 'auto',
           userSelect: 'none',
-          contain: 'paint layout',
         }}
       >
-        {/* Subtle Specular Top Curvature Response */}
+        {/* Canonical Persistent Liquid Glass Surface (Smoothly forms on scroll, dissolves on top) */}
         <div
-          ref={specularRef}
+          ref={glassSurfaceRef}
+          data-testid="shared-floating-header-glass-surface"
           style={{
             position: 'absolute',
             inset: 0,
             borderRadius: 'inherit',
-            background: isLight
-              ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)'
-              : isAmoled
-              ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
-              : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+            background: 'var(--surface-topbar-bg)',
+            border: 'var(--surface-topbar-border)',
+            backdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
+            WebkitBackdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
+            boxShadow: 'var(--surface-topbar-shadow)',
+            filter: 'url(#livex-liquid-glass-filter)',
             pointerEvents: 'none',
-            opacity: 1,
+            opacity: 0,
+            visibility: 'hidden',
+            contain: 'paint layout',
+            zIndex: 0,
           }}
-        />
-
-        {/* Edge-Oriented Chromatic Refraction & Dispersion (confined to curved ends, crystal-clear center) */}
-        <div
-          ref={spectralRef}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            background:
-              'linear-gradient(90deg, rgba(56, 189, 248, 0.13) 0%, rgba(56, 189, 248, 0.03) 10%, transparent 20%, transparent 80%, rgba(244, 63, 94, 0.03) 90%, rgba(244, 63, 94, 0.11) 100%)',
-            pointerEvents: 'none',
-            opacity: isAmoled ? 0.35 : 1,
-          }}
-        />
+        >
+          {/* Subtle Specular Top Curvature Sheen Response */}
+          <div
+            ref={specularRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              background: isLight
+                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, transparent 100%)'
+                : isAmoled
+                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 100%)'
+                : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.10) 0%, transparent 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
 
         {/* Left Back Action Button */}
         {onBack && !hideBack ? (
@@ -378,84 +425,35 @@ export function SharedFloatingHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingLeft: toolbarActions ? '96px' : '52px',
-            paddingRight: toolbarActions ? '96px' : '52px',
+            paddingLeft: toolbarActions ? '96px' : (onBack && !hideBack ? '52px' : '20px'),
+            paddingRight: toolbarActions ? '96px' : (onBack && !hideBack ? '52px' : '20px'),
             pointerEvents: 'none',
             zIndex: 1,
             willChange: 'transform',
           }}
         >
-          {subtitle ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: 0,
-                textAlign: 'center',
-                maxWidth: '100%',
-              }}
-            >
-              <span
-                data-testid={titleTestId}
-                style={{
-                  fontSize: 'var(--type-title-size, 19px)',
-                  lineHeight: '1.2',
-                  fontWeight: 700,
-                  color: 'var(--c-text-primary)',
-                  letterSpacing: 'var(--type-title-tracking, -0.4px)',
-                  fontFamily:
-                    'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
-                {title}
-              </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  lineHeight: '1.2',
-                  fontWeight: 500,
-                  color: 'var(--c-text-muted)',
-                  fontFamily: 'var(--font-body, "Inter", sans-serif)',
-                  marginTop: '1.5px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
-                {subtitle}
-              </span>
-            </div>
-          ) : (
-            <span
-              data-testid={
-                titleTestId ||
-                (title === 'Production Document' ? 'production-document-title' : undefined)
-              }
-              style={{
-                fontSize: 'var(--type-title-size, 19px)',
-                lineHeight: 'var(--type-title-lh, 26px)',
-                fontWeight: 700,
-                color: 'var(--c-text-primary)',
-                letterSpacing: 'var(--type-title-tracking, -0.4px)',
-                fontFamily:
-                  'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                textAlign: 'center',
-                maxWidth: '100%',
-              }}
-            >
-              {title}
-            </span>
-          )}
+          <span
+            data-testid={
+              titleTestId ||
+              (title === 'Production Document' ? 'production-document-title' : undefined)
+            }
+            style={{
+              fontSize: 'var(--type-title-size, 19px)',
+              lineHeight: 'var(--type-title-lh, 26px)',
+              fontWeight: 700,
+              color: 'var(--c-text-primary)',
+              letterSpacing: 'var(--type-title-tracking, -0.4px)',
+              fontFamily:
+                'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              textAlign: 'center',
+              maxWidth: '100%',
+            }}
+          >
+            {title}
+          </span>
         </div>
 
         {/* Right Toolbar Actions Layer */}
@@ -548,23 +546,6 @@ export function SettingsScaffold({
             paddingRight: 'var(--page-inset-h)',
           }}
         >
-          {showLargeTitle && (
-            <div
-              ref={largeTitleRef}
-              style={{
-                width: '100%',
-                marginBottom: '16px',
-              }}
-            >
-              <StudioHeader
-                title={title}
-                disableTopInset={true}
-                disableHorizontalPadding={true}
-                containerStyle={{ paddingTop: '8px', paddingBottom: '16px' }}
-              />
-            </div>
-          )}
-
           {/* Content Canvas */}
           <div style={{ width: '100%' }}>{children}</div>
         </div>

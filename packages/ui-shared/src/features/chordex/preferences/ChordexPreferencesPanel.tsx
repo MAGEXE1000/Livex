@@ -61,7 +61,7 @@ export default function ChordexPreferencesPanel() {
         className="flex flex-col h-full overflow-hidden bg-[var(--app-bg)]"
         style={{ fontFamily: 'var(--studio-font-body)' }}
       >
-        <StudioHeader title={t.settings.title} subtitle={t.settings.subtitle} />
+        <StudioHeader title={t.settings.title} />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar space-y-6 px-6 pb-6">
           {/* ── INSTRUMENT ── */}
@@ -387,7 +387,6 @@ export default function ChordexPreferencesPanel() {
       >
         <StudioHeader
           title={t.settings.title}
-          subtitle={t.settings.subtitle}
           disableHorizontalPadding={true}
         />
 

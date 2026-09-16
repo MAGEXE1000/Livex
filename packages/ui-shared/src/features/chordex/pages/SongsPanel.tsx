@@ -6686,7 +6686,6 @@ export default function SongsPanel() {
                   {/* Canonical Studio Header */}
                   <StudioHeader
                     title="Songs"
-                    subtitle={t.songs?.subtitle || 'Manage your song presets and perform live.'}
                     disableHorizontalPadding={true}
                     disableTopInset={true}
                   />

@@ -290,7 +290,6 @@ export default function TakesPanel() {
         {/* Canonical Vocalex Page Header */}
         <StudioHeader
           title={t.vocalex.takesTitle}
-          subtitle={t.vocalex.takesSubtitle}
           disableHorizontalPadding={true}
           containerStyle={{ marginBottom: '8px' }}
         />

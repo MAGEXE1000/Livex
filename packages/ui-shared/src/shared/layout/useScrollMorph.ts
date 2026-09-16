@@ -3,24 +3,26 @@ import React, { useEffect, useRef, useCallback } from 'react';
 export interface UseScrollMorphOptions {
   /** The scrollable element whose scrollTop drives the morph */
   scrollContainerRef: React.RefObject<HTMLElement | null>;
-  /** The floating header pill element */
+  /** The floating header container element */
   headerRef: React.RefObject<HTMLElement | null>;
-  /** The title element being transformed from left to center */
+  /** The title element being transformed */
   titleRef: React.RefObject<HTMLElement | null>;
-  /** Optional spectral refraction layer for chromatic aberration peak */
+  /** The persistent Liquid Glass surface material layer */
+  glassSurfaceRef?: React.RefObject<HTMLElement | null>;
+  /** Optional spectral refraction layer for chromatic aberration peak (deprecated/unused) */
   spectralRef?: React.RefObject<HTMLElement | null>;
   /** Optional specular curvature highlight layer */
   specularRef?: React.RefObject<HTMLElement | null>;
-  /** Scroll distance in px over which morph completes (default: 80) */
+  /** Scroll distance in px over which morph completes (default: 74) */
   morphDistance?: number;
-  /** Scroll offset in px before morph begins (default: 0) */
+  /** Scroll offset in px before morph begins (default: 6) */
   startOffset?: number;
   /** Whether the morph is enabled (default: true) */
   enabled?: boolean;
   /** Theme indicators to calibrate alpha and borders */
   isLight?: boolean;
   isAmoled?: boolean;
-  /** Left inset target in px when expanded (default: 16 without back button, 52 with back button) */
+  /** Left inset target in px when expanded (default: 20 without back button, 52 with back button) */
   expandedLeftInset?: number;
 }
 
@@ -28,10 +30,9 @@ export function useScrollMorph({
   scrollContainerRef,
   headerRef,
   titleRef,
-  spectralRef,
-  specularRef,
-  morphDistance = 80,
-  startOffset = 0,
+  glassSurfaceRef,
+  morphDistance = 74,
+  startOffset = 6,
   enabled = true,
   isLight = false,
   isAmoled = false,
@@ -93,6 +94,7 @@ export function useScrollMorph({
     (p: number) => {
       const headerEl = headerRef.current;
       const titleEl = titleRef.current;
+      const glassEl = glassSurfaceRef?.current;
 
       if (!headerEl) return;
 
@@ -112,11 +114,11 @@ export function useScrollMorph({
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
       // ── 4. Geometry: Corner curvature (Progressively more rounded) ─────────
-      // Starts at a smooth 24px rounded surface and tightens to 9999px capsule pill
-      if (p >= 0.7) {
+      // Starts at smooth 16px and tightens to 9999px capsule pill
+      if (p >= 0.65) {
         headerEl.style.borderRadius = '9999px';
       } else {
-        const currentRadius = 24 + p * 30;
+        const currentRadius = 16 + p * 40;
         headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
       }
 
@@ -131,19 +133,35 @@ export function useScrollMorph({
       // ── 6. Title typography scale (Dead-centered throughout) ───────────────
       // Title is centered in the surface across all frames: zero horizontal translation
       if (titleEl) {
-        const currentScale = 1 - p * 0.14; // 1.0 (expanded ~20px) -> 0.86 (compact ~17.2px)
+        const currentScale = 1 - p * 0.12; // 1.0 -> 0.88
         titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
         titleEl.style.transformOrigin = 'center center';
       }
+
+      // ── 7. Liquid Glass Material Progressive Emergence ────────────────────
+      if (glassEl) {
+        if (p <= 0.001) {
+          glassEl.style.opacity = '0';
+          glassEl.style.visibility = 'hidden';
+        } else {
+          glassEl.style.visibility = 'visible';
+          // Smooth progressive emergence curve
+          const surfaceAlpha = Math.min(1, Math.pow(p, 0.75));
+          glassEl.style.opacity = surfaceAlpha.toFixed(3);
+        }
+      }
     },
-    [headerRef, titleRef]
+    [headerRef, titleRef, glassSurfaceRef]
   );
 
   useEffect(() => {
     if (!enabled) return;
 
     const scrollEl = scrollContainerRef.current;
-    if (!scrollEl) return;
+    if (!scrollEl) {
+      applyMorph(0);
+      return;
+    }
 
     updateMetrics();
 

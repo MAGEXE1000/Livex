@@ -134,10 +134,8 @@ export const SaxophonePracticePanel: React.FC = () => {
       >
         <StudioHeader
           title="Saxophone Practice"
-          subtitle="Interactive fingerings and ear training"
           containerStyle={{ alignItems: 'center', textAlign: 'center', paddingBottom: 0 }}
           titleStyle={{ textAlign: 'center', color: '#f59e0b' }}
-          subtitleStyle={{ textAlign: 'center' }}
           disableTopInset={true}
           disableHorizontalPadding={true}
         />

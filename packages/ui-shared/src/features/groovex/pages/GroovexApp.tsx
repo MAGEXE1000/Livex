@@ -146,7 +146,6 @@ export default function GroovexApp() {
       {!isWebDesktop && view === 'player' && (
         <SharedFloatingHeader
           title={currentSong?.title || 'Player'}
-          subtitle={currentSong?.artist}
           onBack={handleBack}
         />
       )}

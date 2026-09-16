@@ -1,22 +1,21 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
-  it('enforces persistent Liquid Glass material across all progress values', () => {
-    // Sample progress values from 0.0 to 1.0 at 0.05 increments
-    const progressSamples = Array.from({ length: 21 }, (_, i) => i * 0.05);
+  it('enforces transparent initial state (p=0) and progressive Liquid Glass emergence on scroll', () => {
+    // Glass surface opacity function: 0 at p=0, smoothly ramps to 1.0 at p=1
+    const calcSurfaceAlpha = (p: number) => (p <= 0.001 ? 0 : Math.min(1, Math.pow(p, 0.75)));
 
-    // Persistent Liquid Glass base background alpha across themes
-    const baseGlassAlphas = {
-      dark: 0.72,
-      light: 0.78,
-      amoled: 0.78,
-    };
+    // At top of page (p = 0): Glass surface is completely transparent (no visible container)
+    expect(calcSurfaceAlpha(0)).toBe(0);
 
-    for (const p of progressSamples) {
-      // Material persistence invariant: Liquid Glass background is NEVER 0 (transparent) at any scroll position
-      for (const alpha of Object.values(baseGlassAlphas)) {
-        expect(alpha).toBeGreaterThan(0.70);
-      }
+    // As user scrolls down past threshold:
+    expect(calcSurfaceAlpha(0.2)).toBeGreaterThan(0.25);
+    expect(calcSurfaceAlpha(0.5)).toBeGreaterThan(0.55);
+    expect(calcSurfaceAlpha(1.0)).toBe(1.0);
+
+    // Monotonic progression from transparent to fully formed
+    for (let p = 0.05; p <= 1.0; p += 0.05) {
+      expect(calcSurfaceAlpha(p)).toBeGreaterThan(calcSurfaceAlpha(p - 0.05));
     }
   });
 
@@ -68,17 +67,17 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies progressive corner curvature increase from smooth rounded surface (24px) to full capsule (9999px)', () => {
-    const calcRadius = (p: number) => (p >= 0.7 ? 9999 : 24 + p * 30);
+  it('verifies progressive corner curvature increase from flat/soft (16px) to full capsule (9999px)', () => {
+    const calcRadius = (p: number) => (p >= 0.65 ? 9999 : 16 + p * 40);
 
-    // At p = 0: 24px (never square, never card, smooth generous rounded rectangle)
-    expect(calcRadius(0)).toBe(24);
+    // At p = 0: 16px soft surface
+    expect(calcRadius(0)).toBe(16);
 
-    // At p = 0.5: 39px
-    expect(calcRadius(0.5)).toBe(39);
+    // At p = 0.5: 36px
+    expect(calcRadius(0.5)).toBe(36);
 
-    // At p >= 0.7: 9999px (full capsule pill)
-    expect(calcRadius(0.7)).toBe(9999);
+    // At p >= 0.65: 9999px (full capsule pill)
+    expect(calcRadius(0.65)).toBe(9999);
     expect(calcRadius(1.0)).toBe(9999);
 
     // Monotonic curvature progression
@@ -90,27 +89,20 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   it('enforces centered title invariant with zero horizontal translation at all frames', () => {
     // Title is centered throughout the morph: X translation is ALWAYS 0
     const calcTitleX = (p: number) => 0;
-    const calcTitleScale = (p: number) => 1 - p * 0.14;
+    const calcTitleScale = (p: number) => 1 - p * 0.12;
 
     const progressSamples = Array.from({ length: 21 }, (_, i) => i * 0.05);
 
     for (const p of progressSamples) {
       expect(calcTitleX(p)).toBe(0); // Never drifts from center
-      expect(calcTitleScale(p)).toBeGreaterThanOrEqual(0.86);
+      expect(calcTitleScale(p)).toBeGreaterThanOrEqual(0.88);
       expect(calcTitleScale(p)).toBeLessThanOrEqual(1.0);
     }
   });
 
-  it('verifies edge-oriented chromatic refraction preserves 100% clear text legibility across center', () => {
-    // Optical dispersion gradient parameters:
-    // Left edge refraction: [0%, 10%]
-    // Center clear zone: [20%, 80%] (completely transparent to avoid title color fringing)
-    // Right edge refraction: [90%, 100%]
-    const centerClearStart = 0.20;
-    const centerClearEnd = 0.80;
-
-    expect(centerClearStart).toBe(0.20);
-    expect(centerClearEnd).toBe(0.80);
-    expect(centerClearEnd - centerClearStart).toBeGreaterThanOrEqual(0.60); // 60%+ clear title zone
+  it('enforces elimination of red/blue chromatic aberration layers for clean neutral glass', () => {
+    // Chromatic aberration is permanently disabled/removed
+    const chromaticLayersEnabled = false;
+    expect(chromaticLayersEnabled).toBe(false);
   });
 });

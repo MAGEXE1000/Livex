@@ -27,6 +27,7 @@ import {
 import {
   SettingsScaffold,
   SettingsContentContainer,
+  SharedFloatingHeader,
 } from '../../../shared/layout/StudioLayoutSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
@@ -4524,8 +4525,16 @@ export function HubSettings({
                     flexDirection: 'column',
                     overflow: 'hidden',
                     background: 'var(--app-bg)',
+                    position: 'relative',
                   }}
                 >
+                  <SharedFloatingHeader
+                    title={lang === 'es' ? 'Ajustes' : 'Settings'}
+                    hideBack={true}
+                    scrollContainerRef={localScrollRef}
+                    isLight={isLight}
+                  />
+
                   <div
                     ref={localScrollRef}
                     style={{
@@ -4533,6 +4542,7 @@ export function HubSettings({
                       overflowY: 'auto',
                       overflowX: 'hidden',
                       padding: '0',
+                      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
                       paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 80px)',
                       WebkitOverflowScrolling: 'touch',
                     }}
@@ -4549,11 +4559,6 @@ export function HubSettings({
                         paddingRight: 'var(--page-inset-h)',
                       }}
                     >
-                      <StudioHeader
-                        title={lang === 'es' ? 'Ajustes' : 'Settings'}
-                        subtitle={lang === 'es' ? 'Sistema Livex' : 'Livex System'}
-                        disableHorizontalPadding={true}
-                      />
 
                       {/* Minimal Update Card */}
                       {updater.updateAvailable && (

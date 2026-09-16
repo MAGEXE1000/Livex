@@ -118,11 +118,6 @@ export default function VocalexPreferencesPanel() {
         {/* Canonical Vocalex Page Header */}
         <StudioHeader
           title={isSpanish ? 'Preferencias' : 'Preferences'}
-          subtitle={
-            isSpanish
-              ? 'Configuración de afinación, audio y grabación'
-              : 'Configure pitch detection, audio DSP, and recording behaviors.'
-          }
           disableHorizontalPadding={true}
           containerStyle={{ marginBottom: '8px' }}
         />

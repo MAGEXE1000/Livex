@@ -4698,7 +4698,6 @@ export default function DrumEditor() {
                         {!isWebDesktop && (
                           <StudioHeader
                             title="Beats"
-                            subtitle="Your drum songs"
                             disableHorizontalPadding={true}
                           />
                         )}

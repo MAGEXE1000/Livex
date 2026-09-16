@@ -764,7 +764,6 @@ export function DrumPatternsPanel({
         {/* Header Section */}
         <StudioHeader
           title="Patterns"
-          subtitle="Pattern & groove library"
           disableHorizontalPadding={true}
           disableTopInset={isWebDesktop}
           containerStyle={{ alignItems: 'center' }}
