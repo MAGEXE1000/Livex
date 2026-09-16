@@ -3176,6 +3176,34 @@ export default function DrumEditor() {
                       <MetronomeIcon size={16} />
                     </button>
 
+                    {/* Drum Tuner */}
+                    <button
+                      type="button"
+                      onClick={() => setShowDrumTuner(true)}
+                      className="btn-smooth"
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        border: 'none',
+                        background: showDrumTuner ? `${accent.from}1a` : 'transparent',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: showDrumTuner ? accent.from : 'var(--c-text-secondary)',
+                        transition: 'all 150ms',
+                        marginLeft: 4,
+                      }}
+                      title="Afinador de Batería (Drum Tuner)"
+                      aria-label="Drum Tuner"
+                      data-testid="drum-editor-tuner-btn"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                        tune
+                      </span>
+                    </button>
+
                     {showBpmPopover &&
                       createPortal(
                         <>

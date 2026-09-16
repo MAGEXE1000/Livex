@@ -769,39 +769,64 @@ export function DrumPatternsPanel({
           disableTopInset={isWebDesktop}
           containerStyle={{ alignItems: 'center' }}
           actions={
-            <motion.button
-              type="button"
-              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
-              whileTap={{ scale: 0.94 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-purpose="tool-metronome"
-              aria-label={metronomeLabel}
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                style={{ color: accent?.from || '#f59e0b' }}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <motion.button
+                type="button"
+                onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
+                whileTap={{ scale: 0.94 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 25,
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                  color: 'var(--c-text-primary, #111827)',
+                }}
+                data-purpose="tool-metronome"
+                aria-label={metronomeLabel}
               >
-                <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
-                <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
-                <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
-              </svg>
-              <span>{metronomeLabel}</span>
-            </motion.button>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  style={{ color: accent?.from || '#f59e0b' }}
+                >
+                  <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
+                  <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
+                </svg>
+                <span>{metronomeLabel}</span>
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'tuner' })}
+                whileTap={{ scale: 0.94 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 25,
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                  color: 'var(--c-text-primary, #111827)',
+                }}
+                data-purpose="tool-drum-tuner"
+                aria-label="Drum Tuner"
+              >
+                <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: 16 }}>
+                  tune
+                </span>
+                <span>Tuner</span>
+              </motion.button>
+            </div>
           }
         />
 

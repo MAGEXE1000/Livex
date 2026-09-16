@@ -1,12 +1,10 @@
-# Version 4.6.9
+# Version 4.6.10
 
 Release Date: 2026-09-15
 
 ### Added
 
-- Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14", Tom 1 10", Tom 2 12", Piso 16", Bombo 22") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).
-- Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.
-- Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.
-- High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.
-- Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.
-- Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.
+- Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.
+- Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.
+- Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.
+- Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.

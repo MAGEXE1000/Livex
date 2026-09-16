@@ -563,6 +563,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
         title="METRONOME"
         subtitle={activePreset ? activePreset.name : `${SOUND_LABELS[sound]} • ${timeSignature}`}
         onBack={onBack}
+        scrollContainerRef={mainScrollRef}
       />
 
       {/* ── Main Live Performance Scroll Area ────────────────────────────── */}

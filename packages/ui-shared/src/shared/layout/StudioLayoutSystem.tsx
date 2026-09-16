@@ -9,6 +9,7 @@ import { StudioLogo } from '../../features/chordex/icons/ChordexLogo';
 import { StudioHeader } from './StudioHeader';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { useScrollMorph } from './useScrollMorph';
 
 // Helper hook to detect responsive design states (tablets, landscape, foldables)
 export function useLayoutMetrics() {
@@ -164,6 +165,10 @@ export interface SharedFloatingHeaderProps {
   backBtnTestId?: string;
   isLight?: boolean;
   isAmoled?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  enableMorph?: boolean;
+  morphDistance?: number;
+  startOffset?: number;
 }
 
 export function SharedFloatingHeader({
@@ -179,6 +184,10 @@ export function SharedFloatingHeader({
   backBtnTestId,
   isLight: isLightProp,
   isAmoled: isAmoledProp,
+  scrollContainerRef,
+  enableMorph = true,
+  morphDistance = 80,
+  startOffset = 0,
 }: SharedFloatingHeaderProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -191,6 +200,30 @@ export function SharedFloatingHeader({
   );
   const isLight = isLightProp !== undefined ? isLightProp : theme === 'light';
   const isAmoled = isAmoledProp !== undefined ? isAmoledProp : amoledMode;
+
+  const fallbackHeaderRef = React.useRef<HTMLDivElement | null>(null);
+  const fallbackTitleRef = React.useRef<HTMLDivElement | null>(null);
+  const actualHeaderRef = headerBgRef || fallbackHeaderRef;
+  const actualTitleRef = titleRef || fallbackTitleRef;
+
+  const spectralRef = React.useRef<HTMLDivElement | null>(null);
+  const specularRef = React.useRef<HTMLDivElement | null>(null);
+
+  const morphActive = Boolean(enableMorph && scrollContainerRef);
+
+  useScrollMorph({
+    scrollContainerRef: scrollContainerRef || { current: null },
+    headerRef: actualHeaderRef,
+    titleRef: actualTitleRef,
+    spectralRef,
+    specularRef,
+    morphDistance,
+    startOffset,
+    enabled: morphActive,
+    isLight,
+    isAmoled,
+    expandedLeftInset: onBack && !hideBack ? 56 : 20,
+  });
 
   return (
     <div
@@ -209,38 +242,59 @@ export function SharedFloatingHeader({
       }}
     >
       <header
-        ref={headerBgRef}
+        ref={actualHeaderRef}
         data-testid="shared-floating-header"
         style={{
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: '9999px',
+          borderRadius: morphActive ? '0px' : '9999px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 8px',
+          padding: morphActive ? '0 14px' : '0 8px',
           position: 'relative',
-          background: 'var(--surface-topbar-bg)',
-          border: 'var(--surface-topbar-border)',
-          backdropFilter: 'var(--surface-topbar-blur)',
-          WebkitBackdropFilter: 'var(--surface-topbar-blur)',
-          boxShadow: 'var(--surface-topbar-shadow)',
+          background: morphActive ? 'transparent' : 'var(--surface-topbar-bg)',
+          border: morphActive ? '1px solid transparent' : 'var(--surface-topbar-border)',
+          backdropFilter: morphActive ? 'none' : 'var(--surface-topbar-blur)',
+          WebkitBackdropFilter: morphActive ? 'none' : 'var(--surface-topbar-blur)',
+          boxShadow: morphActive ? 'none' : 'var(--surface-topbar-shadow)',
           boxSizing: 'border-box',
           pointerEvents: 'auto',
           userSelect: 'none',
+          willChange: morphActive
+            ? 'transform, border-radius, background-color, backdrop-filter'
+            : undefined,
+          contain: 'paint layout',
         }}
       >
         {/* Subtle Specular Top Curvature Response */}
         <div
+          ref={specularRef}
           style={{
             position: 'absolute',
             inset: 0,
-            borderRadius: '9999px',
+            borderRadius: 'inherit',
             background: isLight
               ? 'radial-gradient(ellipse 80% 65% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)'
               : 'radial-gradient(ellipse 80% 65% at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 100%)',
             pointerEvents: 'none',
+            opacity: morphActive ? 0 : 1,
+          }}
+        />
+
+        {/* Subtle Chromatic Aberration & Spectral Refraction Peak Layer */}
+        <div
+          ref={spectralRef}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'inherit',
+            background:
+              'radial-gradient(ellipse 65% 55% at 24% 45%, rgba(16, 185, 129, 0.32) 0%, rgba(56, 189, 248, 0.20) 34%, rgba(244, 63, 94, 0.12) 65%, transparent 100%)',
+            pointerEvents: 'none',
+            opacity: 0,
+            willChange: 'opacity, transform',
           }}
         />
 
@@ -297,7 +351,7 @@ export function SharedFloatingHeader({
 
         {/* Mathematically Centered Section Title across complete top bar */}
         <div
-          ref={titleRef}
+          ref={actualTitleRef}
           data-testid="shared-floating-header-title"
           style={{
             position: 'absolute',
@@ -312,6 +366,7 @@ export function SharedFloatingHeader({
             paddingRight: toolbarActions ? '104px' : '56px',
             pointerEvents: 'none',
             zIndex: 1,
+            willChange: 'transform',
           }}
         >
           {subtitle ? (
@@ -329,11 +384,11 @@ export function SharedFloatingHeader({
               <span
                 data-testid={titleTestId}
                 style={{
-                  fontSize: '15.5px',
+                  fontSize: morphActive ? 'var(--type-title-size, 21px)' : '15.5px',
                   lineHeight: '1.2',
                   fontWeight: 700,
                   color: 'var(--c-text-primary)',
-                  letterSpacing: '-0.01em',
+                  letterSpacing: morphActive ? 'var(--type-title-tracking, -0.7px)' : '-0.01em',
                   fontFamily:
                     'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                   whiteSpace: 'nowrap',
@@ -368,11 +423,11 @@ export function SharedFloatingHeader({
                 (title === 'Production Document' ? 'production-document-title' : undefined)
               }
               style={{
-                fontSize: 'var(--type-section-size, 19px)',
-                lineHeight: 'var(--type-section-lh, 24px)',
-                fontWeight: 600,
+                fontSize: morphActive ? 'var(--type-title-size, 21px)' : 'var(--type-section-size, 19px)',
+                lineHeight: morphActive ? 'var(--type-title-lh, 28px)' : 'var(--type-section-lh, 24px)',
+                fontWeight: morphActive ? 700 : 600,
                 color: 'var(--c-text-primary)',
-                letterSpacing: 'var(--type-section-tracking, 0.6px)',
+                letterSpacing: morphActive ? 'var(--type-title-tracking, -0.7px)' : 'var(--type-section-tracking, 0.6px)',
                 fontFamily:
                   'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
                 whiteSpace: 'nowrap',
@@ -445,6 +500,8 @@ export function SettingsScaffold({
         toolbarActions={toolbarActions}
         headerBgRef={headerBgRef}
         titleRef={titleRef}
+        scrollContainerRef={scrollRef}
+        enableMorph={true}
       />
 
       {/* Continuous Scrolling View with safe area top and bottom insets */}
