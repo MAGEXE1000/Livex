@@ -19,30 +19,30 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies continuous horizontal compression and symmetric inward edge displacement', () => {
-    const expandedWidth = 358; // Mobile screen width within page insets
-    const compactWidth = 236;  // Refined compact floating pill width (OpenDesign proportion)
-    const totalCompression = expandedWidth - compactWidth; // 122px
+  it('verifies canonical global top bar preserves full surface width across resting and morphed states', () => {
+    const expandedWidth = 342; // Mobile screen width within page insets (e.g. 390 - 48)
+    const compactWidth = expandedWidth; // Canonical global top bar preserves full content column width
+    const totalCompression = expandedWidth - compactWidth; // 0px
 
     const calcWidth = (p: number) => expandedWidth - p * totalCompression;
     const calcInwardEdge = (p: number) => (expandedWidth - calcWidth(p)) / 2;
 
     // At p = 0 (expanded resting state):
-    expect(calcWidth(0)).toBe(358);
+    expect(calcWidth(0)).toBe(342);
     expect(calcInwardEdge(0)).toBe(0);
 
     // At p = 0.5 (halfway):
-    expect(calcWidth(0.5)).toBe(297);
-    expect(calcInwardEdge(0.5)).toBe(30.5); // Left and right edges moved inward symmetrically
+    expect(calcWidth(0.5)).toBe(342);
+    expect(calcInwardEdge(0.5)).toBe(0);
 
     // At p = 1.0 (settled compact pill):
-    expect(calcWidth(1.0)).toBe(236);
-    expect(calcInwardEdge(1.0)).toBe(61); // Left and right edges moved inward by 61px each
+    expect(calcWidth(1.0)).toBe(342);
+    expect(calcInwardEdge(1.0)).toBe(0);
 
-    // Strictly monotonic decreasing width
+    // Strictly constant width preserving full surface presence
     for (let p = 0.05; p <= 1.0; p += 0.05) {
-      expect(calcWidth(p)).toBeLessThan(calcWidth(p - 0.05));
-      expect(calcInwardEdge(p)).toBeGreaterThan(calcInwardEdge(p - 0.05));
+      expect(calcWidth(p)).toBe(expandedWidth);
+      expect(calcInwardEdge(p)).toBe(0);
     }
   });
 

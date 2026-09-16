@@ -6685,7 +6685,7 @@ export default function SongsPanel() {
                   className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
                   style={{
                     paddingTop:
-                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
                   }}
                   data-purpose="mobile-viewport"
                 >

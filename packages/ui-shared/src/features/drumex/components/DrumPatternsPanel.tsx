@@ -819,7 +819,7 @@ export function DrumPatternsPanel({
           style={{
             paddingTop: isWebDesktop
               ? '24px'
-              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
         >
         {/* Filter & Search Controls */}

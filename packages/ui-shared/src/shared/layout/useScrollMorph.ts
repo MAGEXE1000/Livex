@@ -58,7 +58,7 @@ export function useScrollMorph({
     compactHeight: number;
   }>({
     expandedWidth: 360,
-    compactWidth: 236,
+    compactWidth: 360,
     expandedHeight: 60,
     compactHeight: 56,
   });
@@ -97,10 +97,10 @@ export function useScrollMorph({
     ) || headerEl.querySelector('button[aria-label="Go back"]')) as HTMLElement | null;
     const backWidth = backBtn ? 38 : 0;
 
-    // Inspect right action controls if present (direct child or testid to avoid matching internal refraction plane)
-    const actionsEl = (headerEl.querySelector(
+    // Inspect right action controls if present strictly via dedicated testid
+    const actionsEl = headerEl.querySelector(
       '[data-testid="shared-floating-header-actions"]'
-    ) || headerEl.querySelector(':scope > div:last-child')) as HTMLElement | null;
+    ) as HTMLElement | null;
     const actionsWidth = actionsEl && actionsEl.offsetWidth > 0 ? actionsEl.offsetWidth : 0;
 
     // Symmetrically bounded content width ensuring title and any existing controls never collide
@@ -108,14 +108,9 @@ export function useScrollMorph({
     const rightMargin = actionsWidth > 0 ? actionsWidth + 8 : 16;
     const minContentWidth = titleWidth + leftMargin + rightMargin;
 
-    // Compact pill width: contracts gracefully into an elegant floating capsule
-    // On mobile (~360-390px): contracts to ~220px-248px (matching OpenDesign reference)
-    // On tablet (~600px+): contracts into an elegant ~260px-300px floating capsule
-    const targetCompression = Math.max(72, expandedWidth * 0.35);
-    const compactWidth = Math.max(
-      minContentWidth,
-      Math.min(expandedWidth - targetCompression, 252)
-    );
+    // Canonical global top bar: maintains consistent full-surface presence across the
+    // content column in both resting and morphed states, eliminating capsule contraction and title truncation.
+    const compactWidth = expandedWidth;
 
     metricsRef.current = {
       expandedWidth,
