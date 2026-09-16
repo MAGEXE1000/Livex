@@ -4695,13 +4695,6 @@ export default function DrumEditor() {
                         }}
                         className="no-scrollbar flex flex-col w-full h-full"
                       >
-                        {!isWebDesktop && (
-                          <StudioHeader
-                            title="Beats"
-                            disableHorizontalPadding={true}
-                          />
-                        )}
-
                         {/* Desktop Secondary Toolbar */}
                         {isWebDesktop && (
                           <div

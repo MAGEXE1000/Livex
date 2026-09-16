@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { motion } from 'motion/react';
 import {
   type LibraryPattern,
@@ -20,6 +20,7 @@ import { MorphingActionSurface } from '../../../shared/design-system/MorphingAct
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 export interface DrumPatternsPanelProps {
   onPreviewPattern: (lp: LibraryPattern) => void;
@@ -667,6 +668,7 @@ export function DrumPatternsPanel({
   onScroll,
 }: DrumPatternsPanelProps) {
   const t = useT();
+  const patternsScrollRef = useRef<HTMLDivElement>(null);
   const metronomeLabel = (t.drum as any)?.metronome || 'Metronome';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'All' | LibraryCategory | 'My Grooves'>(
@@ -747,87 +749,101 @@ export function DrumPatternsPanel({
 
   return (
     <div
-      onScroll={onScroll}
-      className="no-scrollbar flex flex-col w-full h-full relative app-bg"
       style={{
-        backgroundColor: 'var(--app-bg)',
-        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
-      data-purpose="patterns-view-container"
     >
+      <SharedFloatingHeader
+        title="Patterns"
+        hideBack={true}
+        scrollContainerRef={patternsScrollRef}
+      />
+
       <div
-        className={
-          'w-full flex flex-col pb-28 ' +
-          (isWebDesktop ? 'max-w-5xl mx-auto px-6 pt-6' : 'max-w-md mx-auto px-4')
-        }
+        ref={patternsScrollRef}
+        onScroll={onScroll}
+        className="no-scrollbar flex-1 overflow-y-auto w-full h-full relative app-bg"
+        style={{
+          backgroundColor: 'var(--app-bg)',
+        }}
+        data-purpose="patterns-view-container"
       >
-        {/* Header Section */}
-        <StudioHeader
-          title="Patterns"
-          disableHorizontalPadding={true}
-          disableTopInset={isWebDesktop}
-          containerStyle={{ alignItems: 'center' }}
-          actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <motion.button
-                type="button"
-                onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
-                whileTap={{ scale: 0.94 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 25,
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                data-purpose="tool-metronome"
-                aria-label={metronomeLabel}
-              >
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  style={{ color: accent?.from || '#f59e0b' }}
-                >
-                  <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
-                  <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
-                </svg>
-                <span>{metronomeLabel}</span>
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'tuner' })}
-                whileTap={{ scale: 0.94 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 25,
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                data-purpose="tool-drum-tuner"
-                aria-label="Drum Tuner"
-              >
-                <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: 16 }}>
-                  tune
-                </span>
-                <span>Tuner</span>
-              </motion.button>
-            </div>
+        <div
+          className={
+            'w-full flex flex-col pb-28 ' +
+            (isWebDesktop ? 'max-w-5xl mx-auto px-6 pt-6' : 'max-w-md mx-auto px-4')
           }
-        />
+          style={{
+            paddingTop: isWebDesktop
+              ? '24px'
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+          }}
+        >
+          {/* Quick Action Tools (Metronome & Drum Tuner) */}
+          <div className="flex items-center justify-end gap-2 mb-3" data-purpose="tool-shortcuts-row">
+            <motion.button
+              type="button"
+              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
+              whileTap={{ scale: 0.94 }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 25,
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
+                color: 'var(--c-text-primary, #111827)',
+              }}
+              data-purpose="tool-metronome"
+              aria-label={metronomeLabel}
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                style={{ color: accent?.from || '#f59e0b' }}
+              >
+                <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
+                <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
+                <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
+              </svg>
+              <span>{metronomeLabel}</span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'tuner' })}
+              whileTap={{ scale: 0.94 }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 25,
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
+                color: 'var(--c-text-primary, #111827)',
+              }}
+              data-purpose="tool-drum-tuner"
+              aria-label="Drum Tuner"
+            >
+              <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: 16 }}>
+                tune
+              </span>
+              <span>Tuner</span>
+            </motion.button>
+          </div>
 
         {/* Filter & Search Controls */}
         <div className="pb-2 flex flex-col gap-2">
@@ -1327,6 +1343,7 @@ export function DrumPatternsPanel({
           </p>
         </Dialog>
       )}
+    </div>
     </div>
   );
 }

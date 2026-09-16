@@ -14,6 +14,7 @@ import { VocalexTakesSkeleton } from '../../../shared/loading/StudioSkeleton';
 import { clearTakeCache } from '../services/harmonyEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 import TakeDetailView from './TakeDetailView';
 
@@ -89,6 +90,7 @@ export default function TakesPanel() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const isAmoled = !isLight && Boolean(settings.amoledMode || activeVis.amoledMode);
+  const takesScrollRef = useRef<HTMLDivElement>(null);
 
   const [takes, setTakes] = useState<TakeRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,20 +281,35 @@ export default function TakesPanel() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
-        minHeight: '100%',
-        boxSizing: 'border-box',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ width: '100%', maxWidth: 440 }}>
-        {/* Canonical Vocalex Page Header */}
-        <StudioHeader
-          title={t.vocalex.takesTitle}
-          disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '8px' }}
-        />
+      <SharedFloatingHeader
+        title={t.vocalex.takesTitle}
+        hideBack={true}
+        scrollContainerRef={takesScrollRef}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+
+      <div
+        ref={takesScrollRef}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding:
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px) 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+          flex: 1,
+          width: '100%',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: 440 }}>
 
         {/* Action and Filter Row */}
         <section
@@ -759,6 +776,7 @@ export default function TakesPanel() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   useIsWebDesktop,
   resolveAccent,
   useShallow,
+  NavigationDispatcher,
 } from '@workspace/studio-core';
 import {
   Toggle,
@@ -16,15 +17,18 @@ import {
   SegmentedControl,
 } from '../../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 
 export interface StagePreferencesViewProps {
   isLight?: boolean;
   isAmoled?: boolean;
+  onBack?: () => void;
 }
 
 export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
   isLight: isLightProp,
   isAmoled: isAmoledProp,
+  onBack,
 }) => {
   const settings = useSettingsStore(
     useShallow((s) => ({
@@ -120,7 +124,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
 
   return (
     <div
-      className="flex flex-col h-full overflow-hidden app-bg"
+      className="flex flex-col h-full overflow-hidden app-bg relative"
       style={{
         backgroundColor: isLight
           ? 'var(--app-bg, #f8fafc)'
@@ -129,15 +133,33 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
             : 'var(--app-bg, #0a0a0c)',
       }}
     >
+      <SharedFloatingHeader
+        title={title}
+        onBack={
+          onBack ||
+          (() => {
+            if (NavigationDispatcher.canGoBack()) {
+              NavigationDispatcher.pop();
+            } else {
+              NavigationDispatcher.replace({ app: 'stagex', page: 'editor' });
+            }
+          })
+        }
+        scrollContainerRef={scrollRef}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto no-scrollbar px-0"
         style={{
           paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 80px)',
-          paddingTop: isWebDesktop ? '20px' : '0',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
         }}
       >
-        <StudioHeader title={title} />
 
         <div className="px-6 max-w-3xl mx-auto">
           {/* ── 1. DISPLAY & OVERLAYS ── */}

@@ -21,6 +21,7 @@ import {
 import { IconSongs, IconLibrary, IconSettings } from '../../hub/icons/NavIcons';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { Button } from '../../../shared/design-system/buttons';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
 
@@ -376,19 +377,29 @@ export default function ChordexPreferencesPanel() {
       className="flex flex-col h-full overflow-hidden app-bg"
       style={{ fontFamily: 'var(--studio-font-body)' }}
     >
+      <SharedFloatingHeader
+        title={t.settings.title}
+        onBack={() => {
+          if (NavigationDispatcher.canGoBack()) {
+            NavigationDispatcher.pop();
+          } else {
+            NavigationDispatcher.replace({ app: 'chordex', page: 'songs' });
+          }
+        }}
+        scrollContainerRef={scrollRef}
+      />
+
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto no-scrollbar"
         style={{
           padding: '0 24px',
           paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 90px)',
-          paddingTop: isWebDesktop ? '20px' : '0',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
         }}
       >
-        <StudioHeader
-          title={t.settings.title}
-          disableHorizontalPadding={true}
-        />
 
         {/* ── INSTRUMENT ── */}
         <SectionHeader

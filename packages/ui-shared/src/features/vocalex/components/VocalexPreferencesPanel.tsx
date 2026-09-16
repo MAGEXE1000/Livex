@@ -1,4 +1,4 @@
-import { useT, resolveAccent, useSettingsStore, vocalexRepository, useShallow } from '@workspace/studio-core';
+import { useT, resolveAccent, useSettingsStore, vocalexRepository, useShallow, NavigationDispatcher } from '@workspace/studio-core';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   SettingSection,
@@ -7,9 +7,11 @@ import {
   SegmentedControl,
 } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { clearTakeCache } from '../services/harmonyEngine';
 
-export default function VocalexPreferencesPanel() {
+export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => void } = {}) {
+  const prefsScrollRef = useRef<HTMLDivElement>(null);
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
@@ -107,20 +109,42 @@ export default function VocalexPreferencesPanel() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
-        minHeight: '100%',
-        boxSizing: 'border-box',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ width: '100%', maxWidth: 440 }}>
-        {/* Canonical Vocalex Page Header */}
-        <StudioHeader
-          title={isSpanish ? 'Preferencias' : 'Preferences'}
-          disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '8px' }}
-        />
+      <SharedFloatingHeader
+        title={isSpanish ? 'Preferencias' : 'Preferences'}
+        onBack={
+          onBack ||
+          (() => {
+            if (NavigationDispatcher.canGoBack()) {
+              NavigationDispatcher.pop();
+            } else {
+              NavigationDispatcher.replace({ app: 'vocalex', page: 'pitch' });
+            }
+          })
+        }
+        scrollContainerRef={prefsScrollRef}
+      />
+
+      <div
+        ref={prefsScrollRef}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding:
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px) 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+          flex: 1,
+          width: '100%',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: 440 }}>
 
         {/* Transient Feedback Banner */}
         {feedbackMsg && (
@@ -635,6 +659,7 @@ export default function VocalexPreferencesPanel() {
           </SettingRow>
         </SettingSection>
       </div>
+    </div>
     </div>
   );
 }

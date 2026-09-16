@@ -6668,6 +6668,12 @@ export default function SongsPanel() {
                 overflow: 'hidden',
               }}
             >
+              <SharedFloatingHeader
+                title="Songs"
+                hideBack={true}
+                scrollContainerRef={listScrollRef}
+              />
+
               {/* Main scrollable viewport */}
               <div
                 ref={listScrollRef}
@@ -6676,19 +6682,13 @@ export default function SongsPanel() {
                 data-purpose="songs-screen"
               >
                 <main
-                  className="w-full max-w-md mx-auto pb-32 px-4 pt-3 space-y-4"
+                  className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
                   style={{
                     paddingTop:
-                      'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px))',
+                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
                   }}
                   data-purpose="mobile-viewport"
                 >
-                  {/* Canonical Studio Header */}
-                  <StudioHeader
-                    title="Songs"
-                    disableHorizontalPadding={true}
-                    disableTopInset={true}
-                  />
 
                   {/* Capsule Search Bar */}
                   <div className="relative flex items-center" data-purpose="search-bar">

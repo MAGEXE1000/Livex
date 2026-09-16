@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/studio-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
@@ -7,6 +7,7 @@ import { MorphingActionSurface } from '../../../shared/design-system/MorphingAct
 import { StaggeredReveal } from '../../../shared/animation';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 export interface DrumBeatsPanelProps {
   drumSongs: DrumSong[];
@@ -440,6 +441,7 @@ export function DrumBeatsPanel({
   renderImportForm,
 }: DrumBeatsPanelProps) {
   const t = useT();
+  const beatsScrollRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [kitFilter, setKitFilter] = useState<string>('all');
@@ -548,24 +550,40 @@ export function DrumBeatsPanel({
 
   return (
     <div
-      onScroll={onScroll}
-      className="flex-1 overflow-y-auto no-scrollbar"
-      style={{ background: 'var(--app-bg)' }}
-      data-purpose="beats-screen"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      <main
-        className={
-          'w-full flex flex-col pb-32 space-y-4 ' +
-          (isWebDesktop ? 'max-w-5xl mx-auto px-6 pt-6' : 'max-w-md mx-auto px-4')
-        }
-        data-purpose="mobile-viewport"
+      <SharedFloatingHeader
+        title="Beats"
+        hideBack={true}
+        scrollContainerRef={beatsScrollRef}
+      />
+
+      <div
+        ref={beatsScrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto no-scrollbar"
+        style={{ background: 'var(--app-bg)' }}
+        data-purpose="beats-screen"
       >
-        {/* Canonical Studio Header */}
-        <StudioHeader
-          title="Beats"
-          disableHorizontalPadding={true}
-          disableTopInset={isWebDesktop}
-        />
+        <main
+          className={
+            'w-full flex flex-col pb-32 space-y-4 ' +
+            (isWebDesktop ? 'max-w-5xl mx-auto px-6 pt-6' : 'max-w-md mx-auto px-4')
+          }
+          style={{
+            paddingTop: isWebDesktop
+              ? '24px'
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+          }}
+          data-purpose="mobile-viewport"
+        >
 
         {/* Capsule Search Bar */}
         <div className="relative flex items-center flex-shrink-0" data-purpose="search-box">
@@ -1091,6 +1109,7 @@ export function DrumBeatsPanel({
           </motion.aside>
         )}
       </AnimatePresence>
+    </div>
     </div>
   );
 }

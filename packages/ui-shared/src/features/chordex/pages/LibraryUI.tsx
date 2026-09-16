@@ -1332,72 +1332,6 @@ export function LibraryMainView({ state }: { state: any }) {
         hideBack={true}
         scrollContainerRef={scrollRef}
         isLight={isLight}
-        toolbarActions={
-          <div
-            className="flex items-center p-0.5 rounded-full border shadow-sm"
-            style={{
-              backgroundColor: 'var(--surface-card-bg, #ffffff)',
-              borderColor: 'var(--c-border, #E3E6EB)',
-            }}
-            data-purpose="tool-segmented-control"
-          >
-            {/* Finder Tool */}
-            <motion.button
-              type="button"
-              onClick={(e) => (openFinder ? openFinder(e) : setShowFinder(true))}
-              whileTap={{ scale: 0.94 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="flex-1 min-w-[70px] sm:min-w-[80px] flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
-              style={{
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-purpose="tool-finder"
-            >
-              <span
-                className="material-symbols-rounded text-[16px]"
-                style={{ color: 'var(--c-accent-from, #2563EB)' }}
-              >
-                travel_explore
-              </span>
-              <span>Finder</span>
-            </motion.button>
-
-            {/* Subtle vertical separator */}
-            <div
-              className="w-[1px] h-3 bg-black/10 dark:bg-white/15 self-center flex-shrink-0 mx-0.5"
-              aria-hidden="true"
-            />
-
-            {/* Tuner Tool */}
-            <motion.button
-              type="button"
-              onClick={(e) => (openTuner ? openTuner(e) : setShowTuner?.(true))}
-              whileTap={{ scale: 0.94 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="flex-1 min-w-[70px] sm:min-w-[80px] flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
-              style={{
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-purpose="tool-tuner"
-            >
-              <span
-                className="flex items-center justify-center text-[16px]"
-                style={{ color: 'var(--c-accent-from, #2563EB)' }}
-              >
-                <TuningForkIcon size={15} />
-              </span>
-              <span>Tuner</span>
-            </motion.button>
-          </div>
-        }
       />
 
       <div
@@ -1417,6 +1351,73 @@ export function LibraryMainView({ state }: { state: any }) {
           }}
           data-purpose="mobile-viewport"
         >
+          {/* Quick Action Tool Shortcuts (Finder / Tuner) */}
+          <div className="flex items-center justify-end" data-purpose="tool-shortcuts-row">
+            <div
+              className="flex items-center p-0.5 rounded-full border shadow-sm"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
+              }}
+              data-purpose="tool-segmented-control"
+            >
+              {/* Finder Tool */}
+              <motion.button
+                type="button"
+                onClick={(e) => (openFinder ? openFinder(e) : setShowFinder(true))}
+                whileTap={{ scale: 0.94 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 25,
+                }}
+                className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
+                style={{
+                  color: 'var(--c-text-primary, #111827)',
+                }}
+                data-purpose="tool-finder"
+              >
+                <span
+                  className="material-symbols-rounded text-[17px]"
+                  style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                >
+                  travel_explore
+                </span>
+                <span>Finder</span>
+              </motion.button>
+
+              {/* Subtle vertical separator */}
+              <div
+                className="w-[1px] h-3.5 bg-black/10 dark:bg-white/15 self-center flex-shrink-0 mx-0.5"
+                aria-hidden="true"
+              />
+
+              {/* Tuner Tool */}
+              <motion.button
+                type="button"
+                onClick={(e) => (openTuner ? openTuner(e) : setShowTuner?.(true))}
+                whileTap={{ scale: 0.94 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 25,
+                }}
+                className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
+                style={{
+                  color: 'var(--c-text-primary, #111827)',
+                }}
+                data-purpose="tool-tuner"
+              >
+                <span
+                  className="flex items-center justify-center text-[17px]"
+                  style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                >
+                  <TuningForkIcon size={16} />
+                </span>
+                <span>Tuner</span>
+              </motion.button>
+            </div>
+          </div>
 
           {/* Search Bar */}
           <div className="relative mt-4 flex items-center" data-purpose="search-bar">

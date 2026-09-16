@@ -8,11 +8,13 @@ import {
   useIsWebDesktop,
   resetNav,
   useSettingsStore,
+  NavigationDispatcher,
 } from '@workspace/studio-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useRef, useState, useEffect } from 'react';
 import { Toggle, SectionHeader, SettingRow } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
 import { AnimatedNavigationIcon } from '../../hub/navigation/AnimatedNavigationIcon';
 
@@ -446,8 +448,21 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         height: '100%',
         minHeight: 0,
         fontFamily: 'var(--studio-font-body)',
+        position: 'relative',
       }}
     >
+      <SharedFloatingHeader
+        title={dp.title}
+        onBack={() => {
+          if (NavigationDispatcher.canGoBack()) {
+            NavigationDispatcher.pop();
+          } else {
+            NavigationDispatcher.replace({ app: 'drumex', page: 'beats' });
+          }
+        }}
+        scrollContainerRef={scrollRef}
+      />
+
       <div
         ref={scrollRef}
         onScroll={onScroll}
@@ -458,10 +473,12 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
           overscrollBehaviorY: 'contain',
           touchAction: 'pan-y',
           padding: '0 24px',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
           paddingBottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 120px)',
         }}
       >
-        <StudioHeader title={dp.title} disableHorizontalPadding={true} />
 
         <SectionHeader icon="edit_note" title={dp.editorBehavior} />
         <Card style={{ padding: 0, overflow: 'hidden' }}>

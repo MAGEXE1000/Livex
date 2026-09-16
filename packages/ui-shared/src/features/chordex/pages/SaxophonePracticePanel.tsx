@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   SAX_FINGERINGS,
@@ -7,13 +7,16 @@ import {
   playRecordedSaxophoneSample,
   type SaxophoneVariant,
   type SaxKeyId,
+  NavigationDispatcher,
 } from '@workspace/studio-core';
 import { SaxophoneView } from '../components/SaxophoneView';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 export type SaxPracticeMode = 'free' | 'learn' | 'quiz' | 'playback' | 'scales' | 'exercises';
 
 export const SaxophonePracticePanel: React.FC = () => {
+  const saxScrollRef = useRef<HTMLDivElement>(null);
   const [variant, setVariant] = useState<SaxophoneVariant>('alto');
   const [practiceMode, setPracticeMode] = useState<SaxPracticeMode>('free');
   const [selectedNoteIdx, setSelectedNoteIdx] = useState<number>(6); // F4 default
@@ -112,33 +115,45 @@ export const SaxophonePracticePanel: React.FC = () => {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
         width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
         background: 'var(--c-background)',
-        color: 'var(--c-text-primary)',
-        fontFamily: 'var(--studio-font-display)',
-        overflowY: 'auto',
-        padding: '16px 20px 100px 20px',
-        boxSizing: 'border-box',
       }}
     >
-      {/* Title & Transposition Variant Tabs */}
+      <SharedFloatingHeader
+        title="Saxophone Practice"
+        onBack={() => NavigationDispatcher.pop()}
+        scrollContainerRef={saxScrollRef}
+      />
+
       <div
+        ref={saxScrollRef}
         style={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 16,
+          height: '100%',
+          width: '100%',
+          background: 'var(--c-background)',
+          color: 'var(--c-text-primary)',
+          fontFamily: 'var(--studio-font-display)',
+          overflowY: 'auto',
+          padding:
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px) 20px 100px 20px',
+          boxSizing: 'border-box',
         }}
       >
-        <StudioHeader
-          title="Saxophone Practice"
-          containerStyle={{ alignItems: 'center', textAlign: 'center', paddingBottom: 0 }}
-          titleStyle={{ textAlign: 'center', color: '#f59e0b' }}
-          disableTopInset={true}
-          disableHorizontalPadding={true}
-        />
+        {/* Title & Transposition Variant Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
 
         {/* Sax Variant Selector */}
         <div
@@ -396,6 +411,7 @@ export const SaxophonePracticePanel: React.FC = () => {
           accentColor="#f59e0b"
         />
       </div>
+    </div>
     </div>
   );
 };

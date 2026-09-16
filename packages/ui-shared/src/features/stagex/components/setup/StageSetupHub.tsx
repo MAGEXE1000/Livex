@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/studio-core';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
+import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { useStagexStore, type StagexSubView } from '../../state/useStagexStore';
 import { useHoverCapable } from '../../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
@@ -101,7 +102,7 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
 
   return (
     <div
-      className="flex flex-col h-full overflow-hidden"
+      className="flex flex-col h-full overflow-hidden relative"
       style={{
         background: isLight
           ? 'var(--app-bg, #f4f4f5)'
@@ -110,15 +111,24 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
             : 'var(--app-bg, #09090b)',
       }}
     >
+      <SharedFloatingHeader
+        title={title}
+        hideBack={true}
+        scrollContainerRef={scrollRef}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto no-scrollbar px-0"
         style={{
           paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 88px)',
-          paddingTop: isWebDesktop ? '20px' : '0',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
         }}
       >
-        <StudioHeader title={title} />
 
         <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pb-12">
           <div className="flex flex-col gap-4">
