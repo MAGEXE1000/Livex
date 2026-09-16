@@ -207,15 +207,15 @@ export function LivexLiquidGlassFilter() {
     >
       <filter
         id="livex-liquid-glass-filter"
-        x="-20%"
-        y="-20%"
-        width="140%"
-        height="140%"
+        x="-10%"
+        y="-10%"
+        width="120%"
+        height="120%"
         colorInterpolationFilters="sRGB"
       >
         <feTurbulence
           type="fractalNoise"
-          baseFrequency="0.008"
+          baseFrequency="0.04 0.04"
           numOctaves="2"
           seed="7"
           result="noise"
@@ -223,7 +223,7 @@ export function LivexLiquidGlassFilter() {
         <feDisplacementMap
           in="SourceGraphic"
           in2="noise"
-          scale="10"
+          scale="2"
           xChannelSelector="R"
           yChannelSelector="G"
         />
@@ -247,8 +247,8 @@ export function SharedFloatingHeader({
   isAmoled: isAmoledProp,
   scrollContainerRef,
   enableMorph = true,
-  morphDistance = 74,
-  startOffset = 6,
+  morphDistance = 86,
+  startOffset = 14,
 }: SharedFloatingHeaderProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -335,14 +335,26 @@ export function SharedFloatingHeader({
             backdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
             WebkitBackdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
             boxShadow: 'var(--surface-topbar-shadow)',
-            filter: 'url(#livex-liquid-glass-filter)',
+            overflow: 'hidden',
             pointerEvents: 'none',
             opacity: 0,
             visibility: 'hidden',
-            contain: 'paint layout',
             zIndex: 0,
           }}
         >
+          {/* Internal Optical Refraction Plane (Applies micro-refraction without distorting container border) */}
+          <div
+            className="liquid-glass-refraction"
+            style={{
+              position: 'absolute',
+              inset: '-2px',
+              borderRadius: 'inherit',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%)',
+              filter: 'url(#livex-liquid-glass-filter)',
+              pointerEvents: 'none',
+            }}
+          />
+
           {/* Subtle Specular Top Curvature Sheen Response */}
           <div
             ref={specularRef}
@@ -529,7 +541,7 @@ export function SettingsScaffold({
           WebkitOverflowScrolling: 'touch',
           boxSizing: 'border-box',
           padding: '0',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 96px)',
         }}
         className="no-scrollbar"

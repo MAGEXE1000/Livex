@@ -126,7 +126,7 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
           paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 88px)',
           paddingTop: isWebDesktop
             ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
 

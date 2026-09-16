@@ -575,7 +575,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
           isEditingBpm ? 'overflow-y-hidden overscroll-none' : 'overflow-y-auto'
         }`}
         style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
           paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 84px)',
         }}
       >

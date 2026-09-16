@@ -1065,7 +1065,7 @@ export default function GroovexPlayer() {
           maxWidth: '520px',
           margin: '0 auto',
           padding: '0 16px',
-          paddingTop: isWebDesktop ? 16 : 'calc(env(safe-area-inset-top, 0px) + 78px)',
+          paddingTop: isWebDesktop ? 16 : 'calc(env(safe-area-inset-top, 0px) + 92px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 36px)',
           display: 'flex',
           flexDirection: 'column',

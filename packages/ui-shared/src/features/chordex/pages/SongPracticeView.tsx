@@ -942,7 +942,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             alignItems: 'center',
             justifyContent: 'center',
             gap: 16,
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
           }}
         >
           <div
@@ -966,7 +966,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: 'calc(env(safe-area-inset-top, 0px) + 78px) 20px 120px',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 92px) 20px 120px',
             boxSizing: 'border-box',
             scrollBehavior: 'smooth',
           }}

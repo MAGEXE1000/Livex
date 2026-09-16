@@ -157,7 +157,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
           paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 80px)',
           paddingTop: isWebDesktop
             ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
 

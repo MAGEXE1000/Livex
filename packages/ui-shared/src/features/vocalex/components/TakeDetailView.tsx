@@ -467,7 +467,7 @@ export default function TakeDetailView({
       style={{
         padding:
           '16px 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
         minHeight: '100%',
         boxSizing: 'border-box',
       }}

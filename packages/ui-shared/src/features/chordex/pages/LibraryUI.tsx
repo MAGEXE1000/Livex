@@ -429,7 +429,7 @@ export function LibraryChordDetail({
           style={{
             paddingTop: inModal
               ? '8px'
-              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
           data-purpose="mobile-viewport"
         >
@@ -1054,7 +1054,7 @@ export function CategoryScreenView({
         <div
           className="w-full max-w-md mx-auto pb-28 px-4 space-y-5"
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
           data-purpose="mobile-viewport"
         >
@@ -1347,7 +1347,7 @@ export function LibraryMainView({ state }: { state: any }) {
         <main
           className="w-full max-w-md mx-auto pb-32 px-4 space-y-6"
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
           data-purpose="mobile-viewport"
         >

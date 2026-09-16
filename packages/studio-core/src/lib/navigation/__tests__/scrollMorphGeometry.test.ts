@@ -3,14 +3,14 @@ import { describe, it, expect } from 'vitest';
 describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   it('enforces transparent initial state (p=0) and progressive Liquid Glass emergence on scroll', () => {
     // Glass surface opacity function: 0 at p=0, smoothly ramps to 1.0 at p=1
-    const calcSurfaceAlpha = (p: number) => (p <= 0.001 ? 0 : Math.min(1, Math.pow(p, 0.75)));
+    const calcSurfaceAlpha = (p: number) => (p <= 0.001 ? 0 : Math.min(1, Math.pow(p, 1.1)));
 
     // At top of page (p = 0): Glass surface is completely transparent (no visible container)
     expect(calcSurfaceAlpha(0)).toBe(0);
 
     // As user scrolls down past threshold:
-    expect(calcSurfaceAlpha(0.2)).toBeGreaterThan(0.25);
-    expect(calcSurfaceAlpha(0.5)).toBeGreaterThan(0.55);
+    expect(calcSurfaceAlpha(0.2)).toBeGreaterThan(0.15);
+    expect(calcSurfaceAlpha(0.5)).toBeGreaterThan(0.45);
     expect(calcSurfaceAlpha(1.0)).toBe(1.0);
 
     // Monotonic progression from transparent to fully formed
@@ -67,22 +67,41 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies progressive corner curvature increase from flat/soft (16px) to full capsule (9999px)', () => {
-    const calcRadius = (p: number) => (p >= 0.65 ? 9999 : 16 + p * 40);
+  it('verifies progressive corner curvature increase from soft (18px) to full capsule (24px / 9999px)', () => {
+    const calcRadius = (p: number) => (p >= 0.98 ? 9999 : 18 + p * 6);
 
-    // At p = 0: 16px soft surface
-    expect(calcRadius(0)).toBe(16);
+    // At p = 0: 18px soft surface
+    expect(calcRadius(0)).toBe(18);
 
-    // At p = 0.5: 36px
-    expect(calcRadius(0.5)).toBe(36);
+    // At p = 0.5: 21px
+    expect(calcRadius(0.5)).toBe(21);
 
-    // At p >= 0.65: 9999px (full capsule pill)
-    expect(calcRadius(0.65)).toBe(9999);
+    // At p = 0.9: 23.4px
+    expect(calcRadius(0.9)).toBeCloseTo(23.4, 1);
+
+    // At p >= 0.98: 9999px (full capsule pill)
+    expect(calcRadius(0.98)).toBe(9999);
     expect(calcRadius(1.0)).toBe(9999);
 
     // Monotonic curvature progression
     for (let p = 0.05; p <= 1.0; p += 0.05) {
       expect(calcRadius(p)).toBeGreaterThanOrEqual(calcRadius(p - 0.05));
+    }
+  });
+
+  it('verifies cubic Hermite smoothstep easing for physical material condensation', () => {
+    const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+    expect(smoothstep(0)).toBe(0);
+    expect(smoothstep(0.5)).toBe(0.5);
+    expect(smoothstep(1)).toBe(1);
+
+    // Zero slope at endpoints (soft ease-in and soft ease-out)
+    expect(smoothstep(0.1)).toBeLessThan(0.1); // Ease in: 0.028 < 0.1
+    expect(smoothstep(0.9)).toBeGreaterThan(0.9); // Ease out: 0.972 > 0.9
+
+    for (let t = 0.05; t <= 1.0; t += 0.05) {
+      expect(smoothstep(t)).toBeGreaterThan(smoothstep(t - 0.05));
     }
   });
 

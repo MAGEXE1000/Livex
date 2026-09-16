@@ -781,7 +781,7 @@ export function DrumPatternsPanel({
           style={{
             paddingTop: isWebDesktop
               ? '24px'
-              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
         >
           {/* Quick Action Tools (Metronome & Drum Tuner) */}

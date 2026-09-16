@@ -13,9 +13,9 @@ export interface UseScrollMorphOptions {
   spectralRef?: React.RefObject<HTMLElement | null>;
   /** Optional specular curvature highlight layer */
   specularRef?: React.RefObject<HTMLElement | null>;
-  /** Scroll distance in px over which morph completes (default: 74) */
+  /** Scroll distance in px over which morph completes (default: 86) */
   morphDistance?: number;
-  /** Scroll offset in px before morph begins (default: 6) */
+  /** Scroll offset in px before morph begins (default: 14) */
   startOffset?: number;
   /** Whether the morph is enabled (default: true) */
   enabled?: boolean;
@@ -26,13 +26,23 @@ export interface UseScrollMorphOptions {
   expandedLeftInset?: number;
 }
 
+/**
+ * Calculates Hermite smoothstep normalized morph progress in [0, 1].
+ * Uses cubic S-curve: 3t^2 - 2t^3 with zero slope at endpoints.
+ */
+function calculateMorphProgress(scrollTop: number, startOffset: number, morphDistance: number): number {
+  const y = Math.max(0, scrollTop);
+  const rawT = Math.min(1, Math.max(0, (y - startOffset) / morphDistance));
+  return rawT * rawT * (3 - 2 * rawT);
+}
+
 export function useScrollMorph({
   scrollContainerRef,
   headerRef,
   titleRef,
   glassSurfaceRef,
-  morphDistance = 74,
-  startOffset = 6,
+  morphDistance = 86,
+  startOffset = 14,
   enabled = true,
   isLight = false,
   isAmoled = false,
@@ -113,12 +123,13 @@ export function useScrollMorph({
       const currentTranslateY = -p * 2;
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
-      // ── 4. Geometry: Corner curvature (Progressively more rounded) ─────────
-      // Starts at smooth 16px and tightens to 9999px capsule pill
-      if (p >= 0.65) {
+      // ── 4. Geometry: Corner curvature (Continuous monotonic rounding) ──────
+      // Starts at smooth 18px and smoothly tightens to 24px (exact capsule radius for 48px height)
+      // At p >= 0.98, clamps to 9999px capsule pill with zero visual step jump
+      if (p >= 0.98) {
         headerEl.style.borderRadius = '9999px';
       } else {
-        const currentRadius = 16 + p * 40;
+        const currentRadius = 18 + p * 6;
         headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
       }
 
@@ -146,7 +157,7 @@ export function useScrollMorph({
         } else {
           glassEl.style.visibility = 'visible';
           // Smooth progressive emergence curve
-          const surfaceAlpha = Math.min(1, Math.pow(p, 0.75));
+          const surfaceAlpha = Math.min(1, Math.pow(p, 1.1));
           glassEl.style.opacity = surfaceAlpha.toFixed(3);
         }
       }
@@ -166,8 +177,7 @@ export function useScrollMorph({
     updateMetrics();
 
     // Initial positioning at current scroll position
-    const initialY = Math.max(0, scrollEl.scrollTop);
-    const initialP = Math.min(1, Math.max(0, (initialY - startOffset) / morphDistance));
+    const initialP = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
     lastP.current = initialP;
     applyMorph(initialP);
 
@@ -175,8 +185,7 @@ export function useScrollMorph({
       if (rafId.current === null) {
         rafId.current = requestAnimationFrame(() => {
           rafId.current = null;
-          const y = Math.max(0, scrollEl.scrollTop);
-          const p = Math.min(1, Math.max(0, (y - startOffset) / morphDistance));
+          const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
           if (Math.abs(p - lastP.current) < 0.002) return;
           lastP.current = p;
           applyMorph(p);
@@ -186,8 +195,8 @@ export function useScrollMorph({
 
     const onResize = () => {
       updateMetrics();
-      const y = Math.max(0, scrollEl.scrollTop);
-      const p = Math.min(1, Math.max(0, (y - startOffset) / morphDistance));
+      const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
+      lastP.current = p;
       applyMorph(p);
     };
 

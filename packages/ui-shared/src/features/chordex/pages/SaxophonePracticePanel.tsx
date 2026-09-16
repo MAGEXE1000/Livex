@@ -140,7 +140,7 @@ export const SaxophonePracticePanel: React.FC = () => {
           fontFamily: 'var(--studio-font-display)',
           overflowY: 'auto',
           padding:
-            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px) 20px 100px 20px',
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px) 20px 100px 20px',
           boxSizing: 'border-box',
         }}
       >

@@ -1989,7 +1989,7 @@ function ExportModal({
         style={{
           flex: 1,
           padding: 0,
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
         }}
       >
         {/* Paper stage */}
@@ -4774,7 +4774,7 @@ export default function SongsPanel() {
             <div
               className="flex-none px-4 pt-2 pb-2 flex flex-col gap-2.5 z-30"
               style={{
-                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
                 background: 'var(--app-bg)',
               }}
             >
@@ -6685,7 +6685,7 @@ export default function SongsPanel() {
                   className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
                   style={{
                     paddingTop:
-                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
                   }}
                   data-purpose="mobile-viewport"
                 >

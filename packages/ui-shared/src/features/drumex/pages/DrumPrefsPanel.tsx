@@ -475,7 +475,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
           padding: '0 24px',
           paddingTop: isWebDesktop
             ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 78px)',
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           paddingBottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 120px)',
         }}
       >
