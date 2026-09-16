@@ -1,4 +1,4 @@
-import { Dialog } from '../../../shared/design-system/dialogs';
+import { Dialog, activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import {
   subscribeSyncStatus,
   getSyncStatus,
@@ -14,6 +14,7 @@ import {
   useT,
   useChordStore,
   useBackHandler,
+  BackDispatcher,
   useIsWebDesktop,
   logActivity,
   getActivityEmoji,
@@ -26,7 +27,7 @@ import {
   useShallow,
 } from '@workspace/studio-core';
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Button, StatefulButton } from '../../../shared/design-system/StudioDesignSystem';
 import { createPortal } from 'react-dom';
 import AppSpinner from '../../../shared/loading/AppSpinner';
@@ -1640,10 +1641,12 @@ function SheetHeader({
   return (
     <div
       style={{
-        padding: '6px 22px 4px',
+        padding: '14px 22px 10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexShrink: 0,
+        borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
       }}
     >
       <p
@@ -1653,6 +1656,7 @@ function SheetHeader({
           fontSize: 18,
           color: titleColor ?? 'var(--c-text-primary)',
           margin: 0,
+          letterSpacing: '-0.02em',
         }}
       >
         {title}
@@ -1660,19 +1664,274 @@ function SheetHeader({
       <button
         onClick={onClose}
         style={{
-          color: 'var(--c-text-secondary)',
-          background: 'none',
-          border: 'none',
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           cursor: 'pointer',
-          padding: 4,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--c-text-secondary)',
+          transition: 'all 150ms ease',
         }}
         aria-label="close"
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
           close
         </span>
       </button>
     </div>
+  );
+}
+
+// ── Spatial Morph Modal Component for Profile Detail Navigation ──────────────
+interface ProfileMorphModalProps {
+  id?: string;
+  isOpen: boolean;
+  title?: string;
+  titleColor?: string;
+  onClose: () => void;
+  originRect?: DOMRect | null;
+  children: React.ReactNode;
+  isWebDesktop?: boolean;
+  isAmoled?: boolean;
+  isLight?: boolean;
+  maxWidth?: number | string;
+}
+
+function ProfileMorphModal({
+  id = 'profile-sheet',
+  isOpen,
+  title,
+  titleColor,
+  onClose,
+  originRect,
+  children,
+  isWebDesktop = false,
+  isAmoled = false,
+  isLight = false,
+  maxWidth,
+}: ProfileMorphModalProps) {
+  const prefersReduced = useAppReducedMotion();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const overlayId = id || Math.random().toString();
+    activeOverlaysRegistry.register('sheet', overlayId);
+    const unregisterBack = BackDispatcher.register('modal', () => {
+      onClose();
+      return true;
+    });
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      activeOverlaysRegistry.unregister('sheet', overlayId);
+      unregisterBack();
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, id, onClose]);
+
+  if (typeof document === 'undefined') return null;
+
+  const winW = typeof window !== 'undefined' ? window.innerWidth : 390;
+  const winH = typeof window !== 'undefined' ? window.innerHeight : 844;
+
+  let initialX = 0;
+  let initialY = isWebDesktop ? 20 : 60;
+  let initialScale = isWebDesktop ? 0.95 : 0.92;
+
+  if (originRect && !prefersReduced) {
+    const originCenterX = originRect.left + originRect.width / 2;
+    const originCenterY = originRect.top + originRect.height / 2;
+    const targetCenterX = winW / 2;
+    const targetCenterY = isWebDesktop ? winH / 2 : winH * 0.55;
+
+    initialX = Math.round((originCenterX - targetCenterX) * 0.45);
+    initialY = Math.round((originCenterY - targetCenterY) * 0.45);
+    initialScale = Math.max(0.45, Math.min(0.88, originRect.width / (isWebDesktop ? 540 : winW)));
+  }
+
+  const scrimBg = isAmoled
+    ? 'rgba(0, 0, 0, 0.88)'
+    : isLight
+      ? 'rgba(0, 0, 0, 0.42)'
+      : 'rgba(0, 0, 0, 0.68)';
+
+  const cardBg = isAmoled
+    ? '#000000'
+    : isLight
+      ? '#ffffff'
+      : 'var(--c-background, #141419)';
+
+  const cardBorder = isAmoled
+    ? '1px solid rgba(255, 255, 255, 0.14)'
+    : isLight
+      ? '1px solid rgba(0, 0, 0, 0.08)'
+      : '1px solid rgba(255, 255, 255, 0.10)';
+
+  const cardShadow = isAmoled
+    ? '0 24px 60px rgba(0, 0, 0, 0.98), 0 4px 16px rgba(0, 0, 0, 0.85)'
+    : isLight
+      ? '0 24px 60px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.06)'
+      : '0 24px 60px rgba(0, 0, 0, 0.65), 0 8px 24px rgba(0, 0, 0, 0.35)';
+
+  const resolvedMaxWidth = maxWidth ?? (isWebDesktop ? '540px' : '640px');
+
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100005,
+            display: 'flex',
+            alignItems: isWebDesktop ? 'center' : 'flex-end',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Backdrop Scrim */}
+          <motion.div
+            key="profile-modal-scrim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: scrimBg,
+              backdropFilter: isAmoled ? 'none' : 'blur(16px)',
+              WebkitBackdropFilter: isAmoled ? 'none' : 'blur(16px)',
+            }}
+          />
+
+          {/* Morphing Modal Panel */}
+          <motion.div
+            key="profile-modal-panel"
+            initial={
+              prefersReduced
+                ? { opacity: 0 }
+                : {
+                    opacity: 0.4,
+                    scale: initialScale,
+                    x: initialX,
+                    y: initialY,
+                    borderRadius: 24,
+                  }
+            }
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
+              y: 0,
+              borderRadius: isWebDesktop ? 24 : '24px 24px 0 0',
+            }}
+            exit={
+              prefersReduced
+                ? { opacity: 0 }
+                : {
+                    opacity: 0,
+                    scale: initialScale * 0.95,
+                    x: initialX * 0.7,
+                    y: initialY * 0.7,
+                    transition: { duration: 0.2, ease: [0.32, 0, 0.67, 0] },
+                  }
+            }
+            transition={
+              prefersReduced
+                ? { duration: 0.15 }
+                : { type: 'spring', damping: 30, stiffness: 350, mass: 0.8 }
+            }
+            className="profile-morph-panel"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: resolvedMaxWidth,
+              maxHeight: isWebDesktop ? '88vh' : '92vh',
+              background: cardBg,
+              border: cardBorder,
+              boxShadow: cardShadow,
+              backdropFilter: isAmoled ? 'none' : 'blur(20px)',
+              WebkitBackdropFilter: isAmoled ? 'none' : 'blur(20px)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              zIndex: 1,
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Top Specular Rim */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 16,
+                right: 16,
+                height: '1px',
+                background:
+                  'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent)',
+                pointerEvents: 'none',
+                zIndex: 10,
+              }}
+            />
+
+            {/* Mobile Drag Pill */}
+            {!isWebDesktop && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  padding: '10px 0 4px',
+                  flexShrink: 0,
+                  cursor: 'grab',
+                }}
+                onClick={onClose}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 4.5,
+                    borderRadius: 9999,
+                    background: 'rgba(255, 255, 255, 0.22)',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Header */}
+            {title && (
+              <SheetHeader
+                title={title}
+                titleColor={titleColor}
+                onClose={onClose}
+              />
+            )}
+
+            {/* Scrollable Content Container */}
+            <div
+              className="no-scrollbar"
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehavior: 'contain',
+                paddingBottom: isWebDesktop ? 20 : 'max(28px, env(safe-area-inset-bottom, 24px))',
+              }}
+            >
+              {children}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -1737,7 +1996,6 @@ export function AccountSettingsPage({
   const [customPhoto, setCustomPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sheet, setSheet] = useState<AccountActiveSheet>('none');
-  const [sheetClosing, setSheetClosing] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -2123,22 +2381,45 @@ export function AccountSettingsPage({
           verificationSent: 'Verification email sent',
         };
 
-  function openSheet(s: AccountActiveSheet) {
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
+  const settingsTheme = useSettingsStore((s) => s.settings.theme);
+  const settingsAmoled = useSettingsStore((s) => s.settings.amoledMode);
+  const hubAmoled = useSettingsStore((s) => s.settings.perApp?.hub?.amoledMode);
+  const isLight =
+    settingsTheme === 'light' ||
+    (settingsTheme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled =
+    !isLight &&
+    (Boolean(settingsAmoled) ||
+      Boolean(hubAmoled) ||
+      (typeof document !== 'undefined' &&
+        document.documentElement.classList.contains('amoled')));
+
+  function openSheet(
+    s: AccountActiveSheet,
+    target?: React.MouseEvent | React.TouchEvent | HTMLElement | DOMRect | null
+  ) {
+    if (target && 'currentTarget' in target && (target.currentTarget as HTMLElement)?.getBoundingClientRect) {
+      setOriginRect((target.currentTarget as HTMLElement).getBoundingClientRect());
+    } else if (target && 'getBoundingClientRect' in (target as HTMLElement)) {
+      setOriginRect((target as HTMLElement).getBoundingClientRect());
+    } else if (target && 'left' in (target as any) && 'top' in (target as any)) {
+      setOriginRect(target as DOMRect);
+    } else {
+      setOriginRect(null);
+    }
     setErr(null);
     setEmailInput('');
     setNameInput(user?.displayName ?? '');
-    setSheetClosing(false);
     setSheet(s);
   }
 
   function closeSheet() {
-    setSheetClosing(true);
-    setTimeout(() => {
-      setSheet('none');
-      setSheetClosing(false);
-      setEmailInput('');
-      setErr(null);
-    }, 280);
+    setSheet('none');
+    setEmailInput('');
+    setErr(null);
   }
 
   function showToast(msg: string) {
@@ -2197,11 +2478,12 @@ export function AccountSettingsPage({
     setBusy(true);
     setErr(null);
     try {
-      await authRepository.updateDisplayName(nameInput);
+      await authRepository.updateDisplayName(nameInput.trim());
       const { syncWriteProfileMain } = await import('@workspace/studio-core');
-      await syncWriteProfileMain(nameInput, user.photoURL, avatarIcon);
-      closeSheet();
+      await syncWriteProfileMain(nameInput.trim(), user.photoURL, avatarIcon);
+      setUser({ ...user, displayName: nameInput.trim() });
       showToast(L.nameSaved);
+      closeSheet();
     } catch (e) {
       setErr(prettyErr(e, lang));
     } finally {
@@ -2215,8 +2497,8 @@ export function AccountSettingsPage({
     setErr(null);
     try {
       await authRepository.sendPasswordReset(user.email);
-      closeSheet();
       showToast(L.passwordResetSent);
+      closeSheet();
     } catch (e) {
       setErr(prettyErr(e, lang));
     } finally {
@@ -2230,8 +2512,8 @@ export function AccountSettingsPage({
     setErr(null);
     try {
       await authRepository.sendVerificationEmail();
-      closeSheet();
       showToast(L.verificationSent);
+      closeSheet();
     } catch (e) {
       setErr(prettyErr(e, lang));
     } finally {
@@ -2240,9 +2522,22 @@ export function AccountSettingsPage({
   }
 
   async function handlePhotoFile(file: File) {
-    if (!user?.uid || !file.type.startsWith('image/')) return;
+    if (!user) return;
+    if (!file.type.startsWith('image/')) {
+      showToast(lang === 'es' ? 'Solo se permiten imágenes' : 'Images only');
+      return;
+    }
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      showToast(
+        lang === 'es'
+          ? `La imagen supera los ${MAX_MB} MB`
+          : `Image exceeds ${MAX_MB} MB limit`
+      );
+      return;
+    }
+
     setBusy(true);
-    setErr(null);
     try {
       const blob = await compressAndResizeImage(file);
 
@@ -2288,62 +2583,6 @@ export function AccountSettingsPage({
   const canConfirmEmail =
     !busy && !!emailToConfirm && emailInput.trim().toLowerCase() === emailToConfirm;
 
-  const sheetAnim = sheetClosing
-    ? isWebDesktop
-      ? 'modal-scale-out 250ms ease both'
-      : 'sheet-down 300ms cubic-bezier(0.16, 1, 0.3, 1) both'
-    : isWebDesktop
-      ? 'modal-scale-in 250ms ease both'
-      : 'sheet-up 400ms cubic-bezier(0.16, 1, 0.3, 1) both';
-  const overlayAnim = sheetClosing ? 'fade-out 280ms ease both' : 'sync-fade-in 200ms ease both';
-  const overlayStyle: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 100005,
-    animation: overlayAnim,
-    display: isWebDesktop ? 'flex' : 'block',
-    alignItems: isWebDesktop ? 'center' : 'stretch',
-    justifyContent: isWebDesktop ? 'center' : 'stretch',
-  };
-  const backdropStyle: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    backdropFilter: 'blur(6px)',
-    WebkitBackdropFilter: 'blur(6px)',
-  };
-  const sheetStyle: React.CSSProperties = isWebDesktop
-    ? {
-        position: 'relative',
-        background: 'var(--c-background)',
-        borderRadius: '16px',
-        boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
-        border: '1px solid rgba(128, 128, 128, 0.15)',
-        width: '460px',
-        maxWidth: '90vw',
-        maxHeight: '85vh',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        animation: sheetAnim,
-      }
-    : {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'var(--c-background)',
-        borderRadius: '1.5rem 1.5rem 0 0',
-        padding: '0 0 max(28px, env(safe-area-inset-bottom)) 0',
-        animation: sheetAnim,
-      };
-  const dragPill = !isWebDesktop ? (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-      <div
-        style={{ width: 36, height: 4, borderRadius: 9999, background: 'rgba(128,128,128,0.3)' }}
-      />
-    </div>
-  ) : null;
 
   function SettingsRow({
     icon,
@@ -2355,7 +2594,7 @@ export function AccountSettingsPage({
     icon: string;
     label: string;
     badge?: string;
-    onPress: () => void;
+    onPress: (e: React.MouseEvent<HTMLButtonElement>) => void;
     last?: boolean;
   }) {
     return (
@@ -2369,9 +2608,10 @@ export function AccountSettingsPage({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
+          gap: 16,
           width: '100%',
-          padding: '14px 16px',
+          minHeight: 58,
+          padding: '16px 18px',
           background: 'transparent',
           border: 'none',
           outline: 'none',
@@ -2384,8 +2624,8 @@ export function AccountSettingsPage({
       >
         <div
           style={{
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             borderRadius: 12,
             background: 'rgba(255, 255, 255, 0.05)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2399,7 +2639,7 @@ export function AccountSettingsPage({
         >
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 20, color: 'var(--c-text-primary)', opacity: 0.85 }}
+            style={{ fontSize: 22, color: 'var(--c-text-primary)', opacity: 0.85 }}
           >
             {icon}
           </span>
@@ -2409,7 +2649,7 @@ export function AccountSettingsPage({
             flex: 1,
             fontFamily: 'var(--studio-font-body)',
             fontWeight: 750,
-            fontSize: 14.5,
+            fontSize: 15.5,
             letterSpacing: '-0.015em',
             color: 'var(--c-text-primary)',
           }}
@@ -2421,12 +2661,12 @@ export function AccountSettingsPage({
             style={{
               fontFamily: 'var(--studio-font-body)',
               fontWeight: 800,
-              fontSize: 9.5,
+              fontSize: 11,
               color: 'var(--c-text-secondary)',
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid rgba(255, 255, 255, 0.10)',
-              borderRadius: 6,
-              padding: '2px 8px',
+              borderRadius: 8,
+              padding: '3px 9px',
               textTransform: 'uppercase' as const,
               letterSpacing: '0.05em',
             }}
@@ -2436,8 +2676,8 @@ export function AccountSettingsPage({
         )}
         <div
           style={{
-            width: 24,
-            height: 24,
+            width: 26,
+            height: 26,
             borderRadius: '50%',
             background: 'rgba(255, 255, 255, 0.04)',
             display: 'flex',
@@ -2447,7 +2687,7 @@ export function AccountSettingsPage({
         >
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 15, color: 'var(--c-text-secondary)', opacity: 0.6, flexShrink: 0 }}
+            style={{ fontSize: 16, color: 'var(--c-text-secondary)', opacity: 0.6, flexShrink: 0 }}
           >
             chevron_right
           </span>
@@ -2506,9 +2746,11 @@ export function AccountSettingsPage({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '20px 20px 24px',
+          padding: '12px 0 24px',
+          width: '100%',
           animation: 'hub-row-fade 350ms ease both',
           position: 'relative',
+          boxSizing: 'border-box',
         }}
       >
         {/* Avatar — tap to open Personal Information */}
@@ -2517,14 +2759,14 @@ export function AccountSettingsPage({
           whileTap={prefersReduced ? undefined : { scale: 0.94 }}
           whileHover={canHover && !prefersReduced ? { scale: 1.03 } : undefined}
           transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
-          onClick={() => openSheet('personal-info')}
+          onClick={(e) => openSheet('personal-info', e)}
           aria-label="Edit profile"
           style={{
-            width: 88,
-            height: 88,
+            width: 100,
+            height: 100,
             borderRadius: '50%',
             padding: 0,
-            border: `3px solid rgba(255, 255, 255, 0.20)`,
+            border: `3px solid rgba(255, 255, 255, 0.22)`,
             cursor: 'pointer',
             background:
               effectivePhoto && !avatarIcon
@@ -2535,9 +2777,9 @@ export function AccountSettingsPage({
             justifyContent: 'center',
             color: '#fff',
             fontWeight: 850,
-            fontSize: 34,
+            fontSize: 38,
             overflow: 'visible',
-            boxShadow: `0 8px 32px ${accent.to}55, inset 0 1px 1.5px rgba(255, 255, 255, 0.40)`,
+            boxShadow: `0 10px 36px ${accent.to}55, inset 0 1px 1.5px rgba(255, 255, 255, 0.40)`,
             position: 'relative',
           }}
         >
@@ -2553,7 +2795,7 @@ export function AccountSettingsPage({
             }}
           >
             {avatarIcon ? (
-              <span className="material-symbols-outlined" style={{ fontSize: 44, color: '#fff' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 52, color: '#fff' }}>
                 {avatarIcon}
               </span>
             ) : effectivePhoto ? (
@@ -2577,11 +2819,11 @@ export function AccountSettingsPage({
               position: 'absolute',
               bottom: 0,
               right: 0,
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
               background: 'var(--c-surface-container, #1e1e24)',
-              border: '2px solid rgba(255, 255, 255, 0.25)',
+              border: '2px solid rgba(255, 255, 255, 0.30)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -2589,7 +2831,7 @@ export function AccountSettingsPage({
               color: '#ffffff',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               edit
             </span>
           </div>
@@ -2601,7 +2843,7 @@ export function AccountSettingsPage({
             style={{
               fontFamily: 'var(--studio-font-body)',
               fontWeight: 850,
-              fontSize: 22,
+              fontSize: 24,
               color: 'var(--c-text-primary)',
               margin: 0,
               letterSpacing: '-0.03em',
@@ -2613,9 +2855,9 @@ export function AccountSettingsPage({
             <p
               style={{
                 fontFamily: 'Inter, sans-serif',
-                fontSize: 13,
+                fontSize: 14,
                 color: 'var(--c-text-secondary)',
-                margin: '3px 0 0',
+                margin: '4px 0 0',
                 fontWeight: 500,
                 opacity: 0.85,
               }}
@@ -2624,7 +2866,7 @@ export function AccountSettingsPage({
             </p>
           )}
           {/* Dynamic Role Badge */}
-          <div style={{ marginTop: 8 }}>{renderRoleBadge(profile?.role, lang, accent)}</div>
+          <div style={{ marginTop: 10 }}>{renderRoleBadge(profile?.role, lang, accent)}</div>
         </div>
 
         {/* Bento Grid */}
@@ -2632,8 +2874,8 @@ export function AccountSettingsPage({
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 12,
-            marginTop: 20,
+            gap: 14,
+            marginTop: 22,
             width: '100%',
             boxSizing: 'border-box',
           }}
@@ -2646,11 +2888,11 @@ export function AccountSettingsPage({
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 20,
-              padding: '16px 16px',
+              padding: '18px 18px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: 96,
+              minHeight: 104,
               backdropFilter: 'var(--surface-float-blur)',
               WebkitBackdropFilter: 'var(--surface-float-blur)',
               boxShadow:
@@ -2662,9 +2904,9 @@ export function AccountSettingsPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
                   background: 'rgba(244, 63, 94, 0.15)',
                   border: '1px solid rgba(244, 63, 94, 0.30)',
                   display: 'flex',
@@ -2675,7 +2917,7 @@ export function AccountSettingsPage({
               >
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: '#f43f5e', fontVariationSettings: "'FILL' 1" }}
+                  style={{ fontSize: 20, color: '#f43f5e', fontVariationSettings: "'FILL' 1" }}
                 >
                   favorite
                 </span>
@@ -2683,7 +2925,7 @@ export function AccountSettingsPage({
               <span
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: 'var(--c-text-tertiary, #808080)',
                   textTransform: 'uppercase',
@@ -2697,9 +2939,9 @@ export function AccountSettingsPage({
               style={{
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 850,
-                fontSize: 28,
+                fontSize: 32,
                 color: 'var(--c-text-primary)',
-                margin: '12px 0 0',
+                margin: '14px 0 0',
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
               }}
@@ -2716,11 +2958,11 @@ export function AccountSettingsPage({
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 20,
-              padding: '16px 16px',
+              padding: '18px 18px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: 96,
+              minHeight: 104,
               backdropFilter: 'var(--surface-float-blur)',
               WebkitBackdropFilter: 'var(--surface-float-blur)',
               boxShadow:
@@ -2732,9 +2974,9 @@ export function AccountSettingsPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
                   background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid rgba(16, 185, 129, 0.30)',
                   display: 'flex',
@@ -2745,7 +2987,7 @@ export function AccountSettingsPage({
               >
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: '#10b981', fontVariationSettings: "'FILL' 1" }}
+                  style={{ fontSize: 20, color: '#10b981', fontVariationSettings: "'FILL' 1" }}
                 >
                   queue_music
                 </span>
@@ -2753,7 +2995,7 @@ export function AccountSettingsPage({
               <span
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: 'var(--c-text-tertiary, #808080)',
                   textTransform: 'uppercase',
@@ -2767,9 +3009,9 @@ export function AccountSettingsPage({
               style={{
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 850,
-                fontSize: 28,
+                fontSize: 32,
                 color: 'var(--c-text-primary)',
-                margin: '12px 0 0',
+                margin: '14px 0 0',
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
               }}
@@ -2786,11 +3028,11 @@ export function AccountSettingsPage({
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 20,
-              padding: '16px 16px',
+              padding: '18px 18px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: 96,
+              minHeight: 104,
               backdropFilter: 'var(--surface-float-blur)',
               WebkitBackdropFilter: 'var(--surface-float-blur)',
               boxShadow:
@@ -2802,9 +3044,9 @@ export function AccountSettingsPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
                   background: 'rgba(245, 158, 11, 0.15)',
                   border: '1px solid rgba(245, 158, 11, 0.30)',
                   display: 'flex',
@@ -2815,7 +3057,7 @@ export function AccountSettingsPage({
               >
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: '#f59e0b', fontVariationSettings: "'FILL' 1" }}
+                  style={{ fontSize: 20, color: '#f59e0b', fontVariationSettings: "'FILL' 1" }}
                 >
                   grid_view
                 </span>
@@ -2823,7 +3065,7 @@ export function AccountSettingsPage({
               <span
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: 'var(--c-text-tertiary, #808080)',
                   textTransform: 'uppercase',
@@ -2837,9 +3079,9 @@ export function AccountSettingsPage({
               style={{
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 850,
-                fontSize: 28,
+                fontSize: 32,
                 color: 'var(--c-text-primary)',
-                margin: '12px 0 0',
+                margin: '14px 0 0',
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
               }}
@@ -2864,11 +3106,11 @@ export function AccountSettingsPage({
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 20,
-              padding: '16px 16px',
+              padding: '18px 18px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: 96,
+              minHeight: 104,
               backdropFilter: 'var(--surface-float-blur)',
               WebkitBackdropFilter: 'var(--surface-float-blur)',
               boxShadow:
@@ -2892,9 +3134,9 @@ export function AccountSettingsPage({
             >
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
                   background: `${
                     sync.phase === 'error'
                       ? '#ff6b6b'
@@ -2915,12 +3157,12 @@ export function AccountSettingsPage({
                 }}
               >
                 {isSyncing ? (
-                  <Loader variant="comet" size={18} />
+                  <Loader variant="comet" size={20} />
                 ) : (
                   <span
                     className={`material-symbols-outlined sync-icon ${justSynced ? 'sync-pop' : ''}`}
                     style={{
-                      fontSize: 18,
+                      fontSize: 20,
                       color:
                         sync.phase === 'error'
                           ? '#ff6b6b'
@@ -2941,7 +3183,7 @@ export function AccountSettingsPage({
               <span
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: 'var(--c-text-tertiary, #808080)',
                   textTransform: 'uppercase',
@@ -2956,7 +3198,7 @@ export function AccountSettingsPage({
                 style={{
                   fontFamily: 'var(--studio-font-body)',
                   fontWeight: 800,
-                  fontSize: 13,
+                  fontSize: 14,
                   color: 'var(--c-text-primary)',
                   margin: 0,
                   lineHeight: 1.2,
@@ -2981,7 +3223,7 @@ export function AccountSettingsPage({
               <p
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 11,
+                  fontSize: 12,
                   color: 'var(--c-text-secondary)',
                   margin: '3px 0 0',
                   lineHeight: 1.2,
@@ -3004,7 +3246,7 @@ export function AccountSettingsPage({
               background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 20,
-              padding: '18px 20px',
+              padding: '20px 20px',
               display: 'flex',
               flexDirection: 'column',
               gap: 12,
@@ -3032,9 +3274,9 @@ export function AccountSettingsPage({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                   display: 'flex',
@@ -3045,7 +3287,7 @@ export function AccountSettingsPage({
               >
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: 'var(--c-text-primary)', opacity: 0.8 }}
+                  style={{ fontSize: 20, color: 'var(--c-text-primary)', opacity: 0.8 }}
                 >
                   history
                 </span>
@@ -3054,7 +3296,7 @@ export function AccountSettingsPage({
                 style={{
                   fontFamily: 'var(--studio-font-body)',
                   fontWeight: 800,
-                  fontSize: 14.5,
+                  fontSize: 16,
                   color: 'var(--c-text-primary)',
                   margin: 0,
                   letterSpacing: '-0.015em',
@@ -3070,13 +3312,13 @@ export function AccountSettingsPage({
                   const emoji = getActivityEmoji(event.type, event.subtitle);
                   return (
                     <div key={event.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{emoji}</span>
+                      <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{emoji}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p
                           style={{
                             fontFamily: 'var(--studio-font-body)',
                             fontWeight: 750,
-                            fontSize: 13,
+                            fontSize: 14,
                             color: 'var(--c-text-primary)',
                             margin: 0,
                             overflow: 'hidden',
@@ -3090,7 +3332,7 @@ export function AccountSettingsPage({
                           <p
                             style={{
                               fontFamily: 'Inter, sans-serif',
-                              fontSize: 11.5,
+                              fontSize: 12.5,
                               color: 'var(--c-text-secondary)',
                               margin: '2px 0 0',
                               opacity: 0.8,
@@ -3103,7 +3345,7 @@ export function AccountSettingsPage({
                       <span
                         style={{
                           fontFamily: 'Inter, sans-serif',
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: 600,
                           color: 'var(--c-text-secondary)',
                           whiteSpace: 'nowrap',
@@ -3130,7 +3372,7 @@ export function AccountSettingsPage({
                 <p
                   style={{
                     fontFamily: 'Inter, sans-serif',
-                    fontSize: 12.5,
+                    fontSize: 13,
                     color: 'var(--c-text-secondary)',
                     margin: 0,
                     opacity: 0.7,
@@ -3145,17 +3387,17 @@ export function AccountSettingsPage({
       </div>
 
       {/* ── Main settings list ── */}
-      <div style={{ padding: '0 16px' }}>
+      <div style={{ padding: 0, width: '100%', boxSizing: 'border-box' }}>
         {/* Section label */}
         <p
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: 800,
-            fontSize: '9.5px',
+            fontSize: '12px',
             color: 'var(--c-text-tertiary, #808080)',
-            letterSpacing: '0.14em',
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            margin: '20px 0 10px 4px',
+            margin: '24px 0 10px 4px',
           }}
         >
           {lang === 'es' ? 'Preferencias y cuenta' : 'Preferences & Account'}
@@ -3166,12 +3408,12 @@ export function AccountSettingsPage({
           style={{
             background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 20,
+            borderRadius: 22,
             overflow: 'hidden',
             position: 'relative',
             backdropFilter: 'var(--surface-float-blur)',
             WebkitBackdropFilter: 'var(--surface-float-blur)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 8px 28px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
           }}
         >
           {/* Top Specular Rim */}
@@ -3190,18 +3432,18 @@ export function AccountSettingsPage({
           <SettingsRow
             icon="person"
             label={lang === 'es' ? 'Información personal' : 'Personal Information'}
-            onPress={() => openSheet('personal-info')}
+            onPress={(e) => openSheet('personal-info', e)}
           />
           <SettingsRow
             icon="lock"
             label={lang === 'es' ? 'Seguridad y acceso' : 'Security & Login'}
-            onPress={() => openSheet('security-login')}
+            onPress={(e) => openSheet('security-login', e)}
           />
           <SettingsRow
             icon="workspace_premium"
             label={lang === 'es' ? 'Suscripción y facturación' : 'Subscription & Billing'}
             badge={lang === 'es' ? 'Próximamente' : 'Coming soon'}
-            onPress={() => openSheet('subscription')}
+            onPress={(e) => openSheet('subscription', e)}
           />
           <SettingsRow
             icon="devices"
@@ -3213,26 +3455,26 @@ export function AccountSettingsPage({
                   : 'Coming soon'
                 : undefined
             }
-            onPress={() => openSheet('devices-sessions')}
+            onPress={(e) => openSheet('devices-sessions', e)}
           />
           <SettingsRow
             icon="shield"
             label={lang === 'es' ? 'Privacidad y datos' : 'Privacy & Data'}
-            onPress={() => openSheet('privacy-data')}
+            onPress={(e) => openSheet('privacy-data', e)}
             last
           />
         </div>
 
         {/* Developer / Account Details Card */}
         {user && (
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 26 }}>
             <p
               style={{
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 800,
-                fontSize: '9.5px',
+                fontSize: '12px',
                 color: 'var(--c-text-tertiary, #808080)',
-                letterSpacing: '0.14em',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
                 margin: '0 0 10px 4px',
               }}
@@ -3243,8 +3485,8 @@ export function AccountSettingsPage({
               style={{
                 background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 20,
-                padding: '18px 20px',
+                borderRadius: 22,
+                padding: '20px 20px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 16,
@@ -3253,7 +3495,7 @@ export function AccountSettingsPage({
                 backdropFilter: 'var(--surface-float-blur)',
                 WebkitBackdropFilter: 'var(--surface-float-blur)',
                 boxShadow:
-                  '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                  '0 8px 28px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
               }}
             >
               <div
@@ -3273,8 +3515,8 @@ export function AccountSettingsPage({
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
-                    fontSize: 10,
-                    fontWeight: 700,
+                    fontSize: 11.5,
+                    fontWeight: 750,
                     color: 'var(--c-text-tertiary, #808080)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
@@ -3286,11 +3528,11 @@ export function AccountSettingsPage({
                   <code
                     style={{
                       fontFamily: 'monospace',
-                      fontSize: 12,
+                      fontSize: 13,
                       color: 'var(--c-text-primary)',
                       background: 'rgba(0, 0, 0, 0.30)',
-                      padding: '6px 10px',
-                      borderRadius: 8,
+                      padding: '8px 12px',
+                      borderRadius: 10,
                       wordBreak: 'break-all',
                       flex: 1,
                       border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -3313,7 +3555,8 @@ export function AccountSettingsPage({
                     style={{
                       background: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.08)',
-                      padding: 8,
+                      width: 38,
+                      height: 38,
                       borderRadius: 10,
                       cursor: 'pointer',
                       color: accent.from,
@@ -3321,10 +3564,11 @@ export function AccountSettingsPage({
                       alignItems: 'center',
                       justifyContent: 'center',
                       boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                      flexShrink: 0,
                     }}
                     title={lang === 'es' ? 'Copiar UID' : 'Copy UID'}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 19 }}>
                       content_copy
                     </span>
                   </motion.button>
@@ -3339,8 +3583,8 @@ export function AccountSettingsPage({
                   <span
                     style={{
                       fontFamily: 'Inter, sans-serif',
-                      fontSize: 10,
-                      fontWeight: 700,
+                      fontSize: 11.5,
+                      fontWeight: 750,
                       color: 'var(--c-text-tertiary, #808080)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.08em',
@@ -3351,7 +3595,7 @@ export function AccountSettingsPage({
                   <span
                     style={{
                       fontFamily: 'var(--studio-font-body)',
-                      fontSize: 14,
+                      fontSize: 15,
                       color: 'var(--c-text-primary)',
                       fontWeight: 750,
                     }}
@@ -3367,8 +3611,8 @@ export function AccountSettingsPage({
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
-                    fontSize: 10,
-                    fontWeight: 700,
+                    fontSize: 11.5,
+                    fontWeight: 750,
                     color: 'var(--c-text-tertiary, #808080)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
@@ -3390,7 +3634,7 @@ export function AccountSettingsPage({
                   <span
                     style={{
                       fontFamily: 'Inter, sans-serif',
-                      fontSize: 13,
+                      fontSize: 14,
                       color: 'var(--c-text-primary)',
                       fontWeight: 500,
                       textTransform: 'capitalize',
@@ -3412,15 +3656,15 @@ export function AccountSettingsPage({
         {/* Sign Out — prominent red glass button */}
         <motion.button
           type="button"
-          onClick={() => openSheet('signout')}
+          onClick={(e) => openSheet('signout', e)}
           whileTap={prefersReduced ? undefined : { scale: 0.975 }}
           whileHover={canHover && !prefersReduced ? { scale: 1.01 } : undefined}
           transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
           style={{
             width: '100%',
-            marginTop: 24,
-            padding: '14px 0',
-            borderRadius: 16,
+            marginTop: 26,
+            padding: '16px 0',
+            borderRadius: 18,
             background: 'rgba(239, 68, 68, 0.08)',
             border: '1px solid rgba(239, 68, 68, 0.22)',
             display: 'flex',
@@ -3430,13 +3674,13 @@ export function AccountSettingsPage({
             color: '#ef4444',
             fontFamily: 'var(--studio-font-body)',
             fontWeight: 800,
-            fontSize: 14.5,
+            fontSize: 15.5,
             cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent',
             boxShadow: '0 4px 16px rgba(239, 68, 68, 0.12)',
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 19 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
             logout
           </span>
           {L.signOut}
@@ -3468,1114 +3712,1085 @@ export function AccountSettingsPage({
         )}
 
       {/* ── Sign out sheet ── */}
-      {sheet === 'signout' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.signOutTitle} onClose={closeSheet} />
+      <ProfileMorphModal
+        id="profile-sheet-signout"
+        isOpen={sheet === 'signout'}
+        title={L.signOutTitle}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <p
+          style={{
+            fontFamily: 'Inter',
+            fontSize: 14,
+            color: 'var(--c-text-secondary)',
+            lineHeight: 1.5,
+            margin: '12px 22px 20px',
+          }}
+        >
+          {L.signOutBody}
+        </p>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doSignOut}
+            style={{ ...dangerOutlineBtn(), flex: 1, padding: '13px 0' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              logout
+            </span>
+            {L.signOut}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Edit display name sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-editname"
+        isOpen={sheet === 'editname'}
+        title={L.editNameTitle}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <div
+          style={{
+            padding: '12px 22px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <input
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') doSaveName();
+            }}
+            placeholder={L.namePlaceholder}
+            autoFocus
+            style={inputStyle(accent)}
+          />
+          {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            disabled={busy}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doSaveName}
+            disabled={busy}
+            style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
+          >
+            {busy ? (
+              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
+                progress_activity
+              </span>
+            ) : (
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                check
+              </span>
+            )}
+            {L.saveBtn}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Change password sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-password"
+        isOpen={sheet === 'password'}
+        title={L.passwordTitle}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <div style={{ padding: '12px 22px 20px' }}>
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 14,
+              color: 'var(--c-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {L.passwordBody(user.email ?? '')}
+          </p>
+          {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: '10px 0 0' }}>{err}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            disabled={busy}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doSendPasswordReset}
+            disabled={busy}
+            style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
+          >
+            {busy ? (
+              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
+                progress_activity
+              </span>
+            ) : (
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                send
+              </span>
+            )}
+            {L.sendBtn}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Verify email sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-verifyemail"
+        isOpen={sheet === 'verifyemail'}
+        title={L.verifyTitle}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <div style={{ padding: '12px 22px 20px' }}>
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 14,
+              color: 'var(--c-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {L.verifyBody(user.email ?? '')}
+          </p>
+          {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: '10px 0 0' }}>{err}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            disabled={busy}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doSendVerification}
+            disabled={busy}
+            style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
+          >
+            {busy ? (
+              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
+                progress_activity
+              </span>
+            ) : (
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                mark_email_read
+              </span>
+            )}
+            {L.sendVerifyBtn}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Disable account sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-disable"
+        isOpen={sheet === 'disable'}
+        title={L.disableTitle}
+        titleColor="#f59e0b"
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <div
+          style={{
+            padding: '12px 22px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 14,
+              color: 'var(--c-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {L.disableBody}
+          </p>
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 12.5,
+              color: 'var(--c-text-secondary)',
+              margin: 0,
+            }}
+          >
+            {L.disableTypeEmail}:{' '}
+            <strong style={{ color: 'var(--c-text-primary)' }}>{user.email}</strong>
+          </p>
+          <input
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            placeholder={user.email ?? ''}
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              ...inputStyle(accent),
+              borderColor: canConfirmEmail ? '#f59e0b66' : 'rgba(245,158,11,0.2)',
+            }}
+          />
+          {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            disabled={busy}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doDisable}
+            disabled={!canConfirmEmail}
+            style={{
+              flex: 1,
+              padding: '13px 0',
+              borderRadius: 12,
+              fontSize: 13.5,
+              fontWeight: 700,
+              background: canConfirmEmail
+                ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                : 'rgba(245,158,11,0.12)',
+              border: '1px solid rgba(245,158,11,0.35)',
+              color: canConfirmEmail ? '#fff' : '#f59e0b',
+              fontFamily: 'var(--studio-font-body)',
+              cursor: canConfirmEmail ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              opacity: canConfirmEmail ? 1 : 0.5,
+            }}
+          >
+            {busy ? (
+              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
+                progress_activity
+              </span>
+            ) : (
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                block
+              </span>
+            )}
+            {L.disableBtn}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Delete account sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-delete"
+        isOpen={sheet === 'delete'}
+        title={L.deleteTitle}
+        titleColor="#ff6b6b"
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth="460px"
+      >
+        <div
+          style={{
+            padding: '12px 22px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 14,
+              color: 'var(--c-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {L.deleteBody}
+          </p>
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 12.5,
+              color: 'var(--c-text-secondary)',
+              margin: 0,
+            }}
+          >
+            {L.deleteTypeEmail}:{' '}
+            <strong style={{ color: 'var(--c-text-primary)' }}>{user.email}</strong>
+          </p>
+          <input
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            placeholder={user.email ?? ''}
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              ...inputStyle(accent),
+              borderColor: canConfirmEmail ? '#ff6b6b66' : 'rgba(255,107,107,0.2)',
+            }}
+          />
+          {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
+          <button
+            onClick={closeSheet}
+            disabled={busy}
+            style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
+          >
+            {L.cancel}
+          </button>
+          <button
+            onClick={doDelete}
+            disabled={!canConfirmEmail}
+            style={{
+              ...dangerSolidBtn(),
+              flex: 1,
+              padding: '13px 0',
+              opacity: canConfirmEmail ? 1 : 0.45,
+              cursor: canConfirmEmail ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {busy ? (
+              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
+                progress_activity
+              </span>
+            ) : (
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                delete_forever
+              </span>
+            )}
+            {L.deleteBtn}
+          </button>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Personal Information sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-personal-info"
+        isOpen={sheet === 'personal-info'}
+        title={lang === 'es' ? 'Información personal' : 'Personal Information'}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+      >
+        {/* Avatar */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '16px 22px 20px',
+            borderBottom: '1px solid rgba(128,128,128,0.08)',
+          }}
+        >
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background:
+                effectivePhoto && !avatarIcon
+                  ? 'transparent'
+                  : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 28,
+              overflow: 'hidden',
+              border: `2px solid ${accent.from}40`,
+            }}
+          >
+            {avatarIcon ? (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 38, color: '#fff' }}
+              >
+                {avatarIcon}
+              </span>
+            ) : effectivePhoto ? (
+              <img
+                src={effectivePhoto}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              marginTop: 14,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            <button
+              onClick={async () => {
+                if (Capacitor.isNativePlatform()) {
+                  try {
+                    const { AppInstaller } = await import('@workspace/studio-core');
+                    await AppInstaller.requestPermissions();
+                  } catch (e) {
+                    console.warn('[Profile] Permissions request failed:', e);
+                  }
+                }
+                fileInputRef.current?.click();
+              }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                background: `${accent.from}18`,
+                border: `1px solid ${accent.from}30`,
+                color: accent.from,
+                fontFamily: 'var(--studio-font-body)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                photo_camera
+              </span>
+              {lang === 'es' ? 'Subir foto' : 'Upload photo'}
+            </button>
+            <button
+              onClick={() => {
+                setPickerClosing(false);
+                setPickerOpen(true);
+                closeSheet();
+              }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                background: 'rgba(128,128,128,0.10)',
+                border: '1px solid rgba(128,128,128,0.18)',
+                color: 'var(--c-text-primary)',
+                fontFamily: 'var(--studio-font-body)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                emoji_emotions
+              </span>
+              {lang === 'es' ? 'Elegir icono' : 'Choose icon'}
+            </button>
+            {(customPhoto || avatarIcon) && (
+              <button
+                onClick={() => {
+                  clearCustomPhoto();
+                  selectAvatarIcon(user, null);
+                }}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: 10,
+                  background: 'rgba(255,107,107,0.08)',
+                  border: '1px solid rgba(255,107,107,0.25)',
+                  color: '#ff6b6b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Reset photo"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  close
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+        {/* Display name row */}
+        <button
+          onClick={(e) => openSheet('editname', e)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            padding: '15px 22px',
+            background: 'none',
+            border: 'none',
+            borderBottom: '1px solid rgba(128,128,128,0.07)',
+            cursor: 'pointer',
+            textAlign: 'left' as const,
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <p
+              style={{
+                fontFamily: 'Inter',
+                fontSize: 11,
+                color: 'var(--c-text-secondary)',
+                margin: 0,
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.06em',
+              }}
+            >
+              {lang === 'es' ? 'Nombre' : 'Display name'}
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 600,
+                fontSize: 15,
+                color: 'var(--c-text-primary)',
+                margin: '3px 0 0',
+              }}
+            >
+              {user.displayName || '—'}
+            </p>
+          </div>
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 18, color: 'var(--c-text-secondary)', opacity: 0.35 }}
+          >
+            chevron_right
+          </span>
+        </button>
+        {/* Email row */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '15px 22px' }}>
+          <div style={{ flex: 1 }}>
+            <p
+              style={{
+                fontFamily: 'Inter',
+                fontSize: 11,
+                color: 'var(--c-text-secondary)',
+                margin: 0,
+                textTransform: 'uppercase' as const,
+                letterSpacing: '0.06em',
+              }}
+            >
+              Email
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 600,
+                fontSize: 15,
+                color: 'var(--c-text-primary)',
+                margin: '3px 0 0',
+              }}
+            >
+              {user.email || '—'}
+            </p>
+          </div>
+          <span
+            className="material-symbols-outlined"
+            style={{
+              fontSize: 16,
+              color: emailVerified ? '#10b981' : '#f59e0b',
+              fontVariationSettings: "'FILL' 1",
+            }}
+          >
+            {emailVerified ? 'check_circle' : 'warning'}
+          </span>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Security & Login sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-security-login"
+        isOpen={sheet === 'security-login'}
+        title={lang === 'es' ? 'Seguridad y acceso' : 'Security & Login'}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+      >
+        <div style={{ padding: '6px 22px 0' }}>
+          <p
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 11,
+              color: 'var(--c-text-secondary)',
+              margin: '0 0 8px',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.06em',
+            }}
+          >
+            {lang === 'es' ? 'Método de inicio de sesión' : 'Sign-in method'}
+          </p>
+          <div
+            style={{
+              background: 'rgba(128,128,128,0.06)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontSize: 18,
+                color: 'var(--c-text-primary)',
+                opacity: 0.7,
+                fontVariationSettings: "'FILL' 1",
+              }}
+            >
+              {isGoogleUser ? 'account_circle' : 'mail'}
+            </span>
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: 'var(--c-text-primary)',
+                  margin: 0,
+                }}
+              >
+                {isGoogleUser ? 'Google' : L.emailPass}
+              </p>
               <p
                 style={{
                   fontFamily: 'Inter',
-                  fontSize: 13,
+                  fontSize: 11.5,
                   color: 'var(--c-text-secondary)',
-                  lineHeight: 1.5,
-                  margin: '8px 22px 20px',
+                  margin: '2px 0 0',
                 }}
               >
-                {L.signOutBody}
+                {user.email}
               </p>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doSignOut}
-                  style={{ ...dangerOutlineBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                    logout
-                  </span>
-                  {L.signOut}
-                </button>
-              </div>
             </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Edit display name sheet ── */}
-      {sheet === 'editname' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.editNameTitle} onClose={closeSheet} />
-              <div
-                style={{
-                  padding: '8px 22px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
-                <input
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') doSaveName();
-                  }}
-                  placeholder={L.namePlaceholder}
-                  autoFocus
-                  style={inputStyle(accent)}
-                />
-                {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
-              </div>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  disabled={busy}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doSaveName}
-                  disabled={busy}
-                  style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
-                >
-                  {busy ? (
-                    <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      check
-                    </span>
-                  )}
-                  {L.saveBtn}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Change password sheet ── */}
-      {sheet === 'password' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.passwordTitle} onClose={closeSheet} />
-              <div style={{ padding: '8px 22px 20px' }}>
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: 'var(--c-text-secondary)',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {L.passwordBody(user.email ?? '')}
-                </p>
-                {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: '10px 0 0' }}>{err}</p>}
-              </div>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  disabled={busy}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doSendPasswordReset}
-                  disabled={busy}
-                  style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
-                >
-                  {busy ? (
-                    <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      send
-                    </span>
-                  )}
-                  {L.sendBtn}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Verify email sheet ── */}
-      {sheet === 'verifyemail' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.verifyTitle} onClose={closeSheet} />
-              <div style={{ padding: '8px 22px 20px' }}>
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: 'var(--c-text-secondary)',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {L.verifyBody(user.email ?? '')}
-                </p>
-                {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: '10px 0 0' }}>{err}</p>}
-              </div>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  disabled={busy}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doSendVerification}
-                  disabled={busy}
-                  style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
-                >
-                  {busy ? (
-                    <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      mark_email_read
-                    </span>
-                  )}
-                  {L.sendVerifyBtn}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Disable account sheet ── */}
-      {sheet === 'disable' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.disableTitle} onClose={closeSheet} titleColor="#f59e0b" />
-              <div
-                style={{
-                  padding: '8px 22px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: 'var(--c-text-secondary)',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {L.disableBody}
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: 'var(--c-text-secondary)',
-                    margin: 0,
-                  }}
-                >
-                  {L.disableTypeEmail}:{' '}
-                  <strong style={{ color: 'var(--c-text-primary)' }}>{user.email}</strong>
-                </p>
-                <input
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder={user.email ?? ''}
-                  autoComplete="off"
-                  spellCheck={false}
-                  style={{
-                    ...inputStyle(accent),
-                    borderColor: canConfirmEmail ? '#f59e0b66' : 'rgba(245,158,11,0.2)',
-                  }}
-                />
-                {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
-              </div>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  disabled={busy}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doDisable}
-                  disabled={!canConfirmEmail}
-                  style={{
-                    flex: 1,
-                    padding: '13px 0',
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    background: canConfirmEmail
-                      ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                      : 'rgba(245,158,11,0.12)',
-                    border: '1px solid rgba(245,158,11,0.35)',
-                    color: canConfirmEmail ? '#fff' : '#f59e0b',
-                    fontFamily: 'var(--studio-font-body)',
-                    cursor: canConfirmEmail ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    opacity: canConfirmEmail ? 1 : 0.5,
-                  }}
-                >
-                  {busy ? (
-                    <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      block
-                    </span>
-                  )}
-                  {L.disableBtn}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Delete account sheet ── */}
-      {sheet === 'delete' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader title={L.deleteTitle} onClose={closeSheet} titleColor="#ff6b6b" />
-              <div
-                style={{
-                  padding: '8px 22px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: 'var(--c-text-secondary)',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {L.deleteBody}
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: 'var(--c-text-secondary)',
-                    margin: 0,
-                  }}
-                >
-                  {L.deleteTypeEmail}:{' '}
-                  <strong style={{ color: 'var(--c-text-primary)' }}>{user.email}</strong>
-                </p>
-                <input
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder={user.email ?? ''}
-                  autoComplete="off"
-                  spellCheck={false}
-                  style={{
-                    ...inputStyle(accent),
-                    borderColor: canConfirmEmail ? '#ff6b6b66' : 'rgba(255,107,107,0.2)',
-                  }}
-                />
-                {err && <p style={{ fontSize: 11, color: '#ff6b6b', margin: 0 }}>{err}</p>}
-              </div>
-              <div style={{ display: 'flex', gap: 10, padding: '0 16px' }}>
-                <button
-                  onClick={closeSheet}
-                  disabled={busy}
-                  style={{ ...secondaryBtn(), flex: 1, padding: '13px 0' }}
-                >
-                  {L.cancel}
-                </button>
-                <button
-                  onClick={doDelete}
-                  disabled={!canConfirmEmail}
-                  style={{
-                    ...dangerSolidBtn(),
-                    flex: 1,
-                    padding: '13px 0',
-                    opacity: canConfirmEmail ? 1 : 0.45,
-                    cursor: canConfirmEmail ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  {busy ? (
-                    <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      delete_forever
-                    </span>
-                  )}
-                  {L.deleteBtn}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Personal Information sheet ── */}
-      {sheet === 'personal-info' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader
-                title={lang === 'es' ? 'Información personal' : 'Personal Information'}
-                onClose={closeSheet}
-              />
-              {/* Avatar */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '16px 22px 20px',
-                  borderBottom: '1px solid rgba(128,128,128,0.08)',
-                }}
-              >
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: '50%',
-                    background:
-                      effectivePhoto && !avatarIcon
-                        ? 'transparent'
-                        : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: 28,
-                    overflow: 'hidden',
-                    border: `2px solid ${accent.from}40`,
-                  }}
-                >
-                  {avatarIcon ? (
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: 38, color: '#fff' }}
-                    >
-                      {avatarIcon}
-                    </span>
-                  ) : effectivePhoto ? (
-                    <img
-                      src={effectivePhoto}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span>{initial}</span>
-                  )}
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                    marginTop: 14,
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <button
-                    onClick={async () => {
-                      if (Capacitor.isNativePlatform()) {
-                        try {
-                          const { AppInstaller } = await import('@workspace/studio-core');
-                          await AppInstaller.requestPermissions();
-                        } catch (e) {
-                          console.warn('[Profile] Permissions request failed:', e);
-                        }
-                      }
-                      fileInputRef.current?.click();
-                    }}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: `${accent.from}18`,
-                      border: `1px solid ${accent.from}30`,
-                      color: accent.from,
-                      fontFamily: 'var(--studio-font-body)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                      photo_camera
-                    </span>
-                    {lang === 'es' ? 'Subir foto' : 'Upload photo'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPickerClosing(false);
-                      setPickerOpen(true);
-                      closeSheet();
-                    }}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: 'rgba(128,128,128,0.10)',
-                      border: '1px solid rgba(128,128,128,0.18)',
-                      color: 'var(--c-text-primary)',
-                      fontFamily: 'var(--studio-font-body)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                      emoji_emotions
-                    </span>
-                    {lang === 'es' ? 'Elegir icono' : 'Choose icon'}
-                  </button>
-                  {(customPhoto || avatarIcon) && (
-                    <button
-                      onClick={() => {
-                        clearCustomPhoto();
-                        selectAvatarIcon(user, null);
-                      }}
-                      style={{
-                        padding: '8px 10px',
-                        borderRadius: 10,
-                        background: 'rgba(255,107,107,0.08)',
-                        border: '1px solid rgba(255,107,107,0.25)',
-                        color: '#ff6b6b',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      aria-label="Reset photo"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        close
-                      </span>
-                    </button>
-                  )}
-                </div>
-              </div>
-              {/* Display name row */}
-              <button
-                onClick={() => {
-                  closeSheet();
-                  setTimeout(() => openSheet('editname'), 310);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  padding: '15px 22px',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(128,128,128,0.07)',
-                  cursor: 'pointer',
-                  textAlign: 'left' as const,
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: 'var(--c-text-secondary)',
-                      margin: 0,
-                      textTransform: 'uppercase' as const,
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {lang === 'es' ? 'Nombre' : 'Display name'}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      color: 'var(--c-text-primary)',
-                      margin: '3px 0 0',
-                    }}
-                  >
-                    {user.displayName || '—'}
-                  </p>
-                </div>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: 'var(--c-text-secondary)', opacity: 0.35 }}
-                >
-                  chevron_right
-                </span>
-              </button>
-              {/* Email row */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '15px 22px' }}>
-                <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: 'var(--c-text-secondary)',
-                      margin: 0,
-                      textTransform: 'uppercase' as const,
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    Email
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      color: 'var(--c-text-primary)',
-                      margin: '3px 0 0',
-                    }}
-                  >
-                    {user.email || '—'}
-                  </p>
-                </div>
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 16,
-                    color: emailVerified ? '#10b981' : '#f59e0b',
-                    fontVariationSettings: "'FILL' 1",
-                  }}
-                >
-                  {emailVerified ? 'check_circle' : 'warning'}
-                </span>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Security & Login sheet ── */}
-      {sheet === 'security-login' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader
-                title={lang === 'es' ? 'Seguridad y acceso' : 'Security & Login'}
-                onClose={closeSheet}
-              />
-              <div style={{ padding: '6px 22px 0' }}>
-                <p
-                  style={{
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    color: 'var(--c-text-secondary)',
-                    margin: '0 0 8px',
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: '0.06em',
-                  }}
-                >
-                  {lang === 'es' ? 'Método de inicio de sesión' : 'Sign-in method'}
-                </p>
-                <div
-                  style={{
-                    background: 'rgba(128,128,128,0.06)',
-                    borderRadius: 12,
-                    padding: '12px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 18,
-                      color: 'var(--c-text-primary)',
-                      opacity: 0.7,
-                      fontVariationSettings: "'FILL' 1",
-                    }}
-                  >
-                    {isGoogleUser ? 'account_circle' : 'mail'}
-                  </span>
-                  <div>
-                    <p
-                      style={{
-                        fontFamily: 'var(--studio-font-body)',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        color: 'var(--c-text-primary)',
-                        margin: 0,
-                      }}
-                    >
-                      {isGoogleUser ? 'Google' : L.emailPass}
-                    </p>
-                    <p
-                      style={{
-                        fontFamily: 'Inter',
-                        fontSize: 11.5,
-                        color: 'var(--c-text-secondary)',
-                        margin: '2px 0 0',
-                      }}
-                    >
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding: '10px 22px 0' }}>
-                <div
-                  style={{
-                    background: 'rgba(128,128,128,0.06)',
-                    borderRadius: 12,
-                    padding: '12px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 16,
-                      color: emailVerified ? '#10b981' : '#f59e0b',
-                      fontVariationSettings: "'FILL' 1",
-                    }}
-                  >
-                    {emailVerified ? 'check_circle' : 'warning'}
-                  </span>
-                  <p
-                    style={{
-                      flex: 1,
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 600,
-                      fontSize: 14,
-                      color: 'var(--c-text-primary)',
-                      margin: 0,
-                    }}
-                  >
-                    {emailVerified
-                      ? lang === 'es'
-                        ? 'Email verificado'
-                        : 'Email verified'
-                      : lang === 'es'
-                        ? 'Email sin verificar'
-                        : 'Email not verified'}
-                  </p>
-                  {!emailVerified && isEmailUser && (
-                    <button
-                      onClick={() => {
-                        closeSheet();
-                        setTimeout(() => openSheet('verifyemail'), 310);
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: `${accent.from}18`,
-                        border: `1px solid ${accent.from}30`,
-                        color: accent.from,
-                        fontFamily: 'var(--studio-font-body)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {lang === 'es' ? 'Verificar' : 'Verify'}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {isEmailUser && (
-                <button
-                  onClick={() => {
-                    closeSheet();
-                    setTimeout(() => openSheet('password'), 310);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    width: '100%',
-                    padding: '15px 22px',
-                    background: 'none',
-                    border: 'none',
-                    borderTop: '1px solid rgba(128,128,128,0.07)',
-                    marginTop: 10,
-                    cursor: 'pointer',
-                    textAlign: 'left' as const,
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 18, color: 'var(--c-text-primary)', opacity: 0.65 }}
-                  >
-                    lock_reset
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <p
-                      style={{
-                        fontFamily: 'var(--studio-font-body)',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: 'var(--c-text-primary)',
-                        margin: 0,
-                      }}
-                    >
-                      {L.changePassword}
-                    </p>
-                    <p
-                      style={{
-                        fontFamily: 'Inter',
-                        fontSize: 11.5,
-                        color: 'var(--c-text-secondary)',
-                        margin: '2px 0 0',
-                      }}
-                    >
-                      {L.changePasswordDesc}
-                    </p>
-                  </div>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 18, color: 'var(--c-text-secondary)', opacity: 0.35 }}
-                  >
-                    chevron_right
-                  </span>
-                </button>
-              )}
-              {/* ── Account actions pill ── */}
-              <div style={{ padding: '14px 22px 28px' }}>
-                <p
-                  style={{
-                    fontFamily: 'var(--studio-font-body)',
-                    fontWeight: 700,
-                    fontSize: 11,
-                    color: 'var(--c-text-secondary)',
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase' as const,
-                    margin: '0 0 8px',
-                  }}
-                >
-                  {lang === 'es' ? 'Zona de riesgo' : 'Danger zone'}
-                </p>
-                <div
-                  style={{
-                    background: 'rgba(128,128,128,0.06)',
-                    borderRadius: 14,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Disable account */}
-                  <button
-                    onClick={() => {
-                      closeSheet();
-                      setTimeout(() => openSheet('disable'), 310);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 13,
-                      width: '100%',
-                      padding: '13px 16px',
-                      background: 'none',
-                      border: 'none',
-                      borderBottom: '1px solid rgba(128,128,128,0.08)',
-                      cursor: 'pointer',
-                      textAlign: 'left' as const,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{
-                        fontSize: 20,
-                        color: 'var(--c-text-secondary)',
-                        opacity: 0.65,
-                        flexShrink: 0,
-                        width: 22,
-                        textAlign: 'center' as const,
-                      }}
-                    >
-                      block
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <p
-                        style={{
-                          fontFamily: 'var(--studio-font-body)',
-                          fontWeight: 600,
-                          fontSize: 14.5,
-                          color: 'var(--c-text-primary)',
-                          margin: 0,
-                        }}
-                      >
-                        {L.disableAccount}
-                      </p>
-                      <p
-                        style={{
-                          fontFamily: 'Inter',
-                          fontSize: 11.5,
-                          color: 'var(--c-text-secondary)',
-                          margin: '2px 0 0',
-                        }}
-                      >
-                        {L.disableAccountDesc}
-                      </p>
-                    </div>
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: 17, color: 'var(--c-text-secondary)', opacity: 0.3 }}
-                    >
-                      chevron_right
-                    </span>
-                  </button>
-                  {/* Delete account */}
-                  <button
-                    onClick={() => {
-                      closeSheet();
-                      setTimeout(() => openSheet('delete'), 310);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 13,
-                      width: '100%',
-                      padding: '13px 16px',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left' as const,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{
-                        fontSize: 20,
-                        color: '#ff6b6b',
-                        opacity: 0.8,
-                        flexShrink: 0,
-                        width: 22,
-                        textAlign: 'center' as const,
-                      }}
-                    >
-                      delete_forever
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <p
-                        style={{
-                          fontFamily: 'var(--studio-font-body)',
-                          fontWeight: 600,
-                          fontSize: 14.5,
-                          color: '#ff6b6b',
-                          margin: 0,
-                        }}
-                      >
-                        {L.deleteAccount}
-                      </p>
-                      <p
-                        style={{
-                          fontFamily: 'Inter',
-                          fontSize: 11.5,
-                          color: 'var(--c-text-secondary)',
-                          margin: '2px 0 0',
-                        }}
-                      >
-                        {lang === 'es'
-                          ? 'Eliminar permanentemente tu cuenta'
-                          : 'Permanently remove your account'}
-                      </p>
-                    </div>
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: 17, color: 'var(--c-text-secondary)', opacity: 0.3 }}
-                    >
-                      chevron_right
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Subscription & Billing sheet ── */}
-      {sheet === 'subscription' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div
-              className="profile-panel-sheet"
-              style={{ ...sheetStyle, width: isWebDesktop ? '850px' : '100%', maxWidth: '95vw' }}
-            >
-              {dragPill}
-              <SheetHeader
-                title={lang === 'es' ? 'Suscripción y facturación' : 'Subscription & Billing'}
-                onClose={closeSheet}
-              />
-              <div
-                style={{
-                  padding: '16px 22px 32px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 20,
-                  maxHeight: 'calc(82vh - env(safe-area-inset-bottom) - 80px)',
-                  overflowY: 'auto',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-                className="no-scrollbar animate-fade-in"
-              >
-                {/* Current plan badge */}
-                <div
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    background: `${accent.from}10`,
-                    border: `1px solid ${accent.from}25`,
-                    borderRadius: 14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 18, color: accent.from, fontVariationSettings: "'FILL' 1" }}
-                  >
-                    verified
-                  </span>
-                  <div>
-                    <p
-                      style={{
-                        fontFamily: 'var(--studio-font-body)',
-                        fontWeight: 700,
-                        fontSize: 14,
-                        color: 'var(--c-text-primary)',
-                        margin: 0,
-                      }}
-                    >
-                      {lang === 'es'
-                        ? `Plan actual · ${profile?.role ? profile.role.toUpperCase() : 'GRATIS'}`
-                        : `Current plan · ${profile?.role ? profile.role.toUpperCase() : 'FREE'}`}
-                    </p>
-                    <p
-                      style={{
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: 'var(--c-text-secondary)',
-                        margin: '2px 0 0',
-                      }}
-                    >
-                      {profile?.role === 'admin'
-                        ? lang === 'es'
-                          ? 'Acceso de administrador completo e ilimitado'
-                          : 'Full unlimited administrator access bypass'
-                        : profile?.role === 'pro'
-                          ? lang === 'es'
-                            ? 'Suite de producción profesional activa'
-                            : 'Active professional production suite access'
-                          : profile?.role === 'core'
-                            ? lang === 'es'
-                              ? 'Funciones avanzadas y almacenamiento en la nube activos'
-                              : 'Active advanced tools & cloud storage access'
-                            : lang === 'es'
-                              ? 'Acceso estándar a las funciones básicas'
-                              : 'Standard access to basic creation tools'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Aceternity Pricing Section */}
-                <StudioPricingSection
-                  accent={accent}
-                  lang={lang}
-                  profile={profile}
-                  user={user}
-                  onShowToast={showToast}
-                />
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── Devices & Sessions sheet ── */}
-      {sheet === 'devices-sessions' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div
-              className="profile-panel-sheet"
+          </div>
+        </div>
+        <div style={{ padding: '10px 22px 0' }}>
+          <div
+            style={{
+              background: 'rgba(128,128,128,0.06)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
               style={{
-                ...sheetStyle,
-                maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
-                display: 'flex',
-                flexDirection: 'column',
+                fontSize: 16,
+                color: emailVerified ? '#10b981' : '#f59e0b',
+                fontVariationSettings: "'FILL' 1",
               }}
             >
-              {dragPill}
-              <SheetHeader
-                title={lang === 'es' ? 'Dispositivos y sesiones' : 'Devices & Sessions'}
-                onClose={closeSheet}
-              />
-              <div
+              {emailVerified ? 'check_circle' : 'warning'}
+            </span>
+            <p
+              style={{
+                flex: 1,
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 600,
+                fontSize: 14,
+                color: 'var(--c-text-primary)',
+                margin: 0,
+              }}
+            >
+              {emailVerified
+                ? lang === 'es'
+                  ? 'Email verificado'
+                  : 'Email verified'
+                : lang === 'es'
+                  ? 'Email sin verificar'
+                  : 'Email not verified'}
+            </p>
+            {!emailVerified && isEmailUser && (
+              <button
+                onClick={(e) => openSheet('verifyemail', e)}
                 style={{
-                  padding: '8px 22px 28px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
-                  overflowY: 'auto',
-                  WebkitOverflowScrolling: 'touch',
-                  flex: 1,
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: `${accent.from}18`,
+                  border: `1px solid ${accent.from}30`,
+                  color: accent.from,
+                  fontFamily: 'var(--studio-font-body)',
+                  cursor: 'pointer',
                 }}
-                className="no-scrollbar"
               >
+                {lang === 'es' ? 'Verificar' : 'Verify'}
+              </button>
+            )}
+          </div>
+        </div>
+        {isEmailUser && (
+          <button
+            onClick={(e) => openSheet('password', e)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              width: '100%',
+              padding: '15px 22px',
+              background: 'none',
+              border: 'none',
+              borderTop: '1px solid rgba(128,128,128,0.07)',
+              marginTop: 10,
+              cursor: 'pointer',
+              textAlign: 'left' as const,
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 18, color: 'var(--c-text-primary)', opacity: 0.65 }}
+            >
+              lock_reset
+            </span>
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  color: 'var(--c-text-primary)',
+                  margin: 0,
+                }}
+              >
+                {L.changePassword}
+              </p>
+              <p
+                style={{
+                  fontFamily: 'Inter',
+                  fontSize: 11.5,
+                  color: 'var(--c-text-secondary)',
+                  margin: '2px 0 0',
+                }}
+              >
+                {L.changePasswordDesc}
+              </p>
+            </div>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 18, color: 'var(--c-text-secondary)', opacity: 0.35 }}
+            >
+              chevron_right
+            </span>
+          </button>
+        )}
+        {/* ── Account actions pill ── */}
+        <div style={{ padding: '14px 22px 28px' }}>
+          <p
+            style={{
+              fontFamily: 'var(--studio-font-body)',
+              fontWeight: 700,
+              fontSize: 11,
+              color: 'var(--c-text-secondary)',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              margin: '0 0 8px',
+            }}
+          >
+            {lang === 'es' ? 'Zona de riesgo' : 'Danger zone'}
+          </p>
+          <div
+            style={{
+              background: 'rgba(128,128,128,0.06)',
+              borderRadius: 14,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Disable account */}
+            <button
+              onClick={(e) => openSheet('disable', e)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                width: '100%',
+                padding: '13px 16px',
+                background: 'none',
+                border: 'none',
+                borderBottom: '1px solid rgba(128,128,128,0.08)',
+                cursor: 'pointer',
+                textAlign: 'left' as const,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: 20,
+                  color: 'var(--c-text-secondary)',
+                  opacity: 0.65,
+                  flexShrink: 0,
+                  width: 22,
+                  textAlign: 'center' as const,
+                }}
+              >
+                block
+              </span>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 600,
+                    fontSize: 14.5,
+                    color: 'var(--c-text-primary)',
+                    margin: 0,
+                  }}
+                >
+                  {L.disableAccount}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'Inter',
+                    fontSize: 11.5,
+                    color: 'var(--c-text-secondary)',
+                    margin: '2px 0 0',
+                  }}
+                >
+                  {L.disableAccountDesc}
+                </p>
+              </div>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 17, color: 'var(--c-text-secondary)', opacity: 0.3 }}
+              >
+                chevron_right
+              </span>
+            </button>
+            {/* Delete account */}
+            <button
+              onClick={(e) => openSheet('delete', e)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                width: '100%',
+                padding: '13px 16px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left' as const,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: 20,
+                  color: '#ff6b6b',
+                  opacity: 0.8,
+                  flexShrink: 0,
+                  width: 22,
+                  textAlign: 'center' as const,
+                }}
+              >
+                delete_forever
+              </span>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 600,
+                    fontSize: 14.5,
+                    color: '#ff6b6b',
+                    margin: 0,
+                  }}
+                >
+                  {L.deleteAccount}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'Inter',
+                    fontSize: 11.5,
+                    color: 'var(--c-text-secondary)',
+                    margin: '2px 0 0',
+                  }}
+                >
+                  {lang === 'es'
+                    ? 'Eliminar permanentemente tu cuenta'
+                    : 'Permanently remove your account'}
+                </p>
+              </div>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 17, color: 'var(--c-text-secondary)', opacity: 0.3 }}
+              >
+                chevron_right
+              </span>
+            </button>
+          </div>
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Subscription & Billing sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-subscription"
+        isOpen={sheet === 'subscription'}
+        title={lang === 'es' ? 'Suscripción y facturación' : 'Subscription & Billing'}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+        maxWidth={isWebDesktop ? '850px' : '640px'}
+      >
+        <div
+          style={{
+            padding: '16px 22px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20,
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+          className="no-scrollbar animate-fade-in"
+        >
+          {/* Current plan badge */}
+          <div
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: `${accent.from}10`,
+              border: `1px solid ${accent.from}25`,
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              boxSizing: 'border-box',
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 18, color: accent.from, fontVariationSettings: "'FILL' 1" }}
+            >
+              verified
+            </span>
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: 'var(--c-text-primary)',
+                  margin: 0,
+                }}
+              >
+                {lang === 'es'
+                  ? `Plan actual · ${profile?.role ? profile.role.toUpperCase() : 'GRATIS'}`
+                  : `Current plan · ${profile?.role ? profile.role.toUpperCase() : 'FREE'}`}
+              </p>
+              <p
+                style={{
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  color: 'var(--c-text-secondary)',
+                  margin: '2px 0 0',
+                }}
+              >
+                {profile?.role === 'admin'
+                  ? lang === 'es'
+                    ? 'Acceso de administrador completo e ilimitado'
+                    : 'Full unlimited administrator access bypass'
+                  : profile?.role === 'pro'
+                    ? lang === 'es'
+                      ? 'Suite de producción profesional activa'
+                      : 'Active professional production suite access'
+                    : profile?.role === 'core'
+                      ? lang === 'es'
+                        ? 'Funciones avanzadas y almacenamiento en la nube activos'
+                        : 'Active advanced tools & cloud storage access'
+                      : lang === 'es'
+                        ? 'Acceso estándar a las funciones básicas'
+                        : 'Standard access to basic creation tools'}
+              </p>
+            </div>
+          </div>
+
+          {/* Aceternity Pricing Section */}
+          <StudioPricingSection
+            accent={accent}
+            lang={lang}
+            profile={profile}
+            user={user}
+            onShowToast={showToast}
+          />
+        </div>
+      </ProfileMorphModal>
+
+      {/* ── Devices & Sessions sheet ── */}
+      <ProfileMorphModal
+        id="profile-sheet-devices-sessions"
+        isOpen={sheet === 'devices-sessions'}
+        title={lang === 'es' ? 'Dispositivos y sesiones' : 'Devices & Sessions'}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+      >
+        <div
+          style={{
+            padding: '8px 22px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+          className="no-scrollbar"
+        >
                 {!user ? (
                   <p
                     style={{
@@ -6882,37 +7097,31 @@ export function AccountSettingsPage({
                     </button>
                   </>
                 )}
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+        </div>
+      </ProfileMorphModal>
 
       {/* ── Privacy & Data sheet ── */}
-      {sheet === 'privacy-data' &&
-        createPortal(
-          <div style={overlayStyle}>
-            <div style={backdropStyle} onClick={closeSheet} />
-            <div className="profile-panel-sheet" style={sheetStyle}>
-              {dragPill}
-              <SheetHeader
-                title={lang === 'es' ? 'Privacidad y datos' : 'Privacy & Data'}
-                onClose={closeSheet}
-              />
-
-              <div
-                style={{
-                  padding: '12px 22px 32px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 20, // Clear, separated breathing room
-                  maxHeight: 'calc(80vh - env(safe-area-inset-bottom) - 80px)',
-                  overflowY: 'auto',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-                className="no-scrollbar animate-fade-in"
-              >
+      <ProfileMorphModal
+        id="profile-sheet-privacy-data"
+        isOpen={sheet === 'privacy-data'}
+        title={lang === 'es' ? 'Privacidad y datos' : 'Privacy & Data'}
+        onClose={closeSheet}
+        originRect={originRect}
+        isWebDesktop={isWebDesktop}
+        isAmoled={isAmoled}
+        isLight={isLight}
+      >
+        <div
+          style={{
+            padding: '12px 22px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20, // Clear, separated breathing room
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+          className="no-scrollbar animate-fade-in"
+        >
                 {/* Card 1: Privacy Dashboard */}
                 <div
                   style={{
@@ -8078,11 +8287,8 @@ export function AccountSettingsPage({
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+        </div>
+      </ProfileMorphModal>
 
       {sync.showMigrationPrompt &&
         createPortal(

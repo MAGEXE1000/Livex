@@ -604,7 +604,13 @@ export function HubSettings({
   const page = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
     if (last?.tab === 'profile') {
-      return (last.page ?? 'profile') as SettingsPageId;
+      const p = last.page ?? 'profile';
+      if (
+        ['personal-info', 'security-login', 'subscription', 'devices-sessions', 'privacy-data'].includes(p)
+      ) {
+        return 'profile' as SettingsPageId;
+      }
+      return p as SettingsPageId;
     }
     return (last?.tab === 'settings' ? (last.page ?? 'main') : 'main') as SettingsPageId;
   });
@@ -4393,11 +4399,6 @@ export function HubSettings({
       case 'licenses':
         return renderLicensesContent();
       case 'profile':
-      case 'personal-info':
-      case 'security-login':
-      case 'subscription':
-      case 'devices-sessions':
-      case 'privacy-data':
         return renderProfile();
       case 'release-notes':
         return renderReleaseNotesContent();
@@ -4436,11 +4437,6 @@ export function HubSettings({
       'terms',
       'privacy-policy',
       'bug-report',
-      'personal-info',
-      'security-login',
-      'subscription',
-      'devices-sessions',
-      'privacy-data',
     ];
 
     return (
@@ -4466,11 +4462,6 @@ export function HubSettings({
             'bug-report',
             'developer',
             'notifications',
-            'personal-info',
-            'security-login',
-            'subscription',
-            'devices-sessions',
-            'privacy-data',
           ]}
           preMountViews={[
             'main',
