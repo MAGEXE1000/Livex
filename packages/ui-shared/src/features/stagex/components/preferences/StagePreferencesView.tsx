@@ -135,16 +135,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
     >
       <SharedFloatingHeader
         title={title}
-        onBack={
-          onBack ||
-          (() => {
-            if (NavigationDispatcher.canGoBack()) {
-              NavigationDispatcher.pop();
-            } else {
-              NavigationDispatcher.replace({ app: 'stagex', page: 'editor' });
-            }
-          })
-        }
+        onBack={onBack}
         scrollContainerRef={scrollRef}
         isLight={isLight}
         isAmoled={isAmoled}

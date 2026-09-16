@@ -912,7 +912,8 @@ export default function DrumEditor() {
       const page = lastRoute.page;
       if (page === 'metronome') return 'metronome';
       if (page === 'songs' || page === 'beats') return 'songs';
-      if (page === 'patterns' || page === 'prefs') return page as DrumTab;
+      if (page === 'patterns' || page === 'prefs' || page === 'preferences')
+        return (page === 'preferences' ? 'prefs' : page) as DrumTab;
     }
     const st = useSettingsStore.getState();
     if (st.settings.restoreLastSession) {

@@ -117,16 +117,7 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
     >
       <SharedFloatingHeader
         title={isSpanish ? 'Preferencias' : 'Preferences'}
-        onBack={
-          onBack ||
-          (() => {
-            if (NavigationDispatcher.canGoBack()) {
-              NavigationDispatcher.pop();
-            } else {
-              NavigationDispatcher.replace({ app: 'vocalex', page: 'pitch' });
-            }
-          })
-        }
+        onBack={onBack}
         scrollContainerRef={prefsScrollRef}
       />
 

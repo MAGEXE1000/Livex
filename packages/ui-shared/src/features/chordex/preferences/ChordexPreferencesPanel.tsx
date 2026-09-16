@@ -379,13 +379,6 @@ export default function ChordexPreferencesPanel() {
     >
       <SharedFloatingHeader
         title={t.settings.title}
-        onBack={() => {
-          if (NavigationDispatcher.canGoBack()) {
-            NavigationDispatcher.pop();
-          } else {
-            NavigationDispatcher.replace({ app: 'chordex', page: 'songs' });
-          }
-        }}
         scrollContainerRef={scrollRef}
       />
 

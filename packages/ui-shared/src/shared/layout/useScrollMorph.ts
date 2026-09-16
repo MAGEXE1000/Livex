@@ -81,12 +81,22 @@ export function useScrollMorph({
     const textEl = (titleEl?.firstElementChild as HTMLElement) || titleEl;
     const titleWidth = textEl?.offsetWidth || 110;
 
+    // Inspect left back button if present
+    const backBtn = (headerEl.querySelector(
+      '[data-testid="shared-floating-header-back-btn"]'
+    ) || headerEl.querySelector('button[aria-label="Go back"]')) as HTMLElement | null;
+    const backWidth = backBtn ? 38 : 0;
+
     // Inspect right action controls if present (direct child or testid to avoid matching internal refraction plane)
     const actionsEl = (headerEl.querySelector(
       '[data-testid="shared-floating-header-actions"]'
     ) || headerEl.querySelector(':scope > div:last-child')) as HTMLElement | null;
-    const actionsWidth = actionsEl && actionsEl.offsetWidth > 44 ? actionsEl.offsetWidth : 38;
-    const minContentWidth = 38 + titleWidth + actionsWidth + 24;
+    const actionsWidth = actionsEl && actionsEl.offsetWidth > 0 ? actionsEl.offsetWidth : 0;
+
+    // Symmetrically bounded content width ensuring title and any existing controls never collide
+    const leftMargin = backWidth > 0 ? backWidth + 8 : 16;
+    const rightMargin = actionsWidth > 0 ? actionsWidth + 8 : 16;
+    const minContentWidth = titleWidth + leftMargin + rightMargin;
 
     // Compact pill width: contracts gracefully into an elegant floating capsule
     // On mobile (~360-390px): contracts to ~220px-248px (matching OpenDesign reference)

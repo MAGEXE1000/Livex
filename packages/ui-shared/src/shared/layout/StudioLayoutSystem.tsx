@@ -432,9 +432,7 @@ export function SharedFloatingHeader({
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </motion.button>
-        ) : (
-          <div style={{ width: 38, height: 38, flexShrink: 0, marginLeft: '2px' }} />
-        )}
+        ) : null}
 
         {/* Mathematically Centered Section Title across complete top bar */}
         <div
@@ -491,18 +489,14 @@ export function SharedFloatingHeader({
               zIndex: 2,
               pointerEvents: 'auto',
               flexShrink: 0,
+              marginLeft: 'auto',
               marginRight: '2px',
               transform: 'scale(var(--morph-btn-scale, 1))',
             }}
           >
             {toolbarActions}
           </div>
-        ) : (
-          <div
-            data-testid="shared-floating-header-actions"
-            style={{ width: 38, height: 38, flexShrink: 0, marginRight: '2px' }}
-          />
-        )}
+        ) : null}
       </header>
     </div>
   );

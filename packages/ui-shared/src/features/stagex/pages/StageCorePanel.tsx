@@ -57,6 +57,8 @@ export default function StagexPanel() {
     const page = currentRoute.page as StagexPrimaryView;
     if (page && VIEW_ORDER.includes(page)) return page;
     const pageLower = page?.toLowerCase();
+    const matched = VIEW_ORDER.find((v) => v.toLowerCase() === pageLower);
+    if (matched) return matched;
     if (
       pageLower === 'rider' ||
       pageLower === 'setlist' ||

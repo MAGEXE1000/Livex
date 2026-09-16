@@ -453,13 +453,6 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
     >
       <SharedFloatingHeader
         title={dp.title}
-        onBack={() => {
-          if (NavigationDispatcher.canGoBack()) {
-            NavigationDispatcher.pop();
-          } else {
-            NavigationDispatcher.replace({ app: 'drumex', page: 'beats' });
-          }
-        }}
         scrollContainerRef={scrollRef}
       />
 
