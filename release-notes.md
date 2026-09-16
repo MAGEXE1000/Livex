@@ -1,10 +1,11 @@
-# Version 4.6.17
+# Version 4.6.18
 
 Release Date: 2026-09-16
 
 ### Improved
-- Stagex Unified Entrance Transition: Added the established `UNIFIED_NAV_TRANSITION` subtle entrance animation (200ms ease-out, 6px lift, 0.995 to 1.0 scale) when entering the Stage destination (`Editor` view), aligning it with Setup and other core destinations.
-- Canvas Lifecycle & Compositor Performance: Preserved 100% persistent DOM mounting of `StageCanvasView` across navigation transitions, avoiding canvas reload or flicker, while using compositor-only properties (`transform`, `opacity`) that complete to inert styles.
-- Preferences Navigation Streamlining: Removed redundant back buttons from the Preferences section across all internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) as it is directly accessible via primary navigation, reclaiming clean header real estate.
-- Header Geometry Refinements: Standardized compact top bar height to 56px with a 60px expanded baseline for optimal beUI Pro proportions and safe area clearance.
-- Motion Accessibility Invariant: Enforced zero-duration, instant state transitions for Stagex and shared navigation when reduced motion is requested by the user or OS.
+- Canonical Bounded Overscroll Spring System: Implemented a polished, unified, native-feeling overscroll spring and bounce interaction across Livex scrollable screens via the canonical `useOverscrollSpring` layout hook.
+- Progressive Rubber-Band Physics: Integrated asymptotic elastic resistance strictly bounding content displacement at 44px ($d(p) = \text{sign}(p) \cdot D_{\max} \cdot (1 - 1 / (1 + c \cdot |p| / D_{\max}))$), preventing runaway stretch and visual dislocation.
+- Analytical Damped Harmonic Oscillator: Built exact continuous-time spring return settling in ~250–300ms with natural frequency $\omega_0 = 24\text{ rad/s}$ and damping ratio $\zeta = 0.94$, eliminating bounce jitter, oscillation, and overshoot.
+- Floating Header & Liquid Glass Isolation: Displaced the scroll container via hardware-accelerated `translate3d(0, y, 0)` leaving sibling floating headers rock-solid with 0.0px drift, undistorted backdrop filters, and intact `useScrollMorph` states.
+- Cross-App Normalization: Deployed overscroll spring interaction across SettingsScaffold, Hub Settings, Groovex Preferences & Library, Stagex Setup & Preferences, Chordex Preferences, Drumex Prefs, Beats & Patterns, and Vocalex Preferences & Takes.
+- Android WebView Performance & Accessibility: Direct DOM updates with zero React re-renders during active touch dragging; directional lockout for horizontal gestures; full compliance with reduced-motion accessibility.

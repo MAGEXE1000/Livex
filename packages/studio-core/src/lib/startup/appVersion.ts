@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.17';
-export const NATIVE_VERSION_CODE = 40617;
-export const WEB_VERSION = '4.6.17';
+export const NATIVE_VERSION = '4.6.18';
+export const NATIVE_VERSION_CODE = 40618;
+export const WEB_VERSION = '4.6.18';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '9a6f1806';
+export const APP_COMMIT_SHA = '1ece750a';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/16/2026, 4:32:04 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/16/2026, 2:08:11 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,11 +98,12 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Stagex Unified Entrance Transition: Added the established `UNIFIED_NAV_TRANSITION` subtle entrance animation (200ms ease-out, 6px lift, 0.995 to 1.0 scale) when entering the Stage destination (`Editor` view), aligning it with Setup and other core destinations.',
-      'Canvas Lifecycle & Compositor Performance: Preserved 100% persistent DOM mounting of `StageCanvasView` across navigation transitions, avoiding canvas reload or flicker, while using compositor-only properties (`transform`, `opacity`) that complete to inert styles.',
-      'Preferences Navigation Streamlining: Removed redundant back buttons from the Preferences section across all internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) as it is directly accessible via primary navigation, reclaiming clean header real estate.',
-      'Header Geometry Refinements: Standardized compact top bar height to 56px with a 60px expanded baseline for optimal beUI Pro proportions and safe area clearance.',
-      'Motion Accessibility Invariant: Enforced zero-duration, instant state transitions for Stagex and shared navigation when reduced motion is requested by the user or OS.',
+      'Canonical Bounded Overscroll Spring System: Implemented a polished, unified, native-feeling overscroll spring and bounce interaction across Livex scrollable screens via the canonical `useOverscrollSpring` layout hook.',
+      'Progressive Rubber-Band Physics: Integrated asymptotic elastic resistance strictly bounding content displacement at 44px ($d(p) = \\text{sign}(p) \\cdot D_{\\max} \\cdot (1 - 1 / (1 + c \\cdot |p| / D_{\\max}))$), preventing runaway stretch and visual dislocation.',
+      'Analytical Damped Harmonic Oscillator: Built exact continuous-time spring return settling in ~250–300ms with natural frequency $\\omega_0 = 24\\text{ rad/s}$ and damping ratio $\\zeta = 0.94$, eliminating bounce jitter, oscillation, and overshoot.',
+      'Floating Header & Liquid Glass Isolation: Displaced the scroll container via hardware-accelerated `translate3d(0, y, 0)` leaving sibling floating headers rock-solid with 0.0px drift, undistorted backdrop filters, and intact `useScrollMorph` states.',
+      'Cross-App Normalization: Deployed overscroll spring interaction across SettingsScaffold, Hub Settings, Groovex Preferences & Library, Stagex Setup & Preferences, Chordex Preferences, Drumex Prefs, Beats & Patterns, and Vocalex Preferences & Takes.',
+      'Android WebView Performance & Accessibility: Direct DOM updates with zero React re-renders during active touch dragging; directional lockout for horizontal gestures; full compliance with reduced-motion accessibility.',
     ],
   },
 ];
@@ -114,6 +115,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.18',
+    date: '2026-09-16',
+    highlights: [
+      'Canonical Bounded Overscroll Spring System: Implemented a polished, unified, native-feeling overscroll spring and bounce interaction across Livex scrollable screens via the canonical `useOverscrollSpring` layout hook.',
+      'Progressive Rubber-Band Physics: Integrated asymptotic elastic resistance strictly bounding content displacement at 44px ($d(p) = \\text{sign}(p) \\cdot D_{\\max} \\cdot (1 - 1 / (1 + c \\cdot |p| / D_{\\max}))$), preventing runaway stretch and visual dislocation.',
+      'Analytical Damped Harmonic Oscillator: Built exact continuous-time spring return settling in ~250–300ms with natural frequency $\\omega_0 = 24\\text{ rad/s}$ and damping ratio $\\zeta = 0.94$, eliminating bounce jitter, oscillation, and overshoot.',
+      'Floating Header & Liquid Glass Isolation: Displaced the scroll container via hardware-accelerated `translate3d(0, y, 0)` leaving sibling floating headers rock-solid with 0.0px drift, undistorted backdrop filters, and intact `useScrollMorph` states.',
+      'Cross-App Normalization: Deployed overscroll spring interaction across SettingsScaffold, Hub Settings, Groovex Preferences & Library, Stagex Setup & Preferences, Chordex Preferences, Drumex Prefs, Beats & Patterns, and Vocalex Preferences & Takes.',
+      'Android WebView Performance & Accessibility: Direct DOM updates with zero React re-renders during active touch dragging; directional lockout for horizontal gestures; full compliance with reduced-motion accessibility.',
+    ],
+  },
   {
     version: '4.6.17',
     date: '2026-09-16',
@@ -204,17 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.',
       'Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.',
       'Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.',
-    ],
-  },
-  {
-    version: '4.6.8',
-    date: '2026-09-14',
-    highlights: [
-      'Background Power & Resource Efficiency: Permanently eliminated deprecated native background OTA polling worker, reducing idle battery and network consumption across all Android devices while stripping redundant WorkManager and Guava dependencies from the APK.',
-      'Production Security Surface Hardening: Gated internal state dispatcher bindings and test diagnostic APIs on development and authenticated debug flags.',
-      'Audio Asset Parsing Latency: Code-split metronome count-in voice sample table into on-demand dynamic chunks, reducing main-thread parse time on startup.',
-      'Shell Reactivity & Theme Propagation: Fixed non-reactive setting access pattern in SharedAppShell, ensuring AMOLED mode and theme transitions re-render immediately.',
-      'Navigation Store Debug Cleanup: Removed dormant debug reads and vestigial handlers across core navigation state stores.',
     ],
   },
 ];
