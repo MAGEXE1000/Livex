@@ -455,7 +455,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                 placeholder="Search gear by name, model or spec..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs border focus:outline-none transition-colors"
+                className="w-full h-[46px] pl-10 pr-4 rounded-full text-sm border focus:outline-none transition-colors"
                 style={{
                   backgroundColor: innerBg,
                   borderColor: innerBorder,

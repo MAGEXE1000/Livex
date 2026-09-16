@@ -10,6 +10,7 @@ import { StudioHeader } from './StudioHeader';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { useScrollMorph } from './useScrollMorph';
+export * from './ContextualActionPill';
 
 // Helper hook to detect responsive design states (tablets, landscape, foldables)
 export function useLayoutMetrics() {

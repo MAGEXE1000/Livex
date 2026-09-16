@@ -21,7 +21,8 @@ import {
   ChordCardMiniRecess,
 } from '../components/MiniFretboardRecess';
 import { TuningForkIcon } from '../components/tuner';
-import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { Compass } from 'lucide-react';
+import { SharedFloatingHeader, ContextualActionPill } from '../../../shared/layout/StudioLayoutSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Button, ActionButton } from '../../../shared/design-system/buttons';
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
@@ -1331,7 +1332,28 @@ export function LibraryMainView({ state }: { state: any }) {
         title="Library"
         hideBack={true}
         scrollContainerRef={scrollRef}
-        isLight={isLight}
+        toolbarActions={
+          <ContextualActionPill
+            items={[
+              {
+                id: 'finder',
+                icon: <Compass size={18} strokeWidth={2.2} />,
+                label: 'Chord Finder',
+                dataPurpose: 'tool-finder',
+                testId: 'chordex-finder-btn',
+                onClick: (e) => (openFinder ? openFinder(e) : setShowFinder(true)),
+              },
+              {
+                id: 'tuner',
+                icon: <TuningForkIcon size={18} strokeWidth={2.2} />,
+                label: 'Tuner',
+                dataPurpose: 'tool-tuner',
+                testId: 'chordex-tuner-btn',
+                onClick: (e) => (openTuner ? openTuner(e) : setShowTuner?.(true)),
+              },
+            ]}
+          />
+        }
       />
 
       <div
@@ -1345,82 +1367,14 @@ export function LibraryMainView({ state }: { state: any }) {
         data-purpose="library-scroll-container"
       >
         <main
-          className="w-full max-w-md mx-auto pb-32 px-4 space-y-6"
+          className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
           }}
           data-purpose="mobile-viewport"
         >
-          {/* Quick Action Tool Shortcuts (Finder / Tuner) */}
-          <div className="flex items-center justify-end" data-purpose="tool-shortcuts-row">
-            <div
-              className="flex items-center p-0.5 rounded-full border shadow-sm"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-              }}
-              data-purpose="tool-segmented-control"
-            >
-              {/* Finder Tool */}
-              <motion.button
-                type="button"
-                onClick={(e) => (openFinder ? openFinder(e) : setShowFinder(true))}
-                whileTap={{ scale: 0.94 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 25,
-                }}
-                className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
-                style={{
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                data-purpose="tool-finder"
-              >
-                <span
-                  className="material-symbols-rounded text-[17px]"
-                  style={{ color: 'var(--c-accent-from, #2563EB)' }}
-                >
-                  travel_explore
-                </span>
-                <span>Finder</span>
-              </motion.button>
-
-              {/* Subtle vertical separator */}
-              <div
-                className="w-[1px] h-3.5 bg-black/10 dark:bg-white/15 self-center flex-shrink-0 mx-0.5"
-                aria-hidden="true"
-              />
-
-              {/* Tuner Tool */}
-              <motion.button
-                type="button"
-                onClick={(e) => (openTuner ? openTuner(e) : setShowTuner?.(true))}
-                whileTap={{ scale: 0.94 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 25,
-                }}
-                className="flex-1 min-w-[76px] sm:min-w-[84px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-colors text-center"
-                style={{
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                data-purpose="tool-tuner"
-              >
-                <span
-                  className="flex items-center justify-center text-[17px]"
-                  style={{ color: 'var(--c-accent-from, #2563EB)' }}
-                >
-                  <TuningForkIcon size={16} />
-                </span>
-                <span>Tuner</span>
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative mt-4 flex items-center" data-purpose="search-bar">
+          {/* Search Bar (Modern 46px Capsule) */}
+          <div className="relative flex items-center" data-purpose="search-bar">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <span
                 className="material-symbols-rounded text-[20px]"
@@ -1430,7 +1384,7 @@ export function LibraryMainView({ state }: { state: any }) {
               </span>
             </div>
             <input
-              className="w-full pl-11 pr-10 py-3 rounded-full text-sm font-medium border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-full h-[46px] pl-11 pr-10 rounded-full text-sm font-medium border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               style={{
                 backgroundColor: 'var(--surface-card-bg, #ffffff)',
                 borderColor: 'var(--c-border, #E3E6EB)',

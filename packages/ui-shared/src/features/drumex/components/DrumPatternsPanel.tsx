@@ -19,8 +19,8 @@ import { Button, Input } from '../../../shared/design-system/StudioDesignSystem'
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { StaggeredReveal } from '../../../shared/animation';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
-import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { SharedFloatingHeader, ContextualActionPill } from '../../../shared/layout/StudioLayoutSystem';
+import { SlidersHorizontal } from 'lucide-react';
 
 export interface DrumPatternsPanelProps {
   onPreviewPattern: (lp: LibraryPattern) => void;
@@ -762,6 +762,42 @@ export function DrumPatternsPanel({
         title="Patterns"
         hideBack={true}
         scrollContainerRef={patternsScrollRef}
+        toolbarActions={
+          <ContextualActionPill
+            items={[
+              {
+                id: 'metronome',
+                icon: (
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2L5 21h14L12 2z" />
+                    <path d="M12 7v10" strokeWidth="1.6" opacity="0.4" />
+                    <path d="M12 17L15.5 8" />
+                    <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
+                  </svg>
+                ),
+                label: 'Metronome',
+                testId: 'drumex-metronome-btn',
+                onClick: () => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' }),
+              },
+              {
+                id: 'tuner',
+                icon: <SlidersHorizontal size={18} strokeWidth={2.2} />,
+                label: 'Drum Tuner',
+                testId: 'drumex-tuner-btn',
+                onClick: () => NavigationDispatcher.push({ app: 'drumex', page: 'tuner' }),
+              },
+            ]}
+          />
+        }
       />
 
       <div
@@ -781,73 +817,12 @@ export function DrumPatternsPanel({
           style={{
             paddingTop: isWebDesktop
               ? '24px'
-              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
           }}
         >
-          {/* Quick Action Tools (Metronome & Drum Tuner) */}
-          <div className="flex items-center justify-end gap-2 mb-3" data-purpose="tool-shortcuts-row">
-            <motion.button
-              type="button"
-              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
-              whileTap={{ scale: 0.94 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-purpose="tool-metronome"
-              aria-label={metronomeLabel}
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                style={{ color: accent?.from || '#f59e0b' }}
-              >
-                <path d="M12 2L5 21h14L12 2z" strokeWidth="2" strokeLinejoin="round" />
-                <path d="M12 7v10" strokeWidth="1.5" opacity="0.4" />
-                <path d="M12 17L15.5 8" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="15.5" cy="8" r="1.5" fill="currentColor" />
-              </svg>
-              <span>{metronomeLabel}</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'tuner' })}
-              whileTap={{ scale: 0.94 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm touch-target-44 cursor-pointer"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-purpose="tool-drum-tuner"
-              aria-label="Drum Tuner"
-            >
-              <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: 16 }}>
-                tune
-              </span>
-              <span>Tuner</span>
-            </motion.button>
-          </div>
-
         {/* Filter & Search Controls */}
         <div className="pb-2 flex flex-col gap-2">
-          {/* Capsule Search Bar */}
+          {/* Capsule Search Bar (Modern 46px Capsule) */}
           <div className="relative flex items-center" data-purpose="search-box">
             <span
               className="material-symbols-outlined absolute left-3.5 pointer-events-none text-lg select-none"
@@ -863,7 +838,7 @@ export function DrumPatternsPanel({
                 setVisibleBatch(20);
               }}
               placeholder="Search patterns, genres, or moods..."
-              className="w-full pl-9 pr-9 py-2 text-xs rounded-full border shadow-soft-card outline-none transition-all font-inter"
+              className="w-full h-[46px] pl-11 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
               style={{
                 backgroundColor: 'var(--surface-card-bg, #ffffff)',
                 borderColor: 'var(--c-border, #E3E6EB)',

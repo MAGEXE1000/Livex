@@ -6685,7 +6685,7 @@ export default function SongsPanel() {
                   className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
                   style={{
                     paddingTop:
-                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
                   }}
                   data-purpose="mobile-viewport"
                 >
@@ -6703,7 +6703,7 @@ export default function SongsPanel() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search titles, keys, or tags..."
-                      className="w-full pl-10 pr-10 py-3 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
+                      className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
                         borderColor: 'var(--c-border, #E3E6EB)',

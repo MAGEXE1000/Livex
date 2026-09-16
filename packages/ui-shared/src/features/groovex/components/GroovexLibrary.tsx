@@ -274,6 +274,7 @@ export default function GroovexLibrary() {
               placeholder={t.groovex.searchPlaceholder || 'Search songs, artists, or genres...'}
               style={{
                 width: '100%',
+                height: '46px',
                 background: 'var(--app-surface)',
                 color: 'var(--c-text-primary, var(--text))',
                 fontFamily: 'var(--studio-font-body)',
@@ -281,8 +282,8 @@ export default function GroovexLibrary() {
                 fontWeight: 500,
                 paddingLeft: '42px',
                 paddingRight: searchQuery ? '40px' : '16px',
-                paddingTop: '11px',
-                paddingBottom: '11px',
+                paddingTop: '0',
+                paddingBottom: '0',
                 borderRadius: '9999px',
                 border: '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
                 boxShadow: isLight
