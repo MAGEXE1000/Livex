@@ -56,7 +56,9 @@ export function useScrollMorph({
     if (!headerEl || !titleEl) return;
 
     const containerWidth = headerEl.offsetWidth || 360;
-    const titleWidth = titleEl.offsetWidth || 120;
+    // Measure actual text/child width rather than the full-width wrapper (left: 0, right: 0)
+    const textEl = (titleEl.firstElementChild as HTMLElement) || titleEl;
+    const titleWidth = textEl.offsetWidth || 120;
 
     // Center of title when centered in container = containerWidth / 2
     // Left edge of centered title = (containerWidth - titleWidth) / 2
@@ -87,7 +89,7 @@ export function useScrollMorph({
       // ── 1. Title transformation (Left -> Center) ──────────────────────────
       // Compositor-only: translate3d + subtle scale
       const currentX = (1 - p) * -deltaX;
-      const currentScale = 1 - p * 0.16; // 1.0 (expanded ~22px) -> 0.84 (compact ~17px)
+      const currentScale = 1 - p * 0.16; // 1.0 (expanded ~21px) -> 0.84 (compact ~17.6px)
       titleEl.style.transform = `translate3d(${currentX.toFixed(2)}px, 0, 0) scale(${currentScale.toFixed(3)})`;
       titleEl.style.transformOrigin = 'center center';
 
@@ -108,17 +110,18 @@ export function useScrollMorph({
         titleEl.style.textShadow = 'none';
       }
 
-      // ── 3. Header surface morph ───────────────────────────────────────────
-      // Transition from expanded surface (p=0) to compact glass pill (p=1)
+      // ── 3. Header surface morph (Direct Pill — Zero Square State) ──────────
+      // The surface maintains full pill curvature (9999px) at ALL frames (p in [0, 1]).
+      // At p=0, background and border are 100% transparent.
+      // As p > 0, the glass surface that materializes is already a fully rounded pill.
       const targetBgAlpha = isLight ? 0.82 : isAmoled ? 0.88 : 0.78;
       const targetBorderAlpha = isLight ? 0.08 : 0.10;
       const bgAlpha = (p * targetBgAlpha).toFixed(3);
       const borderAlpha = (p * targetBorderAlpha).toFixed(3);
       const blurPx = (p * 18).toFixed(1);
       const shadowAlpha = (p * 0.28).toFixed(3);
-      const pillRadius = (p * 32).toFixed(1);
 
-      headerEl.style.borderRadius = p >= 0.98 ? '9999px' : `${pillRadius}px`;
+      headerEl.style.borderRadius = '9999px';
 
       if (p > 0.03) {
         const blurValue = `blur(${blurPx}px) saturate(${(100 + p * 80).toFixed(0)}%)`;
@@ -144,9 +147,6 @@ export function useScrollMorph({
         p > 0.05
           ? `0 ${(p * 8).toFixed(1)}px ${(p * 24).toFixed(1)}px rgba(0, 0, 0, ${shadowAlpha}), 0 1px 3px rgba(0, 0, 0, ${(p * 0.14).toFixed(3)})`
           : 'none';
-
-      headerEl.style.paddingLeft = `${(14 - p * 6).toFixed(1)}px`;
-      headerEl.style.paddingRight = `${(14 - p * 6).toFixed(1)}px`;
 
       // ── 4. Specular rim highlight ─────────────────────────────────────────
       if (rimEl) {

@@ -248,11 +248,11 @@ export function SharedFloatingHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: morphActive ? '0px' : '9999px',
+          borderRadius: '9999px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: morphActive ? '0 14px' : '0 8px',
+          padding: '0 10px',
           position: 'relative',
           background: morphActive ? 'transparent' : 'var(--surface-topbar-bg)',
           border: morphActive ? '1px solid transparent' : 'var(--surface-topbar-border)',
@@ -263,7 +263,7 @@ export function SharedFloatingHeader({
           pointerEvents: 'auto',
           userSelect: 'none',
           willChange: morphActive
-            ? 'transform, border-radius, background-color, backdrop-filter'
+            ? 'transform, opacity, backdrop-filter'
             : undefined,
           contain: 'paint layout',
         }}
