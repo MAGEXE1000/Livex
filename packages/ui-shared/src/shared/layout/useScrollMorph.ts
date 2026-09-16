@@ -59,8 +59,8 @@ export function useScrollMorph({
   }>({
     expandedWidth: 360,
     compactWidth: 236,
-    expandedHeight: 56,
-    compactHeight: 48,
+    expandedHeight: 60,
+    compactHeight: 56,
   });
 
   // Calculate layout geometry outside the active scroll frame to avoid layout thrashing
@@ -74,15 +74,17 @@ export function useScrollMorph({
 
     // Base expanded width: fills available container with standard page insets (e.g. 16px/24px each side)
     const expandedWidth = Math.min(parentWidth - 32, 680);
-    const expandedHeight = 56;
-    const compactHeight = 48;
+    const expandedHeight = 60;
+    const compactHeight = 56;
 
     // Calculate content width for title + left button + right actions
     const textEl = (titleEl?.firstElementChild as HTMLElement) || titleEl;
     const titleWidth = textEl?.offsetWidth || 110;
 
-    // Inspect right action controls if present
-    const actionsEl = headerEl.querySelector('div:last-child') as HTMLElement | null;
+    // Inspect right action controls if present (direct child or testid to avoid matching internal refraction plane)
+    const actionsEl = (headerEl.querySelector(
+      '[data-testid="shared-floating-header-actions"]'
+    ) || headerEl.querySelector(':scope > div:last-child')) as HTMLElement | null;
     const actionsWidth = actionsEl && actionsEl.offsetWidth > 44 ? actionsEl.offsetWidth : 38;
     const minContentWidth = 38 + titleWidth + actionsWidth + 24;
 
@@ -128,12 +130,12 @@ export function useScrollMorph({
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
       // ── 4. Geometry: Corner curvature (Continuous monotonic rounding) ──────
-      // Starts at smooth 18px and smoothly tightens to 24px (exact capsule radius for 48px height)
+      // Starts at smooth 18px and smoothly tightens to 28px (exact capsule radius for 56px height)
       // At p >= 0.96, clamps to 9999px capsule pill with zero visual step jump
       if (p >= 0.96) {
         headerEl.style.borderRadius = '9999px';
       } else {
-        const currentRadius = 18 + p * 6;
+        const currentRadius = 18 + p * 10;
         headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
       }
 
@@ -144,12 +146,12 @@ export function useScrollMorph({
       headerEl.style.paddingRight = `${currentPaddingRight.toFixed(1)}px`;
 
       // Child button scale property for back button and action items
-      headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.08).toFixed(3));
+      headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.05).toFixed(3));
 
       // ── 6. Title typography scale (Dead-centered throughout) ───────────────
       // Title is centered in the surface across all frames: zero horizontal translation
       if (titleEl) {
-        const currentScale = 1 - p * 0.12; // 1.0 -> 0.88
+        const currentScale = 1 - p * 0.08; // 1.0 -> 0.92
         titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
         titleEl.style.transformOrigin = 'center center';
       }

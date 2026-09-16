@@ -47,19 +47,19 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   });
 
   it('verifies continuous vertical compression and snug position transform', () => {
-    const expandedHeight = 56;
-    const compactHeight = 48;
+    const expandedHeight = 60;
+    const compactHeight = 56;
 
     const calcHeight = (p: number) => expandedHeight - p * (expandedHeight - compactHeight);
     const calcTranslateY = (p: number) => (p === 0 ? 0 : -p * 2);
 
-    expect(calcHeight(0)).toBe(56);
+    expect(calcHeight(0)).toBe(60);
     expect(calcTranslateY(0)).toBe(0);
 
-    expect(calcHeight(0.5)).toBe(52);
+    expect(calcHeight(0.5)).toBe(58);
     expect(calcTranslateY(0.5)).toBe(-1);
 
-    expect(calcHeight(1.0)).toBe(48);
+    expect(calcHeight(1.0)).toBe(56);
     expect(calcTranslateY(1.0)).toBe(-2);
 
     for (let p = 0.05; p <= 1.0; p += 0.05) {
@@ -67,17 +67,17 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies progressive corner curvature increase from soft (18px) to full capsule (24px / 9999px)', () => {
-    const calcRadius = (p: number) => (p >= 0.96 ? 9999 : 18 + p * 6);
+  it('verifies progressive corner curvature increase from soft (18px) to full capsule (28px / 9999px)', () => {
+    const calcRadius = (p: number) => (p >= 0.96 ? 9999 : 18 + p * 10);
 
     // At p = 0: 18px soft surface
     expect(calcRadius(0)).toBe(18);
 
-    // At p = 0.5: 21px
-    expect(calcRadius(0.5)).toBe(21);
+    // At p = 0.5: 23px
+    expect(calcRadius(0.5)).toBe(23);
 
-    // At p = 0.9: 23.4px
-    expect(calcRadius(0.9)).toBeCloseTo(23.4, 1);
+    // At p = 0.9: 27px
+    expect(calcRadius(0.9)).toBe(27);
 
     // At p >= 0.96: 9999px (full capsule pill)
     expect(calcRadius(0.96)).toBe(9999);
@@ -108,13 +108,13 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
   it('enforces centered title invariant with zero horizontal translation at all frames', () => {
     // Title is centered throughout the morph: X translation is ALWAYS 0
     const calcTitleX = (p: number) => 0;
-    const calcTitleScale = (p: number) => 1 - p * 0.12;
+    const calcTitleScale = (p: number) => 1 - p * 0.08;
 
     const progressSamples = Array.from({ length: 21 }, (_, i) => i * 0.05);
 
     for (const p of progressSamples) {
       expect(calcTitleX(p)).toBe(0); // Never drifts from center
-      expect(calcTitleScale(p)).toBeGreaterThanOrEqual(0.88);
+      expect(calcTitleScale(p)).toBeGreaterThanOrEqual(0.92);
       expect(calcTitleScale(p)).toBeLessThanOrEqual(1.0);
     }
   });

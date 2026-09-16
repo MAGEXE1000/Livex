@@ -309,7 +309,7 @@ export function SharedFloatingHeader({
         style={{
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
-          height: '56px',
+          height: '60px',
           borderRadius: '18px',
           display: 'flex',
           alignItems: 'center',
@@ -449,8 +449,8 @@ export function SharedFloatingHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingLeft: toolbarActions ? '88px' : (onBack && !hideBack ? '46px' : '16px'),
-            paddingRight: toolbarActions ? '88px' : (onBack && !hideBack ? '46px' : '16px'),
+            paddingLeft: toolbarActions ? '76px' : (onBack && !hideBack ? '46px' : '16px'),
+            paddingRight: toolbarActions ? '76px' : (onBack && !hideBack ? '46px' : '16px'),
             pointerEvents: 'none',
             zIndex: 1,
             willChange: 'transform',
@@ -483,6 +483,7 @@ export function SharedFloatingHeader({
         {/* Right Toolbar Actions Layer */}
         {toolbarActions ? (
           <div
+            data-testid="shared-floating-header-actions"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -497,7 +498,10 @@ export function SharedFloatingHeader({
             {toolbarActions}
           </div>
         ) : (
-          <div style={{ width: 38, height: 38, flexShrink: 0, marginRight: '2px' }} />
+          <div
+            data-testid="shared-floating-header-actions"
+            style={{ width: 38, height: 38, flexShrink: 0, marginRight: '2px' }}
+          />
         )}
       </header>
     </div>

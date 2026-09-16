@@ -89,9 +89,11 @@ export function MobileDevicePreviewFrame({ children }: { children: React.ReactNo
   if (activePreset.id === 'full' || isFrameDisabledByUrl) {
     return (
       <div
-        className="w-full h-full relative overflow-hidden bg-black text-white"
+        className="w-full h-full min-h-[100dvh] relative overflow-hidden bg-black text-white"
         style={
           {
+            height: '100dvh',
+            width: '100vw',
             '--safe-area-inset-top': '0px',
             '--safe-area-inset-bottom': '0px',
           } as React.CSSProperties
