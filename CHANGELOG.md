@@ -1,5 +1,16 @@
 # Studio Changelog
 
+## 4.6.17
+
+Release Date: 2026-09-16
+
+### Improved
+- Stagex Unified Entrance Transition: Added the established `UNIFIED_NAV_TRANSITION` subtle entrance animation (200ms ease-out, 6px lift, 0.995 to 1.0 scale) when entering the Stage destination (`Editor` view), aligning it with Setup and other core destinations.
+- Canvas Lifecycle & Compositor Performance: Preserved 100% persistent DOM mounting of `StageCanvasView` across navigation transitions, avoiding canvas reload or flicker, while using compositor-only properties (`transform`, `opacity`) that complete to inert styles.
+- Preferences Navigation Streamlining: Removed redundant back buttons from the Preferences section across all internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) as it is directly accessible via primary navigation, reclaiming clean header real estate.
+- Header Geometry Refinements: Standardized compact top bar height to 56px with a 60px expanded baseline for optimal beUI Pro proportions and safe area clearance.
+- Motion Accessibility Invariant: Enforced zero-duration, instant state transitions for Stagex and shared navigation when reduced motion is requested by the user or OS.
+
 ## 4.6.16
 
 Release Date: 2026-09-16
