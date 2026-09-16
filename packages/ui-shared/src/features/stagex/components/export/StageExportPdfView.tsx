@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
@@ -258,6 +258,8 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   const blueprintBg = isLight ? '#f4f4f6' : isAmoled ? '#050507' : '#0c0c0e';
   const hoverBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)';
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <div
       data-testid="stage-export-pdf-view"
@@ -286,6 +288,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
         onBack={onBack}
         isLight={isLight}
         isAmoled={isAmoled}
+        scrollContainerRef={scrollRef}
         toolbarActions={
           <div className="flex items-center gap-1.5">
             {/* Control 1: Sections Visibility Morphing Surface */}
@@ -475,6 +478,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
 
       {/* ── 2. CONTINUOUS SCROLLING DOCUMENT BODY ─────────────────── */}
       <div
+        ref={scrollRef}
         className="flex-1 overflow-y-auto w-full h-full relative"
         style={{
           paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 80px)',

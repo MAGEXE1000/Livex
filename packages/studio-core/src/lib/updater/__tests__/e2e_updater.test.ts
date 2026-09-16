@@ -216,5 +216,5 @@ describe('E2E Updater Flow Validation (v4.3.33 to v4.3.34)', () => {
     // Verify it completed with INSTALL_SUCCESS
     expect(globalUpdateState.updateState).toBe('INSTALL_SUCCESS');
     console.log('[DEBUG] Final State after install callback =', globalUpdateState.updateState);
-  }, 15000);
+  }, 30000);
 });

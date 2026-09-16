@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
   getChordById,
@@ -396,6 +396,7 @@ export function LibraryChordDetail({
   };
 
   const handleBack = onBack || (() => selectChord(null));
+  const detailScrollRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <div
@@ -410,10 +411,12 @@ export function LibraryChordDetail({
           hideBack={isWebDesktop}
           backBtnTestId="chord-detail-back-btn"
           isLight={isLight}
+          scrollContainerRef={detailScrollRef}
         />
       )}
 
       <div
+        ref={detailScrollRef}
         className="flex-1 min-h-0 overflow-y-auto no-scrollbar w-full h-full"
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -1036,6 +1039,7 @@ export function CategoryScreenView({
         }}
         backBtnTestId="category-back-btn"
         isLight={isLight}
+        scrollContainerRef={scrollRef}
       />
 
       <div

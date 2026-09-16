@@ -33,6 +33,8 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
       ? isAmoledProp
       : !isLight && (amoledMode || activeVis?.amoledMode);
 
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+
   return (
     <div
       className="w-full h-full relative overflow-hidden flex flex-col"
@@ -53,10 +55,12 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
         toolbarActions={toolbarActions}
         isLight={isLight}
         isAmoled={isAmoled}
+        scrollContainerRef={scrollRef}
       />
 
       {/* Continuous Scrolling Content Area with Safe-Area Insets */}
       <div
+        ref={scrollRef}
         className="flex-1 overflow-y-auto w-full h-full relative"
         style={{
           paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 80px)',

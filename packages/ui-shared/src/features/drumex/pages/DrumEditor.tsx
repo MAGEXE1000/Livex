@@ -2830,17 +2830,23 @@ export default function DrumEditor() {
             <header
               className={`fixed left-3 right-3 z-50 rounded-full px-3.5 ${
                 isLandscape ? 'py-1.5' : 'py-2'
-              } backdrop-blur-md shadow-[0_6px_28px_rgba(0,0,0,0.08)] border flex items-center justify-between select-none ${
+              } flex items-center justify-between select-none ${
                 isAmoled
-                  ? 'bg-black/92 border-zinc-800 text-white'
+                  ? 'text-white'
                   : isLight
-                    ? 'bg-white/95 border-slate-200/80 text-slate-800'
-                    : 'bg-zinc-900/92 border-zinc-800 text-zinc-100'
+                    ? 'text-slate-800'
+                    : 'text-zinc-100'
               }`}
               style={{
                 top: isLandscape
                   ? 'calc(env(safe-area-inset-top, 0px) + 6px)'
                   : 'calc(env(safe-area-inset-top, 0px) + 10px)',
+                background: 'var(--surface-topbar-bg)',
+                border: 'var(--surface-topbar-border)',
+                backdropFilter: 'var(--surface-topbar-blur)',
+                WebkitBackdropFilter: 'var(--surface-topbar-blur)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                contain: 'paint layout',
               }}
             >
               {/* Left: Back Button */}

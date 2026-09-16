@@ -1945,6 +1945,8 @@ function ExportModal({
     ? preset.sections.reduce((n, s) => n + s.chords.length, 0)
     : preset.chords.length;
 
+  const pdfScrollRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <div
       style={{
@@ -1960,6 +1962,7 @@ function ExportModal({
       <SharedFloatingHeader
         title={preset?.name ? `${preset.name} · PDF` : 'PDF Preview'}
         onBack={handleClose}
+        scrollContainerRef={pdfScrollRef}
         toolbarActions={
           <span
             style={{
@@ -1981,6 +1984,7 @@ function ExportModal({
 
       {/* ── Scrollable body ── */}
       <ScrollScaffold
+        ref={pdfScrollRef}
         bottomSpacing={false}
         style={{
           flex: 1,

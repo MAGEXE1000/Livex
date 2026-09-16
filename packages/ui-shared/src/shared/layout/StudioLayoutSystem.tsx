@@ -108,39 +108,56 @@ export interface ScrollScaffoldProps extends React.HTMLAttributes<HTMLDivElement
   disableScrollHide?: boolean;
 }
 
-export function ScrollScaffold({
-  bottomSpacing = true,
-  children,
-  style,
-  className = '',
-  disableScrollHide = false,
-  ...props
-}: ScrollScaffoldProps) {
-  const ref = React.useRef<HTMLDivElement | null>(null);
-  useScrollHide(ref, disableScrollHide);
+export const ScrollScaffold = React.forwardRef<HTMLDivElement, ScrollScaffoldProps>(
+  function ScrollScaffold(
+    {
+      bottomSpacing = true,
+      children,
+      style,
+      className = '',
+      disableScrollHide = false,
+      ...props
+    },
+    forwardedRef
+  ) {
+    const internalRef = React.useRef<HTMLDivElement | null>(null);
+    useScrollHide(internalRef, disableScrollHide);
 
-  return (
-    <div
-      ref={ref}
-      style={{
-        flex: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        boxSizing: 'border-box',
-        padding: 'var(--spacing-md)',
-        paddingBottom: bottomSpacing
-          ? 'var(--content-bottom-pad)'
-          : 'max(var(--spacing-md), env(safe-area-inset-bottom, 16px))',
-        ...style,
-      }}
-      className={`studio-scroll-scaffold no-scrollbar ${className}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
+    const setRefs = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        internalRef.current = node;
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }
+      },
+      [forwardedRef]
+    );
+
+    return (
+      <div
+        ref={setRefs}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          boxSizing: 'border-box',
+          padding: 'var(--spacing-md)',
+          paddingBottom: bottomSpacing
+            ? 'var(--content-bottom-pad)'
+            : 'max(var(--spacing-md), env(safe-area-inset-bottom, 16px))',
+          ...style,
+        }}
+        className={`studio-scroll-scaffold no-scrollbar ${className}`}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
+);
 
 // ── 3. SettingsScaffold ──────────────────────────────────────────────────────
 // Drill down settings details viewport with back button and scroll container.
