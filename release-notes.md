@@ -1,11 +1,9 @@
-# Version 4.6.15
+# Version 4.6.16
 
 Release Date: 2026-09-16
 
-### Fixed
-- Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.
-- Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.
-
 ### Improved
-- OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.
-- Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale="2"` and `baseFrequency="0.04 0.04"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.
+- Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.
+- Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.
+- Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.
+- Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.

@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.15';
-export const NATIVE_VERSION_CODE = 40615;
-export const WEB_VERSION = '4.6.15';
+export const NATIVE_VERSION = '4.6.16';
+export const NATIVE_VERSION_CODE = 40616;
+export const WEB_VERSION = '4.6.16';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '63e819ea';
+export const APP_COMMIT_SHA = '9edb4b4a';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/16/2026, 12:24:28 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/16/2026, 2:16:19 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,10 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.',
-      'Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale="2"` and `baseFrequency="0.04 0.04"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.',
-      'Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.',
+      'Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.',
+      'Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.',
+      'Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.',
+      'Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.',
     ],
   },
 ];
@@ -118,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.16',
+    date: '2026-09-16',
+    highlights: [
+      'Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.',
+      'Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.',
+      'Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.',
+      'Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.',
+    ],
+  },
   {
     version: '4.6.15',
     date: '2026-09-16',
@@ -208,14 +213,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Vocalex Section Hierarchy & Layout Alignment: Streamlined Vocalex interface by removing redundant section headers and descriptions in Vocal Monitor and Exercises already provided by top navigation. Aligned Preferences layout, control cards, and typography with canonical Livex design standards.',
       'Drumex Beats Header & Action Controls Alignment: Refined Drumex beats header spacing, typography, and action controls alignment to match canonical Livex UI while maintaining ergonomic touch targets.',
       'Groovex Android Foreground Service Lifecycle: Resolved fatal `ForegroundServiceStartNotAllowedException` on Android 14+ (API 34+) when exiting an active song by enforcing safe lifecycle teardown and background transition guards.',
-    ],
-  },
-  {
-    version: '4.6.6',
-    date: '2026-09-14',
-    highlights: [
-      'Canonical Android Launcher Icon Architecture: Standardized launcher icon resources to follow modern Android standards comparable to Google Play distributed applications. Removed legacy duplicate `android:roundIcon` definitions and redundant round mipmap assets, eliminating OEM launcher caching fragmentation (e.g. Samsung One UI Home preserving stale icons across updates). Enforced a single canonical adaptive launcher icon entry point (`android:icon="@mipmap/ic_launcher"`) across API 26-35+.',
-      'Launcher Icons Verification Invariants: Updated automated build gates and test suites to validate the unified 15-target asset architecture and prevent regressions in launcher icon declarations.',
     ],
   },
 ];

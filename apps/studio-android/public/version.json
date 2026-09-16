@@ -1,23 +1,21 @@
 {
   "platform": "android",
-  "version": "4.6.15",
-  "versionName": "4.6.15",
-  "versionCode": 40615,
-  "version_code": 40615,
-  "commit": "63e819ea",
-  "releasedAt": "9/16/2026, 12:24:28 AM CST",
-  "buildTimestamp": "9/16/2026, 12:24:28 AM CST",
+  "version": "4.6.16",
+  "versionName": "4.6.16",
+  "versionCode": 40616,
+  "version_code": 40616,
+  "commit": "9edb4b4a",
+  "releasedAt": "9/16/2026, 2:16:19 AM CST",
+  "buildTimestamp": "9/16/2026, 2:16:19 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.\n• Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.\n• OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.\n• Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale=\"2\"` and `baseFrequency=\"0.04 0.04\"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.",
-  "whatsNew": "• Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.\n• Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.\n• OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.\n• Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale=\"2\"` and `baseFrequency=\"0.04 0.04\"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.",
+  "changelog": "• Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.\n• Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.\n• Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.\n• Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.",
+  "whatsNew": "• Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.\n• Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.\n• Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.\n• Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.",
   "releaseNotes": {
     "improved": [
-      "OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.",
-      "Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale=\"2\"` and `baseFrequency=\"0.04 0.04\"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts."
-    ],
-    "fixed": [
-      "Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.",
-      "Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar."
+      "Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.",
+      "Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.",
+      "Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.",
+      "Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language."
     ]
   },
   "mandatory": false
