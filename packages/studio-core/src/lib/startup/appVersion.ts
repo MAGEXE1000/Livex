@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.12';
-export const NATIVE_VERSION_CODE = 40612;
-export const WEB_VERSION = '4.6.12';
+export const NATIVE_VERSION = '4.6.13';
+export const NATIVE_VERSION_CODE = 40613;
+export const WEB_VERSION = '4.6.13';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'b0126ae9';
+export const APP_COMMIT_SHA = 'f3a701f0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/15/2026, 7:53:32 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/15/2026, 9:32:58 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,11 +96,17 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Improved',
+    items: [
+      'Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.',
+      'Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.',
-      'Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.',
-      'Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.',
+      'Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.',
+      'Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.',
     ],
   },
 ];
@@ -112,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.13',
+    date: '2026-09-15',
+    highlights: [
+      'Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.',
+      'Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.',
+      'Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.',
+      'Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.',
+    ],
+  },
   {
     version: '4.6.12',
     date: '2026-09-15',
@@ -199,18 +215,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Tuner Two-Column Spatial Hierarchy: Balanced string card columns flanking the photorealistic headstock graphic to maximize peg alignment and prevent touch target overlap.',
       'Smooth Tuning Selection Transitions: Fluid modal transition between quick tuning presets and grouped tuning library categories.',
       'Startup Pipeline Cancellation Race: Resolved issue where concurrent app initialization steps incremented pipeline counters and aborted active update checks with `PipelineCancelledError`.',
-    ],
-  },
-  {
-    version: '4.6.3',
-    date: '2026-09-14',
-    highlights: [
-      'Bottom-Flush Tuner Presentation: Re-architected the Android Tuner into a full-width bottom sheet extending flush to the bottom bezel (`bottom: 0`, `padding: 0`), anchored below the Library navigation header.',
-      'Header-Integrated Instrument Selector: Restructured the Tuner header by replacing the standalone title with a compact segmented selector (`Electric`, `Acoustic`, `Bass`) on the upper-left and close button on the upper-right.',
-      'Instrument Scale & Stage Density: Substantially enlarged Electric and Bass headstocks to fill stage height, eliminating unused vertical black space across all device aspect ratios.',
-      'Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.',
-      'Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.',
-      'Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly "Bass", eliminating deprecated "Bass 4" naming.',
     ],
   },
 ];

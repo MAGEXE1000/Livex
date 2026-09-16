@@ -1,20 +1,23 @@
 {
   "platform": "android",
-  "version": "4.6.12",
-  "versionName": "4.6.12",
-  "versionCode": 40612,
-  "version_code": 40612,
-  "commit": "b0126ae9",
-  "releasedAt": "9/15/2026, 7:53:32 PM CST",
-  "buildTimestamp": "9/15/2026, 7:53:32 PM CST",
+  "version": "4.6.13",
+  "versionName": "4.6.13",
+  "versionCode": 40613,
+  "version_code": 40613,
+  "commit": "f3a701f0",
+  "releasedAt": "9/15/2026, 9:32:58 PM CST",
+  "buildTimestamp": "9/15/2026, 9:32:58 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.\n• Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.\n• Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.",
-  "whatsNew": "• Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.\n• Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.\n• Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.",
+  "changelog": "• Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.\n• Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.\n• Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.\n• Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.",
+  "whatsNew": "• Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.\n• Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.\n• Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.\n• Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.",
   "releaseNotes": {
+    "improved": [
+      "Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.",
+      "Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment."
+    ],
     "fixed": [
-      "Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.",
-      "Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.",
-      "Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView."
+      "Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.",
+      "Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages."
     ]
   },
   "mandatory": false
