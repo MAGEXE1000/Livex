@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.10';
-export const NATIVE_VERSION_CODE = 40610;
-export const WEB_VERSION = '4.6.10';
+export const NATIVE_VERSION = '4.6.11';
+export const NATIVE_VERSION_CODE = 40611;
+export const WEB_VERSION = '4.6.11';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '134ad391';
+export const APP_COMMIT_SHA = '9eb34165';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/15/2026, 7:04:21 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/15/2026, 7:21:56 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,12 +96,10 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Improved',
     items: [
-      'Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.',
-      'Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.',
-      'Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.',
-      'Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.',
+      'Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.',
+      'Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.',
     ],
   },
 ];
@@ -113,6 +111,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.11',
+    date: '2026-09-15',
+    highlights: [
+      'Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.',
+      'Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.',
+    ],
+  },
   {
     version: '4.6.10',
     date: '2026-09-15',
@@ -205,18 +211,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.',
       'Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.',
       'Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.',
-    ],
-  },
-  {
-    version: '4.6.1',
-    date: '2026-09-13',
-    highlights: [
-      'Physical Tuning Peg Alignment: Implemented a reusable geometry system aligning string controls with physical tuning pegs across Electric Guitar (6 left), Acoustic Guitar (3+3 symmetrical), Bass 4 (4 cloverleaf left), and Bass 5 (2 left, 3 right).',
-      'Directional Spatial Cueing: Subtle directional chevrons (`›` and `‹`) pointing toward the physical pegs without artificial connecting lines.',
-      'AMOLED True Black Purity: Eliminated blue/gray background surfaces behind the instrument stage in favor of pure `#000000` AMOLED black.',
-      'Streamlined Controls Hierarchy: Structured the top control area with prominent "Tuner" title and close button, full-width segmented instrument selector, and compact secondary controls (`Tuning` trigger and unified `A4 | Auto` capsule).',
-      'Simplified Tuning Selection Menu: Removed verbose parenthetical descriptions and redundant pills in favor of clean tuning names, monospace target note previews (`E  A  D  G  B  E`), and checkmarks.',
-      'Responsive Headstock Scaling: Enlarged headstock visualization with proportional scaling across small and tall Android displays.',
     ],
   },
 ];

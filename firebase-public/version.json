@@ -1,21 +1,19 @@
 {
   "platform": "web",
-  "version": "4.6.10",
-  "versionName": "4.6.10",
-  "versionCode": 40610,
-  "version_code": 40610,
-  "commit": "134ad391",
-  "releasedAt": "9/15/2026, 7:04:21 PM CST",
-  "buildTimestamp": "9/15/2026, 7:04:21 PM CST",
+  "version": "4.6.11",
+  "versionName": "4.6.11",
+  "versionCode": 40611,
+  "version_code": 40611,
+  "commit": "9eb34165",
+  "releasedAt": "9/15/2026, 7:21:56 PM CST",
+  "buildTimestamp": "9/15/2026, 7:21:56 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.\n• Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.\n• Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.\n• Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.",
-  "whatsNew": "• Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.\n• Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.\n• Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.\n• Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.",
+  "changelog": "• Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.\n• Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.",
+  "whatsNew": "• Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.\n• Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.",
   "releaseNotes": {
-    "added": [
-      "Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.",
-      "Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.",
-      "Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.",
-      "Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling."
+    "improved": [
+      "Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.",
+      "Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel."
     ]
   },
   "mandatory": false
