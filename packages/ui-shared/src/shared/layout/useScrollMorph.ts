@@ -72,8 +72,18 @@ export function useScrollMorph({
     const parentEl = headerEl.parentElement;
     const parentWidth = parentEl?.offsetWidth || window.innerWidth || 360;
 
-    // Base expanded width: fills available container with standard page insets (e.g. 16px/24px each side)
-    const expandedWidth = Math.min(parentWidth - 32, 680);
+    // Base expanded width: fills available container with standard page insets (var(--page-inset-h, 24px) each side)
+    // and strictly respects canonical content max width (var(--content-max-w, 640px) - insets)
+    const pageInsetH =
+      (typeof window !== 'undefined' &&
+        parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--page-inset-h'))) ||
+      24;
+    const contentMaxW =
+      (typeof window !== 'undefined' &&
+        parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--content-max-w'))) ||
+      640;
+    const maxHeaderW = contentMaxW - pageInsetH * 2;
+    const expandedWidth = Math.min(parentWidth - pageInsetH * 2, maxHeaderW);
     const expandedHeight = 60;
     const compactHeight = 56;
 

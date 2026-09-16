@@ -63,13 +63,25 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
         ref={scrollRef}
         className="flex-1 overflow-y-auto w-full h-full relative"
         style={{
-          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 80px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           paddingBottom:
             'calc(var(--content-bottom-pad, 88px) + env(safe-area-inset-bottom, 0px) + 32px)',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6">{children}</div>
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

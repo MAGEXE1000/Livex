@@ -15,6 +15,7 @@ import { StaggeredReveal } from '../../../shared/animation';
 import { motion } from 'motion/react';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { useVirtualWindow } from '../../../shared/virtualization';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 export default function GroovexLibrary() {
   const searchQuery = useGroovexStore(useShallow((s) => s.searchQuery));
@@ -35,6 +36,11 @@ export default function GroovexLibrary() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const t = useT();
+  const tr = t as any;
+  const amoledMode = useSettingsStore((s) => s.settings.amoledMode);
+  const isAmoled = Boolean(!isLight && amoledMode);
+  const title =
+    tr.nav?.groovexRhythms || tr.groovex?.rhythms || tr.groovex?.libraryTitle || 'Rhythms';
   const isWebDesktop = useIsWebDesktop();
   const [cachedSongIds, setCachedSongIds] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -162,98 +168,55 @@ export default function GroovexLibrary() {
 
   return (
     <div
-      ref={scrollRef}
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        background: 'var(--app-bg)',
-      }}
+      className="flex flex-col w-full h-full relative overflow-hidden"
+      style={{ background: 'var(--app-bg)' }}
+      data-purpose="groovex-library-container"
     >
+      <SharedFloatingHeader
+        title={title}
+        hideBack={true}
+        scrollContainerRef={scrollRef}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+
       <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto no-scrollbar"
         style={{
-          padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
-          paddingBottom:
-            'calc(var(--content-bottom-pad, 96px) + env(safe-area-inset-bottom, 0px) + 24px)',
+          height: '100%',
+          WebkitOverflowScrolling: 'touch',
+          background: 'var(--app-bg)',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
-        {/* ── STITCH COMPACT, PUNCHY LIBRARY HEADER ── */}
-        <section
+        <div
           style={{
-            paddingTop: isWebDesktop
-              ? '16px'
-              : 'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 40px))',
-            paddingBottom: '8px',
-            userSelect: 'none',
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+            paddingBottom:
+              'calc(var(--content-bottom-pad, 96px) + env(safe-area-inset-bottom, 0px) + 24px)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <h1
-              style={{
-                fontFamily: 'var(--studio-font-display)',
-                fontSize: '32px',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-                lineHeight: 1,
-                color: 'var(--c-text-primary, var(--text))',
-                margin: 0,
-              }}
-            >
-              {t.groovex.libraryTitle || 'Library'}
-            </h1>
-          </div>
-          <p
+          {/* ── STITCH POLISHED SEARCH & FILTER CONTROLS ── */}
+          <section
             style={{
-              fontFamily: 'var(--studio-font-body)',
-              fontSize: '11px',
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--c-text-secondary, var(--muted))',
-              marginTop: '6px',
-              marginBottom: 0,
+              paddingTop: '4px',
+              paddingBottom: '12px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
+              flexDirection: 'column',
+              gap: '10px',
             }}
           >
-            <span
-              style={{
-                display: 'inline-block',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--app-accent, #007AFF)',
-                boxShadow: '0 0 6px var(--app-accent, #007AFF)',
-                flexShrink: 0,
-              }}
-            />
-            <span id="session-count">{t.groovex.sessionsAvailable(SONG_CATALOG.length)}</span>
-          </p>
-        </section>
-
-        {/* ── STITCH POLISHED SEARCH & FILTER CONTROLS (STICKY) ── */}
-        <section
-          style={{
-            paddingTop: '8px',
-            paddingBottom: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            position: 'sticky',
-            top: 0,
-            zIndex: 20,
-            background: 'var(--app-bg)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--c-border, rgba(0, 0, 0, 0.04))',
-            margin: '0 calc(-1 * var(--page-header-inset-h, var(--page-inset-h, 20px)))',
-            paddingLeft: 'var(--page-header-inset-h, var(--page-inset-h, 20px))',
-            paddingRight: 'var(--page-header-inset-h, var(--page-inset-h, 20px))',
-          }}
-        >
-          {/* Search Input Container */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            {/* Search Input Container */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span
               className="material-symbols-outlined"
               style={{
@@ -738,6 +701,7 @@ export default function GroovexLibrary() {
         )}
       </div>
     </div>
+  </div>
   );
 }
 

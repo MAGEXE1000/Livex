@@ -13,6 +13,7 @@ import { useGroovexStore } from '../state/useGroovexStore';
 import { SONG_CATALOG } from '../services/songCatalog';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
 // Canonical conversions for Master Gain:
 // Range: -24 dB to +6 dB, with 0 dB at center position (50%).
@@ -156,122 +157,100 @@ export default function GroovexPreferences() {
 
   return (
     <div
-      ref={scrollRef}
-      className="w-full no-scrollbar"
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        background: 'var(--app-bg)',
-      }}
+      className="flex flex-col w-full h-full relative overflow-hidden"
+      style={{ background: 'var(--app-bg)' }}
+      data-purpose="groovex-preferences-container"
     >
-      <style>{`
-        input[type=range].stitch-range-slider {
-          -webkit-appearance: none;
-          appearance: none;
-          background: transparent;
-          cursor: pointer;
-          margin: 0;
-          padding: 0;
-        }
-        input[type=range].stitch-range-slider:focus {
-          outline: none;
-        }
-        input[type=range].stitch-range-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          height: 22px;
-          width: 22px;
-          border-radius: 50%;
-          background: var(--app-accent, #007aff);
-          box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35), 0 0 0 3px ${thumbRing};
-          margin-top: -8px;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        input[type=range].stitch-range-slider::-webkit-slider-thumb:active {
-          transform: scale(1.15);
-          box-shadow: 0 3px 10px rgba(0, 122, 255, 0.45), 0 0 0 4px ${thumbRing};
-        }
-        input[type=range].stitch-range-slider::-webkit-slider-runnable-track {
-          width: 100%;
-          height: 6px;
-          cursor: pointer;
-          border-radius: 9999px;
-          background: transparent;
-        }
-        input[type=range].stitch-range-slider::-moz-range-thumb {
-          height: 22px;
-          width: 22px;
-          border: 3px solid ${thumbRing};
-          border-radius: 50%;
-          background: var(--app-accent, #007aff);
-          box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35);
-          transition: transform 0.15s ease;
-        }
-        input[type=range].stitch-range-slider::-moz-range-thumb:active {
-          transform: scale(1.15);
-        }
-        input[type=range].stitch-range-slider::-moz-range-track {
-          width: 100%;
-          height: 6px;
-          cursor: pointer;
-          border-radius: 9999px;
-          background: transparent;
-        }
-      `}</style>
+      <SharedFloatingHeader
+        title={t.groovex.preferences || 'Preferences'}
+        hideBack={true}
+        scrollContainerRef={scrollRef}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
 
       <div
+        ref={scrollRef}
+        className="flex-1 w-full overflow-y-auto no-scrollbar"
         style={{
-          maxWidth: 600,
-          margin: isWebDesktop ? '0' : '0 auto',
-          padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
-          paddingBottom:
-            'calc(var(--content-bottom-pad, 96px) + env(safe-area-inset-bottom, 0px) + 24px)',
+          height: '100%',
+          WebkitOverflowScrolling: 'touch',
+          background: 'var(--app-bg)',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
-        {/* ── STITCH SCREEN HEADER ── */}
-        <section
-          data-purpose="screen-title-section"
+        <style>{`
+          input[type=range].stitch-range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+          }
+          input[type=range].stitch-range-slider:focus {
+            outline: none;
+          }
+          input[type=range].stitch-range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: var(--app-accent, #007aff);
+            box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35), 0 0 0 3px ${thumbRing};
+            margin-top: -8px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+          }
+          input[type=range].stitch-range-slider::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+            box-shadow: 0 3px 10px rgba(0, 122, 255, 0.45), 0 0 0 4px ${thumbRing};
+          }
+          input[type=range].stitch-range-slider::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 9999px;
+            background: transparent;
+          }
+          input[type=range].stitch-range-slider::-moz-range-thumb {
+            height: 22px;
+            width: 22px;
+            border: 3px solid ${thumbRing};
+            border-radius: 50%;
+            background: var(--app-accent, #007aff);
+            box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35);
+            transition: transform 0.15s ease;
+          }
+          input[type=range].stitch-range-slider::-moz-range-thumb:active {
+            transform: scale(1.15);
+          }
+          input[type=range].stitch-range-slider::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 9999px;
+            background: transparent;
+          }
+        `}</style>
+
+        <div
           style={{
-            paddingTop: isWebDesktop
-              ? '16px'
-              : 'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 40px))',
-            paddingBottom: '20px',
-            userSelect: 'none',
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+            paddingBottom:
+              'calc(var(--content-bottom-pad, 96px) + env(safe-area-inset-bottom, 0px) + 24px)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h1
-              style={{
-                fontFamily: 'var(--studio-font-display)',
-                fontSize: '32px',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-                lineHeight: 1.15,
-                color: 'var(--c-text-primary, var(--text))',
-                margin: 0,
-              }}
-            >
-              {t.groovex.preferences || 'Preferences'}
-            </h1>
-          </div>
-          <p
-            style={{
-              fontFamily: 'var(--studio-font-body)',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'var(--c-text-secondary, var(--muted))',
-              marginTop: '4px',
-              marginBottom: 0,
-              lineHeight: 1.4,
-            }}
-          >
-            Customize how GrooveX feels and sounds
-          </p>
-        </section>
-
-        {/* ── SETTINGS STACK ── */}
-        <div
-          data-purpose="settings-stack"
+          {/* ── SETTINGS STACK ── */}
+          <div
+            data-purpose="settings-stack"
           style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
         >
           {/* ── SECTION 1: DEFAULT VOLUME LEVELS ── */}
@@ -996,6 +975,7 @@ export default function GroovexPreferences() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
 

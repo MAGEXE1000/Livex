@@ -130,7 +130,18 @@ export const StageSetupHub: React.FC<StageSetupHubProps> = ({
         }}
       >
 
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pb-12">
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+            paddingBottom: '48px',
+          }}
+        >
           <div className="flex flex-col gap-4">
             {cards.map((card) => (
               <motion.button

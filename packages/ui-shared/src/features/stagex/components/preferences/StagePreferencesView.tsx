@@ -152,7 +152,17 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
         }}
       >
 
-        <div className="px-6 max-w-3xl mx-auto">
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+          }}
+        >
           {/* ── 1. DISPLAY & OVERLAYS ── */}
           <SectionHeader
             icon="layers"
