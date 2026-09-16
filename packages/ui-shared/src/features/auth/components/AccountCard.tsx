@@ -4697,74 +4697,14 @@ export function AccountSettingsPage({
           }}
           className="no-scrollbar animate-fade-in"
         >
-          {/* Current plan badge */}
-          <div
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: `${accent.from}10`,
-              border: `1px solid ${accent.from}25`,
-              borderRadius: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              boxSizing: 'border-box',
-            }}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 18, color: accent.from, fontVariationSettings: "'FILL' 1" }}
-            >
-              verified
-            </span>
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--studio-font-body)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: 'var(--c-text-primary)',
-                  margin: 0,
-                }}
-              >
-                {lang === 'es'
-                  ? `Plan actual · ${profile?.role ? profile.role.toUpperCase() : 'GRATIS'}`
-                  : `Current plan · ${profile?.role ? profile.role.toUpperCase() : 'FREE'}`}
-              </p>
-              <p
-                style={{
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  color: 'var(--c-text-secondary)',
-                  margin: '2px 0 0',
-                }}
-              >
-                {profile?.role === 'admin'
-                  ? lang === 'es'
-                    ? 'Acceso de administrador completo e ilimitado'
-                    : 'Full unlimited administrator access bypass'
-                  : profile?.role === 'pro'
-                    ? lang === 'es'
-                      ? 'Suite de producción profesional activa'
-                      : 'Active professional production suite access'
-                    : profile?.role === 'core'
-                      ? lang === 'es'
-                        ? 'Funciones avanzadas y almacenamiento en la nube activos'
-                        : 'Active advanced tools & cloud storage access'
-                      : lang === 'es'
-                        ? 'Acceso estándar a las funciones básicas'
-                        : 'Standard access to basic creation tools'}
-              </p>
-            </div>
-          </div>
-
-          {/* Aceternity Pricing Section */}
           <StudioPricingSection
             accent={accent}
             lang={lang}
             profile={profile}
             user={user}
             onShowToast={showToast}
+            isAmoled={isAmoled}
+            isLight={isLight}
           />
         </div>
       </ProfileMorphModal>
