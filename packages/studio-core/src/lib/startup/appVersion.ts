@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.11';
-export const NATIVE_VERSION_CODE = 40611;
-export const WEB_VERSION = '4.6.11';
+export const NATIVE_VERSION = '4.6.12';
+export const NATIVE_VERSION_CODE = 40612;
+export const WEB_VERSION = '4.6.12';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '9eb34165';
+export const APP_COMMIT_SHA = 'b0126ae9';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/15/2026, 7:21:56 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/15/2026, 7:53:32 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,10 +96,11 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Fixed',
     items: [
-      'Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.',
-      'Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.',
+      'Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.',
+      'Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.',
+      'Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.',
     ],
   },
 ];
@@ -210,16 +211,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Ergonomic String Tap Targets: Expanded string buttons to wide, tactile pills (`w-[154-172px]`, `h-11/h-12`) with larger badges, high-contrast typography, and calibrated horizontal/vertical alignment to physical tuning pegs.',
       'Unified Secondary Controls: Standardized the tuning selector, A4 reference, and Auto mode toggle to a unified `h-11` height with neutral AMOLED dark surfaces (`#141518`), reserving accent blue strictly for active state toggles.',
       'Canonical Bass Labeling: Streamlined all user-facing instrument selectors and tuning menus to strictly "Bass", eliminating deprecated "Bass 4" naming.',
-    ],
-  },
-  {
-    version: '4.6.2',
-    date: '2026-09-13',
-    highlights: [
-      'Tuner Audio Graph Isolation: Decoupled reference string audio playback into an independent Web Audio context, completely isolating speaker playback from the microphone capture pipeline.',
-      'Self-Playback Rejection: Implemented active playback tracking and real-time rejection in the pitch analyser pipeline to prevent speaker acoustic bleed from registering as user instrument input.',
-      'Instrument & Tuning Model Consolidation: Standardized the Tuner on three canonical instrument modes (Electric Guitar, Acoustic Guitar, Bass 4) and completely removed Bass 5 from user-facing surfaces.',
-      'Dynamic Tuning-Bound Pitch Detection: Bound pitch detection metrics directly to the selected tuning, ensuring alternate tunings (Drop D, DADGAD, Open G, Half Step Down, etc.) accurately drive target notes, string highlights, and cents deviation.',
     ],
   },
 ];

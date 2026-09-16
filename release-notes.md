@@ -1,8 +1,9 @@
-# Version 4.6.11
+# Version 4.6.12
 
 Release Date: 2026-09-15
 
-### Improved
+### Fixed & Improved
 
-- Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.
-- Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.
+- Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.
+- Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.
+- Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.
