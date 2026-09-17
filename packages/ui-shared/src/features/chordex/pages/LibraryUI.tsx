@@ -374,6 +374,7 @@ export function LibraryChordDetail({
     isWebDesktop,
   } = state;
   const t = useT();
+  const detailScrollRef = useRef<HTMLDivElement | null>(null);
 
   const relatedChords = useMemo(() => (chord ? getRelatedChords(chord) : []), [chord]);
 
@@ -397,7 +398,6 @@ export function LibraryChordDetail({
   };
 
   const handleBack = onBack || (() => selectChord(null));
-  const detailScrollRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <div
