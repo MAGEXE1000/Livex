@@ -4,7 +4,18 @@ import fs from 'node:fs';
 import readline from 'node:readline';
 import { Writable } from 'node:stream';
 
-const EXPECTED_SHA256 = '58b9bf2de5064c62ac3ca181b5608fe135c6894a8359ff6588e19218cd384764';
+import { getAppVersionInfo } from '../../../scripts/parse-version.mjs';
+
+let defaultFingerprint = '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206';
+try {
+  defaultFingerprint = getAppVersionInfo().productionSigningSha256;
+} catch {
+  // fallback
+}
+const EXPECTED_SHA256 = (process.env.EXPECTED_SIGNATURE_SHA256 || defaultFingerprint)
+  .toLowerCase()
+  .replace(/:/g, '')
+  .trim();
 
 function printUsage() {
   console.log('Usage:');
