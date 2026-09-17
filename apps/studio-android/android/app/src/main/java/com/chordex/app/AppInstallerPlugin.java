@@ -272,9 +272,18 @@ public class AppInstallerPlugin extends Plugin {
         String path = call.getString("filePath");
         String expectedHash = call.getString("expectedHash");
         logNativeInstrumentation(getContext(), "verifySha256", callId, "ENTER", "filePath=" + path + ", expectedHash=" + expectedHash + " (total calls: " + verifySha256CallCount + ")");
-        if (path == null || expectedHash == null) {
+        if (path == null || expectedHash == null || expectedHash.trim().isEmpty()) {
             logNativeInstrumentation(getContext(), "verifySha256", callId, "EXIT", "Rejected: missing filePath or expectedHash");
             call.reject("filePath and expectedHash are required");
+            return;
+        }
+        String cleanExpected = expectedHash.trim().toLowerCase();
+        if (!cleanExpected.matches("^[a-f0-9]{64}$") || cleanExpected.replace("0", "").isEmpty()) {
+            logNativeInstrumentation(getContext(), "verifySha256", callId, "EXIT", "Rejected: invalid or all-zero expectedHash: " + expectedHash);
+            JSObject result = new JSObject();
+            result.put("matches", false);
+            result.put("computedHash", "INVALID_EXPECTED_HASH");
+            call.resolve(result);
             return;
         }
         try {
@@ -912,12 +921,19 @@ public class AppInstallerPlugin extends Plugin {
                 return;
             }
 
+            if (!UpdateDownloadService.isTrustedReleaseUrl(urlString)) {
+                logNativeInstrumentation(getContext(), "downloadAndInstallApk", callId, "EXIT", "Rejected: untrusted or insecure url=" + urlString);
+                call.reject("Untrusted or insecure download URL: " + urlString);
+                return;
+            }
+
             activeDownloadCall = call;
 
             Intent serviceIntent = new Intent(getContext(), UpdateDownloadService.class);
             serviceIntent.putExtra("url", urlString);
             serviceIntent.putExtra("fileName", call.getString("fileName"));
             serviceIntent.putExtra("expectedHash", call.getString("expectedHash"));
+            serviceIntent.putExtra("installImmediately", true);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 getContext().startForegroundService(serviceIntent);
@@ -939,12 +955,19 @@ public class AppInstallerPlugin extends Plugin {
             return;
         }
 
+        if (!UpdateDownloadService.isTrustedReleaseUrl(urlString)) {
+            logNativeInstrumentation(getContext(), "downloadApk", callId, "EXIT", "Rejected: untrusted or insecure url=" + urlString);
+            call.reject("Untrusted or insecure download URL: " + urlString);
+            return;
+        }
+
         activeDownloadCall = call;
 
         Intent serviceIntent = new Intent(getContext(), UpdateDownloadService.class);
         serviceIntent.putExtra("url", urlString);
         serviceIntent.putExtra("fileName", call.getString("fileName"));
         serviceIntent.putExtra("expectedHash", call.getString("expectedHash"));
+        serviceIntent.putExtra("installImmediately", false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getContext().startForegroundService(serviceIntent);

@@ -7,6 +7,17 @@ export async function verifyFileIntegrity(filePath: string, expectedHash: string
   transitionToState('VERIFY_SHA256', 'Starting SHA verification');
   updateGlobalState({ statusText: 'Verifying package' });
 
+  if (
+    !expectedHash ||
+    typeof expectedHash !== 'string' ||
+    !/^[a-fA-F0-9]{64}$/.test(expectedHash.trim()) ||
+    expectedHash.trim().replace(/0/g, '') === ''
+  ) {
+    updateDebugLogs.shaVerification = 'FAILED';
+    void logProgressStage('SHA verified', 'SHA validation failed: invalid expected hash');
+    throw new Error('[SHA Verification] Invalid or missing expected SHA-256 hash in update metadata');
+  }
+
   const isValid = await verifyApkSha256(filePath, expectedHash);
   void logProgressStage(
     'SHA verified',

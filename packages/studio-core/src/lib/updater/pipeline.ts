@@ -1377,43 +1377,51 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
           { filePath, expectedHash },
           'SHA-256 verification started'
         );
-        if (expectedHash) {
-          try {
-            await verifyFileIntegrity(filePath, expectedHash);
-            logPipelineTrace(
-              'downloadUpdateInternal',
-              'verification',
-              { filePath, expectedHash },
-              { verified: true }
-            );
-            logDetailedJsTrace(
-              'downloadUpdate',
-              'pipeline.ts',
-              783,
-              'SHA-256 integrity verification passed'
-            );
-            logDiagnosticEvent('APK_VERIFIED', { filePath });
-          } catch (shaErr) {
-            logPipelineTrace(
-              'downloadUpdateInternal',
-              'verification',
-              { filePath, expectedHash },
-              { verified: false, error: shaErr instanceof Error ? shaErr.message : String(shaErr) }
-            );
-            if (globalUpdateState.updateState === 'VERIFY_SHA256') {
-              transitionToState('INSTALL_FAILED', 'SHA integrity check failed');
-            }
-            throw shaErr;
-          }
-        } else {
+        if (
+          !expectedHash ||
+          typeof expectedHash !== 'string' ||
+          !/^[a-fA-F0-9]{64}$/.test(expectedHash.trim()) ||
+          expectedHash.trim().replace(/0/g, '') === ''
+        ) {
           logPipelineTrace(
             'downloadUpdateInternal',
             'verification',
-            { filePath },
-            { verified: 'skipped (no expected hash)' }
+            { filePath, expectedHash },
+            { verified: false, error: 'Missing, malformed, or all-zero expected SHA-256 hash in release metadata' }
           );
-          updateDebugLogs.shaVerification = 'SKIPPED (No expected hash)';
-          logDiagnosticEvent('APK_VERIFIED', { filePath, warning: 'SHA skipped' });
+          updateDebugLogs.shaVerification = 'FAILED (Missing/Invalid expected hash)';
+          if (globalUpdateState.updateState === 'VERIFY_SHA256') {
+            transitionToState('INSTALL_FAILED', 'Missing or invalid APK SHA-256 checksum in update metadata');
+          }
+          throw new Error('[SHA Verification] Update package metadata is missing a valid SHA-256 checksum');
+        }
+
+        try {
+          await verifyFileIntegrity(filePath, expectedHash);
+          logPipelineTrace(
+            'downloadUpdateInternal',
+            'verification',
+            { filePath, expectedHash },
+            { verified: true }
+          );
+          logDetailedJsTrace(
+            'downloadUpdate',
+            'pipeline.ts',
+            783,
+            'SHA-256 integrity verification passed'
+          );
+          logDiagnosticEvent('APK_VERIFIED', { filePath });
+        } catch (shaErr) {
+          logPipelineTrace(
+            'downloadUpdateInternal',
+            'verification',
+            { filePath, expectedHash },
+            { verified: false, error: shaErr instanceof Error ? shaErr.message : String(shaErr) }
+          );
+          if (globalUpdateState.updateState === 'VERIFY_SHA256') {
+            transitionToState('INSTALL_FAILED', 'SHA integrity check failed');
+          }
+          throw shaErr;
         }
       }
       logTimelineEvent('UpdateCore', 'SHA_VERIFICATION_COMPLETED');

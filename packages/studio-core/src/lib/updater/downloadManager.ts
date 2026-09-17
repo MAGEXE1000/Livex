@@ -7,6 +7,7 @@ import {
 } from './stateMachine';
 import { updateDebugLogs, logProgressStage, nextJsCallId } from './diagnostics';
 import { logPipelineTrace } from './releaseMetadata';
+import { runEligibilityCheck } from './eligibilityVerification';
 
 export interface DownloadOptions {
   url: string;
@@ -46,31 +47,36 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
         );
 
         let lastUpdateTime = 0;
-        filePath = await downloadApk(sourceUrl, fileName, (percent, totalBytes, downloadedBytes) => {
-          resetDownloadWatchdog();
-          const now = Date.now();
-          if (now - lastUpdateTime >= 100 || percent === 100 || percent === 0) {
-            lastUpdateTime = now;
-            const effectiveTotal =
-              (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
-              globalUpdateState.apkSizeBytes ??
-              null;
-            const effectiveDownloaded =
-              (typeof downloadedBytes === 'number' && downloadedBytes > 0 ? downloadedBytes : null) ??
-              (effectiveTotal && percent > 0 ? Math.round((percent / 100) * effectiveTotal) : null);
+        filePath = await downloadApk(
+          sourceUrl,
+          fileName,
+          (percent, totalBytes, downloadedBytes) => {
+            resetDownloadWatchdog();
+            const now = Date.now();
+            if (now - lastUpdateTime >= 100 || percent === 100 || percent === 0) {
+              lastUpdateTime = now;
+              const effectiveTotal =
+                (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
+                globalUpdateState.apkSizeBytes ??
+                null;
+              const effectiveDownloaded =
+                (typeof downloadedBytes === 'number' && downloadedBytes > 0 ? downloadedBytes : null) ??
+                (effectiveTotal && percent > 0 ? Math.round((percent / 100) * effectiveTotal) : null);
 
-            if (onProgress) {
-              onProgress(percent, effectiveTotal ?? undefined, effectiveDownloaded ?? undefined);
-            } else {
-              updateGlobalState({
-                progress: Math.max(0, Math.min(1, percent / 100)),
-                statusText: `Downloading update (${Math.round(percent)}%)`,
-                downloadedBytes: effectiveDownloaded,
-                totalBytes: effectiveTotal,
-              });
+              if (onProgress) {
+                onProgress(percent, effectiveTotal ?? undefined, effectiveDownloaded ?? undefined);
+              } else {
+                updateGlobalState({
+                  progress: Math.max(0, Math.min(1, percent / 100)),
+                  statusText: `Downloading update (${Math.round(percent)}%)`,
+                  downloadedBytes: effectiveDownloaded,
+                  totalBytes: effectiveTotal,
+                });
+              }
             }
-          }
-        });
+          },
+          globalUpdateState.apkSha256 ?? undefined
+        );
 
         downloadSuccess = true;
         break;
@@ -114,30 +120,38 @@ export async function downloadAndInstallGitHubApk(): Promise<void> {
     updateDebugLogs.downloadStatus = `Downloading GitHub package: ${gitHubApkUrl}`;
     updateGlobalState({ statusText: 'Downloading from GitHub...' });
 
+    const apkSha256 = globalUpdateState.apkSha256;
+    if (
+      !apkSha256 ||
+      typeof apkSha256 !== 'string' ||
+      !/^[a-fA-F0-9]{64}$/.test(apkSha256.trim()) ||
+      apkSha256.trim().replace(/0/g, '') === ''
+    ) {
+      throw new Error('[GitHub Download] Missing or invalid SHA-256 checksum for update package.');
+    }
+
     const { filePath } = await AppInstaller.downloadApk({
       url: gitHubApkUrl,
       fileName: `studio-github-${globalUpdateState.remoteVersion || 'latest'}.apk`,
+      expectedHash: apkSha256.trim().toLowerCase(),
     });
 
     updateDebugLogs.downloadStatus += `\nDownload finished. Path: ${filePath}`;
-    updateGlobalState({ progress: 1.0, statusText: 'Verifying package signatures...' });
+    updateGlobalState({ progress: 1.0, statusText: 'Verifying package checksum...' });
 
-    if (globalUpdateState.apkSha256) {
-      updateGlobalState({ statusText: 'Verifying SHA-256...' });
-      const shaMatches = (
-        await AppInstaller.verifyApkSha256({ filePath, expectedHash: globalUpdateState.apkSha256 })
-      ).matches;
-      updateDebugLogs.shaVerification = shaMatches ? 'SUCCESS' : 'FAILED';
-      if (!shaMatches) {
-        throw new Error('SHA-256 checksum verification failed.');
-      }
+    updateGlobalState({ statusText: 'Verifying SHA-256...' });
+    const shaMatches = (
+      await AppInstaller.verifyApkSha256({ filePath, expectedHash: apkSha256.trim().toLowerCase() })
+    ).matches;
+    updateDebugLogs.shaVerification = shaMatches ? 'SUCCESS' : 'FAILED';
+    if (!shaMatches) {
+      throw new Error('SHA-256 checksum verification failed.');
     }
 
-    const info = await AppInstaller.inspectApk({ filePath });
-    updateDebugLogs.downloadedIsValidApk = info.isValidApk;
-    updateDebugLogs.downloadedSigningSha256 = info.signingSha256;
-    if (!info.isValidApk) {
-      throw new Error('The downloaded package is not a valid APK.');
+    updateGlobalState({ statusText: 'Verifying package authenticity & eligibility...' });
+    const eligible = await runEligibilityCheck(filePath);
+    if (!eligible) {
+      throw new Error('Package failed authenticity/eligibility verification.');
     }
 
     updateGlobalState({ statusText: 'Launching package installer...' });

@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { parseAndNormalizeVersion } from '../startup/appVersion';
+import { parseAndNormalizeVersion, PRODUCTION_SIGNING_SHA256 } from '../startup/appVersion';
 import { logRawSource, releaseMetadataInspector } from '../updater/versionLogger';
 
 // CRITICAL WARNING:
@@ -14,8 +14,8 @@ import { logRawSource, releaseMetadataInspector } from '../updater/versionLogger
 export interface AppInstallerPlugin {
   installApk(options: { filePath: string }): Promise<void>;
   installApkDirect(options: { filePath: string }): Promise<void>;
-  downloadAndInstallApk(options: { url: string; fileName?: string }): Promise<void>;
-  downloadApk(options: { url: string; fileName?: string }): Promise<{ filePath: string }>;
+  downloadAndInstallApk(options: { url: string; fileName?: string; expectedHash?: string }): Promise<void>;
+  downloadApk(options: { url: string; fileName?: string; expectedHash?: string }): Promise<{ filePath: string }>;
   getLastInstallResult(): Promise<{
     statusCode: number;
     statusMessage: string;
@@ -285,13 +285,55 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
 }
 
 /**
+ * Validates that an APK download URL uses HTTPS and originates from a trusted release host
+ * (Firebase Hosting mirror or GitHub Releases repository/CDN).
+ */
+export function isTrustedReleaseUrl(urlString: string): boolean {
+  if (!urlString || typeof urlString !== 'string') return false;
+  try {
+    const parsed = new URL(urlString.trim());
+    if (parsed.protocol !== 'https:') return false;
+    const host = parsed.hostname.toLowerCase();
+
+    // Firebase Hosting
+    if (
+      host === 'studio-30f44.web.app' ||
+      host === 'studio-30f44.firebaseapp.com' ||
+      host.endsWith('.web.app') ||
+      host.endsWith('.firebaseapp.com')
+    ) {
+      return true;
+    }
+
+    // GitHub Releases & CDN
+    if (
+      host === 'github.com' ||
+      host === 'api.github.com' ||
+      host === 'objects.githubusercontent.com' ||
+      host === 'raw.githubusercontent.com' ||
+      host.endsWith('.githubusercontent.com')
+    ) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Downloads the APK from the specified URL and launches the native package installer.
  */
 export async function downloadAndInstallApk(
   url: string,
   fileName?: string,
-  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void
+  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void,
+  expectedHash?: string
 ): Promise<void> {
+  if (!isTrustedReleaseUrl(url)) {
+    throw new Error(`[apkDownloader] Untrusted or insecure download URL rejected: ${url}`);
+  }
   let progressListener: any = null;
 
   try {
@@ -308,7 +350,7 @@ export async function downloadAndInstallApk(
       } catch (err) {
       }
     }
-    await AppInstaller.downloadAndInstallApk({ url, fileName });
+    await AppInstaller.downloadAndInstallApk({ url, fileName, expectedHash });
 
     if (progressListener) {
       await progressListener.remove();
@@ -329,8 +371,12 @@ export async function downloadAndInstallApk(
 export async function downloadApk(
   url: string,
   fileName?: string,
-  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void
+  onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void,
+  expectedHash?: string
 ): Promise<string> {
+  if (!isTrustedReleaseUrl(url)) {
+    throw new Error(`[apkDownloader] Untrusted or insecure download URL rejected: ${url}`);
+  }
   let progressListener: any = null;
 
   try {
@@ -352,7 +398,7 @@ export async function downloadApk(
       } catch (err) {
       }
     }
-    const res = await AppInstaller.downloadApk({ url, fileName });
+    const res = await AppInstaller.downloadApk({ url, fileName, expectedHash });
 
     if (progressListener) {
       await progressListener.remove();
@@ -379,21 +425,30 @@ export async function downloadApk(
 
 /**
  * Verifies the SHA-256 hash of a file at the given absolute path.
+ * Strictly fail-closed: missing, empty, all-zero, or malformed hashes return false.
  */
 export async function verifyApkSha256(filePath: string, expectedHash: string): Promise<boolean> {
   await AppInstaller.appendLog({
     stage: '[INSTRUMENTATION] verifyApkSha256 ENTER',
     message: `filePath=${filePath}, expectedHash=${expectedHash}`,
   });
-  if (!expectedHash || expectedHash.replace(/0/g, '') === '') {
+  if (
+    !expectedHash ||
+    typeof expectedHash !== 'string' ||
+    !/^[a-fA-F0-9]{64}$/.test(expectedHash.trim()) ||
+    expectedHash.trim().replace(/0/g, '') === ''
+  ) {
     await AppInstaller.appendLog({
       stage: '[INSTRUMENTATION] verifyApkSha256 EXIT',
-      message: 'Skipped: all-zero or empty hash',
+      message: 'Rejected: missing, malformed, or all-zero expected SHA-256 hash',
     });
-    return true; // Skip if no hash provided
+    return false; // Fail-closed: never skip or bypass
   }
+
+  const cleanExpected = expectedHash.trim().toLowerCase();
+
   try {
-    const res = await AppInstaller.verifySha256({ filePath, expectedHash });
+    const res = await AppInstaller.verifySha256({ filePath, expectedHash: cleanExpected });
     try {
       const { updateDebugLogs } = await import('../updater/debugLogs');
       updateDebugLogs.downloadedApkSha256 = res.computedHash;
@@ -446,7 +501,7 @@ export async function verifyApkSha256(filePath: string, expectedHash: string): P
         updateDebugLogs.downloadedApkSha256 = hashHex;
       } catch {}
 
-      const matches = hashHex.toLowerCase() === expectedHash.toLowerCase();
+      const matches = hashHex.toLowerCase() === cleanExpected;
       return matches;
     } catch (jsErr) {
       console.error('[apkDownloader] JS Fallback verification failed:', jsErr);
@@ -487,6 +542,7 @@ export interface InstallEligibility {
   reason?:
     | 'packageName_mismatch'
     | 'signature_mismatch'
+    | 'signature_missing'
     | 'versionCode_low'
     | 'parse_failed'
     | 'not_native'
@@ -561,13 +617,39 @@ export async function checkApkEligibility(
       };
     }
 
-    const cleanInstSig = installed.signingSha256.replace(/:/g, '').toLowerCase();
-    const cleanDownSig = downloaded.signingSha256.replace(/:/g, '').toLowerCase();
-    if (cleanInstSig !== cleanDownSig) {
+    const cleanInstSig = (installed.signingSha256 || '').replace(/:/g, '').toLowerCase().trim();
+    const cleanDownSig = (downloaded.signingSha256 || '').replace(/:/g, '').toLowerCase().trim();
+
+    if (
+      !cleanDownSig ||
+      !/^[a-f0-9]{64}$/.test(cleanDownSig) ||
+      cleanDownSig.replace(/0/g, '') === ''
+    ) {
+      return {
+        eligible: false,
+        reason: 'signature_missing',
+        errorDetails: 'The downloaded APK is not properly signed or signature fingerprint could not be extracted.',
+        installed,
+        downloaded,
+      };
+    }
+
+    if (cleanInstSig && cleanInstSig !== cleanDownSig) {
       return {
         eligible: false,
         reason: 'signature_mismatch',
         errorDetails: `Signing certificate fingerprint mismatch. Installed: ${installed.signingSha256}, Downloaded: ${downloaded.signingSha256}`,
+        installed,
+        downloaded,
+      };
+    }
+
+    const cleanExpectedProdSig = PRODUCTION_SIGNING_SHA256.replace(/:/g, '').toLowerCase().trim();
+    if (!installed.debuggable && cleanDownSig !== cleanExpectedProdSig) {
+      return {
+        eligible: false,
+        reason: 'signature_mismatch',
+        errorDetails: `Signing certificate does not match the official Livex production release fingerprint. Expected: ${PRODUCTION_SIGNING_SHA256}, Found: ${downloaded.signingSha256}`,
         installed,
         downloaded,
       };

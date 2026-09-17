@@ -59,6 +59,45 @@ public class UpdateDownloadService extends Service {
         }
     }
 
+    public static boolean isTrustedReleaseUrl(String urlString) {
+        if (urlString == null || urlString.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            java.net.URI uri = new java.net.URI(urlString.trim());
+            String scheme = uri.getScheme();
+            if (scheme == null || !scheme.equalsIgnoreCase("https")) {
+                return false;
+            }
+            String host = uri.getHost();
+            if (host == null || host.trim().isEmpty()) {
+                return false;
+            }
+            String lowerHost = host.toLowerCase();
+
+            // Firebase Hosting
+            if (lowerHost.equals("studio-30f44.web.app") ||
+                lowerHost.equals("studio-30f44.firebaseapp.com") ||
+                lowerHost.endsWith(".web.app") ||
+                lowerHost.endsWith(".firebaseapp.com")) {
+                return true;
+            }
+
+            // GitHub Releases & CDN
+            if (lowerHost.equals("github.com") ||
+                lowerHost.equals("api.github.com") ||
+                lowerHost.equals("objects.githubusercontent.com") ||
+                lowerHost.equals("raw.githubusercontent.com") ||
+                lowerHost.endsWith(".githubusercontent.com")) {
+                return true;
+            }
+
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
@@ -69,8 +108,19 @@ public class UpdateDownloadService extends Service {
         String url = intent.getStringExtra("url");
         String fileName = intent.getStringExtra("fileName");
         String expectedHash = intent.getStringExtra("expectedHash");
+        boolean installImmediately = intent.getBooleanExtra("installImmediately", false);
 
         if (url == null || isDownloading) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
+        if (!isTrustedReleaseUrl(url)) {
+            Log.e(TAG, "Rejected untrusted or insecure download URL: " + url);
+            if (AppInstallerPlugin.activeDownloadCall != null) {
+                AppInstallerPlugin.activeDownloadCall.reject("Untrusted or insecure download URL: " + url);
+                AppInstallerPlugin.activeDownloadCall = null;
+            }
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -102,25 +152,30 @@ public class UpdateDownloadService extends Service {
                 
                 boolean verified = verifySha256(apkFile, expectedHash);
                 if (verified) {
-                    // Stage: Preparing installation...
-                    updateProgressNotification("Preparing installation...", 100, true);
-                    Thread.sleep(800);
+                    if (installImmediately) {
+                        // Stage: Preparing installation...
+                        updateProgressNotification("Preparing installation...", 100, true);
+                        Thread.sleep(800);
 
-                    // Stage: Launching installer...
-                    updateProgressNotification("Launching installer...", 100, true);
-                    Thread.sleep(800);
-                    
-                    // Trigger native package installer session
-                    if (AppInstallerPlugin.instance != null) {
-                        AppInstallerPlugin.instance.getActivity().runOnUiThread(() -> {
-                            try {
-                                AppInstallerPlugin.instance.triggerInstallation(apkFile, null);
-                            } catch (Exception e) {
-                                Log.e(TAG, "Failed to trigger installation", e);
-                                updateProgressNotification("Installation failed: " + e.getMessage(), 0, false);
-                                finishService();
-                            }
-                        });
+                        // Stage: Launching installer...
+                        updateProgressNotification("Launching installer...", 100, true);
+                        Thread.sleep(800);
+                        
+                        // Trigger native package installer session
+                        if (AppInstallerPlugin.instance != null) {
+                            AppInstallerPlugin.instance.getActivity().runOnUiThread(() -> {
+                                try {
+                                    AppInstallerPlugin.instance.triggerInstallation(apkFile, null);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Failed to trigger installation", e);
+                                    updateProgressNotification("Installation failed: " + e.getMessage(), 0, false);
+                                    finishService();
+                                }
+                            });
+                        }
+                    } else {
+                        updateProgressNotification("Download complete & verified", 100, false);
+                        finishService();
                     }
 
                     // Resolve the pending Capacitor PluginCall to inform JS that download/verification is complete
@@ -298,6 +353,10 @@ public class UpdateDownloadService extends Service {
                 apkFile.delete();
             }
 
+            if (!isTrustedReleaseUrl(urlString)) {
+                throw new SecurityException("Untrusted or insecure download URL: " + urlString);
+            }
+
             URL url = new URL(urlString);
             connection = (HttpURLConnection) url.openConnection();
             connection.setInstanceFollowRedirects(true);
@@ -312,6 +371,9 @@ public class UpdateDownloadService extends Service {
                     && redirectCount < 8) {
                 String newUrl = connection.getHeaderField("Location");
                 if (newUrl == null) break;
+                if (!isTrustedReleaseUrl(newUrl)) {
+                    throw new SecurityException("Untrusted or insecure redirect target URL: " + newUrl);
+                }
                 url = new URL(newUrl);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
@@ -362,13 +424,21 @@ public class UpdateDownloadService extends Service {
 
     private boolean verifySha256(File file, String expectedHash) {
         if (expectedHash == null || expectedHash.trim().isEmpty()) {
-            Log.i(TAG, "[OTA] verifySha256 skipped: no expected hash provided.");
-            return true;
+            Log.e(TAG, "[OTA] verifySha256 failed: missing expected hash.");
+            return false;
         }
         String cleanExpected = expectedHash.trim().toLowerCase();
+        if (!cleanExpected.matches("^[a-f0-9]{64}$")) {
+            Log.e(TAG, "[OTA] verifySha256 failed: invalid expected hash format: " + cleanExpected);
+            return false;
+        }
         if (cleanExpected.replace("0", "").isEmpty()) {
-            Log.i(TAG, "[OTA] verifySha256 skipped: all-zero expected hash.");
-            return true;
+            Log.e(TAG, "[OTA] verifySha256 failed: all-zero expected hash is untrusted.");
+            return false;
+        }
+        if (file == null || !file.exists() || !file.isFile() || file.length() == 0) {
+            Log.e(TAG, "[OTA] verifySha256 failed: file is missing or empty.");
+            return false;
         }
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
