@@ -2449,7 +2449,7 @@ export function AccountSettingsPage({
       if (Capacitor.isNativePlatform()) {
         try {
           const { AppInstaller } = await import('@workspace/studio-core');
-          await AppInstaller.requestPermissions();
+          await AppInstaller.requestPermissions({ aliases: ['storage'] });
         } catch (e) {
           console.warn('[Export] Permissions request failed:', e);
         }
@@ -4460,15 +4460,7 @@ export function AccountSettingsPage({
             }}
           >
             <button
-              onClick={async () => {
-                if (Capacitor.isNativePlatform()) {
-                  try {
-                    const { AppInstaller } = await import('@workspace/studio-core');
-                    await AppInstaller.requestPermissions();
-                  } catch (e) {
-                    console.warn('[Profile] Permissions request failed:', e);
-                  }
-                }
+              onClick={() => {
                 fileInputRef.current?.click();
               }}
               style={{

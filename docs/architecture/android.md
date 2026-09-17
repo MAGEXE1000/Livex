@@ -82,7 +82,6 @@ WorkManager periodic worker (15-minute intervals):
 | `WRITE_EXTERNAL_STORAGE`   | File write (maxSdkVersion=32)      |
 | `READ_MEDIA_IMAGES`        | Media access (Android 13+)         |
 | `READ_MEDIA_AUDIO`         | Audio file access                  |
-| `READ_MEDIA_VIDEO`         | Video file access                  |
 
 ### Intent Filters
 

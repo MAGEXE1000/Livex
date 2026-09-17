@@ -36,10 +36,6 @@ import android.util.Log;
             strings = { Manifest.permission.READ_MEDIA_AUDIO }
         ),
         @Permission(
-            alias = "video",
-            strings = { Manifest.permission.READ_MEDIA_VIDEO }
-        ),
-        @Permission(
             alias = "storage",
             strings = {
                 Manifest.permission.READ_EXTERNAL_STORAGE,
