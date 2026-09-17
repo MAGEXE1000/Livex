@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.19';
-export const NATIVE_VERSION_CODE = 40619;
-export const WEB_VERSION = '4.6.19';
+export const NATIVE_VERSION = '4.6.20';
+export const NATIVE_VERSION_CODE = 40620;
+export const WEB_VERSION = '4.6.20';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'eb87d7a7';
+export const APP_COMMIT_SHA = '83c4181b';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/16/2026, 6:27:47 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/17/2026, 2:47:33 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,21 +96,13 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Realistic House Kit Drum Samples for Drumex Tuner: Equipped the Drumex Tuner reference sound system with authentic high-definition House Kit room-blend samples (Snare, Tom 1, Tom 2, Floor Tom, Kick) replacing synthetic oscillator tones.',
-      'Pitch-Calibrated Shell Resampling: Calibrated Web Audio playback rates dynamically to exact target tension frequencies (Tight, Normal, Loose) in Hz with physical 3ms anti-click attack envelopes and natural room acoustic decay.',
-      'Interactive Photographic Drum Graphic: Enabled direct touch interaction on both the center photographic drumhead render and the dedicated Referencia trigger for immediate reference playback.',
-    ],
-  },
-  {
     heading: 'Improved',
     items: [
-      'Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.',
-      "Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.",
-      'High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.',
-      'Spatial Profile & Subscription Modal Architecture: Restructured Profile and Subscription & Billing modal dialogs with fluid spatial morph transitions, account tier overviews, and multi-theme design tokens.',
-      'Global Top-Bar Geometry & Clearance Normalization: Normalized top-bar container proportions and scroll container top clearance across Library and Patterns views.',
+      'Complete Theme Parity for Chordex & Drumex Tuners: Replaced all legacy hardcoded background colors, borders, and text values across Chromatic Tuner, Drum Tuner, and Tuning Selector modals with canonical Livex theme tokens (var(--app-bg), var(--c-surface-low), var(--c-surface-high), var(--c-surface-highest), var(--c-border), and var(--c-text-*)).',
+      'Seamless Transparent Instrument Artwork in Light Mode: Introduced shared useTunerArtwork hook executing automated client-side edge flood-fill to eliminate black studio backdrops behind guitar headstocks and drum shells in Light theme, allowing instruments to float naturally on light backgrounds.',
+      'Pure Black AMOLED Efficiency: Guaranteed true #000000 pitch black backgrounds and subtle borders in AMOLED mode across all tuner views and modals for optimal display contrast and battery performance.',
+      "Dynamic Accent & State Wiring: Replaced static green/blue active states on string selection, Auto toggles, tuning radios, and Reference playback buttons with the user's active theme accent color.",
+      'Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.',
     ],
   },
 ];
@@ -122,6 +114,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.20',
+    date: '2026-09-17',
+    highlights: [
+      'Complete Theme Parity for Chordex & Drumex Tuners: Replaced all legacy hardcoded background colors, borders, and text values across Chromatic Tuner, Drum Tuner, and Tuning Selector modals with canonical Livex theme tokens (var(--app-bg), var(--c-surface-low), var(--c-surface-high), var(--c-surface-highest), var(--c-border), and var(--c-text-*)).',
+      'Seamless Transparent Instrument Artwork in Light Mode: Introduced shared useTunerArtwork hook executing automated client-side edge flood-fill to eliminate black studio backdrops behind guitar headstocks and drum shells in Light theme, allowing instruments to float naturally on light backgrounds.',
+      'Pure Black AMOLED Efficiency: Guaranteed true #000000 pitch black backgrounds and subtle borders in AMOLED mode across all tuner views and modals for optimal display contrast and battery performance.',
+      "Dynamic Accent & State Wiring: Replaced static green/blue active states on string selection, Auto toggles, tuning radios, and Reference playback buttons with the user's active theme accent color.",
+      'Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.',
+    ],
+  },
   {
     version: '4.6.19',
     date: '2026-09-16',
@@ -214,16 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
     highlights: [
       'Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.',
       'Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.',
-    ],
-  },
-  {
-    version: '4.6.10',
-    date: '2026-09-15',
-    highlights: [
-      'Unified Scroll-Reactive Title → Floating Top Bar Morph: High-performance, compositor-first scroll-linked morph system (`useScrollMorph`, `ScrollMorphHeader`, upgraded `SharedFloatingHeader`). Continuously transforms page heading and top bar from an expanded left-aligned surface into a compact floating glass pill on scroll with synchronized width contraction, corner radius morphing, and constrained backdrop blur.',
-      'Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.',
-      'Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.',
-      'Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.',
     ],
   },
 ];

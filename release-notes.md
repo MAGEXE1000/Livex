@@ -1,15 +1,10 @@
-# Version 4.6.19
+# Version 4.6.20
 
-Release Date: 2026-09-16
-
-### Added
-- Realistic House Kit Drum Samples for Drumex Tuner: Equipped the Drumex Tuner reference sound system with authentic high-definition House Kit room-blend samples (Snare, Tom 1, Tom 2, Floor Tom, Kick) replacing synthetic oscillator tones.
-- Pitch-Calibrated Shell Resampling: Calibrated Web Audio playback rates dynamically to exact target tension frequencies (Tight, Normal, Loose) in Hz with physical 3ms anti-click attack envelopes and natural room acoustic decay.
-- Interactive Photographic Drum Graphic: Enabled direct touch interaction on both the center photographic drumhead render and the dedicated Referencia trigger for immediate reference playback.
+Release Date: 2026-09-17
 
 ### Improved
-- Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.
-- Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.
-- High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.
-- Spatial Profile & Subscription Modal Architecture: Restructured Profile and Subscription & Billing modal dialogs with fluid spatial morph transitions, account tier overviews, and multi-theme design tokens.
-- Global Top-Bar Geometry & Clearance Normalization: Normalized top-bar container proportions and scroll container top clearance across Library and Patterns views.
+- Complete Theme Parity for Chordex & Drumex Tuners: Replaced all legacy hardcoded background colors, borders, and text values across Chromatic Tuner, Drum Tuner, and Tuning Selector modals with canonical Livex theme tokens (var(--app-bg), var(--c-surface-low), var(--c-surface-high), var(--c-surface-highest), var(--c-border), and var(--c-text-*)).
+- Seamless Transparent Instrument Artwork in Light Mode: Introduced shared useTunerArtwork hook executing automated client-side edge flood-fill to eliminate black studio backdrops behind guitar headstocks and drum shells in Light theme, allowing instruments to float naturally on light backgrounds.
+- Pure Black AMOLED Efficiency: Guaranteed true #000000 pitch black backgrounds and subtle borders in AMOLED mode across all tuner views and modals for optimal display contrast and battery performance.
+- Dynamic Accent & State Wiring: Replaced static green/blue active states on string selection, Auto toggles, tuning radios, and Reference playback buttons with the user's active theme accent color.
+- Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.
