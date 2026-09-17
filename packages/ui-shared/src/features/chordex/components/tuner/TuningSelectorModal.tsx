@@ -106,34 +106,33 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
               damping: 32,
               mass: 0.7,
             }}
-            className={`relative w-full max-w-[340px] rounded-2xl p-4 shadow-2xl overflow-hidden z-10 border ${
-              isLight
-                ? 'bg-white border-black/10 text-zinc-900'
-                : isAmoled
-                  ? 'bg-black border-white/20 text-white'
-                  : 'bg-[#121316] border-white/12 text-white'
-            }`}
+            className="relative w-full max-w-[340px] rounded-2xl p-4 shadow-2xl overflow-hidden z-10 border"
+            style={{
+              backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-high)',
+              borderColor: 'var(--c-border)',
+              color: 'var(--c-text-primary)',
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="Select Tuning"
           >
             {/* Header: Title on Left, Close Icon on Right */}
             <div
-              className={`flex items-center justify-between pb-3 mb-1 border-b ${
-                isLight ? 'border-black/10' : 'border-white/10'
-              }`}
+              style={{ borderColor: 'var(--c-border)' }}
+              className="flex items-center justify-between pb-3 mb-1 border-b"
             >
-              <h3 className={`text-sm font-bold tracking-wide ${isLight ? 'text-zinc-900' : 'text-white'}`}>
+              <h3 className="text-sm font-bold tracking-wide" style={{ color: 'var(--c-text-primary)' }}>
                 Select Tuning
               </h3>
               <button
                 type="button"
                 onClick={onClose}
-                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                  isLight
-                    ? 'bg-black/[0.06] hover:bg-black/10 text-zinc-600 hover:text-zinc-900'
-                    : 'bg-white/10 hover:bg-white/20 text-zinc-400 hover:text-white'
-                }`}
+                style={{
+                  backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-low)',
+                  borderColor: 'var(--c-border)',
+                  color: 'var(--c-text-secondary)',
+                }}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer border hover:opacity-80"
                 aria-label="Close"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -142,9 +141,8 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
 
             {/* Tuning Options List */}
             <div
-              className={`flex flex-col divide-y max-h-[280px] overflow-y-auto no-scrollbar ${
-                isLight ? 'divide-black/[0.06]' : 'divide-white/[0.06]'
-              }`}
+              style={{ borderColor: 'var(--c-border)' }}
+              className="flex flex-col divide-y max-h-[280px] overflow-y-auto no-scrollbar"
             >
               {tunings.map((tuning) => {
                 const isSelected = tuning.id === activeTuningId;
@@ -161,22 +159,19 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
                       onSelectTuning(tuning);
                       onClose();
                     }}
-                    className={`w-full flex items-center gap-3 py-2.5 px-2 rounded-xl transition-all text-left cursor-pointer active:scale-[0.98] ${
+                    style={
                       isSelected
-                        ? isLight
-                          ? 'bg-black/[0.05]'
-                          : 'bg-white/[0.06]'
-                        : isLight
-                          ? 'hover:bg-black/[0.03]'
-                          : 'hover:bg-white/[0.03]'
-                    }`}
+                        ? {
+                            backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-low)',
+                          }
+                        : undefined
+                    }
+                    className="w-full flex items-center gap-3 py-2.5 px-2 rounded-xl transition-all text-left cursor-pointer active:scale-[0.98] hover:opacity-80"
                   >
                     {/* Radio Button Indicator */}
                     <div
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        !isSelected ? (isLight ? 'border-zinc-400' : 'border-zinc-600') : ''
-                      }`}
-                      style={isSelected ? { borderColor: effectiveAccent.from } : undefined}
+                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                      style={{ borderColor: isSelected ? effectiveAccent.from : 'var(--c-border)' }}
                     >
                       {isSelected && (
                         <div
@@ -189,22 +184,14 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
                     {/* Tuning Title & Notes */}
                     <div className="flex flex-col min-w-0 flex-1">
                       <span
-                        className={`text-xs font-semibold leading-tight ${
-                          isSelected
-                            ? isLight
-                              ? 'text-zinc-900 font-bold'
-                              : 'text-white font-bold'
-                            : isLight
-                              ? 'text-zinc-700'
-                              : 'text-zinc-200'
-                        }`}
+                        className={`text-xs leading-tight ${isSelected ? 'font-bold' : 'font-semibold'}`}
+                        style={{ color: 'var(--c-text-primary)' }}
                       >
                         {tuning.name}
                       </span>
                       <span
-                        className={`text-[10.5px] font-mono tracking-wider mt-0.5 leading-tight ${
-                          isLight ? 'text-zinc-500' : 'text-zinc-400'
-                        }`}
+                        className="text-[10.5px] font-mono tracking-wider mt-0.5 leading-tight"
+                        style={{ color: 'var(--c-text-secondary)' }}
                       >
                         {displayNotes}
                       </span>
