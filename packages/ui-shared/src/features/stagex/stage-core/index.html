@@ -74,7 +74,11 @@
               }
             }
           }
-          window.parent.postMessage(payload, '*');
+          var targetOrigin =
+            window.location.origin && window.location.origin !== 'null'
+              ? window.location.origin
+              : '*';
+          window.parent.postMessage(payload, targetOrigin);
         } catch (e) {}
       };
 
@@ -6012,25 +6016,37 @@
     <script src="features.js"></script>
     <script>
       window.addEventListener('message', function (e) {
-        if (e.origin !== window.location.origin) return;
+        if (!e.source || e.source !== window.parent) return;
+        var origin = e.origin || '';
+        var isAllowed =
+          origin === window.location.origin ||
+          origin === 'https://localhost' ||
+          origin === 'capacitor://localhost' ||
+          (window.location.origin === 'null' && origin === 'null');
+        if (!isAllowed) return;
+
         if (e.data === 'stage-core-return-hub') {
-          window.parent.dispatchEvent(new CustomEvent('studio-hub-return'));
+          try {
+            window.parent.dispatchEvent(new CustomEvent('studio-hub-return'));
+          } catch (err) {}
         }
         if (e.data && e.data.type === 'sc-landscape') {
-          if (e.data.isLandscape) {
-            document.body.classList.add('is-landscape');
-            document.documentElement.classList.add('is-landscape');
-          } else {
-            document.body.classList.remove('is-landscape');
-            document.documentElement.classList.remove('is-landscape');
+          if (typeof e.data.isLandscape === 'boolean') {
+            if (e.data.isLandscape) {
+              document.body.classList.add('is-landscape');
+              document.documentElement.classList.add('is-landscape');
+            } else {
+              document.body.classList.remove('is-landscape');
+              document.documentElement.classList.remove('is-landscape');
+            }
+            setTimeout(function () {
+              if (typeof _rescaleElementsOnResize === 'function') _rescaleElementsOnResize();
+              if (typeof _renderStageLayout === 'function') _renderStageLayout();
+            }, 60);
           }
-          setTimeout(function () {
-            if (typeof _rescaleElementsOnResize === 'function') _rescaleElementsOnResize();
-            if (typeof _renderStageLayout === 'function') _renderStageLayout();
-          }, 60);
         }
         if (e.data && e.data.type === 'sc-set-lang') {
-          if (typeof setLang === 'function') {
+          if (typeof setLang === 'function' && typeof e.data.lang === 'string') {
             setLang(e.data.lang);
           }
         }
@@ -6087,30 +6103,35 @@
         window.addEventListener(
           'message',
           function (e) {
+            if (!e.source || e.source !== window.parent) return;
             var origin = e.origin || '';
             var isAllowedOrigin =
-              !origin ||
-              origin === 'null' ||
-              origin === 'about:blank' ||
               origin === window.location.origin ||
-              origin.indexOf('https://localhost') === 0 ||
-              origin.indexOf('http://localhost') === 0 ||
-              origin.indexOf('capacitor://localhost') === 0;
+              origin === 'https://localhost' ||
+              origin === 'capacitor://localhost' ||
+              (window.location.origin === 'null' && origin === 'null');
 
             if (!isAllowedOrigin) {
-              logIframeDiagnostic('sc-origin-rejected', {
-                actual: origin,
-                expected: window.location.origin,
-              });
+              if (typeof logIframeDiagnostic === 'function') {
+                logIframeDiagnostic('sc-origin-rejected', {
+                  actual: origin,
+                  expected: window.location.origin,
+                });
+              }
               return;
             }
+
+            var targetOrigin =
+              window.location.origin && window.location.origin !== 'null'
+                ? window.location.origin
+                : '*';
 
             if (e.data && e.data.type === 'sc-back-request') {
               var consumed = false;
               if (typeof window.stageGoBack === 'function') {
                 consumed = window.stageGoBack();
               }
-              window.parent.postMessage({ type: 'sc-back-response', consumed: consumed }, '*');
+              window.parent.postMessage({ type: 'sc-back-response', consumed: !!consumed }, targetOrigin);
               if (typeof window.reportStagexState === 'function') {
                 window.reportStagexState();
               }
@@ -6120,7 +6141,7 @@
             if (e.data && e.data.type === 'requestSceneInfo') {
               if (typeof window.__getSceneInfo === 'function') {
                 var info = window.__getSceneInfo();
-                window.parent.postMessage({ type: 'sc-scene-info', info: info }, '*');
+                window.parent.postMessage({ type: 'sc-scene-info', info: info }, targetOrigin);
               }
               return;
             }
@@ -6166,7 +6187,7 @@
                       handlerName: fn,
                       error: '',
                     },
-                    '*'
+                    targetOrigin
                   );
                   logIframeDiagnostic('sc-ack-sent', { fn: fn, msgId: msgId });
                 }
@@ -6185,7 +6206,7 @@
                       handlerName: fn,
                       error: err.message || String(err),
                     },
-                    '*'
+                    targetOrigin
                   );
                 }
               }
@@ -6201,7 +6222,7 @@
                     handlerName: fn,
                     error: 'Handler missing or not a function',
                   },
-                  '*'
+                  targetOrigin
                 );
               }
             }
@@ -6219,9 +6240,13 @@
             if (typeof window.stageHasOpenOverlay === 'function') {
               currentState = window.stageHasOpenOverlay();
             }
+            var targetOrigin =
+              window.location.origin && window.location.origin !== 'null'
+                ? window.location.origin
+                : '*';
             if (currentState !== lastState) {
               lastState = currentState;
-              window.parent.postMessage({ type: 'sc-overlay-state', open: currentState }, '*');
+              window.parent.postMessage({ type: 'sc-overlay-state', open: currentState }, targetOrigin);
             }
             if (typeof window.reportStagexState === 'function') {
               const presetsOpen = !!document
@@ -6241,7 +6266,7 @@
                     historyOpen: historyOpen,
                     layoutsOpen: presetsOpen,
                   },
-                  '*'
+                  targetOrigin
                 );
               }
             }

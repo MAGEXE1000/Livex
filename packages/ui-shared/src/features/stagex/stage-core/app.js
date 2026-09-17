@@ -6715,6 +6715,10 @@ function showConfirm(message, onOk, options = {}) {
 
   // Also notify parent if listening
   try {
+    var targetOrigin =
+      window.location.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : '*';
     window.parent.postMessage(
       {
         type: 'stage-core:confirm',
@@ -6722,7 +6726,7 @@ function showConfirm(message, onOk, options = {}) {
         title: title,
         isDestructive: options.isDestructive || false,
       },
-      '*'
+      targetOrigin
     );
   } catch (e) {}
 }
@@ -6741,19 +6745,32 @@ function doConfirm(ok) {
 window.doConfirm = doConfirm;
 
 window.addEventListener('message', function (e) {
+  if (!e.source || e.source !== window.parent) return;
+  var origin = e.origin || '';
+  var isAllowed =
+    origin === window.location.origin ||
+    origin === 'https://localhost' ||
+    origin === 'capacitor://localhost' ||
+    (window.location.origin === 'null' && origin === 'null');
+  if (!isAllowed) return;
   if (!e.data || typeof e.data !== 'object') return;
+
   if (e.data.type === 'stage-core:confirm-response') {
-    doConfirm(e.data.ok);
-  } else if (e.data.type === 'sc-landscape') {
-    if (e.data.isLandscape) {
-      document.body.classList.add('is-landscape');
-      document.documentElement.classList.add('is-landscape');
-    } else {
-      document.body.classList.remove('is-landscape');
-      document.documentElement.classList.remove('is-landscape');
+    if (typeof e.data.ok === 'boolean') {
+      doConfirm(e.data.ok);
     }
-    if (typeof _triggerRescale === 'function') {
-      _triggerRescale();
+  } else if (e.data.type === 'sc-landscape') {
+    if (typeof e.data.isLandscape === 'boolean') {
+      if (e.data.isLandscape) {
+        document.body.classList.add('is-landscape');
+        document.documentElement.classList.add('is-landscape');
+      } else {
+        document.body.classList.remove('is-landscape');
+        document.documentElement.classList.remove('is-landscape');
+      }
+      if (typeof _triggerRescale === 'function') {
+        _triggerRescale();
+      }
     }
   }
 });
@@ -12807,38 +12824,56 @@ function downloadQRCode() {
   });
 
   window.addEventListener('message', function (e) {
-    if (!e.data || typeof e.data !== 'object') return;
+    if (!e.source || e.source !== window.parent) return;
+    var origin = e.origin || '';
     var isAllowedOrigin =
-      !e.origin ||
-      e.origin === window.location.origin ||
-      e.origin === 'https://localhost' ||
-      e.origin === 'http://localhost' ||
-      e.origin === 'capacitor://localhost';
+      origin === window.location.origin ||
+      origin === 'https://localhost' ||
+      origin === 'capacitor://localhost' ||
+      (window.location.origin === 'null' && origin === 'null');
     if (!isAllowedOrigin) return;
+    if (!e.data || typeof e.data !== 'object') return;
+
     var t = e.data.type;
+    var targetOrigin =
+      window.location.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : '*';
+
     if (t === 'sc-sync-snapshot') {
       try {
-        var src = e.source || window.parent;
-        src.postMessage(
+        window.parent.postMessage(
           {
             type: 'sc-sync-snapshot-result',
             data: snapshot(),
           },
-          '*'
+          targetOrigin
         );
       } catch (err) {}
     } else if (t === 'sc-sync-restore') {
-      restore(e.data.data);
-      // After restoring, soft-reload so the app re-reads its state cleanly.
-      try {
-        if (e.data.reload !== false) {
-          setTimeout(function () {
-            try {
-              location.reload();
-            } catch (e) {}
-          }, 50);
+      if (e.data.data && typeof e.data.data === 'object' && !Array.isArray(e.data.data)) {
+        var safeData = {};
+        for (var i = 0; i < SYNC_KEYS.length; i++) {
+          var k = SYNC_KEYS[i];
+          if (Object.prototype.hasOwnProperty.call(e.data.data, k)) {
+            var val = e.data.data[k];
+            if (val === null || typeof val === 'string') {
+              safeData[k] = val;
+            }
+          }
         }
-      } catch (err) {}
+        restore(safeData);
+        // After restoring, soft-reload so the app re-reads its state cleanly.
+        try {
+          if (e.data.reload !== false) {
+            setTimeout(function () {
+              try {
+                location.reload();
+              } catch (e) {}
+            }, 50);
+          }
+        } catch (err) {}
+      }
     }
   });
 })();

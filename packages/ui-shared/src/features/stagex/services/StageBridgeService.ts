@@ -440,7 +440,11 @@ export const StageBridge = {
     if (typeof win?.setLang === 'function') {
       win.setLang(targetLang);
     } else if (iframe?.contentWindow) {
-      iframe.contentWindow.postMessage({ type: 'sc-set-lang', lang: targetLang }, '*');
+      const targetOrigin =
+        typeof window !== 'undefined' && window.location.origin !== 'null'
+          ? window.location.origin
+          : '*';
+      iframe.contentWindow.postMessage({ type: 'sc-set-lang', lang: targetLang }, targetOrigin);
     }
   },
 };

@@ -43,6 +43,20 @@ export interface StageCanvasViewProps {
   onNavigateView?: (view: string) => void;
 }
 
+export const isAllowedStagexOrigin = (origin: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (!origin) return false;
+  if (origin === window.location.origin) return true;
+  if (origin === 'https://localhost' || origin === 'capacitor://localhost') return true;
+  if (window.location.origin === 'null' && origin === 'null') return true;
+  return false;
+};
+
+export const getStagexTargetOrigin = (): string => {
+  if (typeof window === 'undefined') return '*';
+  return window.location.origin === 'null' ? '*' : window.location.origin;
+};
+
 export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   isLight,
   isAmoled,
@@ -112,7 +126,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           if (iframeRef.current?.contentWindow) {
             iframeRef.current.contentWindow.postMessage(
               { type: 'sc-landscape', isLandscape: active },
-              '*'
+              getStagexTargetOrigin()
             );
           }
           return active;
@@ -141,24 +155,29 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   // Listen for selection and specs events from the canvas engine
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
+      if (!isAllowedStagexOrigin(e.origin)) return;
+      if (!iframeRef.current?.contentWindow || e.source !== iframeRef.current.contentWindow) return;
       if (!e.data || typeof e.data !== 'object') return;
-      if (e.data.type === 'sc-element-selected') {
-        setSelectedElement(e.data.element || null);
-        if (!e.data.element) {
+
+      const type = e.data.type;
+      if (type === 'sc-element-selected') {
+        const el = e.data.element && typeof e.data.element === 'object' ? e.data.element : null;
+        setSelectedElement(el);
+        if (!el) {
           setSpecsOpen(false);
         }
-      } else if (e.data.type === 'sc-open-specs') {
-        if (e.data.element) {
+      } else if (type === 'sc-open-specs') {
+        if (e.data.element && typeof e.data.element === 'object') {
           setSelectedElement(e.data.element);
         } else if (iframeRef.current) {
           const el = StageBridge.getSelectedElement(iframeRef.current);
           if (el) setSelectedElement(el);
         }
-      } else if (e.data.type === 'sc-drag-start') {
+      } else if (type === 'sc-drag-start') {
         setIsCanvasDragging(true);
-      } else if (e.data.type === 'sc-drag-end') {
+      } else if (type === 'sc-drag-end') {
         setIsCanvasDragging(false);
-      } else if (e.data.type === 'sc-canvas-rescaled') {
+      } else if (type === 'sc-canvas-rescaled') {
         if (Array.isArray(e.data.elements)) {
           useStagexStore.setState({
             elements: e.data.elements,
@@ -168,9 +187,22 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                 : useStagexStore.getState().scenes,
           });
         }
-      } else if (e.data.type === 'sc-project-saved') {
+      } else if (type === 'sc-project-saved') {
         if (Array.isArray(e.data.elements)) {
-          const newName = e.data.name || e.data.projectName;
+          const rawName =
+            typeof e.data.name === 'string'
+              ? e.data.name
+              : typeof e.data.projectName === 'string'
+                ? e.data.projectName
+                : undefined;
+          const newName = rawName ? rawName.slice(0, 120) : undefined;
+          const currentSceneIdx =
+            typeof e.data.currentSceneIdx === 'number' &&
+            Number.isFinite(e.data.currentSceneIdx) &&
+            e.data.currentSceneIdx >= 0
+              ? Math.floor(e.data.currentSceneIdx)
+              : useStagexStore.getState().currentSceneIdx;
+
           useStagexStore.setState({
             ...(newName ? { projectName: newName } : {}),
             elements: e.data.elements,
@@ -178,10 +210,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
               Array.isArray(e.data.scenes) && e.data.scenes.length > 0
                 ? e.data.scenes
                 : useStagexStore.getState().scenes,
-            currentSceneIdx:
-              typeof e.data.currentSceneIdx === 'number'
-                ? e.data.currentSceneIdx
-                : useStagexStore.getState().currentSceneIdx,
+            currentSceneIdx,
           });
         }
       }
@@ -225,16 +254,17 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const callIframe = useCallback((fn: string, arg?: any) => {
     const iframe = iframeRef.current;
     if (!iframe) return;
+    const targetOrigin = getStagexTargetOrigin();
     try {
       const win = iframe.contentWindow as any;
       if (!win) return;
       if (typeof win[fn] === 'function') {
         win[fn](arg);
       } else {
-        iframe.contentWindow?.postMessage({ type: 'sc-call', fn, arg }, '*');
+        iframe.contentWindow?.postMessage({ type: 'sc-call', fn, arg }, targetOrigin);
       }
     } catch {
-      iframe.contentWindow?.postMessage({ type: 'sc-call', fn, arg }, '*');
+      iframe.contentWindow?.postMessage({ type: 'sc-call', fn, arg }, targetOrigin);
     }
   }, []);
 
@@ -339,6 +369,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     };
 
     const handleHistoryEvents = (e: MessageEvent) => {
+      if (!isAllowedStagexOrigin(e.origin)) return;
+      if (!iframeRef.current?.contentWindow || e.source !== iframeRef.current.contentWindow) return;
       if (!e.data || typeof e.data !== 'object') return;
       if (e.data.type === 'stagex-open-history') {
         setPanelMode('history');
@@ -383,7 +415,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         { type: 'sc-landscape', isLandscape: false },
-        '*'
+        getStagexTargetOrigin()
       );
     }
   }, [liveMode, panelOpen, specsOpen, callIframe]);
@@ -407,7 +439,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       if (iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
           { type: 'sc-landscape', isLandscape: true },
-          '*'
+          getStagexTargetOrigin()
         );
       }
     }
