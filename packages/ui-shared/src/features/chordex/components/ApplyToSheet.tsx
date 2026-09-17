@@ -252,7 +252,7 @@ export function MorphingApplyToSurface({
                     gap: 8,
                     padding: '14px 6px',
                     borderRadius: 14,
-                    background: active ? `${accent.from}18` : 'var(--c-surface-high, #1e1e24)',
+                    background: active ? `${accent.from}18` : 'var(--c-surface-high, #1e1e1e)',
                     border: `1.5px solid ${active ? accent.from : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                     cursor: 'pointer',
                     position: 'relative',

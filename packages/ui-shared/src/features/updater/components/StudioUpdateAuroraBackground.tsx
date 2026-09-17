@@ -42,7 +42,7 @@ export default function StudioUpdateAuroraBackground({
         overflow: 'hidden',
         width: '100%',
         height: '100%',
-        background: 'var(--app-bg, #0a0a0c)',
+        background: 'var(--app-bg, #0a0a0a)',
         ...props.style,
       }}
       {...props}

@@ -253,7 +253,7 @@ export const InstrumentRow = memo(
 
             const isGhost = showVariations && variation === 'ghost';
 
-            const strokeColor = isLight ? '#ffffff' : '#141418';
+            const strokeColor = isLight ? '#ffffff' : '#141414';
             const instColor = getInstrumentColor(inst, isLight, noteColor);
 
             return (

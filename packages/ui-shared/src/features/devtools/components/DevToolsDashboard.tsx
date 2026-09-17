@@ -498,17 +498,19 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
       case 'dashboard':
         return 'Developer Options';
       case 'apps':
-        return 'Apps Diagnostics';
+        return 'Apps';
       case 'stagex':
-        return 'Stagex Diagnostics';
+        return 'Stagex';
       case 'updater_diagnostics':
-        return 'Updater Diagnostics';
+        return 'Updater';
       case 'system':
-        return 'System Diagnostics';
+        return 'System';
       case 'logs':
         return 'Logs';
       case 'performance':
-        return 'Performance Diagnostics';
+        return 'Performance';
+      case 'developer_inspector':
+        return 'Inspector';
       default:
         return 'Developer Options';
     }
@@ -1981,38 +1983,42 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     };
 
     const moduleName =
-      title === 'Apps Diagnostics'
+      title === 'Apps' || title === 'Apps Diagnostics'
         ? 'Apps'
-        : title === 'Stagex Diagnostics'
+        : title === 'Stagex' || title === 'Stagex Diagnostics'
           ? 'Stagex'
-          : title === 'Updater Diagnostics'
+          : title === 'Updater' || title === 'Updater Diagnostics'
             ? 'Updater'
-            : title === 'System Diagnostics'
+            : title === 'System' || title === 'System Diagnostics'
               ? 'System'
               : title === 'Logs'
                 ? 'Logs'
-                : title === 'Performance Diagnostics'
+                : title === 'Performance' || title === 'Performance Diagnostics'
                   ? 'Performance'
-                  : title === 'Network Sniffer'
-                    ? 'Network'
-                    : '';
+                  : title === 'Inspector' || title === 'Developer Inspector'
+                    ? 'Inspector'
+                    : title === 'Network Sniffer'
+                      ? 'Network'
+                      : '';
 
     const desc =
-      title === 'Apps Diagnostics'
+      title === 'Apps' || title === 'Apps Diagnostics'
         ? 'Module Performance & Lifecycle'
-        : title === 'Stagex Diagnostics'
+        : title === 'Stagex' || title === 'Stagex Diagnostics'
           ? 'Stagex Telemetry & Testing'
-          : title === 'Updater Diagnostics'
+          : title === 'Updater' || title === 'Updater Diagnostics'
             ? 'Updater Updates & Diagnostics'
-            : title === 'System Diagnostics'
+            : title === 'System' || title === 'System Diagnostics'
               ? 'App Store & Module State'
               : title === 'Logs'
                 ? 'Runtime Events & Warnings'
-                : title === 'Performance Diagnostics'
+                : title === 'Performance' || title === 'Performance Diagnostics'
                   ? 'Real-time Metrics & Frame Data'
-                  : title === 'Network Sniffer'
-                    ? 'HTTP Traffic & WebSockets'
-                    : '';
+                  : title === 'Inspector' || title === 'Developer Inspector'
+                    ? 'Live DOM & Box Model Inspector'
+                    : title === 'Network Sniffer'
+                      ? 'HTTP Traffic & WebSockets'
+                      : '';
 
     return (
       <header
@@ -6941,7 +6947,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                         margin: '0 0 4px',
                       }}
                     >
-                      Updater Diagnostics
+                      Updater
                     </h3>
                     <p
                       style={{
@@ -7008,7 +7014,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                         margin: '0 0 4px',
                       }}
                     >
-                      Developer Inspector
+                      Inspector
                     </h3>
                     <p
                       style={{
@@ -7381,7 +7387,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
               {viewId === 'apps' && (
                 <SettingsScaffold
-                  title="Apps Diagnostics"
+                  title="Apps"
                   onBack={handleSubViewBack}
                   toolbarActions={renderCopyButton('Apps')}
                 >
@@ -7391,7 +7397,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
               {viewId === 'stagex' && (
                 <SettingsScaffold
-                  title="Stagex Diagnostics"
+                  title="Stagex"
                   onBack={handleSubViewBack}
                   toolbarActions={renderCopyButton('Stagex')}
                 >
@@ -7401,7 +7407,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
               {viewId === 'updater_diagnostics' && (
                 <SettingsScaffold
-                  title="Updater Diagnostics"
+                  title="Updater"
                   onBack={handleSubViewBack}
                   toolbarActions={renderCopyButton('Updater')}
                 >
@@ -7421,7 +7427,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
               {viewId === 'system' && (
                 <SettingsScaffold
-                  title="System Diagnostics"
+                  title="System"
                   onBack={handleSubViewBack}
                   toolbarActions={renderCopyButton('System')}
                 >
@@ -7474,7 +7480,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
               {viewId === 'performance' && (
                 <SettingsScaffold
-                  title="Performance Diagnostics"
+                  title="Performance"
                   onBack={handleSubViewBack}
                   toolbarActions={renderCopyButton('Performance')}
                 >
@@ -7492,7 +7498,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               )}
 
               {viewId === 'developer_inspector' && (
-                <SettingsScaffold title="Developer Inspector" onBack={handleSubViewBack}>
+                <SettingsScaffold title="Inspector" onBack={handleSubViewBack}>
                   <SettingsContentContainer
                     style={{
                       flex: 1,

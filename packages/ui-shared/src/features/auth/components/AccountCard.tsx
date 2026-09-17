@@ -3107,7 +3107,7 @@ export function AccountSettingsPage({
               width: 32,
               height: 32,
               borderRadius: '50%',
-              background: 'var(--c-surface-container, #1e1e24)',
+              background: 'var(--c-surface-container, #1e1e1e)',
               border: '2px solid rgba(255, 255, 255, 0.30)',
               display: 'flex',
               alignItems: 'center',

@@ -69,7 +69,7 @@ export const UpdaterDiagnosticsPage: React.FC<{ onBack?: () => void; hideHeader?
 
   const handleCopy = () => {
     const report = generateReport();
-    copyToClipboard(report, 'Updater Diagnostics')
+    copyToClipboard(report, 'Updater')
       .then((msg) => {
         setToast(msg);
         setTimeout(() => setToast(null), 2500);
@@ -309,7 +309,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                   color: 'var(--c-text-primary)',
                 }}
               >
-                Updater Diagnostics
+                Updater
               </h1>
               <p
                 style={{

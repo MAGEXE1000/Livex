@@ -157,7 +157,7 @@ class MainActivity : BridgeActivity() {
         return when (theme) {
             "light" -> android.graphics.Color.WHITE
             "amoled" -> android.graphics.Color.BLACK
-            else -> android.graphics.Color.parseColor("#141418")
+            else -> android.graphics.Color.parseColor("#141414")
         }
     }
 

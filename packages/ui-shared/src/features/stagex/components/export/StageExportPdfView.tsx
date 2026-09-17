@@ -282,7 +282,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
       `}</style>
 
       <SharedFloatingHeader
-        title={isSpanish ? 'Documento de Producción' : 'Production Document'}
+        title={isSpanish ? 'Producción' : 'Production'}
         titleTestId="production-document-title"
         backBtnTestId="production-document-back-btn"
         onBack={onBack}

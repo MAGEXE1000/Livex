@@ -164,7 +164,7 @@ export function applyThemeTokens(settings: any) {
       if (metaThemeColor) {
         metaThemeColor.setAttribute(
           'content',
-          isLightMode ? '#ffffff' : isAmoledMode ? '#000000' : '#141418'
+          isLightMode ? '#ffffff' : isAmoledMode ? '#000000' : '#141414'
         );
       }
     }
@@ -499,7 +499,7 @@ export function getStartupAnimationThemeSpec(
 
   return {
     themeState: 'dark',
-    bgColor: '#141418',
+    bgColor: '#141414',
     glowGradient:
       'radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 70%)',
     logoFilter: 'none',

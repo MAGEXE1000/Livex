@@ -64,7 +64,7 @@ describe('Livex Startup Animation Three-Theme Architecture', () => {
       const spec = getStartupAnimationThemeSpec('dark');
 
       expect(spec.themeState).toBe('dark');
-      expect(spec.bgColor).toBe('#141418');
+      expect(spec.bgColor).toBe('#141414');
       expect(spec.logoFilter).toBe('none');
       expect(spec.logoOpacity).toBe(1.0);
       expect(spec.glowGradient).toContain('rgba(255, 255, 255, 0.12)');
@@ -100,7 +100,7 @@ describe('Livex Startup Animation Three-Theme Architecture', () => {
       state = getEffectiveThemeState(current);
       spec = getStartupAnimationThemeSpec(state);
       expect(spec.themeState).toBe('dark');
-      expect(spec.bgColor).toBe('#141418');
+      expect(spec.bgColor).toBe('#141414');
       expect(spec.logoFilter).toBe('none');
 
       // 3. Cycle to AMOLED

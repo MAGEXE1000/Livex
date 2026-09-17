@@ -187,7 +187,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
 
   return (
     <StageSetupDetailLayout
-      title={gearTr?.title || tr.stagex?.gearTitle || 'Gear Inventory'}
+      title={gearTr?.title || tr.stagex?.gearTitle || 'Gear'}
       onBack={onBack}
       isLight={isLight}
       isAmoled={isAmoled}

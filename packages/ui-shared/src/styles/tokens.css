@@ -210,32 +210,32 @@
 @property --app-bg {
   syntax: '<color>';
   inherits: true;
-  initial-value: #141418;
+  initial-value: #141414;
 }
 @property --app-surface-lowest {
   syntax: '<color>';
   inherits: true;
-  initial-value: #101014;
+  initial-value: #101010;
 }
 @property --app-surface-low {
   syntax: '<color>';
   inherits: true;
-  initial-value: #16161c;
+  initial-value: #161616;
 }
 @property --app-surface {
   syntax: '<color>';
   inherits: true;
-  initial-value: #1e1e24;
+  initial-value: #1e1e1e;
 }
 @property --app-surface-high {
   syntax: '<color>';
   inherits: true;
-  initial-value: #262630;
+  initial-value: #262626;
 }
 @property --app-surface-highest {
   syntax: '<color>';
   inherits: true;
-  initial-value: #2e2e3a;
+  initial-value: #2e2e2e;
 }
 
 /* ===== AMOLED-aware CSS Custom Properties ===== */
@@ -287,26 +287,26 @@
   --livex-accent-glow: var(--studio-accent-glow);
   --livex-accent-border: var(--studio-accent-border);
 
-  --app-bg: var(--c-background, #141418);
-  --app-surface-lowest: var(--c-surface-lowest, #101014);
-  --app-surface-low: var(--c-surface-low, #16161c);
-  --app-surface: var(--c-surface-mid, #1e1e24);
-  --app-surface-high: var(--c-surface-high, #262630);
-  --app-surface-highest: var(--c-surface-highest, #2e2e3a);
+  --app-bg: var(--c-background, #141414);
+  --app-surface-lowest: var(--c-surface-lowest, #101010);
+  --app-surface-low: var(--c-surface-low, #161616);
+  --app-surface: var(--c-surface-mid, #1e1e1e);
+  --app-surface-high: var(--c-surface-high, #262626);
+  --app-surface-highest: var(--c-surface-highest, #2e2e2e);
   --app-surface-scrim: rgba(0, 0, 0, 0.65);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-solid: #000000;
-  --c-bg-card: var(--app-surface, #1e1e24);
+  --c-bg-card: var(--app-surface, #1e1e1e);
 
-  --c-background: #141418;
-  --c-surface-lowest: #101014;
-  --c-surface-low: #16161c;
-  --c-surface-mid: #1e1e24;
-  --c-surface-high: #262630;
-  --c-surface-highest: #2e2e3a;
-  --c-surface-base: #16161c;
-  --surface-dialog-bg: var(--app-surface-high, #151518);
-  --surface-modal-surface: var(--app-surface-high, #151518);
+  --c-background: #141414;
+  --c-surface-lowest: #101010;
+  --c-surface-low: #161616;
+  --c-surface-mid: #1e1e1e;
+  --c-surface-high: #262626;
+  --c-surface-highest: #2e2e2e;
+  --c-surface-base: #161616;
+  --surface-dialog-bg: var(--app-surface-high, #181818);
+  --surface-modal-surface: var(--app-surface-high, #181818);
 
   --c-text-primary: #f4f4f6;
   --c-text-secondary: #a1a1aa;
@@ -315,7 +315,7 @@
 
   --c-border: rgba(255, 255, 255, 0.08);
   --c-border-dashed: 1px dashed rgba(255, 255, 255, 0.14);
-  --c-surface-glass-bg: rgba(20, 20, 25, 0.65);
+  --c-surface-glass-bg: rgba(20, 20, 20, 0.65);
   --c-surface-glass-blur: var(--surface-float-blur, blur(8px));
 
   --c-error: #ef4444;
@@ -2878,7 +2878,7 @@ html.web-desktop.light .card-hover:hover {
 }
 
 html.web-desktop .app-sub-app-container {
-  background: #141418 !important;
+  background: #141414 !important;
   transition: background 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -3213,7 +3213,7 @@ body.amoled .alert-dialog__dialog,
 
 /* Morphing Action Surface Theme Overrides */
 .sc-morphing-panel {
-  background-color: var(--c-surface-base, var(--surface-dialog-bg, #16161c));
+  background-color: var(--c-surface-base, var(--surface-dialog-bg, #161616));
   color: var(--c-text-primary);
   border-color: var(--c-border);
 }
@@ -3263,6 +3263,7 @@ body.amoled .sc-morphing-trigger,
 .amoled .dark\:bg-zinc-800,
 .amoled .dark\:bg-\[\#161618\],
 .amoled .dark\:bg-\[\#141418\],
+.amoled .dark\:bg-\[\#141414\],
 .amoled .dark\:bg-\[\#18181b\],
 .amoled .dark\:bg-\[\#0a0a0e\],
 .amoled .dark\:bg-\[\#121218\],
@@ -3717,7 +3718,7 @@ html.light .button--secondary {
   height: var(--morph-h-closed, 40px);
   border-radius: var(--morph-r-closed, 40px);
   overflow: hidden;
-  background: var(--surface-dialog-bg, var(--app-surface-high, #1e1e24));
+  background: var(--surface-dialog-bg, var(--app-surface-high, #1e1e1e));
   border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;

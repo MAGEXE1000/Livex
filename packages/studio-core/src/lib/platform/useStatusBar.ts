@@ -10,7 +10,7 @@ function getThemeColors(theme: string, amoledMode: boolean) {
 
   if (isLight) return { bg: '#f2f1ef', style: 'LIGHT' as const };
   if (amoledMode) return { bg: '#000000', style: 'DARK' as const };
-  return { bg: '#141418', style: 'DARK' as const };
+  return { bg: '#141414', style: 'DARK' as const };
 }
 
 export async function syncStatusBar(theme: string, amoledMode: boolean) {

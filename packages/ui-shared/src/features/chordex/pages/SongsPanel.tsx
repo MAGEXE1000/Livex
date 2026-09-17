@@ -5017,7 +5017,7 @@ export default function SongsPanel() {
                     <span className="material-symbols-outlined text-[18px]">data_object</span>
                   }
                   style={{
-                    backgroundColor: 'var(--c-surface-high, #1e1e24)',
+                    backgroundColor: 'var(--c-surface-high, #1e1e1e)',
                     borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
                   }}
                   rows={[

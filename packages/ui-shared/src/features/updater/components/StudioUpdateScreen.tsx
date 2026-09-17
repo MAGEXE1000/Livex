@@ -521,13 +521,13 @@ export default memo(function StudioUpdateScreen({
     : isAmoled
       ? 'shadow-[0_24px_50px_-12px_rgba(0,0,0,0.9)]'
       : 'shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)]';
-  const cardBg = isLight ? 'bg-slate-50' : isAmoled ? 'bg-[#000000]' : 'bg-[#1b1b1e]';
+  const cardBg = isLight ? 'bg-slate-50' : isAmoled ? 'bg-[#000000]' : 'bg-[#1b1b1b]';
   const cardBorder = isLight
     ? 'border-black/[0.04]'
     : isAmoled
       ? 'border-white/[0.12]'
       : 'border-white/[0.04]';
-  const pillBg = isLight ? 'bg-slate-100' : isAmoled ? 'bg-[#000000]' : 'bg-[#202024]';
+  const pillBg = isLight ? 'bg-slate-100' : isAmoled ? 'bg-[#000000]' : 'bg-[#202020]';
   const pillBorder = isLight
     ? 'border-black/[0.06]'
     : isAmoled

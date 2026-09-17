@@ -105,21 +105,21 @@
             doc.classList.add('dark');
             doc.classList.remove('light');
             doc.classList.remove('amoled');
-            doc.style.setProperty('--intro-bg', '#141418');
-            doc.style.setProperty('--c-background', '#141418');
-            doc.style.setProperty('--app-bg', '#141418');
-            doc.style.setProperty('--c-surface-lowest', '#101014');
-            doc.style.setProperty('--c-surface-low', '#16161c');
-            doc.style.setProperty('--c-surface-mid', '#1e1e24');
-            doc.style.setProperty('--c-surface-high', '#262630');
-            doc.style.setProperty('--c-surface-highest', '#2e2e3a');
+            doc.style.setProperty('--intro-bg', '#141414');
+            doc.style.setProperty('--c-background', '#141414');
+            doc.style.setProperty('--app-bg', '#141414');
+            doc.style.setProperty('--c-surface-lowest', '#101010');
+            doc.style.setProperty('--c-surface-low', '#161616');
+            doc.style.setProperty('--c-surface-mid', '#1e1e1e');
+            doc.style.setProperty('--c-surface-high', '#262626');
+            doc.style.setProperty('--c-surface-highest', '#2e2e2e');
             doc.style.setProperty('--c-text-primary', '#f4f4f6');
             doc.style.setProperty('--c-text-secondary', '#a1a1aa');
             doc.style.setProperty('--c-text-muted', '#71717a');
             doc.style.setProperty('--c-border', 'rgba(255, 255, 255, 0.08)');
           }
 
-          var themeColor = isLight ? '#ffffff' : (isAmoled ? '#000000' : '#141418');
+          var themeColor = isLight ? '#ffffff' : (isAmoled ? '#000000' : '#141414');
           var metaThemeColor = document.querySelector('meta[name="theme-color"]');
           if (metaThemeColor) {
             metaThemeColor.setAttribute('content', themeColor);
@@ -278,7 +278,7 @@
     <style>
       :root,
       html.dark {
-        --intro-bg: #141418;
+        --intro-bg: #141414;
         --intro-color: #ffffff;
         --intro-sub-color: rgba(255, 255, 255, 0.5);
         --intro-glow-gradient: radial-gradient(

@@ -458,7 +458,9 @@ export function SharedFloatingHeader({
           <span
             data-testid={
               titleTestId ||
-              (title === 'Production Document' ? 'production-document-title' : undefined)
+              (title === 'Production Document' || title === 'Production' || title === 'Producción'
+                ? 'production-document-title'
+                : undefined)
             }
             style={{
               fontSize: 'var(--type-title-size, 19px)',
