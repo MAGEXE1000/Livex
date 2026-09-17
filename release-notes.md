@@ -1,10 +1,9 @@
-# Version 4.6.20
+# Version 4.6.21
 
 Release Date: 2026-09-17
 
-### Improved
-- Complete Theme Parity for Chordex & Drumex Tuners: Replaced all legacy hardcoded background colors, borders, and text values across Chromatic Tuner, Drum Tuner, and Tuning Selector modals with canonical Livex theme tokens (var(--app-bg), var(--c-surface-low), var(--c-surface-high), var(--c-surface-highest), var(--c-border), and var(--c-text-*)).
-- Seamless Transparent Instrument Artwork in Light Mode: Introduced shared useTunerArtwork hook executing automated client-side edge flood-fill to eliminate black studio backdrops behind guitar headstocks and drum shells in Light theme, allowing instruments to float naturally on light backgrounds.
-- Pure Black AMOLED Efficiency: Guaranteed true #000000 pitch black backgrounds and subtle borders in AMOLED mode across all tuner views and modals for optimal display contrast and battery performance.
-- Dynamic Accent & State Wiring: Replaced static green/blue active states on string selection, Auto toggles, tuning radios, and Reference playback buttons with the user's active theme accent color.
-- Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.
+### Fixed
+- Profile & RootApp Runtime Crash Resolved: Eliminated critical production crash (`Minified React error #310: Rendered more hooks than during the previous render`) occurring when navigating to the Profile/Account settings screen.
+- Rules of Hooks Architectural Alignment: Hoisted all store selectors, theme attributes, and modal origin geometry hooks to the top level of `AccountSettingsPage` before early returns, ensuring constant hook allocation counts on both unauthenticated mount and authenticated update renders.
+- Component Lifecycle & Stability Guard: Extracted `AccountDeviceRow` out of inline JSX IIFE closures into module scope with explicit props, eliminating component type churning and local hook allocation jitter across re-renders.
+- Chordex Library Detail Hook Rule Alignment: Hoisted `detailScrollRef` above early return conditions in `LibraryChordDetail`.

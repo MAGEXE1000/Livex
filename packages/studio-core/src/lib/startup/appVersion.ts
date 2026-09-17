@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.20';
-export const NATIVE_VERSION_CODE = 40620;
-export const WEB_VERSION = '4.6.20';
+export const NATIVE_VERSION = '4.6.21';
+export const NATIVE_VERSION_CODE = 40621;
+export const WEB_VERSION = '4.6.21';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '83c4181b';
+export const APP_COMMIT_SHA = '5e296cb1';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/17/2026, 2:47:33 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/17/2026, 4:07:50 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,13 +96,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Fixed',
     items: [
-      'Complete Theme Parity for Chordex & Drumex Tuners: Replaced all legacy hardcoded background colors, borders, and text values across Chromatic Tuner, Drum Tuner, and Tuning Selector modals with canonical Livex theme tokens (var(--app-bg), var(--c-surface-low), var(--c-surface-high), var(--c-surface-highest), var(--c-border), and var(--c-text-*)).',
-      'Seamless Transparent Instrument Artwork in Light Mode: Introduced shared useTunerArtwork hook executing automated client-side edge flood-fill to eliminate black studio backdrops behind guitar headstocks and drum shells in Light theme, allowing instruments to float naturally on light backgrounds.',
-      'Pure Black AMOLED Efficiency: Guaranteed true #000000 pitch black backgrounds and subtle borders in AMOLED mode across all tuner views and modals for optimal display contrast and battery performance.',
-      "Dynamic Accent & State Wiring: Replaced static green/blue active states on string selection, Auto toggles, tuning radios, and Reference playback buttons with the user's active theme accent color.",
-      'Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.',
+      'Profile & RootApp Runtime Crash Resolved: Eliminated critical production crash (`Minified React error #310: Rendered more hooks than during the previous render`) occurring when navigating to the Profile/Account settings screen.',
+      'Rules of Hooks Architectural Alignment: Hoisted all store selectors, theme attributes, and modal origin geometry hooks to the top level of `AccountSettingsPage` before early returns, ensuring constant hook allocation counts on both unauthenticated mount and authenticated update renders.',
+      'Component Lifecycle & Stability Guard: Extracted `AccountDeviceRow` out of inline JSX IIFE closures into module scope with explicit props, eliminating component type churning and local hook allocation jitter across re-renders.',
+      'Chordex Library Detail Hook Rule Alignment: Hoisted `detailScrollRef` above early return conditions in `LibraryChordDetail`.',
     ],
   },
 ];
@@ -114,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.21',
+    date: '2026-09-17',
+    highlights: [
+      'Profile & RootApp Runtime Crash Resolved: Eliminated critical production crash (`Minified React error #310: Rendered more hooks than during the previous render`) occurring when navigating to the Profile/Account settings screen.',
+      'Rules of Hooks Architectural Alignment: Hoisted all store selectors, theme attributes, and modal origin geometry hooks to the top level of `AccountSettingsPage` before early returns, ensuring constant hook allocation counts on both unauthenticated mount and authenticated update renders.',
+      'Component Lifecycle & Stability Guard: Extracted `AccountDeviceRow` out of inline JSX IIFE closures into module scope with explicit props, eliminating component type churning and local hook allocation jitter across re-renders.',
+      'Chordex Library Detail Hook Rule Alignment: Hoisted `detailScrollRef` above early return conditions in `LibraryChordDetail`.',
+    ],
+  },
   {
     version: '4.6.20',
     date: '2026-09-17',
@@ -209,14 +218,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.',
       'Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.',
       'Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.',
-    ],
-  },
-  {
-    version: '4.6.11',
-    date: '2026-09-15',
-    highlights: [
-      'Scroll-Reactive Title → Floating Top Bar Morph Engine: Hardened layout metrics caching, frame interpolation, and compositor transform properties across Android WebView and mobile environments.',
-      'Drum Tuner Direct Integration: Validated responsive button placement and modal activation next to the Metronome control in Drumex transport bar and Patterns panel.',
     ],
   },
 ];
