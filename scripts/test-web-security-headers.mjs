@@ -1,0 +1,330 @@
+/**
+ * Automated Verification for Production Web Content Security Policy and Security Headers
+ */
+
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+
+let passedTests = 0;
+let failedTests = 0;
+
+function test(name, fn) {
+  try {
+    fn();
+    passedTests++;
+    console.log(`  ✓ ${name}`);
+  } catch (err) {
+    failedTests++;
+    console.error(`  ✗ ${name}`);
+    console.error(`    ${err.message}`);
+  }
+}
+
+async function asyncTest(name, fn) {
+  try {
+    await fn();
+    passedTests++;
+    console.log(`  ✓ ${name}`);
+  } catch (err) {
+    failedTests++;
+    console.error(`  ✗ ${name}`);
+    console.error(`    ${err.message}`);
+  }
+}
+
+console.log('=== Starting Web Security Headers & CSP Test Suite ===\n');
+
+// ── 1. Netlify.toml Configuration Tests ──────────────────────────────────────
+console.log('--- Suite 1: netlify.toml Configuration ---');
+
+const netlifyTomlPath = path.join(process.cwd(), 'netlify.toml');
+const netlifyToml = fs.readFileSync(netlifyTomlPath, 'utf-8');
+
+test('netlify.toml exists and has headers configuration', () => {
+  assert(netlifyToml.includes('[[headers]]'), 'netlify.toml must define [[headers]]');
+  assert(netlifyToml.includes('for = "/*"'), 'netlify.toml must define headers for /*');
+});
+
+test('netlify.toml contains X-Content-Type-Options: nosniff', () => {
+  assert(netlifyToml.includes('X-Content-Type-Options = "nosniff"'));
+});
+
+test('netlify.toml contains X-Frame-Options: SAMEORIGIN', () => {
+  assert(netlifyToml.includes('X-Frame-Options = "SAMEORIGIN"'));
+});
+
+test('netlify.toml contains Referrer-Policy: strict-origin-when-cross-origin', () => {
+  assert(netlifyToml.includes('Referrer-Policy = "strict-origin-when-cross-origin"'));
+});
+
+test('netlify.toml contains Permissions-Policy with microphone and audio allowed', () => {
+  assert(netlifyToml.includes('Permissions-Policy = "'));
+  assert(netlifyToml.includes('microphone=(self)'));
+  assert(netlifyToml.includes('camera=()'));
+  assert(netlifyToml.includes('geolocation=()'));
+  assert(netlifyToml.includes('payment=()'));
+  assert(netlifyToml.includes('usb=()'));
+  assert(netlifyToml.includes('midi=(self)'));
+  assert(netlifyToml.includes('autoplay=(self)'));
+});
+
+test('netlify.toml contains Strict-Transport-Security with long max-age and includeSubDomains', () => {
+  assert(netlifyToml.includes('Strict-Transport-Security = "max-age=31536000; includeSubDomains"'));
+});
+
+test('netlify.toml contains Cross-Origin-Opener-Policy: same-origin-allow-popups', () => {
+  assert(netlifyToml.includes('Cross-Origin-Opener-Policy = "same-origin-allow-popups"'));
+});
+
+test('netlify.toml contains Content-Security-Policy', () => {
+  assert(netlifyToml.includes('Content-Security-Policy = "'));
+});
+
+
+// ── 2. Detailed CSP Directive Verification ──────────────────────────────────
+console.log('\n--- Suite 2: CSP Directives Deep Verification ---');
+
+// Extract CSP string from netlify.toml
+const cspMatch = netlifyToml.match(/Content-Security-Policy\s*=\s*"([^"]+)"/);
+assert(cspMatch, 'Could not extract CSP string from netlify.toml');
+const csp = cspMatch[1];
+
+// Helper to parse directives into a map of directive -> set of tokens
+function parseCsp(cspString) {
+  const directives = {};
+  const parts = cspString.split(';').map((s) => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    const tokens = part.split(/\s+/);
+    const name = tokens[0];
+    directives[name] = tokens.slice(1);
+  }
+  return directives;
+}
+
+const parsedCsp = parseCsp(csp);
+
+test('default-src is strictly set to self', () => {
+  assert.deepEqual(parsedCsp['default-src'], ["'self'"]);
+});
+
+test('script-src allows self, inline, eval, wasm, and Google/Firebase auth', () => {
+  const scripts = parsedCsp['script-src'];
+  assert(scripts.includes("'self'"), "script-src must include 'self'");
+  assert(scripts.includes("'unsafe-inline'"), "script-src must include 'unsafe-inline'");
+  assert(scripts.includes("'unsafe-eval'"), "script-src must include 'unsafe-eval' for lottie-web");
+  assert(scripts.includes("'wasm-unsafe-eval'"), "script-src must include 'wasm-unsafe-eval' for DSP WebAssembly");
+  assert(scripts.includes('https://apis.google.com'), 'script-src must include Google APIs');
+  assert(scripts.includes('https://www.gstatic.com'), 'script-src must include gstatic');
+  assert(scripts.includes('https://*.firebaseapp.com'), 'script-src must include firebaseapp');
+});
+
+test('style-src allows self, inline styles, and Google Fonts', () => {
+  const styles = parsedCsp['style-src'];
+  assert(styles.includes("'self'"));
+  assert(styles.includes("'unsafe-inline'"));
+  assert(styles.includes('https://fonts.googleapis.com'));
+});
+
+test('font-src allows self, data, and fonts.gstatic.com', () => {
+  const fonts = parsedCsp['font-src'];
+  assert(fonts.includes("'self'"));
+  assert(fonts.includes('data:'));
+  assert(fonts.includes('https://fonts.gstatic.com'));
+});
+
+test('img-src allows self, data, blob, Firebase Storage, and Google profile avatars', () => {
+  const imgs = parsedCsp['img-src'];
+  assert(imgs.includes("'self'"));
+  assert(imgs.includes('data:'));
+  assert(imgs.includes('blob:'));
+  assert(imgs.includes('https://studio-30f44.web.app'));
+  assert(imgs.includes('https://*.firebasestorage.app'));
+  assert(imgs.includes('https://firebasestorage.googleapis.com'));
+  assert(imgs.includes('https://storage.googleapis.com'));
+  assert(imgs.includes('https://lh3.googleusercontent.com'));
+});
+
+test('connect-src allows all verified API, Firebase, R2, and audio endpoints', () => {
+  const connects = parsedCsp['connect-src'];
+  assert(connects.includes("'self'"));
+  assert(connects.includes('https://identitytoolkit.googleapis.com'));
+  assert(connects.includes('https://securetoken.googleapis.com'));
+  assert(connects.includes('https://studio-30f44.firebaseapp.com'));
+  assert(connects.includes('https://firestore.googleapis.com'));
+  assert(connects.includes('https://*.firestore.googleapis.com'));
+  assert(connects.includes('https://firebasestorage.googleapis.com'));
+  assert(connects.includes('https://*.firebasestorage.app'));
+  assert(connects.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+  assert(connects.includes('https://oramics.github.io'));
+  assert(connects.includes('https://raw.githubusercontent.com'));
+  assert(connects.includes('https://tonejs.github.io'));
+  assert(connects.includes('https://lrclib.net'));
+  assert(connects.includes('https://app.tolgee.io'));
+  assert(connects.includes('https://api.github.com'));
+  assert(connects.includes('https://github.com'));
+  assert(connects.includes('https://studio-30f44.web.app'));
+  assert(connects.includes('wss://*.firebaseio.com'));
+  assert(connects.includes('wss://*.firestore.googleapis.com'));
+});
+
+test('media-src allows self, blob, data, R2 stems, and audio samples', () => {
+  const media = parsedCsp['media-src'];
+  assert(media.includes("'self'"));
+  assert(media.includes('blob:'));
+  assert(media.includes('data:'));
+  assert(media.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+  assert(media.includes('https://oramics.github.io'));
+  assert(media.includes('https://raw.githubusercontent.com'));
+  assert(media.includes('https://tonejs.github.io'));
+  assert(media.includes('https://*.firebasestorage.app'));
+  assert(media.includes('https://firebasestorage.googleapis.com'));
+});
+
+test('frame-src allows self, Firebase auth, and Google Sign-In', () => {
+  const frames = parsedCsp['frame-src'];
+  assert(frames.includes("'self'"), "frame-src must allow 'self' for Stagex /stage-core/index.html");
+  assert(frames.includes('https://studio-30f44.firebaseapp.com'));
+  assert(frames.includes('https://*.firebaseapp.com'));
+  assert(frames.includes('https://apis.google.com'));
+  assert(frames.includes('https://accounts.google.com'));
+});
+
+test('worker-src allows self and blob', () => {
+  const workers = parsedCsp['worker-src'];
+  assert(workers.includes("'self'"));
+  assert(workers.includes('blob:'));
+});
+
+test('frame-ancestors is strictly self', () => {
+  assert.deepEqual(parsedCsp['frame-ancestors'], ["'self'"]);
+});
+
+test('object-src is none and base-uri is self', () => {
+  assert.deepEqual(parsedCsp['object-src'], ["'none'"]);
+  assert.deepEqual(parsedCsp['base-uri'], ["'self'"]);
+});
+
+
+// ── 3. Static _headers and firebase.json Verification ────────────────────────
+console.log('\n--- Suite 3: Static _headers & firebase.json Verification ---');
+
+const publicHeadersPath = path.join(process.cwd(), 'apps/studio-web/public/_headers');
+const distHeadersPath = path.join(process.cwd(), 'dist/web/_headers');
+const firebaseJsonPath = path.join(process.cwd(), 'firebase.json');
+
+test('apps/studio-web/public/_headers exists and matches netlify security headers', () => {
+  assert(fs.existsSync(publicHeadersPath), 'public/_headers must exist');
+  const content = fs.readFileSync(publicHeadersPath, 'utf-8');
+  assert(content.includes('X-Content-Type-Options: nosniff'));
+  assert(content.includes('X-Frame-Options: SAMEORIGIN'));
+  assert(content.includes('Referrer-Policy: strict-origin-when-cross-origin'));
+  assert(content.includes('Content-Security-Policy: default-src'));
+});
+
+test('dist/web/_headers exists in built production bundle', () => {
+  assert(fs.existsSync(distHeadersPath), 'dist/web/_headers must exist after build');
+  const content = fs.readFileSync(distHeadersPath, 'utf-8');
+  assert(content.includes('Content-Security-Policy: default-src'));
+});
+
+test('firebase.json includes X-Content-Type-Options: nosniff, Referrer-Policy, and X-Frame-Options: DENY', () => {
+  const content = fs.readFileSync(firebaseJsonPath, 'utf-8');
+  const parsed = JSON.parse(content);
+  const globalHeaderRule = parsed.hosting.headers.find((h) => h.source === '**');
+  assert(globalHeaderRule, 'Must find ** header rule in firebase.json');
+  const keys = globalHeaderRule.headers.reduce((acc, cur) => {
+    acc[cur.key] = cur.value;
+    return acc;
+  }, {});
+  assert.equal(keys['X-Content-Type-Options'], 'nosniff');
+  assert.equal(keys['Referrer-Policy'], 'strict-origin-when-cross-origin');
+  assert.equal(keys['X-Frame-Options'], 'DENY');
+});
+
+
+// ── 4. Live Static Server Verification ───────────────────────────────────────
+console.log('\n--- Suite 4: Live HTTP Server Header Verification ---');
+
+// Parse _headers format
+function parseHeadersFile(content) {
+  const lines = content.split('\n');
+  const rules = [];
+  let currentPath = null;
+  let currentHeaders = {};
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('#')) continue;
+    if (line.startsWith('/')) {
+      if (currentPath) {
+        rules.push({ path: currentPath, headers: currentHeaders });
+      }
+      currentPath = line;
+      currentHeaders = {};
+    } else if (line.includes(':') && currentPath) {
+      const idx = line.indexOf(':');
+      const key = line.substring(0, idx).trim();
+      const val = line.substring(idx + 1).trim();
+      currentHeaders[key.toLowerCase()] = val;
+    }
+  }
+  if (currentPath) {
+    rules.push({ path: currentPath, headers: currentHeaders });
+  }
+  return rules;
+}
+
+await asyncTest('Live HTTP Server delivers expected headers for web routes', async () => {
+  const rules = parseHeadersFile(fs.readFileSync(distHeadersPath, 'utf-8'));
+  const rootRule = rules.find((r) => r.path === '/*');
+  assert(rootRule, 'Must find /* rule in dist/web/_headers');
+
+  const server = http.createServer((req, res) => {
+    // Apply matching headers
+    for (const [k, v] of Object.entries(rootRule.headers)) {
+      res.setHeader(k, v);
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<!doctype html><html><body>Livex Test</body></html>');
+  });
+
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  try {
+    const res = await new Promise((resolve, reject) => {
+      http.get(`http://127.0.0.1:${port}/`, { agent: false }, (response) => {
+        response.resume();
+        resolve(response);
+      }).on('error', reject);
+    });
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers['x-content-type-options'], 'nosniff');
+    assert.equal(res.headers['x-frame-options'], 'SAMEORIGIN');
+    assert.equal(res.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+    assert(res.headers['permissions-policy'].includes('microphone=(self)'));
+    assert(res.headers['strict-transport-security'].includes('max-age=31536000'));
+    assert.equal(res.headers['cross-origin-opener-policy'], 'same-origin-allow-popups');
+
+    const receivedCsp = res.headers['content-security-policy'];
+    assert(receivedCsp, 'Must receive content-security-policy header');
+    assert(receivedCsp.includes("default-src 'self'"));
+    assert(receivedCsp.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+    assert(receivedCsp.includes("frame-ancestors 'self'"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+console.log(`\n========================================`);
+console.log(`Tests finished: ${passedTests} passed, ${failedTests} failed`);
+console.log(`========================================\n`);
+
+if (failedTests > 0) {
+  process.exit(1);
+} else {
+  process.exit(0);
+}
