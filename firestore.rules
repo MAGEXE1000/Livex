@@ -1,28 +1,154 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isRoomHost(roomId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/rooms/$(roomId)) &&
+        get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
+    }
+
+    function isRoomMember(roomId) {
+      return isAuthenticated() && (
+        isRoomHost(roomId) ||
+        exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid))
+      );
+    }
+
+    function hasValidRoomCode(roomId) {
+      return exists(/databases/$(database)/documents/rooms/$(roomId)) &&
+        get(/databases/$(database)/documents/rooms/$(roomId)).data.shortCode is string &&
+        exists(/databases/$(database)/documents/roomCodes/$(get(/databases/$(database)/documents/rooms/$(roomId)).data.shortCode));
+    }
+
+    // User data isolation: strict per-user sandbox
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
       
       match /{allPaths=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
     }
 
+    // Short room codes: used for code -> roomId resolution
     match /roomCodes/{code} {
-      allow read, write: if request.auth != null;
+      // Prevent enumeration of all active room codes
+      allow list: if false;
+
+      // Allow resolving a specific 6-character room code
+      allow get: if isAuthenticated() && code.size() == 6;
+
+      // Only allow creating a room code with valid format and schema
+      allow create: if isAuthenticated()
+        && code.size() == 6
+        && request.resource.data.roomId is string
+        && request.resource.data.roomId.size() > 0
+        && request.resource.data.createdAt is number;
+
+      // Room codes are immutable once created — cannot be overwritten or hijacked
+      allow update: if false;
+
+      // Only the host of the associated room can delete its code
+      allow delete: if isAuthenticated() && (
+        !exists(/databases/$(database)/documents/rooms/$(resource.data.roomId)) ||
+        get(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.hostId == request.auth.uid
+      );
     }
 
+    // Stage collaboration rooms
     match /rooms/{roomId} {
-      allow read, write: if request.auth != null;
+      // Prevent enumeration of all rooms
+      allow list: if false;
 
+      // Reading room details: must be host, participant, or joining an active room with valid code
+      allow get: if isAuthenticated() && (
+        resource.data.hostId == request.auth.uid ||
+        exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid)) ||
+        (resource.data.shortCode is string && exists(/databases/$(database)/documents/roomCodes/$(resource.data.shortCode)))
+      );
+
+      // Creating a room: must be authenticated and register oneself as hostId
+      allow create: if isAuthenticated()
+        && request.resource.data.hostId == request.auth.uid
+        && request.resource.data.roomId == roomId
+        && request.resource.data.shortCode is string
+        && request.resource.data.shortCode.size() == 6
+        && request.resource.data.createdAt is number
+        && request.resource.data.updatedAt is number
+        && request.resource.data.lastHeartbeat is number
+        && request.resource.data.currentStageVersion is number;
+
+      // Updating a room: only host or active participants can update heartbeat timestamps
+      // Prevents tampering with hostId, snapshot, roomId, or shortCode
+      allow update: if isAuthenticated()
+        && (resource.data.hostId == request.auth.uid || exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid)))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastHeartbeat', 'updatedAt'])
+        && request.resource.data.hostId == resource.data.hostId
+        && request.resource.data.roomId == resource.data.roomId
+        && request.resource.data.shortCode == resource.data.shortCode
+        && request.resource.data.lastHeartbeat is number
+        && request.resource.data.updatedAt is number;
+
+      // Deleting a room: only the room host can delete
+      allow delete: if isAuthenticated() && resource.data.hostId == request.auth.uid;
+
+      // Realtime participant presence subcollection
       match /presence/{userId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        // Participants can read presence if they are host, member, or joining an active room
+        allow read: if isAuthenticated() && (
+          isRoomHost(roomId) ||
+          exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid)) ||
+          hasValidRoomCode(roomId)
+        );
+
+        // Users can only write their own presence document with schema validation
+        allow create, update: if isAuthenticated()
+          && request.auth.uid == userId
+          && request.resource.data.id == userId
+          && request.resource.data.online is bool
+          && request.resource.data.lastSeen is number
+          && (!('displayName' in request.resource.data) || request.resource.data.displayName is string)
+          && (!('avatar' in request.resource.data) || request.resource.data.avatar is string)
+          && (!('device' in request.resource.data) || request.resource.data.device in ['web', 'android', 'desktop'])
+          && (!('cursorColor' in request.resource.data) || request.resource.data.cursorColor is string);
+
+        // Users can delete their own presence (leave), or host can prune inactive participants
+        allow delete: if isAuthenticated() && (
+          request.auth.uid == userId ||
+          isRoomHost(roomId)
+        );
       }
 
+      // Append-only realtime collaboration operations subcollection
       match /operations/{opId} {
-        allow read, write: if request.auth != null;
+        // Members or users joining an active room can read operations
+        allow read: if isAuthenticated() && (
+          isRoomHost(roomId) ||
+          exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid)) ||
+          hasValidRoomCode(roomId)
+        );
+
+        // Active participants can append operations with verified authorId and schema
+        allow create: if isAuthenticated()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.id == opId
+          && request.resource.data.timestamp is number
+          && request.resource.data.type in ['create', 'delete', 'move', 'resize', 'rotate', 'rename', 'layer', 'scene', 'property', 'reorder', 'selection']
+          && (isRoomHost(roomId) || exists(/databases/$(database)/documents/rooms/$(roomId)/presence/$(request.auth.uid)));
+
+        // Operations are immutable: cannot be edited once broadcast
+        allow update: if false;
+
+        // Only room host can delete/prune operations
+        allow delete: if isAuthenticated() && isRoomHost(roomId);
       }
     }
   }
