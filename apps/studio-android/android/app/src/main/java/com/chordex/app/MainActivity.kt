@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -111,9 +112,72 @@ class MainActivity : BridgeActivity() {
     inner class ThemeTransitionBridge {
         @JavascriptInterface
         fun triggerTransition(nextTheme: String, amoled: Boolean, x: Float, y: Float) {
+            val themeStr = if (nextTheme == "light") "light" else if (amoled) "amoled" else "dark"
+            try {
+                val prefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+                prefs.edit().putString("livex_theme", themeStr).apply()
+            } catch (e: Exception) {
+                android.util.Log.w("LivexTheme", "Failed to persist theme transition: ${e.message}")
+            }
             runOnUiThread {
                 runInkFlowTransition(nextTheme, amoled, x, y)
             }
+        }
+
+        @JavascriptInterface
+        fun updateTheme(theme: String) {
+            try {
+                val prefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+                prefs.edit().putString("livex_theme", theme).apply()
+            } catch (e: Exception) {
+                android.util.Log.w("LivexTheme", "Failed to persist updateTheme: ${e.message}")
+            }
+            runOnUiThread {
+                applyNativeThemeColors(theme)
+            }
+        }
+    }
+
+    private fun getResolvedPersistedTheme(): String {
+        return try {
+            val prefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+            val savedTheme = prefs.getString("livex_theme", null)
+            if (!savedTheme.isNullOrEmpty()) {
+                savedTheme
+            } else {
+                val isSystemNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+                if (isSystemNight) "dark" else "light"
+            }
+        } catch (e: Exception) {
+            "light"
+        }
+    }
+
+    private fun getBackgroundColorForTheme(theme: String): Int {
+        return when (theme) {
+            "light" -> android.graphics.Color.WHITE
+            "amoled" -> android.graphics.Color.BLACK
+            else -> android.graphics.Color.parseColor("#141418")
+        }
+    }
+
+    private fun applyNativeThemeColors(theme: String) {
+        val bgColor = getBackgroundColorForTheme(theme)
+        val isLight = (theme == "light")
+        try {
+            window?.decorView?.setBackgroundColor(bgColor)
+            window?.setBackgroundDrawable(ColorDrawable(bgColor))
+            if (this.bridge != null && this.bridge.webView != null) {
+                this.bridge.webView.setBackgroundColor(bgColor)
+            }
+            val win = window
+            if (win != null) {
+                val insetsController = WindowCompat.getInsetsController(win, win.decorView)
+                insetsController.isAppearanceLightStatusBars = isLight
+                insetsController.isAppearanceLightNavigationBars = isLight
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("LivexTheme", "Failed to apply native theme colors: ${e.message}")
         }
     }
 
@@ -173,6 +237,15 @@ class MainActivity : BridgeActivity() {
         ensureNormalAudioMode()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val currentTheme = getResolvedPersistedTheme()
+        val initialBgColor = getBackgroundColorForTheme(currentTheme)
+
+        window.decorView.setBackgroundColor(initialBgColor)
+        window.setBackgroundDrawable(ColorDrawable(initialBgColor))
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = (currentTheme == "light")
+        insetsController.isAppearanceLightNavigationBars = (currentTheme == "light")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 val window = window
@@ -211,7 +284,7 @@ class MainActivity : BridgeActivity() {
         if (this.bridge != null && this.bridge.webView != null) {
             val webView = this.bridge.webView
             android.util.Log.i("LivexBoot", "WebView initialized at " + android.os.SystemClock.elapsedRealtime() + "ms since boot")
-            webView.setBackgroundColor(android.graphics.Color.BLACK)
+            webView.setBackgroundColor(initialBgColor)
             webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
             
             webView.addJavascriptInterface(ThemeTransitionBridge(), "ThemeTransitionBridge")

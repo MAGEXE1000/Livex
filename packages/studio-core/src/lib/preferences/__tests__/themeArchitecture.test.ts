@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useSettingsStore, settingsController } from '../../../store/useSettingsStore';
-import { applyThemeTokens } from '../themeEngine';
+import { applyThemeTokens, resetThemeEngineCache } from '../themeEngine';
 
 describe('Livex Three-State Theme Architecture', () => {
   let originalDocument: any;
   let mockClasses: Set<string>;
 
   beforeEach(() => {
+    resetThemeEngineCache();
     mockClasses = new Set<string>();
     originalDocument = (globalThis as any).document;
 
@@ -29,8 +30,17 @@ describe('Livex Three-State Theme Architecture', () => {
       removeAttribute: vi.fn(),
     };
 
+    const mockMeta = {
+      setAttribute: vi.fn(),
+      getAttribute: vi.fn(),
+    };
+
     (globalThis as any).document = {
       documentElement: mockRoot,
+      querySelector: vi.fn((sel: string) => {
+        if (sel === 'meta[name="theme-color"]') return mockMeta;
+        return null;
+      }),
       body: {
         classList: mockRoot.classList,
         setAttribute: vi.fn(),
@@ -43,6 +53,18 @@ describe('Livex Three-State Theme Architecture', () => {
         },
       },
     };
+
+    const storageMap = new Map<string, string>();
+    const mockStorage = {
+      getItem: (k: string) => storageMap.get(k) ?? null,
+      setItem: (k: string, v: string) => storageMap.set(k, String(v)),
+      removeItem: (k: string) => storageMap.delete(k),
+      clear: () => storageMap.clear(),
+    };
+    (globalThis as any).localStorage = mockStorage;
+    if (typeof window !== 'undefined') {
+      (window as any).localStorage = mockStorage;
+    }
 
     // Reset store to a clean state
     useSettingsStore.setState({
@@ -168,6 +190,17 @@ describe('Livex Three-State Theme Architecture', () => {
       expect(root.classList.contains('light')).toBe(true);
       expect(root.classList.contains('dark')).toBe(false);
       expect(root.classList.contains('amoled')).toBe(false);
+    });
+
+    it('synchronously persists livex-persisted-theme token for frame-0 instant boot in index.html', () => {
+      applyThemeTokens({ theme: 'light', amoledMode: false });
+      expect(localStorage.getItem('livex-persisted-theme')).toBe('light');
+
+      applyThemeTokens({ theme: 'dark', amoledMode: false });
+      expect(localStorage.getItem('livex-persisted-theme')).toBe('dark');
+
+      applyThemeTokens({ theme: 'dark', amoledMode: true });
+      expect(localStorage.getItem('livex-persisted-theme')).toBe('amoled');
     });
   });
 });

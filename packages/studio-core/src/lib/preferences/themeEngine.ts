@@ -1,6 +1,7 @@
 import { useNavigationStore } from '../navigation/useNavigationStore';
 import { Capacitor } from '@capacitor/core';
 import { syncStatusBar } from '../platform/useStatusBar';
+import { nativeSet } from '../platform/nativePrefs';
 import { resolveAccent } from './accentUtils';
 import type { GlassTier } from '../designTokens';
 export interface ThemeConfig {
@@ -21,6 +22,17 @@ let _lastMotionKey = '';
 let _lastPerfKey = '';
 let _lastGlassTierKey = '';
 let _lastStatusBarKey = '';
+
+export function resetThemeEngineCache() {
+  _lastThemeClassKey = '';
+  _lastAccentKey = '';
+  _lastDensityKey = '';
+  _lastTypographyKey = '';
+  _lastMotionKey = '';
+  _lastPerfKey = '';
+  _lastGlassTierKey = '';
+  _lastStatusBarKey = '';
+}
 
 export function applyThemeTokens(settings: any) {
   if (typeof document === 'undefined' || !document.documentElement) return;
@@ -61,15 +73,27 @@ export function applyThemeTokens(settings: any) {
   // Canonical AMOLED resolution: only valid in non-light mode, respects global or per-app
   const isAmoledMode = !isLightMode && (Boolean(activeVis.amoledMode) || Boolean(globalAmoled));
 
+  const effectiveThemeState: VisualThemeState = isLightMode
+    ? 'light'
+    : isAmoledMode
+      ? 'amoled'
+      : 'dark';
+
+  // Synchronously persist fast-read theme token for frame-0 instant hydration in index.html
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('livex-persisted-theme', effectiveThemeState);
+    } else if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('livex-persisted-theme', effectiveThemeState);
+    }
+  } catch (_) {}
+
+  // Persist to native Android SharedPreferences for cold-start launch background
+  void nativeSet('livex_theme', effectiveThemeState);
+
   const themeClassKey = `${activeVis.theme}|${isAmoledMode}|${isLightMode}`;
   if (themeClassKey !== _lastThemeClassKey) {
     _lastThemeClassKey = themeClassKey;
-
-    const effectiveThemeState: VisualThemeState = isLightMode
-      ? 'light'
-      : isAmoledMode
-        ? 'amoled'
-        : 'dark';
 
     // Update HTML theme classes and data-theme attribute
     if (isLightMode) {
@@ -116,6 +140,34 @@ export function applyThemeTokens(settings: any) {
     root.style.removeProperty('--c-text-muted');
     root.style.removeProperty('--c-text-tertiary');
     root.style.removeProperty('--c-border');
+
+    // Synchronously persist fast-read theme token for frame-0 instant hydration in index.html
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('livex-persisted-theme', effectiveThemeState);
+      }
+    } catch (_) {}
+
+    // Persist to native Android SharedPreferences for cold-start launch background
+    void nativeSet('livex_theme', effectiveThemeState);
+
+    // Notify native Android ThemeTransitionBridge if attached to update window/webView backgrounds in real time
+    if (typeof window !== 'undefined' && (window as any).ThemeTransitionBridge?.updateTheme) {
+      try {
+        (window as any).ThemeTransitionBridge.updateTheme(effectiveThemeState);
+      } catch (_) {}
+    }
+
+    // Align meta[name="theme-color"]
+    if (typeof document !== 'undefined') {
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute(
+          'content',
+          isLightMode ? '#ffffff' : isAmoledMode ? '#000000' : '#141418'
+        );
+      }
+    }
   }
 
   // 2. Global Accent Color Tokens
