@@ -1,23 +1,71 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /users/{userId}/profile/avatar.jpg {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId 
-                   && request.resource.size < 2 * 1024 * 1024 
-                   && request.resource.contentType.matches('image/.*');
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
     }
-    match /users/{userId}/profile/avatar.webp {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId 
-                   && request.resource.size < 2 * 1024 * 1024 
-                   && request.resource.contentType.matches('image/.*');
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidAvatarSize() {
+      return request.resource.size < 2 * 1024 * 1024;
+    }
+
+    function isValidUserFileSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Public read-only application assets
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Shared read-only application assets for authenticated users
+    match /shared/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // User profile avatars under /users/{userId}/profile/* (shared among authenticated collaborators)
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId)
+        && isValidAvatarSize()
+        && isValidImage();
+      allow delete: if isOwner(userId);
+    }
+
+    // User profile avatars under /users/{userId}/avatar.* (root-level avatar naming)
+    match /users/{userId}/avatar.{ext} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId)
+        && isValidAvatarSize()
+        && isValidImage()
+        && ext in ['jpg', 'jpeg', 'png', 'webp'];
+      allow delete: if isOwner(userId);
+    }
+
+    // User private storage sandbox (strictly isolated to the owning user)
+    // Prevents cross-user read/write/delete of private recordings, stems, and backups
     match /users/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId 
-                   && request.resource.size < 5 * 1024 * 1024 
-                   && request.resource.contentType.matches('image/.*');
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidUserFileSize()
+        && (
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('audio/.*') ||
+          request.resource.contentType == 'application/json' ||
+          request.resource.contentType == 'application/octet-stream'
+        );
+      allow delete: if isOwner(userId);
     }
   }
 }
