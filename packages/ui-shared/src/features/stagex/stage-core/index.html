@@ -147,7 +147,7 @@
     <link rel="stylesheet" href="app.css" />
     <script src="cloud-stub.js"></script>
     <script>
-      if (location.hash && !location.hash.startsWith('#share=')) {
+      if (!location.hash.startsWith('#share=')) {
         var s = document.createElement('style');
         s.id = 'embedded-hide';
         s.textContent =
@@ -167,6 +167,12 @@
       }
     </script>
     <style>
+      /* Embedded suppression overrides */
+      #sc-fab-btn { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+      #mobile-nav-bar { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+      .sc-back-btn { display: none !important; }
+      #canvas-container { top: 0 !important; bottom: 0 !important; left: 0 !important; right: 0 !important; }
+
       /* ── Global body ────────────────────────────────────────────────────────── */
       html,
       body {
@@ -1325,9 +1331,9 @@
         background: #000000 !important;
       }
 
-      /* Show the ← Setup back buttons */
+      /* Suppress legacy Setup back buttons */
       .sc-back-btn {
-        display: inline-flex !important;
+        display: none !important;
       }
 
       /* ── Smooth theme / AMOLED / accent background transitions ─────── */
@@ -3565,7 +3571,7 @@
       /* ── Canvas bg: controlled by CSS so data-theme (set before first paint) determines initial color,
       eliminating the flash. JS updateCanvasBg() still overrides via inline style for user swatches. ── */
       #stage-canvas {
-        background-color: #0e0e0e;
+        background-color: #141414;
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
       }

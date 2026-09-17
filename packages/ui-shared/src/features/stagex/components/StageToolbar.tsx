@@ -26,7 +26,7 @@ export const StageToolbar: React.FC<StageToolbarProps> = ({
 }) => {
   return (
     <Toolbar
-      className={`border-b ${isLight ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-900 bg-[#080808]'} h-12 flex-shrink-0 select-none`}
+      className={`border-b ${isLight ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-800 bg-[#141414]'} h-12 flex-shrink-0 select-none`}
     >
       <div className="flex items-center gap-3">
         <span

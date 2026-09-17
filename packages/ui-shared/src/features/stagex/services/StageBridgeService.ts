@@ -49,7 +49,7 @@ export function injectTheme(iframe: HTMLIFrameElement, theme: string) {
       root.removeAttribute('data-theme');
       const win = iframe.contentWindow as
         (Window & { updateCanvasBg?: (c: string) => void }) | null;
-      win?.updateCanvasBg?.('#0e0e0e');
+      win?.updateCanvasBg?.('#141414');
     }
   } catch {}
 }
@@ -65,6 +65,11 @@ export function injectAmoled(iframe: HTMLIFrameElement, amoled: boolean) {
       win?.updateCanvasBg?.('#000000');
     } else {
       root.removeAttribute('data-amoled');
+      if (root.getAttribute('data-theme') !== 'light') {
+        const win = iframe.contentWindow as
+          (Window & { updateCanvasBg?: (c: string) => void }) | null;
+        win?.updateCanvasBg?.('#141414');
+      }
     }
   } catch {}
 }

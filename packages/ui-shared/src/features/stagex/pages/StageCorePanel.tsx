@@ -19,7 +19,6 @@ import { SharedNavigationContainer } from '../../../navigation/SharedNavigationC
 import { UNIFIED_NAV_TRANSITION } from '../../../components/StudioPageTransition';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
-import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { StageCanvasView } from '../components/StageCanvasView';
 import { StageSetupContainer } from '../components/setup/StageSetupContainer';
 import { StagePreferencesView } from '../components/preferences/StagePreferencesView';
@@ -128,7 +127,7 @@ export default function StagexPanel() {
   })();
 
   const isAmoled = Boolean(!isLight && (activeVis.amoledMode || settings.amoledMode));
-  const stageBg = isLight ? '#ffffff' : isAmoled ? '#000000' : '#0e0e0e';
+  const stageBg = isLight ? '#ffffff' : isAmoled ? '#000000' : '#141414';
 
   // Mobile live mode state
   const [liveMode, setLiveMode] = useState(false);

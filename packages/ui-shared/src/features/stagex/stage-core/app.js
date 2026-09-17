@@ -40,7 +40,7 @@ const state = {
   currentView: 'Editor',
   navOrder: ['Editor', 'Rider', 'Setlist', 'Gear', 'Members'],
   gridSize: 80,
-  canvasBg: '#0e0e0e',
+  canvasBg: '#141414',
   showStatusBar: false,
   labelsVisible: true,
   connLineStyle: 'solid',

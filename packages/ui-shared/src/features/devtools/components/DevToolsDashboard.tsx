@@ -74,7 +74,6 @@ import {
 } from '../../../shared/layout/StudioLayoutSystem';
 import UpdaterDiagnosticsPage from '../../updater/diagnostics/UpdaterDiagnosticsPage';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
-import MotionPlaygroundView from './MotionPlaygroundView';
 import { DeveloperInspectorPanel } from '../inspector/DeveloperInspectorPanel';
 import { Toggle as StudioToggle } from '../../../shared/design-system/StudioToggle';
 
@@ -497,8 +496,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     switch (subView) {
       case 'dashboard':
         return 'Developer Options';
-      case 'apps':
-        return 'Apps';
       case 'stagex':
         return 'Stagex';
       case 'updater_diagnostics':
@@ -5633,584 +5630,29 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     );
   };
 
-  const renderAppsView = () => {
-    const isLightMode =
-      settings.theme === 'light' ||
-      (settings.theme === 'system' &&
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-color-scheme: light)').matches);
+  const getAppWarnings = (appKey: string) => {
+    return logs.filter((l) => {
+      if (l.level !== 'warn') return false;
+      const mod = (l.module || '').toLowerCase();
+      if (appKey === 'chordex') return mod === 'chordex';
+      if (appKey === 'drumex') return mod === 'drumex' || mod === 'drums';
+      if (appKey === 'stagex') return mod === 'stagex' || mod === 'stage';
+      if (appKey === 'groovex') return mod === 'groovex';
+      if (appKey === 'vocalex') return mod === 'vocalex';
+      return false;
+    });
+  };
 
-    const getAppWarnings = (appKey: string) => {
-      return logs.filter((l) => {
-        if (l.level !== 'warn') return false;
-        const mod = (l.module || '').toLowerCase();
-        if (appKey === 'chordex') return mod === 'chordex';
-        if (appKey === 'drumex') return mod === 'drumex' || mod === 'drums';
-        if (appKey === 'stagex') return mod === 'stagex' || mod === 'stage';
-        if (appKey === 'groovex') return mod === 'groovex';
-        if (appKey === 'vocalex') return mod === 'vocalex';
-        if (appKey === 'hub') {
-          return !['chordex', 'drumex', 'drums', 'stagex', 'stage', 'groovex', 'vocalex'].includes(
-            mod
-          );
-        }
-        return false;
-      });
-    };
-
-    const getAppErrors = (appKey: string) => {
-      return errors.filter((e) => {
-        const mod = (e.module || '').toLowerCase();
-        if (appKey === 'chordex') return mod === 'chordex';
-        if (appKey === 'drumex') return mod === 'drumex' || mod === 'drums';
-        if (appKey === 'stagex') return mod === 'stagex' || mod === 'stage';
-        if (appKey === 'groovex') return mod === 'groovex';
-        if (appKey === 'vocalex') return mod === 'vocalex';
-        if (appKey === 'hub') {
-          return !['chordex', 'drumex', 'drums', 'stagex', 'stage', 'groovex', 'vocalex'].includes(
-            mod
-          );
-        }
-        return false;
-      });
-    };
-
-    // Genuine JS heap measurement if supported by browser/WebView
-    const measuredHeap =
-      typeof window !== 'undefined' && (window.performance as any)?.memory?.usedJSHeapSize
-        ? `${Math.round(((window.performance as any).memory.usedJSHeapSize / (1024 * 1024)) * 10) / 10} MB`
-        : null;
-
-    // Genuine OS process PID if available from nativeDeviceInfo
-    const nativePid = nativeDeviceInfo?.pid ? String(nativeDeviceInfo.pid) : null;
-
-    const chordsHistory = useNavigationStore.getState().history.find((r) => r.app === 'chordex');
-    const chordsView = chordsHistory?.page || chordsHistory?.tab || 'Library';
-
-    const stagexHistory = useNavigationStore.getState().history.find((r) => r.app === 'stagex');
-    const stagexView =
-      stagexHistory?.page || stagexHistory?.tab || settings.defaultStageView || 'Editor';
-
-    const drumexHistory = useNavigationStore.getState().history.find((r) => r.app === 'drumex');
-    const drumexView =
-      drumexHistory?.page || drumexHistory?.tab || settings.defaultDrumTab || 'Songs';
-
-    const groovexHistory = useNavigationStore.getState().history.find((r) => r.app === 'groovex');
-    const groovexView = groovexHistory?.page || groovexHistory?.tab || 'Library';
-
-    const vocalexHistory = useNavigationStore.getState().history.find((r) => r.app === 'vocalex');
-    const vocalexView = vocalexHistory?.page || vocalexHistory?.tab || 'Practice';
-
-    const hubHistory = useNavigationStore.getState().history.find((r) => r.app === 'hub');
-    const hubView = hubHistory?.tab || hubHistory?.page || 'Main';
-
-    const customChordsCount = useChordStore.getState().customChords?.length || 0;
-
-    const appsList = [
-      {
-        key: 'hub',
-        name: 'Livex Hub',
-        icon: 'hub',
-        isActive: currentApp === 'hub',
-        view: hubView,
-        engine: 'React DOM / Host Router',
-        details: [
-          { label: 'Route Tab', value: hubView },
-          { label: 'Theme', value: settings.theme },
-          { label: 'Language', value: settings.language || 'en' },
-        ],
-        warnings: getAppWarnings('hub'),
-        errors: getAppErrors('hub'),
-      },
-      {
-        key: 'chordex',
-        name: 'Chordex',
-        icon: 'music_note',
-        isActive: currentApp === 'chordex',
-        view: chordsView,
-        engine: 'Chord Engine & SVG Renderer',
-        details: [
-          { label: 'Active Page', value: chordsView },
-          { label: 'Instrument', value: settings.instrument || 'guitar' },
-          { label: 'Custom Chords', value: String(customChordsCount) },
-        ],
-        warnings: getAppWarnings('chordex'),
-        errors: getAppErrors('chordex'),
-      },
-      {
-        key: 'drumex',
-        name: 'Drumex',
-        icon: 'album',
-        isActive: currentApp === 'drumex',
-        view: drumexView,
-        engine: 'Web Audio Sequencer',
-        details: [
-          { label: 'Default Tab', value: drumexView },
-          { label: 'Audio Engine', value: 'Web Audio API' },
-          {
-            label: 'Sample Rate',
-            value: typeof AudioContext !== 'undefined' ? '44.1/48 kHz' : 'N/A',
-          },
-        ],
-        warnings: getAppWarnings('drumex'),
-        errors: getAppErrors('drumex'),
-      },
-      {
-        key: 'stagex',
-        name: 'Stagex',
-        icon: 'theater_comedy',
-        isActive: currentApp === 'stagex',
-        view: stagexView,
-        engine: 'IFrame Stage-Core Bridge',
-        details: [
-          { label: 'Default View', value: stagexView },
-          { label: 'Bridge Status', value: stagexStatus },
-          {
-            label: 'ACK Telemetry',
-            value: `${stagex.ackCount} ACKs / ${stagex.messagesSent} Sent`,
-          },
-        ],
-        warnings: getAppWarnings('stagex'),
-        errors: getAppErrors('stagex'),
-        hasTelemetry: true,
-      },
-      {
-        key: 'groovex',
-        name: 'Groovex',
-        icon: 'graphic_eq',
-        isActive: currentApp === 'groovex',
-        view: groovexView,
-        engine: 'Soundfont Player & Synth',
-        details: [
-          { label: 'Active Tab', value: groovexView },
-          { label: 'Synth Engine', value: 'Web Audio / Soundfont' },
-        ],
-        warnings: getAppWarnings('groovex'),
-        errors: getAppErrors('groovex'),
-      },
-      {
-        key: 'vocalex',
-        name: 'Vocalex',
-        icon: 'mic',
-        isActive: currentApp === 'vocalex',
-        view: vocalexView,
-        engine: 'Audio Worklet & Pitch Detection',
-        details: [
-          { label: 'Active View', value: vocalexView },
-          { label: 'Pitch Detector', value: 'YIN Algorithm' },
-        ],
-        warnings: getAppWarnings('vocalex'),
-        errors: getAppErrors('vocalex'),
-      },
-    ];
-
-    const copyAppDiagnostics = (appName: string, appData: any) => {
-      const dump = {
-        appVersion: APP_VERSION,
-        timestamp: new Date().toISOString(),
-        appName,
-        key: appData.key,
-        status: appData.isActive ? 'Active' : 'Inactive',
-        view: appData.view,
-        engine: appData.engine,
-        details: appData.details,
-        warningsCount: appData.warnings.length,
-        errorsCount: appData.errors.length,
-        ...(measuredHeap ? { jsHeapUsage: measuredHeap } : {}),
-        ...(nativePid ? { processId: nativePid } : {}),
-      };
-      copyToClipboard(`${appName} Diagnostics`, dump);
-    };
-
-    return (
-      <SettingsContentContainer style={{ gap: 16 }}>
-        <style>{`
-          .apps-diag-grid {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 14px !important;
-            width: 100% !important;
-          }
-          @media (min-width: 640px) {
-            .apps-diag-grid {
-              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            }
-          }
-          @media (min-width: 1080px) {
-            .apps-diag-grid {
-              grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-            }
-          }
-          @keyframes app-status-pulse {
-            0% { transform: scale(0.95); opacity: 0.6; }
-            50% { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.6; }
-          }
-          .app-active-pulse {
-            animation: app-status-pulse 2s infinite ease-in-out;
-          }
-        `}</style>
-
-        {/* Global Runtime Overview Card */}
-        <div
-          style={{
-            background: isLightMode
-              ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.75))'
-              : 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.70))',
-            borderRadius: 18,
-            padding: '14px 18px',
-            border: '1px solid var(--c-border)',
-            boxShadow: 'var(--surface-topbar-shadow)',
-            backdropFilter: 'var(--surface-float-blur)',
-            WebkitBackdropFilter: 'var(--surface-float-blur)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: 'rgba(37, 99, 235, 0.12)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--studio-accent-from, #2563eb)',
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                apps
-              </span>
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 800,
-                  color: 'var(--c-text-primary)',
-                  fontFamily: 'var(--studio-font-body)',
-                }}
-              >
-                App Runtime Manager
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: 'var(--c-text-secondary)',
-                  fontFamily: 'Inter, sans-serif',
-                  opacity: 0.8,
-                }}
-              >
-                Active app:{' '}
-                <strong style={{ color: 'var(--studio-accent-from, #2563eb)' }}>
-                  {currentApp.toUpperCase()}
-                </strong>{' '}
-                • 6 Integrated Modules
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {measuredHeap && (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: 'monospace',
-                  background: 'rgba(16, 185, 129, 0.10)',
-                  border: '1px solid rgba(16, 185, 129, 0.20)',
-                  color: '#10b981',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                Heap: {measuredHeap}
-              </span>
-            )}
-            {nativePid && (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: 'monospace',
-                  background: 'rgba(128, 128, 128, 0.10)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-secondary)',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                PID: {nativePid}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Responsive Independent Apps Grid */}
-        <div className="apps-diag-grid">
-          {appsList.map((app) => {
-            const hasErrors = app.errors.length > 0;
-            const hasWarnings = app.warnings.length > 0;
-            const statusColor = hasErrors
-              ? '#ee7d77'
-              : hasWarnings
-                ? '#fbbf24'
-                : app.isActive
-                  ? 'var(--studio-accent-from, #2563eb)'
-                  : 'var(--c-text-secondary)';
-
-            const statusBg = hasErrors
-              ? 'rgba(238, 125, 119, 0.12)'
-              : hasWarnings
-                ? 'rgba(251, 191, 36, 0.12)'
-                : app.isActive
-                  ? 'rgba(37, 99, 235, 0.12)'
-                  : 'rgba(128, 128, 128, 0.08)';
-
-            const statusText = hasErrors
-              ? `${app.errors.length} ERROR${app.errors.length > 1 ? 'S' : ''}`
-              : hasWarnings
-                ? `${app.warnings.length} WARN`
-                : app.isActive
-                  ? 'ACTIVE'
-                  : 'INACTIVE';
-
-            return (
-              <div
-                key={app.key}
-                style={{
-                  background: isLightMode
-                    ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                    : 'var(--surface-topbar-bg, rgba(24, 24, 28, 0.70))',
-                  borderRadius: 18,
-                  padding: '16px 18px',
-                  border: app.isActive
-                    ? '1.5px solid var(--studio-accent-from, #2563eb)'
-                    : hasErrors
-                      ? '1px solid rgba(238, 125, 119, 0.3)'
-                      : '1px solid var(--c-border)',
-                  boxShadow: 'var(--surface-topbar-shadow)',
-                  backdropFilter: 'var(--surface-float-blur)',
-                  WebkitBackdropFilter: 'var(--surface-float-blur)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  boxSizing: 'border-box',
-                  width: '100%',
-                }}
-              >
-                {/* Card Header */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 10,
-                        background: app.isActive
-                          ? 'rgba(37, 99, 235, 0.15)'
-                          : 'rgba(128, 128, 128, 0.08)',
-                        border: '1px solid var(--c-border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: app.isActive
-                          ? 'var(--studio-accent-from, #2563eb)'
-                          : 'var(--c-text-secondary)',
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                        {app.icon}
-                      </span>
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 800,
-                          color: 'var(--c-text-primary)',
-                          margin: 0,
-                          fontFamily: 'var(--studio-font-body)',
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
-                        {app.name}
-                      </h3>
-                      <div
-                        style={{
-                          fontSize: 10.5,
-                          color: 'var(--c-text-secondary)',
-                          fontFamily: 'Inter, sans-serif',
-                          opacity: 0.75,
-                        }}
-                      >
-                        {app.engine}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      padding: '4px 8px',
-                      borderRadius: 9999,
-                      background: statusBg,
-                      border: `1px solid ${statusColor}30`,
-                    }}
-                  >
-                    <span
-                      className={app.isActive ? 'app-active-pulse' : ''}
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: statusColor,
-                        display: 'inline-block',
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 9.5,
-                        fontWeight: 800,
-                        color: statusColor,
-                        fontFamily: 'Inter, sans-serif',
-                        letterSpacing: '0.04em',
-                      }}
-                    >
-                      {statusText}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Details Metrics Grid */}
-                <div
-                  style={{
-                    background: isLightMode ? 'rgba(0, 0, 0, 0.025)' : 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: 12,
-                    padding: '10px 12px',
-                    border: '1px solid var(--c-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  {app.details.map((det, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        fontSize: 11,
-                        fontFamily: 'Inter, sans-serif',
-                      }}
-                    >
-                      <span style={{ color: 'var(--c-text-secondary)', opacity: 0.8 }}>
-                        {det.label}
-                      </span>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          color: 'var(--c-text-primary)',
-                          fontFamily: 'monospace',
-                          fontSize: 11,
-                          maxWidth: '65%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {det.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Actions Row */}
-                <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-                  <button
-                    onClick={() => copyAppDiagnostics(app.name, app)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: 10,
-                      background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--c-border)',
-                      color: 'var(--c-text-primary)',
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 700,
-                      fontSize: 11,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 4,
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: 13, opacity: 0.7 }}
-                    >
-                      content_copy
-                    </span>
-                    Copy Data
-                  </button>
-
-                  {app.hasTelemetry && (
-                    <button
-                      onClick={() => setSubView('stagex')}
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        borderRadius: 10,
-                        background: 'rgba(37, 99, 235, 0.12)',
-                        border: '1px solid rgba(37, 99, 235, 0.25)',
-                        color: 'var(--studio-accent-from, #2563eb)',
-                        fontFamily: 'var(--studio-font-body)',
-                        fontWeight: 700,
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                        sensors
-                      </span>
-                      Telemetry
-                    </button>
-                  )}
-                </div>
-
-                {/* Warnings Accordion if any warning exists for this app */}
-                {app.warnings.length > 0 && (
-                  <WarningsInspector logs={logs} showToast={showToast} appKey={app.key} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </SettingsContentContainer>
-    );
+  const getAppErrors = (appKey: string) => {
+    return errors.filter((e) => {
+      const mod = (e.module || '').toLowerCase();
+      if (appKey === 'chordex') return mod === 'chordex';
+      if (appKey === 'drumex') return mod === 'drumex' || mod === 'drums';
+      if (appKey === 'stagex') return mod === 'stagex' || mod === 'stage';
+      if (appKey === 'groovex') return mod === 'groovex';
+      if (appKey === 'vocalex') return mod === 'vocalex';
+      return false;
+    });
   };
 
   const cardContainerStyle = (id: string): React.CSSProperties => ({
@@ -6254,20 +5696,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
       flexShrink: 0,
       marginLeft: 8,
     };
-  };
-
-  const initialBadgeStyle: React.CSSProperties = {
-    width: 24,
-    height: 24,
-    borderRadius: '50%',
-    background: 'var(--app-surface-bright)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 8,
-    fontWeight: 800,
-    color: 'var(--c-text-primary)',
-    border: '1px solid rgba(128, 128, 128, 0.12)',
   };
 
   const renderDashboardBody = () => (
@@ -6500,6 +5928,121 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         </div>
       </div>
 
+        {/* Compact App Health Overview */}
+        <div
+          style={{
+            marginTop: 12,
+            background: 'var(--app-surface-high)',
+            borderRadius: 16,
+            padding: '14px 16px',
+            border: '1px solid rgba(128, 128, 128, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
+          {[
+            { key: 'chordex', name: 'Chordex', icon: 'music_note', color: '#3b82f6' },
+            { key: 'drumex', name: 'Drumex', icon: 'album', color: '#f59e0b' },
+            { key: 'stagex', name: 'Stagex', icon: 'theater_comedy', color: '#8b5cf6' },
+            { key: 'groovex', name: 'Groovex', icon: 'graphic_eq', color: '#ec4899' },
+            { key: 'vocalex', name: 'Vocalex', icon: 'mic', color: '#10b981' },
+          ].map((app) => {
+            const errs = getAppErrors(app.key);
+            const warns = getAppWarnings(app.key);
+            const hasErrors = errs.length > 0;
+            const hasWarns = warns.length > 0;
+            const statusColor = hasErrors
+              ? 'var(--studio-error, #ee7d77)'
+              : hasWarns
+                ? 'var(--studio-warning, #f59e0b)'
+                : 'var(--studio-success, #22c55e)';
+            const statusText = hasErrors
+              ? `${errs.length} err`
+              : hasWarns
+                ? `${warns.length} warn`
+                : 'Healthy';
+
+            return (
+              <div
+                key={app.key}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  style={{
+                    position: 'relative',
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: 'rgba(128, 128, 128, 0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: 20,
+                      color: app.color,
+                      fontVariationSettings: "'FILL' 1",
+                    }}
+                  >
+                    {app.icon}
+                  </span>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -1,
+                      right: -1,
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: statusColor,
+                      border: '2px solid var(--app-surface-high)',
+                      boxShadow: hasErrors ? '0 0 6px rgba(238, 125, 119, 0.6)' : undefined,
+                    }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--c-text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    textAlign: 'center',
+                  }}
+                >
+                  {app.name}
+                </span>
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    fontWeight: 600,
+                    color: statusColor,
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {statusText}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
       {/* ENGINEERING TOOLS */}
       <div
         style={{
@@ -6547,7 +6090,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 display: 'inline-block',
               }}
             />
-            <span>6 Modules Active</span>
+            <span>5 Modules Active</span>
           </div>
         </div>
 
@@ -6593,88 +6136,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             }}
             className="dev-tools-grid"
           >
-            {/* Apps */}
-            <button
-              onClick={() => setSubView('apps')}
-              className="btn-smooth"
-              style={cardContainerStyle('apps')}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'start',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 16, textAlign: 'left' }}>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 32,
-                      color: 'var(--studio-accent-from, #679cff)',
-                      fontVariationSettings: "'FILL' 1",
-                    }}
-                  >
-                    grid_view
-                  </span>
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: 'var(--c-text-primary)',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      Apps
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--c-text-secondary)',
-                        margin: 0,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      View diagnostics and runtime status for Livex applications.
-                    </p>
-                  </div>
-                </div>
-                <span style={badgeStyle('running')}>Running</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  marginTop: 16,
-                }}
-              >
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <div style={initialBadgeStyle}>CH</div>
-                  <div style={initialBadgeStyle}>DR</div>
-                  <div style={initialBadgeStyle}>ST</div>
-                  <div
-                    style={{
-                      ...initialBadgeStyle,
-                      background: 'var(--studio-accent-from, #679cff)',
-                      color: '#fff',
-                    }}
-                  >
-                    +2
-                  </div>
-                </div>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-secondary)', opacity: 0.5 }}
-                >
-                  arrow_forward
-                </span>
-              </div>
-            </button>
-
             {/* Performance */}
             <button
               onClick={() => {
@@ -7051,73 +6512,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               </div>
             </button>
 
-            {/* Motion Playground */}
-            <button
-              onClick={() => setSubView('motion_playground')}
-              className="btn-smooth"
-              style={cardContainerStyle('motion_playground')}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'start',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 16, textAlign: 'left' }}>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 32, color: '#a78bfa', fontVariationSettings: "'FILL' 0" }}
-                  >
-                    motion_photos_on
-                  </span>
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: 'var(--c-text-primary)',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      Motion Playground
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--c-text-secondary)',
-                        margin: 0,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      Prototype and compare different launch animations.
-                    </p>
-                  </div>
-                </div>
-                <span style={badgeStyle('experimental')}>Experimental</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  marginTop: 16,
-                }}
-              >
-                <span style={{ fontSize: 10, color: 'var(--c-text-secondary)' }}>
-                  5 Flagship concepts loaded
-                </span>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-secondary)', opacity: 0.5 }}
-                >
-                  arrow_forward
-                </span>
-              </div>
-            </button>
-          </div>
+                      </div>
         )}
       </div>
     </SettingsContentContainer>
@@ -7331,13 +6726,11 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           viewOrder={[
             'dashboard',
             'developer_inspector',
-            'apps',
             'stagex',
             'updater_diagnostics',
             'system',
             'logs',
             'performance',
-            'motion_playground',
           ]}
         >
           {(viewId) => (
@@ -7382,16 +6775,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   }
                 >
                   {renderDashboardBody()}
-                </SettingsScaffold>
-              )}
-
-              {viewId === 'apps' && (
-                <SettingsScaffold
-                  title="Apps"
-                  onBack={handleSubViewBack}
-                  toolbarActions={renderCopyButton('Apps')}
-                >
-                  {renderAppsView()}
                 </SettingsScaffold>
               )}
 
@@ -7491,10 +6874,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     moduleFilter={['performance', 'perf']}
                   />
                 </SettingsScaffold>
-              )}
-
-              {viewId === 'motion_playground' && (
-                <MotionPlaygroundView accent={accent} onBack={handleSubViewBack} />
               )}
 
               {viewId === 'developer_inspector' && (
