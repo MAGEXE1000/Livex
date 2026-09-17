@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.18';
-export const NATIVE_VERSION_CODE = 40618;
-export const WEB_VERSION = '4.6.18';
+export const NATIVE_VERSION = '4.6.19';
+export const NATIVE_VERSION_CODE = 40619;
+export const WEB_VERSION = '4.6.19';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '1ece750a';
+export const APP_COMMIT_SHA = 'eb87d7a7';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/16/2026, 2:08:11 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/16/2026, 6:27:47 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,14 +96,21 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Realistic House Kit Drum Samples for Drumex Tuner: Equipped the Drumex Tuner reference sound system with authentic high-definition House Kit room-blend samples (Snare, Tom 1, Tom 2, Floor Tom, Kick) replacing synthetic oscillator tones.',
+      'Pitch-Calibrated Shell Resampling: Calibrated Web Audio playback rates dynamically to exact target tension frequencies (Tight, Normal, Loose) in Hz with physical 3ms anti-click attack envelopes and natural room acoustic decay.',
+      'Interactive Photographic Drum Graphic: Enabled direct touch interaction on both the center photographic drumhead render and the dedicated Referencia trigger for immediate reference playback.',
+    ],
+  },
+  {
     heading: 'Improved',
     items: [
-      'Canonical Bounded Overscroll Spring System: Implemented a polished, unified, native-feeling overscroll spring and bounce interaction across Livex scrollable screens via the canonical `useOverscrollSpring` layout hook.',
-      'Progressive Rubber-Band Physics: Integrated asymptotic elastic resistance strictly bounding content displacement at 44px ($d(p) = \\text{sign}(p) \\cdot D_{\\max} \\cdot (1 - 1 / (1 + c \\cdot |p| / D_{\\max}))$), preventing runaway stretch and visual dislocation.',
-      'Analytical Damped Harmonic Oscillator: Built exact continuous-time spring return settling in ~250–300ms with natural frequency $\\omega_0 = 24\\text{ rad/s}$ and damping ratio $\\zeta = 0.94$, eliminating bounce jitter, oscillation, and overshoot.',
-      'Floating Header & Liquid Glass Isolation: Displaced the scroll container via hardware-accelerated `translate3d(0, y, 0)` leaving sibling floating headers rock-solid with 0.0px drift, undistorted backdrop filters, and intact `useScrollMorph` states.',
-      'Cross-App Normalization: Deployed overscroll spring interaction across SettingsScaffold, Hub Settings, Groovex Preferences & Library, Stagex Setup & Preferences, Chordex Preferences, Drumex Prefs, Beats & Patterns, and Vocalex Preferences & Takes.',
-      'Android WebView Performance & Accessibility: Direct DOM updates with zero React re-renders during active touch dragging; directional lockout for horizontal gestures; full compliance with reduced-motion accessibility.',
+      'Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.',
+      "Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.",
+      'High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.',
+      'Spatial Profile & Subscription Modal Architecture: Restructured Profile and Subscription & Billing modal dialogs with fluid spatial morph transitions, account tier overviews, and multi-theme design tokens.',
+      'Global Top-Bar Geometry & Clearance Normalization: Normalized top-bar container proportions and scroll container top clearance across Library and Patterns views.',
     ],
   },
 ];
@@ -115,6 +122,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.19',
+    date: '2026-09-16',
+    highlights: [
+      'Realistic House Kit Drum Samples for Drumex Tuner: Equipped the Drumex Tuner reference sound system with authentic high-definition House Kit room-blend samples (Snare, Tom 1, Tom 2, Floor Tom, Kick) replacing synthetic oscillator tones.',
+      'Pitch-Calibrated Shell Resampling: Calibrated Web Audio playback rates dynamically to exact target tension frequencies (Tight, Normal, Loose) in Hz with physical 3ms anti-click attack envelopes and natural room acoustic decay.',
+      'Interactive Photographic Drum Graphic: Enabled direct touch interaction on both the center photographic drumhead render and the dedicated Referencia trigger for immediate reference playback.',
+      'Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.',
+      "Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.",
+      'High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.',
+    ],
+  },
   {
     version: '4.6.18',
     date: '2026-09-16',
@@ -205,18 +224,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Subtle Chromatic Aberration & Spectral Refraction: GPU-composited optical refraction highlight layer and text-shadow spectral dispersion peaking at mid-transition (`progress = 0.5`) via sinusoidal interpolation and settling cleanly at `progress = 1.0` and `progress = 0.0`.',
       'Drum Tuner Quick Access in Drumex: Added dedicated Drum Tuner button directly adjacent to the Metronome control in both the DrumEditor top transport bar and the DrumPatternsPanel actions toolbar.',
       'Universal Scaffold Integration: Wired `SettingsScaffold` and `MetronomePanel` to automatically drive the scroll morph engine with zero React re-renders during active scrolling.',
-    ],
-  },
-  {
-    version: '4.6.9',
-    date: '2026-09-15',
-    highlights: [
-      'Drum Tuner in Drumex: Acoustic drum tuning tool calibrated for 5 drum kit parts (Tarola 14", Tom 1 10", Tom 2 12", Piso 16", Bombo 22") with Sweet-Spot fundamental tracking (Tarola at 242 Hz / B3).',
-      'Tension Presets: Tight (Alta tensión), Normal (Estándar), and Loose (Baja tensión) calibrated frequency presets.',
-      'Photographic Visuals: Realistic photographic drum imagery for each kit part with smooth animated transitions.',
-      'High-Precision Chromatic Needle Meter: GPU-composited 60/120 FPS needle, -5 to +5 cent deviation scale, and status indicators.',
-      'Acoustic Reference Tone & Self-Playback Rejection: Audible reference tone generator with built-in microphone self-playback suppression to eliminate speaker feedback.',
-      'Drum Tuning Guidance: Interactive star/cross lug pattern tightening tips and step-by-step guidance.',
     ],
   },
 ];
