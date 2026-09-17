@@ -1,9 +1,7 @@
 packages:
   - apps/*
   - packages/*
-  - artifacts/*
   - lib/*
-  - lib/integrations/*
   - scripts
   - tools/*
 
@@ -63,16 +61,26 @@ overrides:
   'picomatch@2.3.1': '2.3.2'
   'picomatch@4.0.3': '4.0.4'
   'lodash@4.17.23': '4.18.0'
-  'brace-expansion@2.0.2': '2.0.3'
+  'brace-expansion@1': '1.1.18'
+  'brace-expansion@2': '2.1.4'
+  'brace-expansion@5': '5.0.9'
   'esbuild@0.18.20': '0.25.0'
   'yaml@2.8.2': '2.8.3'
-  '@xmldom/xmldom': '0.8.13'
-  'dompurify': '3.4.0'
-  'fast-uri': '3.1.2'
+  '@xmldom/xmldom': '0.8.15'
+  'dompurify': '3.4.15'
+  'fast-uri': '3.1.6'
   'fast-xml-builder': '1.1.7'
   'fast-xml-parser': '5.7.0'
-  'postcss': '8.5.10'
-  'tar': '6.2.1'
+  'postcss': '8.5.28'
+  'tar': '7.5.22'
+  'websocket-driver': '0.7.5'
+  '@grpc/grpc-js': '1.14.4'
+  'fflate': '0.8.3'
+  'js-yaml@4': '4.3.2'
+  'browserslist': '4.28.7'
+  'baseline-browser-mapping': '2.11.0'
+  'protobufjs@7': '7.6.6'
+  '@protobufjs/utf8': '1.1.2'
   esbuild: 0.27.3
   esbuild>@esbuild/aix-ppc64: '-'
   esbuild>@esbuild/android-arm: '-'
@@ -133,8 +141,3 @@ overrides:
   rollup>@rollup/rollup-win32-ia32-msvc: '-'
   rollup>@rollup/rollup-win32-x64-gnu: '-'
   rollup>@rollup/rollup-win32-x64-msvc: '-'
-
-packageExtensions:
-  '@capacitor/cli@6.2.1':
-    dependencies:
-      tar: '^6.2.1'
