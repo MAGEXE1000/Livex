@@ -30,6 +30,13 @@ export default defineConfig(async ({ command, mode }) => {
     envDefines[`import.meta.env.${k}`] = JSON.stringify(val);
   }
 
+  const enableSourcemap =
+    process.env.SOURCE_MAP === 'true'
+      ? true
+      : process.env.SOURCE_MAP === 'hidden'
+        ? ('hidden' as const)
+        : mode === 'development';
+
   let gitCommitSha = 'unknown';
   let isDirty = false;
   try {
@@ -97,7 +104,7 @@ export default defineConfig(async ({ command, mode }) => {
       emptyOutDir: true,
       target: 'es2020',
       minify: 'esbuild',
-      sourcemap: false,
+      sourcemap: enableSourcemap,
       assetsInlineLimit: 4096,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {

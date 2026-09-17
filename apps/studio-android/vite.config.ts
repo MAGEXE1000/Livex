@@ -21,7 +21,6 @@ const injectEnvKeys = [
   'VITE_SUPABASE_ANON_KEY',
   'VITE_SYNC_BACKEND_PROVIDER',
 ] as const;
-
 export default defineConfig(async ({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const envDefines: Record<string, string> = {};
@@ -29,6 +28,14 @@ export default defineConfig(async ({ command, mode }) => {
     const val = (process.env[k] ?? env[k] ?? '').trim();
     envDefines[`import.meta.env.${k}`] = JSON.stringify(val);
   }
+
+  const enableSourcemap =
+    process.env.SOURCE_MAP === 'true'
+      ? true
+      : process.env.SOURCE_MAP === 'hidden'
+        ? ('hidden' as const)
+        : mode === 'development';
+
 
   let gitCommitSha = 'unknown';
   let isDirty = false;
@@ -125,7 +132,7 @@ export default defineConfig(async ({ command, mode }) => {
       emptyOutDir: true,
       target: 'es2020',
       minify: 'esbuild',
-      sourcemap: true,
+      sourcemap: enableSourcemap,
       assetsInlineLimit: 4096,
       rollupOptions: {
         output: {
