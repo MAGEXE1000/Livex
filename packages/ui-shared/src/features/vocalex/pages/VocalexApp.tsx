@@ -208,7 +208,7 @@ export default function VocalexApp() {
                     position: 'absolute',
                     inset: 0,
                     pointerEvents: activeTab === viewId ? 'auto' : 'none',
-                    overflowY: 'auto',
+                    overflowY: viewId === 'coach' ? 'auto' : 'hidden',
                     WebkitOverflowScrolling: 'touch',
                     paddingBottom: '0px',
                   }}

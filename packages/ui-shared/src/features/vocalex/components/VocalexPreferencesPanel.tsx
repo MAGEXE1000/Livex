@@ -1,4 +1,12 @@
-import { useT, resolveAccent, useSettingsStore, vocalexRepository, useShallow, NavigationDispatcher } from '@workspace/studio-core';
+import {
+  useT,
+  resolveAccent,
+  useSettingsStore,
+  vocalexRepository,
+  useShallow,
+  NavigationDispatcher,
+  useIsWebDesktop,
+} from '@workspace/studio-core';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   SettingSection,
@@ -32,6 +40,7 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
   const t = useT();
   const vt = t.vocalex as any;
   const isSpanish = (settings.language ?? 'en') === 'es';
+  const isWebDesktop = useIsWebDesktop();
 
   const [takeCount, setTakeCount] = useState<number>(0);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
@@ -126,19 +135,33 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
       <div
         ref={prefsScrollRef}
         data-purpose="vocalex-preferences-scroll-container"
+        className="flex-1 w-full overflow-y-auto no-scrollbar"
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding:
-            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px) 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
           flex: 1,
           width: '100%',
           overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
           boxSizing: 'border-box',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
-        <div style={{ width: '100%', maxWidth: 440 }}>
+        <div
+          data-purpose="vocalex-preferences-content-container"
+          style={{
+            width: '100%',
+            maxWidth: 'var(--content-max-w)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            boxSizing: 'border-box',
+            paddingLeft: 'var(--page-inset-h)',
+            paddingRight: 'var(--page-inset-h)',
+            paddingBottom:
+              'calc(var(--content-bottom-pad, 96px) + env(safe-area-inset-bottom, 0px) + 24px)',
+          }}
+        >
 
         {/* Transient Feedback Banner */}
         {feedbackMsg && (
