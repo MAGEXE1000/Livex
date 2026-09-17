@@ -1,7 +1,6 @@
 import { Capacitor } from '@capacitor/core';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { Button } from '../../../shared/design-system/buttons';
 import {
   Accordion,
@@ -9,162 +8,228 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '../../../shared/design-system';
-import {
-  useT,
-  useSettingsStore,
-  startDiagnosticsSession,
-  getTimelineReport,
-  resetUpdateTimeline,
-  subscribeSyncStatus,
-  deviceId,
-  APP_VERSION,
-  type SyncStatus,
-} from '@workspace/studio-core';
+import { useT, useSettingsStore, APP_VERSION } from '@workspace/studio-core';
 
 export interface FAQItem {
   question: string;
   answer: string;
 }
+
 export const FAQ_ITEMS: Record<string, FAQItem[]> = {
   en: [
     {
-      question: 'What is Studio?',
+      question: 'What is Livex and how do I get started?',
       answer:
-        'Studio is an all-in-one music production suite designed to compose, synthesize, mix, and record tracks directly in our high-performance application.',
+        'Livex is an all-in-one music performance and production suite combining chord progression design, drum sequencing, stage layout management, live vocal coaching, and groove exploration. To get started, tap any app icon in the Hub or bottom navigation. Each app works immediately with zero mandatory initial configuration.',
     },
     {
-      question: 'What is Chordex?',
+      question: 'What is Chordex and what instruments does it support?',
       answer:
-        'Chordex is a professional chord progression companion inside Studio. It helps you compose songs, explore complex scales, and export progressions to your digital audio workstation (DAW).',
+        'Chordex is an intelligent chord progression companion and interactive songbook. It helps you discover chord voicings, test harmonic progressions, transpose keys, and practice in Live Mode. It supports Guitar (standard and alternate tunings), Piano, Ukulele, Bass (4-string and 5-string), and Saxophone.',
     },
     {
-      question: 'What is Stagex?',
+      question: 'What is Drumex and how does the pattern sequencer work?',
       answer:
-        'Stagex is the live performance and virtual stage component of Studio. It lets you organize virtual stage layouts, manage audio routing, and trigger backing tracks dynamically during gigs.',
+        'Drumex is a high-performance drum machine and pattern sequencer. You can compose multi-instrument drum patterns, adjust tempo (BPM), swing, time signatures, and velocity dynamics. Use the Beats tab to play pre-built rhythm libraries or the Patterns tab to build your own groove step-by-step.',
     },
     {
-      question: 'How do Android updates in the background work?',
+      question: 'What is Stagex and how does it assist live performances?',
       answer:
-        'Studio queries Firebase metadata in the background. When a new update is downloaded, a lightweight status bar indicator notifies you. Tap it to trigger the native PackageInstaller overlay.',
+        'Stagex is a virtual stage plot designer and live performance coordinator. It enables bands, solo artists, and audio engineers to arrange virtual stage layouts, position instruments, monitors, microphones, and cables, visualize audio dispersion coverage, and organize scene cues for gigs and rehearsals.',
     },
     {
-      question: 'How do I troubleshoot audio sound and MIDI?',
+      question: 'What is Groovex and how is it used?',
       answer:
-        'Authorize MIDI and audio recording permissions in Studio Settings, ensure your device volume is up, or trigger a sound engine reset using the tester below.',
+        'Groovex is a rhythm and polyrhythm exploration engine designed for generating syncopated patterns, layered grooves, and dynamic rhythmic foundations to complement your songwriting and live jamming workflows.',
     },
     {
-      question: 'How do Android APK updates work?',
+      question: 'What is Vocalex and how does the vocal coach work?',
       answer:
-        'The native Android app automatically queries our servers for updates. When a new APK is available, the app downloads it directly, enabling instant installation without the Google Play Store.',
+        'Vocalex is a vocal practice companion and take recorder. It utilizes low-latency pitch detection algorithms to graph your singing pitch in real time against reference musical pitches, allowing you to practice intonation, vocal scales, and record multi-take vocal sessions.',
     },
     {
-      question: 'Does Studio work offline?',
+      question: 'How do audio and MIDI permissions work in Livex?',
       answer:
-        'Yes! Studio is fully optimized for offline operation. All synthesis engines, editors, and local database systems work without a network connection. Cloud backups sync automatically once you reconnect.',
+        'Livex requests microphone access solely for acoustic pitch detection (in Vocalex and the Chromatic Tuner) and vocal recording. Web MIDI and native MIDI permissions allow connecting external hardware controllers, keyboards, and master synths. All audio analysis is performed entirely on your device; no audio data is ever uploaded or monitored.',
     },
     {
-      question: 'Where are my preferences stored?',
+      question: 'How do I use the built-in Chromatic Tuner?',
       answer:
-        'Your preferences, presets, and recordings are securely stored in your local application database (localStorage and SQLite/IndexedDB). Synchronizing with your account backs them up safely to our secure cloud.',
+        'The chromatic tuner is accessible from Chordex and Vocalex. Tap the Tuner icon, allow microphone access, and play or sing a clear single note. The tuner display shows the detected pitch, note name, target frequency (Hz), and exact deviation in cents. For best results, tune in an environment with minimal background noise.',
     },
     {
-      question: 'Does Studio include cloud sync?',
+      question: 'How do I customize my theme, accent color, and Start On preferences?',
       answer:
-        'Firestore backup functionality is operational but in active development. We recommend relying on local storage and local exports for reliable project management.',
+        'Go to Hub > Preferences to customize the visual appearance (Light, Dark, or true AMOLED black), select an accent color or custom hue using the pipette color picker, and choose your interface language. In each app preferences panel (Chordex, Drumex, Stagex, Vocalex), you can set the "Start On" option to choose which tab opens automatically when launching that tool.',
+    },
+    {
+      question: 'How are my songs, patterns, and preferences stored?',
+      answer:
+        'Livex employs a local-first storage architecture. Your chord progressions, custom songs, drum sequences, stage plots, and settings are saved directly in your device local database (IndexedDB and SQLite). Cloud Synchronization optionally backs up your creative data to our secure cloud when you are signed in.',
+    },
+    {
+      question: 'How do native Android APK updates work?',
+      answer:
+        'On Android, Livex features an integrated native updater that verifies releases against our public server in the background. When an update is ready, a notification banner appears. Tapping it downloads the verified, signed APK and launches the Android PackageInstaller, upgrading the app seamlessly without losing any local projects.',
+    },
+    {
+      question: 'Troubleshooting: Why is there no sound coming from Livex?',
+      answer:
+        'Verify that your device media volume is up and not muted. In web browsers, interactive audio requires an initial user gesture (tapping any button or key) before the Web Audio API context can unlock. On Android, verify that headphones or Bluetooth devices are connected properly and that no other audio app has exclusive hardware control.',
+    },
+    {
+      question: 'Troubleshooting: What if the microphone or tuner is not responding?',
+      answer:
+        'Ensure microphone permission is granted in your device or browser system settings. In Android Settings > Apps > Livex > Permissions, verify Microphone is set to "Allow while using the app". If permissions were previously declined in a browser, click the lock or settings icon in your browser address bar to reset permissions and reload.',
+    },
+    {
+      question: 'Troubleshooting: How can I reduce audio latency or playback jitter?',
+      answer:
+        'For minimal latency during practice and live performances, use wired headphones or device built-in speakers. Bluetooth wireless connections introduce an inherent hardware delay of 100-200ms. Closing background resource-intensive apps and disabling battery saver mode can also ensure optimal real-time audio thread scheduling.',
     },
   ],
   es: [
     {
-      question: '¿Qué es Studio?',
+      question: '¿Qué es Livex y cómo empiezo a utilizarlo?',
       answer:
-        'Studio es una suite de producción musical todo en uno diseñada para componer, sintetizar, mezclar y grabar pistas directamente en nuestra aplicación de alto rendimiento.',
+        'Livex es una suite integral de producción y rendimiento musical que reúne diseño de progresiones de acordes, secuenciación de batería, gestión de escenarios, entrenamiento vocal en vivo y exploración de ritmos. Para comenzar, pulsa sobre cualquier aplicación en el Hub o en la barra de navegación inferior. Cada herramienta funciona de forma inmediata sin configuraciones obligatorias.',
     },
     {
-      question: '¿Qué es Chordex?',
+      question: '¿Qué es Chordex y qué instrumentos admite?',
       answer:
-        'Chordex es un potente compañero de progresiones de acordes dentro de Studio. Te ayuda a componer canciones, explorar escalas complejas y exportar progresiones a tu secuenciador (DAW) favorito.',
+        'Chordex es un asistente inteligente de acordes y cancionero interactivo. Te ayuda a descubrir digitaciones, probar progresiones armónicas, transportar tonalidades y practicar en Modo Live. Admite Guitarra (afinaciones estándar y alternativas), Piano, Ukelele, Bajo (4 y 5 cuerdas) y Saxofón.',
     },
     {
-      question: '¿Qué es Stagex?',
+      question: '¿Qué es Drumex y cómo funciona el secuenciador de ritmos?',
       answer:
-        'Stagex es el componente de directo y escenario virtual de Studio. Te permite organizar el diseño de tu escenario, gestionar el enrutamiento de audio y lanzar pistas de acompañamiento dinámicamente.',
+        'Drumex es una caja de ritmos y secuenciador de patrones de alto rendimiento. Permite componer patrones de percusión con múltiples instrumentos, ajustar tempo (BPM), swing, compases y dinámicas de velocidad. Utiliza la pestaña Ritmos para explorar librerías prediseñadas o Patrones para construir secuencias paso a paso.',
     },
     {
-      question: '¿Cómo funcionan las actualizaciones de Android en segundo plano?',
+      question: '¿Qué es Stagex y cómo ayuda en actuaciones en vivo?',
       answer:
-        'Studio consulta los metadatos de Firebase en segundo plano. Cuando se descarga una nueva actualización, un indicador en la barra de estado te notifica. Púlsalo para activar la ventana nativa de PackageInstaller.',
+        'Stagex es un diseñador visual de planos de escenario y coordinador para actuaciones en vivo. Permite a bandas, músicos y técnicos organizar la disposición del escenario, ubicar instrumentos, monitores, micrófonos y cableado, visualizar la cobertura acústica y gestionar escenas durante ensayos y conciertos.',
     },
     {
-      question: '¿Cómo soluciono problemas de sonido y MIDI?',
+      question: '¿Qué es Groovex y para qué se utiliza?',
       answer:
-        'Autoriza los permisos de MIDI y grabación en la configuración de la app, asegúrate de subir el volumen de tu dispositivo o reinicia el motor de sonido con el probador a continuación.',
+        'Groovex es un motor de exploración de ritmos y polirritmias diseñado para generar patrones sincopados, bases rítmicas en capas y texturas dinámicas que complementan la composición de canciones y sesiones de improvisación.',
     },
     {
-      question: '¿Cómo funcionan las actualizaciones de APK en Android?',
+      question: '¿Qué es Vocalex y cómo funciona el entrenador vocal?',
       answer:
-        'La aplicación nativa de Android consulta automáticamente si hay actualizaciones. Cuando hay un nuevo APK disponible, la aplicación lo descarga directamente para su instalación sin depender de Google Play.',
+        'Vocalex es un compañero de práctica vocal y grabador de tomas. Emplea algoritmos de detección de tono de baja latencia para representar visualmente tu afinación en tiempo real frente a notas musicales de referencia, ayudándote a mejorar tu entonación y registrar sesiones vocales.',
     },
     {
-      question: '¿Funciona Studio sin conexión (offline)?',
+      question: '¿Cómo funcionan los permisos de audio y MIDI en Livex?',
       answer:
-        '¡Sí! Studio está completamente optimizado para funcionar sin conexión. Los motores de síntesis, editores y bases de datos locales funcionan sin red. Los respaldos en la nube se sincronizan al reconectarte.',
+        'Livex solicita acceso al micrófono únicamente para la detección acústica de tono (en Vocalex y en el Afinador Cromático) y para la grabación de tomas vocales. Los permisos MIDI permiten conectar teclados controladores e instrumentos externos. Todo el procesamiento se realiza localmente en tu dispositivo; ningún dato de audio se transmite a servidores externos.',
     },
     {
-      question: '¿Dónde se almacenan mis preferencias?',
+      question: '¿Cómo utilizo el afinador cromático integrado?',
       answer:
-        'Tus preferencias, preajustes y grabaciones se guardan de forma segura en la base de datos local de la aplicación (localStorage e IndexedDB). Sincronizar tu cuenta los respalda en la nube de Firestore.',
+        'El afinador cromático es accesible desde Chordex y Vocalex. Pulsa el icono del Afinador, autoriza el acceso al micrófono y toca o canta una nota limpia. La aguja mostrará el tono detectado, nombre de la nota, frecuencia en hercios (Hz) y desviación en centésimas de semitono. Se recomienda un entorno con poco ruido ambiental.',
     },
     {
-      question: '¿Incluye Studio sincronización en la nube?',
+      question: '¿Cómo personalizo el tema, color de acento y preferencias de inicio?',
       answer:
-        'La funcionalidad de respaldo de Firestore está operativa pero en desarrollo activo. Recomendamos usar el almacenamiento local y las exportaciones manuales.',
+        'Accede a Hub > Preferencias para personalizar el aspecto visual (Claro, Oscuro o Negro AMOLED puro), seleccionar un color de acento o un tono personalizado con la pipeta cuentagotas y definir el idioma. En los ajustes de cada aplicación (Chordex, Drumex, Stagex, Vocalex), puedes configurar "Iniciar en" para elegir qué pestaña se abre automáticamente al abrir cada app.',
+    },
+    {
+      question: '¿Cómo se almacenan mis canciones, ritmos y preferencias?',
+      answer:
+        'Livex funciona bajo una arquitectura orientada a lo local (local-first). Todas tus canciones, acordes, secuencias de batería, montajes de escenario y preferencias se guardan directamente en la base de datos de tu dispositivo (IndexedDB y SQLite). La sincronización en la nube respalda tus datos de forma segura en Firestore cuando inicias sesión.',
+    },
+    {
+      question: '¿Cómo funcionan las actualizaciones nativas de la APK en Android?',
+      answer:
+        'En Android, Livex incluye un actualizador nativo que consulta periódicamente las nuevas versiones oficiales en segundo plano. Cuando hay una versión lista, se notifica mediante un aviso. Al pulsarlo, se descarga la APK firmada y se inicia el instalador del sistema sin perder tus datos ni proyectos locales.',
+    },
+    {
+      question: 'Solución de problemas: ¿Por qué no se escucha sonido en Livex?',
+      answer:
+        'Comprueba que el volumen multimedia de tu dispositivo esté activo y no en modo silencio. En navegadores web, el audio interactivo requiere un primer toque o clic en la pantalla para activar el motor Web Audio. En Android, revisa la conexión de tus auriculares o Bluetooth y asegúrate de que otra aplicación no bloquee el audio.',
+    },
+    {
+      question: 'Solución de problemas: ¿Qué hago si el micrófono o el afinador no responden?',
+      answer:
+        'Verifica que el permiso de micrófono esté habilitado en los ajustes de tu dispositivo o navegador. En Android: Ajustes > Aplicaciones > Livex > Permisos > Micrófono > "Permitir solo con la app en uso". En navegadores, pulsa en el candado o icono de ajustes de la barra de direcciones para restablecer los permisos del sitio.',
+    },
+    {
+      question: 'Solución de problemas: ¿Cómo reduzco la latencia de audio o el retardo?',
+      answer:
+        'Para obtener la menor latencia posible durante la práctica y el directo, utiliza auriculares con cable o los altavoces de tu dispositivo. Las conexiones inalámbricas Bluetooth agregan un retraso natural de 100-200 ms. Cerrar aplicaciones pesadas en segundo plano y desactivar el modo de ahorro de batería también ayuda a optimizar el rendimiento.',
     },
   ],
   de: [
     {
-      question: 'Was ist Studio?',
+      question: 'Was ist Livex und wie starte ich?',
       answer:
-        'Studio ist eine All-in-One-Musikproduktionssuite, mit der Sie Tracks direkt in unserer leistungsstarken App komponieren, synthetisieren, mischen und aufnehmen können.',
+        'Livex ist eine All-in-One-Musikproduktionssuite, die Akkordfolgen, Drum-Sequencing, Bühnen-Management, Gesangstraining und Rhythmus-Erkundung vereint. Tippen Sie einfach auf ein App-Symbol im Hub, um sofort zu beginnen.',
     },
     {
-      question: 'Was ist Chordex?',
+      question: 'Was ist Chordex und welche Instrumente werden unterstützt?',
       answer:
-        'Chordex ist ein professioneller Begleiter für Akkordfolgen in Studio. Es hilft Ihnen, Songs zu komponieren, komplexe Tonleitern zu erkunden und Akkordfolgen in Ihre DAW zu exportieren.',
+        'Chordex ist ein intelligenter Begleiter für Akkordfolgen und ein interaktives Songbook. Es unterstützt Gitarre, Klavier, Ukulele, Bass und Saxophon für Übung und Live-Auftritte.',
     },
     {
-      question: 'Was ist Stagex?',
+      question: 'Was ist Drumex und wie funktioniert der Pattern-Sequenzer?',
       answer:
-        'Stagex ist die Live-Performance- und virtuelle Bühnenkomponente von Studio. Sie können virtuelle Bühnenlayouts organisieren, Audio-Routing verwalten und Backing-Tracks dynamisch abspielen.',
+        'Drumex ist eine Drum Machine mit Beat-Bibliotheken und einem detaillierten Step-Sequenzer zur Erstellung individueller Rhythmen.',
     },
     {
-      question: 'Wie funktionieren Android-Updates im Hintergrund?',
+      question: 'Was ist Stagex und wie hilft es bei Live-Auftritten?',
       answer:
-        'Studio fragt Firebase-Metadaten im Hintergrund ab. Sobald ein Update heruntergeladen wurde, meldet sich ein Indikator in der Statusleiste. Tippen Sie darauf, um PackageInstaller zu starten.',
+        'Stagex ermöglicht das visuelle Planen von Bühnenlayouts, Positionieren von Instrumenten und Lautsprechern sowie die Organisation von Szenen.',
     },
     {
-      question: 'Wie behebe ich Audio- und MIDI-Probleme?',
+      question: 'Was ist Groovex und wofür wird es verwendet?',
       answer:
-        'Erteilen Sie MIDI- und Audioberechtigungen in den App-Einstellungen, stellen Sie sicher, dass die Lautstärke aktiv ist, oder testen Sie die Sound-Engine unten.',
+        'Groovex ist ein Rhythmus- und Polyrhythmus-Generator für komplexe Grooves und Begleitungen.',
     },
     {
-      question: 'Wie funktionieren Android APK-Updates?',
+      question: 'Was ist Vocalex und wie funktioniert das Gesangstraining?',
       answer:
-        'Die native Android-App sucht automatisch auf unseren Servern nach Updates. Wenn eine neue APK verfügbar ist, lädt die App sie direkt herunter und ermöglicht eine sofortige Installation.',
+        'Vocalex bietet Echtzeit-Tonhöhenerkennung und visuelle Intonationskontrolle für Gesangsübungen und Aufnahmen.',
     },
     {
-      question: 'Warum ist Windows als "Demnächst verfügbar" markiert?',
+      question: 'Wie funktionieren Audio- und MIDI-Berechtigungen in Livex?',
       answer:
-        'Wir entwickeln einen optimierten nativen Windows-Client, um ASIO-Treiber mit geringer Latenz und VST-Plugins zu unterstützen. In der Zwischenzeit können Sie die Web-Version nutzen.',
+        'Mikrofonzugriff wird ausschließlich für die Tonhöhenerkennung und Aufnahmen benötigt. Alle Audiodaten verbleiben lokal auf Ihrem Gerät.',
     },
     {
-      question: 'Wo werden meine Einstellungen gespeichert?',
+      question: 'Wie verwende ich das integrierte chromatische Stimmgerät?',
       answer:
-        'Ihre Einstellungen, Presets und Songs werden sicher in der lokalen Datenbank Ihres Browsers gespeichert (localStorage und IndexedDB). Die Sychronisierung sichert sie in unserer Firestore-Cloud.',
+        'Aktivieren Sie das Stimmgerät in Chordex oder Vocalex und spielen Sie einen Ton. Die Anzeige zeigt Note, Frequenz und Abweichung präzise an.',
     },
     {
-      question: 'Enthält Studio Cloud-Synchronisierung?',
+      question: 'Wie passe ich Design, Akzentfarbe und Start-Einstellungen an?',
       answer:
-        'Die Firestore-Backup-Funktion ist betriebsbereit, befindet sich jedoch in der aktiven Entwicklung und wird derzeit nicht als öffentliches Feature beworben. Bitte nutzen Sie den lokalen Export.',
+        'Unter Hub > Einstellungen können Sie Farbthemen (Hell, Dunkel, AMOLED), Akzentfarben sowie die Startansichten der einzelnen Apps festlegen.',
+    },
+    {
+      question: 'Wie werden meine Songs, Rhythmen und Einstellungen gespeichert?',
+      answer:
+        'Livex speichert alle Daten lokal auf Ihrem Gerät (IndexedDB/SQLite). Bei Anmeldung sichert die Cloud-Synchronisation Ihre Daten zusätzlich ab.',
+    },
+    {
+      question: 'Wie funktionieren native Android APK-Updates?',
+      answer:
+        'Auf Android prüft Livex Updates im Hintergrund und ermöglicht die direkte Aktualisierung per sicher signierter APK ohne Datenverlust.',
+    },
+    {
+      question: 'Fehlerbehebung: Warum gibt es keinen Ton in Livex?',
+      answer:
+        'Überprüfen Sie die Lautstärke Ihres Geräts. In Webbrowsern ist ein erster Klick erforderlich, um die Web Audio API zu aktivieren.',
+    },
+    {
+      question: 'Fehlerbehebung: Was tun, wenn Mikrofon oder Stimmgerät nicht reagieren?',
+      answer:
+        'Prüfen Sie in den Systemeinstellungen Ihres Geräts, ob Livex die Berechtigung zur Mikrofonnutzung erteilt wurde.',
+    },
+    {
+      question: 'Fehlerbehebung: Wie kann ich die Audio-Latenz verringern?',
+      answer:
+        'Nutzen Sie kabelgebundene Kopfhörer anstelle von Bluetooth und schließen Sie ressourcenintensive Apps im Hintergrund.',
     },
   ],
 };
@@ -173,7 +238,7 @@ export function HelpAccordion({
   accent,
   lang,
 }: {
-  accent: { from: string; to: string };
+  accent: { from: string; to: string; mid: string };
   lang: string;
 }) {
   const t = useT();
@@ -187,36 +252,27 @@ export function HelpAccordion({
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const faqList = FAQ_ITEMS[lang] ?? FAQ_ITEMS.en;
-
-  // Troubleshooter States
-  const [audioState, setAudioState] = useState<'idle' | 'testing' | 'success'>('idle');
-  const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-  const [cacheState, setCacheState] = useState<'idle' | 'clearing' | 'success'>('idle');
-  const [securityState, setSecurityState] = useState<'idle' | 'auditing' | 'success'>('idle');
-  const [auditReport, setAuditReport] = useState<string | null>(null);
-  const [resetState, setResetState] = useState<'idle' | 'repairing' | 'success'>('idle');
-
-  const [timelineText, setTimelineText] = useState('');
   const [copiedBugTemplate, setCopiedBugTemplate] = useState(false);
 
+  const faqList = FAQ_ITEMS[lang] ?? FAQ_ITEMS.en;
+
   const handleCopyBugTemplate = () => {
-    const template = `[STUDIO BUG REPORT]
+    const template = `[LIVEX BUG REPORT]
 ------------------------------------
 App Version: v${APP_VERSION} (${Capacitor.isNativePlatform() ? 'Android' : 'Web'})
 User Agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}
 Date: ${new Date().toISOString()}
 
 [Description of Bug]
--
+- 
 
 [Steps to Reproduce]
-1.
-2.
-3.
+1. 
+2. 
+3. 
 
 [Expected Behavior]
--
+- 
 
 [Actual Behavior]
 - `;
@@ -227,213 +283,13 @@ Date: ${new Date().toISOString()}
     setTimeout(() => setCopiedBugTemplate(false), 2000);
   };
 
-  const [diagActive, setDiagActive] = useState(() => {
-    try {
-      return localStorage.getItem('studio:diagnostics_session_active') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    if (!diagActive) return;
-    setTimelineText(getTimelineReport());
-    const interval = setInterval(() => {
-      setTimelineText(getTimelineReport());
-    }, 500);
-    return () => clearInterval(interval);
-  }, [diagActive]);
-
-  const handleToggleDiagnostics = () => {
-    if (diagActive) {
-      resetUpdateTimeline();
-      setDiagActive(false);
-      try {
-        localStorage.setItem('studio:diagnostics_session_active', 'false');
-      } catch (_) {}
-      setTimelineText('');
-    } else {
-      startDiagnosticsSession();
-      setDiagActive(true);
-      try {
-        localStorage.setItem('studio:diagnostics_session_active', 'true');
-      } catch (_) {}
-      setTimelineText(getTimelineReport());
-    }
-  };
-
-  const handleCopyTimeline = () => {
-    try {
-      navigator.clipboard.writeText(getTimelineReport() || 'No events');
-      alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard!');
-    } catch (_) {}
-  };
-
-  const handleShareTimeline = async () => {
-    const report = getTimelineReport();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Studio Update Diagnostics',
-          text: report || 'No events',
-        });
-      } catch (_) {}
-    } else {
-      handleCopyTimeline();
-    }
-  };
-
-  const diagEnabled = useSettingsStore((s) => s.settings.stagexDiagnostics ?? false);
-  const updateSettings = useSettingsStore((s) => s.updateSettings);
-
-  const toggleDiagOverlay = () => {
-    updateSettings({ stagexDiagnostics: !diagEnabled });
-  };
-
-  // Audio Context State
-  const [audioCtxState, setAudioCtxState] = useState<string>('unknown');
-  useEffect(() => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const tempCtx = new AudioCtx();
-        setAudioCtxState(tempCtx.state);
-        tempCtx.close();
-      } else {
-        setAudioCtxState('unsupported');
-      }
-    } catch {
-      setAudioCtxState('error');
-    }
-  }, [audioState]);
-
-  // Sync state monitoring
-  useEffect(() => {
-    if (syncState !== 'syncing') return;
-    const unsubscribe = subscribeSyncStatus((status: SyncStatus) => {
-      if (status.phase === 'success') {
-        setSyncState('success');
-        setTimeout(() => setSyncState('idle'), 4000);
-      } else if (status.phase === 'error') {
-        setSyncState('error');
-        setTimeout(() => setSyncState('idle'), 4000);
-      }
-    });
-    return () => unsubscribe();
-  }, [syncState]);
-
-  const runAudioTroubleshooter = async () => {
-    setAudioState('testing');
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const tempCtx = new AudioCtx();
-        if (tempCtx.state === 'suspended') {
-          await tempCtx.resume();
-        }
-        const osc = tempCtx.createOscillator();
-        const gain = tempCtx.createGain();
-        osc.connect(gain);
-        gain.connect(tempCtx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, tempCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, tempCtx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.06, tempCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, tempCtx.currentTime + 0.18);
-        osc.start();
-        osc.stop(tempCtx.currentTime + 0.2);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setAudioState('success');
-      setTimeout(() => setAudioState('idle'), 3000);
-    } catch (e) {
-      console.error('Audio repair failed:', e);
-      setAudioState('idle');
-    }
-  };
-
-  const runSyncTroubleshooter = async () => {
-    setSyncState('syncing');
-    try {
-      localStorage.removeItem('chordex_sync_first_pull_done_v1');
-      /* await syncNow(); */
-    } catch (e) {
-      console.error('Sync repair failed:', e);
-      setSyncState('error');
-      setTimeout(() => setSyncState('idle'), 4000);
-    }
-  };
-
-  const runCacheTroubleshooter = async () => {
-    setCacheState('clearing');
-    try {
-      localStorage.removeItem('chordex_asset_cache_v1');
-      localStorage.removeItem('Updater_update_progress');
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (
-          key &&
-          (key.includes('lottie_cache') ||
-            key.includes('ota_temp') ||
-            key.includes('temp_asset') ||
-            key.includes('debug_log'))
-        ) {
-          localStorage.removeItem(key);
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setCacheState('success');
-      setTimeout(() => setCacheState('idle'), 3000);
-    } catch (e) {
-      console.error('Cache flush failed:', e);
-      setCacheState('idle');
-    }
-  };
-
-  const runSecurityTroubleshooter = async () => {
-    setSecurityState('auditing');
-    setAuditReport(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const devId = localStorage.getItem('chordex_device_id') ? 'VERIFIED' : 'GENERATED';
-      const storageKeys = Object.keys(localStorage);
-      const encryptedKeysCount = storageKeys.filter((k) => {
-        const val = localStorage.getItem(k);
-        return val && val.length > 9 && val.charAt(8) === ':';
-      }).length;
-
-      const report =
-        lang === 'es'
-          ? `Clave de cifrado: ACTIVA (256-bit CFB)\nID de hardware: ${devId}\nBases de datos encriptadas: ${encryptedKeysCount} de ${storageKeys.length} claves\nEstado del cortafuegos: SEGURO`
-          : lang === 'de'
-            ? `Schlüssel-Status: AKTIV (256-bit CFB)\nHardware-ID: ${devId}\nVerschlüsselte Datenbanken: ${encryptedKeysCount} von ${storageKeys.length} Keys\nSicherheitsstufe: MAXIMAL`
-            : `Encryption Key: ACTIVE (256-bit CFB)\nHardware ID: ${devId}\nEncrypted Databases: ${encryptedKeysCount} of ${storageKeys.length} keys\nFirewall Status: SECURE`;
-
-      setAuditReport(report);
-      setSecurityState('success');
-    } catch (e) {
-      setSecurityState('idle');
-    }
-  };
-
-  const runResetTroubleshooter = async () => {
-    setResetState('repairing');
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setResetState('success');
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
-    } catch (e) {
-      setResetState('idle');
-    }
-  };
-
   // Helper for categorizing FAQ items
   const getFaqCategory = (idx: number): string => {
-    if ([0, 1, 2, 3, 6].includes(idx)) return 'getting-started';
-    if ([4].includes(idx)) return 'audio-midi';
-    if ([5, 7, 8].includes(idx)) return 'sync-storage';
+    if (idx === 0) return 'getting-started';
+    if (idx >= 1 && idx <= 5) return 'apps';
+    if (idx >= 6 && idx <= 7) return 'audio-tuner';
+    if (idx >= 8 && idx <= 10) return 'settings-sync';
+    if (idx >= 11 && idx <= 13) return 'troubleshooting';
     return 'getting-started';
   };
 
@@ -548,19 +404,28 @@ Date: ${new Date().toISOString()}
                 (lang === 'es' ? 'Inicio' : 'Getting Started'),
               icon: 'play_circle',
             },
-            { id: 'audio-midi', label: 'Audio & MIDI', icon: 'volume_up' },
             {
-              id: 'sync-storage',
+              id: 'apps',
+              label: lang === 'es' ? 'Apps y Herramientas' : 'Apps & Tools',
+              icon: 'apps',
+            },
+            {
+              id: 'audio-tuner',
+              label: lang === 'es' ? 'Audio y Afinador' : 'Audio & Tuner',
+              icon: 'volume_up',
+            },
+            {
+              id: 'settings-sync',
               label:
                 t.help?.accordion?.categories?.syncStorage ||
-                (lang === 'es' ? 'Sincro y Almacén' : 'Sync & Storage'),
+                (lang === 'es' ? 'Ajustes y Sincro' : 'Settings & Sync'),
               icon: 'cloud_sync',
             },
             {
               id: 'troubleshooting',
               label:
                 t.help?.accordion?.categories?.diagnostics ||
-                (lang === 'es' ? 'Diagnóstico' : 'Diagnostics'),
+                (lang === 'es' ? 'Solución de Problemas' : 'Troubleshooting'),
               icon: 'build',
             },
             {
@@ -609,643 +474,6 @@ Date: ${new Date().toISOString()}
           })}
         </div>
       </div>
-
-      {/* Device Diagnostics Card */}
-      {(!activeCategory || activeCategory === 'troubleshooting') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span
-            style={{
-              fontSize: '9.5px',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: 'var(--c-text-tertiary, #808080)',
-              fontFamily: 'Inter, sans-serif',
-              paddingLeft: '4px',
-            }}
-          >
-            {t.help?.accordion?.diagnosticsCard?.title ||
-              (lang === 'es' ? 'Diagnóstico del Dispositivo' : 'Device Diagnostics')}
-          </span>
-          <div
-            style={{
-              background: 'var(--surface-topbar-bg)',
-              border: '1px solid var(--c-border)',
-              borderRadius: 18,
-              padding: '14px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              position: 'relative',
-              overflow: 'hidden',
-              backdropFilter: 'var(--surface-float-blur)',
-              WebkitBackdropFilter: 'var(--surface-float-blur)',
-              boxShadow: isLight
-                ? '0 4px 16px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                : 'var(--surface-topbar-shadow)',
-            }}
-          >
-            {/* Top Specular Rim */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 12,
-                right: 12,
-                height: '1px',
-                background: 'var(--surface-glass-rim)',
-                pointerEvents: 'none',
-                opacity: 0.6,
-              }}
-            />
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: `${accent.from}18`,
-                    border: `1px solid ${accent.from}33`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ color: accent.from, fontSize: 18 }}
-                  >
-                    monitor_heart
-                  </span>
-                </div>
-                <div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: 14,
-                      fontWeight: 750,
-                      color: 'var(--c-text-primary)',
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                    }}
-                  >
-                    {t.help?.accordion?.diagnosticsCard?.title ||
-                      (lang === 'es' ? 'Diagnóstico del Dispositivo' : 'Device Diagnostics')}
-                  </h4>
-                  <span style={{ fontSize: 11, color: 'var(--c-text-secondary)', opacity: 0.8 }}>
-                    ID:{' '}
-                    <span style={{ fontFamily: 'monospace' }}>
-                      {deviceId()?.slice(0, 12) || 'UNKNOWN'}...
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Metrics 2-column grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 8,
-              }}
-            >
-              <div
-                style={{
-                  padding: '8px 12px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: 12,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 3,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '9.5px',
-                    color: 'var(--c-text-tertiary)',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    fontFamily: 'Inter, sans-serif',
-                  }}
-                >
-                  {lang === 'es' ? 'Audio' : 'Audio Engine'}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: audioCtxState === 'running' ? '#10b981' : '#ef4444',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                      color: audioCtxState === 'running' ? '#10b981' : 'var(--c-text-secondary)',
-                    }}
-                  >
-                    {audioCtxState === 'running'
-                      ? lang === 'es'
-                        ? 'Activo'
-                        : 'Running'
-                      : lang === 'es'
-                        ? 'Detenido'
-                        : 'Stopped'}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: '8px 12px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: 12,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 3,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '9.5px',
-                    color: 'var(--c-text-tertiary)',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    fontFamily: 'Inter, sans-serif',
-                  }}
-                >
-                  {lang === 'es' ? 'Almacenamiento' : 'Local Storage'}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 14, color: accent.from }}
-                  >
-                    database
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                      color: 'var(--c-text-primary)',
-                    }}
-                  >
-                    {localStorage?.length || 0} {lang === 'es' ? 'claves' : 'keys'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={runAudioTroubleshooter}
-                disabled={audioState === 'testing'}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  opacity: audioState === 'testing' ? 0.6 : 1,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    animation: audioState === 'testing' ? 'spin 1s linear infinite' : 'none',
-                  }}
-                >
-                  {audioState === 'testing' ? 'sync' : 'volume_up'}
-                </span>
-                {audioState === 'testing'
-                  ? t.help?.accordion?.diagnosticsCard?.btnTesting || 'Testing...'
-                  : t.help?.accordion?.diagnosticsCard?.btnTestAudio ||
-                    (lang === 'es' ? 'Probar Audio' : 'Test Audio')}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={runSyncTroubleshooter}
-                disabled={syncState === 'syncing'}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  opacity: syncState === 'syncing' ? 0.6 : 1,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    animation: syncState === 'syncing' ? 'spin 1s linear infinite' : 'none',
-                  }}
-                >
-                  {syncState === 'syncing' ? 'sync' : 'sync'}
-                </span>
-                {syncState === 'syncing'
-                  ? t.help?.accordion?.diagnosticsCard?.btnSyncing || 'Syncing...'
-                  : t.help?.accordion?.diagnosticsCard?.btnForceSync ||
-                    (lang === 'es' ? 'Forzar Sincro' : 'Force Sync')}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={runCacheTroubleshooter}
-                disabled={cacheState === 'clearing'}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  opacity: cacheState === 'clearing' ? 0.6 : 1,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    animation: cacheState === 'clearing' ? 'spin 1s linear infinite' : 'none',
-                  }}
-                >
-                  {cacheState === 'clearing' ? 'sync' : 'mop'}
-                </span>
-                {cacheState === 'clearing'
-                  ? t.help?.accordion?.diagnosticsCard?.btnClearing || 'Clearing...'
-                  : t.help?.accordion?.diagnosticsCard?.btnClearCache ||
-                    (lang === 'es' ? 'Limpiar Caché' : 'Clear Cache')}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={runSecurityTroubleshooter}
-                disabled={securityState === 'auditing'}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  opacity: securityState === 'auditing' ? 0.6 : 1,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    animation: securityState === 'auditing' ? 'spin 1s linear infinite' : 'none',
-                  }}
-                >
-                  {securityState === 'auditing' ? 'sync' : 'security'}
-                </span>
-                {securityState === 'auditing'
-                  ? t.help?.accordion?.diagnosticsCard?.btnAuditing || 'Auditing...'
-                  : t.help?.accordion?.diagnosticsCard?.btnSecurityAudit ||
-                    (lang === 'es' ? 'Auditoría' : 'Security Audit')}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={runResetTroubleshooter}
-                disabled={resetState === 'repairing'}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  opacity: resetState === 'repairing' ? 0.6 : 1,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    animation: resetState === 'repairing' ? 'spin 1s linear infinite' : 'none',
-                  }}
-                >
-                  {resetState === 'repairing' ? 'sync' : 'restart_alt'}
-                </span>
-                {resetState === 'repairing'
-                  ? t.help?.accordion?.diagnosticsCard?.btnResetting || 'Resetting...'
-                  : t.help?.accordion?.diagnosticsCard?.btnResetReload ||
-                    (lang === 'es' ? 'Reiniciar' : 'Reset & Reload')}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleDiagOverlay}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '9999px',
-                  background: diagEnabled
-                    ? isLight
-                      ? 'rgba(16, 185, 129, 0.12)'
-                      : 'rgba(16, 185, 129, 0.18)'
-                    : isLight
-                      ? 'rgba(0, 0, 0, 0.03)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  border: diagEnabled
-                    ? '1px solid rgba(16, 185, 129, 0.35)'
-                    : '1px solid var(--c-border)',
-                  color: diagEnabled ? '#10b981' : 'var(--c-text-primary)',
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  bug_report
-                </span>
-                {diagEnabled
-                  ? lang === 'es'
-                    ? 'Diag: ACTIVO'
-                    : 'Diagnostics: ON'
-                  : lang === 'es'
-                    ? 'Superposición Diag'
-                    : 'Diagnostics Overlay'}
-              </motion.button>
-            </div>
-
-            {auditReport && (
-              <div
-                style={{
-                  background: isLight ? 'rgba(15, 23, 42, 0.04)' : 'rgba(0, 0, 0, 0.45)',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: 12,
-                  padding: '10px 12px',
-                  fontSize: 11,
-                  fontFamily: '"Roboto Mono", monospace',
-                  color: isLight ? '#0369a1' : '#4ade80',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.45,
-                }}
-              >
-                {auditReport}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Update Session Diagnostics Card */}
-      {(!activeCategory || activeCategory === 'troubleshooting') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span
-            style={{
-              fontSize: '9.5px',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: 'var(--c-text-tertiary, #808080)',
-              fontFamily: 'Inter, sans-serif',
-              paddingLeft: '4px',
-            }}
-          >
-            {lang === 'es' ? 'Diagnósticos de Actualización' : 'Update Session Diagnostics'}
-          </span>
-          <div
-            style={{
-              background: 'var(--surface-topbar-bg)',
-              border: '1px solid var(--c-border)',
-              borderRadius: 18,
-              padding: '14px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              position: 'relative',
-              overflow: 'hidden',
-              backdropFilter: 'var(--surface-float-blur)',
-              WebkitBackdropFilter: 'var(--surface-float-blur)',
-              boxShadow: isLight
-                ? '0 4px 16px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                : 'var(--surface-topbar-shadow)',
-            }}
-          >
-            {/* Top Specular Rim */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 12,
-                right: 12,
-                height: '1px',
-                background: 'var(--surface-glass-rim)',
-                pointerEvents: 'none',
-                opacity: 0.6,
-              }}
-            />
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: `${accent.to}18`,
-                  border: `1px solid ${accent.to}33`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: accent.to, fontSize: 18 }}
-                >
-                  system_update_alt
-                </span>
-              </div>
-              <div>
-                <h4
-                  style={{
-                    margin: 0,
-                    fontSize: 14,
-                    fontWeight: 750,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  }}
-                >
-                  {lang === 'es' ? 'Diagnósticos de Actualización' : 'Update Session Diagnostics'}
-                </h4>
-                <span style={{ fontSize: 11, color: 'var(--c-text-secondary)', opacity: 0.8 }}>
-                  {lang === 'es'
-                    ? 'Rastreo y registro de eventos del actualizador nativo en tiempo real.'
-                    : 'Trace and inspect native updater events in real-time.'}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleToggleDiagnostics}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  background: diagActive
-                    ? '#10b981'
-                    : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                  border: '1px solid transparent',
-                  color: '#ffffff',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  {diagActive ? 'pause' : 'play_arrow'}
-                </span>
-                {diagActive
-                  ? lang === 'es'
-                    ? 'Modo Diagnóstico: ACTIVO'
-                    : 'Diagnostic Mode: ACTIVE'
-                  : lang === 'es'
-                    ? 'Iniciar Diagnóstico'
-                    : 'Start Diagnostic Mode'}
-              </motion.button>
-
-              {diagActive && (
-                <>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleCopyTimeline}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '9999px',
-                      background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--c-border)',
-                      color: 'var(--c-text-primary)',
-                      fontSize: 11.5,
-                      fontWeight: 650,
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                      content_copy
-                    </span>
-                    {lang === 'es' ? 'Copiar' : 'Copy Trace'}
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleShareTimeline}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '9999px',
-                      background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--c-border)',
-                      color: 'var(--c-text-primary)',
-                      fontSize: 11.5,
-                      fontWeight: 650,
-                      fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                      share
-                    </span>
-                    {lang === 'es' ? 'Compartir' : 'Share Trace'}
-                  </motion.button>
-                </>
-              )}
-            </div>
-
-            {diagActive && (
-              <div
-                style={{
-                  background: isLight ? 'rgba(15, 23, 42, 0.04)' : 'rgba(0, 0, 0, 0.45)',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: 12,
-                  padding: '10px 12px',
-                  fontFamily: '"Roboto Mono", monospace',
-                  fontSize: '11px',
-                  lineHeight: 1.4,
-                  color: isLight ? '#0284c7' : '#38bdf8',
-                  maxHeight: 160,
-                  overflowY: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  textAlign: 'left',
-                }}
-              >
-                {timelineText ||
-                  (lang === 'es'
-                    ? 'Esperando eventos del actualizador...'
-                    : 'Waiting for update events...')}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* FAQs Section */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1366,97 +594,6 @@ Date: ${new Date().toISOString()}
                         }}
                       >
                         <span>{item.answer}</span>
-
-                        {/* Troubleshooter In-Answer Injectors */}
-                        {item.originalIdx === 4 && (
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={runAudioTroubleshooter}
-                            disabled={audioState === 'testing'}
-                            style={{
-                              marginTop: 4,
-                              alignSelf: 'flex-start',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              padding: '6px 14px',
-                              borderRadius: '9999px',
-                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                              color: '#ffffff',
-                              border: 'none',
-                              fontWeight: 700,
-                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            }}
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                              volume_up
-                            </span>
-                            {lang === 'es' ? 'Probar Motor de Audio' : 'Test Audio Engine'}
-                          </motion.button>
-                        )}
-
-                        {item.originalIdx === 5 && (
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={runSyncTroubleshooter}
-                            disabled={syncState === 'syncing'}
-                            style={{
-                              marginTop: 4,
-                              alignSelf: 'flex-start',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              padding: '6px 14px',
-                              borderRadius: '9999px',
-                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                              color: '#ffffff',
-                              border: 'none',
-                              fontWeight: 700,
-                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            }}
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                              cloud_sync
-                            </span>
-                            {lang === 'es' ? 'Forzar Sincronización' : 'Force Full Re-Sync'}
-                          </motion.button>
-                        )}
-
-                        {item.originalIdx === 6 && (
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={runCacheTroubleshooter}
-                            disabled={cacheState === 'clearing'}
-                            style={{
-                              marginTop: 4,
-                              alignSelf: 'flex-start',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              padding: '6px 14px',
-                              borderRadius: '9999px',
-                              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                              color: '#ffffff',
-                              border: 'none',
-                              fontWeight: 700,
-                              fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            }}
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                              mop
-                            </span>
-                            {lang === 'es' ? 'Vaciar Caché' : 'Wipe Caches & Temp Files'}
-                          </motion.button>
-                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -1575,7 +712,7 @@ Date: ${new Date().toISOString()}
                 lineHeight: 1.45,
               }}
             >
-              {`[STUDIO BUG REPORT]
+              {`[LIVEX BUG REPORT]
 App Version: v${APP_VERSION} (${Capacitor.isNativePlatform() ? 'Android' : 'Web'})
 User Agent: ${typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 48) + '...' : '[Auto]'}
 Date: ${new Date().toISOString()}`}

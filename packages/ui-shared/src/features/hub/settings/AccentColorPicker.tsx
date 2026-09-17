@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Pipette } from 'lucide-react';
 import {
   useSettingsStore,
   ACCENT_PRESETS,
@@ -472,33 +473,21 @@ export function AccentColorPicker() {
               width: 38,
               height: 38,
               borderRadius: '50%',
-              background: isCustomActive
-                ? `linear-gradient(135deg, ${resolved.from}, ${resolved.to})`
-                : 'conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+              background: 'transparent',
               border: isCustomActive
-                ? '2.5px solid var(--c-text-primary)'
-                : '2px solid rgba(255, 255, 255, 0.25)',
-              boxShadow: isCustomActive
-                ? `0 0 0 2px var(--app-surface), 0 4px 14px ${resolved.to}66`
-                : '0 2px 6px rgba(0, 0, 0, 0.15)',
+                ? '2px solid var(--c-text-primary)'
+                : '1.5px solid var(--c-border)',
+              boxShadow: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 0,
               outline: 'none',
+              color: 'var(--c-text-primary)',
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{
-                fontSize: 17,
-                color: isCustomActive ? resolved.contrast : '#ffffff',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)',
-              }}
-            >
-              {isCustomActive ? 'check' : 'colorize'}
-            </span>
+            <Pipette size={18} strokeWidth={2} style={{ color: 'var(--c-text-primary)' }} />
           </motion.button>
         </div>
       </div>

@@ -12,7 +12,7 @@ import {
 } from '@workspace/studio-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useRef, useState, useEffect } from 'react';
-import { Toggle, SectionHeader, SettingRow } from '../../../shared/settings/SettingControls';
+import { Toggle, SectionHeader, SettingRow, StartOnSelector } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
@@ -151,6 +151,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
+      language: s.settings.language,
       perApp: s.settings.perApp,
       theme: s.settings.theme,
       amoledMode: s.settings.amoledMode,
@@ -164,6 +165,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
   const updateDrumPrefs = useDrumStore((s) => s.updateDrumPrefs);
   const t = useT();
   const dp = t.drumPrefs;
+  const isSpanish = (settings.language ?? 'en') === 'es';
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
   useOverscrollSpring({ scrollContainerRef: scrollRef });
@@ -337,15 +339,36 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
           }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
-            {/* Column 1: Editor Behavior */}
-            {(activeCat === 'all' || activeCat === 'editor') && (
+            {/* Column 1: Startup & Editor Behavior */}
+            {(activeCat === 'all' || activeCat === 'startup' || activeCat === 'editor') && (
               <div className="space-y-6">
-                <PrefsSection title={dp.editorBehavior}>
-                  {row('noteVariationsCycle', dp.noteVariations, dp.noteVariationsDesc)}
-                  {row('autoExpandPattern', dp.autoExpand, dp.autoExpandDesc)}
-                  {row('snapToGrid', dp.snapToGrid, dp.snapToGridDesc)}
-                  {row('dragToFill', dp.dragToFill, dp.dragToFillDesc)}
-                </PrefsSection>
+                {(activeCat === 'all' || activeCat === 'startup') && (
+                  <PrefsSection title={dp.startOn}>
+                    <PrefsRow label={dp.startOn} desc={dp.startOnDesc}>
+                      <StartOnSelector<'beats' | 'patterns' | 'prefs'>
+                        currentValue={((settings.defaultDrumTab === 'songs' ? 'beats' : settings.defaultDrumTab) ?? 'beats') as any}
+                        options={[
+                          { value: 'beats', iconName: 'drum', label: isSpanish ? 'Ritmos' : 'Beats' },
+                          { value: 'patterns', iconName: 'blocks', label: isSpanish ? 'Patrones' : 'Patterns' },
+                          { value: 'prefs', iconName: 'sliders-horizontal', label: isSpanish ? 'Ajustes' : 'Prefs' },
+                        ]}
+                        onChange={(value) =>
+                          useSettingsStore.getState().updateSettings({ defaultDrumTab: value })
+                        }
+                        accentColor={settings.accentColor}
+                      />
+                    </PrefsRow>
+                  </PrefsSection>
+                )}
+
+                {(activeCat === 'all' || activeCat === 'editor') && (
+                  <PrefsSection title={dp.editorBehavior}>
+                    {row('noteVariationsCycle', dp.noteVariations, dp.noteVariationsDesc)}
+                    {row('autoExpandPattern', dp.autoExpand, dp.autoExpandDesc)}
+                    {row('snapToGrid', dp.snapToGrid, dp.snapToGridDesc)}
+                    {row('dragToFill', dp.dragToFill, dp.dragToFillDesc)}
+                  </PrefsSection>
+                )}
               </div>
             )}
 
@@ -362,78 +385,17 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
               </div>
             )}
 
-            {/* Column 3: Display & Start On */}
-            {(activeCat === 'all' || activeCat === 'display' || activeCat === 'startup') && (
+            {/* Column 3: Display & Visuals */}
+            {(activeCat === 'all' || activeCat === 'display') && (
               <div className="space-y-6">
-                {(activeCat === 'all' || activeCat === 'display') && (
-                  <>
-                    <PrefsSection title={dp.interaction}>
-                      {row('showNoteVariations', dp.showVariations, dp.showVariationsDesc)}
-                      {row('highlightActiveInst', dp.highlightActive, dp.highlightActiveDesc)}
-                    </PrefsSection>
+                <PrefsSection title={dp.interaction}>
+                  {row('showNoteVariations', dp.showVariations, dp.showVariationsDesc)}
+                  {row('highlightActiveInst', dp.highlightActive, dp.highlightActiveDesc)}
+                </PrefsSection>
 
-                    <PrefsSection title={dp.visual}>
-                      {row('gridLinesEmphasis', dp.gridEmphasis, dp.gridEmphasisDesc)}
-                    </PrefsSection>
-                  </>
-                )}
-
-                {(activeCat === 'all' || activeCat === 'startup') && (
-                  <PrefsSection title={dp.startOn}>
-                    <PrefsRow label={dp.startOn} desc={dp.startOnDesc}>
-                      {(() => {
-                        const raw = settings.defaultDrumTab;
-                        const cur = (raw === 'songs' ? 'beats' : raw) ?? 'beats';
-                        const tabs: {
-                          value: 'beats' | 'patterns' | 'prefs';
-                          iconName: string;
-                        }[] = [
-                          { value: 'beats', iconName: 'drum' },
-                          { value: 'patterns', iconName: 'blocks' },
-                          { value: 'prefs', iconName: 'sliders-horizontal' },
-                        ];
-                        return (
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            {tabs.map(({ value, iconName }) => {
-                              const active = cur === value;
-                              return (
-                                <button
-                                  key={value}
-                                  onClick={() =>
-                                    useSettingsStore
-                                      .getState()
-                                      .updateSettings({ defaultDrumTab: value })
-                                  }
-                                  className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all"
-                                  style={{
-                                    background: active
-                                      ? 'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))'
-                                      : 'var(--c-surface-low)',
-                                    color: active
-                                      ? 'var(--color-on-tertiary, #ffffff)'
-                                      : 'var(--c-text-secondary)',
-                                    border: active
-                                      ? '1px solid var(--studio-accent-border)'
-                                      : '1px solid var(--c-border)',
-                                    boxShadow: active ? 'var(--studio-accent-glow)' : 'none',
-                                  }}
-                                >
-                                  <AnimatedNavigationIcon
-                                    itemKey={value}
-                                    iconName={iconName}
-                                    size={18}
-                                    isActive={active}
-                                    color="currentColor"
-                                  />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </PrefsRow>
-                  </PrefsSection>
-                )}
+                <PrefsSection title={dp.visual}>
+                  {row('gridLinesEmphasis', dp.gridEmphasis, dp.gridEmphasisDesc)}
+                </PrefsSection>
               </div>
             )}
           </div>
@@ -475,6 +437,24 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         }}
       >
 
+        <SectionHeader icon="dashboard" title={dp.startOn} />
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <SettingRow label={dp.startOn} desc={dp.startOnDesc}>
+            <StartOnSelector<'beats' | 'patterns' | 'prefs'>
+              currentValue={((settings.defaultDrumTab === 'songs' ? 'beats' : settings.defaultDrumTab) ?? 'beats') as any}
+              options={[
+                { value: 'beats', iconName: 'drum', label: isSpanish ? 'Ritmos' : 'Beats' },
+                { value: 'patterns', iconName: 'blocks', label: isSpanish ? 'Patrones' : 'Patterns' },
+                { value: 'prefs', iconName: 'sliders-horizontal', label: isSpanish ? 'Ajustes' : 'Prefs' },
+              ]}
+              onChange={(value) =>
+                useSettingsStore.getState().updateSettings({ defaultDrumTab: value })
+              }
+              accentColor={settings.accentColor}
+            />
+          </SettingRow>
+        </Card>
+
         <SectionHeader icon="edit_note" title={dp.editorBehavior} />
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {row('noteVariationsCycle', dp.noteVariations, dp.noteVariationsDesc)}
@@ -501,66 +481,6 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         <SectionHeader icon="grid_on" title={dp.visual} />
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {row('gridLinesEmphasis', dp.gridEmphasis, dp.gridEmphasisDesc)}
-        </Card>
-
-        <SectionHeader icon="dashboard" title={dp.startOn} />
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <SettingRow label={dp.startOn} desc={dp.startOnDesc}>
-            {(() => {
-              const raw = settings.defaultDrumTab;
-              const cur = (raw === 'songs' ? 'beats' : raw) ?? 'beats';
-              const tabs: {
-                value: 'beats' | 'patterns' | 'prefs';
-                iconName: string;
-              }[] = [
-                { value: 'beats', iconName: 'drum' },
-                { value: 'patterns', iconName: 'blocks' },
-                { value: 'prefs', iconName: 'sliders-horizontal' },
-              ];
-              return (
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {tabs.map(({ value, iconName }) => {
-                    const active = cur === value;
-                    return (
-                      <button
-                        key={value}
-                        onClick={() =>
-                          useSettingsStore.getState().updateSettings({ defaultDrumTab: value })
-                        }
-                        className="touch-target-44"
-                        style={{
-                          width: 'var(--btn-size-md, 42px)',
-                          height: 'var(--btn-size-md, 42px)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: 'var(--radius-compact, 12px)',
-                          border: active
-                            ? `2px solid ${acc.from}`
-                            : '1px solid var(--track, var(--c-border))',
-                          background: active
-                            ? `linear-gradient(135deg, ${acc.from}22, ${acc.to}18)`
-                            : 'var(--app-surface-low)',
-                          color: active ? acc.from : 'var(--c-text-secondary, var(--muted))',
-                          cursor: 'pointer',
-                          transition: 'all 150ms ease',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <AnimatedNavigationIcon
-                          itemKey={value}
-                          iconName={iconName}
-                          size={20}
-                          isActive={active}
-                          color={active ? acc.from : 'var(--c-text-secondary)'}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </SettingRow>
         </Card>
       </div>
     </div>

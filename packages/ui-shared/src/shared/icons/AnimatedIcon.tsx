@@ -81,7 +81,9 @@ import { TuningForkIcon } from '../../features/chordex/components/tuner/TuningFo
 const localAnimatedIcons: Record<string, any> = {
   activity: ActivityIcon,
   'arrow-left': ArrowLeftIcon,
+  arrowleft: ArrowLeftIcon,
   'arrow-right': ArrowRightIcon,
+  arrowright: ArrowRightIcon,
   'audio-lines': AudioLinesIcon,
   audiolines: AudioLinesIcon,
   bell: BellIcon,
@@ -205,6 +207,28 @@ function getAnimatedIconComponent(name: string) {
   // Normalize names that are Material symbols or aliases to their Lucide/local counterparts
   let normName = (name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
   if (
+    normName === 'arrow-left' ||
+    normName === 'arrowleft' ||
+    normName === 'arrow_back' ||
+    normName === 'arrowback' ||
+    normName === 'arrow-back' ||
+    normName === 'arrow_left' ||
+    normName === 'chevron_left' ||
+    normName === 'chevron-left'
+  ) {
+    normName = 'arrow-left';
+  } else if (
+    normName === 'arrow-right' ||
+    normName === 'arrowright' ||
+    normName === 'arrow_forward' ||
+    normName === 'arrowforward' ||
+    normName === 'arrow-forward' ||
+    normName === 'arrow_right' ||
+    normName === 'chevron_right' ||
+    normName === 'chevron-right'
+  ) {
+    normName = 'arrow-right';
+  } else if (
     normName === 'system_update' ||
     normName === 'sync' ||
     normName === 'refresh' ||

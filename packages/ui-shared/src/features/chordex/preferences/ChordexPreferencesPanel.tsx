@@ -17,6 +17,7 @@ import {
   SectionHeader,
   SettingRow,
   SettingSection,
+  StartOnSelector,
 } from '../../../shared/settings/SettingControls';
 import { IconSongs, IconLibrary, IconSettings } from '../../hub/icons/NavIcons';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
@@ -67,6 +68,41 @@ export default function ChordexPreferencesPanel() {
         <StudioHeader title={t.settings.title} />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar space-y-6 px-6 pb-6">
+          {/* ── START ON (FIRST PREFERENCE) ── */}
+          <SettingSection title={t.drumPrefs?.startOn || (isSpanish ? 'Iniciar en' : 'Start On')}>
+            <SettingRow
+              label={t.drumPrefs?.startOn || (isSpanish ? 'Iniciar en' : 'Start On')}
+              desc={
+                isSpanish
+                  ? 'Elige qué pantalla se activa al abrir Chordex.'
+                  : 'Choose which screen activates when Chordex launches.'
+              }
+            >
+              <StartOnSelector<ActivePanel>
+                currentValue={settings.defaultTab ?? 'songs'}
+                options={[
+                  {
+                    value: 'songs',
+                    iconName: 'audio-lines',
+                    label: t.nav?.songs || (isSpanish ? 'Canciones' : 'Songs'),
+                  },
+                  {
+                    value: 'library',
+                    iconName: 'gallery-vertical-end',
+                    label: t.nav?.library || (isSpanish ? 'Biblioteca' : 'Library'),
+                  },
+                  {
+                    value: 'preferences',
+                    iconName: 'sliders-horizontal',
+                    label: t.nav?.preferences || (isSpanish ? 'Preferencias' : 'Preferences'),
+                  },
+                ]}
+                onChange={(val) => useSettingsStore.getState().updateSettings({ defaultTab: val })}
+                accentColor={settings.accentColor}
+              />
+            </SettingRow>
+          </SettingSection>
+
           {/* ── INSTRUMENT ── */}
           <SettingSection title={isSpanish ? 'Instrumento Global' : 'Global Instrument'}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1">
@@ -395,6 +431,45 @@ export default function ChordexPreferencesPanel() {
             : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
         }}
       >
+
+        {/* ── START ON (FIRST PREFERENCE) ── */}
+        <SectionHeader
+          icon="dashboard"
+          title={t.drumPrefs?.startOn || (isSpanish ? 'Iniciar en' : 'Start On')}
+        />
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <SettingRow
+            label={t.drumPrefs?.startOn || (isSpanish ? 'Iniciar en' : 'Start On')}
+            desc={
+              isSpanish
+                ? 'Elige qué pantalla se activa al abrir Chordex.'
+                : 'Choose which screen activates when Chordex launches.'
+            }
+          >
+            <StartOnSelector<ActivePanel>
+              currentValue={settings.defaultTab ?? 'songs'}
+              options={[
+                {
+                  value: 'songs',
+                  iconName: 'audio-lines',
+                  label: t.nav?.songs || (isSpanish ? 'Canciones' : 'Songs'),
+                },
+                {
+                  value: 'library',
+                  iconName: 'gallery-vertical-end',
+                  label: t.nav?.library || (isSpanish ? 'Biblioteca' : 'Library'),
+                },
+                {
+                  value: 'preferences',
+                  iconName: 'sliders-horizontal',
+                  label: t.nav?.preferences || (isSpanish ? 'Preferencias' : 'Preferences'),
+                },
+              ]}
+              onChange={(val) => useSettingsStore.getState().updateSettings({ defaultTab: val })}
+              accentColor={settings.accentColor}
+            />
+          </SettingRow>
+        </Card>
 
         {/* ── INSTRUMENT ── */}
         <SectionHeader

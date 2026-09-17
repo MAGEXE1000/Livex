@@ -5,6 +5,7 @@ import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 export { Toggle, type ToggleProps } from '../design-system/StudioToggle';
 export { LiquidSwitch, type LiquidSwitchProps } from '../design-system/LiquidSwitch';
+export { StartOnSelector, type StartOnOption, type StartOnSelectorProps } from './StartOnSelector';
 
 export const SectionHeader = memo(function SectionHeader({
   icon,

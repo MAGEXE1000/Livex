@@ -15,6 +15,7 @@ import {
   SectionHeader,
   SettingRow,
   SegmentedControl,
+  StartOnSelector,
 } from '../../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
@@ -38,6 +39,7 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
       theme: s.settings.theme,
       amoledMode: s.settings.amoledMode,
       language: s.settings.language,
+      defaultStageView: s.settings.defaultStageView,
     }))
   );
   const acc = resolveAccent(settings.accentColor);
@@ -165,6 +167,48 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
             paddingRight: 'var(--page-inset-h)',
           }}
         >
+          {/* ── 0. START ON (FIRST PREFERENCE) ── */}
+          <SectionHeader
+            icon="dashboard"
+            title={tr.stagex?.startOn || (isSpanish ? 'Iniciar en' : 'Start on')}
+          />
+          <div style={cardStyle} className="mb-6">
+            <SettingRow
+              label={tr.stagex?.startOn || (isSpanish ? 'Iniciar en' : 'Start on')}
+              desc={
+                tr.stagex?.startOnDesc ||
+                (isSpanish
+                  ? 'Qué vista se abre al iniciar Stagex.'
+                  : 'Which view opens when you launch Stagex.')
+              }
+            >
+              <StartOnSelector<'Editor' | 'Setup' | 'Preferences'>
+                currentValue={settings.defaultStageView ?? 'Editor'}
+                options={[
+                  {
+                    value: 'Editor',
+                    iconName: 'layout-panel-top',
+                    label: tr.nav?.stage || (isSpanish ? 'Escenario' : 'Editor'),
+                  },
+                  {
+                    value: 'Setup',
+                    iconName: 'layers',
+                    label: tr.stagex?.setup || (isSpanish ? 'Configuración' : 'Setup'),
+                  },
+                  {
+                    value: 'Preferences',
+                    iconName: 'sliders-horizontal',
+                    label: tr.nav?.preferences || (isSpanish ? 'Preferencias' : 'Preferences'),
+                  },
+                ]}
+                onChange={(val) =>
+                  useSettingsStore.getState().updateSettings({ defaultStageView: val })
+                }
+                accentColor={settings.accentColor}
+              />
+            </SettingRow>
+          </div>
+
           {/* ── 1. DISPLAY & OVERLAYS ── */}
           <SectionHeader
             icon="layers"

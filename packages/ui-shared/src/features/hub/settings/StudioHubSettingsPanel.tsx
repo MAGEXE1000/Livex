@@ -83,45 +83,11 @@ export default function StudioHubSettingsPanel() {
           <AccentColorPicker />
         </SettingSection>
 
-        {/* Interface Scaling Section */}
-        <SettingSection title={t.settings.rows.interfaceScaling || 'Interface Scaling'}>
-          <SettingRow
-            label={t.settings.rows.displayDensity || 'Display Density'}
-            desc={t.settings.rows.displayDensityDesc || 'Adjust screen layout density'}
-          >
-            <SegmentedControl
-              value={settings.displayDensity || 'comfortable'}
-              options={[
-                { value: 'compact', label: t.settings.rows.densityCompact || 'Compact' },
-                { value: 'comfortable', label: t.settings.rows.densityStandard || 'Standard' },
-                { value: 'spacious', label: t.settings.rows.densitySpacious || 'Spacious' },
-              ]}
-              onChange={(v) => settingsController.updateSettings({ displayDensity: v })}
-              layoutId="density-control"
-            />
-          </SettingRow>
-          <SettingRow
-            label={t.settings.rows.textSize || 'Text Size'}
-            desc={t.settings.rows.textSizeDesc || 'Scale global typography'}
-          >
-            <SegmentedControl
-              value={settings.fontSize || 'medium'}
-              options={[
-                { value: 'small', label: t.settings.rows.fontSizeSmall || 'Small' },
-                { value: 'medium', label: t.settings.rows.fontSizeMedium || 'Medium' },
-                { value: 'large', label: t.settings.rows.fontSizeLarge || 'Large' },
-              ]}
-              onChange={(v) => settingsController.updateSettings({ fontSize: v })}
-              layoutId="font-size-control"
-            />
-          </SettingRow>
-        </SettingSection>
-
         {/* Language Section */}
         <SettingSection title={t.settings.sections.language || 'Language'}>
           <SettingRow
             label={t.settings.rows.appLanguage || 'App Language'}
-            desc={t.settings.rows.appLanguageDesc || 'Change the display language for Studio'}
+            desc={t.settings.rows.appLanguageDesc || 'Change the display language for Livex'}
           >
             <MorphingActionSurface
               title={isSpanish ? 'Seleccionar idioma' : 'Select Language'}

@@ -13,6 +13,7 @@ import {
   SettingRow,
   Toggle,
   SegmentedControl,
+  StartOnSelector,
 } from '../../../shared/settings/SettingControls';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
@@ -205,26 +206,33 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
                 ? 'Elige qué pantalla se activa al abrir Vocalex.'
                 : 'Choose which screen activates when Vocalex launches.')
             }
-            layout="stacked"
           >
-            <SegmentedControl<'coach' | 'takes' | 'preferences'>
-              value={startTab}
-              onChange={(val) =>
-                useSettingsStore.getState().updateSettings({ defaultVocalexTab: val })
-              }
-              accentFrom={acc.from}
-              accentTo={acc.to}
-              layoutId="vocalex-start-tab"
-              fullWidth
+            <StartOnSelector<'coach' | 'takes' | 'preferences'>
+              currentValue={startTab}
               options={[
-                { value: 'coach', label: vt.navCoach || 'Coach', testId: 'vocalex-start-coach' },
-                { value: 'takes', label: vt.tabTakes || 'Takes', testId: 'vocalex-start-takes' },
+                {
+                  value: 'coach',
+                  iconName: 'graduation-cap',
+                  label: vt.navCoach || (isSpanish ? 'Entrenador' : 'Coach'),
+                  testId: 'vocalex-start-coach',
+                },
+                {
+                  value: 'takes',
+                  iconName: 'clap',
+                  label: vt.tabTakes || (isSpanish ? 'Tomas' : 'Takes'),
+                  testId: 'vocalex-start-takes',
+                },
                 {
                   value: 'preferences',
-                  label: vt.navPreferences || 'Prefs',
+                  iconName: 'sliders-horizontal',
+                  label: vt.navPreferences || (isSpanish ? 'Preferencias' : 'Preferences'),
                   testId: 'vocalex-start-prefs',
                 },
               ]}
+              onChange={(val) =>
+                useSettingsStore.getState().updateSettings({ defaultVocalexTab: val })
+              }
+              accentColor={settings.accentColor}
             />
           </SettingRow>
         </SettingSection>

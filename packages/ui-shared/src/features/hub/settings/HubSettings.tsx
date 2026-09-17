@@ -1811,7 +1811,7 @@ export function HubSettings({
               lineHeight: 1.6,
             }}
           >
-            Welcome to Studio. By accessing or using our application, you agree to comply with and
+            Welcome to Livex. By accessing or using our application, you agree to comply with and
             be bound by the following Terms of Service. Please read them carefully.
           </p>
           <div>
@@ -1838,7 +1838,7 @@ export function HubSettings({
               }}
             >
               All musical patterns, drum sequences, settings, and other project data created by you
-              using Studio's tools (Chordex, Drumex, Stagex, Groovex, Vocalex) remain entirely your
+              using Livex's tools (Chordex, Drumex, Stagex, Groovex, Vocalex) remain entirely your
               property. We lay no claim of copyright, trademark, or ownership over your creative
               output.
             </p>
@@ -1866,7 +1866,7 @@ export function HubSettings({
                 opacity: 0.85,
               }}
             >
-              Studio is provided on a local-first basis. Data sync features are provided for your
+              Livex is provided on a local-first basis. Data sync features are provided for your
               personal backup convenience. You agree not to abuse or attempt to overload the sync
               servers.
             </p>
@@ -1894,7 +1894,7 @@ export function HubSettings({
                 opacity: 0.85,
               }}
             >
-              Studio is provided "as is" and "as available" without any warranties of any kind.
+              Livex is provided "as is" and "as available" without any warranties of any kind.
               While we aim to protect project data using reliable local storage and cloud sync
               mechanisms, we cannot guarantee data will not be lost. We recommend periodic manual
               backups.
@@ -1933,7 +1933,7 @@ export function HubSettings({
               lineHeight: 1.6,
             }}
           >
-            Your privacy is extremely important to us. This Privacy Policy details how Studio
+            Your privacy is extremely important to us. This Privacy Policy details how Livex
             collects, uses, and safeguards your data.
           </p>
           <div>
@@ -1987,7 +1987,7 @@ export function HubSettings({
                 opacity: 0.85,
               }}
             >
-              If you create a Studio Account, we use Firebase to manage your login credentials. Your
+              If you create a Livex Account, we use Firebase to manage your login credentials. Your
               project backups are stored securely in Firestore databases. We only use this data to
               perform cross-device syncing at your request.
             </p>
@@ -2015,7 +2015,7 @@ export function HubSettings({
                 opacity: 0.85,
               }}
             >
-              Studio does not use telemetry, advertising trackers, or external behavioral analytics.
+              Livex does not use telemetry, advertising trackers, or external behavioral analytics.
               Your interaction with the app remains entirely private.
             </p>
           </div>
@@ -5474,7 +5474,7 @@ export function HubSettings({
                 fontFamily: 'var(--studio-font-display)',
               }}
             >
-              {lang === 'es' ? 'Ajustes de Studio' : 'Studio Settings'}
+              {lang === 'es' ? 'Ajustes de Livex' : 'Livex Settings'}
             </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

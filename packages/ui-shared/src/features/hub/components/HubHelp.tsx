@@ -443,50 +443,6 @@ export function HubHelp({
             {t.help.downloadApps.installPwaDesc}
           </p>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[
-            { platform: 'iOS App', icon: 'phone_iphone' },
-            { platform: 'Desktop (macOS / Windows)', icon: 'desktop_windows' },
-          ].map((item, i) => (
-            <div
-              key={i}
-              style={{
-                padding: 14,
-                background: 'var(--surface-topbar-bg)',
-                border: '1px solid var(--c-border)',
-                borderRadius: 14,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                opacity: 0.8,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: 'var(--c-text-secondary)' }}
-                >
-                  {item.icon}
-                </span>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-text-primary)' }}>
-                  {item.platform}
-                </span>
-              </div>
-              <span
-                style={{
-                  fontSize: '9.5px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: accent.from,
-                }}
-              >
-                {t.help.downloadApps.comingSoon}
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
     );
   }
@@ -956,7 +912,7 @@ export function HubHelp({
                 fontFamily: 'var(--studio-font-display)',
               }}
             >
-              {lang === 'es' ? 'Ayuda de Studio' : 'Studio Help'}
+              {lang === 'es' ? 'Ayuda de Livex' : 'Livex Help'}
             </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

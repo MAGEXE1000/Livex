@@ -437,7 +437,7 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
           opacity: currentIdx === 0 ? 0.25 : 1,
           pointerEvents: 'all',
         }}
-        icon="arrow_back"
+        icon="arrow-left"
       />
       <div style={{ width: '48px' }} />
       <Button
@@ -456,7 +456,7 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
           boxShadow: `0 4px 20px ${accent.to}55`,
           pointerEvents: 'all',
         }}
-        icon="arrow_forward"
+        icon="arrow-right"
       />
     </div>
   );
