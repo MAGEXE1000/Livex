@@ -1,5 +1,8 @@
 import type { InstrumentStringTarget, InstrumentTuningMode } from './tunerTypes';
 import { createAudioContext } from '../audioContextOptions';
+import { drumAssetUrl } from '../storage/assetCache';
+import type { DrumPartId, DrumTensionId } from './drumTuningModels';
+import { DRUM_PARTS, findNearestDrumPart } from './drumTuningModels';
 
 let playbackAudioCtx: AudioContext | null = null;
 const decodedBufferCache = new Map<string, AudioBuffer>();
@@ -115,6 +118,85 @@ async function getOrDecodeNoteBuffer(
   }
 }
 
+// ── Authoritative House Kit Sample Mapping for Drum Tuner ─────────────────────
+export interface HouseKitAnchorConfig {
+  partId: DrumPartId;
+  name: string;
+  path: string;
+  anchorHz: number;
+  duration: number;
+}
+
+export const HOUSE_KIT_TUNER_ANCHORS: Record<DrumPartId, HouseKitAnchorConfig> = {
+  snare: {
+    partId: 'snare',
+    name: 'Tarola',
+    path: '/drums/realistic/snare/blend/hard_1.opus',
+    anchorHz: 211.5,
+    duration: 2.5,
+  },
+  tom1: {
+    partId: 'tom1',
+    name: 'Tom 1',
+    path: '/drums/realistic/tom10/blend/med_1.opus',
+    anchorHz: 145.5,
+    duration: 2.8,
+  },
+  tom2: {
+    partId: 'tom2',
+    name: 'Tom 2',
+    path: '/drums/realistic/tom12/blend/med_1.opus',
+    anchorHz: 112.4,
+    duration: 2.8,
+  },
+  floorTom: {
+    partId: 'floorTom',
+    name: 'Piso',
+    path: '/drums/realistic/tom16/blend/med_1.opus',
+    anchorHz: 72.7,
+    duration: 3.0,
+  },
+  kick: {
+    partId: 'kick',
+    name: 'Bombo',
+    path: '/drums/realistic/kick/blend/med_1.opus',
+    anchorHz: 59.5,
+    duration: 1.8,
+  },
+};
+
+/**
+ * Loads and caches an authentic House Kit drum sample into an AudioBuffer.
+ * Pre-decoded in memory so playback has zero latency.
+ */
+export async function loadDrumReferenceBuffer(
+  ctx: AudioContext,
+  partId: DrumPartId
+): Promise<AudioBuffer | null> {
+  const cacheKey = `drum:${partId}`;
+  const cached = decodedBufferCache.get(cacheKey);
+  if (cached) return cached;
+
+  const anchor = HOUSE_KIT_TUNER_ANCHORS[partId];
+  if (!anchor) return null;
+
+  try {
+    const url = await drumAssetUrl(anchor.path);
+    const resp = await fetch(url, { cache: 'force-cache' });
+    if (!resp.ok) {
+      console.warn(`[tunerReferenceAudio] Failed to fetch drum sample for ${partId}: HTTP ${resp.status}`);
+      return null;
+    }
+    const arrayBuf = await resp.arrayBuffer();
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    decodedBufferCache.set(cacheKey, audioBuf);
+    return audioBuf;
+  } catch (err) {
+    console.warn(`[tunerReferenceAudio] Failed to decode drum sample for ${partId}:`, err);
+    return null;
+  }
+}
+
 /**
  * Pre-decodes reference samples for an instrument mode in the background.
  */
@@ -124,6 +206,18 @@ export async function preloadTunerReferenceAudio(
 ): Promise<void> {
   const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getPlaybackAudioContext();
   if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
+
+  if (mode === 'drum') {
+    const drumParts: DrumPartId[] = ['snare', 'tom1', 'tom2', 'floorTom', 'kick'];
+    await Promise.all(
+      drumParts.map(async (partId) => {
+        if (!decodedBufferCache.has(`drum:${partId}`)) {
+          await loadDrumReferenceBuffer(ctx, partId);
+        }
+      })
+    );
+    return;
+  }
 
   const family = getFamilyForMode(mode);
   try {
@@ -352,83 +446,134 @@ export async function playTunerReferenceString(
 }
 
 /**
- * Play a resonant drum reference tone calibrated to the exact fundamental frequency.
- * Integrates with active playback tracking to ensure microphone self-playback rejection.
+ * Options for playing a realistic House Kit drum reference sample.
  */
-export function playDrumReferenceSound(
-  frequency: number,
-  duration: number = 2.0,
-  volume: number = 0.35
-): void {
+export interface PlayDrumReferenceOptions {
+  partId: DrumPartId;
+  tensionId?: DrumTensionId;
+  frequency: number;
+  duration?: number;
+  volume?: number;
+}
+
+/**
+ * Plays the authentic acoustic House Kit drum sample for the selected drum part,
+ * repitched to the exact calibrated fundamental frequency via Web Audio playbackRate.
+ *
+ * Supports both options object and positional arguments:
+ * - playDrumReferenceSound(options: PlayDrumReferenceOptions)
+ * - playDrumReferenceSound(partId, tensionId, frequency, duration, volume)
+ * - playDrumReferenceSound(frequency, duration, volume) [legacy fallback]
+ */
+export async function playDrumReferenceSound(
+  partIdOrOptionsOrFreq: PlayDrumReferenceOptions | DrumPartId | number,
+  tensionIdOrDuration: DrumTensionId | number = 'normal',
+  targetFrequency?: number,
+  duration?: number,
+  volume: number = 0.85
+): Promise<void> {
   const ctx = getPlaybackAudioContext();
   if (!ctx) return;
 
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch {}
+  }
+
   stopTunerReferenceAudio();
 
+  let partId: DrumPartId = 'snare';
+  let tensionId: DrumTensionId = 'normal';
+  let freq = 242.0;
+  let requestedDuration = 2.5;
+  let vol = volume;
+
+  if (typeof partIdOrOptionsOrFreq === 'object' && partIdOrOptionsOrFreq !== null) {
+    partId = partIdOrOptionsOrFreq.partId;
+    tensionId = partIdOrOptionsOrFreq.tensionId ?? 'normal';
+    freq = partIdOrOptionsOrFreq.frequency;
+    requestedDuration = partIdOrOptionsOrFreq.duration ?? 2.5;
+    vol = partIdOrOptionsOrFreq.volume ?? 0.85;
+  } else if (typeof partIdOrOptionsOrFreq === 'string') {
+    partId = partIdOrOptionsOrFreq as DrumPartId;
+    tensionId = (typeof tensionIdOrDuration === 'string' ? tensionIdOrDuration : 'normal') as DrumTensionId;
+    freq = targetFrequency ?? (DRUM_PARTS.find((p) => p.id === partId)?.tensions[tensionId].frequency ?? 242);
+    requestedDuration = duration ?? 2.5;
+  } else if (typeof partIdOrOptionsOrFreq === 'number') {
+    // Legacy fallback when only frequency was provided
+    freq = partIdOrOptionsOrFreq;
+    requestedDuration = typeof tensionIdOrDuration === 'number' ? tensionIdOrDuration : 2.5;
+    vol = targetFrequency ?? 0.85;
+    const nearest = findNearestDrumPart(freq, 'normal');
+    partId = nearest.part.id;
+    tensionId = 'normal';
+  }
+
+  const anchor = HOUSE_KIT_TUNER_ANCHORS[partId] || HOUSE_KIT_TUNER_ANCHORS.snare;
+  const buffer = await loadDrumReferenceBuffer(ctx, partId);
+  if (!buffer) return;
+
   const now = ctx.currentTime;
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
 
-  // Primary fundamental oscillator (sine wave)
-  const osc1 = ctx.createOscillator();
-  osc1.type = 'sine';
-  osc1.frequency.setValueAtTime(frequency, now);
+  // Calibrated playbackRate: resamples authentic shell resonance to the exact target Hz
+  const playbackRate = Math.max(0.3, Math.min(3.5, freq / anchor.anchorHz));
+  source.playbackRate.setValueAtTime(playbackRate, now);
 
-  // Body overtone (subtle harmonic simulating cylindrical drumhead mode)
-  const osc2 = ctx.createOscillator();
-  osc2.type = 'triangle';
-  osc2.frequency.setValueAtTime(frequency * 1.5, now);
+  const gain = ctx.createGain();
+  // Fast 3ms linear attack to prevent DAC clicks, preserving the physical transient strike
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(vol, now + 0.003);
 
-  const gain1 = ctx.createGain();
-  // Percussive strike envelope (3ms linear attack, natural drum decay)
-  gain1.gain.setValueAtTime(0.0001, now);
-  gain1.gain.linearRampToValueAtTime(volume, now + 0.004);
-  gain1.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  // Natural acoustic decay envelope bounded by sample duration and requested duration
+  const effectiveDuration = Math.min(requestedDuration, buffer.duration / playbackRate);
+  const fadeStart = Math.max(0.1, effectiveDuration - 0.4);
+  gain.gain.setValueAtTime(vol, now + fadeStart);
+  gain.gain.linearRampToValueAtTime(0.0001, now + effectiveDuration);
 
-  const gain2 = ctx.createGain();
-  // Overtone decays faster than fundamental
-  gain2.gain.setValueAtTime(0.0001, now);
-  gain2.gain.linearRampToValueAtTime(volume * 0.22, now + 0.004);
-  gain2.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.45);
+  source.connect(gain);
+  gain.connect(ctx.destination);
 
-  osc1.connect(gain1);
-  osc2.connect(gain2);
-  gain1.connect(ctx.destination);
-  gain2.connect(ctx.destination);
-
-  activeGainNodes.push(gain1, gain2);
+  activeSources.push(source);
+  activeGainNodes.push(gain);
 
   activePlaybackInfo = {
     target: {
-      name: 'Drum',
+      name: anchor.name,
       note: '',
       octave: 0,
-      fullName: `${frequency}Hz`,
-      frequency,
+      fullName: `${anchor.name} (${freq.toFixed(1)} Hz)`,
+      frequency: freq,
       stringNumber: 1,
     },
-    frequency,
+    frequency: freq,
     mode: 'drum',
     startTime: Date.now(),
-    duration,
+    duration: effectiveDuration,
   };
 
-  osc1.start(now);
-  osc2.start(now);
-  osc1.stop(now + duration);
-  osc2.stop(now + duration);
+  source.start(now);
+  source.stop(now + effectiveDuration + 0.05);
 
-  osc1.onended = () => {
+  source.onended = () => {
     try {
-      osc1.disconnect();
-      osc2.disconnect();
-      gain1.disconnect();
-      gain2.disconnect();
+      source.disconnect();
+      gain.disconnect();
     } catch {}
-    activePlaybackInfo = null;
+    activeSources = activeSources.filter((s) => s !== source);
+    activeGainNodes = activeGainNodes.filter((g) => g !== gain);
+    if (activeSources.length === 0) {
+      activePlaybackInfo = null;
+    }
   };
 
   if (playbackTimeout) clearTimeout(playbackTimeout);
   playbackTimeout = setTimeout(() => {
-    activePlaybackInfo = null;
-  }, (duration + 0.1) * 1000);
+    if (activeSources.length === 0) {
+      activePlaybackInfo = null;
+    }
+  }, (effectiveDuration + 0.1) * 1000);
 }
 

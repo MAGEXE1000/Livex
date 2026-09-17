@@ -25,9 +25,9 @@ import {
   preloadTunerReferenceAudio,
   stopTunerReferenceAudio,
   playDrumReferenceSound,
-  getActiveReferencePlayback,
   getPlaybackAudioContext,
 } from './tunerReferenceAudio';
+import type { DrumPartId, DrumTensionId } from './drumTuningModels';
 
 const BUFFER_SIZE = 2048;
 const REQUIRED_IN_TUNE_FRAMES = 3;
@@ -200,10 +200,20 @@ export class TunerAudioEngine {
   }
 
   /**
-   * Play an audible calibrated drum reference tone for acoustic drum tuning
+   * Play an audible calibrated drum reference tone or realistic sample for acoustic drum tuning
    */
-  public playDrumReference(frequency: number, durationSeconds: number = 2.0): void {
-    playDrumReferenceSound(frequency, durationSeconds);
+  public playDrumReference(
+    partIdOrFrequency: DrumPartId | number,
+    tensionIdOrDuration: DrumTensionId | number = 'normal',
+    frequency?: number,
+    durationSeconds: number = 2.5
+  ): void {
+    void playDrumReferenceSound(
+      partIdOrFrequency as any,
+      tensionIdOrDuration as any,
+      frequency,
+      durationSeconds
+    );
   }
 
   public getState(): TunerLifecycleState {
@@ -502,26 +512,6 @@ export class TunerAudioEngine {
       this.setState('weak_signal');
       this.emitFrame(null);
       return;
-    }
-
-    // 4b. Self-Playback Rejection:
-    // If a reference string sound is currently playing from the speaker, ensure that acoustic
-    // speaker bleed into the microphone is never reported as user instrument input.
-    const activeRef = getActiveReferencePlayback();
-    if (activeRef && Number.isFinite(rawFreq) && rawFreq > 0) {
-      const refFreq = activeRef.frequency;
-      const centsDiff = Math.abs(1200 * Math.log2(rawFreq / refFreq));
-      const octaveDiff = Math.abs(1200 * Math.log2(rawFreq / (2 * refFreq)));
-
-      // If the detected pitch is matching the tuner's active reference tone (within 45 cents)
-      if (centsDiff <= 45 || octaveDiff <= 45) {
-        // Suppress self-playback so the speaker output is never reported as user instrument input
-        this.consecutiveInTuneFrames = 0;
-        this.currentlyInTune = false;
-        this.setState('no_signal');
-        this.emitFrame(null);
-        return;
-      }
     }
 
     // 5. Octave Error Protection for Low Guitar & Bass Strings

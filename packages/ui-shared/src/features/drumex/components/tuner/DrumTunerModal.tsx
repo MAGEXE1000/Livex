@@ -12,6 +12,7 @@ import {
   useSettingsStore,
   getEffectiveThemeState,
   resolveAccent,
+  preloadTunerReferenceAudio,
   type DrumPartId,
   type DrumTensionId,
   type TunerLifecycleState,
@@ -311,6 +312,11 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
     setSelectedTensionId(id);
   };
 
+  // Preload realistic House Kit drum samples into AudioBuffer cache on mount
+  useEffect(() => {
+    void preloadTunerReferenceAudio('drum');
+  }, []);
+
   const handleToggleAuto = () => {
     setIsAuto((prev) => !prev);
   };
@@ -318,10 +324,15 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
   const handlePlayReference = () => {
     if (!engineRef.current) return;
     setIsReferencePlaying(true);
-    engineRef.current.playDrumReference(currentTarget.frequency, 2.2);
+    engineRef.current.playDrumReference(
+      selectedPartId,
+      selectedTensionId,
+      currentTarget.frequency,
+      2.5
+    );
     setTimeout(() => {
       setIsReferencePlaying(false);
-    }, 2200);
+    }, 2500);
   };
 
   const handleNextTip = () => {
@@ -586,11 +597,13 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
 
       {/* ── 4. Main Body: Realistic Photographic Drum Graphic + Target Info ─── */}
       <div className="relative flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-hidden px-4">
-        {/* Photographic Drum Image with Smooth AnimatePresence Transition */}
+        {/* Photographic Drum Image with Smooth AnimatePresence Transition (Click to play reference) */}
         <div
-          className={`relative w-full max-w-[280px] xs:max-w-[320px] aspect-[4/3] flex items-center justify-center ${
+          onClick={handlePlayReference}
+          className={`relative w-full max-w-[280px] xs:max-w-[320px] aspect-[4/3] flex items-center justify-center cursor-pointer active:scale-[0.98] transition-transform ${
             isLight ? 'rounded-2xl bg-black border border-black/10 overflow-hidden shadow-inner' : ''
           }`}
+          title="Toca para escuchar el sonido de referencia"
         >
           <AnimatePresence mode="wait">
             <motion.div
