@@ -406,92 +406,6 @@
         }
       }
 
-      #intro-center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        z-index: 1;
-        will-change: transform;
-        transform: translate(-50%, -50%) scale(0.92);
-        opacity: 0;
-        animation: center-fade-in 500ms cubic-bezier(0.22, 1, 0.36, 1) 100ms forwards;
-        color: var(--intro-color);
-      }
-      @keyframes center-fade-in {
-        0% {
-          opacity: 0;
-          transform: translate(-50%, -50%) scale(0.92);
-        }
-        100% {
-          opacity: 1;
-          transform: translate(-50%, -50%) scale(1);
-        }
-      }
-      #intro-center .logo {
-        position: relative;
-        width: 96px;
-        height: 96px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        filter: var(--intro-shadow);
-      }
-      #intro-center .logo svg {
-        width: 96px;
-        height: 96px;
-      }
-
-      /* Pure CSS logo draw animation starting on the very first painted frame */
-      #intro-center .logo path {
-        stroke-dasharray: 550;
-        stroke-dashoffset: 550;
-        animation: logo-draw-in 650ms cubic-bezier(0.25, 1, 0.5, 1) 150ms forwards;
-      }
-      @keyframes logo-draw-in {
-        from {
-          stroke-dashoffset: 550;
-        }
-        to {
-          stroke-dashoffset: 0;
-        }
-      }
-
-      #logo-bloom {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 80px;
-        height: 80px;
-        transform: translate(-50%, -50%) scale(0.1);
-        border-radius: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(255, 255, 255, 1) 0%,
-          rgba(103, 156, 255, 0.4) 60%,
-          rgba(103, 156, 255, 0) 100%
-        );
-        z-index: -1;
-        opacity: 0;
-        pointer-events: none;
-      }
-      #logo-bloom.animate {
-        animation: bloom-expand 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      }
-      @keyframes bloom-expand {
-        0% {
-          transform: translate(-50%, -50%) scale(0.1);
-          opacity: 0.8;
-        }
-        100% {
-          transform: translate(-50%, -50%) scale(28);
-          opacity: 0;
-        }
-      }
-
       @media (prefers-reduced-motion: reduce) {
         #intro *,
         #intro {
@@ -525,38 +439,37 @@
           return;
         }
 
-        // Notify Android wrapper immediately that WebView has completed first paint
-        try {
-          if (
-            window.Capacitor &&
-            window.Capacitor.Plugins &&
-            window.Capacitor.Plugins.AppInstaller
-          ) {
-            window.Capacitor.Plugins.AppInstaller.notifyAppReady();
-          }
-        } catch (e) {}
-
-        function isReactHubReady() {
-          return !!window.__studioHubReady;
-        }
+        // Safety watchdog: ensure native splash screen is dismissed even if React encounters a boot error
+        setTimeout(function () {
+          try {
+            if (
+              window.Capacitor &&
+              window.Capacitor.Plugins &&
+              window.Capacitor.Plugins.AppInstaller
+            ) {
+              window.Capacitor.Plugins.AppInstaller.notifyAppReady();
+            }
+          } catch (e) {}
+        }, 2000);
 
         var handleReactReady = function () {
           window.removeEventListener('studio-hub-ready', handleReactReady);
           window.removeEventListener('studio:hub-ready', handleReactReady);
-          intro.style.transition = 'opacity 80ms ease-out';
-          intro.style.opacity = '0';
-          setTimeout(function () {
-            intro.classList.add('dismissed');
-            if (intro.parentNode) intro.parentNode.removeChild(intro);
-          }, 100);
+          if (intro) {
+            intro.style.transition = 'opacity 80ms ease-out';
+            intro.style.opacity = '0';
+            setTimeout(function () {
+              intro.classList.add('dismissed');
+              if (intro.parentNode) intro.parentNode.removeChild(intro);
+            }, 100);
+          }
         };
 
-        if (isReactHubReady()) {
+        if (window.__studioHubReady || window.__studioStartupComplete) {
           handleReactReady();
         } else {
           window.addEventListener('studio-hub-ready', handleReactReady);
           window.addEventListener('studio:hub-ready', handleReactReady);
-          setTimeout(handleReactReady, 3000); // safety fallback
         }
       })();
 

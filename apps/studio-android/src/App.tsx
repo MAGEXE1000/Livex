@@ -77,6 +77,23 @@ export default function App() {
     }
   }, [isDev]);
 
+  useEffect(() => {
+    if (!showLaunchOverlay) {
+      requestAnimationFrame(() => {
+        try {
+          if (
+            typeof window !== 'undefined' &&
+            (window as any).Capacitor &&
+            (window as any).Capacitor.Plugins &&
+            (window as any).Capacitor.Plugins.AppInstaller
+          ) {
+            (window as any).Capacitor.Plugins.AppInstaller.notifyAppReady();
+          }
+        } catch (_) {}
+      });
+    }
+  }, [showLaunchOverlay]);
+
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
   /* Note: SharedNavigationBar is rendered via BottomNavigationController */
 

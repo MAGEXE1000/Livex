@@ -77,19 +77,8 @@ export function LaunchAnimationEngine({
   scaleFactor = 1,
   skipIntro = false,
 }: LaunchAnimationEngineProps) {
-  // Determine start delay from app launch time (T+0.65s target)
-  const getInitialDelay = () => {
-    if (skipIntro) return 0;
-    const htmlStart =
-      typeof window !== 'undefined' ? (window as any).__bootTimings?.htmlStart || 0 : 0;
-    const elapsed = htmlStart > 0 ? performance.now() - htmlStart : 0;
-    const targetDelay = 650; // 0.65s intentional start delay
-    return Math.max(0, Math.round(targetDelay - elapsed));
-  };
-
-  const initialDelay = useRef<number>(getInitialDelay());
-  const [stage, setStage] = useState<'delay' | 'brand_reveal' | 'exit_dissolve' | 'complete'>(
-    skipIntro ? 'complete' : initialDelay.current > 0 ? 'delay' : 'brand_reveal'
+  const [stage, setStage] = useState<'brand_reveal' | 'exit_dissolve' | 'complete'>(
+    skipIntro ? 'complete' : 'brand_reveal'
   );
   const [key, setKey] = useState(0);
 
@@ -105,30 +94,38 @@ export function LaunchAnimationEngine({
       );
     }
 
+    // Release native Android splash screen on the first painted frame of the brand reveal
+    requestAnimationFrame(() => {
+      try {
+        if (
+          typeof window !== 'undefined' &&
+          (window as any).Capacitor &&
+          (window as any).Capacitor.Plugins &&
+          (window as any).Capacitor.Plugins.AppInstaller
+        ) {
+          (window as any).Capacitor.Plugins.AppInstaller.notifyAppReady();
+          console.log(
+            `[STARTUP-TRACE] LaunchAnimationEngine: notifyAppReady() called on first paint at ${performance.now().toFixed(0)}ms`
+          );
+        }
+      } catch (_) {}
+    });
+
     if (skipIntro) {
       triggerIntroReveal();
       onComplete?.();
     }
-  }, [skipIntro]);
-  // 1. delay: 0.65s initial launch pause
-  // 2. brand_reveal: 1.18s 6-phase mark assembly, sheen sweep, and breathing hold
-  // 3. exit_dissolve: 0.30s graceful fade-out into pre-mounted Hub DOM (Total motion: ~1.48s)
+  }, [skipIntro, onComplete]);
+
+  // 1. brand_reveal: 1.05s 6-phase mark assembly, sheen sweep, and breathing hold
+  // 2. exit_dissolve: 0.30s graceful fade-out into pre-mounted Hub DOM (Total motion: ~1.35s)
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
     let unsub: (() => void) | undefined;
     let watchdogTimer: ReturnType<typeof setTimeout> | undefined;
 
-    if (stage === 'delay') {
-      const waitMs = initialDelay.current;
-      console.log(`[STARTUP-TRACE] LaunchAnimationEngine: waiting ${waitMs}ms start delay`);
-      t = setTimeout(() => {
-        console.log(
-          `[STARTUP-TRACE] LaunchAnimationEngine: delay -> brand_reveal transition at ${performance.now().toFixed(0)}ms`
-        );
-        setStage('brand_reveal');
-      }, waitMs);
-    } else if (stage === 'brand_reveal') {
-      // Phase 1 through 5 run over 1180ms before initiating Hub exit dissolve
+    if (stage === 'brand_reveal') {
+      // Phase 1 through 5 run over 1050ms before initiating Hub exit dissolve
       t = setTimeout(() => {
         console.log(
           `[STARTUP-TRACE] LaunchAnimationEngine: brand_reveal complete -> checking Hub readiness at ${performance.now().toFixed(0)}ms`
@@ -136,8 +133,10 @@ export function LaunchAnimationEngine({
 
         const isHubReady =
           loopMode ||
+          StartupCoordinator.isStartupComplete() ||
           (typeof window !== 'undefined' &&
             ((window as any).__studioStartupComplete ||
+              (window as any).__studioHubReady ||
               !!document.querySelector('[data-livex-hub-root="true"]') ||
               !!document.getElementById('hub-root')));
 
@@ -163,9 +162,9 @@ export function LaunchAnimationEngine({
               `[STARTUP-TRACE] LaunchAnimationEngine: watchdog triggered, starting exit_dissolve`
             );
             setStage('exit_dissolve');
-          }, 2000);
+          }, 1000);
         }
-      }, 1180);
+      }, 1050);
     }
 
     return () => {
@@ -269,8 +268,7 @@ export function LaunchAnimationEngine({
           }}
         />
 
-        {/* The Livex Logo Stage: Form 1 + Form 2 + Specular Seam Sheen */}
-        {/* Phase 4 (0.70-0.80s) Union impulse + Phase 5 (0.80-1.18s) Breathing hold + Phase 6 Exit scale */}
+        {/* Phase 4 (0.70-0.80s) Union impulse + Phase 5 (0.80-1.05s) Breathing hold + Phase 6 Exit scale */}
         <motion.div
           initial={{ scale: 1 }}
           animate={
@@ -284,7 +282,7 @@ export function LaunchAnimationEngine({
             isExit
               ? { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
               : {
-                  duration: 1.18,
+                  duration: 1.05,
                   times: [0, 0.58, 0.63, 0.7, 1.0],
                   ease: 'easeInOut',
                 }

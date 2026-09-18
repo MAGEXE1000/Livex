@@ -293,15 +293,7 @@ class StartupCoordinatorClass {
     });
     if (!p3Success || this.currentRunId !== runId) return;
 
-    // Wait for orbits intro splash transition to finish
-    console.log(
-      `[STARTUP-TRACE] waitForIntroDone STARTED at ${performance.now().toFixed(0)}ms, __introDone=${(window as any).__introDone}`
-    );
-    await this.waitForIntroDone();
-    console.log(`[STARTUP-TRACE] waitForIntroDone COMPLETED at ${performance.now().toFixed(0)}ms`);
-    if (this.currentRunId !== runId) return;
-
-    // Phase 4: Updater initialization (Runs before Hub is visible)
+    // Phase 4: Updater initialization (Runs concurrently with foreground brand reveal)
     const p4Success = await this.executePhase('4', 10000, async () => {
       try {
         const {
@@ -364,9 +356,13 @@ class StartupCoordinatorClass {
         (window as any).__bootTimings.hubVisible = performance.now();
       }
 
-      // Set complete gate to true (enables Updater listener checks)
+      // Set complete gate to true (enables Updater listener checks and signals Hub readiness)
       if (typeof window !== 'undefined') {
         (window as any).__studioStartupComplete = true;
+        (window as any).__studioHubReady = true;
+        try {
+          window.dispatchEvent(new CustomEvent('studio-hub-ready'));
+        } catch (_) {}
         console.log(
           `[STARTUP-TRACE] Phase 5: startup complete at ${performance.now().toFixed(0)}ms`
         );
@@ -385,48 +381,6 @@ class StartupCoordinatorClass {
     // Run Phases 6 & 7 asynchronously after the Hub is visible and interactive
     void this.runPhase6(runId);
     void this.runPhase7(runId);
-  }
-
-  private waitForIntroDone(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      if (typeof window === 'undefined') {
-        resolve();
-        return;
-      }
-
-      if ((window as any).__introDone || sessionStorage.getItem('studio-intro-shown') === 'true') {
-        resolve();
-        return;
-      }
-
-      let resolved = false;
-      let checkInterval: any = null;
-
-      const doneTimer = this.setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          if (checkInterval) clearInterval(checkInterval);
-          resolve();
-        }
-      }, 2500);
-
-      checkInterval = setInterval(() => {
-        if ((window as any).__introDone) {
-          if (!resolved) {
-            resolved = true;
-            clearInterval(checkInterval);
-            const idx = this.activeTimers.indexOf(doneTimer);
-            if (idx !== -1) this.activeTimers.splice(idx, 1);
-            clearTimeout(doneTimer);
-            if (typeof requestAnimationFrame !== 'undefined') {
-              requestAnimationFrame(() => resolve());
-            } else {
-              resolve();
-            }
-          }
-        }
-      }, 50);
-    });
   }
 
   private async runPhase6(runId: number) {
