@@ -48,21 +48,20 @@ Source:
 
 ## 2. Typography
 
-We use Google Fonts to establish a clean interface hierarchy:
+We establish a clean, consistent interface typography hierarchy across platforms:
 
-- **Primary Copy (Inter)**: Applied to general body copy, tooltips, list elements, and console views to optimize readability.
+- **Display & Headings (`Inter Tight`)**: Applied to all screen titles, section headings, cards, and modal titles via `--studio-font-display`.
+  - Weights: `Inter Tight Bold (700)`, `Inter Tight SemiBold (600)`
+  - Fallback: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
+- **Body & Labels (`Inter`)**: Applied to general body copy, controls, form inputs, tooltips, and lists via `--studio-font-body`.
   - Standard: `Inter Regular 400`
-  - Strong: `Inter Bold 700`
-- **Headings & Metrics (Manrope)**: Applied to titles, status counters, and stats grids.
-  - Weight: `Manrope 700` or `Manrope 800`
-  - Font-Family fallback: `'Manrope', system-ui, sans-serif`
-
-Source:
-
-- `packages/ui-shared/package.json` (depends on `@fontsource/inter` and `@fontsource/manrope`)
-- `packages/ui-shared/src/components/DevToolsDashboard.tsx`
+  - Medium/SemiBold: `Inter Medium 500`, `Inter SemiBold 600`
+  - Fallback: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
+- **Stagex Canvas & Direction Labels (`Manrope` & `Space Grotesk`)**: Embedded offline in Stagex canvas iframe for stage layouts and direction labels (DOWNSTAGE, UPSTAGE, etc.).
+- **Icons (`Material Symbols Outlined` & `Material Symbols Rounded`)**: Variable icon font with ligatures, weighted at 450 with optical size 24. Stagex embeds local offline fallback glyphs.
 
 ---
+
 
 ## 3. Component Templates & Guidelines
 

@@ -26,7 +26,6 @@ const packagesToUpdate = {
   i18next: '^26.3.6',
   'react-i18next': '^17.0.9',
   zustand: '^5.0.14',
-  'material-symbols': '^0.45.7',
   motion: '^12.42.2',
 };
 

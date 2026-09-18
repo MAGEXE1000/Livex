@@ -150,7 +150,6 @@ export default defineConfig(async ({ command, mode }) => {
               if (id.includes('/zustand/')) return 'zustand';
               if (id.includes('/jspdf/')) return 'jspdf';
               if (id.includes('/@capacitor/')) return 'capacitor';
-              if (id.includes('/@fontsource/')) return 'fonts';
               if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
               if (id.includes('/motion/')) return 'motion-vendor';
             }
