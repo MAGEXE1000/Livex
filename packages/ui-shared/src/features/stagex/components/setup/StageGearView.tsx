@@ -198,7 +198,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -368,7 +368,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
         {gear.length === 0 ? (
           /* ── SECTION 1A: EMPTY STATE CARD (STITCH PARITY) ────────── */
           <section
-            className="rounded-[28px] border p-8 flex flex-col items-center justify-center text-center shadow-soft min-h-[300px]"
+            className="rounded-3xl border p-8 flex flex-col items-center justify-center text-center shadow-soft min-h-[300px]"
             style={{
               backgroundColor: cardBg,
               borderColor: cardBorder,
@@ -419,7 +419,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
         ) : (
           /* ── SECTION 1B: POPULATED GEAR LIST (STITCH PARITY) ──────── */
           <div
-            className="p-5 rounded-[28px] border shadow-soft"
+            className="p-5 rounded-3xl border shadow-soft"
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
             data-testid="gear-populated-container"
           >
@@ -533,7 +533,7 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                                 prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }
                               }
                               transition={{ duration: 0.2 }}
-                              className="flex items-center justify-between p-3.5 rounded-[16px] border transition-colors duration-150"
+                              className="flex items-center justify-between p-3.5 rounded-2xl border transition-colors duration-150"
                               style={{
                                 backgroundColor: innerBg,
                                 borderColor: innerBorder,

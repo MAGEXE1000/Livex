@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { Button } from './ui/button';
+import { Button } from '../shared/design-system/buttons';
 import {
   DropdownMenu,
   DropdownMenuContent,

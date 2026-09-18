@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useSettingsStore, BackDispatcher } from '@workspace/studio-core';
-import { activeOverlaysRegistry } from '../../../../shared/design-system/dialogs';
+import { useSettingsStore } from '@workspace/studio-core';
+import { Dialog } from '../../../../shared/design-system/dialogs';
 
 export interface SaveFilenameModalProps {
   open: boolean;
@@ -44,34 +43,6 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
     }
   }, [open, defaultFileName]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const id = 'stagex:save-filename-modal';
-    activeOverlaysRegistry.register('modal', id);
-    const unregisterBack = BackDispatcher.register('modal', () => {
-      if (!isSaving) {
-        onClose();
-      }
-      return true;
-    });
-    return () => {
-      activeOverlaysRegistry.unregister('modal', id);
-      unregisterBack();
-    };
-  }, [open, isSaving, onClose]);
-
-  // Close on Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isSaving) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, isSaving, onClose]);
-
   // Real-time illegal character sanitization [\\/:*?"<>|]
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
@@ -93,40 +64,25 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
   const inputBg = 'var(--app-surface-low)';
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div
-          data-testid="save-filename-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none"
-        >
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => {
-              if (!isSaving) onClose();
-            }}
-          />
-
-          {/* Modal Dialog Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl p-6 flex flex-col gap-5"
-            style={{
-              backgroundColor: bgCard,
-              border: `1px solid ${borderCol}`,
-              boxShadow: isLight
-                ? '0 20px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08)'
-                : '0 24px 60px rgba(0, 0, 0, 0.8), 0 4px 16px rgba(0, 0, 0, 0.5)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (!isSaving) onClose();
+      }}
+      isDismissable={!isSaving}
+      hideCloseButton={true}
+      size="sm"
+      className="max-w-md p-6 select-none rounded-2xl"
+    >
+      <div
+        data-testid="save-filename-modal"
+        className="flex flex-col gap-5"
+        style={{
+          backgroundColor: bgCard,
+          borderColor: borderCol,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
             {/* Header */}
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
@@ -328,9 +284,7 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
                 )}
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </Dialog>
   );
 };

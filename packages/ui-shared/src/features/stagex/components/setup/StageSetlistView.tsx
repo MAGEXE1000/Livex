@@ -206,7 +206,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -500,7 +500,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
         {setlist.length === 0 ? (
           /* Empty Setlist Card matching Stitch Reference */
           <section
-            className="w-full rounded-[26px] p-7 shadow-card border text-center flex flex-col items-center justify-center min-h-[175px]"
+            className="w-full rounded-3xl p-7 shadow-card border text-center flex flex-col items-center justify-center min-h-[175px]"
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
             data-testid="setlist-empty-state"
           >
@@ -548,7 +548,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
         ) : (
           /* Populated Arrangement Tracks Container */
           <div
-            className="p-4 rounded-[26px] border shadow-card flex flex-col gap-2.5"
+            className="p-4 rounded-3xl border shadow-card flex flex-col gap-2.5"
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
             data-testid="setlist-populated-container"
           >
@@ -575,7 +575,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center justify-between p-3.5 rounded-[16px] border transition-colors duration-150"
+                  className="flex items-center justify-between p-3.5 rounded-2xl border transition-colors duration-150"
                   style={{
                     backgroundColor: innerBg,
                     borderColor: innerBorder,
@@ -795,7 +795,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
 
         {/* ── 5. SETLIST INSIGHTS CARD (STITCH PARITY) ────────────────── */}
         <section
-          className="rounded-[26px] px-6 py-5 shadow-card border mt-1"
+          className="rounded-3xl px-6 py-5 shadow-card border mt-1"
           style={{ backgroundColor: cardBg, borderColor: cardBorder }}
           data-testid="card-setlist-insights"
         >

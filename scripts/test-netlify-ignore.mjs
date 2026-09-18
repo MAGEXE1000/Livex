@@ -45,7 +45,7 @@ const testCases = [
   },
   {
     name: 'Shared UI change (packages/ui-shared/**)',
-    files: ['packages/ui-shared/src/components/ui/button.tsx'],
+    files: ['packages/ui-shared/src/shared/design-system/buttons.tsx'],
     expectedBuild: true, // Run Netlify build
   },
   {

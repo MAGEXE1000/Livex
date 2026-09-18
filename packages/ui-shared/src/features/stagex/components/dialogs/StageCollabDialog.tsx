@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { NavigationDispatcher, useT, useSettingsStore, SpringPresets, BackDispatcher } from '@workspace/studio-core';
-import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
-import { activeOverlaysRegistry } from '../../../../shared/design-system/dialogs';
+import React, { useState } from 'react';
+import { NavigationDispatcher, useT, useSettingsStore } from '@workspace/studio-core';
+import { Dialog } from '../../../../shared/design-system/dialogs';
 
 import { Loader } from '../../../../components/motion/loader';
 import { ShareMenu } from '../../../../components/share-menu';
@@ -55,51 +53,24 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
   const language = useSettingsStore((s) => s.settings.language) ?? 'en';
   const isSpanish = language === 'es';
 
-  const prefersReduced = useAppReducedMotion();
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const id = 'stagex:collab-dialog';
-    activeOverlaysRegistry.register('modal', id);
-    const unregisterBack = BackDispatcher.register('modal', () => {
-      if (!collabLoading) {
-        onClose();
-      }
-      return true;
-    });
-    return () => {
-      activeOverlaysRegistry.unregister('modal', id);
-      unregisterBack();
-    };
-  }, [open, collabLoading, onClose]);
-
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReduced ? 0 : 0.2 }}
-            onClick={() => !collabLoading && onClose()}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-          />
-
-          {/* Modal Card */}
-          <motion.div
-            initial={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
-            transition={prefersReduced ? { duration: 0 } : SpringPresets.panel}
-            className="relative w-full max-w-lg overflow-hidden rounded-[28px] shadow-2xl border flex flex-col max-h-[90vh]"
-          style={{
-            background: 'var(--c-surface-mid)',
-            borderColor: 'var(--c-border)',
-            boxShadow: 'var(--elevation-high)',
-          }}
-        >
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (!collabLoading) onClose();
+      }}
+      isDismissable={!collabLoading}
+      hideCloseButton={true}
+      size="md"
+      className="max-w-lg overflow-hidden rounded-3xl p-0 flex flex-col max-h-[90vh] shadow-2xl"
+    >
+      <div
+        className="relative w-full flex flex-col max-h-[90vh]"
+        style={{
+          background: 'var(--c-surface-mid)',
+          borderColor: 'var(--c-border)',
+        }}
+      >
           {/* Header */}
           <div
             className="px-6 py-5 border-b flex items-center justify-between"
@@ -537,10 +508,8 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
               </div>
             )}
           </div>
-        </motion.div>
       </div>
-    )}
-  </AnimatePresence>
+    </Dialog>
   );
 };
 
