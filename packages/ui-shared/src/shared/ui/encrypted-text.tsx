@@ -3,6 +3,7 @@ import { cn } from '@workspace/studio-core';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'motion/react';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 type EncryptedTextProps = {
   text: string;
@@ -62,17 +63,18 @@ export const EncryptedText: React.FC<EncryptedTextProps> = ({
   paused = false,
 }) => {
   const ref = useRef<HTMLSpanElement>(null);
+  const prefersReduced = useAppReducedMotion();
 
   // Standard IntersectionObserver visibility hook from Framer Motion
   const inViewSignal = useInView(ref, { once: true });
   const [isInView, setIsInView] = useState(false);
 
   // Checks if this specific text has already completed decryption during this launch session
-  const alreadyAnimated = onlyOnce && animatedTextsCache.has(text);
+  const alreadyAnimated = (onlyOnce && animatedTextsCache.has(text)) || prefersReduced;
 
   // Track if this instance has finished animating during this mount lifecycle
   const hasAnimatedRef = useRef(alreadyAnimated);
-  const isAnimated = alreadyAnimated || hasAnimatedRef.current;
+  const isAnimated = alreadyAnimated || hasAnimatedRef.current || prefersReduced;
 
   const [revealCount, setRevealCount] = useState<number>(() => (isAnimated ? text.length : 0));
 

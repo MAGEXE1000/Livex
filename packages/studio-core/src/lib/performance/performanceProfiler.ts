@@ -90,6 +90,8 @@ export class PerformanceProfiler {
   private cachedGpuLayerCount = 0;
   private lastGpuLayerCountSampleTime = 0;
   private activeListeners = new Set<(metrics: ProfilerMetrics) => void>();
+  private isPaused = false;
+  private visibilityListenerBound = false;
 
   public static getInstance(): PerformanceProfiler {
     if (!PerformanceProfiler.instance) {
@@ -131,8 +133,9 @@ export class PerformanceProfiler {
   }
 
   public start() {
-    if (this.rafId !== null) return;
+    if (this.rafId !== null || this.sampleTimer !== null) return;
 
+    this.isPaused = false;
     this.frameTimes = [];
     this.totalFrames = 0;
     this.startTime = performance.now();
@@ -154,8 +157,14 @@ export class PerformanceProfiler {
     this.lastSampleTime = performance.now();
     this.lastBlockingTime = 0;
 
+    if (typeof document !== 'undefined' && !this.visibilityListenerBound) {
+      this.visibilityListenerBound = true;
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    }
+
     // Start periodic sampler
     this.sampleTimer = setInterval(() => {
+      if (this.isPaused) return;
       const now = performance.now();
       const interval = now - this.lastSampleTime;
       if (interval <= 0) return;
@@ -185,7 +194,44 @@ export class PerformanceProfiler {
     }, 1000);
 
     // 1. Frame profiling loop
+    this.startFrameLoop();
+
+    // 2. Event loop delay tracking loop
+    this.startEventLoopTimer();
+
+    // 3. Heap sample init
+    const mem = (performance as any).memory;
+    if (mem) {
+      this.initialUsedHeap = mem.usedJSHeapSize;
+      this.lastHeapSampleTime = performance.now();
+      this.heapGrowthRate = 0;
+    }
+
+    // 4. PerformanceObserver for Long Tasks
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        this.observer = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            this.totalBlockingTime += entry.duration;
+            if (entry.duration > this.longestBlockingTask) {
+              this.longestBlockingTask = entry.duration;
+            }
+            this.jsThreadSamples.push(entry.duration);
+            if (this.jsThreadSamples.length > 100) this.jsThreadSamples.shift();
+          }
+        });
+        this.observer.observe({ entryTypes: ['longtask'] });
+      } catch (e) {}
+    }
+  }
+
+  private startFrameLoop() {
+    if (this.rafId !== null) return;
     const loop = (now: number) => {
+      if (this.isPaused) {
+        this.rafId = null;
+        return;
+      }
       const delta = now - this.lastFrameTime;
       this.lastFrameTime = now;
 
@@ -216,10 +262,16 @@ export class PerformanceProfiler {
       this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);
+  }
 
-    // 2. Event loop delay tracking loop
+  private startEventLoopTimer() {
+    if (this.eventLoopTimer !== null) return;
     this.lastEventLoopTime = performance.now();
     const tickEventLoop = () => {
+      if (this.isPaused) {
+        this.eventLoopTimer = null;
+        return;
+      }
       const now = performance.now();
       const delay = now - this.lastEventLoopTime - 50;
       this.eventLoopDelay = Math.max(0, delay);
@@ -227,34 +279,10 @@ export class PerformanceProfiler {
       this.eventLoopTimer = setTimeout(tickEventLoop, 50);
     };
     this.eventLoopTimer = setTimeout(tickEventLoop, 50);
-
-    // 3. Heap sample init
-    const mem = (performance as any).memory;
-    if (mem) {
-      this.initialUsedHeap = mem.usedJSHeapSize;
-      this.lastHeapSampleTime = performance.now();
-      this.heapGrowthRate = 0;
-    }
-
-    // 4. PerformanceObserver for Long Tasks
-    if (typeof PerformanceObserver !== 'undefined') {
-      try {
-        this.observer = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            this.totalBlockingTime += entry.duration;
-            if (entry.duration > this.longestBlockingTask) {
-              this.longestBlockingTask = entry.duration;
-            }
-            this.jsThreadSamples.push(entry.duration);
-            if (this.jsThreadSamples.length > 100) this.jsThreadSamples.shift();
-          }
-        });
-        this.observer.observe({ entryTypes: ['longtask'] });
-      } catch (e) {}
-    }
   }
 
-  public stop() {
+  public pause() {
+    this.isPaused = true;
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
@@ -262,6 +290,32 @@ export class PerformanceProfiler {
     if (this.eventLoopTimer !== null) {
       clearTimeout(this.eventLoopTimer);
       this.eventLoopTimer = null;
+    }
+  }
+
+  public resume() {
+    if (!this.isPaused || this.activeListeners.size === 0) return;
+    this.isPaused = false;
+    this.lastFrameTime = performance.now();
+    this.lastEventLoopTime = performance.now();
+    this.startFrameLoop();
+    this.startEventLoopTimer();
+  }
+
+  private handleVisibilityChange = () => {
+    if (typeof document === 'undefined') return;
+    if (document.hidden) {
+      this.pause();
+    } else if (this.activeListeners.size > 0 && this.isPaused) {
+      this.resume();
+    }
+  };
+
+  public stop() {
+    this.pause();
+    if (typeof document !== 'undefined' && this.visibilityListenerBound) {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      this.visibilityListenerBound = false;
     }
     if (this.sampleTimer !== null) {
       clearInterval(this.sampleTimer);

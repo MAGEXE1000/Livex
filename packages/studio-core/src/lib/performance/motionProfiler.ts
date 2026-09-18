@@ -59,6 +59,7 @@ class ActiveTraceTracker {
   private lastRafTime: number;
   private rafId: number | null = null;
   private isStopped = false;
+  private watchdogTimer: any = null;
 
   constructor(id: string, name: string, target?: string, metadata: Record<string, any> = {}) {
     this.id = id;
@@ -86,6 +87,17 @@ class ActiveTraceTracker {
       };
       this.rafId = window.requestAnimationFrame(loop);
     }
+
+    // Safety watchdog: auto-terminate after 15 seconds to prevent orphaned rAF loops if caller forgets stop()
+    if (typeof setTimeout !== 'undefined') {
+      this.watchdogTimer = setTimeout(() => {
+        if (!this.isStopped) {
+          try {
+            this.stop();
+          } catch (_) {}
+        }
+      }, 15000);
+    }
   }
 
   public recordRender(componentName: string) {
@@ -108,6 +120,11 @@ class ActiveTraceTracker {
       throw new Error(`Trace ${this.id} already stopped`);
     }
     this.isStopped = true;
+
+    if (this.watchdogTimer !== null) {
+      clearTimeout(this.watchdogTimer);
+      this.watchdogTimer = null;
+    }
 
     if (this.rafId !== null && typeof window !== 'undefined') {
       window.cancelAnimationFrame(this.rafId);

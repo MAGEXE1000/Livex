@@ -419,7 +419,11 @@ export default function TakeDetailView({
     if (audio.duration && isFinite(audio.duration)) {
       setProgress((audio.currentTime / audio.duration) * 100);
     }
-    rafRef.current = requestAnimationFrame(updateProgress);
+    if (!audio.paused && !audio.ended) {
+      rafRef.current = requestAnimationFrame(updateProgress);
+    } else {
+      rafRef.current = 0;
+    }
   }, []);
 
   const togglePlay = useCallback(() => {

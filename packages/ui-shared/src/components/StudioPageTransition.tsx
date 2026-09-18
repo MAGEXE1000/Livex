@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useAppReducedMotion } from '../hooks/useAppReducedMotion';
 
 export const UNIFIED_NAV_TRANSITION = {
   initial: {
@@ -128,13 +128,7 @@ export const StudioPageTransition: React.FC<StudioPageTransitionProps> = ({
   variant = 'tab',
   initial,
 }) => {
-  const speed = useSettingsStore((s) => s.settings?.animationSpeed);
-  const prefersReduced =
-    speed === 'reduced' ||
-    (speed !== 'normal' &&
-      speed !== 'fast' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+  const prefersReduced = useAppReducedMotion();
 
   const transitionConfig = prefersReduced
     ? REDUCED_NAV_TRANSITION

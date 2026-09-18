@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import {
   enableLiquidGlass,
   tagLiquidTarget,
@@ -21,13 +22,13 @@ import {
  */
 export function useLiquidGlassNav(ref: React.RefObject<HTMLElement | null>) {
   const platformOk = useMemo(() => liquidGlassPlatformSupported(), []);
-  const reduceMotion = useMemo(() => {
-    try {
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch {
-      return false;
-    }
-  }, []);
+  const speed = useSettingsStore((s) => s.settings?.animationSpeed);
+  const reduceMotion =
+    speed === 'reduced' ||
+    (speed !== 'normal' &&
+      speed !== 'fast' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
   useEffect(() => {
     const el = ref.current;
@@ -116,5 +117,5 @@ export function useLiquidGlassNav(ref: React.RefObject<HTMLElement | null>) {
       if (idleTimer !== null) clearTimeout(idleTimer);
       untagLiquidTarget(el);
     };
-  }, [ref, platformOk]);
+  }, [ref, platformOk, reduceMotion]);
 }

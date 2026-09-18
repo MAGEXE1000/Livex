@@ -6,7 +6,7 @@ export type RenderActivityReason =
   | 'audio_playback'
   | 'stage_canvas'
   | 'motion_animation'
-  | 'ota_update';
+  | 'native_updater';
 
 type ActivityListener = (isActive: boolean, activeReasons: Set<RenderActivityReason>) => void;
 

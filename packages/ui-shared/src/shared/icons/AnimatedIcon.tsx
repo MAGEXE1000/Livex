@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useEffect, useRef, useCallback } from 'react';
-import { motion, useAnimation } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   ArrowUpToLine,
   BadgeAlert,
@@ -426,7 +426,6 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
   ) => {
     const canHover = useHoverCapable();
     const prefersReduced = useAppReducedMotion();
-    const controls = useAnimation();
     const isSpinning = state === 'loading' || name === 'loader-circle' || name === 'loader';
 
     const innerIconRef = useRef<any>(null);
@@ -468,9 +467,6 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
       if (isActiveState) {
         if (innerIconRef.current && (!isAnimatingRef.current || epochChanged)) {
           isAnimatingRef.current = true;
-          console.log(
-            `[AnimatedIcon] START ANIMATION -> icon: ${name}, state: ${state}, epoch: ${animationEpoch ?? 0}`
-          );
           innerIconRef.current.stopAnimation?.();
           innerIconRef.current.startAnimation?.();
           setTimeout(
@@ -482,9 +478,6 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
         }
       } else {
         if (innerIconRef.current) {
-          console.log(
-            `[AnimatedIcon] STOP (REVERSE) ANIMATION -> icon: ${name}, state: ${state}, epoch: ${animationEpoch ?? 0}`
-          );
           innerIconRef.current.stopAnimation?.();
           isAnimatingRef.current = false;
         }
@@ -633,7 +626,7 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
           willChange: isSpinning ? 'transform' : 'auto',
           ...style,
         }}
-        animate={isSpinning ? { rotate: [0, 360] } : controls}
+        animate={isSpinning ? { rotate: [0, 360] } : state}
         initial="inactive"
         whileHover={
           isSpinning || isMatched || !canHover || prefersReduced

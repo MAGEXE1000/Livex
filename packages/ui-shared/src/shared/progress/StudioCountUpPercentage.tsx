@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
 interface StudioCountUpPercentageProps {
   value: number; // raw value, can be 0-100 or 0-1 (we'll detect and handle both!)
@@ -17,17 +18,9 @@ export default function StudioCountUpPercentage({
   const targetPct = Math.min(100, Math.max(0, Math.round(rawTarget)));
 
   const [currentPct, setCurrentPct] = useState(0);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = useAppReducedMotion();
   const animationRef = useRef<number | null>(null);
   const renderedPctRef = useRef<number>(0);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
-    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mediaQuery.addEventListener('change', listener);
-    return () => mediaQuery.removeEventListener('change', listener);
-  }, []);
 
   useEffect(() => {
     if (reducedMotion) {

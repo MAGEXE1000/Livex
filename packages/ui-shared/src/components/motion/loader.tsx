@@ -110,16 +110,17 @@ function Spinner({ size, speed, reduce }: PartProps) {
   const stroke = Math.max(2, size * 0.09);
   const r = (size - stroke) / 2;
   return (
-    <motion.svg
+    <svg
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      animate={reduce ? REDUCED.animate : { rotate: 360 }}
-      transition={
-        reduce
-          ? REDUCED.transition
-          : { duration: speed, ease: "linear", repeat: Infinity }
-      }
+      style={{
+        animation: reduce
+          ? 'pulse 1.4s ease-in-out infinite'
+          : `spin ${speed}s linear infinite`,
+        transformOrigin: 'center',
+        willChange: 'transform',
+      }}
     >
       <circle
         cx={size / 2}
@@ -137,7 +138,7 @@ function Spinner({ size, speed, reduce }: PartProps) {
         strokeWidth={stroke}
         strokeLinecap="round"
       />
-    </motion.svg>
+    </svg>
   );
 }
 

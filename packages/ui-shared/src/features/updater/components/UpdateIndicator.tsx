@@ -1136,19 +1136,25 @@ function UpdateModal({
     }
 
     let animationFrameId: number;
+    let shouldContinue = true;
     const step = () => {
       setInterpolatedProgress((prev) => {
         const diff = target - prev;
         if (Math.abs(diff) < 0.002) {
+          shouldContinue = false;
           return target;
         }
-        const next = prev + diff * 0.12;
-        animationFrameId = requestAnimationFrame(step);
-        return next;
+        return prev + diff * 0.12;
       });
+      if (shouldContinue) {
+        animationFrameId = requestAnimationFrame(step);
+      }
     };
     animationFrameId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => {
+      shouldContinue = false;
+      cancelAnimationFrame(animationFrameId);
+    };
   }, [updater.progress, updater.updateState]);
 
   const pct = Math.round(interpolatedProgress * 100);

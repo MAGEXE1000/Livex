@@ -93,10 +93,6 @@ export function LaunchAnimationEngine({
   );
   const [key, setKey] = useState(0);
 
-  // Telemetry frame tracking
-  const frameTimes = useRef<number[]>([]);
-  const lastTime = useRef<number>(0);
-
   useEffect(() => {
     // Dismiss index.html splash overlay immediately once React mounts to prevent duplicate presentation
     const intro = document.getElementById('intro');
@@ -114,29 +110,6 @@ export function LaunchAnimationEngine({
       onComplete?.();
     }
   }, [skipIntro]);
-
-  // Frame telemetry tracking
-  useEffect(() => {
-    lastTime.current = performance.now();
-    let frameId: number;
-
-    const trackFrame = (time: number) => {
-      if (lastTime.current > 0) {
-        const delta = time - lastTime.current;
-        frameTimes.current.push(delta);
-        if (frameTimes.current.length > 300) frameTimes.current.shift();
-      }
-      lastTime.current = time;
-      frameId = requestAnimationFrame(trackFrame);
-    };
-
-    frameId = requestAnimationFrame(trackFrame);
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
-  }, [key]);
-
-  // Stage transition orchestration:
   // 1. delay: 0.65s initial launch pause
   // 2. brand_reveal: 1.18s 6-phase mark assembly, sheen sweep, and breathing hold
   // 3. exit_dissolve: 0.30s graceful fade-out into pre-mounted Hub DOM (Total motion: ~1.48s)

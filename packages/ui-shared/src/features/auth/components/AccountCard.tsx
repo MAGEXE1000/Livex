@@ -32,7 +32,6 @@ import { Button, StatefulButton } from '../../../shared/design-system/StudioDesi
 import { createPortal } from 'react-dom';
 import AppSpinner from '../../../shared/loading/AppSpinner';
 import { Circle, Layers3, BadgeCheck, FlaskConical, ShieldCheck } from 'lucide-react';
-import StudioSpinner from '../../../shared/animata/progress/spinner';
 import { Loader } from '../../../components/motion/loader';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';

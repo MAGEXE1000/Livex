@@ -1,10 +1,14 @@
 import { Loader } from '../../components/motion/loader';
 
-interface AppSpinnerProps {
+export interface AppSpinnerProps {
   size?: number;
   color?: string;
   strokeWidth?: number;
   className?: string;
+  outerSize?: string;
+  childSize?: string;
+  colorFrom?: string;
+  colorTo?: string;
 }
 
 /**
