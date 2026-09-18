@@ -20,6 +20,8 @@ export async function init(provider: any): Promise<void> {
 
     // Subscribe to Firebase Auth and dynamically acquire the token
     const unsubAuth = authRepository.subscribeAuth(async (user) => {
+      const currentEpoch = ++provider.authEpoch;
+
       if (user) {
         provider.userId = user.uid;
         provider.diagState.firebaseAuthUid = user.uid;
@@ -34,14 +36,21 @@ export async function init(provider: any): Promise<void> {
           const rawUser = getFirebaseAuth()?.currentUser;
           if (!rawUser) throw new Error('No active Firebase user instance');
           const token = await rawUser.getIdToken();
+          if (provider.authEpoch !== currentEpoch || provider.userId !== user.uid) return;
+
           setFirebaseIdToken(token);
           provider.diagState.firestoreInitSource = 'firebase-auth-token-bridged';
 
           // Setup Realtime Channels and Initial registration
           provider.setupRealtimeAndPresence(user.uid);
           await provider.registerCurrentDevice('init-auth');
+          if (provider.authEpoch !== currentEpoch || provider.userId !== user.uid) return;
+
           await provider.heartbeatNow('init-auth');
-          provider.startPeriodicRefetch(user.uid);
+          if (provider.authEpoch !== currentEpoch || provider.userId !== user.uid) return;
+
+          // Note: Unconditional startPeriodicRefetch removed. Fallback polling only
+          // activates if the realtime channel fails, drops, or times out.
         } catch (e: any) {
           console.error('[supabaseRealtime] Token retrieval failed:', e);
           const errorMsg = provider.processError(e);
@@ -65,6 +74,70 @@ export async function init(provider: any): Promise<void> {
       }
     });
 
+    // Lifecycle & Network Listeners
+    if (typeof document !== 'undefined') {
+      const onVisibility = () => {
+        const isVisible = document.visibilityState === 'visible';
+        provider.isForeground = isVisible;
+        if (!isVisible) {
+          provider.stopFallbackPolling();
+        } else if (provider.userId) {
+          if (provider.diagState?.realtimeConnected) {
+            provider.heartbeatNow('foreground-liveness').catch(() => {});
+          } else {
+            provider.refetchAllData(provider.userId, 'foreground-recovery');
+            provider.startFallbackPolling(provider.userId, 'foreground-resume');
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      provider.lifecycleCleanups.push(() => document.removeEventListener('visibilitychange', onVisibility));
+    }
+
+    if (typeof window !== 'undefined') {
+      const onOnline = () => {
+        provider.isOnline = true;
+        if (provider.userId) {
+          if (!provider.diagState?.realtimeConnected) {
+            provider.reconnectDevices().catch(() => {});
+          }
+        }
+      };
+      const onOffline = () => {
+        provider.isOnline = false;
+        provider.stopFallbackPolling();
+      };
+      window.addEventListener('online', onOnline);
+      window.addEventListener('offline', onOffline);
+      provider.lifecycleCleanups.push(() => {
+        window.removeEventListener('online', onOnline);
+        window.removeEventListener('offline', onOffline);
+      });
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      import('@capacitor/app')
+        .then(({ App }) => {
+          App.addListener('appStateChange', (state) => {
+            const isVisible = state.isActive;
+            provider.isForeground = isVisible;
+            if (!isVisible) {
+              provider.stopFallbackPolling();
+            } else if (provider.userId) {
+              if (provider.diagState?.realtimeConnected) {
+                provider.heartbeatNow('app-active-liveness').catch(() => {});
+              } else {
+                provider.refetchAllData(provider.userId, 'app-active-recovery');
+                provider.startFallbackPolling(provider.userId, 'app-active-resume');
+              }
+            }
+          }).then((handle) => {
+            provider.lifecycleCleanups.push(() => handle.remove());
+          });
+        })
+        .catch(() => {});
+    }
+
     provider.unsubs.push(() => {
       unsubAuth();
       provider.clearSubscriptions();
@@ -72,8 +145,12 @@ export async function init(provider: any): Promise<void> {
   }
 
 export async function dispose(provider: any): Promise<void> {
-    provider.unsubs.forEach((u) => u());
+    provider.unsubs.forEach((u: any) => u());
     provider.unsubs = [];
+    if (provider.lifecycleCleanups) {
+      provider.lifecycleCleanups.forEach((c: any) => c());
+      provider.lifecycleCleanups = [];
+    }
     provider.clearSubscriptions();
   }
 

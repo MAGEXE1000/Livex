@@ -118,6 +118,8 @@ export interface SyncDiagnostics {
   realtimeConnected: boolean;
   lastRealtimeEventAt: string;
   lastManualRefetchAt: string;
+  fallbackPollingActive?: boolean;
+  lastFallbackPollAt?: string;
 
   // UI mapping fields to maintain compatibility
   authReady: boolean;

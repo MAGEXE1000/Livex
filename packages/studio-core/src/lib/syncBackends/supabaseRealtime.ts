@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured, setFirebaseIdToken, getSupabaseConfigDe
 import { getStableDeviceId, getDeviceDetails, classifyDeviceSession } from "../syncEngine";
 import { APP_VERSION, APP_COMMIT_SHA } from "../appVersion";
 import { init, dispose, getCurrentUserId, updateDiag } from "./syncAuth";
-import { clearSubscriptions, startPeriodicRefetch, refetchAllData, setupRealtimeAndPresence, subscribeProfile, subscribeAppearanceSettings, subscribePreferences, subscribeDevices, subscribeSyncProbe, getProfile, getAppearanceSettings, getPreferences } from "./syncState";
+import { clearSubscriptions, startPeriodicRefetch, startFallbackPolling, stopFallbackPolling, refetchAllData, setupRealtimeAndPresence, subscribeProfile, subscribeAppearanceSettings, subscribePreferences, subscribeDevices, subscribeSyncProbe, getProfile, getAppearanceSettings, getPreferences } from "./syncState";
 import { updateProfile, updateAppearanceSettings, updatePreferences, registerCurrentDevice, heartbeatNow } from "./syncConflictResolution";
 
 export class SupabaseRealtimeProvider implements SyncBackendProvider {
@@ -194,6 +194,11 @@ export class SupabaseRealtimeProvider implements SyncBackendProvider {
 
   realtimeChannel: any = null;
   refetchInterval: any = null;
+  subscriptionWatchdog: any = null;
+  isForeground: boolean = true;
+  isOnline: boolean = true;
+  authEpoch: number = 0;
+  lifecycleCleanups: Array<() => void> = [];
 
   processError(e: any): string {
     if (!e) return 'None';
@@ -242,6 +247,14 @@ export class SupabaseRealtimeProvider implements SyncBackendProvider {
 
   startPeriodicRefetch(userId: string) {
       { startPeriodicRefetch(this, userId); }
+  }
+
+  stopFallbackPolling() {
+      { stopFallbackPolling(this); }
+  }
+
+  startFallbackPolling(userId: string, reason?: string) {
+      { startFallbackPolling(this, userId, reason); }
   }
 
   async refetchAllData(userId: string, source: string) {

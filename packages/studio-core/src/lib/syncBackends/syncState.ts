@@ -4,24 +4,81 @@ import { SyncBackendProvider, UserProfile, AppearanceSettings, UserPreferences, 
 import { supabase, isSupabaseConfigured, setFirebaseIdToken, getSupabaseConfigDetails, getFirebaseIdToken } from "../supabaseClient";
 import { getStableDeviceId, getDeviceDetails, classifyDeviceSession } from "../syncEngine";
 import { APP_VERSION, APP_COMMIT_SHA } from "../appVersion";
-export function clearSubscriptions(provider: any) {
-    if (provider.realtimeChannel) {
-      provider.realtimeChannel.unsubscribe();
-      provider.realtimeChannel = null;
-    }
-    if (provider.refetchInterval) {
-      clearInterval(provider.refetchInterval);
-      provider.refetchInterval = null;
-    }
-    provider.diagState.realtimeConnected = false;
+export function stopFallbackPolling(provider: any) {
+  if (provider.refetchInterval) {
+    clearInterval(provider.refetchInterval);
+    provider.refetchInterval = null;
+  }
+  provider.updateDiag({ fallbackPollingActive: false });
+}
+
+export function startFallbackPolling(provider: any, userId: string, reason = 'fallback') {
+  // 1. Never poll if realtime is healthy
+  if (provider.diagState?.realtimeConnected) {
+    stopFallbackPolling(provider);
+    return;
+  }
+  // 2. Never poll if user is logged out or mismatched
+  if (!provider.userId || provider.userId !== userId) {
+    stopFallbackPolling(provider);
+    return;
+  }
+  // 3. Never poll if application is backgrounded
+  if (provider.isForeground === false) {
+    stopFallbackPolling(provider);
+    return;
+  }
+  // 4. Never poll if device is offline
+  if (provider.isOnline === false) {
+    stopFallbackPolling(provider);
+    return;
+  }
+  // 5. Prevent duplicate timers
+  if (provider.refetchInterval) {
+    return;
   }
 
-export function startPeriodicRefetch(provider: any, userId: string) {
-    if (provider.refetchInterval) clearInterval(provider.refetchInterval);
-    provider.refetchInterval = setInterval(() => {
-      provider.refetchAllData(userId, 'periodic-fallback');
-    }, 15000);
+  provider.updateDiag({
+    fallbackPollingActive: true,
+    lastFallbackPollAt: new Date().toLocaleString(),
+  });
+
+  // Conservative fallback interval: 30s instead of aggressive 15s
+  provider.refetchInterval = setInterval(() => {
+    // Re-verify guards before dispatching network calls
+    if (
+      provider.diagState?.realtimeConnected ||
+      provider.isForeground === false ||
+      provider.isOnline === false ||
+      !provider.userId ||
+      provider.userId !== userId
+    ) {
+      stopFallbackPolling(provider);
+      return;
+    }
+
+    provider.updateDiag({ lastFallbackPollAt: new Date().toLocaleString() });
+    provider.refetchAllData(userId, `fallback-poll:${reason}`);
+  }, 30000);
+}
+
+export function clearSubscriptions(provider: any) {
+  if (provider.subscriptionWatchdog) {
+    clearTimeout(provider.subscriptionWatchdog);
+    provider.subscriptionWatchdog = null;
   }
+  if (provider.realtimeChannel) {
+    provider.realtimeChannel.unsubscribe();
+    provider.realtimeChannel = null;
+  }
+  stopFallbackPolling(provider);
+  provider.diagState.realtimeConnected = false;
+  provider.updateDiag({ realtimeConnected: false, fallbackPollingActive: false });
+}
+
+export function startPeriodicRefetch(provider: any, userId: string, reason = 'periodic-fallback') {
+  startFallbackPolling(provider, userId, reason);
+}
 
 export async function refetchAllData(provider: any, userId: string, source: string) {
     if (!supabase) return;
@@ -264,7 +321,24 @@ export function setupRealtimeAndPresence(provider: any, userId: string) {
       .subscribe((status: string) => {
         const isConnected = status === 'SUBSCRIBED';
         provider.updateDiag({ realtimeConnected: isConnected });
+        if (isConnected) {
+          if (provider.subscriptionWatchdog) {
+            clearTimeout(provider.subscriptionWatchdog);
+            provider.subscriptionWatchdog = null;
+          }
+          stopFallbackPolling(provider);
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          startFallbackPolling(provider, userId, `status-${status}`);
+        }
       });
+
+    // Connection watchdog: If channel fails to reach SUBSCRIBED within 8s, activate fallback polling
+    provider.subscriptionWatchdog = setTimeout(() => {
+      provider.subscriptionWatchdog = null;
+      if (!provider.diagState?.realtimeConnected && provider.userId === userId) {
+        startFallbackPolling(provider, userId, 'subscription-timeout');
+      }
+    }, 8000);
 
     // Initial Fetch
     provider.refetchAllData(userId, 'realtime-initial-mount');
