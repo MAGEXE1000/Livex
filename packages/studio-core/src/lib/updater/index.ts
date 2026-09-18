@@ -161,6 +161,7 @@ export {
   checkAndCleanCache,
   checkForUpdate,
   downloadUpdate,
+  cancelDownload,
   applyUpdate,
   initializeGlobalUpdateListeners,
   getInstallRecoveryPromise,

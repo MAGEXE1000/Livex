@@ -551,7 +551,14 @@ async function fetchLatestFromGitHub(signal: AbortSignal): Promise<RemoteVersion
             apkSha256 = match[1].toLowerCase();
           }
         }
-      } catch (shaErr) {}
+      } catch (shaErr) {
+        logPipelineTrace(
+          caller,
+          'SHA_FETCH_ERROR',
+          { url: shaUrl },
+          { error: shaErr instanceof Error ? shaErr.message : String(shaErr) }
+        );
+      }
     }
 
     const rawNotesInput = targetRelease.body || targetRelease.name || '';
@@ -642,14 +649,28 @@ export async function fetchRemoteVersion(signal?: AbortSignal): Promise<RemoteVe
             });
         });
       });
-    } catch (e) {}
+    } catch (e: any) {
+      logPipelineTrace(
+        caller,
+        'FIREBASE_METADATA_FETCH_ERROR',
+        {},
+        { error: e?.message || String(e) }
+      );
+    }
   }
 
   // 2. Query GitHub releases to ensure we pick the highest available release
   let githubRes: RemoteVersionInfo | null = null;
   try {
     githubRes = await fetchLatestFromGitHub(sig);
-  } catch (err) {}
+  } catch (err: any) {
+    logPipelineTrace(
+      caller,
+      'GITHUB_METADATA_FETCH_ERROR',
+      {},
+      { error: err?.message || String(err) }
+    );
+  }
 
   if (firebaseRes && githubRes && firebaseRes.version && githubRes.version) {
     const comp = compareSemver(githubRes.version, firebaseRes.version);

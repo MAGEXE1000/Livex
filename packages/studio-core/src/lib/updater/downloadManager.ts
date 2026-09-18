@@ -14,11 +14,12 @@ export interface DownloadOptions {
   version: string;
   manualApkUrl?: string;
   fallbackApkUrl?: string;
+  signal?: AbortSignal;
   onProgress?: (progress: number, totalBytes?: number, downloadedBytes?: number) => void;
 }
 
 export async function downloadUpdateApk(options: DownloadOptions): Promise<string> {
-  const { url, version, manualApkUrl, fallbackApkUrl, onProgress } = options;
+  const { url, version, manualApkUrl, fallbackApkUrl, signal, onProgress } = options;
   const fileName = `studio-update-${version}.apk`;
   logPipelineTrace('downloadUpdateApk', 'APK filename generation', { version }, { fileName });
 
@@ -32,6 +33,9 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
   updateDebugLogs.downloadSourcesConfigured = uniqueSources.join(' | ');
 
   for (let sIdx = 0; sIdx < uniqueSources.length; sIdx++) {
+    if (signal?.aborted) {
+      throw new Error('Download cancelled');
+    }
     const sourceUrl = uniqueSources[sIdx];
     updateDebugLogs.currentDownloadSource = sourceUrl;
     updateDebugLogs.downloadStatus += `\nTrying Source [${sIdx + 1}/${uniqueSources.length}]: ${sourceUrl}`;
@@ -40,6 +44,9 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
     const maxRetries = 3;
 
     while (retryCount < maxRetries) {
+      if (signal?.aborted) {
+        throw new Error('Download cancelled');
+      }
       try {
         void logProgressStage(
           'Download started',
@@ -81,13 +88,27 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
         downloadSuccess = true;
         break;
       } catch (err: any) {
+        if (signal?.aborted) {
+          throw new Error('Download cancelled');
+        }
         retryCount++;
         lastDownloadError = err instanceof Error ? err : new Error(String(err));
         const delay = Math.pow(2, retryCount) * 1000;
         updateGlobalState({
           statusText: `Retry ${retryCount}/${maxRetries} in ${delay / 1000}s...`,
         });
-        await new Promise((r) => setTimeout(r, delay));
+        if (signal) {
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(resolve, delay);
+            const onAbort = () => {
+              clearTimeout(timer);
+              reject(new Error('Download cancelled'));
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+          });
+        } else {
+          await new Promise((r) => setTimeout(r, delay));
+        }
       }
     }
 
@@ -159,10 +180,12 @@ export async function downloadAndInstallGitHubApk(): Promise<void> {
 
     transitionToState('IDLE', 'GitHub download complete');
   } catch (err: any) {
+    const errMsg = err?.message || String(err);
     console.error(`[INSTRUMENTATION] downloadAndInstallGitHubApk EXIT Call #${callId} error:`, err);
+    transitionToState('INSTALL_FAILED', 'GitHub installation failed', errMsg);
     updateGlobalState({
       loading: false,
-      error: `GitHub installation failed: ${err.message || String(err)}`,
+      error: `GitHub installation failed: ${errMsg}`,
     });
   }
 }

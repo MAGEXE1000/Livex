@@ -29,6 +29,7 @@ import {
   globalUpdateState,
   updateGlobalState,
   transitionToState,
+  transitionListeners,
   stopWatchdog,
   stateListeners,
   setActivePipelineContext,
@@ -43,6 +44,7 @@ import {
   updateActiveSession,
   isUpdateDismissed,
 } from './stateMachine';
+import { updaterSimulation } from './updaterSimulation';
 
 import {
   type RemoteVersionInfo,
@@ -57,50 +59,29 @@ import { verifyFileIntegrity } from './integrityVerification';
 import { runEligibilityCheck } from './eligibilityVerification';
 import { triggerNativeInstall, processLastInstallResult } from './installer';
 import { runSignatureMismatchRecovery, isRecovering, setIsRecovering } from './recovery';
-
+import { validateLocalApk, deleteLocalApk, getLocalApkPath } from './cacheManager';
 import {
-  validateLocalApk,
-  deleteLocalApk,
-  getLocalApkPath,
-  recordDismissal,
-  shouldShowRecoveryReminder,
-} from './cacheManager';
-import {
-  updateDebugLogs,
   updateDiagnostics,
-  logProgressStage,
+  updateDebugLogs,
   populateDiagnostics,
-  nextJsCallId,
-  runUpdaterHealthCheck,
-  getDiagnosticsReport,
-  type HealthStatus,
+  logProgressStage,
+  logDiagnosticEvent,
   logTimelineEvent,
+  logDetailedJsTrace,
+  nextJsCallId,
   interceptIllegalCall,
-  startDiagnosticsSession,
-  getTimelineReport,
   recordCloseEvent,
-  recordUpToDatePopup,
-  logInstallLockEvent,
 } from './diagnostics';
-
-import { logDiagnosticEvent, logDetailedJsTrace } from './telemetry';
 import {
-  getStoredList,
   addToStoredList,
-  getSessionItem,
-  setSessionItem,
   removeSessionItem,
   getNativeVersion,
   getNativeVersionCode,
+  getSessionItem,
+  getStoredList,
 } from './sessionStorage';
-import { getPackageInstallerStatusName } from './packageInstallerStatus';
-import { getUpdateHistory, logUpdateTransition } from './updateHistory';
 
-// ─── Simulation Stubs (dev-time hooks, intentionally no-op in production) ──
-// These provide named hooks for updater simulation scenarios (download failures,
-// SHA mismatches, forced updates, etc.). They are referenced throughout the
-// pipeline but are inactive unless explicitly wired up during development.
-const updaterSimulation: Record<string, any> = {};
+// ─── Simulation Helpers & Callbacks ───────────────────────────────────────
 function addJsLog(_msg: string): void {}
 function setSimulateStatusCallback(_cb: any): void {}
 const simulateStatusCallback: ((data: any) => void) | null = null;
@@ -290,7 +271,7 @@ function safeTransition(
     return false;
   }
   transitionToState(nextState, reason, failureReason);
-  return true;
+  return globalUpdateState.updateState === nextState;
 }
 
 async function delayForSim(ms: number) {
@@ -311,6 +292,7 @@ const latestCheckId = 0;
 const activeCheckIsManual = false;
 const activeCheckPromise: Promise<CentralizedUpdateState> | null = null;
 let activeDownloadPromise: Promise<void> | null = null;
+let downloadAbortController: AbortController | null = null;
 let activeApplyPromise: Promise<void> | null = null;
 let startupRecoveryPromise: Promise<void> | null = null;
 let isDownloading = false;
@@ -319,6 +301,52 @@ let lastCheckedTime = 0;
 let activeInstallPromiseResolver: (() => void) | null = null;
 let activeInstallPromiseRejecter: ((err: Error) => void) | null = null;
 let lastInstallProgressTime = 0;
+
+// Guarantee cleanup of in-flight promises, locks, and controllers on terminal/recovery states
+transitionListeners.add((_from, to) => {
+  if (['IDLE', 'RECOVERY', 'INSTALL_FAILED', 'INSTALL_CANCELLED'].includes(to)) {
+    isDownloading = false;
+    activeDownloadPromise = null;
+    if (downloadAbortController) {
+      downloadAbortController.abort();
+      downloadAbortController = null;
+    }
+  }
+});
+
+export function cancelDownload(reason = 'User cancelled download'): void {
+  if (downloadAbortController) {
+    downloadAbortController.abort();
+    downloadAbortController = null;
+  }
+  isDownloading = false;
+  activeDownloadPromise = null;
+
+  const currentState = globalUpdateState.updateState;
+  if (
+    currentState === 'FETCH_APK_INFORMATION' ||
+    currentState === 'DOWNLOAD_APK' ||
+    currentState === 'VERIFY_SHA256' ||
+    currentState === 'PREPARING_INSTALL' ||
+    currentState === 'WAITING_USER_CONFIRMATION'
+  ) {
+    transitionToState('INSTALL_CANCELLED', reason);
+    updateGlobalState({
+      loading: false,
+      progress: 0,
+      statusText: 'Download cancelled',
+    });
+    logTimelineEvent('UpdateCore', 'DOWNLOAD_CANCELLED', reason);
+    UpdaterFlightRecorder.record({
+      thread: 'js',
+      sessionId: activeUpdateSession ? activeUpdateSession.sessionId : null,
+      workflowId: activePipelineContext ? String(activePipelineContext.checkId) : null,
+      eventType: 'downloadCancelled',
+      caller: 'cancelDownload',
+      reason,
+    });
+  }
+}
 
 /**
  * Holds the in-flight promise for checkAndRecoverInstallState() while the app
@@ -732,7 +760,9 @@ async function executeCheckForUpdateInternal(
           updateDebugLogs.pluginMethodCheck = isNativePlat ? 'Plugin not found' : 'N/A (Web)';
           updateDebugLogs.installerLaunchStatus = `MISSING: AppInstaller not registered. Plugins: ${registry.join(', ')}`;
         }
-      } catch (e) {}
+      } catch (e: any) {
+        updateDebugLogs.installerLaunchStatus = `ERROR: Plugin registry inspection failed: ${e?.message || String(e)}`;
+      }
     }
 
     checkCancellation(pipelineId, 'AWAIT_METADATA_VALIDATION');
@@ -1191,6 +1221,7 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
   updateGlobalState({ progress: 0, statusText: 'Preparing update...', error: null });
 
   activeDownloadPromise = (async () => {
+    downloadAbortController = new AbortController();
     const downloadedPath = localStorage.getItem('studio:downloadedApkPath');
     if (downloadedPath && !downloadedPath.includes(`studio-update-${ver}.apk`)) {
       localStorage.removeItem('studio:downloadedApkPath');
@@ -1199,7 +1230,11 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
     const hasValid = await checkAndCleanCache();
     if (hasValid) {
       if (!safeTransition('FETCH_APK_INFORMATION', 'VERIFY_SHA256', 'Valid cached APK exists')) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to VERIFY_SHA256 from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       updateGlobalState({ progress: 1.0, statusText: 'Verifying update...' });
       const filePath = await getLocalApkPath(ver);
@@ -1207,7 +1242,11 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
       if (
         !safeTransition('VERIFY_SHA256', 'PREPARING_INSTALL', 'Checking cached APK eligibility')
       ) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to PREPARING_INSTALL from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       const isEligible = await runEligibilityCheck(filePath, isDowngrade);
       if (!isEligible) {
@@ -1233,13 +1272,21 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
           'Valid cached APK verified'
         )
       ) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to WAITING_USER_CONFIRMATION from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       return;
     }
 
     if (!safeTransition('FETCH_APK_INFORMATION', 'DOWNLOAD_APK', 'Starting APK package download')) {
-      return;
+      if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+      const msg = `Failed transition to DOWNLOAD_APK from ${globalUpdateState.updateState}`;
+      transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+      updateGlobalState({ error: msg, loading: false });
+      throw new Error(msg);
     }
     updateActiveSession({ installStep: 'downloading' });
     updateDebugLogs.downloadStatus = `Update started: apk\nAPK URL: ${apkUrl}`;
@@ -1257,6 +1304,12 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
         } catch (_) {}
         addJsLog('[Simulate Download] Starting simulated download loop...');
         for (let i = 1; i <= 10; i++) {
+          if (
+            downloadAbortController?.signal.aborted ||
+            globalUpdateState.updateState === 'INSTALL_CANCELLED'
+          ) {
+            return;
+          }
           if (updaterSimulation.injectNetworkTimeout) {
             addJsLog('[Simulate Download] Injecting network timeout!');
             if (globalUpdateState.updateState === 'DOWNLOAD_APK') {
@@ -1309,6 +1362,7 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
             version: ver,
             manualApkUrl: (globalUpdateState as any).manualApkUrl,
             fallbackApkUrl: (globalUpdateState as any).fallbackApkUrl,
+            signal: downloadAbortController?.signal,
           });
           logPipelineTrace(
             'downloadUpdateInternal',
@@ -1323,6 +1377,9 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
             'APK download completed successfully. File path: ' + filePath
           );
         } catch (dlErr) {
+          if (globalUpdateState.updateState === 'INSTALL_CANCELLED') {
+            return;
+          }
           logPipelineTrace(
             'downloadUpdateInternal',
             'download',
@@ -1342,7 +1399,11 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
       logTimelineEvent('UpdateCore', 'DOWNLOAD_COMPLETED', `Path: ${filePath}`);
 
       if (!safeTransition('DOWNLOAD_APK', 'VERIFY_SHA256', 'Verifying checksum')) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to VERIFY_SHA256 from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       logTimelineEvent('UpdateCore', 'SHA_VERIFICATION_STARTED');
       logDetailedJsTrace(
@@ -1448,7 +1509,11 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
 
       updateDebugLogs.downloadStatus += `\nRunning pre-install eligibility check...`;
       if (!safeTransition('VERIFY_SHA256', 'PREPARING_INSTALL', 'Checking eligibility')) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to PREPARING_INSTALL from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       updateGlobalState({ statusText: 'Checking eligibility...' });
       logTimelineEvent('UpdateCore', 'ELIGIBILITY_CHECK_STARTED');
@@ -1527,7 +1592,11 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
           'APK download & verify complete'
         )
       ) {
-        return;
+        if (globalUpdateState.updateState === 'INSTALL_CANCELLED') return;
+        const msg = `Failed transition to WAITING_USER_CONFIRMATION from ${globalUpdateState.updateState}`;
+        transitionToState('INSTALL_FAILED', 'Transition failure', msg);
+        updateGlobalState({ error: msg, loading: false });
+        throw new Error(msg);
       }
       updateGlobalState({ statusText: 'Ready to install' });
       localStorage.setItem('studio:downloadedApkPath', filePath);
@@ -1561,13 +1630,17 @@ async function downloadUpdateInternal(trigger?: string): Promise<void> {
       updateDebugLogs.installerLaunchStatus = 'FAILED';
       await populateDiagnostics(err, 'APK download or verification failed');
 
-      if (globalUpdateState.updateState !== 'RECOVERY') {
+      if (
+        globalUpdateState.updateState !== 'RECOVERY' &&
+        globalUpdateState.updateState !== 'INSTALL_CANCELLED'
+      ) {
         transitionToState('INSTALL_FAILED', 'Download/Verify exception', errMsg);
-        updateGlobalState({ error: errMsg });
+        updateGlobalState({ error: errMsg, loading: false });
       }
       throw err;
     } finally {
       activeDownloadPromise = null;
+      downloadAbortController = null;
       UpdatePipelineCoordinator.setStage('IDLE');
     }
   })();
@@ -1950,7 +2023,22 @@ export async function checkAndRecoverInstallState() {
         activeInstallPromiseRejecter = null;
       }
     }
-  } catch (err) {}
+  } catch (err: any) {
+    const msg = err instanceof Error ? err.message : String(err);
+    UpdaterFlightRecorder.record({
+      thread: 'js',
+      sessionId: activeUpdateSession ? activeUpdateSession.sessionId : null,
+      workflowId: null,
+      eventType: 'installRecoveryError',
+      caller: 'checkAndRecoverInstallState',
+      reason: `Error recovering install state: ${msg}`,
+    });
+    if (activeInstallPromiseRejecter) {
+      activeInstallPromiseRejecter(err instanceof Error ? err : new Error(msg));
+      activeInstallPromiseResolver = null;
+      activeInstallPromiseRejecter = null;
+    }
+  }
 }
 
 // ─── Global Listeners ─────────────────────────────────────────────────────
@@ -2079,8 +2167,17 @@ export function initializeGlobalUpdateListeners() {
   if (Capacitor.isNativePlatform() && isAppInstallerAvailable()) {
     void (async () => {
       try {
-        await (AppInstaller as any).addListener('onInstallStatusChanged', (eventData: any) => {});
-      } catch (e) {}
+        await (AppInstaller as any).addListener('onInstallStatusChanged', handleInstallStatusChange);
+      } catch (e: any) {
+        UpdaterFlightRecorder.record({
+          thread: 'js',
+          sessionId: null,
+          workflowId: null,
+          eventType: 'listenerRegistrationFailed',
+          caller: 'initializeGlobalUpdateListeners',
+          reason: `Failed to register onInstallStatusChanged listener: ${e?.message || String(e)}`,
+        });
+      }
     })();
   }
 

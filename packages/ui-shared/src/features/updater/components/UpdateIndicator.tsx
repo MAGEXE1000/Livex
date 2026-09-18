@@ -1260,6 +1260,15 @@ function UpdateModal({
     }
   };
 
+  const handleCancelDownload = () => {
+    try {
+      updater.cancelDownload('User cancelled download');
+    } catch (err) {
+      console.error('[UpdateIndicator] Cancel download failed:', err);
+    }
+    onClose();
+  };
+
   const handleInstallApk = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
@@ -2614,7 +2623,7 @@ function UpdateModal({
       onClose={onClose}
       onLater={onLater}
       onUpdateNow={handleStartUpdate}
-      onCancelDownload={onLater}
+      onCancelDownload={handleCancelDownload}
       onRetry={handleStartUpdate}
       onDone={async () => {
         try {

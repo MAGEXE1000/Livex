@@ -740,25 +740,47 @@ function commitTransition(state: AppUpdateState, reason: string, failureReason?:
           'DOWNLOAD_APK',
           'VERIFY_SHA256',
           'PREPARING_INSTALL',
+          'INSTALL_CANCELLED',
+          'INSTALL_FAILED',
           'RECOVERY',
           'IDLE',
         ].includes(state);
         break;
       case 'DOWNLOAD_APK':
-        isValid = ['VERIFY_SHA256', 'INSTALL_FAILED', 'RECOVERY', 'IDLE'].includes(state);
+        isValid = [
+          'VERIFY_SHA256',
+          'INSTALL_CANCELLED',
+          'INSTALL_FAILED',
+          'RECOVERY',
+          'IDLE',
+        ].includes(state);
         break;
       case 'VERIFY_SHA256':
-        isValid = ['PREPARING_INSTALL', 'INSTALL_FAILED', 'RECOVERY', 'IDLE'].includes(state);
+        isValid = [
+          'PREPARING_INSTALL',
+          'INSTALL_CANCELLED',
+          'INSTALL_FAILED',
+          'RECOVERY',
+          'IDLE',
+        ].includes(state);
         break;
       case 'PREPARING_INSTALL':
-        isValid = ['WAITING_USER_CONFIRMATION', 'INSTALL_FAILED', 'RECOVERY', 'IDLE'].includes(
-          state
-        );
+        isValid = [
+          'WAITING_USER_CONFIRMATION',
+          'INSTALL_CANCELLED',
+          'INSTALL_FAILED',
+          'RECOVERY',
+          'IDLE',
+        ].includes(state);
         break;
       case 'WAITING_USER_CONFIRMATION':
-        isValid = ['PACKAGEINSTALLER_VISIBLE', 'INSTALL_FAILED', 'RECOVERY', 'IDLE'].includes(
-          state
-        );
+        isValid = [
+          'PACKAGEINSTALLER_VISIBLE',
+          'INSTALL_CANCELLED',
+          'INSTALL_FAILED',
+          'RECOVERY',
+          'IDLE',
+        ].includes(state);
         break;
       case 'PACKAGEINSTALLER_VISIBLE':
         isValid = [
@@ -773,7 +795,7 @@ function commitTransition(state: AppUpdateState, reason: string, failureReason?:
         isValid = ['INSTALL_SUCCESS', 'INSTALL_FAILED', 'RECOVERY', 'IDLE'].includes(state);
         break;
       case 'INSTALL_CANCELLED':
-        isValid = ['RECOVERY', 'IDLE'].includes(state);
+        isValid = ['RECOVERY', 'IDLE', 'INITIALIZING', 'UPDATE_AVAILABLE'].includes(state);
         break;
       case 'INSTALL_SUCCESS':
         isValid = ['IDLE', 'INITIALIZING'].includes(state);

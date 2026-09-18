@@ -36,6 +36,7 @@ import { detectJustUpdated, writeLastSeen } from '../lib/updater/versionManager'
 import {
   checkForUpdate,
   downloadUpdate,
+  cancelDownload,
   applyUpdate,
   initializeGlobalUpdateListeners,
   checkAndCleanCache,
@@ -51,6 +52,7 @@ import { getUpdateHistory, logUpdateTransition } from '../lib/updater/updateHist
 export interface AppUpdateHookResult extends CentralizedUpdateState {
   checkNow: () => Promise<CentralizedUpdateState>;
   downloadUpdate: (trigger?: string) => Promise<void>;
+  cancelDownload: (reason?: string) => void;
   applyUpdate: (trigger?: string) => Promise<void>;
   dismissUpdate: () => void;
   markUpdateSeen: () => void;
@@ -103,6 +105,7 @@ export function useAppUpdate(): AppUpdateHookResult {
     downloadUpdate: async (trigger?: string) => {
       await downloadUpdate(trigger);
     },
+    cancelDownload,
     applyUpdate: async (trigger?: string) => {
       await applyUpdate(trigger);
     },
