@@ -184,6 +184,22 @@
   box-shadow: 0 2px 6px color-mix(in srgb, var(--c-accent-from, #2563eb) 40%, transparent);
 }
 
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url(/stage-core/fonts/kJESBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMO1W.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url(/stage-core/fonts/kJESBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMO1W.woff2) format('woff2');
+}
+
 .material-symbols-rounded,
 .material-symbols-outlined {
   font-family: 'Material Symbols Rounded', 'Material Symbols Outlined';
@@ -199,6 +215,9 @@
   vertical-align: middle;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  text-rendering: optimizeLegibility;
   font-variation-settings:
     'FILL' 0,
     'wght' 450,

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import {
   motion,
   useMotionValue,
@@ -741,12 +742,11 @@ export function SharedNavigationBar({
               ) : profileIcon ? (
                 profileIcon
               ) : (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 'var(--font-display-sm)', color: 'var(--c-text-secondary)' }}
-                >
-                  person
-                </span>
+                <StudioIcon
+                  name="person"
+                  size={22}
+                  style={{ color: 'var(--c-text-secondary)' }}
+                />
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
@@ -801,12 +801,11 @@ export function SharedNavigationBar({
                 fontFamily: 'var(--font-body)',
               }}
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
-              >
-                person
-              </span>
+              <StudioIcon
+                name="person"
+                size={20}
+                style={{ color: 'var(--c-text-secondary)' }}
+              />
               {isSpanish ? 'Ver perfil' : 'View Profile'}
             </button>
 
@@ -830,12 +829,11 @@ export function SharedNavigationBar({
                 fontFamily: 'var(--font-body)',
               }}
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
-              >
-                settings
-              </span>
+              <StudioIcon
+                name="settings"
+                size={20}
+                style={{ color: 'var(--c-text-secondary)' }}
+              />
               {(t as any).nav?.settings || (isSpanish ? 'Ajustes' : 'Settings')}
             </button>
           </div>
@@ -1244,17 +1242,20 @@ export function SharedNavigationBar({
                     }}
                   />
                   <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.span
+                    <motion.div
                       key={isSwitcherOpen ? 'close' : 'apps'}
                       initial={{ rotate: isSwitcherOpen ? -90 : 90, opacity: 0, scale: 0.7 }}
                       animate={{ rotate: 0, opacity: 1, scale: 1 }}
                       exit={{ rotate: isSwitcherOpen ? 90 : -90, opacity: 0, scale: 0.7 }}
                       transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.7 }}
-                      className="material-symbols-outlined text-[20px]"
-                      style={{ display: 'block' }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      {isSwitcherOpen ? 'close' : 'apps'}
-                    </motion.span>
+                      <StudioIcon
+                        name={isSwitcherOpen ? 'close' : 'apps'}
+                        size={20}
+                        style={{ display: 'block' }}
+                      />
+                    </motion.div>
                   </AnimatePresence>
                 </motion.button>
               </motion.div>

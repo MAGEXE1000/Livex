@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import {
   useNavHidden,
   useNavCollapsed,
@@ -171,12 +172,12 @@ export function BottomNavigationController() {
     const effectivePhoto = customPhoto || user?.photoURL;
     if (avatarIcon) {
       return (
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: 22, fontVariationSettings: "'FILL' 1", display: 'block' }}
-        >
-          {avatarIcon}
-        </span>
+        <StudioIcon
+          name={avatarIcon}
+          size={22}
+          filled
+          style={{ display: 'block' }}
+        />
       );
     }
     if (effectivePhoto) {
@@ -196,9 +197,11 @@ export function BottomNavigationController() {
       );
     }
     return (
-      <span className="material-symbols-outlined" style={{ fontSize: 22, display: 'block' }}>
-        person
-      </span>
+      <StudioIcon
+        name="person"
+        size={22}
+        style={{ display: 'block' }}
+      />
     );
   }, [user, avatarIcon, customPhoto]);
 

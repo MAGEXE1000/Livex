@@ -25,6 +25,7 @@ export const activeOverlaysRegistry = {
 };
 
 import React, { useEffect } from 'react';
+import { StudioIcon } from '../icons/StudioIcon';
 import { BackDispatcher } from '@workspace/studio-core';
 import {
   AlertDialog,
@@ -237,9 +238,7 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
               color: 'var(--c-text-secondary, var(--muted))',
             }}
           >
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18 }}>
-              close
-            </span>
+            <StudioIcon name="close" size={18} aria-hidden="true" />
           </button>
         </div>
       )}

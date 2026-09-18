@@ -3,6 +3,7 @@ import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 export { Toggle, type ToggleProps } from '../design-system/StudioToggle';
 export { LiquidSwitch, type LiquidSwitchProps } from '../design-system/LiquidSwitch';
 export { StartOnSelector, type StartOnOption, type StartOnSelectorProps } from './StartOnSelector';
@@ -19,12 +20,11 @@ export const SectionHeader = memo(function SectionHeader({
   return (
     <div className="flex items-center justify-between mb-2 mt-5">
       <div className="flex items-center gap-2">
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: '18px', color: 'var(--c-text-tertiary, var(--muted, #808080))' }}
-        >
-          {icon}
-        </span>
+        <StudioIcon
+          name={icon}
+          size={18}
+          style={{ color: 'var(--c-text-tertiary, var(--muted, #808080))' }}
+        />
         <p
           style={{
             color: 'var(--c-text-primary, var(--text, #ffffff))',
@@ -312,16 +312,12 @@ export function BentoSettingCard({
               : 'inset 0 1px 1px rgba(255, 255, 255, 0.10)',
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{
-              fontSize: 20,
-              color: iconColor || 'var(--studio-accent-from, #679cff)',
-              fontVariationSettings: "'FILL' 1",
-            }}
-          >
-            {icon}
-          </span>
+          <StudioIcon
+            name={icon}
+            size={20}
+            color={iconColor || 'var(--studio-accent-from, #679cff)'}
+            filled
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4
@@ -400,12 +396,11 @@ export function BentoSettingCard({
             justifyContent: 'center',
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 15, color: 'var(--c-text-secondary, var(--muted))', opacity: 0.6 }}
-          >
-            chevron_right
-          </span>
+          <StudioIcon
+            name="chevron_right"
+            size={15}
+            style={{ color: 'var(--c-text-secondary, var(--muted))', opacity: 0.6 }}
+          />
         </div>
       </div>
     </motion.button>
@@ -481,16 +476,12 @@ export function BentoSettingRow({
               : 'inset 0 1px 1px rgba(255, 255, 255, 0.10)',
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{
-              fontSize: 20,
-              color: iconColor || 'var(--studio-accent-from, #679cff)',
-              fontVariationSettings: "'FILL' 1",
-            }}
-          >
-            {icon}
-          </span>
+          <StudioIcon
+            name={icon}
+            size={20}
+            color={iconColor || 'var(--studio-accent-from, #679cff)'}
+            filled
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4
@@ -569,12 +560,11 @@ export function BentoSettingRow({
             justifyContent: 'center',
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 15, color: 'var(--c-text-secondary, var(--muted))', opacity: 0.6 }}
-          >
-            chevron_right
-          </span>
+          <StudioIcon
+            name="chevron_right"
+            size={15}
+            style={{ color: 'var(--c-text-secondary, var(--muted))', opacity: 0.6 }}
+          />
         </div>
       </div>
     </motion.button>

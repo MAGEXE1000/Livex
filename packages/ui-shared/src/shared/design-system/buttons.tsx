@@ -13,6 +13,7 @@ import {
 } from '@heroui/react/button-group';
 import { SpringPresets } from '@workspace/studio-core';
 import { AnimatedIcon } from '../icons/AnimatedIcon';
+import { StudioIcon } from '../icons/StudioIcon';
 import { EASE_OUT } from '../../lib/ease';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
@@ -448,9 +449,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {loading ? (
           <AnimatedIcon name="loader-circle" state="loading" size={dim.icon} aria-hidden="true" />
         ) : typeof icon === 'string' ? (
-          <span className="material-symbols-outlined" style={{ fontSize: dim.icon }} aria-hidden="true">
-            {icon}
-          </span>
+          <StudioIcon name={icon} size={dim.icon} aria-hidden="true" />
         ) : (
           icon
         )}

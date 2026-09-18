@@ -5,6 +5,7 @@ import { Loader } from '../../components/motion/loader';
 import { Button } from './buttons';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 
 // ── 14. Skeleton ───────────────────────────────────────────────────────────
 export interface SkeletonProps {
@@ -130,9 +131,7 @@ export function Badge({
     >
       {icon &&
         (typeof icon === 'string' ? (
-          <span className="material-symbols-outlined" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
-            {icon}
-          </span>
+          <StudioIcon name={icon} size={size === 'sm' ? 12 : 14} />
         ) : (
           icon
         ))}
@@ -200,9 +199,7 @@ export function Chip({
     >
       {icon &&
         (typeof icon === 'string' ? (
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            {icon}
-          </span>
+          <StudioIcon name={icon} size={16} />
         ) : (
           icon
         ))}
@@ -305,9 +302,7 @@ export function Error({ message, onRetry }: ErrorProps) {
           color: '#ef4444',
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-          error
-        </span>
+        <StudioIcon name="error" size={24} color="#ef4444" />
       </div>
       <p
         style={{
@@ -362,16 +357,14 @@ export function EmptyState({ message, icon = 'folder_open', description }: Empty
           marginBottom: '16px',
         }}
       >
-        <span
-          className="material-symbols-outlined"
+        <StudioIcon
+          name={icon}
+          size={32}
           style={{
-            fontSize: '32px',
             color: 'var(--c-text-secondary)',
             opacity: 0.7,
           }}
-        >
-          {icon}
-        </span>
+        />
       </div>
       <h3
         style={{

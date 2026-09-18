@@ -5,6 +5,7 @@ import { StudioHeader as AnimatedAppHeader } from '../layout/StudioHeader';
 import { ProgressiveBlur } from './ProgressiveBlur';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 
 // ── 5. Toolbar ─────────────────────────────────────────────────────────────
 export interface ToolbarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -290,9 +291,7 @@ export const ListRow = forwardRef<HTMLButtonElement, ListRowProps>(
             }}
           >
             {typeof icon === 'string' ? (
-              <span className="material-symbols-outlined" style={{ fontSize: 20, opacity: 0.85 }}>
-                {icon}
-              </span>
+              <StudioIcon name={icon} size={20} style={{ opacity: 0.85 }} />
             ) : (
               icon
             )}
@@ -362,12 +361,11 @@ export const ListRow = forwardRef<HTMLButtonElement, ListRowProps>(
               flexShrink: 0,
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 15, color: 'var(--c-text-secondary)', opacity: 0.6 }}
-            >
-              chevron_right
-            </span>
+            <StudioIcon
+              name="chevron_right"
+              size={15}
+              style={{ color: 'var(--c-text-secondary)', opacity: 0.6 }}
+            />
           </div>
         )}
       </Component>

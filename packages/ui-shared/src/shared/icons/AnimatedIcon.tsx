@@ -7,6 +7,7 @@ import {
   BookOpen,
   Brush,
   Bug,
+  ChevronLeft,
   CircleHelp,
   CloudUpload,
   EyeOff,
@@ -143,6 +144,7 @@ const staticLucideIcons: Record<string, LucideIcon> = {
   'book-open': BookOpen,
   brush: Brush,
   bug: Bug,
+  'chevron-left': ChevronLeft,
   'circle-help': CircleHelp,
   'cloud-upload': CloudUpload,
   'eye-off': EyeOff,
@@ -208,15 +210,17 @@ function getAnimatedIconComponent(name: string) {
 
   // Normalize names that are Material symbols or aliases to their Lucide/local counterparts
   let normName = (name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
-  if (
+  if (normName === 'chevron_left' || normName === 'chevron-left') {
+    normName = 'chevron-left';
+  } else if (normName === 'chevron_right' || normName === 'chevron-right') {
+    normName = 'chevron-right';
+  } else if (
     normName === 'arrow-left' ||
     normName === 'arrowleft' ||
     normName === 'arrow_back' ||
     normName === 'arrowback' ||
     normName === 'arrow-back' ||
-    normName === 'arrow_left' ||
-    normName === 'chevron_left' ||
-    normName === 'chevron-left'
+    normName === 'arrow_left'
   ) {
     normName = 'arrow-left';
   } else if (
@@ -225,9 +229,7 @@ function getAnimatedIconComponent(name: string) {
     normName === 'arrow_forward' ||
     normName === 'arrowforward' ||
     normName === 'arrow-forward' ||
-    normName === 'arrow_right' ||
-    normName === 'chevron_right' ||
-    normName === 'chevron-right'
+    normName === 'arrow_right'
   ) {
     normName = 'arrow-right';
   } else if (

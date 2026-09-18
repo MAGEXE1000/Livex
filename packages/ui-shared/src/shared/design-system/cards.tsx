@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/studio-core';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 
 // ── 2. Card ────────────────────────────────────────────────────────────────
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -192,9 +193,7 @@ export const BentoCard = forwardRef<HTMLDivElement, BentoCardProps>(
                 }}
               >
                 {typeof icon === 'string' ? (
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                    {icon}
-                  </span>
+                  <StudioIcon name={icon} size={18} />
                 ) : (
                   icon
                 )}

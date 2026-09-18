@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useId } from 'react';
 import { BackDispatcher } from '@workspace/studio-core';
 import { activeOverlaysRegistry } from './dialogs';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 
 export interface MorphMenuRowItem {
   id: string;
@@ -277,7 +278,7 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
                     className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer ml-1"
                     aria-label="Close menu"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <StudioIcon name="close" size={14} />
                   </button>
                 </div>
               )}
@@ -297,12 +298,12 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
                 >
                   {row.icon && (
                     typeof row.icon === 'string' ? (
-                      <span
-                        className="material-symbols-outlined text-[16px] shrink-0"
+                      <StudioIcon
+                        name={row.icon}
+                        size={16}
+                        className="shrink-0"
                         style={{ color: row.destructive ? '#ef4444' : undefined }}
-                      >
-                        {row.icon}
-                      </span>
+                      />
                     ) : (
                       row.icon
                     )

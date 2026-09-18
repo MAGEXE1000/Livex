@@ -26,6 +26,7 @@ export { default as ChordDiagram } from './features/chordex/diagrams/ChordDiagra
 export * from './shared/loading/StudioSkeleton';
 export { LibraryPanel } from './features/chordex';
 export { AnimatedIcon } from './shared/icons/AnimatedIcon';
+export * from './shared/icons/StudioIcon';
 export * from './shared/icons/bakaiIconLibrary';
 export { LiquidSurfaceEngine } from './shared/liquid/LiquidSurfaceEngine';
 

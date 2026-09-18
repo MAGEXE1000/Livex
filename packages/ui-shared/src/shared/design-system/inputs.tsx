@@ -1,6 +1,7 @@
 import React, { forwardRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/studio-core';
+import { StudioIcon } from '../icons/StudioIcon';
 
 // ── 6. Input ───────────────────────────────────────────────────────────────
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -146,17 +147,16 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           }}
         />
 
-        <span
-          className="material-symbols-outlined absolute left-4 pointer-events-none"
+        <StudioIcon
+          name="search"
+          size={20}
+          className="absolute left-4 pointer-events-none"
           style={{
             color: focused ? activeAccent : 'var(--c-text-secondary)',
-            fontSize: '20px',
             zIndex: 5,
             transition: 'color 200ms ease',
           }}
-        >
-          search
-        </span>
+        />
         <input
           ref={ref}
           value={value}
@@ -213,9 +213,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               zIndex: 5,
             }}
           >
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: '15px' }}>
-              close
-            </span>
+            <StudioIcon name="close" size={15} aria-hidden="true" />
           </motion.button>
         )}
       </div>

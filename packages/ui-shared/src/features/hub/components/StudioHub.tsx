@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
+import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import { subscribeIntroDone } from '../../../shared/animation/introSignal';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
@@ -1258,12 +1259,10 @@ export default function StudioHub() {
                                 boxShadow: `0 2px 8px ${accent.from}40`,
                               }}
                             >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: 13, lineHeight: 1 }}
-                              >
-                                check
-                              </span>
+                              <StudioIcon
+                                name="check"
+                                size={13}
+                              />
                               {lang === 'es' ? 'Listo' : 'Done'}
                             </motion.button>
                           ) : (
@@ -1295,12 +1294,10 @@ export default function StudioHub() {
                                     gap: 3,
                                   }}
                                 >
-                                  <span
-                                    className="material-symbols-outlined"
-                                    style={{ fontSize: 13, lineHeight: 1 }}
-                                  >
-                                    add
-                                  </span>
+                                  <StudioIcon
+                                    name="add"
+                                    size={13}
+                                  />
                                   {lang === 'es' ? 'Fijar' : 'Pin'}
                                 </motion.button>
                               )}
@@ -1444,17 +1441,15 @@ export default function StudioHub() {
                                                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                                 >
                                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <span
-                                                      className="material-symbols-outlined"
+                                                    <StudioIcon
+                                                      name="drag_indicator"
+                                                      size={16}
                                                       style={{
                                                         color: 'var(--c-text-secondary)',
                                                         opacity: 0.4,
-                                                        fontSize: 16,
                                                         cursor: 'grab',
                                                       }}
-                                                    >
-                                                      drag_indicator
-                                                    </span>
+                                                    />
                                                     <div
                                                       style={{
                                                         width: 26,
@@ -1533,12 +1528,11 @@ export default function StudioHub() {
                                                       transition: 'transform 120ms ease, background 120ms ease',
                                                     }}
                                                   >
-                                                    <span
-                                                      className="material-symbols-outlined"
-                                                      style={{ fontSize: 14, fontWeight: 700 }}
-                                                    >
-                                                      remove
-                                                    </span>
+                                                    <StudioIcon
+                                                      name="remove"
+                                                      size={14}
+                                                      strokeWidth={2.5}
+                                                    />
                                                   </button>
                                                 </Reorder.Item>
                                               );
@@ -1692,12 +1686,11 @@ export default function StudioHub() {
                                                   transition: 'transform 120ms ease, opacity 120ms ease',
                                                 }}
                                               >
-                                                <span
-                                                  className="material-symbols-outlined"
-                                                  style={{ fontSize: 14, fontWeight: 700 }}
-                                                >
-                                                  add
-                                                </span>
+                                                <StudioIcon
+                                                  name="add"
+                                                  size={14}
+                                                  strokeWidth={2.5}
+                                                />
                                               </button>
                                             </div>
                                           );
@@ -1731,9 +1724,11 @@ export default function StudioHub() {
                                       letterSpacing: '-0.01em',
                                     }}
                                   >
-                                    <span className="material-symbols-outlined" style={{ fontSize: 18, fontWeight: 700 }}>
-                                      check
-                                    </span>
+                                    <StudioIcon
+                                      name="check"
+                                      size={18}
+                                      strokeWidth={2.5}
+                                    />
                                     {lang === 'es' ? 'Listo' : 'Done'}
                                   </button>
                                 </div>
@@ -1877,16 +1872,11 @@ export default function StudioHub() {
                                           boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)',
                                         }}
                                       >
-                                        <span
-                                          className="material-symbols-outlined"
-                                          style={{
-                                            fontSize: 12,
-                                            fontWeight: 'bold',
-                                            lineHeight: 1,
-                                          }}
-                                        >
-                                          close
-                                        </span>
+                                        <StudioIcon
+                                          name="close"
+                                          size={12}
+                                          strokeWidth={2.5}
+                                        />
                                       </button>
                                     )}
                                   </motion.div>
@@ -1936,16 +1926,14 @@ export default function StudioHub() {
                                     justifyContent: 'center',
                                   }}
                                 >
-                                  <span
-                                    className="material-symbols-outlined"
+                                  <StudioIcon
+                                    name="add"
+                                    size={20}
                                     style={{
                                       color: 'var(--c-text-secondary)',
-                                      fontSize: '20px',
                                       opacity: 0.7,
                                     }}
-                                  >
-                                    add
-                                  </span>
+                                  />
                                 </motion.div>
                                 <span
                                   style={{
@@ -2177,17 +2165,14 @@ export default function StudioHub() {
                                   marginLeft: 8,
                                 }}
                               >
-                                <span
-                                  className="material-symbols-outlined"
+                                <StudioIcon
+                                  name="chevron_right"
+                                  size={16}
                                   style={{
-                                    fontSize: 16,
                                     color: 'var(--c-text-secondary)',
                                     opacity: 0.6,
-                                    lineHeight: 1,
                                   }}
-                                >
-                                  chevron_right
-                                </span>
+                                />
                               </div>
                             </motion.button>
                           ))}
@@ -2503,12 +2488,11 @@ function AppRow({
             {desc}
           </p>
         </div>
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: 16, color: 'var(--c-text-muted)', flexShrink: 0 }}
-        >
-          chevron_right
-        </span>
+        <StudioIcon
+          name="chevron_right"
+          size={16}
+          style={{ color: 'var(--c-text-muted)', flexShrink: 0 }}
+        />
       </button>
     );
   }
@@ -2580,12 +2564,11 @@ function AppRow({
       </div>
 
       {/* Chevron */}
-      <span
-        className="material-symbols-outlined"
-        style={{ fontSize: 18, color: 'var(--c-text-secondary)', flexShrink: 0, opacity: 0.5 }}
-      >
-        chevron_right
-      </span>
+      <StudioIcon
+        name="chevron_right"
+        size={18}
+        style={{ color: 'var(--c-text-secondary)', flexShrink: 0, opacity: 0.5 }}
+      />
     </button>
   );
 }

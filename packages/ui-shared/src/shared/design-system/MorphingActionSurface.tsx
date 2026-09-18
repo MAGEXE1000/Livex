@@ -5,6 +5,7 @@ import { BackDispatcher, MotionProfiler } from '@workspace/studio-core';
 import { activeOverlaysRegistry } from './dialogs';
 import { SPRING_PANEL, EASE_OUT } from '../../lib/ease';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { StudioIcon } from '../icons/StudioIcon';
 
 
 export interface MorphingActionRowItem {
@@ -597,9 +598,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                           touchAction: 'manipulation',
                         }}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          close
-                        </span>
+                        <StudioIcon name="close" size={18} />
                       </button>
                     </div>
                   ) : null
@@ -664,19 +663,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: isCompact ? 10 : 12 }}>
                           {row.icon && (
-                            <span
-                              className="material-symbols-outlined"
+                            <StudioIcon
+                              name={row.icon}
+                              size={isCompact ? 18 : 20}
                               style={{
-                                fontSize: isCompact ? 18 : 20,
                                 color: isDestructive
                                   ? '#ef4444'
                                   : row.active
                                   ? accentColor
                                   : 'var(--c-text-secondary, #9ca3af)',
+                                flexShrink: 0,
                               }}
-                            >
-                              {row.icon}
-                            </span>
+                            />
                           )}
                           <div>
                             <div
@@ -722,12 +720,11 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                             </span>
                           )}
                           {row.active && (
-                            <span
-                              className="material-symbols-outlined"
-                              style={{ fontSize: 16, color: accentColor }}
-                            >
-                              check
-                            </span>
+                            <StudioIcon
+                              name="check"
+                              size={16}
+                              style={{ color: accentColor, flexShrink: 0 }}
+                            />
                           )}
                         </div>
                       </motion.div>
@@ -812,12 +809,11 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             aria-label={title}
           >
             {buttonIcon && (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 18, color: accentColor }}
-              >
-                {buttonIcon}
-              </span>
+              <StudioIcon
+                name={buttonIcon}
+                size={18}
+                style={{ color: accentColor, flexShrink: 0 }}
+              />
             )}
           </motion.button>
         ) : (buttonLabel || buttonIcon) ? (
@@ -853,20 +849,18 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
             className={`sc-morphing-trigger ${className}`}
           >
             {buttonIcon && (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 18, color: accentColor }}
-              >
-                {buttonIcon}
-              </span>
+              <StudioIcon
+                name={buttonIcon}
+                size={18}
+                style={{ color: accentColor, flexShrink: 0 }}
+              />
             )}
             <span>{buttonLabel}</span>
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 16, opacity: 0.6, marginLeft: 2 }}
-            >
-              expand_more
-            </span>
+            <StudioIcon
+              name="expand_more"
+              size={16}
+              style={{ opacity: 0.6, marginLeft: 2, flexShrink: 0 }}
+            />
           </motion.button>
         ) : null}
       </span>
