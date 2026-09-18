@@ -40,24 +40,15 @@ const standardDeps = {
 };
 
 const packageWorkspaceDeps = {
-  'studio-core': {
-    '@workspace/db': 'workspace:*',
-    '@workspace/api-client-react': 'workspace:*',
-  },
+  'studio-core': {},
   'ui-shared': {
-    '@workspace/db': 'workspace:*',
-    '@workspace/api-client-react': 'workspace:*',
     '@workspace/studio-core': 'workspace:*',
   },
   'ui-web': {
-    '@workspace/db': 'workspace:*',
-    '@workspace/api-client-react': 'workspace:*',
     '@workspace/studio-core': 'workspace:*',
     '@workspace/ui-shared': 'workspace:*',
   },
   'ui-android': {
-    '@workspace/db': 'workspace:*',
-    '@workspace/api-client-react': 'workspace:*',
     '@workspace/studio-core': 'workspace:*',
     '@workspace/ui-shared': 'workspace:*',
   },

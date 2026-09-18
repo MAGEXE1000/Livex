@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useCallback,
   Suspense,
+  lazy,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
@@ -50,7 +51,7 @@ import AccountCard, {
   AccountDangerZone,
   AccountSettingsPage,
 } from '../../auth/components/AccountCard';
-import DevToolsDashboard from '../../devtools/components/DevToolsDashboard';
+const DevToolsDashboard = lazy(() => import('../../devtools/components/DevToolsDashboard'));
 import {
   useBackHandler,
   type AuthUser,

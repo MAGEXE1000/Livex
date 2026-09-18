@@ -29,8 +29,6 @@
     "@supabase/supabase-js": "^2.110.2",
     "@tolgee/i18next": "^7.1.1",
     "@tolgee/react": "^7.1.1",
-    "@workspace/api-client-react": "workspace:*",
-    "@workspace/db": "workspace:*",
     "@workspace/studio-core": "workspace:*",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",

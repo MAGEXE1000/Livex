@@ -41,9 +41,9 @@ assert(workspaceYaml.includes("'protobufjs@7': '7.6.6'"), 'pnpm-workspace.yaml o
 
 const studioAndroidPkg = JSON.parse(readFileSync(resolve(ROOT_DIR, 'apps/studio-android/package.json'), 'utf8'));
 assert(studioAndroidPkg.devDependencies?.['adm-zip'] === '^0.6.1', 'apps/studio-android specifies adm-zip ^0.6.1');
-
-const apiSpecPkg = JSON.parse(readFileSync(resolve(ROOT_DIR, 'lib/api-spec/package.json'), 'utf8'));
-assert(apiSpecPkg.devDependencies?.['orval'] === '^8.33.0', 'lib/api-spec specifies patched orval ^8.33.0');
+assert(!existsSync(resolve(ROOT_DIR, 'lib/api-spec')), 'lib/api-spec directory is completely removed');
+assert(!existsSync(resolve(ROOT_DIR, 'lib/api-zod')), 'lib/api-zod directory is completely removed');
+assert(!existsSync(resolve(ROOT_DIR, 'lib/api-client-react')), 'lib/api-client-react directory is completely removed');
 
 console.log('\n--- Suite 3: Vulnerability Audit Verification ---');
 try {

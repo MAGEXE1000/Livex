@@ -128,7 +128,6 @@ import AccountCard, {
   AccountDangerZone,
   AccountSettingsPage,
 } from '../../auth/components/AccountCard';
-import DevToolsDashboard from '../../devtools/components/DevToolsDashboard';
 
 import {
   HubTab,

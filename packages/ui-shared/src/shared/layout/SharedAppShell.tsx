@@ -72,9 +72,11 @@ export interface SharedAppShellProps {
   };
 }
 
-const InspectorRouteTracer = lazy(() =>
-  import('./InspectorRouteTracer').then((m) => ({ default: m.InspectorRouteTracer }))
-);
+const InspectorRouteTracer = import.meta.env.DEV
+  ? lazy(() =>
+      import('./InspectorRouteTracer').then((m) => ({ default: m.InspectorRouteTracer }))
+    )
+  : null;
 
 const AppReadyNotifier = memo(function AppReadyNotifier({
   app,
@@ -431,7 +433,7 @@ export function SharedAppShell({
         </Suspense>
       </ErrorBoundary>
       {renderLaunchOverlay?.()}
-      {developerMode && isInspectorEnabled && showRouteTracer && (
+      {InspectorRouteTracer && developerMode && isInspectorEnabled && showRouteTracer && (
         <Suspense fallback={null}>
           <InspectorRouteTracer />
         </Suspense>

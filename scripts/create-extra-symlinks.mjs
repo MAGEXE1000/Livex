@@ -73,14 +73,6 @@ for (const entry of fileLinks) {
 
 // 3. firebase.config.json symlinks in package roots
 const firebaseTarget = path.join(repoRoot, 'packages/studio-core/firebase.config.json');
-// Make sure target exists, if not copy it from original chord-app
-if (!fs.existsSync(firebaseTarget)) {
-  const originalConfig = path.join(repoRoot, 'artifacts/chord-app/firebase.config.json');
-  if (fs.existsSync(originalConfig)) {
-    console.log(`Copying firebase.config.json to studio-core`);
-    fs.copyFileSync(originalConfig, firebaseTarget);
-  }
-}
 
 const firebasePkgs = ['ui-shared', 'ui-web', 'ui-android'];
 for (const pkg of firebasePkgs) {

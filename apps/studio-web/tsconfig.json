@@ -14,7 +14,6 @@
   "references": [
     { "path": "../../packages/studio-core" },
     { "path": "../../packages/ui-shared" },
-    { "path": "../../packages/ui-web" },
-    { "path": "../../lib/api-client-react" }
+    { "path": "../../packages/ui-web" }
   ]
 }

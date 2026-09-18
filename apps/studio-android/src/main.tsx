@@ -32,9 +32,13 @@ if (
   // @ts-ignore
   window.useApplicationTransitionStore = useApplicationTransitionStore;
 }
-const LazyEmergencyOverlay = lazy(() => import('./EmergencyDebugOverlay'));
+const LazyEmergencyOverlay = import.meta.env.DEV
+  ? lazy(() => import('./EmergencyDebugOverlay'))
+  : null;
 
 function EmergencyDebugOverlayWrapper() {
+  if (!import.meta.env.DEV || !LazyEmergencyOverlay) return null;
+
   const [shouldRender, setShouldRender] = useState(() => {
     if (typeof window === 'undefined') return false;
     const isDebugModeEnabled =
