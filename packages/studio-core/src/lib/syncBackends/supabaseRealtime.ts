@@ -2,7 +2,6 @@ import { authRepository } from "../../repositories/AuthRepository";
 import { Capacitor } from "@capacitor/core";
 import { SyncBackendProvider, UserProfile, AppearanceSettings, UserPreferences, SyncDiagnostics, Unsubscribe, ProbeListener, DevicesListener, ProfileListener, AppearanceListener, PreferencesListener, DiagnosticsListener, SyncDevice, ProbeDoc } from "./types";
 import { supabase, isSupabaseConfigured, setFirebaseIdToken, getSupabaseConfigDetails, getFirebaseIdToken } from "../supabaseClient";
-import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage, getFirebaseProjectId, getFirebaseConfigDetails } from "../firebase";
 
 import { getStableDeviceId, getDeviceDetails, classifyDeviceSession } from "../syncEngine";
 import { APP_VERSION, APP_COMMIT_SHA } from "../appVersion";

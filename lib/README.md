@@ -9,15 +9,7 @@ Standalone TypeScript packages used by tooling or back-end scripts. These packag
 
 ## Packages
 
-| Package | Path | Purpose |
-|---------|------|---------|
-| **api-spec** | `lib/api-spec/` | OpenAPI YAML source definition (`openapi.yaml`). Input for Orval code generation. |
-| **api-zod** | `lib/api-zod/` | Zod schemas auto-generated from api-spec via Orval. **Do not hand-edit.** |
-| **api-client-react** | `lib/api-client-react/` | React Query hooks auto-generated from api-spec. **Do not hand-edit.** |
-| **db** | `lib/db/` | Drizzle ORM schema for the Supabase PostgreSQL database. |
-
-## Rules
-
-- `api-zod` and `api-client-react` are **auto-generated** — regenerate with Orval when the OpenAPI spec changes
-- Never modify generated files by hand
-- `api-spec` changes require user approval (see README.md user preferences)
+All former prototype libraries (`api-spec`, `api-zod`, `api-client-react`, `db`) have been permanently decommissioned.
+Production code uses canonical client architectures:
+- `@workspace/studio-core/lib/services/supabaseClient` for Supabase PostgREST, Realtime, and Storage.
+- `@workspace/studio-core/lib/services/firebase` for Firebase Auth and Firestore stage collaboration.

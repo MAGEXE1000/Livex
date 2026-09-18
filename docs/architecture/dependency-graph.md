@@ -58,7 +58,7 @@ graph TD
 | State     | `zustand`, `zustand/middleware`                                   |
 | Platform  | `@capacitor/core`                                                 |
 | Auth      | `firebase/auth`, `@capacitor-firebase/authentication`             |
-| Database  | `firebase/firestore`, `firebase/storage`, `@supabase/supabase-js` |
+| Database  | `firebase/firestore`, `@supabase/supabase-js`                     |
 | i18n      | `i18next`, `@tolgee/react`                                        |
 | Utilities | Various small utilities                                           |
 

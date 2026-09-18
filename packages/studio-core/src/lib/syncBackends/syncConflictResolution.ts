@@ -1,10 +1,8 @@
-import { authRepository } from "../../repositories/AuthRepository";
 import { Capacitor } from "@capacitor/core";
-import { SyncBackendProvider, UserProfile, AppearanceSettings, UserPreferences, SyncDiagnostics, Unsubscribe, ProbeListener, DevicesListener, ProfileListener, AppearanceListener, PreferencesListener, DiagnosticsListener, SyncDevice, ProbeDoc } from "./types";
-import { supabase, isSupabaseConfigured, setFirebaseIdToken, getSupabaseConfigDetails, getFirebaseIdToken } from "../supabaseClient";
-import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage, getFirebaseProjectId, getFirebaseConfigDetails } from "../firebase";
-import { getStableDeviceId, getDeviceDetails, classifyDeviceSession } from "../syncEngine";
-import { APP_VERSION, APP_COMMIT_SHA } from "../appVersion";
+import { UserProfile, AppearanceSettings } from "./types";
+import { supabase } from "../supabaseClient";
+import { getDeviceDetails } from "../syncEngine";
+import { APP_VERSION } from "../appVersion";
 export async function updateProfile(provider: any, patch: Partial<UserProfile>): Promise<void> {
     const uid = provider.userId;
     const nowStr = new Date().toLocaleString();

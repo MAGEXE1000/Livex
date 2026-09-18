@@ -1,8 +1,4 @@
-import { getFirebaseDb, getFirebaseAuth, incrementFirestoreListeners, decrementFirestoreListeners, incrementFirestoreWrites, decrementFirestoreWrites, setFirestoreLastError } from './firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminUIDs } from './adminConfig';
-import { useChordStore } from '../../store/useChordStore';
-import { useSettingsStore } from '../../store/useSettingsStore';
 
 export type UserRole = 'free' | 'core' | 'pro' | 'beta_tester' | 'admin';
 
@@ -28,7 +24,6 @@ export type FeatureKey =
 
 let currentProfile: UserProfile | null = null;
 let profileListeners: Array<(profile: UserProfile | null) => void> = [];
-let unsubscribeFirestore: (() => void) | null = null;
 
 /**
  * Subscribes to changes in the active user's secure profile.
@@ -50,123 +45,24 @@ function notifyProfileChange(p: UserProfile | null) {
 
 /**
  * Synchronously handles Firebase Auth state changes.
- * Starts a real-time listener on Firestore 'users/{uid}' document.
- * Falls back to basic memory/adminUID check if Firestore is not accessible.
+ * Resolves the user profile and permissions (free tier by default, or admin if in adminUIDs).
  */
 export function syncProfileListener(authUser: { uid: string; email: string | null } | null) {
-  if (unsubscribeFirestore) {
-    unsubscribeFirestore();
-    unsubscribeFirestore = null;
-  }
-  
   if (!authUser) {
     notifyProfileChange(null);
     return;
   }
-  
-  const providerKey = useSettingsStore.getState().settings?.syncBackendProvider;
-  if (providerKey !== 'firebase-firestore-legacy') {
-    const isAdminBypass = adminUIDs.includes(authUser.uid);
-    const defaultProfile: UserProfile = {
-      uid: authUser.uid,
-      email: authUser.email,
-      role: isAdminBypass ? 'admin' : 'free',
-      plan: isAdminBypass ? 'admin' : 'free',
-      subscriptionStatus: isAdminBypass ? 'active' : 'inactive',
-    };
-    notifyProfileChange(defaultProfile);
-    return;
-  }
-  
-  const db = getFirebaseDb();
+
   const isAdminBypass = adminUIDs.includes(authUser.uid);
-  
-  if (!db) {
-    // Offline / fallback configuration
-    const defaultProfile: UserProfile = {
-      uid: authUser.uid,
-      email: authUser.email,
-      role: isAdminBypass ? 'admin' : 'free',
-      plan: isAdminBypass ? 'admin' : 'free',
-      subscriptionStatus: isAdminBypass ? 'active' : 'inactive',
-    };
-    notifyProfileChange(defaultProfile);
-    return;
-  }
-  
-  const userRef = doc(db, 'users', authUser.uid);
-  
-  incrementFirestoreListeners();
-  const innerUnsub = onSnapshot(userRef, async (snap) => {
-    if (!snap.exists()) {
-      // Lazy-initialize a default profile document in Firestore
-      const defaultProfile: UserProfile = {
-        uid: authUser.uid,
-        email: authUser.email,
-        role: isAdminBypass ? 'admin' : 'free',
-        plan: isAdminBypass ? 'admin' : 'free',
-        subscriptionStatus: isAdminBypass ? 'active' : 'inactive',
-      };
-      
-      try {
-        incrementFirestoreWrites();
-        await setDoc(userRef, defaultProfile, { merge: true });
-      } catch (err: any) {
-        setFirestoreLastError(err.message || String(err));
-      } finally {
-        decrementFirestoreWrites();
-      }
-      
-      notifyProfileChange(defaultProfile);
-    } else {
-      const data = snap.data();
-      const role = isAdminBypass ? 'admin' : (data.role ?? 'free');
-      const plan = isAdminBypass ? 'admin' : (data.plan ?? 'free');
-      const status = isAdminBypass ? 'active' : (data.subscriptionStatus ?? 'inactive');
-      
-      notifyProfileChange({
-        uid: authUser.uid,
-        email: authUser.email,
-        role: role,
-        plan: plan,
-        subscriptionStatus: status,
-        subscriptionId: data.subscriptionId,
-        currentPeriodEnd: data.currentPeriodEnd,
-      });
-    }
-  }, (err) => {
-    setFirestoreLastError(err.message || String(err));
-    // Fallback on error to ensure operational resilience
-    notifyProfileChange({
-      uid: authUser.uid,
-      email: authUser.email,
-      role: isAdminBypass ? 'admin' : 'free',
-      plan: isAdminBypass ? 'admin' : 'free',
-      subscriptionStatus: isAdminBypass ? 'active' : 'inactive',
-    });
-  });
-
-  unsubscribeFirestore = () => {
-    innerUnsub();
-    decrementFirestoreListeners();
+  const defaultProfile: UserProfile = {
+    uid: authUser.uid,
+    email: authUser.email,
+    role: isAdminBypass ? 'admin' : 'free',
+    plan: isAdminBypass ? 'admin' : 'free',
+    subscriptionStatus: isAdminBypass ? 'active' : 'inactive',
   };
+  notifyProfileChange(defaultProfile);
 }
-
-// ── Dynamic Provider Change Subscription ──
-let lastProvider = useSettingsStore.getState().settings.syncBackendProvider;
-useChordStore.subscribe((state) => {
-  const currentProvider = useSettingsStore.getState().settings.syncBackendProvider;
-  if (currentProvider !== lastProvider) {
-    lastProvider = currentProvider;
-    const auth = getFirebaseAuth();
-    const currentUser = auth?.currentUser;
-    if (currentUser) {
-      syncProfileListener({ uid: currentUser.uid, email: currentUser.email });
-    } else {
-      syncProfileListener(null);
-    }
-  }
-});
 
 /* ─── Permission Helpers ─── */
 

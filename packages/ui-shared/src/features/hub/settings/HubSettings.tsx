@@ -3122,9 +3122,9 @@ export function HubSettings({
           <div style={cardStyle}>
             <DevInfoRow
               label="Active Sync Provider"
-              value={diag.activeSyncProvider || 'firebase-legacy'}
+              value={diag.activeSyncProvider || 'supabase-realtime'}
             />
-            <DevInfoRow label="Database Provider" value={diag.databaseProvider || 'firestore'} />
+            <DevInfoRow label="Database Provider" value={diag.databaseProvider || 'supabase'} />
             <DevInfoRow label="Auth UID" value={diag.authUid} />
             <DevInfoRow label="Current Device ID" value={diag.deviceId || diag.currentDeviceId} />
 

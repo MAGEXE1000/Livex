@@ -24,14 +24,17 @@ assert(!existsSync(resolve(ROOT_DIR, 'packages/chordex-native-poc')), 'packages/
 assert(!existsSync(resolve(ROOT_DIR, 'lib/api-spec')), 'lib/api-spec is deleted');
 assert(!existsSync(resolve(ROOT_DIR, 'lib/api-zod')), 'lib/api-zod is deleted');
 assert(!existsSync(resolve(ROOT_DIR, 'lib/api-client-react')), 'lib/api-client-react is deleted');
+assert(!existsSync(resolve(ROOT_DIR, 'lib/db')), 'lib/db is deleted');
 assert(!existsSync(resolve(ROOT_DIR, 'artifacts/chord-app')), 'artifacts/chord-app untracked leftovers deleted');
 
 console.log('\n--- Suite 2: Manifest & Configuration Reference Hygiene ---');
 const rootTsConfig = readFileSync(resolve(ROOT_DIR, 'tsconfig.json'), 'utf8');
+assert(!rootTsConfig.includes('lib/db'), 'root tsconfig.json does not reference lib/db');
 assert(!rootTsConfig.includes('lib/api-client-react'), 'root tsconfig.json does not reference api-client-react');
 assert(!rootTsConfig.includes('lib/api-zod'), 'root tsconfig.json does not reference api-zod');
 
 const coreTsConfig = readFileSync(resolve(ROOT_DIR, 'packages/studio-core/tsconfig.json'), 'utf8');
+assert(!coreTsConfig.includes('lib/db'), 'studio-core tsconfig.json does not reference lib/db');
 assert(!coreTsConfig.includes('lib/api-client-react'), 'studio-core tsconfig.json does not reference api-client-react');
 
 const webTsConfig = readFileSync(resolve(ROOT_DIR, 'apps/studio-web/tsconfig.json'), 'utf8');

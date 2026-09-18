@@ -88,7 +88,7 @@ export interface AppSettings {
   lastExportDate: string;
   activityHistoryEnabled: boolean;
   developerMode: boolean;
-  syncBackendProvider: 'firebase-firestore-legacy' | 'supabase-realtime' | 'supabase-powersync';
+  syncBackendProvider: 'supabase-realtime';
   stagexDiagnostics?: boolean;
   launchAnimationPreset?:
     'fluid_surface' | 'liquid_glass' | 'ripple_reveal' | 'layer_expansion' | 'aurora_reveal';
@@ -176,7 +176,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   lastExportDate: 'Never exported',
   activityHistoryEnabled: true,
   developerMode: false,
-  syncBackendProvider: (import.meta.env.VITE_SYNC_BACKEND_PROVIDER as any) || 'supabase-realtime',
+  syncBackendProvider: 'supabase-realtime',
   launchAnimationPreset: 'fluid_surface',
   perApp: {
     hub: { theme: 'light', amoledMode: false },

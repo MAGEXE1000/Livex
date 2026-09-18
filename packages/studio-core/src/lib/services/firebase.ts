@@ -16,7 +16,6 @@ import {
   enableNetwork as fsEnableNetwork,
   disableNetwork as fsDisableNetwork,
 } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import bundledConfig from '../../../firebase.config.json';
 
 let _persistenceEnabled = false;
@@ -92,7 +91,6 @@ export const isFirebaseConfigured = Boolean(
 let _app: FirebaseApp | null = null;
 let _auth: Auth | null = null;
 let _db: Firestore | null = null;
-let _storage: FirebaseStorage | null = null;
 let _initError: string | null = null;
 export const firebaseInitErrors: any[] = [];
 
@@ -169,9 +167,6 @@ function init() {
     if (_firestoreReadyResolver) {
       _firestoreReadyResolver();
     }
-    console.log('[FirebaseInit] Getting Storage instance...');
-    _storage = getStorage(_app);
-    console.log('[FirebaseInit] Storage instance acquired.');
 
     console.log('[FirebaseInit] Setting Auth persistence...');
     setPersistence(_auth, browserLocalPersistence)
@@ -211,11 +206,6 @@ export function getFirebaseAuth(): Auth | null {
 export function getFirebaseDb(): Firestore | null {
   init();
   return _db;
-}
-
-export function getFirebaseStorage(): FirebaseStorage | null {
-  init();
-  return _storage;
 }
 
 export function getFirebaseProjectId(): string {

@@ -1,6 +1,5 @@
 import { SyncBackendProvider } from './types';
 import { SupabaseRealtimeProvider } from './supabaseRealtime';
-import { useChordStore } from '../../store/useChordStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 const providers: Record<string, SyncBackendProvider> = {
@@ -8,8 +7,7 @@ const providers: Record<string, SyncBackendProvider> = {
 };
 
 export function getActiveSyncProvider(): SyncBackendProvider {
-  const providerKey = useSettingsStore.getState().settings.syncBackendProvider || 'supabase-realtime';
-  return providers[providerKey] || providers['supabase-realtime'];
+  return providers['supabase-realtime'];
 }
 
 export function getSyncProviderByKey(key: string): SyncBackendProvider {
