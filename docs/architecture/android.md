@@ -69,19 +69,33 @@ WorkManager periodic worker (15-minute intervals):
 
 ## Android Manifest
 
-### Permissions
+### Permissions Ownership & Governance
 
-| Permission                 | Purpose                            |
-| -------------------------- | ---------------------------------- |
-| `INTERNET`                 | Network access                     |
-| `RECORD_AUDIO`             | Vocalex recording                  |
-| `MODIFY_AUDIO_SETTINGS`    | Audio engine control               |
-| `POST_NOTIFICATIONS`       | Update notifications (Android 13+) |
-| `REQUEST_INSTALL_PACKAGES` | OTA APK installation               |
-| `READ_EXTERNAL_STORAGE`    | File access                        |
-| `WRITE_EXTERNAL_STORAGE`   | File write (maxSdkVersion=32)      |
-| `READ_MEDIA_IMAGES`        | Media access (Android 13+)         |
-| `READ_MEDIA_AUDIO`         | Audio file access                  |
+The Android application maintains a minimal, strictly governed permission set. Every permission in the final APK maps to an active feature or essential dependency:
+
+| Permission | Origin | Purpose / Runtime Usage |
+| :--- | :--- | :--- |
+| `INTERNET` | App Manifest | Supabase sync, Firebase Auth, Firestore real-time collaboration, update downloads |
+| `ACCESS_NETWORK_STATE` | `firebase-auth` (Dependency) | Network connectivity change detection for sync reconnection |
+| `RECORD_AUDIO` | App Manifest / `AppInstallerPlugin` | Acoustic microphone capture in Chromatic Tuner and Vocalex recording |
+| `MODIFY_AUDIO_SETTINGS` | App Manifest | Low-latency Web Audio buffer routing and audio routing control |
+| `FOREGROUND_SERVICE` | App Manifest | Base permission for foreground download and media services |
+| `FOREGROUND_SERVICE_DATA_SYNC` | App Manifest | Android 14+ (targetSdk 35) requirement for `UpdateDownloadService` (`dataSync`) |
+| `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | App Manifest | Android 14+ (targetSdk 35) requirement for `MediaNotificationService` (`mediaPlayback`) |
+| `POST_NOTIFICATIONS` | App Manifest | Android 13+ runtime notification permission for updater alerts and audio playback controls |
+| `REQUEST_INSTALL_PACKAGES` | App Manifest | In-app APK updates via `PackageInstaller` API |
+| `READ_EXTERNAL_STORAGE` | App Manifest | Scoped with `maxSdkVersion="32"` for backup JSON imports on legacy Android |
+| `WRITE_EXTERNAL_STORAGE` | App Manifest | Scoped with `maxSdkVersion="32"` for backup JSON exports on legacy Android |
+| `READ_MEDIA_IMAGES` | App Manifest / `AppInstallerPlugin` | Media images access on Android 13+ |
+| `READ_MEDIA_AUDIO` | App Manifest / `AppInstallerPlugin` | Audio file access on Android 13+ |
+| `RECEIVE_BOOT_COMPLETED` | `@capacitor/local-notifications` | Restores scheduled notification alarms after device reboot |
+| `WAKE_LOCK` | `@capacitor/local-notifications` | Wakes device CPU briefly to deliver scheduled notification alarms |
+| `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | `androidx.core:core:1.16.0` | Secures dynamic broadcast receivers on Android 14+ (signature protection) |
+
+#### Stripped & Excluded Permissions
+- `com.google.android.providers.gsf.permission.READ_GSERVICES`: Injected transitively by Google reCAPTCHA (`recaptcha:18.6.1`). Obsolete on modern Android and stripped during manifest merge via `tools:node="remove"`.
+- `READ_MEDIA_VIDEO`: Permanently excluded. Livex does not process video.
+- `CAMERA`: Permanently excluded. Livex does not capture video or take camera photos.
 
 ### Intent Filters
 

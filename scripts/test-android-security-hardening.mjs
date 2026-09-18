@@ -61,6 +61,13 @@ test('AndroidManifest completely eliminates READ_MEDIA_VIDEO', () => {
   );
 });
 
+test('AndroidManifest explicitly strips READ_GSERVICES via tools:node="remove"', () => {
+  assert(
+    manifestContent.includes('READ_GSERVICES') && manifestContent.includes('tools:node="remove"'),
+    'Expected tools:node="remove" for READ_GSERVICES in AndroidManifest.xml'
+  );
+});
+
 test('AndroidManifest preserves all essential production permissions', () => {
   const requiredPermissions = [
     'android.permission.INTERNET',
@@ -204,6 +211,79 @@ test('AccountCard avatar photo selection does not perform redundant permission p
     'Avatar button must trigger fileInputRef directly without permissions prompt'
   );
 });
+
+// -----------------------------------------------------------------------------
+// Suite 5: Merged Manifest Invariant & Permission Whitelist Verification
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 5: Merged Manifest Invariant & Permission Whitelist Verification ---');
+
+const mergedManifestPath = path.join(
+  repoRoot,
+  'apps/studio-android/android/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml'
+);
+
+if (fs.existsSync(mergedManifestPath)) {
+  const mergedContent = fs.readFileSync(mergedManifestPath, 'utf8');
+
+  test('Merged Android manifest completely eliminates READ_GSERVICES', () => {
+    assert(
+      !mergedContent.includes('READ_GSERVICES'),
+      'com.google.android.providers.gsf.permission.READ_GSERVICES must be absent from merged manifest'
+    );
+  });
+
+  test('Merged Android manifest completely eliminates READ_MEDIA_VIDEO', () => {
+    assert(
+      !mergedContent.includes('READ_MEDIA_VIDEO'),
+      'READ_MEDIA_VIDEO must be absent from merged manifest'
+    );
+  });
+
+  test('Merged Android manifest completely eliminates CAMERA permission', () => {
+    assert(
+      !mergedContent.includes('android.permission.CAMERA'),
+      'android.permission.CAMERA must not be present in merged manifest'
+    );
+  });
+
+  test('Merged Android manifest contains only whitelisted permissions', () => {
+    const allowedPermissions = new Set([
+      'android.permission.INTERNET',
+      'android.permission.RECORD_AUDIO',
+      'android.permission.MODIFY_AUDIO_SETTINGS',
+      'android.permission.FOREGROUND_SERVICE',
+      'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.REQUEST_INSTALL_PACKAGES',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_AUDIO',
+      'android.permission.RECEIVE_BOOT_COMPLETED',
+      'android.permission.WAKE_LOCK',
+      'android.permission.ACCESS_NETWORK_STATE',
+      'com.chordex.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
+    ]);
+
+    const matches = mergedContent.matchAll(/<uses-permission[^>]+android:name="([^"]+)"/g);
+    const discovered = [];
+    for (const match of matches) {
+      discovered.push(match[1]);
+      assert(
+        allowedPermissions.has(match[1]),
+        `Unauthorized permission discovered in merged manifest: ${match[1]}`
+      );
+    }
+    assert.strictEqual(
+      discovered.length,
+      allowedPermissions.size,
+      `Expected exactly ${allowedPermissions.size} permissions in merged manifest, but found ${discovered.length}`
+    );
+  });
+} else {
+  console.log('  ⚠ Merged manifest not found yet (skipping Suite 5 until manifest merge run)');
+}
 
 // -----------------------------------------------------------------------------
 // Summary
