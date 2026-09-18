@@ -82,8 +82,10 @@ function EmergencyDebugOverlayWrapper() {
   return <EmergencyDebugOverlayInner />;
 }
 
-// Initialize DevTools
-initDevToolsFramework();
+// Initialize DevTools in development builds only (compile-time eliminated in production)
+if (import.meta.env.DEV) {
+  initDevToolsFramework();
+}
 
 // Defer non-critical background initialization by 8 seconds to keep critical frames clear
 setTimeout(() => {

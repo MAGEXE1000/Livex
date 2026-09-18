@@ -91,6 +91,20 @@ export const useNavigationStore = create<NavigationStore>()(
   )
 );
 
+if (typeof window !== 'undefined' && !Object.prototype.hasOwnProperty.call(window, 'studioTransitionActive')) {
+  try {
+    Object.defineProperty(window, 'studioTransitionActive', {
+      get() {
+        return useNavigationStore.getState().isTransitioning;
+      },
+      set(val) {
+        useNavigationStore.getState().setTransition(null, !!val);
+      },
+      configurable: true,
+    });
+  } catch (_) {}
+}
+
 
 export const useCurrentApp = (): NavigationRoute['app'] => {
   return useNavigationStore((state) => {

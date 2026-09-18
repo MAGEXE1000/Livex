@@ -62,6 +62,51 @@ assert(
   androidMain.includes('if (!import.meta.env.DEV || !LazyEmergencyOverlay) return null;'),
   'EmergencyDebugOverlayWrapper guards against non-DEV execution'
 );
+assert(
+  androidMain.includes('if (import.meta.env.DEV) {\n  initDevToolsFramework();\n}') ||
+  androidMain.includes('if (import.meta.env.DEV) {\r\n  initDevToolsFramework();\r\n}') ||
+  androidMain.includes('import.meta.env.DEV && initDevToolsFramework()'),
+  'studio-android main.tsx gates initDevToolsFramework to import.meta.env.DEV'
+);
+
+const webMain = readFileSync(resolve(ROOT_DIR, 'apps/studio-web/src/main.tsx'), 'utf8');
+assert(
+  webMain.includes('if (import.meta.env.DEV) {\n  initDevToolsFramework();\n}') ||
+  webMain.includes('if (import.meta.env.DEV) {\r\n  initDevToolsFramework();\r\n}') ||
+  webMain.includes('import.meta.env.DEV && initDevToolsFramework()'),
+  'studio-web main.tsx gates initDevToolsFramework to import.meta.env.DEV'
+);
+
+const devToolsSource = readFileSync(
+  resolve(ROOT_DIR, 'packages/studio-core/src/lib/diagnostics/devTools.ts'),
+  'utf8'
+);
+assert(
+  devToolsSource.includes('if (!import.meta.env.DEV) {\n    return;\n  }') ||
+  devToolsSource.includes('if (!import.meta.env.DEV) {\r\n    return;\r\n  }') ||
+  devToolsSource.includes('if (!import.meta.env.DEV) return;'),
+  'devTools.ts initDevToolsFramework fails-closed when not in DEV'
+);
+assert(
+  devToolsSource.includes('export function addLog(') && devToolsSource.includes('if (!import.meta.env.DEV) return;'),
+  'devTools.ts addLog contains fail-closed DEV guard'
+);
+assert(
+  devToolsSource.includes('export function recordNavigation(') && devToolsSource.includes('if (!import.meta.env.DEV) return;'),
+  'devTools.ts recordNavigation contains fail-closed DEV guard'
+);
+assert(
+  devToolsSource.includes('export function recordNetworkRequest(') && devToolsSource.includes("if (!import.meta.env.DEV) return '';"),
+  'devTools.ts recordNetworkRequest contains fail-closed DEV guard'
+);
+assert(
+  devToolsSource.includes('export function recordEvent(') && devToolsSource.includes('if (!import.meta.env.DEV) return;'),
+  'devTools.ts recordEvent contains fail-closed DEV guard'
+);
+assert(
+  devToolsSource.includes('export function registerDebugProvider(') && devToolsSource.includes('if (!import.meta.env.DEV) return;'),
+  'devTools.ts registerDebugProvider contains fail-closed DEV guard'
+);
 
 const sharedAppShell = readFileSync(
   resolve(ROOT_DIR, 'packages/ui-shared/src/shared/layout/SharedAppShell.tsx'),

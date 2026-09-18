@@ -159,6 +159,7 @@ const stagexDiagnostics: StagexDiagnosticsState = {
 };
 
 export function updateStagexDiagnostics(updates: Partial<StagexDiagnosticsState>) {
+  if (!import.meta.env.DEV) return;
   Object.assign(stagexDiagnostics, updates);
   notifyListeners();
 }
@@ -168,6 +169,7 @@ export function getStagexDiagnostics() {
 }
 
 export function resetStagexDiagnostics() {
+  if (!import.meta.env.DEV) return;
   Object.assign(stagexDiagnostics, {
     iframeMounted: false,
     iframeSrc: 'N/A',
@@ -315,6 +317,9 @@ function notifyListeners() {
 }
 
 export function subscribeToDevTools(listener: () => void) {
+  if (!import.meta.env.DEV) {
+    return () => {};
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
@@ -352,6 +357,7 @@ function getCallerSource(): string {
 
 // ── 1. LOG VIEWER ──
 export function addLog(level: 'info' | 'warn' | 'error', module: string, ...args: any[]) {
+  if (!import.meta.env.DEV) return;
   const isDevMode = useSettingsStore.getState().settings.developerMode;
   if (!isDevMode && !initialized) return;
 
@@ -422,7 +428,7 @@ export function addLog(level: 'info' | 'warn' | 'error', module: string, ...args
 }
 
 export function inspectWifiInterface(trigger = 'Manual Inspection') {
-  if (typeof window === 'undefined') return;
+  if (!import.meta.env.DEV || typeof window === 'undefined') return;
 
   const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
   const conn = typeof navigator !== 'undefined' ? (navigator as any).connection : null;
@@ -476,7 +482,7 @@ export function clearLogs() {
 
 // ── 1B. NAVIGATION TRACE LOGS ──
 export function recordNavigation(entry: Omit<NavigationEntry, 'id' | 'timestamp'>) {
-  // Always record navigation events for watchdog/diagnostic tracing, regardless of devMode
+  if (!import.meta.env.DEV) return;
 
   const id = Math.random().toString(36).substring(2, 9);
   navBuffer.push({
@@ -500,6 +506,7 @@ export function clearNavigationEntries() {
 
 // ── 2. ERROR VIEWER ──
 export function addError(err: Omit<ErrorEntry, 'timestamp'>) {
+  if (!import.meta.env.DEV) return;
   const isDevMode = useSettingsStore.getState().settings.developerMode;
   if (!isDevMode) return;
 
@@ -559,6 +566,8 @@ export function clearErrors() {
 
 // ── 3. EVENT INSPECTOR ──
 export function recordEvent(type: string, target: string, module = 'general') {
+  if (!import.meta.env.DEV) return;
+
   eventsBuffer.push({
     timestamp: Date.now(),
     type,
@@ -610,6 +619,8 @@ function stripSensitiveHeaders(headers: HeadersInit | undefined): Record<string,
 }
 
 export function recordNetworkRequest(method: string, url: string, init?: RequestInit): string {
+  if (!import.meta.env.DEV) return '';
+
   const id = Math.random().toString(36).substring(2, 9);
   const isDevMode = useSettingsStore.getState().settings.developerMode;
   if (!isDevMode) return id;
@@ -645,6 +656,8 @@ const STATUS_TEXTS: Record<number, string> = {
 };
 
 export function recordNetworkResponse(id: string, status: number, statusText: string) {
+  if (!import.meta.env.DEV || !id) return;
+
   const req = networkBuffer.find((n) => n.id === id);
   if (req) {
     req.status = status;
@@ -660,6 +673,8 @@ export function recordNetworkResponse(id: string, status: number, statusText: st
 }
 
 export function recordNetworkFailure(id: string, error: string) {
+  if (!import.meta.env.DEV || !id) return;
+
   const req = networkBuffer.find((n) => n.id === id);
   if (req) {
     req.error = error;
@@ -682,6 +697,8 @@ export function recordPerfEvent(
   type: 'mount' | 'unmount' | 'render',
   renderCount = 0
 ) {
+  if (!import.meta.env.DEV) return;
+
   const isDevMode = useSettingsStore.getState().settings.developerMode;
   if (!isDevMode) return;
 
@@ -711,11 +728,15 @@ export function clearPerfStats() {
 
 // ── 6. DEBUG PROVIDERS REGISTRY ──
 export function registerDebugProvider(provider: DebugProvider) {
+  if (!import.meta.env.DEV) return;
+
   providers.set(provider.id, provider);
   notifyListeners();
 }
 
 export function unregisterDebugProvider(id: string) {
+  if (!import.meta.env.DEV) return;
+
   providers.delete(id);
   notifyListeners();
 }
@@ -743,6 +764,17 @@ export function maskSensitiveValue(key: string, value: string): string {
 
 // ── 8. GLOBAL INITIALIZATION ──
 export function initDevToolsFramework() {
+  // Fail-closed in production: The development diagnostics framework must NEVER execute in production builds.
+  // The production path must return immediately before:
+  // - setting initialized state
+  // - monkey-patching console
+  // - monkey-patching fetch
+  // - registering global event listeners
+  // - allocating diagnostic buffers
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
   if (initialized) return;
   initialized = true;
 

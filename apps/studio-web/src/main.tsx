@@ -6,8 +6,10 @@ import {
   useNavigationStore,
 } from '@workspace/studio-core';
 
-// Initialize DevTools
-initDevToolsFramework();
+// Initialize DevTools in development builds only (compile-time eliminated in production)
+if (import.meta.env.DEV) {
+  initDevToolsFramework();
+}
 
 import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useState, useEffect } from 'react';
