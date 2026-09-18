@@ -1168,6 +1168,7 @@ function AddTrackContent({
                 </p>
                 <button
                   onClick={stopRec}
+                  aria-label="Stop recording"
                   style={{
                     width: 64,
                     height: 64,
@@ -1184,6 +1185,7 @@ function AddTrackContent({
                   <span
                     className="material-symbols-outlined"
                     style={{ fontSize: 28, color: '#fff', fontVariationSettings: "'FILL' 1" }}
+                    aria-hidden="true"
                   >
                     stop
                   </span>
@@ -1626,6 +1628,7 @@ function MixerView({
           <button
             onClick={() => setConfirmDelete(true)}
             title={t.vocalex.deleteSession || 'Delete session'}
+            aria-label={t.vocalex.deleteSession || 'Delete session'}
             style={{
               flexShrink: 0,
               width: 36,
@@ -1649,7 +1652,7 @@ function MixerView({
               e.currentTarget.style.color = 'var(--vx-text-3)';
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               delete
             </span>
           </button>

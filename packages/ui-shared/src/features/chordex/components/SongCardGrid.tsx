@@ -21,6 +21,15 @@ export function SongCardGrid({ songs, onSelectSong }: SongCardGridProps) {
         <div
           key={song.id}
           onClick={() => onSelectSong(song)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSelectSong(song);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Select ${song.name}`}
           className="content-auto-row"
           style={{
             background: 'var(--c-surface-mid)',
@@ -39,7 +48,7 @@ export function SongCardGrid({ songs, onSelectSong }: SongCardGridProps) {
               {song.artist ? `by ${song.artist}` : 'Unknown Artist'} • Key: {song.key || 'C'} • {song.bpm || 120} BPM
             </div>
           </div>
-          <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--c-text-muted)' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--c-text-muted)' }} aria-hidden="true">
             chevron_right
           </span>
         </div>

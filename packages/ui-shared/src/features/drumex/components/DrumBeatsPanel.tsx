@@ -265,7 +265,7 @@ function BeatCard({
                 color: isPlaying ? '#ffffff' : 'var(--c-accent-from, #2563EB)',
               }}
             >
-              <span className="material-symbols-outlined text-2xl select-none">
+              <span className="material-symbols-outlined text-2xl select-none" aria-hidden="true">
                 {isPlaying ? 'stop' : 'play_arrow'}
               </span>
             </button>
@@ -274,6 +274,15 @@ function BeatCard({
             <div
               className="flex-1 min-w-0 cursor-pointer"
               onClick={onOpen}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpen();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open ${song.name}`}
               data-purpose="beat-title-area"
             >
               <h3
@@ -311,7 +320,10 @@ function BeatCard({
             className="w-8 h-8 rounded-full flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
             style={{ color: 'var(--c-text-muted, #8A92A6)' }}
           >
-            <span className="material-symbols-outlined text-xl group-hover:translate-x-0.5 transition-transform">
+            <span
+              className="material-symbols-outlined text-xl group-hover:translate-x-0.5 transition-transform"
+              aria-hidden="true"
+            >
               chevron_right
             </span>
           </button>

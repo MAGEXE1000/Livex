@@ -555,6 +555,7 @@ export function DrumExportModal({
               <button
                 onClick={handleClose}
                 className="btn-smooth"
+                aria-label="Back"
                 style={{
                   width: 36,
                   height: 36,
@@ -569,6 +570,7 @@ export function DrumExportModal({
                 <span
                   className="material-symbols-outlined"
                   style={{ color: accent.from, fontSize: 22 }}
+                  aria-hidden="true"
                 >
                   arrow_back
                 </span>

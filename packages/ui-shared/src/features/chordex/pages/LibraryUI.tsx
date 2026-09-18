@@ -1653,6 +1653,15 @@ export function LibraryMainView({ state }: { state: any }) {
                         key={rc.id}
                         data-chord-id={rc.id}
                         onClick={(e) => handleChordClick(rc.id, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleChordClick(rc.id, e as any);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Chord ${rc.name}`}
                         className="min-w-[136px] rounded-3xl p-4 border shadow-soft-card flex flex-col justify-between cursor-pointer active:scale-95 transition-all hover:border-studio-accent/40"
                         style={{
                           backgroundColor: 'var(--surface-card-bg, #ffffff)',
@@ -1670,6 +1679,7 @@ export function LibraryMainView({ state }: { state: any }) {
                           <span
                             className="material-symbols-rounded text-[16px]"
                             style={{ color: 'var(--c-text-muted, #8A92A6)' }}
+                            aria-hidden="true"
                           >
                             history
                           </span>
@@ -1730,6 +1740,15 @@ export function LibraryMainView({ state }: { state: any }) {
                     <div
                       key={cat.type}
                       onClick={() => setActiveType(cat.type)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setActiveType(cat.type);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Category ${cat.label}`}
                       className="rounded-3xl p-3.5 border shadow-soft-card flex items-center justify-between hover:border-studio-accent/40 active:scale-[0.98] transition-all cursor-pointer"
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',

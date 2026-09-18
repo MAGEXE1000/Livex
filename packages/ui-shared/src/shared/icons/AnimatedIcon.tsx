@@ -189,6 +189,8 @@ export interface AnimatedIconProps {
   onClick?: (e: React.MouseEvent) => void;
   /** Incrementing counter to force animation replay even when state is unchanged (e.g. re-tapping active tab) */
   animationEpoch?: number;
+  'aria-hidden'?: boolean | 'true' | 'false';
+  'aria-label'?: string;
 }
 
 export interface AnimatedIconHandle {
@@ -421,6 +423,8 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
       strokeWidth = 2,
       onClick,
       animationEpoch,
+      'aria-hidden': ariaHidden,
+      'aria-label': ariaLabel,
     },
     ref
   ) => {
@@ -612,9 +616,13 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
         };
 
     const IconComponent = getAnimatedIconComponent(name);
+    const effectiveAriaHidden = ariaHidden !== undefined ? ariaHidden : (ariaLabel ? undefined : true);
 
     return (
       <motion.div
+        role={ariaLabel ? 'img' : undefined}
+        aria-label={ariaLabel}
+        aria-hidden={effectiveAriaHidden}
         className={`inline-flex items-center justify-center select-none ${className}`}
         style={{
           width: size,

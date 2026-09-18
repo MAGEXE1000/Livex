@@ -104,10 +104,11 @@ export const StageCollabDialog: React.FC<StageCollabDialogProps> = ({
             </div>
             <button
               onClick={() => !collabLoading && onClose()}
+              aria-label={isSpanish ? 'Cerrar diálogo' : 'Close dialog'}
               className="p-2 rounded-full transition-colors flex items-center justify-center cursor-pointer"
               style={{ background: 'var(--c-surface-low)' }}
             >
-              <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              <span className="material-symbols-outlined text-on-surface-variant" aria-hidden="true">close</span>
             </button>
           </div>
 

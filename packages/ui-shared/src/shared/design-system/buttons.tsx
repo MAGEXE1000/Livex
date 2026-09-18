@@ -224,7 +224,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           gap: '6px',
           cursor: disabled || activeLoading ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.45 : 1,
-          outline: 'none',
           boxSizing: 'border-box',
           position: 'relative',
           overflow: ripple && !reduce ? 'hidden' : 'visible',
@@ -438,7 +437,6 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           justifyContent: 'center',
           cursor: disabled || loading ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.5 : 1,
-          outline: 'none',
           userSelect: 'none',
           WebkitTapHighlightColor: 'transparent',
           boxSizing: 'border-box',
@@ -448,9 +446,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {...(props as any)}
       >
         {loading ? (
-          <AnimatedIcon name="loader-circle" state="loading" size={dim.icon} />
+          <AnimatedIcon name="loader-circle" state="loading" size={dim.icon} aria-hidden="true" />
         ) : typeof icon === 'string' ? (
-          <span className="material-symbols-outlined" style={{ fontSize: dim.icon }}>
+          <span className="material-symbols-outlined" style={{ fontSize: dim.icon }} aria-hidden="true">
             {icon}
           </span>
         ) : (
@@ -491,16 +489,16 @@ export function FloatingButton({ icon, style, className = '', ...props }: Floati
         boxShadow:
           '0 8px 28px rgba(0, 0, 0, 0.35), 0 0 20px var(--c-accent-from, rgba(124, 58, 237, 0.35)), inset 0 1px 1.5px rgba(255, 255, 255, 0.40)',
         cursor: 'pointer',
-        outline: 'none',
         boxSizing: 'border-box',
         userSelect: 'none',
         WebkitTapHighlightColor: 'transparent',
         ...style,
       }}
       className={`studio-fab ${className}`}
+      aria-label={props['aria-label'] || (typeof icon === 'string' ? icon.replace(/_/g, ' ') : undefined)}
       {...(props as any)}
     >
-      <AnimatedIcon name={icon} size={24} />
+      <AnimatedIcon name={icon} size={24} aria-hidden="true" />
     </motion.button>
   );
 }
@@ -742,7 +740,6 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         borderRadius: '9999px',
         padding: '8px 14px',
         cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-        outline: 'none',
         overflow: 'hidden',
         boxShadow: shadow,
         fontFamily: 'var(--type-button-font, var(--studio-font-body))',
@@ -926,7 +923,6 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
           justifyContent: 'center',
           gap: '6px',
           cursor: 'pointer',
-          outline: 'none',
           boxSizing: 'border-box',
           position: 'relative',
           userSelect: 'none',

@@ -1224,6 +1224,7 @@ export function AccountDangerZone({ accent, cardStyle }: DangerZoneProps) {
                 </p>
                 <button
                   onClick={closeSheet}
+                  aria-label={(t as any).close || t.cancel || 'Close'}
                   className="btn-smooth"
                   style={{
                     color: 'var(--c-text-secondary)',
@@ -1233,7 +1234,7 @@ export function AccountDangerZone({ accent, cardStyle }: DangerZoneProps) {
                     padding: 4,
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
                     close
                   </span>
                 </button>

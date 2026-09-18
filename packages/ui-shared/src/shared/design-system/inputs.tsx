@@ -196,6 +196,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           <motion.button
             onClick={onClear}
             type="button"
+            aria-label="Clear search"
             whileTap={{ scale: 0.9 }}
             transition={SpringPresets.soft}
             className="absolute right-3.5 outline-none cursor-pointer flex items-center justify-center"
@@ -212,7 +213,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               zIndex: 5,
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: '15px' }}>
               close
             </span>
           </motion.button>

@@ -1078,6 +1078,22 @@ html[data-perf-mode='on'] *::after {
     transform: scale(0.93);
   }
 
+  /* ===== Keyboard Accessible Focus-Visible Indicator ===== */
+  :focus-visible {
+    outline: 2px solid var(--c-accent-from, #2563eb);
+    outline-offset: 2px;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--c-accent-from, #2563eb);
+    outline-offset: 2px;
+  }
+
   /* ===== Card hover ===== */
   .card-hover {
     transition:

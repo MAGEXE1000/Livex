@@ -396,6 +396,7 @@ export default function PracticePanel() {
             <button
               type="button"
               onClick={goBack}
+              aria-label="Back"
               style={{
                 width: 40,
                 height: 40,
@@ -416,7 +417,7 @@ export default function PracticePanel() {
                 transition: 'all 150ms ease',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
                 arrow_back
               </span>
             </button>

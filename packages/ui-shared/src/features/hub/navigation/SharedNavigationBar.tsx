@@ -116,6 +116,8 @@ const NavigationItem = React.memo(
     return (
       <motion.button
         onClick={onClick}
+        role="tab"
+        aria-selected={isActive}
         aria-label={item.label}
         title={item.label}
         data-nav-item-index={index}
@@ -135,7 +137,6 @@ const NavigationItem = React.memo(
           position: 'relative',
           zIndex: 1,
           padding: '2px 4px',
-          outline: 'none',
           WebkitTapHighlightColor: 'transparent',
           gap: '2px',
         }}
@@ -1012,6 +1013,8 @@ export function SharedNavigationBar({
                   {isSwitcherOpen ? (
                     <motion.div
                       key="switcher"
+                      role="tablist"
+                      aria-label="App Switcher"
                       initial={{ opacity: 0 }}
                       animate={{
                         opacity: 1,
@@ -1088,6 +1091,8 @@ export function SharedNavigationBar({
                   ) : (
                     <motion.div
                       key="nav"
+                      role="tablist"
+                      aria-label="Main Navigation"
                       initial={{ opacity: 0 }}
                       animate={{
                         opacity: 1,

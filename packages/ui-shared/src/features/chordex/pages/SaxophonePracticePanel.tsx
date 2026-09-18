@@ -313,6 +313,7 @@ export const SaxophonePracticePanel: React.FC = () => {
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={handlePlaySound}
+              aria-label="Play reference pitch"
               style={{
                 width: 54,
                 height: 54,
@@ -327,7 +328,7 @@ export const SaxophonePracticePanel: React.FC = () => {
                 boxShadow: '0 4px 20px rgba(245, 158, 11, 0.4)',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 28 }} aria-hidden="true">
                 volume_up
               </span>
             </motion.button>

@@ -221,6 +221,7 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
           <button
             onClick={onClose}
             type="button"
+            aria-label="Close sheet"
             className="touch-target-44"
             style={{
               width: 'var(--btn-size-sm, 38px)',
@@ -236,7 +237,7 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
               color: 'var(--c-text-secondary, var(--muted))',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18 }}>
               close
             </span>
           </button>

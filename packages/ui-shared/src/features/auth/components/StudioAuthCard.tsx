@@ -220,19 +220,25 @@ export default function StudioAuthCard({
             >
               Studio only syncs the data needed to connect and restore your workspace. You can
               manage{' '}
-              <span
+              <button
+                type="button"
                 onClick={() =>
                   NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'privacy' })
                 }
                 style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  font: 'inherit',
                   textDecoration: 'underline',
                   cursor: 'pointer',
                   color: 'var(--c-text-primary)',
                   fontWeight: 500,
+                  display: 'inline',
                 }}
               >
                 privacy and sync options
-              </span>{' '}
+              </button>{' '}
               anytime.
             </p>
           </div>
