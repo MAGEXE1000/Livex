@@ -36,9 +36,7 @@ const LazyEmergencyOverlay = import.meta.env.DEV
   ? lazy(() => import('./EmergencyDebugOverlay'))
   : null;
 
-function EmergencyDebugOverlayWrapper() {
-  if (!import.meta.env.DEV || !LazyEmergencyOverlay) return null;
-
+function EmergencyDebugOverlayInner() {
   const [shouldRender, setShouldRender] = useState(() => {
     if (typeof window === 'undefined') return false;
     const isDebugModeEnabled =
@@ -70,13 +68,18 @@ function EmergencyDebugOverlayWrapper() {
     };
   }, []);
 
-  if (!shouldRender) return null;
+  if (!shouldRender || !LazyEmergencyOverlay) return null;
 
   return (
     <Suspense fallback={null}>
       <LazyEmergencyOverlay />
     </Suspense>
   );
+}
+
+function EmergencyDebugOverlayWrapper() {
+  if (!import.meta.env.DEV || !LazyEmergencyOverlay) return null;
+  return <EmergencyDebugOverlayInner />;
 }
 
 // Initialize DevTools

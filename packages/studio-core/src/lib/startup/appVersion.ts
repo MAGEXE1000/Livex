@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.21';
-export const NATIVE_VERSION_CODE = 40621;
-export const WEB_VERSION = '4.6.21';
+export const NATIVE_VERSION = '4.6.22';
+export const NATIVE_VERSION_CODE = 40622;
+export const WEB_VERSION = '4.6.22';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -96,12 +96,22 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Improved',
+    items: [
+      'Decommissioned Obsolete Prototype Packages: Completely removed legacy direct-postgres prototype package `lib/db/` and purged obsolete workspace dependencies and tsconfig references.',
+      'Sync Provider Canonicalization: Pruned dead ghost options (`firebase-firestore-legacy`, `supabase-powersync`) in favor of canonical `supabase-realtime` sync engine.',
+      'Theme Token & Visual Hierarchy Unification: Consolidated Chordex and Drumex tuner surfaces to canonical Livex theme tokens, guaranteeing true AMOLED pitch black and adaptive light mode backgrounds.',
+      'Animation & Motion Performance: Optimized animation lifecycles with CSS compositor offloading and strict reduced-motion accessibility enforcement.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Profile & RootApp Runtime Crash Resolved: Eliminated critical production crash (`Minified React error #310: Rendered more hooks than during the previous render`) occurring when navigating to the Profile/Account settings screen.',
-      'Rules of Hooks Architectural Alignment: Hoisted all store selectors, theme attributes, and modal origin geometry hooks to the top level of `AccountSettingsPage` before early returns, ensuring constant hook allocation counts on both unauthenticated mount and authenticated update renders.',
-      'Component Lifecycle & Stability Guard: Extracted `AccountDeviceRow` out of inline JSX IIFE closures into module scope with explicit props, eliminating component type churning and local hook allocation jitter across re-renders.',
-      'Chordex Library Detail Hook Rule Alignment: Hoisted `detailScrollRef` above early return conditions in `LibraryChordDetail`.',
+      'Native Updater State Machine Deadlock Resolution: Corrected unhandled transition paths in updater pipeline that previously left the updater stuck in downloading/verifying states on unhandled transitions.',
+      'Updater Download Cancellation Support: Added comprehensive `AbortController` cancellation for in-flight APK downloads when dialogs are closed or dismissed, cleanly terminating connections and resetting state to `INSTALL_CANCELLED`.',
+      'Native Android PackageInstaller Callbacks: Connected native Android `PackageInstaller` broadcast events (`STATUS_SUCCESS`, `STATUS_PENDING_USER_ACTION`, `STATUS_FAILURE_*`) to the JavaScript runtime.',
+      'Silent Catch Block Remediation: Replaced silent empty catch blocks across metadata retrieval, SHA-256 verification, and installation recovery with structured diagnostic flight recorder telemetry.',
+      'Theme Cold-Boot Initialization Flash: Eliminated theme flicker and initialization lag during cold boots and page transitions.',
     ],
   },
 ];
@@ -113,6 +123,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.22',
+    date: '2026-09-17',
+    highlights: [
+      'Android Manifest Permission Hardening: Stripped legacy `com.google.android.providers.gsf.permission.READ_GSERVICES` injected transitively by reCAPTCHA via manifest merger (`tools:node="remove"`), strictly enforcing a 16-permission whitelist with zero unauthorized permissions.',
+      'Scoped FileProvider & Backup Protection: Narrowed `FileProvider` paths strictly to cache directories and configured `data_extraction_rules.xml` and `backup_rules.xml` to completely disable cloud backups and device data transfers.',
+      'Strict Authorization & Storage Isolation: Decommissioned unused `firebase/storage` SDK from client runtime, enforced strict 2MB/10MB limits in server rules, and locked Firestore rooms and presence to authenticated user sandboxes.',
+      'Native Updater State Machine Deadlock Resolution: Corrected unhandled transition paths in updater pipeline that previously left the updater stuck in downloading/verifying states on unhandled transitions.',
+      'Updater Download Cancellation Support: Added comprehensive `AbortController` cancellation for in-flight APK downloads when dialogs are closed or dismissed, cleanly terminating connections and resetting state to `INSTALL_CANCELLED`.',
+      'Native Android PackageInstaller Callbacks: Connected native Android `PackageInstaller` broadcast events (`STATUS_SUCCESS`, `STATUS_PENDING_USER_ACTION`, `STATUS_FAILURE_*`) to the JavaScript runtime.',
+    ],
+  },
   {
     version: '4.6.21',
     date: '2026-09-17',
@@ -209,15 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.',
       'Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.',
       'Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.',
-    ],
-  },
-  {
-    version: '4.6.12',
-    date: '2026-09-15',
-    highlights: [
-      'Permanent Capsule Pill Curvature: Completely eliminated intermediate square/rectangular card states during scroll-linked morphing. The floating top bar maintains an intrinsic, continuous pill curvature (`border-radius: 9999px`) across all scroll frames with zero intermediate card artifacts.',
-      'Inner Title Metrics Precision: Hardened `updateMetrics` in `useScrollMorph` to resolve inner typography bounds, ensuring accurate left-to-center mathematical alignment during scroll morph.',
-      'Compositor-Only Layout Protection: Removed per-frame padding mutations in the morph loop to eliminate layout recalculations, sustaining 120 FPS fluid motion on Android WebView.',
     ],
   },
 ];
