@@ -85,16 +85,12 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
   };
 
   // Theming tokens
-  const bgCard = isLight
-    ? 'rgba(255, 255, 255, 0.98)'
-    : isAmoled
-      ? 'rgba(10, 10, 14, 0.98)'
-      : 'rgba(24, 24, 30, 0.96)';
-  const borderCol = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.12)';
-  const textPrimary = isLight ? '#09090b' : '#ffffff';
-  const textSecondary = isLight ? '#52525b' : '#d4d4d8';
-  const textDim = isLight ? '#a1a1aa' : '#71717a';
-  const inputBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)';
+  const bgCard = 'var(--surface-dialog-bg, var(--app-surface-high))';
+  const borderCol = 'var(--c-border)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textDim = 'var(--c-text-muted)';
+  const inputBg = 'var(--app-surface-low)';
 
   return (
     <AnimatePresence>

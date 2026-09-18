@@ -235,10 +235,10 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
   const activeCount = Object.values(sections).filter(Boolean).length;
   const isAllActive = activeCount === sectionItems.length;
 
-  const borderCol = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
-  const textPrimary = isLight ? '#09090b' : '#ffffff';
-  const textDim = isLight ? '#a1a1aa' : '#71717a';
-  const hoverBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)';
+  const borderCol = 'var(--c-border)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textDim = 'var(--c-text-muted)';
+  const hoverBg = 'var(--app-surface-low)';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>

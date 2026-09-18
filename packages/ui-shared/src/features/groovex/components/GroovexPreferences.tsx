@@ -140,12 +140,8 @@ export default function GroovexPreferences() {
   // defaultStemVolume default 0.85 -> 85%.
   const currentStemPct = Math.round(preferences.defaultStemVolume * 100);
 
-  const cardBg = isAmoled ? '#000000' : isLight ? '#ffffff' : 'var(--app-surface, #141417)';
-  const cardBorder = isAmoled
-    ? '1px solid rgba(255, 255, 255, 0.12)'
-    : isLight
-      ? '1px solid rgba(0, 0, 0, 0.06)'
-      : '1px solid rgba(255, 255, 255, 0.07)';
+  const cardBg = 'var(--app-surface)';
+  const cardBorder = '1px solid var(--c-border)';
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: cardBg,
@@ -155,7 +151,7 @@ export default function GroovexPreferences() {
     border: cardBorder,
   };
 
-  const thumbRing = isLight ? '#ffffff' : cardBg;
+  const thumbRing = 'var(--app-surface)';
 
   return (
     <div
@@ -422,7 +418,7 @@ export default function GroovexPreferences() {
               <div
                 style={{
                   height: 1,
-                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                  backgroundColor: 'var(--c-border)',
                 }}
               />
               <StitchToggleRow
@@ -436,7 +432,7 @@ export default function GroovexPreferences() {
               <div
                 style={{
                   height: 1,
-                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                  backgroundColor: 'var(--c-border)',
                 }}
               />
               <StitchToggleRow
@@ -509,10 +505,10 @@ export default function GroovexPreferences() {
             {/* Metric Display */}
             <div
               style={{
-                backgroundColor: isLight ? 'rgba(0, 0, 0, 0.025)' : 'rgba(255, 255, 255, 0.035)',
+                backgroundColor: 'var(--app-surface-low)',
                 borderRadius: 18,
                 padding: '16px',
-                border: `1px solid ${isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)'}`,
+                border: '1px solid var(--c-border)',
                 marginBottom: 12,
               }}
             >
@@ -565,12 +561,10 @@ export default function GroovexPreferences() {
                   style={{
                     padding: '6px 14px',
                     borderRadius: 10,
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    border: '1px solid var(--c-error-container)',
                     cursor: 'pointer',
-                    backgroundColor: isLight
-                      ? 'rgba(239, 68, 68, 0.08)'
-                      : 'rgba(239, 68, 68, 0.16)',
-                    color: '#ef4444',
+                    backgroundColor: 'var(--c-error-container)',
+                    color: 'var(--c-error)',
                     fontSize: '12px',
                     fontWeight: 700,
                     fontFamily: 'var(--studio-font-body)',
@@ -607,15 +601,11 @@ export default function GroovexPreferences() {
                         alignItems: 'center',
                         gap: 12,
                         padding: '10px 12px',
-                        backgroundColor: isLight
-                          ? 'rgba(0, 0, 0, 0.02)'
-                          : 'rgba(255, 255, 255, 0.03)',
+                        backgroundColor: 'var(--app-surface-low)',
                         borderRadius: 12,
                         opacity: isDeleting ? 0.4 : 1,
                         transition: 'opacity 200ms ease',
-                        border: isLight
-                          ? '1px solid rgba(0, 0, 0, 0.05)'
-                          : '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--c-border)',
                       }}
                     >
                       <span
@@ -666,7 +656,7 @@ export default function GroovexPreferences() {
                           borderRadius: 8,
                           border: 'none',
                           cursor: deletingId ? 'default' : 'pointer',
-                          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                          backgroundColor: 'var(--c-error-container)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -677,7 +667,7 @@ export default function GroovexPreferences() {
                       >
                         <span
                           className="material-symbols-outlined"
-                          style={{ fontSize: 16, color: '#ef4444' }}
+                          style={{ fontSize: 16, color: 'var(--c-error)' }}
                         >
                           {isDeleting ? 'hourglass_empty' : 'delete'}
                         </span>
@@ -726,7 +716,7 @@ export default function GroovexPreferences() {
                   <Button
                     variant="primary"
                     onClick={handleClearAll}
-                    style={{ flex: 1, backgroundColor: '#ef4444', color: '#ffffff' }}
+                    style={{ flex: 1, backgroundColor: 'var(--c-error)', color: '#ffffff' }}
                   >
                     {t.groovex.confirm}
                   </Button>
@@ -818,9 +808,7 @@ export default function GroovexPreferences() {
                 style={{
                   paddingTop: 8,
                   marginTop: 2,
-                  borderTop: `1px solid ${
-                    isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)'
-                  }`,
+                  borderTop: '1px solid var(--c-border)',
                 }}
               >
                 <span
@@ -845,10 +833,8 @@ export default function GroovexPreferences() {
               backgroundColor: cardBg,
               borderRadius: 24,
               padding: '20px',
-              boxShadow: isLight
-                ? '0 2px 12px rgba(239, 68, 68, 0.04)'
-                : '0 4px 20px rgba(0, 0, 0, 0.25)',
-              border: `1px solid ${isLight ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.3)'}`,
+              boxShadow: 'var(--shadow-surface-raised)',
+              border: '1px solid var(--c-error-container)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
@@ -857,14 +843,12 @@ export default function GroovexPreferences() {
                   width: 32,
                   height: 32,
                   borderRadius: 12,
-                  backgroundColor: isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.16)',
-                  border: `1px solid ${
-                    isLight ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.3)'
-                  }`,
+                  backgroundColor: 'var(--c-error-container)',
+                  border: '1px solid var(--c-error-container)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#ef4444',
+                  color: 'var(--c-error)',
                   flexShrink: 0,
                   marginTop: 2,
                 }}
@@ -915,11 +899,9 @@ export default function GroovexPreferences() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.16)',
-                  color: '#ef4444',
-                  border: `1px solid ${
-                    isLight ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.35)'
-                  }`,
+                  backgroundColor: 'var(--c-error-container)',
+                  color: 'var(--c-error)',
+                  border: '1px solid var(--c-error-container)',
                   borderRadius: 16,
                   padding: '10px 20px',
                   fontWeight: 600,
@@ -966,7 +948,7 @@ export default function GroovexPreferences() {
                       });
                       setConfirmReset(false);
                     }}
-                    style={{ flex: 1, backgroundColor: '#ef4444', color: '#ffffff' }}
+                    style={{ flex: 1, backgroundColor: 'var(--c-error)', color: '#ffffff' }}
                   >
                     {t.groovex.resetToDefaults}
                   </Button>

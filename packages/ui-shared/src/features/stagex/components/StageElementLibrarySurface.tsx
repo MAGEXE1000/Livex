@@ -154,11 +154,9 @@ export const StageElementLibrarySurface: React.FC<StageElementLibrarySurfaceProp
               onClick={onSwitchToHistory}
               className="h-7 px-2 rounded-full flex items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-all text-[11px] font-semibold"
               style={{
-                background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                color: isLight ? '#52525b' : '#a1a1aa',
-                border: isLight
-                  ? '1px solid rgba(0, 0, 0, 0.06)'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--app-surface-low)',
+                color: 'var(--c-text-secondary)',
+                border: '1px solid var(--c-border)',
               }}
               aria-label={isSpanish ? 'Ver historial' : 'View history'}
               title={isSpanish ? 'Historial de Edición' : 'Edit History'}
@@ -174,11 +172,9 @@ export const StageElementLibrarySurface: React.FC<StageElementLibrarySurfaceProp
             onClick={onClose}
             className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer active:scale-90 transition-all"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-              color: isLight ? '#52525b' : '#a1a1aa',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.06)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--app-surface-low)',
+              color: 'var(--c-text-secondary)',
+              border: '1px solid var(--c-border)',
             }}
             aria-label={tr.stagex?.library?.closeDrawer || 'Close Element Drawer'}
             title={tr.stagex?.library?.closeDrawer || 'Close'}

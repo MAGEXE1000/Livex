@@ -1105,14 +1105,10 @@ export default function GroovexPlayer() {
         {/* SECTION 1: TURNTABLE & AUDIO DECK CARD */}
         <section
           style={{
-            background: isLight ? '#FFFFFF' : isAmoled ? '#000000' : 'rgba(255,255,255,0.03)',
+            background: 'var(--c-bg-card)',
             borderRadius: 28,
             padding: '16px 16px 18px',
-            border: isLight
-              ? '1px solid #E8EDF5'
-              : isAmoled
-                ? '1px solid #1a1a1a'
-                : '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid var(--c-border)',
             boxShadow: isLight
               ? '0 10px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 8px -2px rgba(15, 23, 42, 0.02)'
               : 'none',
@@ -2004,10 +2000,10 @@ export default function GroovexPlayer() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
-                    background: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.06)',
+                    background: 'var(--c-surface-low)',
                     padding: 4,
                     borderRadius: 12,
-                    border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid var(--c-border)',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                   }}
                 >
@@ -2048,7 +2044,7 @@ export default function GroovexPlayer() {
                       fontFamily: 'var(--studio-font-mono, monospace)',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: pitchShift !== 0 ? '#0066FF' : 'var(--c-text-primary)',
+                      color: pitchShift !== 0 ? 'var(--app-accent, #007aff)' : 'var(--c-text-primary)',
                     }}
                   >
                     {pitchShift > 0 ? `+${pitchShift}` : pitchShift === 0 ? '±0' : pitchShift}
@@ -2093,14 +2089,10 @@ export default function GroovexPlayer() {
           <section
             id="stems-mixer-section"
             style={{
-              background: isLight ? '#FFFFFF' : isAmoled ? '#000000' : 'rgba(255,255,255,0.03)',
+              background: 'var(--c-bg-card)',
               borderRadius: 28,
               padding: '16px 16px 20px',
-              border: isLight
-                ? '1px solid #E8EDF5'
-                : isAmoled
-                  ? '1px solid #1a1a1a'
-                  : '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid var(--c-border)',
               boxShadow: 'var(--shadow-surface-raised)',
               animation: 'gxFadeSlideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
             }}

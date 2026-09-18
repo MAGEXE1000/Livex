@@ -159,11 +159,11 @@ export const SaxophonePracticePanel: React.FC = () => {
         <div
           style={{
             display: 'flex',
-            background: 'rgba(255, 255, 255, 0.06)',
+            background: 'var(--c-surface-low)',
             padding: 4,
             borderRadius: 12,
             gap: 4,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid var(--c-border)',
           }}
         >
           {(Object.keys(SAX_VARIANTS) as SaxophoneVariant[]).map((v) => {
@@ -271,12 +271,12 @@ export const SaxophonePracticePanel: React.FC = () => {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b' }}>
                 QUIZ TARGET NOTE
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--c-text-primary)' }}>
                 {SAX_FINGERINGS[quizTargetIdx].displayNote}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, color: '#a1a1aa' }}>SCORE</div>
+              <div style={{ fontSize: 11, color: 'var(--c-text-secondary)' }}>SCORE</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#38bdf8' }}>{quizScore}</div>
               <div style={{ fontSize: 10, color: '#f59e0b' }}>Streak: {quizStreak} 🔥</div>
             </div>
@@ -296,13 +296,13 @@ export const SaxophonePracticePanel: React.FC = () => {
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#a1a1aa',
+                  color: 'var(--c-text-secondary)',
                   textTransform: 'uppercase',
                 }}
               >
                 Written Pitch
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--c-text-primary)' }}>
                 {currentFingering.displayNote}
               </div>
               <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>

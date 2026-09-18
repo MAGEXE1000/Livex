@@ -172,30 +172,14 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   };
 
   // Theme Design Tokens
-  const cardBg = isLight ? '#ffffff' : isAmoled ? '#000000' : 'var(--c-bg-card, #111115)';
-  const cardBorder = isLight
-    ? '#eaecef'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'var(--c-border, rgba(255, 255, 255, 0.08))';
-  const innerBg = isLight
-    ? '#f9fafb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(255, 255, 255, 0.03)';
-  const innerBorder = isLight
-    ? '#e5e7eb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(255, 255, 255, 0.06)';
-  const dividerColor = isLight
-    ? '#f3f4f6'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(255, 255, 255, 0.06)';
-  const textPrimary = isLight ? '#18181b' : '#ffffff';
-  const textSecondary = isLight ? '#71717a' : '#a1a1aa';
-  const textMuted = isLight ? '#9ca3af' : '#71717a';
+  const cardBg = 'var(--c-bg-card)';
+  const cardBorder = '1px solid var(--c-border)';
+  const innerBg = 'var(--app-surface-low)';
+  const innerBorder = '1px solid var(--c-border)';
+  const dividerColor = 'var(--c-border)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textMuted = 'var(--c-text-muted)';
 
   return (
     <StageSetupDetailLayout
@@ -209,8 +193,8 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
           onClick={() => setIsAdding((prev) => !prev)}
           className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
           style={{
-            backgroundColor: isLight ? '#000000' : '#ffffff',
-            color: isLight ? '#ffffff' : '#000000',
+            backgroundColor: 'var(--c-text-primary)',
+            color: 'var(--app-bg)',
           }}
           title={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
           aria-label={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
@@ -500,8 +484,8 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
                   disabled={!title.trim()}
                   className="px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-sm active:scale-95"
                   style={{
-                    backgroundColor: isLight ? '#000000' : '#ffffff',
-                    color: isLight ? '#ffffff' : '#000000',
+                    backgroundColor: 'var(--c-text-primary)',
+                    color: 'var(--app-bg)',
                   }}
                   data-testid="btn-submit-track"
                 >
@@ -802,7 +786,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
               ) : (
                 <span
                   className="inline-block w-8 h-1.5 rounded-full"
-                  style={{ backgroundColor: isLight ? '#18181b' : '#ffffff' }}
+                  style={{ backgroundColor: 'var(--c-text-primary)' }}
                 />
               )}
             </div>

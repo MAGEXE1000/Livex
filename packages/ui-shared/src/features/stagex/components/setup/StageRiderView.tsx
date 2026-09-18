@@ -318,25 +318,13 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
   }, [riderChannels, elements]);
 
   // Theme Design Tokens
-  const cardBg = isLight ? '#ffffff' : isAmoled ? '#000000' : 'var(--c-bg-card, #111115)';
-  const cardBorder = isLight
-    ? '#eaecef'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'var(--c-border, rgba(255, 255, 255, 0.08))';
-  const innerBg = isLight
-    ? '#f9fafb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(255, 255, 255, 0.03)';
-  const innerBorder = isLight
-    ? '#e5e7eb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(255, 255, 255, 0.06)';
-  const textPrimary = isLight ? '#111827' : '#ffffff';
-  const textSecondary = isLight ? '#6b7280' : '#a1a1aa';
-  const textMuted = isLight ? '#9ca3af' : '#71717a';
+  const cardBg = 'var(--c-bg-card)';
+  const cardBorder = '1px solid var(--c-border)';
+  const innerBg = 'var(--app-surface-low)';
+  const innerBorder = '1px solid var(--c-border)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textMuted = 'var(--c-text-muted)';
 
   return (
     <StageSetupDetailLayout
@@ -386,9 +374,9 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                     <span
                       className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border"
                       style={{
-                        backgroundColor: isLight ? '#111827' : '#ffffff',
-                        color: isLight ? '#ffffff' : '#111827',
-                        borderColor: isLight ? '#111827' : '#ffffff',
+                        backgroundColor: 'var(--c-text-primary)',
+                        color: 'var(--app-bg)',
+                        borderColor: 'var(--c-text-primary)',
                       }}
                     >
                       {currentScene.name || 'Main Stage'}
@@ -498,9 +486,9 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
               onClick={() => setIsAdding((prev) => !prev)}
               className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer shrink-0"
               style={{
-                backgroundColor: isAdding ? (isLight ? '#111827' : '#ffffff') : innerBg,
-                borderColor: isAdding ? (isLight ? '#111827' : '#ffffff') : innerBorder,
-                color: isAdding ? (isLight ? '#ffffff' : '#111827') : textPrimary,
+                backgroundColor: isAdding ? 'var(--c-text-primary)' : innerBg,
+                borderColor: isAdding ? 'var(--c-text-primary)' : innerBorder,
+                color: isAdding ? 'var(--app-bg)' : textPrimary,
               }}
             >
               <span>{isAdding ? '✕' : '+'}</span>
@@ -547,12 +535,10 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                         className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border"
                         style={{
                           backgroundColor: isSelected
-                            ? isLight
-                              ? '#111827'
-                              : '#ffffff'
+                            ? 'var(--c-text-primary)'
                             : 'transparent',
-                          borderColor: isSelected ? (isLight ? '#111827' : '#ffffff') : innerBorder,
-                          color: isSelected ? (isLight ? '#ffffff' : '#111827') : textSecondary,
+                          borderColor: isSelected ? 'var(--c-text-primary)' : innerBorder,
+                          color: isSelected ? 'var(--app-bg)' : textSecondary,
                         }}
                       >
                         {TYPE_CONFIG[type].label}
@@ -609,7 +595,7 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                     onChange={(e) => setNewValue(e.target.value)}
                     className="flex-1 text-[11px] rounded-lg px-2.5 py-1.5 border focus:outline-none transition-colors"
                     style={{
-                      backgroundColor: isLight ? '#ffffff' : 'rgba(0, 0, 0, 0.4)',
+                      backgroundColor: innerBg,
                       borderColor: innerBorder,
                       color: textPrimary,
                     }}
@@ -621,8 +607,8 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                     disabled={!newValue.trim()}
                     className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 cursor-pointer shrink-0"
                     style={{
-                      backgroundColor: isLight ? '#111827' : '#ffffff',
-                      color: isLight ? '#ffffff' : '#111827',
+                      backgroundColor: 'var(--c-text-primary)',
+                      color: 'var(--app-bg)',
                     }}
                   >
                     {riderTr?.save || 'SAVE'}
@@ -823,8 +809,8 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                           disabled={!customText.trim()}
                           className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 cursor-pointer shrink-0"
                           style={{
-                            backgroundColor: isLight ? '#111827' : '#ffffff',
-                            color: isLight ? '#ffffff' : '#111827',
+                            backgroundColor: 'var(--c-text-primary)',
+                            color: 'var(--app-bg)',
                           }}
                         >
                           {isSpanish ? 'Fijar' : 'Set'}
@@ -1070,7 +1056,7 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border"
                       style={{
-                        backgroundColor: isLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
+                        backgroundColor: innerBg,
                         borderColor: innerBorder,
                       }}
                     >
@@ -1183,9 +1169,9 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 border"
                       style={{
-                        backgroundColor: isLight ? '#111827' : '#ffffff',
-                        color: isLight ? '#ffffff' : '#111827',
-                        borderColor: isLight ? '#111827' : '#ffffff',
+                        backgroundColor: 'var(--c-text-primary)',
+                        color: 'var(--app-bg)',
+                        borderColor: 'var(--c-text-primary)',
                       }}
                     >
                       {ch.ch || idx + 1}

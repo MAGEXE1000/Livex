@@ -221,26 +221,14 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
   };
 
   // Theme Design Tokens
-  const cardBg = isLight ? '#ffffff' : isAmoled ? '#000000' : 'var(--c-bg-card, #111115)';
-  const cardBorder = isLight
-    ? '#eaecef'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'var(--c-border, rgba(255, 255, 255, 0.08))';
-  const inputBg = isLight
-    ? 'rgba(246, 246, 247, 0.8)'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(255, 255, 255, 0.05)';
-  const inputBorder = isLight
-    ? 'rgba(0, 0, 0, 0.08)'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.08)';
+  const cardBg = 'var(--c-bg-card)';
+  const cardBorder = '1px solid var(--c-border)';
+  const inputBg = 'var(--app-surface-low)';
+  const inputBorder = '1px solid var(--c-border)';
 
-  const textPrimary = isLight ? '#09090b' : '#ffffff';
-  const textSecondary = isLight ? '#71717a' : '#a1a1aa';
-  const textMuted = isLight ? '#a1a1aa' : '#71717a';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textMuted = 'var(--c-text-muted)';
 
   return (
     <StageSetupDetailLayout
@@ -255,8 +243,8 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
           disabled={isAtLimit}
           className="relative z-10 w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 touch-target-44"
           style={{
-            backgroundColor: isLight ? '#000000' : '#ffffff',
-            color: isLight ? '#ffffff' : '#000000',
+            backgroundColor: 'var(--c-text-primary)',
+            color: 'var(--app-bg)',
           }}
           title={isAtLimit ? 'Capacity reached' : 'Add Member'}
           aria-label="Add Member"
@@ -599,8 +587,8 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
                 className="absolute right-2 h-[38px] px-4 font-semibold text-xs tracking-wide transition-all flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer touch-target-44"
                 style={{
                   borderRadius: 'var(--radius-compact, 12px)',
-                  backgroundColor: isLight ? '#09090b' : '#ffffff',
-                  color: isLight ? '#ffffff' : '#09090b',
+                  backgroundColor: 'var(--c-text-primary)',
+                  color: 'var(--app-bg)',
                   fontFamily:
                     'var(--type-button-font, var(--studio-font-body, "Inter", sans-serif))',
                 }}
@@ -705,18 +693,12 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
                       lineHeight: 'var(--type-meta-lh, 16px)',
                       letterSpacing: 'var(--type-meta-tracking, 0.2px)',
                       backgroundColor: isSelected
-                        ? isLight
-                          ? '#09090b'
-                          : '#ffffff'
-                        : isLight
-                          ? 'rgba(0, 0, 0, 0.03)'
-                          : 'rgba(255, 255, 255, 0.04)',
+                        ? 'var(--c-text-primary)'
+                        : 'var(--app-surface-low)',
                       borderColor: isSelected
-                        ? isLight
-                          ? '#09090b'
-                          : '#ffffff'
-                        : 'var(--track, var(--c-border))',
-                      color: isSelected ? (isLight ? '#ffffff' : '#09090b') : textSecondary,
+                        ? 'var(--c-text-primary)'
+                        : 'var(--c-border)',
+                      color: isSelected ? 'var(--app-bg)' : textSecondary,
                     }}
                     data-testid={`tag-chip-${tag.id}`}
                     aria-pressed={isSelected}

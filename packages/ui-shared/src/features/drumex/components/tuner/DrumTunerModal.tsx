@@ -336,7 +336,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
     <div
       className="flex flex-col w-full h-full select-none overflow-hidden"
       style={{
-        backgroundColor: isAmoled ? '#000000' : 'var(--app-bg)',
+        backgroundColor: 'var(--app-bg)',
         color: 'var(--c-text-primary)',
       }}
     >
@@ -345,7 +345,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
         {/* Compact Drum Parts Pill immediately to the left of close button */}
         <div
           style={{
-            backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-low)',
+            backgroundColor: 'var(--c-surface-low)',
             borderColor: 'var(--c-border)',
           }}
           className="flex-1 flex items-center p-1 rounded-full border min-w-0 transition-colors"
@@ -360,7 +360,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
                 style={
                   isSelected
                     ? {
-                        backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-highest)',
+                        backgroundColor: 'var(--c-surface-highest)',
                         borderColor: 'var(--c-border)',
                         color: 'var(--c-text-primary)',
                       }
@@ -383,7 +383,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
           type="button"
           onClick={onClose}
           style={{
-            backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-low)',
+            backgroundColor: 'var(--c-surface-low)',
             borderColor: 'var(--c-border)',
             color: 'var(--c-text-secondary)',
           }}
@@ -398,7 +398,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
       <div className="w-full px-4 pb-2 z-20">
         <div
           style={{
-            backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-low)',
+            backgroundColor: 'var(--c-surface-low)',
             borderColor: 'var(--c-border)',
           }}
           className="flex items-center gap-1.5 w-full p-1 rounded-2xl border transition-colors"
@@ -413,7 +413,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
                 style={
                   isSelected
                     ? {
-                        backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-highest)',
+                        backgroundColor: 'var(--c-surface-highest)',
                         borderColor: 'var(--c-border)',
                         color: 'var(--c-text-primary)',
                       }
@@ -649,7 +649,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
       <div className="w-full px-4 pb-2 z-20">
         <div
           style={{
-            backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-low)',
+            backgroundColor: 'var(--c-surface-low)',
             borderColor: 'var(--c-border)',
           }}
           className="flex items-center justify-between p-2.5 rounded-2xl border gap-2 transition-colors"
@@ -703,7 +703,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
           style={{
             backgroundColor: isReferencePlaying
               ? `${effectiveAccent.from}20`
-              : isAmoled ? '#000000' : 'var(--c-surface-low)',
+              : 'var(--c-surface-low)',
             borderColor: isReferencePlaying
               ? effectiveAccent.from
               : 'var(--c-border)',
@@ -723,7 +723,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
           type="button"
           onClick={handleToggleAuto}
           style={{
-            backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-low)',
+            backgroundColor: 'var(--c-surface-low)',
             borderColor: 'var(--c-border)',
             color: 'var(--c-text-primary)',
           }}

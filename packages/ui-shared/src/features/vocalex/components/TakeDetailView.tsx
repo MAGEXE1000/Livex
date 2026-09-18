@@ -457,12 +457,8 @@ export default function TakeDetailView({
   const currentTimeSec = audioRef.current?.currentTime ?? 0;
   const totalTimeSec = take.durationMs / 1000;
 
-  const cardBg = isLight
-    ? '#ffffff'
-    : isAmoled
-      ? '#000000'
-      : 'var(--app-surface-low, rgba(255,255,255,0.04))';
-  const cardBorder = '1px solid var(--c-border, rgba(128,128,128,0.14))';
+  const cardBg = 'var(--c-bg-card)';
+  const cardBorder = '1px solid var(--c-border)';
   const cardShadow = 'var(--shadow-surface-raised)';
 
   return (

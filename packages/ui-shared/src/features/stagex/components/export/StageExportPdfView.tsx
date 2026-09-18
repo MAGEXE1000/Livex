@@ -244,19 +244,15 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   );
 
   // Dynamic Theme Colors
-  const bgMain = isLight ? '#f9f9fb' : isAmoled ? '#000000' : '#08080a';
-  const bgCard = isLight
-    ? 'rgba(255, 255, 255, 0.96)'
-    : isAmoled
-      ? 'rgba(10, 10, 14, 0.98)'
-      : 'rgba(20, 20, 26, 0.95)';
-  const textPrimary = isLight ? '#09090b' : '#ffffff';
-  const textSecondary = isLight ? '#52525b' : '#d4d4d8';
-  const textDim = isLight ? '#a1a1aa' : '#71717a';
-  const borderCol = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
-  const borderSubtle = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)';
-  const blueprintBg = isLight ? '#f4f4f6' : isAmoled ? '#050507' : '#0c0c0e';
-  const hoverBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)';
+  const bgMain = 'var(--app-bg)';
+  const bgCard = 'var(--c-bg-card)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textDim = 'var(--c-text-muted)';
+  const borderCol = 'var(--c-border)';
+  const borderSubtle = 'var(--c-border)';
+  const blueprintBg = 'var(--app-surface-low)';
+  const hoverBg = 'var(--app-surface-low)';
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -874,7 +870,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                             className="absolute top-[calc(100%+2px)] left-1/2 -translate-x-1/2 text-[9.5px] font-bold uppercase tracking-[0.05em] text-center truncate max-w-[85px] leading-tight select-none whitespace-nowrap"
                             style={{
                               fontFamily: 'var(--studio-font-display)',
-                              color: isLight ? '#18181b' : '#ffffff',
+                              color: 'var(--c-text-primary)',
                             }}
                           >
                             {labelText}

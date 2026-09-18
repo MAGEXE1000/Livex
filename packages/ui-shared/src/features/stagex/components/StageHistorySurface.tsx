@@ -81,11 +81,9 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
               onClick={onSwitchToElements}
               className="h-7 px-2 rounded-full flex items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-all text-[11px] font-semibold"
               style={{
-                background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                color: isLight ? '#52525b' : '#a1a1aa',
-                border: isLight
-                  ? '1px solid rgba(0, 0, 0, 0.06)'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--app-surface-low)',
+                color: 'var(--c-text-secondary)',
+                border: '1px solid var(--c-border)',
               }}
               aria-label={isSpanish ? 'Volver a Elementos' : 'Back to Elements'}
               title={isSpanish ? 'Volver a Elementos' : 'Back to Elements'}
@@ -102,7 +100,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
             data-testid="stagex-history-title"
             className="text-[13px] font-bold tracking-tight whitespace-nowrap"
             style={{
-              color: isLight ? '#09090b' : '#ffffff',
+              color: 'var(--c-text-primary)',
               fontFamily: 'var(--studio-font-display)',
             }}
           >
@@ -112,11 +110,9 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
             data-testid="stagex-history-step-badge"
             className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.10)',
-              color: isLight ? '#52525b' : '#a1a1aa',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.05)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--app-surface-low)',
+              color: 'var(--c-text-secondary)',
+              border: '1px solid var(--c-border)',
             }}
           >
             {stepText}
@@ -133,11 +129,9 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
             disabled={!canUndo}
             className="flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-              color: canUndo ? (isLight ? '#09090b' : '#ffffff') : isLight ? '#a1a1aa' : '#52525b',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.06)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--app-surface-low)',
+              color: canUndo ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
+              border: '1px solid var(--c-border)',
               opacity: canUndo ? 1 : 0.4,
               cursor: canUndo ? 'pointer' : 'not-allowed',
             }}
@@ -155,11 +149,9 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
             disabled={!canRedo}
             className="flex items-center justify-center w-7 h-7 rounded-full transition-all active:scale-95"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-              color: canRedo ? (isLight ? '#09090b' : '#ffffff') : isLight ? '#a1a1aa' : '#52525b',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.06)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--app-surface-low)',
+              color: canRedo ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
+              border: '1px solid var(--c-border)',
               opacity: canRedo ? 1 : 0.4,
               cursor: canRedo ? 'pointer' : 'not-allowed',
             }}
@@ -171,7 +163,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
 
           <div
             className="w-[1px] h-3.5 mx-0.5"
-            style={{ background: isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)' }}
+            style={{ background: 'var(--c-border)' }}
           />
 
           {/* Dedicated Close Button */}
@@ -181,11 +173,9 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
             onClick={onClose}
             className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer active:scale-90 transition-all"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-              color: isLight ? '#52525b' : '#a1a1aa',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.06)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--app-surface-low)',
+              color: 'var(--c-text-secondary)',
+              border: '1px solid var(--c-border)',
             }}
             aria-label={isSpanish ? 'Cerrar panel de historial' : 'Close History Panel'}
             title={isSpanish ? 'Cerrar' : 'Close'}
@@ -209,7 +199,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
           <div
             data-testid="stagex-history-empty"
             className="w-full flex items-center justify-center py-5 text-[11px] font-medium"
-            style={{ color: isLight ? '#71717a' : '#a1a1aa' }}
+            style={{ color: 'var(--c-text-muted)' }}
           >
             {isSpanish ? 'No hay acciones registradas aún' : 'No history recorded yet'}
           </div>
@@ -242,10 +232,8 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                       : 'rgba(255, 255, 255, 0.04)',
                   border: isCurrent
                     ? '1.5px solid #ec4899'
-                    : isLight
-                      ? '1px solid rgba(0, 0, 0, 0.07)'
-                      : '1px solid rgba(255, 255, 255, 0.07)',
-                  color: isLight ? '#09090b' : '#ffffff',
+                    : '1px solid var(--c-border)',
+                  color: 'var(--c-text-primary)',
                 }}
                 title={isSpanish ? `Ir a ${entry.label}` : `Jump to ${entry.label}`}
               >
@@ -256,10 +244,8 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                     style={{
                       background: isCurrent
                         ? '#ec4899'
-                        : isLight
-                          ? 'rgba(0, 0, 0, 0.06)'
-                          : 'rgba(255, 255, 255, 0.10)',
-                      color: isCurrent ? '#ffffff' : isLight ? '#71717a' : '#a1a1aa',
+                        : 'var(--app-surface-low)',
+                      color: isCurrent ? '#ffffff' : 'var(--c-text-secondary)',
                     }}
                   >
                     #{entry.index + 1}
@@ -276,7 +262,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                   {timeStr && !isCurrent && (
                     <span
                       className="text-[9px] font-medium"
-                      style={{ color: isLight ? '#a1a1aa' : '#71717a' }}
+                      style={{ color: 'var(--c-text-muted)' }}
                     >
                       {timeStr}
                     </span>
@@ -287,13 +273,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                 <span
                   className="text-[10px] font-bold w-full line-clamp-2 leading-snug"
                   style={{
-                    color: isCurrent
-                      ? isLight
-                        ? '#09090b'
-                        : '#ffffff'
-                      : isLight
-                        ? '#3f3f46'
-                        : '#d4d4d8',
+                    color: isCurrent ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                     fontFamily: 'Inter, sans-serif',
                   }}
                 >

@@ -675,7 +675,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         {/* 4. Lower Section: Photorealistic Headstock Graphic with Physical Peg-Aligned String Cards */}
         <div
           className="relative w-full flex-1 min-h-0 overflow-hidden select-none"
-          style={{ backgroundColor: isAmoled ? '#000000' : 'transparent' }}
+          style={{ backgroundColor: 'transparent' }}
         >
           {/* Canonical Headstock Graphic (Medium-large scale, right-aligned, breathing room) */}
           <AnimatePresence mode="wait">

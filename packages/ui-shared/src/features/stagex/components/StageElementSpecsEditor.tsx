@@ -660,11 +660,9 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                         onClick={onClose}
                         className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-all"
                         style={{
-                          background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                          color: isLight ? '#52525b' : '#a1a1aa',
-                          border: isLight
-                            ? '1px solid rgba(0, 0, 0, 0.06)'
-                            : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: 'var(--app-surface-low)',
+                          color: 'var(--c-text-secondary)',
+                          border: '1px solid var(--c-border)',
                         }}
                         aria-label={tr.stagex?.specs?.close || 'Close Specs'}
                         title={tr.stagex?.specs?.close || 'Close'}
@@ -1003,15 +1001,11 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                             style={{
                               background: element.phantom
                                 ? 'rgba(236, 72, 153, 0.20)'
-                                : isLight
-                                  ? 'rgba(0, 0, 0, 0.04)'
-                                  : 'rgba(255, 255, 255, 0.05)',
+                                : 'var(--app-surface-low)',
                               border: element.phantom
                                 ? '1px solid #ec4899'
-                                : isLight
-                                  ? '1px solid rgba(0, 0, 0, 0.08)'
-                                  : '1px solid rgba(255, 255, 255, 0.08)',
-                              color: element.phantom ? '#ec4899' : isLight ? '#52525b' : '#a1a1aa',
+                                : '1px solid var(--c-border)',
+                              color: element.phantom ? '#ec4899' : 'var(--c-text-secondary)',
                             }}
                           >
                             <span>{tr.stagex?.specs?.phantomPower || '48V Power'}</span>

@@ -3816,8 +3816,8 @@ export function HubSettings({
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: 6,
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'var(--c-surface-low)',
+                    border: '1px solid var(--c-border)',
                     color: 'var(--c-text-secondary)',
                     fontFamily: 'monospace',
                   }}
@@ -3869,7 +3869,7 @@ export function HubSettings({
           width: '100%',
           padding: '16px 18px',
           background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--c-border)',
           borderRadius: 22,
           cursor: 'pointer',
           outline: 'none',
@@ -4028,8 +4028,8 @@ export function HubSettings({
             width: 28,
             height: 28,
             borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--c-surface-low)',
+            border: '1px solid var(--c-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -4069,9 +4069,7 @@ export function HubSettings({
             : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
           borderRadius: 20,
           overflow: 'hidden',
-          border: isAmoled
-            ? '1px solid rgba(255, 255, 255, 0.12)'
-            : '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--c-border)',
           boxShadow: isAmoled
             ? '0 4px 16px rgba(0, 0, 0, 0.8)'
             : '0 8px 24px rgba(0, 0, 0, 0.16)',
@@ -4095,9 +4093,7 @@ export function HubSettings({
             : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
           borderRadius: 20,
           overflow: 'hidden',
-          border: isAmoled
-            ? '1px solid rgba(255, 255, 255, 0.12)'
-            : '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--c-border)',
           boxShadow: isAmoled
             ? '0 4px 16px rgba(0, 0, 0, 0.8)'
             : '0 8px 24px rgba(0, 0, 0, 0.16)',
@@ -4287,9 +4283,9 @@ export function HubSettings({
               style={{
                 padding: '6px 14px',
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.06)',
+                background: 'var(--c-surface-low)',
                 color: 'var(--c-text-primary)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--c-border)',
                 fontSize: 'var(--font-section-label)',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -4358,9 +4354,9 @@ export function HubSettings({
                 style={{
                   padding: '6px 14px',
                   borderRadius: 10,
-                  background: 'rgba(255,255,255,0.06)',
+                  background: 'var(--c-surface-low)',
                   color: 'var(--c-text-primary)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid var(--c-border)',
                   fontSize: 'var(--font-section-label)',
                   fontWeight: 700,
                   cursor: 'pointer',

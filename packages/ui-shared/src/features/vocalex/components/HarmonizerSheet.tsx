@@ -151,8 +151,8 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
                 marginBottom: 10,
                 padding: 10,
                 borderRadius: 12,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--c-surface-low)',
+                border: '1px solid var(--c-border)',
               }}
             >
               {HARMONIES.map((h) => (
@@ -162,8 +162,8 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
                   style={{
                     padding: '8px 4px',
                     borderRadius: 8,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--app-surface-low)',
+                    border: '1px solid var(--c-border)',
                     cursor: 'pointer',
                     textAlign: 'center',
                   }}
@@ -219,10 +219,10 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
               width: '100%',
               padding: '10px 13px',
               borderRadius: 10,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--c-surface-low)',
+              border: '1px solid var(--c-border)',
               cursor: 'pointer',
-              color: 'rgba(255,255,255,0.55)',
+              color: 'var(--c-text-secondary)',
             }}
           >
             <div
@@ -236,7 +236,7 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
             >
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)' }}
+                style={{ fontSize: 16, color: 'var(--c-text-muted)' }}
               >
                 tune
               </span>
@@ -260,8 +260,8 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
                 marginTop: 6,
                 padding: '14px 13px',
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--c-surface-low)',
+                border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 16,

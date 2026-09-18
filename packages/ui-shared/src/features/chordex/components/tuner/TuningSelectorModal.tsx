@@ -108,7 +108,7 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
             }}
             className="relative w-full max-w-[340px] rounded-2xl p-4 shadow-2xl overflow-hidden z-10 border"
             style={{
-              backgroundColor: isAmoled ? '#000000' : 'var(--c-surface-high)',
+              backgroundColor: 'var(--surface-dialog-bg)',
               borderColor: 'var(--c-border)',
               color: 'var(--c-text-primary)',
             }}
@@ -128,7 +128,7 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
                 type="button"
                 onClick={onClose}
                 style={{
-                  backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-low)',
+                  backgroundColor: 'var(--c-surface-low)',
                   borderColor: 'var(--c-border)',
                   color: 'var(--c-text-secondary)',
                 }}
@@ -162,7 +162,7 @@ export const TuningSelectorModal: React.FC<TuningSelectorModalProps> = ({
                     style={
                       isSelected
                         ? {
-                            backgroundColor: isAmoled ? '#1c1c22' : 'var(--c-surface-low)',
+                            backgroundColor: 'var(--c-surface-low)',
                           }
                         : undefined
                     }

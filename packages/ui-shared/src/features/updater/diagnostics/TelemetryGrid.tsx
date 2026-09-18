@@ -253,7 +253,7 @@ export default function TelemetryGrid({
             {(downloadProgress * 100).toFixed(0)}%
           </span>
         </div>
-        <div className="h-2 w-full bg-[#161616] rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-[var(--app-surface-low)] rounded-full overflow-hidden">
           <div
             className="h-full bg-tertiary transition-all duration-500 rounded-full"
             style={{ width: `${downloadProgress * 100}%` }}

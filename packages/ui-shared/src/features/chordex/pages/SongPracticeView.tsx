@@ -807,8 +807,8 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             width: chordSize === 'sm' ? 100 : chordSize === 'lg' ? 140 : 120,
             padding: '12px 14px',
             borderRadius: 16,
-            background: 'rgba(15,15,20,0.92)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--surface-dialog-bg)',
+            border: '1px solid var(--c-border)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
             backdropFilter: 'var(--surface-float-blur)',
             WebkitBackdropFilter: 'var(--surface-float-blur)',
@@ -822,7 +822,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             style={{
               display: 'flex',
               justifyContent: 'center',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              borderBottom: '1px solid var(--c-border)',
               paddingBottom: 4,
             }}
           >

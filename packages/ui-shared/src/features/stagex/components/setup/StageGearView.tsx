@@ -165,25 +165,13 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
   };
 
   // Theme Design Tokens
-  const cardBg = isLight ? '#ffffff' : isAmoled ? '#000000' : 'var(--c-bg-card, #111115)';
-  const cardBorder = isLight
-    ? '#eaecef'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'var(--c-border, rgba(255, 255, 255, 0.08))';
-  const innerBg = isLight
-    ? '#f9fafb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.04)'
-      : 'rgba(255, 255, 255, 0.03)';
-  const innerBorder = isLight
-    ? '#e5e7eb'
-    : isAmoled
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(255, 255, 255, 0.06)';
-  const textPrimary = isLight ? '#111827' : '#ffffff';
-  const textSecondary = isLight ? '#6b7280' : '#a1a1aa';
-  const textMuted = isLight ? '#9ca3af' : '#71717a';
+  const cardBg = 'var(--c-bg-card)';
+  const cardBorder = '1px solid var(--c-border)';
+  const innerBg = 'var(--app-surface-low)';
+  const innerBorder = '1px solid var(--c-border)';
+  const textPrimary = 'var(--c-text-primary)';
+  const textSecondary = 'var(--c-text-secondary)';
+  const textMuted = 'var(--c-text-muted)';
 
   return (
     <StageSetupDetailLayout
@@ -197,8 +185,8 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
           onClick={() => setIsAdding((prev) => !prev)}
           className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
           style={{
-            backgroundColor: isLight ? '#000000' : '#ffffff',
-            color: isLight ? '#ffffff' : '#000000',
+            backgroundColor: 'var(--c-text-primary)',
+            color: 'var(--app-bg)',
           }}
           title={isAdding ? gearTr?.cancel || 'Cancel' : gearTr?.addItem || 'Add Item'}
           aria-label={isAdding ? gearTr?.cancel || 'Cancel' : gearTr?.addItem || 'Add Item'}
@@ -298,8 +286,8 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                       key={c.key}
                       value={c.key}
                       style={{
-                        backgroundColor: isLight ? '#ffffff' : '#18181b',
-                        color: isLight ? '#000000' : '#ffffff',
+                        backgroundColor: 'var(--app-surface)',
+                        color: 'var(--c-text-primary)',
                       }}
                     >
                       {c.label}
@@ -365,8 +353,8 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                   disabled={!name.trim()}
                   className="px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-sm active:scale-95"
                   style={{
-                    backgroundColor: isLight ? '#000000' : '#ffffff',
-                    color: isLight ? '#ffffff' : '#000000',
+                    backgroundColor: 'var(--c-text-primary)',
+                    color: 'var(--app-bg)',
                   }}
                   data-testid="btn-submit-gear"
                 >
@@ -476,8 +464,8 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                 className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer shrink-0"
                 style={{
                   backgroundColor:
-                    selectedCat === 'all' ? (isLight ? '#000000' : '#ffffff') : innerBg,
-                  color: selectedCat === 'all' ? (isLight ? '#ffffff' : '#000000') : textSecondary,
+                    selectedCat === 'all' ? 'var(--c-text-primary)' : innerBg,
+                  color: selectedCat === 'all' ? 'var(--app-bg)' : textSecondary,
                   border: `1px solid ${selectedCat === 'all' ? 'transparent' : innerBorder}`,
                 }}
                 data-testid="pill-filter-all"
@@ -494,8 +482,8 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
                     onClick={() => setSelectedCat(cat.key)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer shrink-0"
                     style={{
-                      backgroundColor: isCatActive ? (isLight ? '#000000' : '#ffffff') : innerBg,
-                      color: isCatActive ? (isLight ? '#ffffff' : '#000000') : textSecondary,
+                      backgroundColor: isCatActive ? 'var(--c-text-primary)' : innerBg,
+                      color: isCatActive ? 'var(--app-bg)' : textSecondary,
                       border: `1px solid ${isCatActive ? 'transparent' : innerBorder}`,
                     }}
                     data-testid={`pill-filter-${cat.key}`}

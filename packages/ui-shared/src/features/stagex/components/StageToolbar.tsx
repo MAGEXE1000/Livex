@@ -26,18 +26,22 @@ export const StageToolbar: React.FC<StageToolbarProps> = ({
 }) => {
   return (
     <Toolbar
-      className={`border-b ${isLight ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-800 bg-[#141414]'} h-12 flex-shrink-0 select-none`}
+      className="border-b h-12 flex-shrink-0 select-none"
+      style={{
+        backgroundColor: 'var(--app-bg)',
+        borderColor: 'var(--c-border)',
+      }}
     >
       <div className="flex items-center gap-3">
         <span
-          className={`font-extrabold text-[10px] uppercase ${isLight ? 'text-zinc-850' : 'text-white'} tracking-widest`}
-          style={{ letterSpacing: '0.08em' }}
+          className="font-extrabold text-[10px] uppercase tracking-widest"
+          style={{ letterSpacing: '0.08em', color: 'var(--c-text-primary)' }}
         >
           Stagex
         </span>
         {curView !== 'Editor' && (
           <>
-            <div className={`h-4 w-[1px] ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
+            <div className="h-4 w-[1px]" style={{ backgroundColor: 'var(--c-border)' }} />
             <span
               data-testid="stagex-toolbar-curview"
               className="text-[8.5px] text-zinc-500 font-extrabold uppercase tracking-widest"

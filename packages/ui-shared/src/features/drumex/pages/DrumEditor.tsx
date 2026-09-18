@@ -3100,12 +3100,12 @@ export default function DrumEditor() {
                       height: 28,
                       borderRadius: '50%',
                       border: 'none',
-                      background: playing ? '#ef4444' : isLight ? '#18181b' : '#ffffff',
+                      background: playing ? 'var(--c-error, #ef4444)' : 'var(--c-text-primary)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: playing ? '#ffffff' : isLight ? '#ffffff' : '#18181b',
+                      color: playing ? '#ffffff' : 'var(--app-bg)',
                       transition: 'all 150ms',
                       flexShrink: 0,
                     }}
@@ -3117,7 +3117,7 @@ export default function DrumEditor() {
                     style={{
                       width: 1,
                       height: 18,
-                      background: isLight ? 'rgba(9, 9, 11, 0.12)' : 'rgba(255, 255, 255, 0.08)',
+                      background: 'var(--c-border)',
                     }}
                   />
 
@@ -3236,10 +3236,8 @@ export default function DrumEditor() {
                               position: 'fixed',
                               top: popoverCoords?.top ?? 0,
                               left: popoverCoords?.left ?? 0,
-                              background: isLight ? '#ffffff' : '#18181b',
-                              border: isLight
-                                ? '1px solid rgba(0,0,0,0.1)'
-                                : '1px solid rgba(255,255,255,0.1)',
+                              background: 'var(--surface-dialog-bg)',
+                              border: '1px solid var(--c-border)',
                               borderRadius: 12,
                               padding: '16px',
                               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
@@ -3648,13 +3646,13 @@ export default function DrumEditor() {
                         height: 30,
                         width: 30,
                         borderRadius: 8,
-                        background: 'rgba(255,255,255,0.03)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'var(--app-surface-low)',
+                        border: '1px solid var(--c-border)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#ee7d77',
+                        color: 'var(--c-error-dim, #ee7d77)',
                       }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
@@ -3667,8 +3665,8 @@ export default function DrumEditor() {
                           position: 'absolute',
                           top: 'calc(100% + 8px)',
                           right: 0,
-                          background: 'rgba(10, 10, 12, 0.98)',
-                          border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'var(--surface-dialog-bg)',
+                          border: '1px solid var(--c-border)',
                           borderRadius: 12,
                           padding: '12px 14px',
                           boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
@@ -3729,12 +3727,12 @@ export default function DrumEditor() {
                               flex: 1,
                               padding: '7px 0',
                               borderRadius: 9,
-                              background: 'rgba(239,68,68,0.15)',
-                              border: '1px solid rgba(239,68,68,0.3)',
+                              background: 'var(--c-error-container)',
+                              border: '1px solid var(--c-error-container)',
                               cursor: 'pointer',
                               fontSize: 12,
                               fontWeight: 700,
-                              color: '#f87171',
+                              color: 'var(--c-error-dim, #f87171)',
                               fontFamily: 'var(--studio-font-body)',
                             }}
                           >
@@ -3762,8 +3760,8 @@ export default function DrumEditor() {
                           height: 30,
                           width: 30,
                           borderRadius: 8,
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: 'var(--app-surface-low)',
+                          border: '1px solid var(--c-border)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -3794,7 +3792,7 @@ export default function DrumEditor() {
                     style={{
                       width: 1,
                       height: 18,
-                      background: 'rgba(255,255,255,0.08)',
+                      background: 'var(--c-border)',
                       margin: '0 2px',
                     }}
                   />
@@ -3811,8 +3809,8 @@ export default function DrumEditor() {
                       height: 30,
                       width: 30,
                       borderRadius: 8,
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'var(--app-surface-low)',
+                      border: '1px solid var(--c-border)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -3834,8 +3832,8 @@ export default function DrumEditor() {
                       height: 30,
                       width: 30,
                       borderRadius: 8,
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'var(--app-surface-low)',
+                      border: '1px solid var(--c-border)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',

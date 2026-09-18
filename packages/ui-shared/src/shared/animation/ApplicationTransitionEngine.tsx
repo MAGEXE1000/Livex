@@ -52,8 +52,8 @@ export function ApplicationTransitionEngine({
     return () => {};
   }, [startZoom, completeTransition, isHub, onComplete]);
 
-  const bgColor = isAmoled ? '#000000' : isLight ? '#ffffff' : '#141414';
-  const baseColor = isLight ? '#000000' : '#ffffff';
+  const bgColor = 'var(--app-bg)';
+  const baseColor = 'var(--c-text-primary)';
 
   // App Specific Colors
   const appColors: Record<AppKey, string> = {

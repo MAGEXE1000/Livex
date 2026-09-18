@@ -161,7 +161,7 @@ export default function LiveConsole({
       <div className="bg-black border border-outline-variant/10 rounded-xl overflow-hidden flex flex-col h-80 shadow-inner">
         {/* Search Bar Header */}
         <div className="flex items-center gap-3 p-3 bg-black border-b border-outline-variant/5">
-          <div className="flex-1 flex items-center gap-2 bg-[#161616] px-3 py-1.5 rounded-lg border border-outline-variant/10">
+          <div className="flex-1 flex items-center gap-2 bg-[var(--app-surface-low)] px-3 py-1.5 rounded-lg border border-outline-variant/10">
             <span className="material-symbols-outlined text-sm text-on-surface-variant">
               search
             </span>
@@ -192,7 +192,7 @@ export default function LiveConsole({
               className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors outline-none whitespace-nowrap ${
                 filterMode === mode
                   ? 'bg-tertiary text-on-tertiary-fixed'
-                  : 'bg-[#161616] text-on-surface-variant hover:bg-white/10'
+                  : 'bg-[var(--app-surface-low)] text-on-surface-variant hover:bg-white/10'
               }`}
             >
               {mode}
