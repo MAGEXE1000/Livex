@@ -55,4 +55,43 @@ describe('Updater Scheduler Proof', () => {
 
     expect(pendingEvents.length).toBe(0); // MUST BE 0!
   });
+
+  it('suppresses lifecycle update checks when document is hidden', async () => {
+    const coordinator = StartupCoordinator;
+    (coordinator as any).isCompleted = true;
+    const pendingEvents = (coordinator as any).pendingLifecycleEvents;
+    pendingEvents.length = 0;
+
+    const originalDoc = (globalThis as any).document;
+    (globalThis as any).document = { visibilityState: 'hidden' };
+
+    try {
+      (coordinator as any).handleLifecycleEvent('focus', 'test_trigger', 'Window focus while hidden');
+      expect(pendingEvents.length).toBe(0);
+    } finally {
+      if (originalDoc !== undefined) {
+        (globalThis as any).document = originalDoc;
+      } else {
+        delete (globalThis as any).document;
+      }
+    }
+  });
+
+  it('rejects automatic checkForUpdate when application is backgrounded', async () => {
+    const { checkForUpdate } = await import('../pipeline');
+
+    const originalDoc = (globalThis as any).document;
+    (globalThis as any).document = { visibilityState: 'hidden' };
+
+    try {
+      const state = await checkForUpdate(false, 'periodic_poll', 'test background check');
+      expect(state.updateState).toBe('IDLE');
+    } finally {
+      if (originalDoc !== undefined) {
+        (globalThis as any).document = originalDoc;
+      } else {
+        delete (globalThis as any).document;
+      }
+    }
+  });
 });

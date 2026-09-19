@@ -958,29 +958,24 @@ function getOrMigrateDeviceId(): string | null {
   return null;
 }
 
-let heartbeatInterval: any = null;
-
 export async function performHeartbeat(uid: string) {
-  const provider = getActiveSyncProvider();
-  await provider.heartbeatNow('legacy-call');
+  const provider = getActiveSyncProvider() as any;
+  if (provider && typeof provider.heartbeatNow === 'function') {
+    await provider.heartbeatNow('legacy-call');
+  }
 }
 
 export function startDeviceHeartbeat(uid: string) {
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-  const provider = getActiveSyncProvider();
-  // Trigger immediately
-  provider.heartbeatNow('start-heartbeat').catch(console.error);
-  // Then run every 60s
-  heartbeatInterval = setInterval(() => {
-    const p = getActiveSyncProvider();
-    p.heartbeatNow('periodic-tick').catch(console.error);
-  }, 60000);
+  const provider = getActiveSyncProvider() as any;
+  if (provider && typeof provider.startHeartbeat === 'function') {
+    provider.startHeartbeat(uid, 'legacy-manual');
+  }
 }
 
 export function stopDeviceHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
+  const provider = getActiveSyncProvider() as any;
+  if (provider && typeof provider.stopHeartbeat === 'function') {
+    provider.stopHeartbeat();
   }
 }
 

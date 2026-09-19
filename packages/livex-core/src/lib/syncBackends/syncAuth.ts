@@ -49,6 +49,8 @@ export async function init(provider: any): Promise<void> {
           await provider.heartbeatNow('init-auth');
           if (provider.authEpoch !== currentEpoch || provider.userId !== user.uid) return;
 
+          provider.startHeartbeat(user.uid, 'auth-init');
+
           // Note: Unconditional startPeriodicRefetch removed. Fallback polling only
           // activates if the realtime channel fails, drops, or times out.
         } catch (e: any) {
@@ -81,6 +83,7 @@ export async function init(provider: any): Promise<void> {
         provider.isForeground = isVisible;
         if (!isVisible) {
           provider.stopFallbackPolling();
+          provider.stopHeartbeat();
         } else if (provider.userId) {
           if (provider.diagState?.realtimeConnected) {
             provider.heartbeatNow('foreground-liveness').catch(() => {});
@@ -88,6 +91,7 @@ export async function init(provider: any): Promise<void> {
             provider.refetchAllData(provider.userId, 'foreground-recovery');
             provider.startFallbackPolling(provider.userId, 'foreground-resume');
           }
+          provider.startHeartbeat(provider.userId, 'foreground-resume');
         }
       };
       document.addEventListener('visibilitychange', onVisibility);
@@ -101,11 +105,15 @@ export async function init(provider: any): Promise<void> {
           if (!provider.diagState?.realtimeConnected) {
             provider.reconnectDevices().catch(() => {});
           }
+          if (provider.isForeground) {
+            provider.startHeartbeat(provider.userId, 'online');
+          }
         }
       };
       const onOffline = () => {
         provider.isOnline = false;
         provider.stopFallbackPolling();
+        provider.stopHeartbeat();
       };
       window.addEventListener('online', onOnline);
       window.addEventListener('offline', onOffline);
@@ -123,6 +131,7 @@ export async function init(provider: any): Promise<void> {
             provider.isForeground = isVisible;
             if (!isVisible) {
               provider.stopFallbackPolling();
+              provider.stopHeartbeat();
             } else if (provider.userId) {
               if (provider.diagState?.realtimeConnected) {
                 provider.heartbeatNow('app-active-liveness').catch(() => {});
@@ -130,6 +139,7 @@ export async function init(provider: any): Promise<void> {
                 provider.refetchAllData(provider.userId, 'app-active-recovery');
                 provider.startFallbackPolling(provider.userId, 'app-active-resume');
               }
+              provider.startHeartbeat(provider.userId, 'app-active-resume');
             }
           }).then((handle) => {
             provider.lifecycleCleanups.push(() => handle.remove());

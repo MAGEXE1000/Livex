@@ -62,6 +62,53 @@ export function startFallbackPolling(provider: any, userId: string, reason = 'fa
   }, 30000);
 }
 
+export function stopHeartbeat(provider: any) {
+  if (provider.heartbeatInterval) {
+    clearInterval(provider.heartbeatInterval);
+    provider.heartbeatInterval = null;
+  }
+}
+
+export function startHeartbeat(provider: any, userId: string, reason = 'heartbeat') {
+  // 1. Never heartbeat if user is logged out or mismatched
+  if (!provider.userId || provider.userId !== userId) {
+    stopHeartbeat(provider);
+    return;
+  }
+  // 2. Never heartbeat if application is backgrounded
+  if (provider.isForeground === false) {
+    stopHeartbeat(provider);
+    return;
+  }
+  // 3. Never heartbeat if device is offline
+  if (provider.isOnline === false) {
+    stopHeartbeat(provider);
+    return;
+  }
+  // 4. Prevent duplicate timers
+  if (provider.heartbeatInterval) {
+    return;
+  }
+
+  // Heartbeat runs every 60 seconds while active, visible, and online
+  provider.heartbeatInterval = setInterval(() => {
+    // Re-verify guards before dispatching network calls
+    if (
+      provider.isForeground === false ||
+      provider.isOnline === false ||
+      !provider.userId ||
+      provider.userId !== userId
+    ) {
+      stopHeartbeat(provider);
+      return;
+    }
+
+    provider.heartbeatNow(`periodic-tick:${reason}`).catch((err: any) => {
+      console.warn('[sync] Periodic heartbeat failed:', err);
+    });
+  }, 60000);
+}
+
 export function clearSubscriptions(provider: any) {
   if (provider.subscriptionWatchdog) {
     clearTimeout(provider.subscriptionWatchdog);
@@ -72,6 +119,7 @@ export function clearSubscriptions(provider: any) {
     provider.realtimeChannel = null;
   }
   stopFallbackPolling(provider);
+  stopHeartbeat(provider);
   provider.diagState.realtimeConnected = false;
   provider.updateDiag({ realtimeConnected: false, fallbackPollingActive: false });
 }

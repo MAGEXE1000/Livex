@@ -119,7 +119,8 @@ class StartupCoordinatorClass {
   isStartupComplete() {
     return (
       this.isCompleted ||
-      (typeof window !== 'undefined' && (window as any).__studioStartupComplete === true)
+      (typeof window !== 'undefined' &&
+        ((window as any).__livexStartupComplete === true || (window as any).__studioStartupComplete === true))
     );
   }
 
@@ -358,9 +359,12 @@ class StartupCoordinatorClass {
 
       // Set complete gate to true (enables Updater listener checks and signals Hub readiness)
       if (typeof window !== 'undefined') {
+        (window as any).__livexStartupComplete = true;
         (window as any).__studioStartupComplete = true;
+        (window as any).__livexHubReady = true;
         (window as any).__studioHubReady = true;
         try {
+          window.dispatchEvent(new CustomEvent('livex-hub-ready'));
           window.dispatchEvent(new CustomEvent('studio-hub-ready'));
         } catch (_) {}
         console.log(
@@ -478,6 +482,7 @@ class StartupCoordinatorClass {
     }
 
     if (typeof window !== 'undefined') {
+      (window as any).__livexStartupComplete = false;
       (window as any).__studioStartupComplete = false;
     }
 
@@ -564,13 +569,19 @@ class StartupCoordinatorClass {
     });
 
     this.addEventListener(window, 'focus', () => {
-      this.handleLifecycleEvent('focus', 'lifecycle_focus', 'window focus');
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        this.handleLifecycleEvent('focus', 'lifecycle_focus', 'window focus');
+      }
     });
     this.addEventListener(window, 'pageshow', () => {
-      this.handleLifecycleEvent('pageshow', 'lifecycle_focus', 'window focus');
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        this.handleLifecycleEvent('pageshow', 'lifecycle_focus', 'window focus');
+      }
     });
     this.addEventListener(window, 'online', () => {
-      this.handleLifecycleEvent('online', 'lifecycle_focus', 'window focus');
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        this.handleLifecycleEvent('online', 'lifecycle_focus', 'window focus');
+      }
     });
 
     if (Capacitor.isNativePlatform()) {
@@ -624,9 +635,15 @@ class StartupCoordinatorClass {
   }
 
   private startPeriodicUpdatePolling() {
-    if (this.pollingTimer) {
-      this.logStartup('startPeriodicUpdatePolling() RETURN', 'already running');
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      this.logStartup('startPeriodicUpdatePolling() RETURN', 'app is hidden');
       return;
+    }
+
+    if (this.pollingTimer) {
+      this.logStartup('startPeriodicUpdatePolling() DEDUPLICATE', 'clearing existing timer first');
+      clearInterval(this.pollingTimer);
+      this.pollingTimer = null;
     }
 
     this.logStartup('startPeriodicUpdatePolling() STARTED');
@@ -642,6 +659,8 @@ class StartupCoordinatorClass {
         (typeof document === 'undefined' || document.visibilityState === 'visible')
       ) {
         void this.triggerUpdateCheck('polling', 'periodic foreground poll');
+      } else {
+        this.logStartup('polling timer SKIPPED', 'app is not visible');
       }
     }, POLL_INTERVAL);
   }
@@ -659,6 +678,15 @@ class StartupCoordinatorClass {
       'handleLifecycleEvent() CALLED',
       `type=${type}, trigger=${trigger}, reason=${reason}`
     );
+
+    if (
+      typeof document !== 'undefined' &&
+      document.visibilityState === 'hidden' &&
+      type !== 'appStateChange'
+    ) {
+      this.logStartup('handleLifecycleEvent() RETURN', 'suppressed while document is hidden');
+      return;
+    }
     if (!this.isCompleted) {
       if (!this.isStarted && this.savedOnHubShow) {
         this.logStartup(

@@ -1030,6 +1030,27 @@ export function checkForUpdate(
   );
 
   if (!isManual) {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      const msg = 'checkForUpdate() automatic update check skipped while application is backgrounded';
+      console.log(`[UPDATER-TRACE] ${msg}`);
+      logTimelineEvent(
+        'UpdateCore',
+        'CHECK_REJECTED_BACKGROUND',
+        'Application is backgrounded'
+      );
+      UpdaterFlightRecorder.record({
+        thread: 'js',
+        sessionId: null,
+        workflowId: null,
+        eventType: 'checkForUpdateRejected',
+        caller: callerInfo,
+        reason: `Blocked automatic check (app backgrounded). Trigger: ${trigger}, Reason: ${reason}, Screen: ${screen}`,
+        warning: 'CHECK_BLOCKED_BACKGROUND',
+        stack: stackTrace,
+      });
+      return Promise.resolve(globalUpdateState);
+    }
+
     try {
       const autoUpdates = localStorage.getItem('studio:automatic_updates') !== 'false';
       if (!autoUpdates) {

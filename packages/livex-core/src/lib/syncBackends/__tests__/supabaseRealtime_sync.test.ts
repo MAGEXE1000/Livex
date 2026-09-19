@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   startFallbackPolling,
   stopFallbackPolling,
+  startHeartbeat,
+  stopHeartbeat,
   clearSubscriptions,
   setupRealtimeAndPresence,
 } from '../syncState';
@@ -145,6 +147,7 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
       authEpoch: 0,
       realtimeChannel: null,
       refetchInterval: null,
+      heartbeatInterval: null,
       subscriptionWatchdog: null,
       lifecycleCleanups: [],
       unsubs: [],
@@ -170,6 +173,12 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
       }),
       stopFallbackPolling: vi.fn(() => {
         stopFallbackPolling(mockProvider);
+      }),
+      startHeartbeat: vi.fn((userId: string, reason?: string) => {
+        startHeartbeat(mockProvider, userId, reason);
+      }),
+      stopHeartbeat: vi.fn(() => {
+        stopHeartbeat(mockProvider);
       }),
       setupRealtimeAndPresence: vi.fn((userId: string) => {
         setupRealtimeAndPresence(mockProvider, userId);
@@ -477,6 +486,157 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
       expect(mockProvider.refetchAllData.mock.calls.length).toBe(initialCallCount);
 
       await dispose(mockProvider);
+    });
+  });
+
+  describe('Device Heartbeat Lifecycle & Visibility Gating', () => {
+    it('starts heartbeat timer on authenticated foreground login and ticks every 60s', async () => {
+      await init(mockProvider);
+
+      const authSubscriber = Array.from(mockAuthSubscribers)[0];
+      await authSubscriber({
+        uid: 'test-user-123',
+        email: 'test@example.com',
+      });
+
+      // Initial heartbeatNow('init-auth') called
+      expect(mockProvider.heartbeatNow).toHaveBeenCalledWith('init-auth');
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      const callCountBefore = mockProvider.heartbeatNow.mock.calls.length;
+
+      // Advance by 60 seconds
+      vi.advanceTimersByTime(60000);
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(callCountBefore + 1);
+
+      // Advance by another 60 seconds
+      vi.advanceTimersByTime(60000);
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(callCountBefore + 2);
+
+      await dispose(mockProvider);
+    });
+
+    it('suspends heartbeat when application is backgrounded and resumes on foreground', async () => {
+      await init(mockProvider);
+
+      const authSubscriber = Array.from(mockAuthSubscribers)[0];
+      await authSubscriber({
+        uid: 'test-user-123',
+        email: 'test@example.com',
+      });
+      mockProvider.diagState.realtimeConnected = true;
+
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      // App goes to background
+      Object.defineProperty(document, 'visibilityState', {
+        value: 'hidden',
+        configurable: true,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(mockProvider.isForeground).toBe(false);
+      expect(mockProvider.heartbeatInterval).toBeNull();
+
+      const callCountWhileHidden = mockProvider.heartbeatNow.mock.calls.length;
+
+      // Advance timers by 3 minutes (180s) while in background
+      vi.advanceTimersByTime(180000);
+
+      // No periodic ticks occurred while hidden
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(callCountWhileHidden);
+
+      // App returns to foreground
+      Object.defineProperty(document, 'visibilityState', {
+        value: 'visible',
+        configurable: true,
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(mockProvider.isForeground).toBe(true);
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      // Foreground-liveness heartbeat sent
+      expect(mockProvider.heartbeatNow).toHaveBeenCalledWith('foreground-liveness');
+
+      // Subsequent 60s tick resumes
+      const callCountAfterResume = mockProvider.heartbeatNow.mock.calls.length;
+      vi.advanceTimersByTime(60000);
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(callCountAfterResume + 1);
+
+      await dispose(mockProvider);
+    });
+
+    it('suspends heartbeat when device goes offline and resumes when online', async () => {
+      await init(mockProvider);
+
+      const authSubscriber = Array.from(mockAuthSubscribers)[0];
+      await authSubscriber({
+        uid: 'test-user-123',
+        email: 'test@example.com',
+      });
+
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      // Network goes offline
+      window.dispatchEvent(new Event('offline'));
+
+      expect(mockProvider.isOnline).toBe(false);
+      expect(mockProvider.heartbeatInterval).toBeNull();
+
+      const countOffline = mockProvider.heartbeatNow.mock.calls.length;
+      vi.advanceTimersByTime(120000);
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(countOffline);
+
+      // Network comes back online
+      window.dispatchEvent(new Event('online'));
+
+      expect(mockProvider.isOnline).toBe(true);
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      // Ticks resume
+      vi.advanceTimersByTime(60000);
+      expect(mockProvider.heartbeatNow.mock.calls.length).toBe(countOffline + 1);
+
+      await dispose(mockProvider);
+    });
+
+    it('deduplicates heartbeat intervals when startHeartbeat is called repeatedly', () => {
+      mockProvider.userId = 'test-user-123';
+      mockProvider.isForeground = true;
+      mockProvider.isOnline = true;
+
+      startHeartbeat(mockProvider, 'test-user-123');
+      const firstInterval = mockProvider.heartbeatInterval;
+      expect(firstInterval).not.toBeNull();
+
+      // Call startHeartbeat again
+      startHeartbeat(mockProvider, 'test-user-123');
+      expect(mockProvider.heartbeatInterval).toBe(firstInterval);
+
+      stopHeartbeat(mockProvider);
+      expect(mockProvider.heartbeatInterval).toBeNull();
+    });
+
+    it('cleans up heartbeat on user logout and dispose', async () => {
+      await init(mockProvider);
+
+      const authSubscriber = Array.from(mockAuthSubscribers)[0];
+      await authSubscriber({
+        uid: 'test-user-123',
+        email: 'test@example.com',
+      });
+
+      expect(mockProvider.heartbeatInterval).not.toBeNull();
+
+      // Logout
+      await authSubscriber(null);
+
+      expect(mockProvider.userId).toBeNull();
+      expect(mockProvider.heartbeatInterval).toBeNull();
+
+      await dispose(mockProvider);
+      expect(mockProvider.heartbeatInterval).toBeNull();
     });
   });
 });

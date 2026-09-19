@@ -305,6 +305,8 @@ export interface SyncBackendProvider {
 
   registerCurrentDevice(reason: string): Promise<DeviceWriteResult>;
   heartbeatNow(reason: string): Promise<HeartbeatResult>;
+  startHeartbeat(userId: string, reason?: string): void;
+  stopHeartbeat(): void;
   subscribeDevices(callback: DevicesListener): Unsubscribe;
 
   getProfile(): Promise<UserProfile | null>;
