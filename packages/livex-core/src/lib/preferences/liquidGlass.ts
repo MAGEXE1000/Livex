@@ -121,6 +121,7 @@ interface Shader {
   ro: ResizeObserver;
   width: number;
   height: number;
+  pendingRaf: number | null;
   /** Inline styles captured BEFORE we mutated them, restored on destroy. */
   styleSnapshot: {
     backdropFilter: string;
@@ -136,49 +137,84 @@ function nextFilterId(): string {
   return `lgshader-${++_idCounter}`;
 }
 
+interface CachedDisplacementMap {
+  dataURL: string;
+  baseScale: number;
+}
+
+const _displacementMapCache = new Map<string, CachedDisplacementMap>();
+const MAX_DISPLACEMENT_CACHE_SIZE = 16;
+
+/**
+ * Purge cached displacement map textures. Kept for test harnesses or memory sweeps.
+ */
+export function clearLiquidGlassCache(): void {
+  _displacementMapCache.clear();
+}
+
 /**
  * Generate the displacement map PNG for the given dimensions and write it
  * into the three feImage elements (R, G, B channels of the chromatic
  * aberration triple). Also sets the matching `scale` on each
  * feDisplacementMap, derived from the data exactly as shuding does.
+ *
+ * Caches displacement maps by `${width}x${height}` to avoid re-running the
+ * pixel loop and toDataURL() on remounts or unchanged dimensions.
  */
 function regenerateMap(s: Shader, width: number, height: number): void {
   if (width <= 0 || height <= 0) return;
-  s.width = width;
-  s.height = height;
-  s.canvas.width = width;
-  s.canvas.height = height;
+  const w = Math.round(width);
+  const h = Math.round(height);
+  if (w <= 0 || h <= 0) return;
 
-  const w = width,
-    h = height;
-  const data = new Uint8ClampedArray(w * h * 4);
-  let maxScale = 0;
-  const raw: number[] = [];
+  s.width = w;
+  s.height = h;
 
-  for (let i = 0; i < data.length; i += 4) {
-    const x = (i / 4) % w;
-    const y = Math.floor(i / 4 / w);
-    const pos = fragment(x / w, y / h);
-    const dx = pos.x * w - x;
-    const dy = pos.y * h - y;
-    if (Math.abs(dx) > maxScale) maxScale = Math.abs(dx);
-    if (Math.abs(dy) > maxScale) maxScale = Math.abs(dy);
-    raw.push(dx, dy);
+  const cacheKey = `${w}x${h}`;
+  let cached = _displacementMapCache.get(cacheKey);
+
+  if (!cached) {
+    s.canvas.width = w;
+    s.canvas.height = h;
+
+    const data = new Uint8ClampedArray(w * h * 4);
+    let maxScale = 0;
+    const raw = new Float32Array(w * h * 2);
+    let rawIdx = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const x = (i / 4) % w;
+      const y = Math.floor(i / 4 / w);
+      const pos = fragment(x / w, y / h);
+      const dx = pos.x * w - x;
+      const dy = pos.y * h - y;
+      if (Math.abs(dx) > maxScale) maxScale = Math.abs(dx);
+      if (Math.abs(dy) > maxScale) maxScale = Math.abs(dy);
+      raw[rawIdx++] = dx;
+      raw[rawIdx++] = dy;
+    }
+    // Shuding's exact scaling — divide by 2 so the encoded values stay
+    // within the 0..255 range with headroom for the 0.5 bias.
+    maxScale *= 0.5;
+    if (maxScale === 0) maxScale = 1;
+
+    let idx = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = (raw[idx++] / maxScale + 0.5) * 255;
+      data[i + 1] = (raw[idx++] / maxScale + 0.5) * 255;
+      data[i + 2] = 0;
+      data[i + 3] = 255;
+    }
+    s.ctx.putImageData(new ImageData(data, w, h), 0, 0);
+    const dataURL = s.canvas.toDataURL();
+
+    if (_displacementMapCache.size >= MAX_DISPLACEMENT_CACHE_SIZE) {
+      const firstKey = _displacementMapCache.keys().next().value;
+      if (firstKey) _displacementMapCache.delete(firstKey);
+    }
+    cached = { dataURL, baseScale: maxScale };
+    _displacementMapCache.set(cacheKey, cached);
   }
-  // Shuding's exact scaling — divide by 2 so the encoded values stay
-  // within the 0..255 range with headroom for the 0.5 bias.
-  maxScale *= 0.5;
-  if (maxScale === 0) maxScale = 1;
-
-  let idx = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = (raw[idx++] / maxScale + 0.5) * 255;
-    data[i + 1] = (raw[idx++] / maxScale + 0.5) * 255;
-    data[i + 2] = 0;
-    data[i + 3] = 255;
-  }
-  s.ctx.putImageData(new ImageData(data, w, h), 0, 0);
-  const dataURL = s.canvas.toDataURL();
 
   // Update filter region.
   s.filter.setAttribute('x', '0');
@@ -191,14 +227,14 @@ function regenerateMap(s: Shader, width: number, height: number): void {
     fe.setAttribute('height', String(h));
     // CRITICAL: xlink:href via setAttributeNS — plain 'href' is silently
     // ignored by Chrome Android in <feImage>.
-    fe.setAttributeNS(XLINK_NS, 'xlink:href', dataURL);
+    fe.setAttributeNS(XLINK_NS, 'xlink:href', cached.dataURL);
     // Belt-and-braces — newer browsers accept both.
-    fe.setAttribute('href', dataURL);
+    fe.setAttribute('href', cached.dataURL);
   }
 
   // Chromatic aberration: R is displaced slightly more than G, B slightly
   // less. Scale derived from data so it auto-tunes to element size.
-  const baseScale = maxScale; // shuding uses this directly (canvasDPI = 1)
+  const baseScale = cached.baseScale; // shuding uses this directly (canvasDPI = 1)
   s.feDispR.setAttribute('scale', String(baseScale * 1.06));
   s.feDispG.setAttribute('scale', String(baseScale));
   s.feDispB.setAttribute('scale', String(baseScale * 0.94));
@@ -296,11 +332,25 @@ function createShader(host: HTMLElement): Shader {
   svg.appendChild(defs);
   document.body.appendChild(svg);
 
-  const ro = new ResizeObserver(() => {
-    const r = host.getBoundingClientRect();
-    if (r.width !== shader.width || r.height !== shader.height) {
-      regenerateMap(shader, Math.round(r.width), Math.round(r.height));
+  let shader: Shader;
+
+  const ro = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (!entry) return;
+    const cr = entry.contentRect;
+    const w = Math.round(cr.width);
+    const h = Math.round(cr.height);
+    if (w <= 0 || h <= 0) return;
+    if (w === shader.width && h === shader.height) return;
+
+    if (shader.pendingRaf !== null) {
+      cancelAnimationFrame(shader.pendingRaf);
     }
+    shader.pendingRaf = requestAnimationFrame(() => {
+      shader.pendingRaf = null;
+      if (w === shader.width && h === shader.height) return;
+      regenerateMap(shader, w, h);
+    });
   });
 
   // Snapshot inline styles BEFORE mutating, so destroyShader() can faithfully
@@ -312,7 +362,7 @@ function createShader(host: HTMLElement): Shader {
     webkitBackdropFilterPriority: host.style.getPropertyPriority('-webkit-backdrop-filter'),
   };
 
-  const shader: Shader = {
+  shader = {
     filterId,
     svg,
     filter,
@@ -327,6 +377,7 @@ function createShader(host: HTMLElement): Shader {
     ro,
     width: 0,
     height: 0,
+    pendingRaf: null,
     styleSnapshot,
   };
 
@@ -347,6 +398,14 @@ function createShader(host: HTMLElement): Shader {
 function destroyShader(host: HTMLElement): void {
   const s = _shaders.get(host);
   if (!s) return;
+  if (s.pendingRaf !== null) {
+    try {
+      cancelAnimationFrame(s.pendingRaf);
+    } catch {
+      /* swallow */
+    }
+    s.pendingRaf = null;
+  }
   try {
     s.ro.disconnect();
   } catch {
@@ -381,6 +440,54 @@ function destroyShader(host: HTMLElement): void {
   // Clear the scroll-shine var the hook may have written.
   host.style.removeProperty('--lg-shine-x');
   _shaders.delete(host);
+}
+
+/* ───────────────────── Native Android Bridge ────────────────────────────── */
+
+let _lastBridgeNav: {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  visible: boolean;
+  theme: string;
+  cornerRadius: number;
+} | null = null;
+
+/**
+ * Deduplicated dispatch to native LiquidGlassBridge JavascriptInterface.
+ * Skips redundant bridge calls when coordinates have not changed by >= 0.5px.
+ */
+export function updateNativeLiquidGlassBridge(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  visible: boolean,
+  theme: string,
+  cornerRadius: number
+): void {
+  if (typeof window === 'undefined') return;
+  const bridge = (window as any).LiquidGlassBridge;
+  if (!bridge?.updatePosition) return;
+  if (
+    _lastBridgeNav &&
+    _lastBridgeNav.visible === visible &&
+    _lastBridgeNav.theme === theme &&
+    Math.abs(_lastBridgeNav.left - left) < 0.5 &&
+    Math.abs(_lastBridgeNav.top - top) < 0.5 &&
+    Math.abs(_lastBridgeNav.width - width) < 0.5 &&
+    Math.abs(_lastBridgeNav.height - height) < 0.5 &&
+    Math.abs(_lastBridgeNav.cornerRadius - cornerRadius) < 0.5
+  ) {
+    return;
+  }
+  _lastBridgeNav = { left, top, width, height, visible, theme, cornerRadius };
+  try {
+    bridge.updatePosition(left, top, width, height, visible, theme, cornerRadius);
+  } catch {
+    /* swallow native bridge communication errors */
+  }
 }
 
 /* ───────────────────── Shared cosmetic styles ───────────────────────────── */

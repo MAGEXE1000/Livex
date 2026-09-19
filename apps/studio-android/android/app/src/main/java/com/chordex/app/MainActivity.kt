@@ -101,6 +101,39 @@ class MainActivity : BridgeActivity() {
     @Volatile
     private var isExclusiveVolumeMode = false
 
+    private var activeTransitionOverlay: View? = null
+    private var activeTransitionBitmap: Bitmap? = null
+
+    private fun cleanupActiveTransition() {
+        val oldOverlay = activeTransitionOverlay
+        activeTransitionOverlay = null
+        val oldBitmap = activeTransitionBitmap
+        activeTransitionBitmap = null
+
+        val cleanupAction = {
+            if (oldOverlay != null) {
+                val rootView = findViewById<FrameLayout>(android.R.id.content)
+                rootView?.removeView(oldOverlay)
+                if (oldOverlay is ComposeView) {
+                    try {
+                        oldOverlay.disposeComposition()
+                    } catch (_: Exception) {}
+                }
+            }
+            if (oldBitmap != null && !oldBitmap.isRecycled) {
+                try {
+                    oldBitmap.recycle()
+                } catch (_: Exception) {}
+            }
+        }
+
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            cleanupAction()
+        } else {
+            runOnUiThread(cleanupAction)
+        }
+    }
+
     inner class ExclusiveVolumeBridge {
         @JavascriptInterface
         fun setExclusiveVolumeMode(enabled: Boolean) {
@@ -336,10 +369,28 @@ class MainActivity : BridgeActivity() {
             return
         }
 
-        // 1. Capture WebView bitmap
-        val bitmap = Bitmap.createBitmap(webView.width, webView.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        webView.draw(canvas)
+        // Cancel and recycle any existing active transition before starting a new one
+        cleanupActiveTransition()
+
+        // 1. Capture WebView bitmap at 0.5x resolution to reduce memory allocation by 75%
+        // (e.g. from 10.4MB down to 2.6MB on 1080p, and from 18.4MB down to 4.6MB on 1440p)
+        // using ARGB_8888 for full 32-bit color fidelity (preventing RGB_565 dark banding/alpha artifacts).
+        val captureWidth = Math.max(1, webView.width / 2)
+        val captureHeight = Math.max(1, webView.height / 2)
+
+        val bitmap: Bitmap
+        try {
+            bitmap = Bitmap.createBitmap(captureWidth, captureHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.scale(captureWidth.toFloat() / webView.width.toFloat(), captureHeight.toFloat() / webView.height.toFloat())
+            webView.draw(canvas)
+        } catch (e: Throwable) {
+            android.util.Log.w("LivexTheme", "Failed to allocate theme transition bitmap (low memory): ${e.message}")
+            webView.evaluateJavascript("if (typeof window.__themeTransitionCallback === 'function') { window.__themeTransitionCallback(); }", null)
+            return
+        }
+
+        activeTransitionBitmap = bitmap
 
         // 2. Add ComposeView overlay
         val rootView = findViewById<FrameLayout>(android.R.id.content)
@@ -349,6 +400,7 @@ class MainActivity : BridgeActivity() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
+        activeTransitionOverlay = composeView
         rootView.addView(composeView)
 
         // 3. Set content with InkFlow reveal
@@ -356,25 +408,28 @@ class MainActivity : BridgeActivity() {
             var progress by remember { mutableStateOf(0f) }
 
             LaunchedEffect(Unit) {
-                // Execute the JS theme change callback to update the WebView in the background
-                webView.evaluateJavascript("if (typeof window.__themeTransitionCallback === 'function') { window.__themeTransitionCallback(); }", null)
+                try {
+                    // Execute the JS theme change callback to update the WebView in the background
+                    webView.evaluateJavascript("if (typeof window.__themeTransitionCallback === 'function') { window.__themeTransitionCallback(); }", null)
 
-                // Allow 40ms (approx 2 frames) for the WebView to finish background style recalculation & paint
-                // under the static screenshot overlay before running the reveal animation.
-                kotlinx.coroutines.delay(40)
+                    // Allow 40ms (approx 2 frames) for the WebView to finish background style recalculation & paint
+                    // under the static screenshot overlay before running the reveal animation.
+                    kotlinx.coroutines.delay(40)
 
-                // Run progress animation
-                animate(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing)
-                ) { value, _ ->
-                    progress = value
+                    // Run progress animation
+                    animate(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing)
+                    ) { value, _ ->
+                        progress = value
+                    }
+                } finally {
+                    // Guaranteed release of native resources on completion or coroutine cancellation
+                    if (activeTransitionOverlay === composeView) {
+                        cleanupActiveTransition()
+                    }
                 }
-
-                // Animation finished: remove the overlay
-                rootView.removeView(composeView)
-                bitmap.recycle()
             }
 
             Box(
@@ -578,12 +633,14 @@ class MainActivity : BridgeActivity() {
     override fun onStop() {
         super.onStop()
         isExclusiveVolumeMode = false
+        cleanupActiveTransition()
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onStop", "MainActivity entered onStop")
     }
 
     override fun onDestroy() {
         super.onDestroy()
         isExclusiveVolumeMode = false
+        cleanupActiveTransition()
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onDestroy", "MainActivity entered onDestroy")
     }
 

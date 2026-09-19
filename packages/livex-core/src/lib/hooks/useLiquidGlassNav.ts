@@ -7,6 +7,29 @@ import {
   liquidGlassPlatformSupported,
 } from '../preferences/liquidGlass';
 
+const _scrollerCache = new WeakMap<HTMLElement, Element | null>();
+
+function findScrollableAncestor(el: HTMLElement): Element | null {
+  const cached = _scrollerCache.get(el);
+  if (cached !== undefined) {
+    if (cached === null || cached.isConnected) {
+      return cached;
+    }
+  }
+  let attachedScroller: Element | null = null;
+  let walk: Element | null = el.parentElement;
+  while (walk && walk !== document.body) {
+    const cs = getComputedStyle(walk);
+    if (/(auto|scroll)/.test(cs.overflowY) && walk.scrollHeight > walk.clientHeight) {
+      attachedScroller = walk;
+      break;
+    }
+    walk = walk.parentElement;
+  }
+  _scrollerCache.set(el, attachedScroller);
+  return attachedScroller;
+}
+
 /**
  * Wire a bottom-nav element into the shared liquid-glass filter. The hook:
  *   • Lazy-injects the SVG filter on first mount when the platform supports
@@ -40,6 +63,7 @@ export function useLiquidGlassNav(ref: React.RefObject<HTMLElement | null>) {
     // visual itself is always shown (that's a static effect, not an animation).
     let shine = 50; // current shine position in %
     let target = 50; // target position the shine eases toward
+    let lastWrittenShine = -1;
     let rafId: number | null = null;
     let idleTimer: number | null = null;
     let disposed = false;
@@ -58,8 +82,15 @@ export function useLiquidGlassNav(ref: React.RefObject<HTMLElement | null>) {
         return;
       }
       shine += (target - shine) * 0.18;
-      el.style.setProperty('--lg-shine-x', shine.toFixed(2) + '%');
-      if (Math.abs(target - shine) > 0.2) {
+      const delta = Math.abs(shine - lastWrittenShine);
+      const targetDelta = Math.abs(target - shine);
+      // Only mutate the style property if the change is noticeable (>=0.2%)
+      // or when settling to target.
+      if (delta >= 0.2 || targetDelta <= 0.2) {
+        el.style.setProperty('--lg-shine-x', shine.toFixed(1) + '%');
+        lastWrittenShine = shine;
+      }
+      if (targetDelta > 0.2) {
         rafId = requestAnimationFrame(tick);
       } else {
         rafId = null;
@@ -87,18 +118,8 @@ export function useLiquidGlassNav(ref: React.RefObject<HTMLElement | null>) {
 
     // Find nearest scrollable ancestor (NOT including the nav itself, which
     // is fixed-positioned and doesn't scroll the page).
-    let attachedScroller: Element | null = null;
-    let lastScrollerTop = 0;
-    let walk: Element | null = el.parentElement;
-    while (walk && walk !== document.body) {
-      const cs = getComputedStyle(walk);
-      if (/(auto|scroll)/.test(cs.overflowY) && walk.scrollHeight > walk.clientHeight) {
-        attachedScroller = walk;
-        lastScrollerTop = walk.scrollTop;
-        break;
-      }
-      walk = walk.parentElement;
-    }
+    const attachedScroller = findScrollableAncestor(el);
+    let lastScrollerTop = attachedScroller ? attachedScroller.scrollTop : 0;
     const onScrollerScroll = (e: Event) => {
       const t = e.currentTarget as Element;
       const top = t.scrollTop;
