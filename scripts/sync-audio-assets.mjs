@@ -30,6 +30,7 @@ const canonicalDir = path.join(
 const targets = [
   path.join(repoRoot, 'apps', 'studio-web', 'public', 'audio'),
   path.join(repoRoot, 'apps', 'studio-android', 'public', 'audio'),
+  path.join(repoRoot, 'apps', 'studio-android', 'android', 'app', 'src', 'main', 'assets', 'public', 'audio'),
 ];
 
 console.log('================================================================');

@@ -73,7 +73,7 @@ function isNative(): boolean {
  */
 export async function drumAssetUrl(p: string): Promise<string> {
   if (!isNative()) {
-    const base = (import.meta.env.BASE_URL ?? '/').replace(/\/?$/, '/');
+    const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL ? (import.meta as any).env.BASE_URL : '/').replace(/\/?$/, '/');
     const trimmed = p.replace(/^\/+/, '');
     return `${base}${trimmed}`;
   }
@@ -103,7 +103,14 @@ export async function drumAssetUrl(p: string): Promise<string> {
   }
 }
 
-export const audioAssetUrl = drumAssetUrl;
+export function audioAssetUrl(p: string): Promise<string> {
+  const base =
+    typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL
+      ? (import.meta as any).env.BASE_URL.replace(/\/?$/, '/')
+      : '/';
+  const cleanPath = p.replace(/^\/+/, '');
+  return Promise.resolve(`${base}${cleanPath}`);
+}
 
 /** Idempotent: returns the same in-flight promise on repeat calls. */
 export function seedAudioAssets(): Promise<void> {

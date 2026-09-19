@@ -12,7 +12,9 @@ export function getAudioContextOptions(): AudioContextOptions {
 
 export function createAudioContext(): AudioContext {
   const AC =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    typeof window !== 'undefined'
+      ? window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      : (globalThis as any).AudioContext;
   return new AC(getAudioContextOptions());
 }

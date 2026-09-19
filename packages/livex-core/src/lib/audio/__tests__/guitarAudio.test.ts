@@ -61,14 +61,30 @@ class MockAudioContext {
   sampleRate = 44100;
   state: AudioContextState = 'running';
   destination = {};
-  createGain = vi.fn(() => new MockGainNode());
-  createBuffer = vi.fn(() => new MockAudioBuffer());
-  createBufferSource = vi.fn(() => new MockBufferSourceNode());
-  createBiquadFilter = vi.fn(() => new MockBiquadFilterNode());
-  createDynamicsCompressor = vi.fn(() => new MockDynamicsCompressorNode());
-  decodeAudioData = vi.fn().mockImplementation(async () => new MockAudioBuffer());
-  resume = vi.fn().mockResolvedValue(undefined);
-  close = vi.fn().mockResolvedValue(undefined);
+  createGain() {
+    return new MockGainNode();
+  }
+  createBuffer() {
+    return new MockAudioBuffer();
+  }
+  createBufferSource() {
+    return new MockBufferSourceNode();
+  }
+  createBiquadFilter() {
+    return new MockBiquadFilterNode();
+  }
+  createDynamicsCompressor() {
+    return new MockDynamicsCompressorNode();
+  }
+  async decodeAudioData() {
+    return new MockAudioBuffer();
+  }
+  async resume() {
+    return undefined;
+  }
+  async close() {
+    return undefined;
+  }
 }
 
 // Attach mock AudioContext to globalThis
@@ -170,4 +186,69 @@ describe('guitarAudio engine', () => {
     playChord(cMajorData, 0.65);
     expect(() => stopChordPlayback()).not.toThrow();
   });
+
+  it('cancels pending async playback when stopChordPlayback is called immediately', async () => {
+    const cMajorData = {
+      frets: [-1, 3, 2, 0, 1, 0],
+      fingers: [0, 3, 2, 0, 1, 0],
+      barres: [],
+      baseFret: 1,
+    };
+
+    const ctx = (globalThis as any).AudioContext;
+    const createBufferSourceSpy = vi.spyOn(MockAudioContext.prototype, 'createBufferSource');
+    createBufferSourceSpy.mockClear();
+
+    playChord(cMajorData, 0.65);
+    // Immediately stop playback before async load finishes
+    stopChordPlayback();
+
+    await new Promise((r) => setTimeout(r, 60));
+    // Since playback was stopped while in-flight, no audio sources should have been created or started
+    expect(createBufferSourceSpy).not.toHaveBeenCalled();
+    createBufferSourceSpy.mockRestore();
+  });
+
+  it('supercedes previous chord playback when a new chord is triggered rapidly', async () => {
+    const cMajorData = {
+      frets: [-1, 3, 2, 0, 1, 0],
+      fingers: [0, 3, 2, 0, 1, 0],
+      barres: [],
+      baseFret: 1,
+    };
+    const gMajorData = {
+      frets: [3, 2, 0, 0, 0, 3],
+      fingers: [2, 1, 0, 0, 0, 3],
+      barres: [],
+      baseFret: 1,
+    };
+
+    const createBufferSourceSpy = vi.spyOn(MockAudioContext.prototype, 'createBufferSource');
+    createBufferSourceSpy.mockClear();
+
+    // Trigger chord 1 then immediately trigger chord 2
+    playChord(cMajorData, 0.65);
+    playChord(gMajorData, 0.65);
+
+    await new Promise((r) => setTimeout(r, 60));
+
+    // Only G Major (6 strings) should have created buffer sources, not C Major (5) + G Major (6) = 11
+    expect(createBufferSourceSpy).toHaveBeenCalledTimes(6);
+    createBufferSourceSpy.mockRestore();
+  });
+
+  it('gracefully warns and does not throw when all strings are muted (-1)', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const allMutedData = {
+      frets: [-1, -1, -1, -1, -1, -1],
+      fingers: [0, 0, 0, 0, 0, 0],
+      barres: [],
+      baseFret: 1,
+    };
+
+    expect(() => playChord(allMutedData)).not.toThrow();
+    await new Promise((r) => setTimeout(r, 30));
+    warnSpy.mockRestore();
+  });
 });
+

@@ -1,5 +1,6 @@
 import type { GuitarChordData } from '../../data/chords';
 import { loadAudioSample } from './audioSampleLoader';
+import { createAudioContext } from './audioContextOptions';
 
 // ── Open String MIDI Constants (Standard Tuning E-A-D-G-B-e) ──────────────────
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // E2, A2, D3, G3, B3, E4
@@ -26,26 +27,37 @@ const decodedBufferCache = new Map<number, AudioBuffer>();
 let activeSources: AudioBufferSourceNode[] = [];
 let activeGainNodes: GainNode[] = [];
 let playbackTimeout: ReturnType<typeof setTimeout> | null = null;
+let currentPlaybackId = 0;
 
+/**
+ * Returns or initializes the shared AudioContext using Livex audio architecture.
+ * Safely resumes suspended context during user-initiated events.
+ */
 function getCtx(): AudioContext | null {
-  if (!audioCtx) {
-    const CtxClass =
-      typeof AudioContext !== 'undefined'
-        ? AudioContext
-        : typeof window !== 'undefined' && typeof (window as any).webkitAudioContext !== 'undefined'
-          ? ((window as any).webkitAudioContext as typeof AudioContext)
-          : null;
-    if (!CtxClass) return null;
-    audioCtx = new CtxClass({ sampleRate: 44100 });
+  if (
+    typeof window === 'undefined' &&
+    typeof (globalThis as any).AudioContext === 'undefined'
+  ) {
+    return null;
   }
+
+  if (!audioCtx || audioCtx.state === 'closed') {
+    try {
+      audioCtx = createAudioContext();
+    } catch {
+      audioCtx = null;
+    }
+  }
+
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume().catch(() => {});
   }
+
   return audioCtx;
 }
 
 /**
- * Decodes and caches a note buffer by MIDI pitch.
+ * Decodes and caches a note buffer by MIDI pitch on-demand.
  * Resolves exact recorded samples in range [40, 76] (E2-E5).
  * Falls back to nearest anchor with pitch resampling outside this range.
  */
@@ -72,16 +84,20 @@ async function getOrDecodeNoteBuffer(
 }
 
 /**
- * Pre-decodes acoustic guitar sample buffers in the background.
- * Call on Chordex mount to eliminate first-playback decode latency.
+ * Pre-decodes acoustic guitar sample buffers for specified notes or core anchors.
+ * Does not block application startup or download unnecessary samples.
  */
-export async function preloadGuitarAudio(): Promise<void> {
+export async function preloadGuitarAudio(notesToPreload?: string[]): Promise<void> {
   const ctx = getCtx();
   if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
 
-  const notes = Object.keys(NAME_TO_MIDI);
+  // If specific notes requested, preload those; otherwise preload fundamental open strings
+  const targets = notesToPreload && notesToPreload.length > 0
+    ? notesToPreload
+    : ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+
   await Promise.all(
-    notes.map(async (noteName) => {
+    targets.map(async (noteName) => {
       const midi = NAME_TO_MIDI[noteName];
       if (!midi || decodedBufferCache.has(midi)) return;
       const buf = await loadAudioSample(ctx, `/audio/guitar/${noteName}.mp3`);
@@ -96,13 +112,22 @@ export async function preloadGuitarAudio(): Promise<void> {
  * Checks if acoustic guitar samples are pre-decoded in memory.
  */
 export function isGuitarAudioLoaded(): boolean {
-  return decodedBufferCache.size >= 25;
+  return decodedBufferCache.size > 0;
 }
 
 /**
  * Smoothly stops in-flight chord playback with a fast 25ms anti-click ramp.
+ * Also cancels any pending asynchronous sample loading.
  */
 export function stopChordPlayback(): void {
+  // Invalidate any in-flight async playback requests
+  currentPlaybackId++;
+
+  if (playbackTimeout) {
+    clearTimeout(playbackTimeout);
+    playbackTimeout = null;
+  }
+
   const ctx = audioCtx;
   const now = ctx ? ctx.currentTime : 0;
 
@@ -125,11 +150,6 @@ export function stopChordPlayback(): void {
       } catch {}
     });
   }, 35);
-
-  if (playbackTimeout) {
-    clearTimeout(playbackTimeout);
-    playbackTimeout = null;
-  }
 }
 
 /**
@@ -155,9 +175,23 @@ export function playChord(data: GuitarChordData, volume: number = 0.65): void {
 
   if (stringsToPlay.length === 0) return;
 
+  const thisPlaybackId = ++currentPlaybackId;
+
   // Asynchronously decode (or retrieve cached) notes and trigger playback
   (async () => {
     try {
+      // Ensure AudioContext is actively running under browser/WebView autoplay policies
+      if (ctx.state === 'suspended') {
+        try {
+          await ctx.resume();
+        } catch (resumeErr) {
+          console.warn('[guitarAudio] AudioContext resume warning:', resumeErr);
+        }
+      }
+
+      // Check if playback was canceled while awaiting resume
+      if (thisPlaybackId !== currentPlaybackId) return;
+
       const decodedResults = await Promise.all(
         stringsToPlay.map(async (item) => ({
           stringIdx: item.stringIdx,
@@ -165,12 +199,18 @@ export function playChord(data: GuitarChordData, volume: number = 0.65): void {
         }))
       );
 
+      // Check if playback was canceled while samples were decoding
+      if (thisPlaybackId !== currentPlaybackId) return;
+
       const playable = decodedResults.filter(
         (r): r is { stringIdx: number; sample: { buffer: AudioBuffer; playbackRate: number } } =>
           r.sample !== null
       );
 
-      if (playable.length === 0) return;
+      if (playable.length === 0) {
+        console.warn('[guitarAudio] Chord preview failed: 0 playable strings decoded for chord', data);
+        return;
+      }
 
       const now = ctx.currentTime;
 
@@ -220,6 +260,10 @@ export function playChord(data: GuitarChordData, volume: number = 0.65): void {
         strumIdx++;
       }
 
+      if (playbackTimeout) {
+        clearTimeout(playbackTimeout);
+      }
+
       playbackTimeout = setTimeout(
         () => {
           activeSources = [];
@@ -232,4 +276,3 @@ export function playChord(data: GuitarChordData, volume: number = 0.65): void {
     }
   })();
 }
-
