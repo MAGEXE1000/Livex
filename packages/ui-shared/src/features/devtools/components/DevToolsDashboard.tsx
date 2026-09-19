@@ -76,6 +76,13 @@ import UpdaterDiagnosticsPage from '../../updater/diagnostics/UpdaterDiagnostics
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { DeveloperInspectorPanel } from '../inspector/DeveloperInspectorPanel';
 import { Toggle as StudioToggle } from '../../../shared/design-system/StudioToggle';
+import {
+  ChordexLogo,
+  DrumexLogo,
+  StagexLogoIcon,
+  GroovexLogo,
+  VocalexLogo,
+} from '../../chordex/icons/ChordexLogo';
 
 interface Props {
   accent: { from: string; mid?: string; to: string };
@@ -5934,21 +5941,47 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             marginTop: 12,
             background: 'var(--app-surface-high)',
             borderRadius: 16,
-            padding: '14px 16px',
+            padding: '14px 10px',
             border: '1px solid rgba(128, 128, 128, 0.08)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            gap: 8,
             width: '100%',
             boxSizing: 'border-box',
           }}
         >
           {[
-            { key: 'chordex', name: 'Chordex', icon: 'music_note', color: '#3b82f6' },
-            { key: 'drumex', name: 'Drumex', icon: 'album', color: '#f59e0b' },
-            { key: 'stagex', name: 'Stagex', icon: 'theater_comedy', color: '#8b5cf6' },
-            { key: 'groovex', name: 'Groovex', icon: 'graphic_eq', color: '#ec4899' },
-            { key: 'vocalex', name: 'Vocalex', icon: 'mic', color: '#10b981' },
+            {
+              key: 'chordex',
+              name: 'Chordex',
+              color: 'var(--app-identity-chordex, #a855f7)',
+              Logo: ChordexLogo,
+            },
+            {
+              key: 'drumex',
+              name: 'Drumex',
+              color: 'var(--app-identity-drumex, #ec4899)',
+              Logo: DrumexLogo,
+            },
+            {
+              key: 'stagex',
+              name: 'Stagex',
+              color: 'var(--app-identity-stagex, #3b82f6)',
+              Logo: StagexLogoIcon,
+            },
+            {
+              key: 'groovex',
+              name: 'Groovex',
+              color: 'var(--app-identity-groovex, #10b981)',
+              Logo: GroovexLogo,
+            },
+            {
+              key: 'vocalex',
+              name: 'Vocalex',
+              color: 'var(--app-identity-vocalex, #f59e0b)',
+              Logo: VocalexLogo,
+            },
           ].map((app) => {
             const errs = getAppErrors(app.key);
             const warns = getAppWarnings(app.key);
@@ -5973,7 +6006,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 6,
-                  flex: 1,
+                  flex: '1 1 0',
+                  maxWidth: 62,
                   minWidth: 0,
                 }}
               >
@@ -5987,18 +6021,10 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    color: app.color,
                   }}
                 >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 20,
-                      color: app.color,
-                      fontVariationSettings: "'FILL' 1",
-                    }}
-                  >
-                    {app.icon}
-                  </span>
+                  <app.Logo size={20} />
                   <span
                     style={{
                       position: 'absolute',
