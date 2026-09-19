@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.24';
-export const NATIVE_VERSION_CODE = 40624;
-export const WEB_VERSION = '4.6.24';
+export const NATIVE_VERSION = '4.6.25';
+export const NATIVE_VERSION_CODE = 40625;
+export const WEB_VERSION = '4.6.25';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '8a12d3c8';
+export const APP_COMMIT_SHA = '919f7ce6';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/19/2026, 11:45:00 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/19/2026, 1:22:01 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,12 +96,20 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Improved',
+    items: [
+      'TopBar Specular Curvature Highlight: Tuned upper curvature radial highlight for AMOLED to catch subtle natural light along the floating pill rim.',
+      'Fail-Safe Performance Safeguards: Enforced zero blur passes and solid black rendering in AMOLED under performance mode and prefers-reduced-motion.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Android Updater Download Progress Reliability: Resolved race condition and service sleep deadlock in UpdateDownloadService that caused completed downloads to regress from 100% to 0% in active downloading state.',
-      'Decoupled Error & Status Broadcasting: Guarded native download progress listeners to ensure error and completion statuses never emit zero progress across the Capacitor bridge.',
-      'Strict Progress Monotonicity: Enforced non-decreasing download progress in downloadManager and protected post-download verification states against late bridge events.',
-      'Active Call Safety: Safely resolved and cleaned up superseded download plugin calls to prevent dangling promises.',
+      'TopBar AMOLED Visual Depth Restoration: Re-enabled restrained Liquid Glass material blur and calibrated obsidian background tint in AMOLED mode, eliminating the flat pitch-black void while preserving the pure black page aesthetic.',
+      'CSS Filter Syntax Robustness: Introduced `--surface-topbar-backdrop` across all theme states to prevent invalid `none saturate(140%)` evaluation in browsers when blur is disabled.',
+      'Tuner Reference String Audio: Restored authentic recorded instrument sounds across all supported guitars and basses in Chordex tuner, eliminating multi-context hardware conflicts and async decoding races on Android.',
+      'Android Loudspeaker Routing: Resolved `MODE_IN_COMMUNICATION` native routing bug in MainActivity, ensuring tuner reference tones play clearly through device loudspeakers rather than being routed to the silent earpiece receiver.',
+      'Guitar Audio Preview Resolution: Fixed relative asset path resolution for guitar chord previews in Android native Capacitor builds.',
     ],
   },
 ];
@@ -113,6 +121,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.25',
+    date: '2026-09-19',
+    highlights: [
+      'TopBar AMOLED Visual Depth Restoration: Re-enabled restrained Liquid Glass material blur and calibrated obsidian background tint in AMOLED mode, eliminating the flat pitch-black void while preserving the pure black page aesthetic.',
+      'CSS Filter Syntax Robustness: Introduced `--surface-topbar-backdrop` across all theme states to prevent invalid `none saturate(140%)` evaluation in browsers when blur is disabled.',
+      'Tuner Reference String Audio: Restored authentic recorded instrument sounds across all supported guitars and basses in Chordex tuner, eliminating multi-context hardware conflicts and async decoding races on Android.',
+      'Android Loudspeaker Routing: Resolved `MODE_IN_COMMUNICATION` native routing bug in MainActivity, ensuring tuner reference tones play clearly through device loudspeakers rather than being routed to the silent earpiece receiver.',
+      'Guitar Audio Preview Resolution: Fixed relative asset path resolution for guitar chord previews in Android native Capacitor builds.',
+      'TopBar Specular Curvature Highlight: Tuned upper curvature radial highlight for AMOLED to catch subtle natural light along the floating pill rim.',
+    ],
+  },
   {
     version: '4.6.24',
     date: '2026-09-19',
@@ -211,16 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.',
       'Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.',
       'Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.',
-    ],
-  },
-  {
-    version: '4.6.15',
-    date: '2026-09-16',
-    highlights: [
-      'Top-Bar Boundary Distortion Elimination: Decoupled the SVG displacement filter from the outer top-bar container and isolated micro-refraction to an internal clipped plane, eliminating wavy/wiggly edge deformation and boundary ripping.',
-      'Top-Bar Content Clearance Normalization: Expanded scroll viewport top padding from `+ 78px` to `+ 92px` across all application scaffolds and detail views, providing 26px breathing room and preventing content from colliding with the floating top bar.',
-      'OpenDesign Liquid Glass Morph: Upgraded scroll-reactive header morph with cubic Hermite smoothstep easing and monotonic continuous curvature (18px to 24px to 9999px), delivering fluid physical capsule condensation with zero step discontinuities.',
-      'Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale="2"` and `baseFrequency="0.04 0.04"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.',
     ],
   },
 ];
