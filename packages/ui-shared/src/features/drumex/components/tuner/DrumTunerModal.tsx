@@ -13,6 +13,7 @@ import {
   getEffectiveThemeState,
   resolveAccent,
   preloadTunerReferenceAudio,
+  isReferenceSuppressionActive,
   type DrumPartId,
   type DrumTensionId,
   type TunerLifecycleState,
@@ -198,7 +199,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
         setErrorMessage(payload.error);
       }
 
-      if (!payload.metrics || payload.metrics.frequency <= 0) {
+      if (isReferenceSuppressionActive() || !payload.metrics || payload.metrics.frequency <= 0) {
         targetCentsRef.current = 0;
         setTuningStatus('silent');
         setActiveFrequency(0);
@@ -319,7 +320,7 @@ export const DrumTunerModal: React.FC<DrumTunerModalProps> = ({
     );
     setTimeout(() => {
       setIsReferencePlaying(false);
-    }, 2500);
+    }, 2750);
   };
 
   const handleNextTip = () => {

@@ -6,6 +6,12 @@ import {
   stopTunerReferenceAudio,
   getActiveReferencePlayback,
   isReferencePlaybackActive,
+  isReferenceSuppressionActive,
+  REFERENCE_SETTLING_TIME_MS,
+  getSuppressionRemainingMs,
+  clearTunerReferenceSuppression,
+  startReferenceToneSuppression,
+  playDrumReferenceSound,
   clearTunerReferenceCache,
 } from '../src/lib/tuner/tunerReferenceAudio';
 import { TUNER_SAMPLE_DATA } from '../src/lib/tuner/tunerSampleData';
@@ -35,6 +41,7 @@ class MockGainNode {
     value: 1,
     setValueAtTime: vi.fn(),
     linearRampToValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
   };
   connect = vi.fn().mockReturnThis();
   disconnect = vi.fn();
@@ -55,11 +62,25 @@ class MockBufferSourceNode {
   onended: (() => void) | null = null;
 }
 
+class MockOscillatorNode {
+  type = 'triangle';
+  frequency = {
+    setValueAtTime: vi.fn(),
+  };
+  connect = vi.fn().mockReturnThis();
+  disconnect = vi.fn();
+  start = vi.fn();
+  stop = vi.fn();
+  onended: (() => void) | null = null;
+}
+
 class MockAudioContext {
   currentTime = 1.0;
+  sampleRate = 44100;
   state = 'running';
   destination = {};
   createBufferSource = vi.fn(() => new MockBufferSourceNode());
+  createOscillator = vi.fn(() => new MockOscillatorNode());
   createGain = vi.fn(() => {
     const g = new MockGainNode();
     g.context = this;
@@ -77,11 +98,17 @@ describe('Tuner Realistic Reference Audio Engine', () => {
     vi.clearAllMocks();
     clearTunerReferenceCache();
     mockCtx = new MockAudioContext();
+    (globalThis as any).AudioContext = vi.fn(() => mockCtx);
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
+    });
   });
 
   afterEach(() => {
     stopTunerReferenceAudio();
     clearTunerReferenceCache();
+    delete (globalThis as any).AudioContext;
   });
 
   describe('Mode to Instrument Family Mapping', () => {
@@ -575,6 +602,185 @@ describe('Tuner Realistic Reference Audio Engine', () => {
       // mockCtx was used to create buffer source and gain
       expect(mockCtx.createBufferSource).toHaveBeenCalled();
       expect(mockCtx.createGain).toHaveBeenCalled();
+
+      engine.destroy();
+    });
+  });
+
+  describe('Reference Audio Isolation & Detector Feedback Protection', () => {
+    it('activates suppression during string reference playback', async () => {
+      clearTunerReferenceCache();
+      expect(isReferenceSuppressionActive()).toBe(false);
+
+      await playTunerReferenceString({
+        target: STANDARD_GUITAR_STRINGS[0],
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+      expect(isReferenceSuppressionActive()).toBe(true);
+      expect(getSuppressionRemainingMs()).toBeGreaterThan(0);
+
+      stopTunerReferenceAudio();
+    });
+
+    it('preserves calibrated settling window after reference playback stops', async () => {
+      clearTunerReferenceCache();
+
+      await playTunerReferenceString({
+        target: STANDARD_GUITAR_STRINGS[0],
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+      expect(isReferenceSuppressionActive()).toBe(true);
+
+      // Stop reference playback
+      stopTunerReferenceAudio();
+
+      // Audio is stopped, but suppression remains active for acoustic settling decay
+      expect(isReferencePlaybackActive()).toBe(false);
+      expect(isReferenceSuppressionActive()).toBe(true);
+      expect(getSuppressionRemainingMs()).toBeGreaterThan(0);
+      expect(getSuppressionRemainingMs()).toBeLessThanOrEqual(REFERENCE_SETTLING_TIME_MS + 60);
+
+      // Explicitly clearing suppression restores immediate detector readiness
+      clearTunerReferenceSuppression();
+      expect(isReferenceSuppressionActive()).toBe(false);
+      expect(getSuppressionRemainingMs()).toBe(0);
+    });
+
+    it('analyzeFrame emits null metrics and resets in-tune counters during reference suppression', () => {
+      clearTunerReferenceCache();
+
+      let lastEmittedFrame: any = null;
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'electric',
+        referenceA4: 440,
+        onFrame: (payload) => {
+          lastEmittedFrame = payload;
+        },
+      });
+
+      // Inject mock audio processing graph
+      const mockAnalyser = {
+        getFloatTimeDomainData: vi.fn((buf: Float32Array) => {
+          buf.fill(0.1); // High amplitude signal
+        }),
+        disconnect: vi.fn(),
+      };
+      const mockDetector = {
+        findPitch: vi.fn(() => [82.41, 0.95]), // In-tune Low E with high clarity
+      };
+
+      (engine as any).audioCtx = mockCtx;
+      (engine as any).analyser = mockAnalyser;
+      (engine as any).detector = mockDetector;
+
+      // Simulate prior in-tune state
+      (engine as any).consecutiveInTuneFrames = 2;
+      (engine as any).currentlyInTune = true;
+
+      // 1. Activate suppression
+      expect(engine.isReferenceSuppressed()).toBe(false);
+      (engine as any).playReferenceTone(82.41, 1.4);
+      expect(engine.isReferenceSuppressed()).toBe(true);
+
+      // 2. Execute analyzeFrame while suppressed
+      (engine as any).analyzeFrame();
+
+      // Detector must have been bypassed: null metrics emitted, state set to no_signal
+      expect(lastEmittedFrame).not.toBeNull();
+      expect(lastEmittedFrame.metrics).toBeNull();
+      expect(lastEmittedFrame.state).toBe('no_signal');
+
+      // Internal in-tune counters must be cleanly reset
+      expect((engine as any).consecutiveInTuneFrames).toBe(0);
+      expect((engine as any).currentlyInTune).toBe(false);
+      expect(mockDetector.findPitch).not.toHaveBeenCalled();
+
+      // 3. Clear suppression: detector resumes normal processing immediately
+      clearTunerReferenceSuppression();
+      expect(engine.isReferenceSuppressed()).toBe(false);
+
+      // Advance frames past pluck transient cooldown (~2 frames) to sustained note
+      (engine as any).analyzeFrame(); // frame 1: transient detected (peak 0.1 > prevPeak 0 * 2.8)
+      (engine as any).analyzeFrame(); // frame 2: cooldown frame 1
+      (engine as any).analyzeFrame(); // frame 3: pitch detection executed
+
+      // Pitch detector was executed and metrics were emitted
+      expect(mockDetector.findPitch).toHaveBeenCalled();
+      expect(lastEmittedFrame.metrics).not.toBeNull();
+      expect(lastEmittedFrame.metrics.fullName).toBe('E2');
+
+      engine.destroy();
+    });
+
+    it('integrates playReferenceTone with unified suppression lifecycle', () => {
+      clearTunerReferenceCache();
+
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'electric',
+        referenceA4: 440,
+      });
+      (engine as any).audioCtx = mockCtx;
+
+      expect(engine.isReferencePlaying()).toBe(false);
+      expect(engine.isReferenceSuppressed()).toBe(false);
+
+      engine.playReferenceTone(440, 1.0);
+
+      expect(engine.isReferencePlaying()).toBe(true);
+      expect(engine.isReferenceSuppressed()).toBe(true);
+      const active = getActiveReferencePlayback();
+      expect(active).not.toBeNull();
+      expect(active?.target.name).toBe('Tone');
+      expect(active?.frequency).toBe(440);
+
+      engine.stopReferenceAudio();
+      expect(engine.isReferencePlaying()).toBe(false);
+      expect(engine.isReferenceSuppressed()).toBe(true);
+
+      clearTunerReferenceSuppression();
+      expect(engine.isReferenceSuppressed()).toBe(false);
+
+      engine.destroy();
+    });
+
+    it('integrates drum reference audio with suppression lifecycle and settling window', async () => {
+      clearTunerReferenceCache();
+
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'drum',
+      });
+      (engine as any).audioCtx = mockCtx;
+
+      expect(engine.isReferenceSuppressed()).toBe(false);
+
+      await playDrumReferenceSound({
+        partId: 'snare',
+        tensionId: 'normal',
+        frequency: 242.0,
+        duration: 2.5,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+      expect(isReferenceSuppressionActive()).toBe(true);
+      const active = getActiveReferencePlayback();
+      expect(active?.mode).toBe('drum');
+      expect(active?.frequency).toBe(242.0);
+
+      stopTunerReferenceAudio();
+      expect(isReferencePlaybackActive()).toBe(false);
+      expect(isReferenceSuppressionActive()).toBe(true);
+
+      clearTunerReferenceSuppression();
+      expect(isReferenceSuppressionActive()).toBe(false);
 
       engine.destroy();
     });

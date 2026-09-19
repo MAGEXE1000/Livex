@@ -25,6 +25,16 @@ export interface ActiveReferencePlayback {
 let activePlaybackInfo: ActiveReferencePlayback | null = null;
 
 /**
+ * Calibrated post-playback settling duration in milliseconds.
+ * Accounts for phone loudspeaker physical dissipation, small room acoustic reverb,
+ * and draining the 2048-sample (~43ms) Web Audio analyzer input buffer.
+ */
+export const REFERENCE_SETTLING_TIME_MS = 250;
+
+let suppressionUntilTimestamp = 0;
+let activeToneCleanup: (() => void) | null = null;
+
+/**
  * Returns currently active reference playback metadata, or null if no reference sound is playing.
  */
 export function getActiveReferencePlayback(): ActiveReferencePlayback | null {
@@ -32,17 +42,101 @@ export function getActiveReferencePlayback(): ActiveReferencePlayback | null {
 }
 
 /**
- * Returns whether a reference string sound is currently sounding.
+ * Returns whether reference audio is actively sounding through the speaker.
  */
 export function isReferencePlaybackActive(): boolean {
-  return activePlaybackInfo !== null;
+  return activePlaybackInfo !== null || activeSources.length > 0;
 }
 
 /**
- * Clears decoded AudioBuffer cache for memory reclamation or test isolation.
+ * Returns whether pitch detection should be suppressed to isolate the tuner
+ * from speaker acoustic feedback during reference playback or post-playback settling.
+ */
+export function isReferenceSuppressionActive(): boolean {
+  return isReferencePlaybackActive() || Date.now() < suppressionUntilTimestamp;
+}
+
+/**
+ * Returns remaining suppression duration in milliseconds, or 0 if suppression is inactive.
+ */
+export function getSuppressionRemainingMs(): number {
+  return Math.max(0, suppressionUntilTimestamp - Date.now());
+}
+
+/**
+ * Extends the suppression window for a specified duration plus the calibrated settling decay.
+ */
+export function markReferenceSuppression(durationMs: number): void {
+  suppressionUntilTimestamp = Math.max(
+    suppressionUntilTimestamp,
+    Date.now() + Math.max(0, durationMs) + REFERENCE_SETTLING_TIME_MS
+  );
+}
+
+/**
+ * Immediately clears reference suppression. Used for test isolation and instant teardowns.
+ */
+export function clearTunerReferenceSuppression(): void {
+  if (activeToneCleanup) {
+    activeToneCleanup();
+    activeToneCleanup = null;
+  }
+  activePlaybackInfo = null;
+  suppressionUntilTimestamp = 0;
+}
+
+/**
+ * Starts a coordinated reference tone suppression window for pure oscillator fallback tones.
+ * Returns a cleanup function invoked when the tone stops.
+ */
+export function startReferenceToneSuppression(frequency: number, durationSeconds: number): () => void {
+  if (activeToneCleanup) {
+    activeToneCleanup();
+    activeToneCleanup = null;
+  }
+
+  const durationMs = durationSeconds * 1000;
+  const now = Date.now();
+  suppressionUntilTimestamp = now + durationMs + REFERENCE_SETTLING_TIME_MS;
+
+  activePlaybackInfo = {
+    target: {
+      name: 'Tone',
+      note: '',
+      octave: 0,
+      fullName: `${frequency.toFixed(1)} Hz`,
+      frequency,
+      stringNumber: 0,
+    },
+    frequency,
+    mode: 'electric',
+    startTime: now,
+    duration: durationSeconds,
+  };
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    if (activePlaybackInfo?.target.name === 'Tone') {
+      activePlaybackInfo = null;
+    }
+    suppressionUntilTimestamp = Math.max(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
+    if (activeToneCleanup === cleanup) {
+      activeToneCleanup = null;
+    }
+  };
+
+  activeToneCleanup = cleanup;
+  return cleanup;
+}
+
+/**
+ * Clears decoded AudioBuffer cache and resets suppression state for test isolation.
  */
 export function clearTunerReferenceCache(): void {
   decodedBufferCache.clear();
+  clearTunerReferenceSuppression();
 }
 
 /**
@@ -50,7 +144,13 @@ export function clearTunerReferenceCache(): void {
  * Used as a fallback when the main TunerAudioEngine AudioContext is not active.
  */
 export function getPlaybackAudioContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
+  const AC =
+    typeof window !== 'undefined'
+      ? window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      : (globalThis as any).AudioContext;
+
+  if (!AC) return null;
 
   if (!playbackAudioCtx || playbackAudioCtx.state === 'closed') {
     try {
@@ -248,6 +348,9 @@ function stopTunerReferenceAudioInternal(): void {
     clearTimeout(playbackTimeout);
     playbackTimeout = null;
   }
+
+  // Preserve settling window for room reverberation and analyzer buffer
+  suppressionUntilTimestamp = Date.now() + 35 + REFERENCE_SETTLING_TIME_MS;
 }
 
 /**
@@ -332,6 +435,9 @@ export async function playTunerReferenceString(
 
   const playbackId = ++currentPlaybackId;
 
+  // Mark suppression immediately upon triggering so detector does not capture attack or asynchronous load interval
+  markReferenceSuppression(4000);
+
   // Smoothly fade out previous string reference
   stopTunerReferenceAudioInternal();
 
@@ -362,7 +468,12 @@ export async function playTunerReferenceString(
   }
 
   const buffer = await getOrDecodeNoteBuffer(ctx, family, sampleNoteName);
-  if (!buffer || playbackId !== currentPlaybackId) return;
+  if (!buffer || playbackId !== currentPlaybackId) {
+    if (activeSources.length === 0) {
+      suppressionUntilTimestamp = Math.min(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
+    }
+    return;
+  }
 
   if (ctx.state === 'suspended') {
     await ctx.resume().catch(() => {});
@@ -409,6 +520,8 @@ export async function playTunerReferenceString(
     duration: ringDuration,
   };
 
+  suppressionUntilTimestamp = Date.now() + Math.round(ringDuration * 1000) + REFERENCE_SETTLING_TIME_MS;
+
   source.start(now);
   source.stop(now + ringDuration);
 
@@ -421,6 +534,7 @@ export async function playTunerReferenceString(
     activeGainNodes = activeGainNodes.filter((g) => g !== gain);
     if (activeSources.length === 0) {
       activePlaybackInfo = null;
+      suppressionUntilTimestamp = Math.max(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
     }
   };
 
@@ -430,6 +544,7 @@ export async function playTunerReferenceString(
   playbackTimeout = setTimeout(() => {
     if (activeSources.length === 0) {
       activePlaybackInfo = null;
+      suppressionUntilTimestamp = Math.max(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
     }
   }, (ringDuration + 0.1) * 1000);
 }
@@ -443,6 +558,7 @@ export interface PlayDrumReferenceOptions {
   frequency: number;
   duration?: number;
   volume?: number;
+  audioCtx?: AudioContext;
 }
 
 /**
@@ -459,9 +575,14 @@ export async function playDrumReferenceSound(
   tensionIdOrDuration: DrumTensionId | number = 'normal',
   targetFrequency?: number,
   duration?: number,
-  volume: number = 0.85
+  volume: number = 0.85,
+  audioCtx?: AudioContext
 ): Promise<void> {
-  const ctx = getPlaybackAudioContext();
+  let explicitCtx: AudioContext | undefined = audioCtx;
+  if (typeof partIdOrOptionsOrFreq === 'object' && partIdOrOptionsOrFreq !== null) {
+    explicitCtx = partIdOrOptionsOrFreq.audioCtx ?? explicitCtx;
+  }
+  const ctx = explicitCtx && explicitCtx.state !== 'closed' ? explicitCtx : getPlaybackAudioContext();
   if (!ctx) return;
 
   if (ctx.state === 'suspended') {
@@ -471,6 +592,9 @@ export async function playDrumReferenceSound(
   }
 
   stopTunerReferenceAudio();
+
+  // Mark suppression immediately upon triggering so detector does not capture attack or asynchronous load interval
+  markReferenceSuppression(3500);
 
   let partId: DrumPartId = 'snare';
   let tensionId: DrumTensionId = 'normal';
@@ -501,7 +625,12 @@ export async function playDrumReferenceSound(
 
   const anchor = HOUSE_KIT_TUNER_ANCHORS[partId] || HOUSE_KIT_TUNER_ANCHORS.snare;
   const buffer = await loadDrumReferenceBuffer(ctx, partId);
-  if (!buffer) return;
+  if (!buffer) {
+    if (activeSources.length === 0) {
+      suppressionUntilTimestamp = Math.min(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
+    }
+    return;
+  }
 
   const now = ctx.currentTime;
   const source = ctx.createBufferSource();
@@ -543,6 +672,8 @@ export async function playDrumReferenceSound(
     duration: effectiveDuration,
   };
 
+  suppressionUntilTimestamp = Date.now() + Math.round(effectiveDuration * 1000) + REFERENCE_SETTLING_TIME_MS;
+
   source.start(now);
   source.stop(now + effectiveDuration + 0.05);
 
@@ -555,6 +686,7 @@ export async function playDrumReferenceSound(
     activeGainNodes = activeGainNodes.filter((g) => g !== gain);
     if (activeSources.length === 0) {
       activePlaybackInfo = null;
+      suppressionUntilTimestamp = Math.max(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
     }
   };
 
@@ -562,6 +694,7 @@ export async function playDrumReferenceSound(
   playbackTimeout = setTimeout(() => {
     if (activeSources.length === 0) {
       activePlaybackInfo = null;
+      suppressionUntilTimestamp = Math.max(suppressionUntilTimestamp, Date.now() + REFERENCE_SETTLING_TIME_MS);
     }
   }, (effectiveDuration + 0.1) * 1000);
 }

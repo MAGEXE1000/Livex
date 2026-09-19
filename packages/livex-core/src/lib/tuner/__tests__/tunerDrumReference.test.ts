@@ -3,6 +3,9 @@ import {
   HOUSE_KIT_TUNER_ANCHORS,
   preloadTunerReferenceAudio,
   playDrumReferenceSound,
+  isReferenceSuppressionActive,
+  stopTunerReferenceAudio,
+  clearTunerReferenceSuppression,
 } from '../tunerReferenceAudio';
 import { DRUM_PARTS } from '../drumTuningModels';
 import { TunerAudioEngine } from '../tunerAudioEngine';
@@ -74,5 +77,60 @@ describe('Drumex Tuner Realistic House Kit Reference Audio', () => {
   it('exports preloadTunerReferenceAudio and playDrumReferenceSound as callable async functions', () => {
     expect(typeof preloadTunerReferenceAudio).toBe('function');
     expect(typeof playDrumReferenceSound).toBe('function');
+  });
+
+  it('suppresses pitch detector during drum reference sound playback and honors settling window', async () => {
+    clearTunerReferenceSuppression();
+    expect(isReferenceSuppressionActive()).toBe(false);
+
+    const mockBuffer = { duration: 2.5 };
+    const mockCtx = {
+      state: 'running',
+      currentTime: 1.0,
+      createBufferSource: () => ({
+        playbackRate: { setValueAtTime: () => {} },
+        connect: () => ({}),
+        start: () => {},
+        stop: () => {},
+        disconnect: () => {},
+      }),
+      createGain: () => ({
+        gain: { setValueAtTime: () => {}, linearRampToValueAtTime: () => {} },
+        connect: () => ({}),
+        disconnect: () => {},
+      }),
+      decodeAudioData: async () => mockBuffer,
+      resume: async () => {},
+    };
+
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = () =>
+      Promise.resolve({
+        ok: true,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
+      } as any);
+
+    try {
+      await playDrumReferenceSound({
+        partId: 'snare',
+        tensionId: 'normal',
+        frequency: 242.0,
+        duration: 2.5,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferenceSuppressionActive()).toBe(true);
+
+      stopTunerReferenceAudio();
+      // After stop, suppression remains active for settling window
+      expect(isReferenceSuppressionActive()).toBe(true);
+
+      clearTunerReferenceSuppression();
+      expect(isReferenceSuppressionActive()).toBe(false);
+    } finally {
+      globalThis.fetch = origFetch;
+      stopTunerReferenceAudio();
+      clearTunerReferenceSuppression();
+    }
   });
 });

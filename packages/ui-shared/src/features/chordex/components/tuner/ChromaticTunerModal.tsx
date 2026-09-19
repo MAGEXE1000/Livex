@@ -5,6 +5,7 @@ import {
   TunerAudioEngine,
   getDefaultTuningForMode,
   getTuningById,
+  isReferenceSuppressionActive,
   useSettingsStore,
   getEffectiveThemeState,
   resolveAccent,
@@ -245,7 +246,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
         }
 
         const metrics = payload.metrics;
-        if (!metrics) {
+        if (!metrics || isReferenceSuppressionActive()) {
           targetCentsRef.current = 0;
           currentCentsRef.current = 0;
           updateNeedleDom(0, 0, 'silent', null);

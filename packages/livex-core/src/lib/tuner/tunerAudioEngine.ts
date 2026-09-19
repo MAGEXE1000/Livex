@@ -26,6 +26,9 @@ import {
   stopTunerReferenceAudio,
   playDrumReferenceSound,
   getPlaybackAudioContext,
+  isReferencePlaybackActive,
+  isReferenceSuppressionActive,
+  startReferenceToneSuppression,
 } from './tunerReferenceAudio';
 import type { DrumPartId, DrumTensionId } from './drumTuningModels';
 
@@ -178,7 +181,10 @@ export class TunerAudioEngine {
    */
   public playReferenceTone(frequency: number, durationSeconds: number = 1.4): void {
     try {
-      const ctx = getPlaybackAudioContext() || createAudioContext();
+      const ctx =
+        (this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : null) ||
+        getPlaybackAudioContext() ||
+        createAudioContext();
 
       if (ctx.state === 'suspended') {
         ctx.resume();
@@ -197,6 +203,15 @@ export class TunerAudioEngine {
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+
+      const endSuppression = startReferenceToneSuppression(frequency, durationSeconds);
+      osc.onended = () => {
+        endSuppression();
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {}
+      };
 
       osc.start(now);
       osc.stop(now + durationSeconds);
@@ -218,8 +233,31 @@ export class TunerAudioEngine {
       partIdOrFrequency as any,
       tensionIdOrDuration as any,
       frequency,
-      durationSeconds
+      durationSeconds,
+      0.85,
+      this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined
     );
+  }
+
+  /**
+   * Returns whether reference audio is actively sounding through the speaker.
+   */
+  public isReferencePlaying(): boolean {
+    return isReferencePlaybackActive();
+  }
+
+  /**
+   * Returns whether pitch detection is currently suppressed to prevent speaker feedback.
+   */
+  public isReferenceSuppressed(): boolean {
+    return isReferenceSuppressionActive();
+  }
+
+  /**
+   * Smoothly stops active reference playback and enters the calibrated settling window.
+   */
+  public stopReferenceAudio(): void {
+    stopTunerReferenceAudio();
   }
 
   public getState(): TunerLifecycleState {
@@ -444,6 +482,20 @@ export class TunerAudioEngine {
     const ctx = this.audioCtx;
     const detector = this.detector;
     if (!analyser || !ctx || !detector) return;
+
+    if (isReferenceSuppressionActive()) {
+      // Isolate pitch detector from reference sound speaker playback and acoustic settling decay
+      this.buffer.fill(0);
+      this.consecutiveInTuneFrames = 0;
+      this.currentlyInTune = false;
+      this.prevPeak = 0;
+      this.transientCooldownFrames = 0;
+      if (this.state !== 'no_signal') {
+        this.setState('no_signal');
+      }
+      this.emitFrame(null);
+      return;
+    }
 
     analyser.getFloatTimeDomainData(this.buffer);
 
