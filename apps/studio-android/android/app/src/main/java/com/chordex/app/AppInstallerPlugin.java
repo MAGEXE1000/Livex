@@ -923,6 +923,11 @@ public class AppInstallerPlugin extends Plugin {
                 return;
             }
 
+            if (activeDownloadCall != null) {
+                try {
+                    activeDownloadCall.reject("Superseded by newer download request");
+                } catch (Exception ignored) {}
+            }
             activeDownloadCall = call;
 
             Intent serviceIntent = new Intent(getContext(), UpdateDownloadService.class);
@@ -957,6 +962,11 @@ public class AppInstallerPlugin extends Plugin {
             return;
         }
 
+        if (activeDownloadCall != null) {
+            try {
+                activeDownloadCall.reject("Superseded by newer download request");
+            } catch (Exception ignored) {}
+        }
         activeDownloadCall = call;
 
         Intent serviceIntent = new Intent(getContext(), UpdateDownloadService.class);

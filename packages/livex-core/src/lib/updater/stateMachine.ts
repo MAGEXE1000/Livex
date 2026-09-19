@@ -576,8 +576,55 @@ export const MAX_CONSECUTIVE_FAILURES = 5;
  * All state transitions MUST go through `transitionToState()` to ensure
  * transition validation, watchdog management, and history recording.
  */
+const POST_DOWNLOAD_STATES = new Set([
+  'VERIFY_SHA256',
+  'PREPARING_INSTALL',
+  'WAITING_USER_CONFIRMATION',
+  'PACKAGEINSTALLER_VISIBLE',
+  'INSTALLING',
+  'INSTALL_SUCCESS',
+]);
+
 export function updateGlobalState(patch: Partial<CentralizedUpdateState>) {
-  if (patch.progress !== undefined && globalUpdateState.updateState === 'DOWNLOAD_APK') {
+  const currentState = globalUpdateState.updateState;
+
+  // Invariant 1: In post-download states, download has finished.
+  // Never allow late callbacks or errors to regress progress below 1.0 or reset downloadedBytes.
+  if (POST_DOWNLOAD_STATES.has(currentState)) {
+    if (patch.progress !== undefined && patch.progress < 1.0) {
+      delete patch.progress;
+    }
+    if (patch.downloadedBytes !== undefined && patch.downloadedBytes === null && globalUpdateState.downloadedBytes) {
+      delete patch.downloadedBytes;
+    }
+    if (typeof patch.statusText === 'string' && patch.statusText.startsWith('Downloading update')) {
+      delete patch.statusText;
+    }
+  }
+
+  // Invariant 2: Monotonic progress during active DOWNLOAD_APK.
+  // Never allow progress or downloadedBytes to regress backwards to 0% within the same download phase.
+  if (currentState === 'DOWNLOAD_APK') {
+    if (patch.progress !== undefined) {
+      if (globalUpdateState.progress > 0 && patch.progress < globalUpdateState.progress) {
+        patch.progress = globalUpdateState.progress;
+      }
+    }
+    if (patch.downloadedBytes !== undefined && globalUpdateState.downloadedBytes) {
+      if (patch.downloadedBytes === null || patch.downloadedBytes < globalUpdateState.downloadedBytes) {
+        patch.downloadedBytes = globalUpdateState.downloadedBytes;
+      }
+    }
+    if (
+      typeof patch.statusText === 'string' &&
+      globalUpdateState.progress >= 1.0 &&
+      patch.statusText.includes('(0%)')
+    ) {
+      delete patch.statusText;
+    }
+  }
+
+  if (patch.progress !== undefined && currentState === 'DOWNLOAD_APK') {
     const prevPct = Math.round(globalUpdateState.progress * 20);
     const currPct = Math.round(patch.progress * 20);
     if (prevPct !== currPct) {

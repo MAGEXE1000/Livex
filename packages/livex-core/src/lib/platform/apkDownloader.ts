@@ -378,6 +378,7 @@ export async function downloadApk(
     throw new Error(`[apkDownloader] Untrusted or insecure download URL rejected: ${url}`);
   }
   let progressListener: any = null;
+  let isSettled = false;
 
   try {
     await AppInstaller.appendLog({
@@ -390,6 +391,7 @@ export async function downloadApk(
         progressListener = await (AppInstaller as any).addListener(
           'apkDownloadProgress',
           (status: any) => {
+            if (isSettled) return;
             if (status && typeof status.progress === 'number') {
               onProgress(status.progress, status.totalBytes, status.downloadedBytes);
             }
@@ -399,6 +401,7 @@ export async function downloadApk(
       }
     }
     const res = await AppInstaller.downloadApk({ url, fileName, expectedHash });
+    isSettled = true;
 
     if (progressListener) {
       await progressListener.remove();
@@ -409,6 +412,7 @@ export async function downloadApk(
     });
     return res.filePath;
   } catch (err) {
+    isSettled = true;
     if (progressListener) {
       await progressListener.remove();
     }

@@ -42,6 +42,8 @@ describe('Livex Updater Reliability & State Machine Suite', () => {
     updateGlobalState({
       loading: false,
       progress: 0,
+      downloadedBytes: null,
+      totalBytes: null,
       error: null,
       updateAvailable: false,
       consecutiveFailures: 0,
@@ -222,6 +224,132 @@ describe('Livex Updater Reliability & State Machine Suite', () => {
       expect(recorded[1].to).toBe('IDLE');
 
       transitionListeners.delete(listener);
+    });
+  });
+
+  describe('Suite 6: Download Progress Monotonicity & Post-Download Protection', () => {
+    it('rejects progress regression from 100% back to 0% in DOWNLOAD_APK', () => {
+      transitionToState('IDLE', 'Reset');
+      transitionToState('INITIALIZING', 'setup');
+      transitionToState('FETCH_REMOTE_METADATA', 'setup');
+      transitionToState('VALIDATE_METADATA', 'setup');
+      transitionToState('COMPARE_VERSION', 'setup');
+      transitionToState('UPDATE_AVAILABLE', 'setup');
+      transitionToState('FETCH_APK_INFORMATION', 'setup');
+      transitionToState('DOWNLOAD_APK', 'setup');
+
+      updateGlobalState({
+        progress: 1.0,
+        downloadedBytes: 54572076,
+        totalBytes: 54572076,
+        statusText: 'Downloading update (100%)',
+      });
+
+      expect(globalUpdateState.progress).toBe(1.0);
+      expect(globalUpdateState.downloadedBytes).toBe(54572076);
+
+      // Attempt regression with 0% progress and null bytes (simulating native error callback)
+      updateGlobalState({
+        progress: 0,
+        downloadedBytes: null,
+        statusText: 'Downloading update (0%)',
+      });
+
+      expect(globalUpdateState.progress).toBe(1.0);
+      expect(globalUpdateState.downloadedBytes).toBe(54572076);
+      expect(globalUpdateState.statusText).not.toContain('(0%)');
+    });
+
+    it('enforces non-decreasing progress during DOWNLOAD_APK', () => {
+      transitionToState('IDLE', 'Reset');
+      transitionToState('INITIALIZING', 'setup');
+      transitionToState('FETCH_REMOTE_METADATA', 'setup');
+      transitionToState('VALIDATE_METADATA', 'setup');
+      transitionToState('COMPARE_VERSION', 'setup');
+      transitionToState('UPDATE_AVAILABLE', 'setup');
+      transitionToState('FETCH_APK_INFORMATION', 'setup');
+      transitionToState('DOWNLOAD_APK', 'setup');
+
+      updateGlobalState({
+        progress: 0.6,
+        downloadedBytes: 30000000,
+        totalBytes: 50000000,
+      });
+
+      expect(globalUpdateState.progress).toBe(0.6);
+      expect(globalUpdateState.downloadedBytes).toBe(30000000);
+
+      // Regressed values are rejected
+      updateGlobalState({
+        progress: 0.3,
+        downloadedBytes: 15000000,
+      });
+
+      expect(globalUpdateState.progress).toBe(0.6);
+      expect(globalUpdateState.downloadedBytes).toBe(30000000);
+
+      // Advanced values are accepted
+      updateGlobalState({
+        progress: 0.85,
+        downloadedBytes: 42500000,
+      });
+
+      expect(globalUpdateState.progress).toBe(0.85);
+      expect(globalUpdateState.downloadedBytes).toBe(42500000);
+    });
+
+    it('protects post-download states against late progress callbacks', () => {
+      transitionToState('IDLE', 'Reset');
+      transitionToState('INITIALIZING', 'setup');
+      transitionToState('FETCH_REMOTE_METADATA', 'setup');
+      transitionToState('VALIDATE_METADATA', 'setup');
+      transitionToState('COMPARE_VERSION', 'setup');
+      transitionToState('UPDATE_AVAILABLE', 'setup');
+      transitionToState('FETCH_APK_INFORMATION', 'setup');
+      transitionToState('DOWNLOAD_APK', 'setup');
+      transitionToState('VERIFY_SHA256', 'setup');
+
+      updateGlobalState({
+        progress: 1.0,
+        downloadedBytes: 54572076,
+        statusText: 'Verifying package...',
+      });
+
+      // Late bridge progress event in VERIFY_SHA256
+      updateGlobalState({
+        progress: 0,
+        downloadedBytes: null,
+        statusText: 'Downloading update (0%)',
+      });
+
+      expect(globalUpdateState.progress).toBe(1.0);
+      expect(globalUpdateState.downloadedBytes).toBe(54572076);
+      expect(globalUpdateState.statusText).toBe('Verifying package...');
+
+      transitionToState('PREPARING_INSTALL', 'setup');
+
+      // Late bridge progress event in PREPARING_INSTALL
+      updateGlobalState({
+        progress: 0,
+        downloadedBytes: null,
+      });
+
+      expect(globalUpdateState.progress).toBe(1.0);
+      expect(globalUpdateState.downloadedBytes).toBe(54572076);
+    });
+
+    it('allows clean progress reset when in IDLE state', () => {
+      transitionToState('IDLE', 'Reset');
+
+      updateGlobalState({
+        progress: 0,
+        downloadedBytes: null,
+        totalBytes: null,
+      });
+
+      expect(globalUpdateState.progress).toBe(0);
+      expect(globalUpdateState.downloadedBytes).toBeNull();
+      expect(globalUpdateState.totalBytes).toBeNull();
     });
   });
 });

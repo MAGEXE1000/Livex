@@ -31,7 +31,8 @@ public class UpdateDownloadService extends Service {
 
     private NotificationManager notificationManager;
     private NotificationCompat.Builder notificationBuilder;
-    private boolean isDownloading = false;
+    private volatile boolean isDownloading = false;
+    private int latestStartId = -1;
 
     @Override
     public void onCreate() {
@@ -100,8 +101,9 @@ public class UpdateDownloadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        latestStartId = startId;
         if (intent == null) {
-            stopSelf();
+            stopSelf(startId);
             return START_NOT_STICKY;
         }
 
@@ -110,8 +112,22 @@ public class UpdateDownloadService extends Service {
         String expectedHash = intent.getStringExtra("expectedHash");
         boolean installImmediately = intent.getBooleanExtra("installImmediately", false);
 
-        if (url == null || isDownloading) {
-            stopSelf();
+        if (url == null) {
+            Log.e(TAG, "Rejected download: missing url");
+            if (AppInstallerPlugin.activeDownloadCall != null) {
+                AppInstallerPlugin.activeDownloadCall.reject("Missing download URL");
+                AppInstallerPlugin.activeDownloadCall = null;
+            }
+            stopSelf(startId);
+            return START_NOT_STICKY;
+        }
+
+        if (isDownloading) {
+            Log.w(TAG, "Download request arrived while already downloading. Rejecting duplicate start.");
+            if (AppInstallerPlugin.activeDownloadCall != null) {
+                AppInstallerPlugin.activeDownloadCall.reject("Download already in progress");
+                AppInstallerPlugin.activeDownloadCall = null;
+            }
             return START_NOT_STICKY;
         }
 
@@ -121,7 +137,7 @@ public class UpdateDownloadService extends Service {
                 AppInstallerPlugin.activeDownloadCall.reject("Untrusted or insecure download URL: " + url);
                 AppInstallerPlugin.activeDownloadCall = null;
             }
-            stopSelf();
+            stopSelf(startId);
             return START_NOT_STICKY;
         }
 
@@ -273,9 +289,13 @@ public class UpdateDownloadService extends Service {
             state.put("progress", progress);
             AppInstallerPlugin.instance.emitInstallStatus(state);
 
-            JSObject progressObj = new JSObject();
-            progressObj.put("progress", progress);
-            AppInstallerPlugin.instance.emitDownloadProgress(progressObj);
+            // Only emit download progress during active transfer with positive progress.
+            // Never emit 0% on error or cleanup, which would regress UI progress.
+            if (isDownloading && progress > 0) {
+                JSObject progressObj = new JSObject();
+                progressObj.put("progress", progress);
+                AppInstallerPlugin.instance.emitDownloadProgress(progressObj);
+            }
         }
     }
 
@@ -315,13 +335,16 @@ public class UpdateDownloadService extends Service {
     }
 
     private void finishService() {
+        isDownloading = false;
+        final int finishStartId = latestStartId;
         new Thread(() -> {
             try {
-                Thread.sleep(5000);
+                Thread.sleep(1500);
             } catch (InterruptedException ignored) {}
-            isDownloading = false;
             stopForeground(false);
-            stopSelf();
+            if (!isDownloading && finishStartId != -1) {
+                stopSelf(finishStartId);
+            }
         }).start();
     }
 

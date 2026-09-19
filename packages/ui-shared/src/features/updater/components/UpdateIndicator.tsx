@@ -1027,6 +1027,18 @@ function UpdateModal({
   const [computedEta, setComputedEta] = useState<number | null>(null);
 
   useEffect(() => {
+    const isDownloadingState =
+      updater.updateState === 'DOWNLOAD_APK' || updater.updateState === 'FETCH_APK_INFORMATION';
+
+    if (!isDownloadingState || !updater.progress || updater.progress <= 0) {
+      if (speedSamplesRef.current.length > 0) {
+        speedSamplesRef.current = [];
+      }
+      if (computedSpeed !== null) setComputedSpeed(null);
+      if (computedEta !== null) setComputedEta(null);
+      return;
+    }
+
     const total =
       (typeof updater.totalBytes === 'number' && updater.totalBytes > 0 ? updater.totalBytes : null) ??
       (typeof updater.apkSizeBytes === 'number' && updater.apkSizeBytes > 0 ? updater.apkSizeBytes : null);
@@ -1071,7 +1083,7 @@ function UpdateModal({
         }
       }
     }
-  }, [updater.downloadedBytes, updater.totalBytes, updater.apkSizeBytes, updater.progress]);
+  }, [updater.downloadedBytes, updater.totalBytes, updater.apkSizeBytes, updater.progress, updater.updateState, computedSpeed, computedEta]);
 
   // Reset speed samples when download is not active
   useEffect(() => {

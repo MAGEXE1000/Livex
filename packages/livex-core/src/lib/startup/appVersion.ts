@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.23';
-export const NATIVE_VERSION_CODE = 40623;
-export const WEB_VERSION = '4.6.23';
+export const NATIVE_VERSION = '4.6.24';
+export const NATIVE_VERSION_CODE = 40624;
+export const WEB_VERSION = '4.6.24';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -67,7 +67,7 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/18/2026';
+export const APP_VERSION_DATE = '9/19/2026';
 
 /**
  * Git commit hash this build was generated from.
@@ -79,7 +79,7 @@ export const APP_COMMIT_SHA = '8a12d3c8';
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/18/2026, 11:30:00 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/19/2026, 11:45:00 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,10 +96,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Fixed',
     items: [
-      'Dead Dependency & Bundle Optimization: Completely purged unused drizzle-orm, @tanstack/react-query, and class-variance-authority. Dynamically code-split jspdf (411 kB) out of critical paths.',
-      'Deterministic Vector Iconography: Standardized app-wide icons to deterministic SVG vectors, permanently eliminating unstyled font ligature flash and layout jitter.',
+      'Android Updater Download Progress Reliability: Resolved race condition and service sleep deadlock in UpdateDownloadService that caused completed downloads to regress from 100% to 0% in active downloading state.',
+      'Decoupled Error & Status Broadcasting: Guarded native download progress listeners to ensure error and completion statuses never emit zero progress across the Capacitor bridge.',
+      'Strict Progress Monotonicity: Enforced non-decreasing download progress in downloadManager and protected post-download verification states against late bridge events.',
+      'Active Call Safety: Safely resolved and cleaned up superseded download plugin calls to prevent dangling promises.',
     ],
   },
 ];
@@ -111,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.24',
+    date: '2026-09-19',
+    highlights: [
+      'Android Updater Download Progress Reliability: Resolved race condition and service sleep deadlock in UpdateDownloadService that caused completed downloads to regress from 100% to 0% in active downloading state.',
+      'Decoupled Error & Status Broadcasting: Guarded native download progress listeners to ensure error and completion statuses never emit zero progress across the Capacitor bridge.',
+      'Strict Progress Monotonicity: Enforced non-decreasing download progress in downloadManager and protected post-download verification states against late bridge events.',
+      'Active Call Safety: Safely resolved and cleaned up superseded download plugin calls to prevent dangling promises.',
+    ],
+  },
   {
     version: '4.6.23',
     date: '2026-09-18',
@@ -211,36 +223,16 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Subtle Optical Refraction Tuning: Standardized turbulence and displacement parameters to `scale="2"` and `baseFrequency="0.04 0.04"`, producing clean, premium neutral Liquid Glass without RGB edge artifacts.',
     ],
   },
-  {
-    version: '4.6.14',
-    date: '2026-09-15',
-    highlights: [
-      'Immediate Floating Header Elimination: Transformed page headers to render State A (transparent, unformed glass, centered page title resting directly on background) at scroll position 0, eliminating premature floating capsule appearance.',
-      'Chromatic Aberration Artifact Removal: Removed hardcoded cyan/rose-red chromatic fringe overlays in favor of pure SVG turbulence glass refraction (`dpawlikowski/liquid-glass`).',
-      'Subtitle Clutter Cleanup: Removed all secondary descriptive text beneath page titles across all screens.',
-      'Cross-App Canonical Header Unification: Fully standardized centered-title and scroll-formed Liquid Glass top bar across Chordex (Library, Songs, Saxophone Practice, Preferences), Drumex (Beats, Patterns, Preferences), Stagex (Setup Hub, Preferences), Groovex, and Vocalex (Takes, Preferences).',
-      'Dead-Center Title Invariant: Relocated contextual quick-actions (Finder/Tuner in Chordex Library, Metronome/Drum Tuner in Drumex Patterns) to dedicated body rows, guaranteeing 100% mathematical dead-centering of titles with zero collision or lateral offset.',
-      'Navigation Dispatcher Safety: Standardized on `NavigationDispatcher.canGoBack()` before popping history across all subviews.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
 export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
-    heading: 'Performance',
+    heading: 'Fixed',
     items: [
-      'Lifecycle-Gated Background Activity: Update polling and presence heartbeat pause while backgrounded to conserve battery and CPU.',
-      'Theme Transition & Liquid Glass Memory: Up to 96% reduction in native memory allocation during theme changes and glass morphs.',
-      'Connection-Gated Realtime Sync: Eliminated redundant background queries during active connections (0 idle requests).',
-      'Cold-Start Streamlining: Faster app startup with aligned splash screen release and DevTools isolated from production.',
-    ],
-  },
-  {
-    heading: 'Improved',
-    items: [
-      'Dependency & Bundle Optimization: Removed unused dependencies and code-split PDF generation out of critical path.',
-      'Deterministic Vector Icons: Vector SVG iconography across all apps, eliminating font ligature flash.',
+      'Updater Download Reliability: Fixed issue where update downloads could regress from 100% to 0% and become stuck.',
+      'Native Service Synchronization: Eliminated service sleep deadlocks and ensured clean progress delivery.',
+      'Strict Progress Monotonicity: Prevented progress metrics from resetting during transfer and verification.',
     ],
   },
 ];
@@ -249,19 +241,11 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
  *  by `ChangelogSheet` based on `settings.language`. */
 export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
-    heading: 'Rendimiento',
+    heading: 'Correcciones',
     items: [
-      'Actividad en segundo plano controlada: La comprobación de actualizaciones y presencia se detienen en segundo plano para ahorrar batería.',
-      'Memoria de transición de temas y Liquid Glass: Reducción de hasta el 96% en asignación de memoria nativa durante cambios de tema.',
-      'Sincronización en tiempo real optimizada: Eliminación de consultas redundantes durante conexiones activas (0 peticiones en reposo).',
-      'Arranque en frío acelerado: Inicio de la aplicación optimizado con DevTools aislado de producción.',
-    ],
-  },
-  {
-    heading: 'Mejoras',
-    items: [
-      'Optimización de dependencias y paquetes: Eliminación de librerías en desuso y carga dinámica de generación de PDF.',
-      'Iconos vectoriales deterministas: Iconografía SVG en todas las aplicaciones, eliminando parpadeos de fuentes.',
+      'Fiabilidad de descarga del actualizador: Se solucionó el problema por el cual las descargas regresaban del 100% al 0% y se quedaban atascadas.',
+      'Sincronización del servicio nativo: Eliminación de bloqueos por espera en segundo plano y entrega limpia del progreso.',
+      'Monotonía estricta de progreso: Protección del progreso y bytes descargados durante la transferencia y verificación.',
     ],
   },
 ];
@@ -269,19 +253,11 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
 /** German version of the current changelog. */
 export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
-    heading: 'Leistung',
+    heading: 'Fehlerbehebungen',
     items: [
-      'Lebenszyklus-gesteuerte Hintergrundaktivität: Update-Prüfung und Präsenz-Heartbeat pausieren im Hintergrund.',
-      'Theme-Übergänge & Liquid Glass Speicher: Bis zu 96% Speicherreduktion bei Theme-Wechseln und Glas-Effekten.',
-      'Echtzeit-Synchronisierung: Beseitigung redundanter Hintergrundabfragen bei aktiver Verbindung.',
-      'Beschleunigter Kaltstart: Schnellere App-Initialisierung und DevTools-Isolierung.',
-    ],
-  },
-  {
-    heading: 'Verbesserungen',
-    items: [
-      'Paket- und Abhängigkeitsoptimierung: Ungenutzte Abhängigkeiten entfernt und PDF-Erzeugung dynamisch ausgelagert.',
-      'Deterministische Vektor-Icons: SVG-Vektor-Icons in allen Apps ohne Schriftarten-Flackern.',
+      'Zuverlässigkeit des Download-Updaters: Behoben, dass Update-Downloads von 100% auf 0% zurückfielen und hängen blieben.',
+      'Native Service-Synchronisierung: Beseitigung von Service-Deadlocks und saubere Fortschrittsübertragung.',
+      'Strikte Fortschritts-Monotonie: Verhindert das Zurücksetzen von Download-Metriken während der Übertragung.',
     ],
   },
 ];

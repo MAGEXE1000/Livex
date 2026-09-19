@@ -47,6 +47,7 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
       if (signal?.aborted) {
         throw new Error('Download cancelled');
       }
+      let isAttemptCompleted = false;
       try {
         void logProgressStage(
           'Download started',
@@ -54,28 +55,53 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
         );
 
         let lastUpdateTime = 0;
+        let sessionMaxPercent = 0;
+        let sessionMaxDownloaded = 0;
+
         filePath = await downloadApk(
           sourceUrl,
           fileName,
           (percent, totalBytes, downloadedBytes) => {
+            if (isAttemptCompleted) return;
+            if (globalUpdateState.updateState !== 'DOWNLOAD_APK') return;
+
             resetDownloadWatchdog();
+
+            // Strictly monotonic progress invariant:
+            // An in-progress download must never regress backwards (e.g. 100% -> 0%).
+            const normalizedPercent = Math.max(0, Math.min(100, percent));
+            if (normalizedPercent < sessionMaxPercent && sessionMaxPercent > 0) {
+              return;
+            }
+            sessionMaxPercent = normalizedPercent;
+
             const now = Date.now();
-            if (now - lastUpdateTime >= 100 || percent === 100 || percent === 0) {
+            if (now - lastUpdateTime >= 100 || sessionMaxPercent === 100) {
               lastUpdateTime = now;
               const effectiveTotal =
                 (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
                 globalUpdateState.apkSizeBytes ??
                 null;
-              const effectiveDownloaded =
-                (typeof downloadedBytes === 'number' && downloadedBytes > 0 ? downloadedBytes : null) ??
-                (effectiveTotal && percent > 0 ? Math.round((percent / 100) * effectiveTotal) : null);
+
+              let calculatedDownloaded: number | null = null;
+              if (typeof downloadedBytes === 'number' && downloadedBytes > 0) {
+                calculatedDownloaded = downloadedBytes;
+              } else if (effectiveTotal && sessionMaxPercent > 0) {
+                calculatedDownloaded = Math.round((sessionMaxPercent / 100) * effectiveTotal);
+              }
+
+              if (calculatedDownloaded !== null && calculatedDownloaded > sessionMaxDownloaded) {
+                sessionMaxDownloaded = calculatedDownloaded;
+              }
+
+              const effectiveDownloaded = sessionMaxDownloaded > 0 ? sessionMaxDownloaded : null;
 
               if (onProgress) {
-                onProgress(percent, effectiveTotal ?? undefined, effectiveDownloaded ?? undefined);
+                onProgress(sessionMaxPercent, effectiveTotal ?? undefined, effectiveDownloaded ?? undefined);
               } else {
                 updateGlobalState({
-                  progress: Math.max(0, Math.min(1, percent / 100)),
-                  statusText: `Downloading update (${Math.round(percent)}%)`,
+                  progress: sessionMaxPercent / 100,
+                  statusText: `Downloading update (${Math.round(sessionMaxPercent)}%)`,
                   downloadedBytes: effectiveDownloaded,
                   totalBytes: effectiveTotal,
                 });
@@ -85,9 +111,11 @@ export async function downloadUpdateApk(options: DownloadOptions): Promise<strin
           globalUpdateState.apkSha256 ?? undefined
         );
 
+        isAttemptCompleted = true;
         downloadSuccess = true;
         break;
       } catch (err: any) {
+        isAttemptCompleted = true;
         if (signal?.aborted) {
           throw new Error('Download cancelled');
         }
