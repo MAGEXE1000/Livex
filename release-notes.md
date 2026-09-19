@@ -1,14 +1,12 @@
-# Version 4.6.25
+# Version 4.6.26
 
 Release Date: 2026-09-19
 
-### Fixed
-- TopBar AMOLED Visual Depth Restoration: Re-enabled restrained Liquid Glass material blur and calibrated obsidian background tint in AMOLED mode, eliminating the flat pitch-black void while preserving the pure black page aesthetic.
-- CSS Filter Syntax Robustness: Introduced `--surface-topbar-backdrop` across all theme states to prevent invalid `none saturate(140%)` evaluation in browsers when blur is disabled.
-- Tuner Reference String Audio: Restored authentic recorded instrument sounds across all supported guitars and basses in Chordex tuner, eliminating multi-context hardware conflicts and async decoding races on Android.
-- Android Loudspeaker Routing: Resolved `MODE_IN_COMMUNICATION` native routing bug in MainActivity, ensuring tuner reference tones play clearly through device loudspeakers rather than being routed to the silent earpiece receiver.
-- Guitar Audio Preview Resolution: Fixed relative asset path resolution for guitar chord previews in Android native Capacitor builds.
+### Added
+- App-Entry Shared-Element Morph Transition: Redesigned the launch interaction for all five internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) into a continuous physical shared-element card morph. Tapping an application card expands that exact card from its viewport coordinates into the full-screen canvas.
 
 ### Improved
-- TopBar Specular Curvature Highlight: Tuned upper curvature radial highlight for AMOLED to catch subtle natural light along the floating pill rim.
-- Fail-Safe Performance Safeguards: Enforced zero blur passes and solid black rendering in AMOLED under performance mode and prefers-reduced-motion.
+- Continuous Surface Expansion: Progressive border-radius morph from 20px card styling to edge-to-edge 0px display, driven by Apple-grade fluid deceleration easing (`[0.16, 1, 0.3, 1]`) across 320ms.
+- Canonical Brand Identity: Integrated authentic logos and brand colors with glowing radial aura and smooth header badge cross-fade during card expansion.
+- Zero-Seam Destination App Reveal: Destination sub-apps preload seamlessly underneath the morph surface, eliminating loading spinners, blank screens, and jump cuts.
+- Hub Depth Recess: Replaced aggressive scale-out with a subtle background recess (`scale: 0.985`, `opacity: 0.35`) while the selected card expands forward.

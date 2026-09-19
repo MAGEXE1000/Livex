@@ -1,5 +1,18 @@
 # Studio Changelog
 
+## 4.6.26
+
+Release Date: 2026-09-19
+
+### Added
+- App-Entry Shared-Element Morph Transition: Redesigned the launch interaction for all five internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) into a continuous physical shared-element card morph. Tapping an application card expands that exact card from its viewport coordinates into the full-screen canvas.
+
+### Improved
+- Continuous Surface Expansion: Progressive border-radius morph from 20px card styling to edge-to-edge 0px display, driven by Apple-grade fluid deceleration easing (`[0.16, 1, 0.3, 1]`) across 320ms.
+- Canonical Brand Identity: Integrated authentic logos and brand colors with glowing radial aura and smooth header badge cross-fade during card expansion.
+- Zero-Seam Destination App Reveal: Destination sub-apps preload seamlessly underneath the morph surface, eliminating loading spinners, blank screens, and jump cuts.
+- Hub Depth Recess: Replaced aggressive scale-out with a subtle background recess (`scale: 0.985`, `opacity: 0.35`) while the selected card expands forward.
+
 ## 4.6.25
 
 Release Date: 2026-09-19

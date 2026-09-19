@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.25';
-export const NATIVE_VERSION_CODE = 40625;
-export const WEB_VERSION = '4.6.25';
+export const NATIVE_VERSION = '4.6.26';
+export const NATIVE_VERSION_CODE = 40626;
+export const WEB_VERSION = '4.6.26';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '919f7ce6';
+export const APP_COMMIT_SHA = 'ff854a9b';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/19/2026, 1:22:01 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/19/2026, 4:42:40 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,20 +96,18 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Added',
     items: [
-      'TopBar Specular Curvature Highlight: Tuned upper curvature radial highlight for AMOLED to catch subtle natural light along the floating pill rim.',
-      'Fail-Safe Performance Safeguards: Enforced zero blur passes and solid black rendering in AMOLED under performance mode and prefers-reduced-motion.',
+      'App-Entry Shared-Element Morph Transition: Redesigned the launch interaction for all five internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) into a continuous physical shared-element card morph. Tapping an application card expands that exact card from its viewport coordinates into the full-screen canvas.',
     ],
   },
   {
-    heading: 'Fixed',
+    heading: 'Improved',
     items: [
-      'TopBar AMOLED Visual Depth Restoration: Re-enabled restrained Liquid Glass material blur and calibrated obsidian background tint in AMOLED mode, eliminating the flat pitch-black void while preserving the pure black page aesthetic.',
-      'CSS Filter Syntax Robustness: Introduced `--surface-topbar-backdrop` across all theme states to prevent invalid `none saturate(140%)` evaluation in browsers when blur is disabled.',
-      'Tuner Reference String Audio: Restored authentic recorded instrument sounds across all supported guitars and basses in Chordex tuner, eliminating multi-context hardware conflicts and async decoding races on Android.',
-      'Android Loudspeaker Routing: Resolved `MODE_IN_COMMUNICATION` native routing bug in MainActivity, ensuring tuner reference tones play clearly through device loudspeakers rather than being routed to the silent earpiece receiver.',
-      'Guitar Audio Preview Resolution: Fixed relative asset path resolution for guitar chord previews in Android native Capacitor builds.',
+      'Continuous Surface Expansion: Progressive border-radius morph from 20px card styling to edge-to-edge 0px display, driven by Apple-grade fluid deceleration easing (`[0.16, 1, 0.3, 1]`) across 320ms.',
+      'Canonical Brand Identity: Integrated authentic logos and brand colors with glowing radial aura and smooth header badge cross-fade during card expansion.',
+      'Zero-Seam Destination App Reveal: Destination sub-apps preload seamlessly underneath the morph surface, eliminating loading spinners, blank screens, and jump cuts.',
+      'Hub Depth Recess: Replaced aggressive scale-out with a subtle background recess (`scale: 0.985`, `opacity: 0.35`) while the selected card expands forward.',
     ],
   },
 ];
@@ -121,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.26',
+    date: '2026-09-19',
+    highlights: [
+      'App-Entry Shared-Element Morph Transition: Redesigned the launch interaction for all five internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) into a continuous physical shared-element card morph. Tapping an application card expands that exact card from its viewport coordinates into the full-screen canvas.',
+      'Continuous Surface Expansion: Progressive border-radius morph from 20px card styling to edge-to-edge 0px display, driven by Apple-grade fluid deceleration easing (`[0.16, 1, 0.3, 1]`) across 320ms.',
+      'Canonical Brand Identity: Integrated authentic logos and brand colors with glowing radial aura and smooth header badge cross-fade during card expansion.',
+      'Zero-Seam Destination App Reveal: Destination sub-apps preload seamlessly underneath the morph surface, eliminating loading spinners, blank screens, and jump cuts.',
+      'Hub Depth Recess: Replaced aggressive scale-out with a subtle background recess (`scale: 0.985`, `opacity: 0.35`) while the selected card expands forward.',
+    ],
+  },
   {
     version: '4.6.25',
     date: '2026-09-19',
@@ -221,16 +230,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Preferences Navigation Streamlining: Removed redundant back buttons from the Preferences section across all internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) as it is directly accessible via primary navigation, reclaiming clean header real estate.',
       'Header Geometry Refinements: Standardized compact top bar height to 56px with a 60px expanded baseline for optimal beUI Pro proportions and safe area clearance.',
       'Motion Accessibility Invariant: Enforced zero-duration, instant state transitions for Stagex and shared navigation when reduced motion is requested by the user or OS.',
-    ],
-  },
-  {
-    version: '4.6.16',
-    date: '2026-09-16',
-    highlights: [
-      'Contextual Action Pill Integration: Introduced canonical `ContextualActionPill` modeled after Stagex floating actions, housing compact 32px circular icon buttons with >=44px ergonomic touch hit areas and SpringPresets.soft micro-interactions across Chordex and Drumex.',
-      'Reclaimed Vertical Space: Eliminated legacy text shortcut rows and normalized scroll container padding across Chordex (Library, Songs), Drumex (Patterns, Beats), Stagex, and Vocalex, reclaiming ~80px of vertical space.',
-      'Canonical 46px Search Bar Standard: Standardized top-level search inputs across Chordex, Drumex, Stagex, and Groovex to 46px height with full pill radius (`rounded-full`), optical icon centering, and responsive theme styling.',
-      'Neutral Color Language: Replaced hardcoded blue accent icons on secondary tools with neutral, theme-aware tokens matching the established Studio design language.',
     ],
   },
 ];
