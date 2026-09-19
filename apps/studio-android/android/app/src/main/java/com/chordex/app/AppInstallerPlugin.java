@@ -819,6 +819,7 @@ public class AppInstallerPlugin extends Plugin {
             connection.setInstanceFollowRedirects(true);
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(30000);
+            connection.setRequestProperty("Connection", "close");
             
             int redirectCount = 0;
             int status = connection.getResponseCode();
@@ -834,6 +835,7 @@ public class AppInstallerPlugin extends Plugin {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(30000);
+                connection.setRequestProperty("Connection", "close");
                 status = connection.getResponseCode();
                 redirectCount++;
             }
@@ -869,7 +871,14 @@ public class AppInstallerPlugin extends Plugin {
                         progressObj.put("downloadedBytes", totalBytesRead);
                         notifyListeners("apkDownloadProgress", progressObj);
                     }
+                    if (totalBytesRead >= fileLength) {
+                        break;
+                    }
                 }
+            }
+
+            if (fileLength > 0 && totalBytesRead < fileLength) {
+                throw new Exception("Incomplete download: expected " + fileLength + " bytes, received " + totalBytesRead + " bytes");
             }
 
             output.close();

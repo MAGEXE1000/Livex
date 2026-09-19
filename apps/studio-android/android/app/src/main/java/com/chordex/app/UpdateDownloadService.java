@@ -123,11 +123,7 @@ public class UpdateDownloadService extends Service {
         }
 
         if (isDownloading) {
-            Log.w(TAG, "Download request arrived while already downloading. Rejecting duplicate start.");
-            if (AppInstallerPlugin.activeDownloadCall != null) {
-                AppInstallerPlugin.activeDownloadCall.reject("Download already in progress");
-                AppInstallerPlugin.activeDownloadCall = null;
-            }
+            Log.w(TAG, "Download request arrived while already downloading. Ignoring duplicate start without interrupting active download.");
             return START_NOT_STICKY;
         }
 
@@ -146,38 +142,18 @@ public class UpdateDownloadService extends Service {
 
         new Thread(() -> {
             try {
-                // Stage: Preparing update...
-                updateProgressNotification("Preparing update...", 0, true);
-                Thread.sleep(800);
-
-                // Stage: Checking release...
-                updateProgressNotification("Checking release...", 0, true);
-                Thread.sleep(800);
-
-                // Stage: Downloading update...
                 updateProgressNotification("Downloading update...", 0, true);
                 File apkFile = downloadFile(url, fileName, expectedHash);
-                
-                // Stage: Verifying APK...
-                updateProgressNotification("Verifying APK...", 100, true);
-                Thread.sleep(800);
 
-                // Stage: Checking SHA-256...
-                updateProgressNotification("Checking SHA-256...", 100, true);
-                Thread.sleep(800);
-                
-                boolean verified = verifySha256(apkFile, expectedHash);
+                boolean verified = true;
+                if (expectedHash != null && !expectedHash.trim().isEmpty()) {
+                    updateProgressNotification("Verifying package...", 100, true);
+                    verified = verifySha256(apkFile, expectedHash);
+                }
+
                 if (verified) {
                     if (installImmediately) {
-                        // Stage: Preparing installation...
-                        updateProgressNotification("Preparing installation...", 100, true);
-                        Thread.sleep(800);
-
-                        // Stage: Launching installer...
                         updateProgressNotification("Launching installer...", 100, true);
-                        Thread.sleep(800);
-                        
-                        // Trigger native package installer session
                         if (AppInstallerPlugin.instance != null) {
                             AppInstallerPlugin.instance.getActivity().runOnUiThread(() -> {
                                 try {
@@ -190,16 +166,17 @@ public class UpdateDownloadService extends Service {
                             });
                         }
                     } else {
-                        updateProgressNotification("Download complete & verified", 100, false);
+                        updateProgressNotification("Download complete", 100, false, apkFile.length(), apkFile.length());
                         finishService();
                     }
 
-                    // Resolve the pending Capacitor PluginCall to inform JS that download/verification is complete
-                    if (AppInstallerPlugin.activeDownloadCall != null) {
+                    // Resolve the pending Capacitor PluginCall to inform JS that download is complete
+                    PluginCall callToResolve = AppInstallerPlugin.activeDownloadCall;
+                    AppInstallerPlugin.activeDownloadCall = null;
+                    if (callToResolve != null) {
                         JSObject ret = new JSObject();
                         ret.put("filePath", apkFile.getAbsolutePath());
-                        AppInstallerPlugin.activeDownloadCall.resolve(ret);
-                        AppInstallerPlugin.activeDownloadCall = null;
+                        callToResolve.resolve(ret);
                     }
                 } else {
                     updateProgressNotification("Verification failed (SHA mismatch)", 0, false);
@@ -208,9 +185,10 @@ public class UpdateDownloadService extends Service {
                         err.put("error", "SHA mismatch");
                         AppInstallerPlugin.instance.emitInstallStatus(err);
                     }
-                    if (AppInstallerPlugin.activeDownloadCall != null) {
-                        AppInstallerPlugin.activeDownloadCall.reject("SHA mismatch");
-                        AppInstallerPlugin.activeDownloadCall = null;
+                    PluginCall callToReject = AppInstallerPlugin.activeDownloadCall;
+                    AppInstallerPlugin.activeDownloadCall = null;
+                    if (callToReject != null) {
+                        callToReject.reject("SHA mismatch");
                     }
                     finishService();
                 }
@@ -222,9 +200,10 @@ public class UpdateDownloadService extends Service {
                     err.put("error", e.getMessage());
                     AppInstallerPlugin.instance.emitInstallStatus(err);
                 }
-                if (AppInstallerPlugin.activeDownloadCall != null) {
-                    AppInstallerPlugin.activeDownloadCall.reject("Download failed: " + e.getMessage(), e);
-                    AppInstallerPlugin.activeDownloadCall = null;
+                PluginCall callToReject = AppInstallerPlugin.activeDownloadCall;
+                AppInstallerPlugin.activeDownloadCall = null;
+                if (callToReject != null) {
+                    callToReject.reject("Download failed: " + e.getMessage(), e);
                 }
                 finishService();
             }
@@ -268,6 +247,10 @@ public class UpdateDownloadService extends Service {
     }
 
     private void updateProgressNotification(String text, int progress, boolean indeterminate) {
+        updateProgressNotification(text, progress, indeterminate, -1, -1);
+    }
+
+    private void updateProgressNotification(String text, int progress, boolean indeterminate, long downloadedBytes, long totalBytes) {
         if (notificationBuilder != null) {
             int icon = getApplicationInfo().icon;
             if (icon == 0) {
@@ -287,6 +270,10 @@ public class UpdateDownloadService extends Service {
             JSObject state = new JSObject();
             state.put("status", text);
             state.put("progress", progress);
+            if (totalBytes > 0) {
+                state.put("totalBytes", totalBytes);
+                state.put("downloadedBytes", downloadedBytes);
+            }
             AppInstallerPlugin.instance.emitInstallStatus(state);
 
             // Only emit download progress during active transfer with positive progress.
@@ -294,6 +281,10 @@ public class UpdateDownloadService extends Service {
             if (isDownloading && progress > 0) {
                 JSObject progressObj = new JSObject();
                 progressObj.put("progress", progress);
+                if (totalBytes > 0) {
+                    progressObj.put("totalBytes", totalBytes);
+                    progressObj.put("downloadedBytes", downloadedBytes);
+                }
                 AppInstallerPlugin.instance.emitDownloadProgress(progressObj);
             }
         }
@@ -385,6 +376,7 @@ public class UpdateDownloadService extends Service {
             connection.setInstanceFollowRedirects(true);
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(30000);
+            connection.setRequestProperty("Connection", "close");
 
             int redirectCount = 0;
             int status = connection.getResponseCode();
@@ -402,6 +394,7 @@ public class UpdateDownloadService extends Service {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(30000);
+                connection.setRequestProperty("Connection", "close");
                 status = connection.getResponseCode();
                 redirectCount++;
             }
@@ -429,9 +422,16 @@ public class UpdateDownloadService extends Service {
                     int progress = (int) (totalBytesRead * 100 / fileLength);
                     if (progress > lastProgress) {
                         lastProgress = progress;
-                        updateProgressNotification("Downloading... " + progress + "%", progress, false);
+                        updateProgressNotification("Downloading... " + progress + "%", progress, false, totalBytesRead, fileLength);
+                    }
+                    if (totalBytesRead >= fileLength) {
+                        break;
                     }
                 }
+            }
+
+            if (fileLength > 0 && totalBytesRead < fileLength) {
+                throw new java.io.IOException("Incomplete download: expected " + fileLength + " bytes, but received " + totalBytesRead + " bytes");
             }
 
             output.close();

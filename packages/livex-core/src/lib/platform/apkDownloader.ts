@@ -403,9 +403,6 @@ export async function downloadApk(
     const res = await AppInstaller.downloadApk({ url, fileName, expectedHash });
     isSettled = true;
 
-    if (progressListener) {
-      await progressListener.remove();
-    }
     await AppInstaller.appendLog({
       stage: '[INSTRUMENTATION] downloadApk EXIT',
       message: `Success res.filePath=${res.filePath}`,
@@ -413,9 +410,6 @@ export async function downloadApk(
     return res.filePath;
   } catch (err) {
     isSettled = true;
-    if (progressListener) {
-      await progressListener.remove();
-    }
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error(`[INSTRUMENTATION] [JS] downloadApk EXIT error=${errMsg}`);
     await AppInstaller.appendLog({
@@ -424,6 +418,13 @@ export async function downloadApk(
     });
     console.error('[apkDownloader] Native downloadApk failed:', err);
     throw err;
+  } finally {
+    isSettled = true;
+    if (progressListener) {
+      try {
+        await progressListener.remove();
+      } catch (_) {}
+    }
   }
 }
 
