@@ -1,8 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
-import { AppKey, useApplicationTransitionStore } from '@workspace/livex-core';
+import {
+  type AppKey,
+  useApplicationTransitionStore,
+  type CardMorphSourceRect,
+} from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { triggerIntroReveal } from './introSignal';
+import {
+  ChordexLogo,
+  DrumexLogo,
+  StagexLogoIcon,
+  GroovexLogo,
+  VocalexLogo,
+  LivexLogo,
+} from '../../features/chordex/icons/ChordexLogo';
 
 interface TransitionEngineProps {
   appKey: AppKey;
@@ -10,7 +22,55 @@ interface TransitionEngineProps {
   onComplete: () => void;
   isLight?: boolean;
   isAmoled?: boolean;
+  sourceRect?: CardMorphSourceRect | null;
 }
+
+interface AppVisualProfile {
+  name: string;
+  tagline: string;
+  color: string;
+  Logo: React.ComponentType<{ size?: number }>;
+}
+
+const APP_PROFILES: Record<string, AppVisualProfile> = {
+  chordex: {
+    name: 'Chordex',
+    tagline: 'Acordes, escalas y biblioteca',
+    color: '#a855f7',
+    Logo: ChordexLogo,
+  },
+  drumex: {
+    name: 'Drumex',
+    tagline: 'Secuenciador rítmico y caja de ritmos',
+    color: '#ec4899',
+    Logo: DrumexLogo,
+  },
+  stagex: {
+    name: 'Stagex',
+    tagline: 'Modo en vivo y control de escenario',
+    color: '#3b82f6',
+    Logo: StagexLogoIcon,
+  },
+  groovex: {
+    name: 'Groovex',
+    tagline: 'Pistas, audio multipista y loops',
+    color: '#10b981',
+    Logo: GroovexLogo,
+  },
+  vocalex: {
+    name: 'Vocalex',
+    tagline: 'Calentamiento vocal y afinación',
+    color: '#f59e0b',
+    Logo: VocalexLogo,
+  },
+};
+
+const DEFAULT_PROFILE: AppVisualProfile = {
+  name: 'Livex',
+  tagline: 'Livex Suite',
+  color: '#3b82f6',
+  Logo: LivexLogo,
+};
 
 export function ApplicationTransitionEngine({
   appKey,
@@ -18,627 +78,293 @@ export function ApplicationTransitionEngine({
   onComplete,
   isLight = false,
   isAmoled = false,
+  sourceRect,
 }: TransitionEngineProps) {
-  const state = useApplicationTransitionStore((s) => s.state);
   const setLogoFormed = useApplicationTransitionStore((s) => s.setLogoFormed);
   const completeTransition = useApplicationTransitionStore((s) => s.completeTransition);
+  const startZoom = useApplicationTransitionStore((s) => s.startZoom);
   const prefersReduced = useAppReducedMotion();
+  const completedRef = useRef(false);
 
   const isHub = appKey === 'hub';
+  const profile = APP_PROFILES[appKey] || DEFAULT_PROFILE;
+  const { name, tagline, color, Logo } = profile;
 
+  // Immediately signal logo formation to keep transition store lifecycle responsive
   useEffect(() => {
     if (isHub) {
-      setLogoFormed(true);
+      triggerIntroReveal();
+      completeTransition();
+      if (onComplete) onComplete();
       return;
     }
-    const timer = setTimeout(() => {
-      setLogoFormed(true);
-    }, prefersReduced ? 150 : 780);
-    return () => clearTimeout(timer);
-  }, [isHub, setLogoFormed, prefersReduced]);
+    setLogoFormed(true);
+  }, [isHub, setLogoFormed, completeTransition, onComplete]);
 
-  const startZoom =
-    state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE';
-
+  // When sub-app is preloaded, advance transition state
   useEffect(() => {
-    if (startZoom) {
-      const timer = setTimeout(() => {
-        triggerIntroReveal();
-        completeTransition();
-        if (onComplete) onComplete();
-      }, isHub ? 180 : 320);
-      return () => clearTimeout(timer);
+    if (preloaded && !isHub) {
+      startZoom();
     }
-    return () => {};
-  }, [startZoom, completeTransition, isHub, onComplete]);
+  }, [preloaded, isHub, startZoom]);
 
-  const bgColor = 'var(--app-bg)';
-  const baseColor = 'var(--c-text-primary)';
+  // Completion coordinator: ensures atomic single-fire transition finalization
+  const handleTransitionEnd = useMemo(
+    () => () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      triggerIntroReveal();
+      completeTransition();
+      if (onComplete) onComplete();
+    },
+    [completeTransition, onComplete]
+  );
 
-  // App Specific Colors
-  const appColors: Record<AppKey, string> = {
-    hub: '#3b82f6',
-    chordex: '#a855f7',
-    drumex: '#ec4899',
-    stagex: '#3b82f6',
-    groovex: '#10b981',
-    vocalex: '#f59e0b',
-    devtools: '#ef4444',
-  };
-  const accentColor = appColors[appKey] || '#ffffff';
+  // Safety watchdog: guarantees transition always completes even if animation interrupts
+  useEffect(() => {
+    if (isHub) return;
+    const watchdogTimer = setTimeout(() => {
+      handleTransitionEnd();
+    }, 450);
+    return () => clearTimeout(watchdogTimer);
+  }, [isHub, handleTransitionEnd]);
 
-  // Shared Animation Presets
-  const containerAnimate = !startZoom
-    ? { backgroundColor: bgColor, opacity: 1 }
-    : { backgroundColor: bgColor, opacity: 0 };
+  if (isHub) {
+    return null;
+  }
 
-  const containerTransition: any = isHub
-    ? { duration: 0.18, ease: 'easeOut' }
-    : { duration: prefersReduced ? 0.2 : 0.32, ease: [0.4, 0, 0.2, 1] };
-
-  // Render progressive icons
-  const renderIcon = () => {
-    const svgStyle = { width: '80px', height: '80px', display: 'block' };
-
-    switch (appKey) {
-      case 'chordex':
-        return (
-          <svg viewBox="0 0 13 17" fill="none" style={svgStyle}>
-            {/* Fretboard Nut */}
-            <motion.rect
-              x="0.5"
-              y="0.5"
-              width="12"
-              height="2.5"
-              rx="1"
-              fill={baseColor}
-              initial={{ scaleX: prefersReduced ? 1 : 0 }}
-              animate={{ scaleX: 1 }}
-              style={{ originX: 0.5 }}
-              transition={{ duration: prefersReduced ? 0 : 0.35, ease: 'easeOut' }}
-            />
-            {/* Vertical Strings (Line Drawing) */}
-            {[2.5, 6.5, 10.5].map((xVal, idx) => (
-              <motion.line
-                key={`str-${idx}`}
-                x1={xVal}
-                y1="3"
-                x2={xVal}
-                y2="16.5"
-                stroke={baseColor}
-                strokeWidth="0.9"
-                strokeOpacity="0.35"
-                initial={{ pathLength: prefersReduced ? 1 : 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{
-                  delay: prefersReduced ? 0 : 0.15 + idx * 0.08,
-                  duration: prefersReduced ? 0 : 0.4,
-                  ease: 'easeOut',
-                }}
-              />
-            ))}
-            {/* Horizontal Frets (Line Drawing) */}
-            {[8, 13].map((yVal, idx) => (
-              <motion.line
-                key={`fret-${idx}`}
-                x1="0.5"
-                y1={yVal}
-                x2="12.5"
-                y2={yVal}
-                stroke={baseColor}
-                strokeWidth="0.7"
-                strokeOpacity="0.28"
-                initial={{ pathLength: prefersReduced ? 1 : 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{
-                  delay: prefersReduced ? 0 : 0.3 + idx * 0.1,
-                  duration: prefersReduced ? 0 : 0.35,
-                  ease: 'easeOut',
-                }}
-              />
-            ))}
-            {/* Chord Dots with accent color */}
-            {[
-              { cx: 2.5, cy: 5.5, delay: 0.45 },
-              { cx: 10.5, cy: 5.5, delay: 0.52 },
-              { cx: 6.5, cy: 10.5, delay: 0.6 },
-            ].map((dot, idx) => (
-              <motion.circle
-                key={`dot-${idx}`}
-                cx={dot.cx}
-                cy={dot.cy}
-                r="2.1"
-                fill={accentColor}
-                initial={{ scale: prefersReduced ? 1 : 0 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  delay: prefersReduced ? 0 : dot.delay,
-                  type: 'spring',
-                  stiffness: 350,
-                  damping: 15,
-                }}
-              />
-            ))}
-          </svg>
-        );
-
-      case 'drumex':
-        return (
-          <svg viewBox="0 0 16 16" fill="none" style={svgStyle}>
-            {/* Concentric Rhythmic Pulses (Ripples) */}
-            {!prefersReduced && (
-              <>
-                <motion.circle
-                  cx="8"
-                  cy="8"
-                  r="7.5"
-                  stroke={accentColor}
-                  strokeWidth="0.5"
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.2, ease: 'easeOut' }}
-                />
-                <motion.circle
-                  cx="8"
-                  cy="8"
-                  r="7.5"
-                  stroke={accentColor}
-                  strokeWidth="0.5"
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: [0.8, 1.4], opacity: [0.7, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.2, delay: 0.4, ease: 'easeOut' }}
-                />
-              </>
-            )}
-            {/* Drum Rim */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="7"
-              stroke={baseColor}
-              strokeWidth="1.6"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeInOut' }}
-            />
-            {/* Head Ring */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="4.8"
-              stroke={baseColor}
-              strokeWidth="0.85"
-              strokeOpacity="0.5"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.15,
-                duration: prefersReduced ? 0 : 0.4,
-                ease: 'easeInOut',
-              }}
-            />
-            {/* Tension Lugs */}
-            {Array.from({ length: 6 }).map((_, i) => {
-              const angle = (i * Math.PI * 2) / 6 - Math.PI / 2;
-              const lx = 8 + 6.1 * Math.cos(angle);
-              const ly = 8 + 6.1 * Math.sin(angle);
-              return (
-                <motion.circle
-                  key={`lug-${i}`}
-                  cx={lx}
-                  cy={ly}
-                  r="0.95"
-                  fill={baseColor}
-                  initial={{ scale: prefersReduced ? 1 : 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{
-                    delay: prefersReduced ? 0 : 0.3 + i * 0.05,
-                    type: 'spring',
-                    stiffness: 300,
-                    damping: 14,
-                  }}
-                />
-              );
-            })}
-            {/* Center sweet-spot (Colored) */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="1.4"
-              fill={accentColor}
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.55,
-                type: 'spring',
-                stiffness: 350,
-                damping: 12,
-              }}
-            />
-          </svg>
-        );
-
-      case 'stagex':
-        return (
-          <svg viewBox="0 0 16 16" fill="none" style={svgStyle}>
-            {/* Floating Lighting Bars in background */}
-            <motion.path
-              d="M 2 2 L 8 4 L 14 2"
-              stroke={accentColor}
-              strokeWidth="0.6"
-              strokeOpacity="0.4"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.35, duration: prefersReduced ? 0 : 0.45 }}
-            />
-            {/* Platform */}
-            <motion.rect
-              x="1"
-              y="10"
-              width="14"
-              height="2.5"
-              rx="1"
-              fill={baseColor}
-              fillOpacity="0.9"
-              initial={{ scaleX: prefersReduced ? 1 : 0 }}
-              animate={{ scaleX: 1 }}
-              style={{ originX: 0.5 }}
-              transition={{ duration: prefersReduced ? 0 : 0.4, ease: 'easeOut' }}
-            />
-            {/* Left Speaker */}
-            <motion.rect
-              x="1"
-              y="4"
-              width="3.5"
-              height="5.5"
-              rx="0.8"
-              stroke={baseColor}
-              strokeWidth="1.1"
-              initial={{ scaleY: prefersReduced ? 1 : 0 }}
-              animate={{ scaleY: 1 }}
-              style={{ originY: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.15, duration: prefersReduced ? 0 : 0.35 }}
-            />
-            <motion.circle
-              cx="2.75"
-              cy="6.2"
-              r="0.8"
-              fill={baseColor}
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.35, type: 'spring' }}
-            />
-            <motion.circle
-              cx="2.75"
-              cy="8.1"
-              r="0.55"
-              fill={baseColor}
-              fillOpacity="0.6"
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.45, type: 'spring' }}
-            />
-            {/* Right Speaker */}
-            <motion.rect
-              x="11.5"
-              y="4"
-              width="3.5"
-              height="5.5"
-              rx="0.8"
-              stroke={baseColor}
-              strokeWidth="1.1"
-              initial={{ scaleY: prefersReduced ? 1 : 0 }}
-              animate={{ scaleY: 1 }}
-              style={{ originY: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.2, duration: prefersReduced ? 0 : 0.35 }}
-            />
-            <motion.circle
-              cx="13.25"
-              cy="6.2"
-              r="0.8"
-              fill={baseColor}
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.4, type: 'spring' }}
-            />
-            <motion.circle
-              cx="13.25"
-              cy="8.1"
-              r="0.55"
-              fill={baseColor}
-              fillOpacity="0.6"
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.5, type: 'spring' }}
-            />
-            {/* Center Stand & Mic Capsule (Accent) */}
-            <motion.line
-              x1="8"
-              y1="4"
-              x2="8"
-              y2="9.5"
-              stroke={baseColor}
-              strokeWidth="1.1"
-              strokeLinecap="round"
-              initial={{ scaleY: prefersReduced ? 1 : 0 }}
-              animate={{ scaleY: 1 }}
-              style={{ originY: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.25, duration: prefersReduced ? 0 : 0.4 }}
-            />
-            <motion.circle
-              cx="8"
-              cy="3.2"
-              r="1.2"
-              fill={accentColor}
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.55,
-                type: 'spring',
-                stiffness: 350,
-                damping: 10,
-              }}
-            />
-          </svg>
-        );
-
-      case 'groovex':
-        return (
-          <svg viewBox="0 0 16 16" fill="none" style={svgStyle}>
-            {/* Outer Circle */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="7"
-              stroke={baseColor}
-              strokeWidth="1.5"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeInOut' }}
-            />
-            {/* Inner Ring */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="3"
-              stroke={baseColor}
-              strokeWidth="1.2"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.15,
-                duration: prefersReduced ? 0 : 0.4,
-                ease: 'easeInOut',
-              }}
-            />
-            {/* Center Center dot */}
-            <motion.circle
-              cx="8"
-              cy="8"
-              r="1"
-              fill={accentColor}
-              initial={{ scale: prefersReduced ? 1 : 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: prefersReduced ? 0 : 0.3, type: 'spring' }}
-            />
-            {/* Audio Wave / Mixer ticks */}
-            {[
-              { x1: 8, y1: 1, x2: 8, y2: 5, originY: 0, delay: 0.3 },
-              { x1: 8, y1: 11, x2: 8, y2: 15, originY: 1, delay: 0.35 },
-              { x1: 1, y1: 8, x2: 5, y2: 8, originX: 0, delay: 0.4 },
-              { x1: 11, y1: 8, x2: 15, y2: 8, originX: 1, delay: 0.45 },
-            ].map((lineProps, idx) => (
-              <motion.line
-                key={`line-${idx}`}
-                x1={lineProps.x1}
-                y1={lineProps.y1}
-                x2={lineProps.x2}
-                y2={lineProps.y2}
-                stroke={baseColor}
-                strokeWidth="0.8"
-                strokeOpacity="0.5"
-                initial={
-                  lineProps.originY !== undefined
-                    ? { scaleY: prefersReduced ? 1 : 0 }
-                    : { scaleX: prefersReduced ? 1 : 0 }
-                }
-                animate={lineProps.originY !== undefined ? { scaleY: 1 } : { scaleX: 1 }}
-                style={{ originY: lineProps.originY, originX: lineProps.originX }}
-                transition={{
-                  delay: prefersReduced ? 0 : lineProps.delay,
-                  duration: prefersReduced ? 0 : 0.3,
-                }}
-              />
-            ))}
-            {/* Waveform graphic overlay inside outer ring */}
-            <motion.path
-              d="M 3.5 8.5 Q 5.75 6 8 8.5 T 12.5 8.5"
-              stroke={accentColor}
-              strokeWidth="0.6"
-              strokeLinecap="round"
-              strokeOpacity="0.75"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.4,
-                duration: prefersReduced ? 0 : 0.5,
-              }}
-            />
-          </svg>
-        );
-
-      case 'vocalex':
-        return (
-          <svg viewBox="0 0 16 16" fill="none" style={svgStyle}>
-            {/* Liquid Fill Clip Path definition */}
-            <defs>
-              <clipPath id="vocalex-fill-clip">
-                <motion.rect
-                  x="6.5"
-                  y="2"
-                  width="3"
-                  height="8"
-                  rx="1.5"
-                  initial={{ y: prefersReduced ? 2 : 10 }}
-                  animate={{ y: 2 }}
-                  transition={{
-                    delay: prefersReduced ? 0 : 0.2,
-                    duration: prefersReduced ? 0 : 0.65,
-                    ease: 'easeInOut',
-                  }}
-                />
-              </clipPath>
-            </defs>
-
-            {/* Sound Wave Resonance Arcs */}
-            {!prefersReduced && (
-              <>
-                <motion.path
-                  d="M 2.5 5 A 4 4 0 0 0 2.5 11"
-                  stroke={accentColor}
-                  strokeWidth="0.85"
-                  strokeLinecap="round"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
-                  transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
-                />
-                <motion.path
-                  d="M 13.5 5 A 4 4 0 0 1 13.5 11"
-                  stroke={accentColor}
-                  strokeWidth="0.85"
-                  strokeLinecap="round"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: [0, 0.8, 0], scale: [0.8, 1.25] }}
-                  transition={{ repeat: Infinity, duration: 1.4, ease: 'easeOut' }}
-                />
-              </>
-            )}
-            {/* Silhouette Outline */}
-            <motion.rect
-              x="6.5"
-              y="2"
-              width="3"
-              height="8"
-              rx="1.5"
-              stroke={baseColor}
-              strokeWidth="1.4"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: prefersReduced ? 0 : 0.45, ease: 'easeOut' }}
-            />
-            {/* Filled inner area with clip path (Liquid filling) */}
-            <rect
-              x="6.5"
-              y="2"
-              width="3"
-              height="8"
-              rx="1.5"
-              fill={accentColor}
-              clipPath="url(#vocalex-fill-clip)"
-            />
-            {/* Cradle U-shape */}
-            <motion.path
-              d="M4 8.5C4 11.26 5.79 13 8 13C10.21 13 12 11.26 12 8.5"
-              stroke={baseColor}
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              initial={{ pathLength: prefersReduced ? 1 : 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{
-                delay: prefersReduced ? 0 : 0.2,
-                duration: prefersReduced ? 0 : 0.4,
-                ease: 'easeOut',
-              }}
-            />
-            {/* Stand Post */}
-            <motion.line
-              x1="8"
-              y1="13"
-              x2="8"
-              y2="14"
-              stroke={baseColor}
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              initial={{ scaleY: prefersReduced ? 1 : 0 }}
-              animate={{ scaleY: 1 }}
-              style={{ originY: 0 }}
-              transition={{ delay: prefersReduced ? 0 : 0.38, duration: prefersReduced ? 0 : 0.2 }}
-            />
-            {/* Base Line */}
-            <motion.line
-              x1="6"
-              y1="14"
-              x2="10"
-              y2="14"
-              stroke={baseColor}
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              initial={{ scaleX: prefersReduced ? 1 : 0 }}
-              animate={{ scaleX: 1 }}
-              style={{ originX: 0.5 }}
-              transition={{ delay: prefersReduced ? 0 : 0.44, duration: prefersReduced ? 0 : 0.25 }}
-            />
-          </svg>
-        );
-
-      default:
-        return null;
+  // Derive initial card geometry from captured source element, or compute centered fallback
+  const startBounds = useMemo(() => {
+    if (
+      sourceRect &&
+      typeof sourceRect.width === 'number' &&
+      sourceRect.width > 20 &&
+      sourceRect.height > 20
+    ) {
+      return {
+        x: Math.round(sourceRect.x),
+        y: Math.round(sourceRect.y),
+        width: Math.round(sourceRect.width),
+        height: Math.round(sourceRect.height),
+        borderRadius: sourceRect.borderRadius ?? 20,
+      };
     }
-  };
+
+    // Centered card fallback if source rect was not provided
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 390;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 844;
+    const cardW = Math.min(vw - 32, 420);
+    const cardH = 72;
+    return {
+      x: Math.round((vw - cardW) / 2),
+      y: Math.round((vh - cardH) / 2),
+      width: cardW,
+      height: cardH,
+      borderRadius: 20,
+    };
+  }, [sourceRect]);
+
+  const targetBg = isAmoled
+    ? '#000000'
+    : isLight
+      ? 'var(--app-bg, #f8fafc)'
+      : 'var(--app-bg, #0b0d13)';
+
+  const cardInitialBg = isLight
+    ? 'rgba(255, 255, 255, 0.92)'
+    : isAmoled
+      ? '#000000'
+      : 'rgba(20, 22, 30, 0.96)';
+
+  const cardInitialBorder = isLight
+    ? '1px solid rgba(0, 0, 0, 0.08)'
+    : '1px solid rgba(255, 255, 255, 0.12)';
+
+  const duration = prefersReduced ? 0.15 : 0.32;
+  const fluidEase: [number, number, number, number] = [0.16, 1, 0.3, 1]; // Apple-grade physical deceleration curve
 
   return (
-    <motion.div
-      initial={{ opacity: 1, backgroundColor: bgColor }}
-      animate={containerAnimate}
-      transition={containerTransition}
-      onAnimationComplete={() => {
-        if (startZoom) {
-          triggerIntroReveal();
-          completeTransition();
-          if (onComplete) onComplete();
-        }
-      }}
+    <div
+      data-livex-app-transition="shared-card-morph"
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        backgroundColor: bgColor,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: startZoom ? 'none' : 'auto',
-        willChange: 'transform, opacity',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        transformStyle: 'preserve-3d',
+        pointerEvents: 'none',
+        overflow: 'hidden',
       }}
     >
-      {!isHub && (
+      {/* Dimmed Hub backdrop to focus visual attention on expanding card */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: duration * 0.8, ease: 'easeOut' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: isAmoled ? '#000000' : 'rgba(0, 0, 0, 0.28)',
+          willChange: 'opacity',
+        }}
+      />
+
+      {/* The expanding shared-element card morph surface */}
+      <motion.div
+        initial={
+          prefersReduced
+            ? { opacity: 0, top: 0, left: 0, width: '100vw', height: '100dvh', borderRadius: 0 }
+            : {
+                top: startBounds.y,
+                left: startBounds.x,
+                width: startBounds.width,
+                height: startBounds.height,
+                borderRadius: startBounds.borderRadius,
+                backgroundColor: cardInitialBg,
+                border: cardInitialBorder,
+                boxShadow: `0 16px 36px -10px ${color}35, 0 0 0 1px ${color}20`,
+                opacity: 1,
+              }
+        }
+        animate={{
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100dvh',
+          borderRadius: 0,
+          backgroundColor: targetBg,
+          border: '1px solid rgba(0, 0, 0, 0)',
+          boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+          // Smoothly cross-fade card surface during final 25% of expansion to reveal preloaded sub-app
+          opacity: [1, 1, 0],
+        }}
+        transition={{
+          top: { duration, ease: fluidEase },
+          left: { duration, ease: fluidEase },
+          width: { duration, ease: fluidEase },
+          height: { duration, ease: fluidEase },
+          borderRadius: { duration: duration * 0.95, ease: fluidEase },
+          backgroundColor: { duration: duration * 0.85, ease: 'easeOut' },
+          border: { duration: duration * 0.6, ease: 'easeOut' },
+          boxShadow: { duration: duration * 0.6, ease: 'easeOut' },
+          opacity: {
+            duration,
+            times: [0, 0.72, 1],
+            ease: 'easeOut',
+          },
+        }}
+        onAnimationComplete={handleTransitionEnd}
+        style={{
+          position: 'absolute',
+          overflow: 'hidden',
+          willChange: 'transform, top, left, width, height, opacity, border-radius',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        {/* Glowing brand aura expanding from card origin */}
         <motion.div
-          initial={{ opacity: 0, scale: prefersReduced ? 1 : 0.75 }}
-          animate={
-            !startZoom
-              ? { opacity: 1, scale: 1 }
-              : { scale: prefersReduced ? 1 : 1.05, opacity: 0 }
-          }
-          transition={
-            !startZoom
-              ? { type: 'spring', stiffness: 450, damping: 28 }
-              : {
-                  scale: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
-                  opacity: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
-                }
-          }
+          initial={{ opacity: 0.25, scale: 0.8 }}
+          animate={{ opacity: [0.35, 0.15, 0], scale: [0.8, 1.4, 2] }}
+          transition={{ duration, times: [0, 0.6, 1], ease: 'easeOut' }}
           style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            width: '160px',
+            height: '160px',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${color}45 0%, ${color}10 50%, transparent 75%)`,
+            pointerEvents: 'none',
+            transform: 'translate(-35%, -35%)',
+            willChange: 'transform, opacity',
+          }}
+        />
+
+        {/* Card visual content morph: stays anchored to card header and dissolves seamlessly */}
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{
+            opacity: [1, 0.85, 0],
+            scale: [1, 1.04, 1.08],
+          }}
+          transition={{
+            duration: duration * 0.88,
+            times: [0, 0.45, 1],
+            ease: fluidEase,
+          }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: startBounds.width,
+            padding: '14px 16px',
+            boxSizing: 'border-box',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 14,
+            pointerEvents: 'none',
             willChange: 'transform, opacity',
           }}
         >
-          {renderIcon()}
+          {/* Canonical app icon badge */}
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
+              background: isLight ? `${color}18` : `${color}22`,
+              border: `1px solid ${color}40`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: color,
+              flexShrink: 0,
+              boxShadow: `0 4px 14px ${color}25`,
+            }}
+          >
+            <Logo size={24} />
+          </div>
+
+          {/* App title and description */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0,
+            }}
+          >
+            <span
+              style={{
+                fontSize: '16px',
+                fontWeight: 800,
+                color: 'var(--c-text-primary)',
+                fontFamily: 'var(--studio-font-display)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
+              }}
+            >
+              {name}
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                color: 'var(--c-text-secondary)',
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 500,
+                marginTop: '3px',
+                lineHeight: 1.3,
+                opacity: 0.85,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {tagline}
+            </span>
+          </div>
         </motion.div>
-      )}
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

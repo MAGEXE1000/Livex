@@ -3,6 +3,14 @@ import type { AppKey } from '../../store/useSettingsStore';
 import { useBottomNavigationStore } from './useBottomNavigationStore.js';
 import { MotionProfiler } from '../performance/motionProfiler';
 
+export interface CardMorphSourceRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  borderRadius?: number;
+}
+
 export type TransitionState =
   | 'IDLE'
   | 'PREPARING'
@@ -18,8 +26,9 @@ interface ApplicationTransitionState {
   launchingApp: AppKey | null;
   appPreloaded: boolean;
   logoFormed: boolean;
+  sourceRect: CardMorphSourceRect | null;
   
-  requestTransition: (targetApp: AppKey) => boolean;
+  requestTransition: (targetApp: AppKey, sourceRect?: CardMorphSourceRect | null) => boolean;
   setAppPreloaded: (preloaded: boolean) => void;
   setLogoFormed: (formed: boolean) => void;
   startZoom: () => void;
@@ -32,8 +41,9 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
   launchingApp: null,
   appPreloaded: false,
   logoFormed: false,
+  sourceRect: null,
 
-  requestTransition: (targetApp) => {
+  requestTransition: (targetApp, sourceRect) => {
     let { state, launchingApp } = get();
     
     // Clear bottom navigation switcher state immediately during transition preparation
@@ -61,6 +71,7 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
     set({
       state: 'PREPARING',
       launchingApp: targetApp,
+      sourceRect: sourceRect ?? null,
       appPreloaded: targetApp === 'hub',
       logoFormed: targetApp === 'hub',
     });
@@ -147,6 +158,7 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
       launchingApp: null,
       appPreloaded: false,
       logoFormed: false,
+      sourceRect: null,
     });
   },
 
@@ -169,6 +181,7 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
       launchingApp: null,
       appPreloaded: false,
       logoFormed: false,
+      sourceRect: null,
     });
   },
 }));

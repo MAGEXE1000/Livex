@@ -51,6 +51,8 @@ import {
   useNavigationStore,
   NavigationDispatcher,
   useBottomNavigationStore,
+  useApplicationTransitionStore,
+  type CardMorphSourceRect,
   useSettingsStore,
   DurationPresets,
   EasingPresets,
@@ -860,11 +862,29 @@ export default function LivexHub() {
     });
   }, []);
 
-  const launchApp = useCallback((appMode: AppKey) => {
+  const launchApp = useCallback((appMode: AppKey, sourceElement?: HTMLElement | null) => {
     if ((window as any).studioTransitionActive) {
       console.warn('[Navigation] App switch request ignored: transition in progress.');
       return;
     }
+
+    let sourceRect: CardMorphSourceRect | null = null;
+    if (sourceElement && typeof sourceElement.getBoundingClientRect === 'function') {
+      const r = sourceElement.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        sourceRect = {
+          x: Math.round(r.left),
+          y: Math.round(r.top),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+          borderRadius: 20,
+        };
+      }
+    }
+
+    // Arm the shared-element transition store with exact source card coordinates
+    useApplicationTransitionStore.getState().requestTransition(appMode, sourceRect);
+
     const currentApp = NavigationDispatcher.currentApp();
     recordNavigation({
       fromApp: currentApp,
@@ -893,7 +913,7 @@ export default function LivexHub() {
         activeAppAfterTransition: appMode,
         fallbackRendered: false,
       });
-    }, 340);
+    }, 360);
     launchTimers.current.push(t2);
     // updateSettings is stable (Zustand action), setZooming is React setState
   }, []);
@@ -1087,10 +1107,10 @@ export default function LivexHub() {
         display: 'flex',
         flexDirection: 'column',
         fontFamily: 'var(--studio-font-body)',
-        transform: zooming ? 'scale(1.10)' : 'scale(1)',
-        opacity: zooming ? 0 : 1,
+        transform: zooming ? 'scale(0.985)' : 'scale(1)',
+        opacity: zooming ? 0.35 : 1,
         transition: zooming
-          ? 'transform 285ms cubic-bezier(0.4,0,1,1), opacity 210ms ease-in, background-color 700ms cubic-bezier(0.4,0,0.2,1)'
+          ? 'transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-in, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
           : 'transform 285ms cubic-bezier(0.16, 1, 0.3, 1), opacity 285ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents: introFinished ? 'auto' : 'none',
       }}
@@ -2028,7 +2048,7 @@ export default function LivexHub() {
                           ).map(({ app, Logo, name, desc, color, active }) => (
                             <motion.button
                               key={app}
-                              onClick={() => launchApp(app)}
+                              onClick={(e) => launchApp(app, e.currentTarget)}
                               whileTap={prefersReduced ? undefined : { scale: 0.975 }}
                               whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}
                               transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}

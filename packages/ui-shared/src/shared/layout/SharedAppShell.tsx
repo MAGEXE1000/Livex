@@ -283,6 +283,7 @@ export function SharedAppShell({
     state: transitionState,
     launchingApp,
     appPreloaded,
+    sourceRect,
     requestTransition,
     setAppPreloaded,
   } = useApplicationTransitionStore(
@@ -290,6 +291,7 @@ export function SharedAppShell({
       state: s.state,
       launchingApp: s.launchingApp,
       appPreloaded: s.appPreloaded,
+      sourceRect: s.sourceRect,
       requestTransition: s.requestTransition,
       setAppPreloaded: s.setAppPreloaded,
     }))
@@ -426,6 +428,7 @@ export function SharedAppShell({
                 onComplete={() => {}}
                 isLight={isTransitionLight}
                 isAmoled={isTransitionAmoled}
+                sourceRect={sourceRect}
               />
             )}
           </AnimatePresence>
