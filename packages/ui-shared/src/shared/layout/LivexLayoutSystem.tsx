@@ -278,6 +278,7 @@ export function SharedFloatingHeader({
 
   const glassSurfaceRef = React.useRef<HTMLDivElement | null>(null);
   const specularRef = React.useRef<HTMLDivElement | null>(null);
+  const progressiveBlurRef = React.useRef<HTMLDivElement | null>(null);
 
   const morphActive = Boolean(enableMorph && scrollContainerRef);
 
@@ -286,6 +287,7 @@ export function SharedFloatingHeader({
     headerRef: actualHeaderRef,
     titleRef: actualTitleRef,
     glassSurfaceRef,
+    progressiveBlurRef,
     morphDistance,
     startOffset,
     enabled: morphActive,
@@ -298,18 +300,62 @@ export function SharedFloatingHeader({
     <div
       style={{
         position: 'absolute',
-        top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+        top: 0,
         left: 0,
         right: 0,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
-        padding: '0 var(--page-inset-h, 24px)',
+        alignItems: 'flex-start',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+        paddingLeft: 'var(--page-inset-h, 24px)',
+        paddingRight: 'var(--page-inset-h, 24px)',
         zIndex: 110,
         pointerEvents: 'none',
         boxSizing: 'border-box',
       }}
     >
+      {/* Flagship Progressive Blur Backdrop Layer at Top of Scroll Container */}
+      <div
+        ref={progressiveBlurRef}
+        aria-hidden="true"
+        data-testid="shared-floating-header-progressive-blur"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 'calc(env(safe-area-inset-top, 0px) + 88px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+          opacity: 0.28,
+          overflow: 'hidden',
+          transition: 'opacity 250ms ease-out',
+        }}
+      >
+        <ProgressiveBlur
+          direction="top"
+          blurLayers={2}
+          maxBlur={14}
+          style={{
+            position: 'absolute',
+            inset: 0,
+          }}
+        />
+        {/* Ambient atmospheric gradient scrim to preserve theme luminance */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: isLight
+              ? 'linear-gradient(to bottom, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.15) 55%, transparent 100%)'
+              : isAmoled
+                ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.70) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 100%)'
+                : 'linear-gradient(to bottom, rgba(14, 14, 18, 0.50) 0%, rgba(14, 14, 18, 0.20) 55%, transparent 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+
       <LivexLiquidGlassFilter />
       <header
         ref={actualHeaderRef}
@@ -346,8 +392,8 @@ export function SharedFloatingHeader({
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
-            opacity: 0,
-            visibility: 'hidden',
+            opacity: 0.45,
+            visibility: 'visible',
             zIndex: 0,
           }}
         >
@@ -372,10 +418,10 @@ export function SharedFloatingHeader({
               inset: 0,
               borderRadius: 'inherit',
               background: isLight
-                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, transparent 100%)'
+                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.25) 0%, transparent 100%)'
                 : isAmoled
-                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 100%)'
-                : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.10) 0%, transparent 100%)',
+                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.10) 0%, transparent 100%)'
+                : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 100%)',
               pointerEvents: 'none',
             }}
           />
@@ -400,11 +446,11 @@ export function SharedFloatingHeader({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.05)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-              boxShadow: 'var(--btn-surface-shadow, 0 1px 3px rgba(0,0,0,0.12))',
+              background: 'var(--surface-pill-bg)',
+              border: 'var(--surface-pill-border)',
+              backdropFilter: 'var(--surface-pill-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+              boxShadow: 'var(--surface-pill-shadow)',
               color: 'var(--c-text-primary)',
               cursor: 'pointer',
               zIndex: 2,

@@ -2844,8 +2844,8 @@ export default function DrumEditor() {
                   : 'calc(env(safe-area-inset-top, 0px) + 10px)',
                 background: 'var(--surface-topbar-bg)',
                 border: 'var(--surface-topbar-border)',
-                backdropFilter: 'var(--surface-topbar-blur)',
-                WebkitBackdropFilter: 'var(--surface-topbar-blur)',
+                backdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
+                WebkitBackdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
                 boxShadow: 'var(--surface-topbar-shadow)',
                 contain: 'paint layout',
               }}
@@ -2856,7 +2856,11 @@ export default function DrumEditor() {
                   onClick={handleBack}
                   className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer"
                   style={{
-                    background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                    background: 'var(--surface-pill-bg)',
+                    border: 'var(--surface-pill-border)',
+                    backdropFilter: 'var(--surface-pill-backdrop)',
+                    WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+                    boxShadow: 'var(--surface-pill-shadow)',
                     color: 'var(--c-text-primary)',
                   }}
                   aria-label="Back"

@@ -9,6 +9,8 @@ export interface UseScrollMorphOptions {
   titleRef: React.RefObject<HTMLElement | null>;
   /** The persistent Liquid Glass surface material layer */
   glassSurfaceRef?: React.RefObject<HTMLElement | null>;
+  /** Optional progressive blur backdrop layer at the top of the scroll container */
+  progressiveBlurRef?: React.RefObject<HTMLElement | null>;
   /** Optional spectral refraction layer for chromatic aberration peak (deprecated/unused) */
   spectralRef?: React.RefObject<HTMLElement | null>;
   /** Optional specular curvature highlight layer */
@@ -42,6 +44,7 @@ export function useScrollMorph({
   headerRef,
   titleRef,
   glassSurfaceRef,
+  progressiveBlurRef,
   morphDistance = 86,
   startOffset = 14,
   enabled = true,
@@ -173,18 +176,20 @@ export function useScrollMorph({
 
       // ── 7. Liquid Glass Material Progressive Emergence ────────────────────
       if (glassEl) {
-        if (p <= 0.001) {
-          glassEl.style.opacity = '0';
-          glassEl.style.visibility = 'hidden';
-        } else {
-          glassEl.style.visibility = 'visible';
-          // Smooth progressive emergence curve (material emerges early, then stabilizes)
-          const surfaceAlpha = Math.min(1, Math.pow(p, 0.9));
-          glassEl.style.opacity = surfaceAlpha.toFixed(3);
-        }
+        glassEl.style.visibility = 'visible';
+        // Continuous physical emergence: subtle resting translucency (0.45) scaling smoothly to full definition (1.0)
+        const surfaceAlpha = 0.45 + 0.55 * Math.min(1, Math.pow(p, 0.85));
+        glassEl.style.opacity = surfaceAlpha.toFixed(3);
+      }
+
+      // ── 8. Progressive Blur Zone Interpolation ────────────────────────────
+      const blurEl = progressiveBlurRef?.current;
+      if (blurEl) {
+        const blurAlpha = 0.28 + 0.72 * Math.min(1, Math.pow(p, 0.85));
+        blurEl.style.opacity = blurAlpha.toFixed(3);
       }
     },
-    [headerRef, titleRef, glassSurfaceRef]
+    [headerRef, titleRef, glassSurfaceRef, progressiveBlurRef]
   );
 
   useEffect(() => {

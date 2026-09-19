@@ -1798,29 +1798,33 @@ html[data-perf-mode='on'] *::after {
 
   /* ── Glass Tiering & Floating-surface tokens — dark (default) ───────────── */
   --glass-tier: blur;
-  --glass-blur-radius: 8px;
+  --glass-blur-radius: 14px;
   --glass-blur: blur(var(--glass-blur-radius));
-  /* Alpha 0.18: translucent frosted glass with clearly visible background content.
-     Lighter base opacity allows underlying elements to show through the glass
-     while preserving the authentic frosted backdrop blur.                      */
-  --surface-float-bg: rgba(18, 18, 22, 0.72);
-  --surface-topbar-bg: rgba(18, 18, 22, 0.72);
-  /* Outer border: soft, low-contrast translucent rim */
-  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.08);
-  /* Natural depth separation — lighter to avoid competing with transparent bg */
+  /* Translucent obsidian glass with softly diffused background visibility */
+  --surface-float-bg: rgba(20, 20, 24, 0.70);
+  --surface-topbar-bg: rgba(20, 20, 24, 0.70);
+  /* Outer border: crisp, micro-refined translucent rim */
+  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.09);
+  /* Premium physical depth: dual ambient/directional shadow + top specular rim highlight */
   --surface-topbar-shadow:
-    0 8px 24px -4px rgba(0, 0, 0, 0.35), 0 2px 6px -2px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  /* blur(8px): frosted blur provides depth while keeping GPU fill-rate bounded */
+    0 8px 24px -4px rgba(0, 0, 0, 0.32), 0 2px 6px -1px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   --surface-topbar-blur: var(--glass-blur);
-  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
-  --surface-topbar-fallback: rgba(18, 18, 22, 0.96);
+  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(150%);
+  --surface-topbar-fallback: rgba(20, 20, 24, 0.96);
   --surface-float-blur: var(--glass-blur); /* shared backdrop-filter */
   --surface-scrim-blur: none;
+  /* Floating Control Pills (Back buttons, Tuner, Finder, Metronome) */
+  --surface-pill-bg: rgba(255, 255, 255, 0.07);
+  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.10);
+  --surface-pill-shadow:
+    0 2px 8px -1px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --surface-pill-blur: blur(12px);
+  --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.12) 50%,
     rgba(255, 255, 255, 0.03) 100%
   );
   --surface-glass-bottom-rim: linear-gradient(
@@ -1849,19 +1853,25 @@ html[data-perf-mode='on'] *::after {
 /* Light-theme overrides — translucent frosted white glass */
 :root.light {
   --glass-tier: blur;
-  --glass-blur-radius: 8px;
+  --glass-blur-radius: 14px;
   --glass-blur: blur(var(--glass-blur-radius));
-  --surface-float-bg: rgba(255, 255, 255, 0.78);
-  --surface-topbar-bg: rgba(255, 255, 255, 0.78);
-  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.07);
+  --surface-float-bg: rgba(255, 255, 255, 0.76);
+  --surface-topbar-bg: rgba(255, 255, 255, 0.76);
+  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.08);
   --surface-topbar-shadow:
-    0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
   --surface-topbar-blur: var(--glass-blur);
-  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
+  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(150%);
   --surface-float-blur: var(--glass-blur);
   --surface-scrim-blur: none;
   --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
+  --surface-pill-bg: rgba(0, 0, 0, 0.045);
+  --surface-pill-border: 1px solid rgba(0, 0, 0, 0.07);
+  --surface-pill-shadow:
+    0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --surface-pill-blur: blur(12px);
+  --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.2) 0%,
@@ -1903,6 +1913,12 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
   --surface-topbar-fallback: #000000;
+  --surface-pill-bg: rgba(255, 255, 255, 0.085);
+  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.12);
+  --surface-pill-shadow:
+    0 2px 10px -1px rgba(0, 0, 0, 0.60), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --surface-pill-blur: blur(8px);
+  --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.03) 0%,
@@ -1939,6 +1955,9 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-float-bg: rgba(18, 18, 22, 0.92);
   --surface-topbar-bg: rgba(18, 18, 22, 0.92);
+  --surface-pill-blur: none;
+  --surface-pill-backdrop: none;
+  --surface-pill-bg: rgba(255, 255, 255, 0.08);
 }
 
 :root.light[data-perf-mode="on"],
@@ -1947,6 +1966,9 @@ html[data-perf-mode='on'] *::after {
   --surface-float-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-backdrop: none;
+  --surface-pill-blur: none;
+  --surface-pill-backdrop: none;
+  --surface-pill-bg: rgba(0, 0, 0, 0.05);
 }
 
 :root[data-glass-tier="solid"] {
@@ -1959,6 +1981,9 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-float-bg: #121216;
   --surface-topbar-bg: #121216;
+  --surface-pill-blur: none;
+  --surface-pill-backdrop: none;
+  --surface-pill-bg: #1e1e24;
 }
 
 :root.amoled[data-perf-mode="on"],
@@ -1970,12 +1995,18 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-blur: none;
   --surface-float-blur: none;
   --surface-topbar-backdrop: none;
+  --surface-pill-blur: none;
+  --surface-pill-backdrop: none;
+  --surface-pill-bg: #141418;
 }
 
 :root.light[data-glass-tier="solid"] {
   --surface-float-bg: #ffffff;
   --surface-topbar-bg: #ffffff;
   --surface-topbar-backdrop: none;
+  --surface-pill-blur: none;
+  --surface-pill-backdrop: none;
+  --surface-pill-bg: #f1f5f9;
 }
 
 /* Reduced motion preference: eliminate expensive blur shaders */
@@ -1989,11 +2020,17 @@ html[data-perf-mode='on'] *::after {
     --surface-scrim-blur: none;
     --surface-float-bg: rgba(18, 18, 22, 0.92);
     --surface-topbar-bg: rgba(18, 18, 22, 0.92);
+    --surface-pill-blur: none;
+    --surface-pill-backdrop: none;
+    --surface-pill-bg: rgba(255, 255, 255, 0.08);
   }
   :root.light {
     --surface-float-bg: rgba(255, 255, 255, 0.94);
     --surface-topbar-bg: rgba(255, 255, 255, 0.94);
     --surface-topbar-backdrop: none;
+    --surface-pill-blur: none;
+    --surface-pill-backdrop: none;
+    --surface-pill-bg: rgba(0, 0, 0, 0.05);
   }
   :root.amoled {
     --surface-float-bg: #000000;
@@ -2001,6 +2038,9 @@ html[data-perf-mode='on'] *::after {
     --surface-topbar-blur: none;
     --surface-float-blur: none;
     --surface-topbar-backdrop: none;
+    --surface-pill-blur: none;
+    --surface-pill-backdrop: none;
+    --surface-pill-bg: #141418;
   }
 }
 

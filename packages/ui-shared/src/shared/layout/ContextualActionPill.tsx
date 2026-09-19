@@ -44,17 +44,11 @@ export const ContextualActionPill: React.FC<ContextualActionPillProps> = ({
       data-testid="contextual-action-pill"
       className={`contextual-action-pill pointer-events-auto flex items-center p-0.5 rounded-full ${className}`}
       style={{
-        background: isAmoled
-          ? 'rgba(10, 10, 12, 0.88)'
-          : isLight
-            ? 'rgba(0, 0, 0, 0.04)'
-            : 'rgba(255, 255, 255, 0.06)',
-        border: isAmoled
-          ? '1px solid rgba(255, 255, 255, 0.12)'
-          : isLight
-            ? '1px solid rgba(0, 0, 0, 0.08)'
-            : '1px solid rgba(255, 255, 255, 0.10)',
-        boxShadow: 'var(--btn-surface-shadow, 0 1px 3px rgba(0,0,0,0.12))',
+        background: 'var(--surface-pill-bg)',
+        border: 'var(--surface-pill-border)',
+        backdropFilter: 'var(--surface-pill-backdrop)',
+        WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+        boxShadow: 'var(--surface-pill-shadow)',
         boxSizing: 'border-box',
         ...style,
       }}

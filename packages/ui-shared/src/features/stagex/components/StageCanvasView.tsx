@@ -667,19 +667,11 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           <div
             className="stagex-floating-actions-pill pointer-events-auto flex items-center gap-1 p-1 rounded-full"
             style={{
-              background: isAmoled
-                ? 'rgba(10, 10, 12, 0.88)'
-                : isLight
-                  ? 'rgba(255, 255, 255, 0.85)'
-                  : 'rgba(20, 20, 26, 0.80)',
-              border: isAmoled
-                ? '1px solid rgba(255, 255, 255, 0.12)'
-                : isLight
-                  ? '1px solid rgba(0, 0, 0, 0.08)'
-                  : '1px solid rgba(255, 255, 255, 0.10)',
-              backdropFilter: 'var(--surface-float-blur)',
-              WebkitBackdropFilter: 'var(--surface-float-blur)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+              background: 'var(--surface-pill-bg)',
+              border: 'var(--surface-pill-border)',
+              backdropFilter: 'var(--surface-pill-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+              boxShadow: 'var(--surface-pill-shadow)',
             }}
           >
             {/* 0. Exit Landscape Button (Active in landscape mode) */}
