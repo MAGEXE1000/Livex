@@ -203,4 +203,38 @@ describe('Livex Three-State Theme Architecture', () => {
       expect(localStorage.getItem('livex-persisted-theme')).toBe('amoled');
     });
   });
+
+  describe('AMOLED TopBar Liquid Glass Tokens & Performance Invariants', () => {
+    it('verifies :root.amoled defines restrained frosted glass tokens and obsidian material', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const tokensPath = path.resolve(__dirname, '../../../../../ui-shared/src/styles/tokens.css');
+      const css = fs.readFileSync(tokensPath, 'utf-8');
+
+      // 1. :root.amoled must enable restrained Liquid Glass blur tier
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--glass-tier:\s*blur;/);
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--glass-blur-radius:\s*8px;/);
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--surface-topbar-blur:\s*var\(--glass-blur\);/);
+
+      // 2. :root.amoled must use obsidian near-black material (not pure flat 0,0,0)
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--surface-topbar-bg:\s*rgba\(10,\s*10,\s*14,\s*0\.75\);/);
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--surface-float-bg:\s*rgba\(10,\s*10,\s*14,\s*0\.75\);/);
+
+      // 3. :root.amoled must use restrained hairline border and elevation shadow with rim highlight
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--surface-topbar-border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.08\);/);
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*inset 0 1px 0 0 rgba\(255,\s*255,\s*255,\s*0\.08\)/);
+
+      // 4. :root.amoled must define valid --surface-topbar-backdrop token
+      expect(css).toMatch(/:root\.amoled\s*\{[^}]*--surface-topbar-backdrop:\s*var\(--surface-topbar-blur\)\s*saturate\(140%\);/);
+
+      // 5. AMOLED performance mode & solid tier overrides must drop blur to none and bg to #000000
+      expect(css).toMatch(/:root\.amoled\[data-perf-mode="on"\],\s*:root\.amoled\[data-glass-tier="translucent"\],\s*:root\.amoled\[data-glass-tier="none"\],\s*:root\.amoled\[data-glass-tier="solid"\]\s*\{[^}]*--surface-topbar-bg:\s*#000000;/);
+      expect(css).toMatch(/:root\.amoled\[data-perf-mode="on"\],\s*:root\.amoled\[data-glass-tier="translucent"\],\s*:root\.amoled\[data-glass-tier="none"\],\s*:root\.amoled\[data-glass-tier="solid"\]\s*\{[^}]*--surface-topbar-blur:\s*none;/);
+
+      // 6. Reduced motion preference must drop AMOLED blur to none and bg to #000000
+      const reducedMotionBlocks = Array.from(css.matchAll(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?\n\})/g)).map(m => m[1]).join('\n');
+      expect(reducedMotionBlocks).toMatch(/:root\.amoled\s*\{[\s\S]*?--surface-topbar-blur:\s*none;/);
+      expect(reducedMotionBlocks).toMatch(/:root\.amoled\s*\{[\s\S]*?--surface-topbar-bg:\s*#000000;/);
+    });
+  });
 });

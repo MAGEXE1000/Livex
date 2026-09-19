@@ -334,8 +334,8 @@ export function SharedFloatingHeader({
             borderRadius: 'inherit',
             background: 'var(--surface-topbar-bg)',
             border: 'var(--surface-topbar-border)',
-            backdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
-            WebkitBackdropFilter: 'var(--surface-topbar-blur) saturate(140%)',
+            backdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
+            WebkitBackdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
@@ -367,7 +367,7 @@ export function SharedFloatingHeader({
               background: isLight
                 ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, transparent 100%)'
                 : isAmoled
-                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 100%)'
+                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 100%)'
                 : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.10) 0%, transparent 100%)',
               pointerEvents: 'none',
             }}
