@@ -6,6 +6,7 @@ import {
   stopTunerReferenceAudio,
   getActiveReferencePlayback,
   isReferencePlaybackActive,
+  clearTunerReferenceCache,
 } from '../src/lib/tuner/tunerReferenceAudio';
 import { TUNER_SAMPLE_DATA } from '../src/lib/tuner/tunerSampleData';
 import {
@@ -29,6 +30,7 @@ class MockAudioBuffer {
 }
 
 class MockGainNode {
+  context: any = { currentTime: 1.0 };
   gain = {
     value: 1,
     setValueAtTime: vi.fn(),
@@ -58,7 +60,11 @@ class MockAudioContext {
   state = 'running';
   destination = {};
   createBufferSource = vi.fn(() => new MockBufferSourceNode());
-  createGain = vi.fn(() => new MockGainNode());
+  createGain = vi.fn(() => {
+    const g = new MockGainNode();
+    g.context = this;
+    return g;
+  });
   decodeAudioData = vi.fn().mockResolvedValue(new MockAudioBuffer());
   resume = vi.fn().mockResolvedValue(undefined);
   close = vi.fn().mockResolvedValue(undefined);
@@ -69,11 +75,13 @@ describe('Tuner Realistic Reference Audio Engine', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearTunerReferenceCache();
     mockCtx = new MockAudioContext();
   });
 
   afterEach(() => {
     stopTunerReferenceAudio();
+    clearTunerReferenceCache();
   });
 
   describe('Mode to Instrument Family Mapping', () => {
@@ -347,6 +355,228 @@ describe('Tuner Realistic Reference Audio Engine', () => {
 
       stopTunerReferenceAudio();
       expect(isReferencePlaybackActive()).toBe(false);
+    });
+
+    it('cancels pending in-flight async load when a newer string note is tapped', async () => {
+      let resolveFirstLoad: () => void = () => {};
+
+      // Custom mock context that pauses the first decodeAudioData
+      let decodeCount = 0;
+      const slowCtx = new MockAudioContext();
+      slowCtx.decodeAudioData = vi.fn().mockImplementation(() => {
+        decodeCount++;
+        if (decodeCount === 1) {
+          return new Promise((resolve) => {
+            resolveFirstLoad = () => resolve(new MockAudioBuffer());
+          });
+        }
+        return Promise.resolve(new MockAudioBuffer());
+      });
+
+      const stringE2 = STANDARD_GUITAR_STRINGS[0]; // E2
+      const stringA2 = STANDARD_GUITAR_STRINGS[1]; // A2
+
+      // Tap 1: starts loading E2 (in-flight, held by promise)
+      const tap1Promise = playTunerReferenceString({
+        target: stringE2,
+        mode: 'acoustic',
+        refA4: 440,
+        audioCtx: slowCtx as any,
+      });
+
+      // Small tick to ensure async load reaches decodeAudioData
+      await new Promise((r) => setTimeout(r, 20));
+
+      // Tap 2: immediately taps A2
+      const tap2Promise = playTunerReferenceString({
+        target: stringA2,
+        mode: 'acoustic',
+        refA4: 440,
+        audioCtx: slowCtx as any,
+      });
+
+      await tap2Promise;
+
+      // Active playback must be A2
+      expect(getActiveReferencePlayback()?.target.fullName).toBe('A2');
+      const sourcesAfterTap2 = slowCtx.createBufferSource.mock.results.length;
+
+      // Now resolve Tap 1 late
+      resolveFirstLoad();
+      await tap1Promise;
+
+      // Tap 1's resolved sample must be discarded due to monotonic token!
+      // No extra source node was started for the stale Tap 1!
+      expect(slowCtx.createBufferSource.mock.results.length).toBe(sourcesAfterTap2);
+      expect(getActiveReferencePlayback()?.target.fullName).toBe('A2');
+
+      stopTunerReferenceAudio();
+    });
+
+    it('cancels in-flight load when stopTunerReferenceAudio is called before decode completes', async () => {
+      let resolveLoad: () => void = () => {};
+      const slowCtx = new MockAudioContext();
+      slowCtx.decodeAudioData = vi.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          resolveLoad = () => resolve(new MockAudioBuffer());
+        });
+      });
+
+      const stringE2 = STANDARD_GUITAR_STRINGS[0];
+      const playPromise = playTunerReferenceString({
+        target: stringE2,
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: slowCtx as any,
+      });
+
+      // Small tick to ensure async load reaches decodeAudioData
+      await new Promise((r) => setTimeout(r, 20));
+
+      // Stop called while decode is pending
+      stopTunerReferenceAudio();
+
+      // Resolve load
+      resolveLoad();
+      await playPromise;
+
+      // No buffer source was started
+      expect(slowCtx.createBufferSource).not.toHaveBeenCalled();
+      expect(getActiveReferencePlayback()).toBeNull();
+    });
+
+    it('supports Acoustic Guitar Half-Step Down (Eb2) with exact semitone pitch shift', async () => {
+      const halfStepDownE = {
+        name: 'Eb2',
+        note: 'Eb',
+        octave: 2,
+        fullName: 'Eb2',
+        frequency: 77.78,
+        stringNumber: 6,
+      };
+
+      await playTunerReferenceString({
+        target: halfStepDownE,
+        mode: 'acoustic',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(mockCtx.createBufferSource).toHaveBeenCalled();
+      const lastSource = mockCtx.createBufferSource.mock.results[0].value as MockBufferSourceNode;
+      // Eb2 is 1 semitone below E2 anchor (39 - 40 = -1), rate = 2^(-1/12) ≈ 0.94387
+      const expectedRate = Math.pow(2, -1 / 12);
+      expect(lastSource.playbackRate.value).toBeCloseTo(expectedRate, 3);
+    });
+
+    it('supports Electric Guitar Drop C (C2) with -4 semitone pitch shift from E2 anchor', async () => {
+      const dropCString6 = {
+        name: 'Low C',
+        note: 'C',
+        octave: 2,
+        fullName: 'C2',
+        frequency: 65.41,
+        stringNumber: 6,
+      };
+
+      await playTunerReferenceString({
+        target: dropCString6,
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(mockCtx.createBufferSource).toHaveBeenCalled();
+      const lastSource = mockCtx.createBufferSource.mock.results[0].value as MockBufferSourceNode;
+      // C2 (36) is 4 semitones below E2 anchor (40), rate = 2^(-4/12) ≈ 0.7937
+      const expectedRate = Math.pow(2, -4 / 12);
+      expect(lastSource.playbackRate.value).toBeCloseTo(expectedRate, 3);
+    });
+
+    it('supports 4-string Bass Half-Step Down (Eb1) with -1 semitone shift from E1 anchor', async () => {
+      const bassEb1 = {
+        name: 'Eb1',
+        note: 'Eb',
+        octave: 1,
+        fullName: 'Eb1',
+        frequency: 38.89,
+        stringNumber: 4,
+      };
+
+      await playTunerReferenceString({
+        target: bassEb1,
+        mode: 'bass-4',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(mockCtx.createBufferSource).toHaveBeenCalled();
+      const lastSource = mockCtx.createBufferSource.mock.results[0].value as MockBufferSourceNode;
+      // Eb1 is 1 semitone below E1 anchor (27 - 28 = -1), rate = 2^(-1/12) ≈ 0.94387
+      const expectedRate = Math.pow(2, -1 / 12);
+      expect(lastSource.playbackRate.value).toBeCloseTo(expectedRate, 3);
+    });
+
+    it('silences reference audio immediately when engine.setMode is called', async () => {
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'electric',
+        referenceA4: 440,
+      });
+
+      await playTunerReferenceString({
+        target: STANDARD_GUITAR_STRINGS[0],
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+
+      // Switching mode silences active reference
+      engine.setMode('bass-4');
+      expect(isReferencePlaybackActive()).toBe(false);
+
+      engine.destroy();
+    });
+
+    it('silences reference audio immediately when engine.setTuning is called', async () => {
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'electric',
+        referenceA4: 440,
+      });
+
+      await playTunerReferenceString({
+        target: STANDARD_GUITAR_STRINGS[0],
+        mode: 'electric',
+        refA4: 440,
+        audioCtx: mockCtx as any,
+      });
+
+      expect(isReferencePlaybackActive()).toBe(true);
+
+      // Switching tuning silences active reference
+      engine.setTuning('guitar-drop-d');
+      expect(isReferencePlaybackActive()).toBe(false);
+
+      engine.destroy();
+    });
+
+    it('reuses engine.audioCtx when calling engine.playStringReference', async () => {
+      const engine = new TunerAudioEngine({
+        instrumentMode: 'acoustic',
+        referenceA4: 440,
+      });
+
+      // Inject mockCtx as the engine's active audioCtx
+      (engine as any).audioCtx = mockCtx;
+
+      await engine.playStringReference(STANDARD_GUITAR_STRINGS[0]);
+
+      // mockCtx was used to create buffer source and gain
+      expect(mockCtx.createBufferSource).toHaveBeenCalled();
+      expect(mockCtx.createGain).toHaveBeenCalled();
+
+      engine.destroy();
     });
   });
 });

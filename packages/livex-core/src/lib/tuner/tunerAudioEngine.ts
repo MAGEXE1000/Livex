@@ -94,6 +94,7 @@ export class TunerAudioEngine {
   public setMode(newMode: InstrumentTuningMode) {
     if (this.mode === newMode) return;
     this.mode = newMode;
+    stopTunerReferenceAudio();
     if (!this.activeTuning.instrumentCompatibility.includes(newMode)) {
       this.activeTuning = getDefaultTuningForMode(newMode);
     }
@@ -107,6 +108,7 @@ export class TunerAudioEngine {
   public setTuning(tuning: InstrumentTuningDefinition | string): void {
     const resolved = typeof tuning === 'string' ? getTuningById(tuning) : tuning;
     if (!resolved) return;
+    stopTunerReferenceAudio();
     this.activeTuning = resolved;
     if (!resolved.instrumentCompatibility.includes(this.mode)) {
       this.setMode(resolved.instrumentCompatibility[0]);
@@ -156,6 +158,7 @@ export class TunerAudioEngine {
       target,
       mode: activeMode,
       refA4: this.refA4,
+      audioCtx: this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined,
     });
   }
 
@@ -164,7 +167,10 @@ export class TunerAudioEngine {
    */
   public preloadReferenceAudio(mode?: InstrumentTuningMode): void {
     const activeMode = mode || this.mode;
-    preloadTunerReferenceAudio(activeMode);
+    preloadTunerReferenceAudio(
+      activeMode,
+      this.audioCtx && this.audioCtx.state !== 'closed' ? this.audioCtx : undefined
+    );
   }
 
   /**

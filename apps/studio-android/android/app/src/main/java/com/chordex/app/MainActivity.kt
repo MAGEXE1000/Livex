@@ -229,12 +229,17 @@ class MainActivity : BridgeActivity() {
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
             if (audioManager != null) {
                 val currentMode = audioManager.mode
-                // Do not collide with an active cellular phone call or VoIP communication session (e.g. WhatsApp, Meet, Zoom)
-                if (currentMode != android.media.AudioManager.MODE_IN_CALL &&
-                    currentMode != android.media.AudioManager.MODE_IN_COMMUNICATION &&
-                    currentMode != android.media.AudioManager.MODE_NORMAL) {
-                    audioManager.mode = android.media.AudioManager.MODE_NORMAL
-                    android.util.Log.i("LivexAudio", "Enforced AudioManager.MODE_NORMAL (previous mode: $currentMode)")
+                // Do not collide with an active cellular phone call
+                if (currentMode != android.media.AudioManager.MODE_IN_CALL) {
+                    if (currentMode != android.media.AudioManager.MODE_NORMAL) {
+                        audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                        android.util.Log.i("LivexAudio", "Enforced AudioManager.MODE_NORMAL (previous mode: $currentMode)")
+                    }
+                    try {
+                        audioManager.isSpeakerphoneOn = true
+                    } catch (se: Exception) {
+                        android.util.Log.w("LivexAudio", "Could not set isSpeakerphoneOn: ${se.message}")
+                    }
                 }
             }
         } catch (e: Exception) {

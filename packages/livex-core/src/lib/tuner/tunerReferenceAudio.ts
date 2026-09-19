@@ -2,12 +2,13 @@ import type { InstrumentStringTarget, InstrumentTuningMode } from './tunerTypes'
 import { createAudioContext } from '../audioContextOptions';
 import { drumAssetUrl } from '../storage/assetCache';
 import { loadAudioSample } from '../audio/audioSampleLoader';
+import { TUNER_SAMPLE_DATA } from './tunerSampleData';
 import type { DrumPartId, DrumTensionId } from './drumTuningModels';
 import { DRUM_PARTS, findNearestDrumPart } from './drumTuningModels';
 
 let playbackAudioCtx: AudioContext | null = null;
 const decodedBufferCache = new Map<string, AudioBuffer>();
-let sampleBankPromise: Promise<Record<string, Record<string, string>>> | null = null;
+let currentPlaybackId = 0;
 
 let activeSources: AudioBufferSourceNode[] = [];
 let activeGainNodes: GainNode[] = [];
@@ -38,8 +39,15 @@ export function isReferencePlaybackActive(): boolean {
 }
 
 /**
+ * Clears decoded AudioBuffer cache for memory reclamation or test isolation.
+ */
+export function clearTunerReferenceCache(): void {
+  decodedBufferCache.clear();
+}
+
+/**
  * Provides a dedicated, isolated AudioContext for reference string playback.
- * Strictly decoupled from microphone capture AudioContext to prevent any audio feedback or loopback.
+ * Used as a fallback when the main TunerAudioEngine AudioContext is not active.
  */
 export function getPlaybackAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -55,23 +63,6 @@ export function getPlaybackAudioContext(): AudioContext | null {
     playbackAudioCtx.resume().catch(() => {});
   }
   return playbackAudioCtx;
-}
-
-/**
- * Lazy loads the base64 sample bank as an isolated chunk.
- * Keeps initial application bundle small and startup instantaneous.
- */
-async function getSampleBank(): Promise<Record<string, Record<string, string>>> {
-  if (!sampleBankPromise) {
-    sampleBankPromise = import('./tunerSampleData')
-      .then((mod) => mod.TUNER_SAMPLE_DATA)
-      .catch((err) => {
-        sampleBankPromise = null;
-        console.warn('[tunerReferenceAudio] Failed to load tuner sample data:', err);
-        return {};
-      });
-  }
-  return sampleBankPromise;
 }
 
 /**
@@ -208,8 +199,7 @@ export async function preloadTunerReferenceAudio(
 
   const family = getFamilyForMode(mode);
   try {
-    const bank = await getSampleBank();
-    const familyBank = bank[family];
+    const familyBank = TUNER_SAMPLE_DATA[family];
     if (!familyBank) return;
 
     const notes = Object.keys(familyBank);
@@ -222,15 +212,20 @@ export async function preloadTunerReferenceAudio(
 }
 
 /**
- * Smoothly stops in-flight reference playback with a fast 25ms anti-click ramp.
+ * Smoothly stops in-flight reference playback with a fast 25ms anti-click ramp
+ * and cancels any pending asynchronous sample loading requests.
  */
 export function stopTunerReferenceAudio(): void {
+  currentPlaybackId++;
+  stopTunerReferenceAudioInternal();
+}
+
+function stopTunerReferenceAudioInternal(): void {
   activePlaybackInfo = null;
-  const ctx = playbackAudioCtx;
-  const now = ctx ? ctx.currentTime : 0;
 
   activeGainNodes.forEach((g) => {
     try {
+      const now = g.context ? g.context.currentTime : 0;
       g.gain.setValueAtTime(g.gain.value, now);
       g.gain.linearRampToValueAtTime(0.0001, now + 0.025);
     } catch {}
@@ -335,19 +330,21 @@ export async function playTunerReferenceString(
   const { target, mode, refA4 = 440, volume = 0.8, audioCtx } = options;
   if (!target || !target.fullName) return;
 
+  const playbackId = ++currentPlaybackId;
+
+  // Smoothly fade out previous string reference
+  stopTunerReferenceAudioInternal();
+
   const ctx = audioCtx && audioCtx.state !== 'closed' ? audioCtx : getPlaybackAudioContext();
   if (!ctx) return;
 
   if (ctx.state === 'suspended') {
     await ctx.resume().catch(() => {});
   }
-
-  // Smoothly fade out previous string reference
-  stopTunerReferenceAudio();
+  if (playbackId !== currentPlaybackId) return;
 
   const family = getFamilyForMode(mode);
-  const bank = await getSampleBank();
-  const familyBank = bank[family];
+  const familyBank = TUNER_SAMPLE_DATA[family];
   if (!familyBank) return;
 
   const targetMidi = noteNameToMidi(target.fullName);
@@ -365,7 +362,12 @@ export async function playTunerReferenceString(
   }
 
   const buffer = await getOrDecodeNoteBuffer(ctx, family, sampleNoteName);
-  if (!buffer) return;
+  if (!buffer || playbackId !== currentPlaybackId) return;
+
+  if (ctx.state === 'suspended') {
+    await ctx.resume().catch(() => {});
+  }
+  if (ctx.state === 'closed' || playbackId !== currentPlaybackId) return;
 
   const now = ctx.currentTime;
   const source = ctx.createBufferSource();
