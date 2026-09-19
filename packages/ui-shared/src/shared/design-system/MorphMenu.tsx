@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useId } from 'react';
-import { BackDispatcher } from '@workspace/studio-core';
+import { BackDispatcher } from '@workspace/livex-core';
 import { activeOverlaysRegistry } from './dialogs';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { StudioIcon } from '../icons/StudioIcon';

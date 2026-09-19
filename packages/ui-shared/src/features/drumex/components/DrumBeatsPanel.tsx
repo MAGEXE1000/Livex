@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/studio-core';
+import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/livex-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';

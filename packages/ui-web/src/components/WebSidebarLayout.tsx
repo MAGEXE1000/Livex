@@ -14,7 +14,7 @@ import {
   REGISTERED_APPS,
   getUserCover,
   subscribeUserCover,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   StudioLogo,
   ChordexLogo,

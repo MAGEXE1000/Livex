@@ -1,6 +1,7 @@
 import type { InstrumentStringTarget, InstrumentTuningMode } from './tunerTypes';
 import { createAudioContext } from '../audioContextOptions';
 import { drumAssetUrl } from '../storage/assetCache';
+import { loadAudioSample } from '../audio/audioSampleLoader';
 import type { DrumPartId, DrumTensionId } from './drumTuningModels';
 import { DRUM_PARTS, findNearestDrumPart } from './drumTuningModels';
 
@@ -94,28 +95,14 @@ async function getOrDecodeNoteBuffer(
   const cached = decodedBufferCache.get(cacheKey);
   if (cached) return cached;
 
-  const bank = await getSampleBank();
-  const familyBank = bank[family];
-  const b64 = familyBank ? familyBank[noteName] : null;
-  if (!b64) {
+  const sample = await loadAudioSample(ctx, `/audio/tuner/${family}/${noteName}.mp3`);
+  if (!sample) {
     console.warn(`[tunerReferenceAudio] Sample not found for ${family}:${noteName}`);
     return null;
   }
 
-  try {
-    const binStr =
-      typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
-    const bytes = new Uint8Array(binStr.length);
-    for (let i = 0; i < binStr.length; i++) {
-      bytes[i] = binStr.charCodeAt(i);
-    }
-    const buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-    decodedBufferCache.set(cacheKey, buffer);
-    return buffer;
-  } catch (err) {
-    console.warn(`[tunerReferenceAudio] Failed to decode sample for ${family}:${noteName}`, err);
-    return null;
-  }
+  decodedBufferCache.set(cacheKey, sample);
+  return sample;
 }
 
 // ── Authoritative House Kit Sample Mapping for Drum Tuner ─────────────────────

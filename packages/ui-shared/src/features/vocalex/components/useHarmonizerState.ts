@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { type TakeRecord, blobToAudioBuffer, createAudioContext, useT } from '@workspace/studio-core';
+import { type TakeRecord, blobToAudioBuffer, createAudioContext, useT } from '@workspace/livex-core';
 import {
   HARMONIES,
   DEFAULT_HARMONY_LAYERS,

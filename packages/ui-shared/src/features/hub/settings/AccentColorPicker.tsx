@@ -7,7 +7,7 @@ import {
   DEFAULT_ACCENT_ID,
   resolveAccent,
   useT,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 

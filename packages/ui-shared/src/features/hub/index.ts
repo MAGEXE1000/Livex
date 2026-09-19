@@ -1,7 +1,7 @@
 // features/hub/index.ts — Hub module public API
 
 // Components
-export { default as StudioHub } from './components/StudioHub';
+export { default as LivexHub, default as StudioHub } from './components/LivexHub';
 export { HubAppGrid } from './components/HubAppGrid';
 
 // Navigation
@@ -18,7 +18,7 @@ export {
 
 
 // Settings
-export { default as StudioHubSettingsPanel } from './settings/StudioHubSettingsPanel';
+export { default as LivexHubSettingsPanel, default as StudioHubSettingsPanel } from './settings/LivexHubSettingsPanel';
 export { default as HubChangelogSection } from './settings/HubChangelogSection';
 
 // Icons

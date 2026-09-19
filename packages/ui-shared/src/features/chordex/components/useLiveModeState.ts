@@ -8,8 +8,8 @@ import {
   resolveAccent,
   useSettingsStore,
   useShallow,
-} from '@workspace/studio-core';
-import type { SongPreset, GuitarChordData } from '@workspace/studio-core';
+} from '@workspace/livex-core';
+import type { SongPreset, GuitarChordData } from '@workspace/livex-core';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
 export type BeatsPerChord = 1 | 2 | 4 | 8;

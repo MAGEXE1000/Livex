@@ -10,7 +10,7 @@ import {
   NavigationDispatcher,
   type Instrument,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React, { useRef, useMemo } from 'react';
 import {
   Toggle,

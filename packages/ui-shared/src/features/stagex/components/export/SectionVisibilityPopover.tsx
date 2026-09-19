@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 import type {
   ProductionDocumentData,
   ProductionDocumentSectionsConfig,

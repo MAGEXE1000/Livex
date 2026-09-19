@@ -1,4 +1,4 @@
-import { UserProfile, AuthUser, useSettingsStore } from '@workspace/studio-core';
+import { UserProfile, AuthUser, useSettingsStore } from '@workspace/livex-core';
 import React from 'react';
 import { Button } from '../../../shared/design-system/buttons';
 import {
@@ -146,7 +146,7 @@ interface Props {
   isLight?: boolean;
 }
 
-function StudioPricingSection({
+function LivexPricingSectionBase({
   accent,
   lang = 'en',
   profile,
@@ -1029,7 +1029,7 @@ function StudioPricingSection({
   );
 }
 
-const MemoizedStudioPricingSection = React.memo(StudioPricingSection, (prevProps, nextProps) => {
+const MemoizedLivexPricingSection = React.memo(LivexPricingSectionBase, (prevProps, nextProps) => {
   return (
     prevProps.lang === nextProps.lang &&
     prevProps.profile?.role === nextProps.profile?.role &&
@@ -1045,4 +1045,6 @@ const MemoizedStudioPricingSection = React.memo(StudioPricingSection, (prevProps
   );
 });
 
-export default MemoizedStudioPricingSection;
+export const LivexPricingSection = MemoizedLivexPricingSection;
+export const StudioPricingSection = MemoizedLivexPricingSection;
+export default MemoizedLivexPricingSection;

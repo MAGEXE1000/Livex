@@ -2,7 +2,7 @@
  * updater/index.ts
  *
  * Barrel re-exporting the entire Updater updater public API.
- * Consumers can import from '@workspace/studio-core' or 'lib/updater'
+ * Consumers can import from '@workspace/livex-core' or 'lib/updater'
  * without knowing the internal sub-module structure.
  */
 

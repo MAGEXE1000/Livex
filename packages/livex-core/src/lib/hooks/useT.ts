@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useChordStore } from '../../store/useChordStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import i18n from '../i18n-lib/i18nSetup';
+import i18n, { ensureLocaleLoaded } from '../i18n-lib/i18nSetup';
 import type { Translations } from '../i18n-lib/i18n';
 
 function deepMerge<T>(base: T, override: unknown): T {
@@ -133,5 +133,15 @@ function buildTranslations(lang: string): Translations {
 
 export function useT(): Translations {
   const language = useSettingsStore((s) => s.settings.language);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (language && language !== 'en') {
+      void ensureLocaleLoaded(language).then(() => {
+        setTick((t) => t + 1);
+      });
+    }
+  }, [language]);
+
   return useMemo(() => buildTranslations(language), [language]);
 }

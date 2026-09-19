@@ -19,7 +19,7 @@ import {
   useBackHandler,
   useShallow,
   useChordStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { SharedNavigationBar } from './SharedNavigationBar';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
 import { IconSongs, IconLibrary, IconSettings } from '../icons/NavIcons';

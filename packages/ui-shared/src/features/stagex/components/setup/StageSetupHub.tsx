@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
-import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/studio-core';
+import { useT, useIsWebDesktop, useScrollHide, useSettingsStore, useShallow } from '@workspace/livex-core';
 import { StudioHeader } from '../../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';

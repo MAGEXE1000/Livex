@@ -6,7 +6,7 @@ import {
   useSettingsStore,
   useNavigationStore,
   getLogs,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { ActionButton } from '@workspace/ui-shared/src/shared/design-system/buttons';
 import { MorphingModal } from '@workspace/ui-shared/src/components/motion/morphing-modal';
 import { BouncyAccordion } from '@workspace/ui-shared/src/components/motion/bouncy-accordion';

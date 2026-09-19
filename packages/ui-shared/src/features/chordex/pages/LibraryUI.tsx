@@ -9,7 +9,7 @@ import {
   useSettingsStore,
   useT,
   type Instrument,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import GuitarDiagram from '../diagrams/GuitarDiagram';
 import PianoDiagram from '../diagrams/PianoDiagram';
 import FourStringDiagram from '../diagrams/FourStringDiagram';

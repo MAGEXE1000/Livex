@@ -36,7 +36,7 @@ export function validateChangelog(options = {}) {
   }
 
   // 2. Resolve target versionName
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
   let versionName = options.version || '';
   if (!versionName && fs.existsSync(appVersionPath)) {
     const src = fs.readFileSync(appVersionPath, 'utf8');

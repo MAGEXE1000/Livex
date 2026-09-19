@@ -13,7 +13,7 @@ import {
   nativeLogs,
   getTransitionHistory,
   getRejectedTransitions,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { copyToClipboard } from './centralizedClipboard';
 import { CopyIcon } from '../../../components/ui/copy';
 import {

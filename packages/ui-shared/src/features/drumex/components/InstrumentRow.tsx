@@ -7,7 +7,7 @@ import {
   INSTRUMENT_COLOR,
   DEFAULT_VELOCITY,
   MAX_VELOCITY,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { NoteHead } from './DrumNoteHeads';
 
 const CORE_INSTS: DrumInstrument[] = ['hihat-closed', 'snare', 'kick', 'crash'];

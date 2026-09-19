@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useBackHandler, useT, useSettingsStore } from '@workspace/studio-core';
+import { useBackHandler, useT, useSettingsStore } from '@workspace/livex-core';
 import { useStagexStore } from '../state/useStagexStore';
 import { STAGEX_ICON_MAP, localizeElementName } from '../constants';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';

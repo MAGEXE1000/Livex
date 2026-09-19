@@ -1,6 +1,6 @@
 import React, { forwardRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import { StudioIcon } from '../icons/StudioIcon';
 
 // ── 6. Input ───────────────────────────────────────────────────────────────

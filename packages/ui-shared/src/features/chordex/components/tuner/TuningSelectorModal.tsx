@@ -4,13 +4,13 @@ import { X } from 'lucide-react';
 import type {
   InstrumentTuningDefinition,
   InstrumentTuningMode,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   getTuningsForMode,
   useSettingsStore,
   getEffectiveThemeState,
   resolveAccent,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 export interface TuningSelectorModalProps {
   isOpen: boolean;

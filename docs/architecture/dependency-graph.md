@@ -68,7 +68,7 @@ graph TD
 | --------- | ------------------------------------------------ |
 | Framework | `react`, `react-dom`                             |
 | Animation | `motion` (Framer Motion), `gsap`, `lottie-react` |
-| State     | `zustand` (via `@workspace/studio-core`)         |
+| State     | `zustand` (via `@workspace/livex-core`)         |
 | Platform  | `@capacitor/core`                                |
 | Audio     | `pitchy` (pitch detection)                       |
 | i18n      | `@tolgee/react`                                  |
@@ -77,7 +77,7 @@ graph TD
 
 | Category   | Dependencies                                     |
 | ---------- | ------------------------------------------------ |
-| Re-exports | `@workspace/ui-shared`, `@workspace/studio-core` |
+| Re-exports | `@workspace/ui-shared`, `@workspace/livex-core` |
 | Platform   | `@capacitor/core`, Capacitor plugins             |
 | Animation  | `motion`, `gsap`, `lottie-react`                 |
 | Auth       | `firebase`                                       |
@@ -86,7 +86,7 @@ graph TD
 
 | Category           | Dependencies                                     |
 | ------------------ | ------------------------------------------------ |
-| Re-exports         | `@workspace/ui-shared`, `@workspace/studio-core` |
+| Re-exports         | `@workspace/ui-shared`, `@workspace/livex-core` |
 | Same as ui-android | (identical dependency list)                      |
 
 ## Internal Module Dependencies

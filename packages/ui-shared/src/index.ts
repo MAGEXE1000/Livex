@@ -6,16 +6,16 @@ export { default as ElasticSlider } from './shared/progress/ElasticSlider';
 export { default as GradientBorderCard } from './shared/cards/GradientBorderCard';
 export { default as SmartLoading, AppLoadingScreen } from './shared/loading/SmartLoading';
 export { SharedNavigationContainer } from './navigation/SharedNavigationContainer';
-export { StudioPageTransition, UNIFIED_NAV_TRANSITION } from './components/StudioPageTransition';
-export { default as StudioCountUpPercentage } from './shared/progress/StudioCountUpPercentage';
-export { default as StudioProgressBar } from './shared/progress/StudioProgressBar';
+export { LivexPageTransition, StudioPageTransition, UNIFIED_NAV_TRANSITION } from './components/LivexPageTransition';
+export { default as LivexCountUpPercentage, default as StudioCountUpPercentage } from './shared/progress/LivexCountUpPercentage';
+export { default as LivexProgressBar, default as StudioProgressBar } from './shared/progress/LivexProgressBar';
 export * from './components/motion';
 export { default as InkThemeToggle } from './shared/typography/InkThemeToggle';
 export {
   triggerIntroReveal,
   subscribeIntroDone,
 } from './shared/animation/introSignal';
-export { default as StudioUpdateAuroraBackground } from './features/updater/components/StudioUpdateAuroraBackground';
+export { default as LivexUpdateAuroraBackground, default as StudioUpdateAuroraBackground } from './features/updater/components/LivexUpdateAuroraBackground';
 export { ErrorBoundary } from './shared/feedback/ErrorBoundary';
 export { RootAppCrashReportUI } from './shared/feedback/RootAppCrashReportUI';
 export * from './features/chordex/icons/ChordexLogo';
@@ -23,9 +23,11 @@ export { default as PianoDiagram } from './features/chordex/diagrams/PianoDiagra
 export { default as GuitarDiagram } from './features/chordex/diagrams/GuitarDiagram';
 export { default as FourStringDiagram } from './features/chordex/diagrams/FourStringDiagram';
 export { default as ChordDiagram } from './features/chordex/diagrams/ChordDiagram';
+export * from './shared/loading/LivexSkeleton';
 export * from './shared/loading/StudioSkeleton';
 export { LibraryPanel } from './features/chordex';
 export { AnimatedIcon } from './shared/icons/AnimatedIcon';
+export * from './shared/icons/LivexIcon';
 export * from './shared/icons/StudioIcon';
 export * from './shared/icons/bakaiIconLibrary';
 export { LiquidSurfaceEngine } from './shared/liquid/LiquidSurfaceEngine';
@@ -33,7 +35,7 @@ export { LiquidSurfaceEngine } from './shared/liquid/LiquidSurfaceEngine';
 export { SaxophonePracticePanel } from './features/chordex/pages/SaxophonePracticePanel';
 export { SaxophoneView } from './features/chordex/components/SaxophoneView';
 export { default as SettingsPanel } from './panels/SettingsPanel';
-export { default as StudioHubSettingsPanel } from './features/hub/settings/StudioHubSettingsPanel';
+export { default as LivexHubSettingsPanel, default as StudioHubSettingsPanel } from './features/hub/settings/LivexHubSettingsPanel';
 export { default as ChordexPreferencesPanel } from './features/chordex/preferences/ChordexPreferencesPanel';
 export { default as HubChangelogSection } from './features/hub/settings/HubChangelogSection';
 export { SongsPanel } from './features/chordex';
@@ -41,7 +43,7 @@ export { DrumEditor } from './features/drumex';
 export { GroovexApp } from './features/groovex';
 export { VocalexApp } from './features/vocalex';
 export { StageCorePanel } from './features/stagex';
-export { default as StudioHub } from './features/hub/components/StudioHub';
+export { default as LivexHub, default as StudioHub } from './features/hub/components/LivexHub';
 export * from './features/hub/icons/NavIcons';
 export * from './shared/animation';
 export { SongPracticeView } from './features/chordex/pages/SongPracticeView';
@@ -56,14 +58,14 @@ export * from './shared/icons/DownloadIcon';
 export { default as PendingDeletionScreen } from './features/auth/screens/PendingDeletionScreen';
 export * from './shared/typography/ScrollFade';
 export * from './shared/settings/SettingControls';
-export { default as StudioAuthCard } from './features/auth/components/StudioAuthCard';
-export { default as StudioPricingSection } from './features/auth/components/StudioPricingSection';
-export { default as StudioUpdateScreen } from './features/updater/components/StudioUpdateScreen';
+export { default as LivexAuthCard, default as StudioAuthCard } from './features/auth/components/LivexAuthCard';
+export { default as LivexPricingSection, default as StudioPricingSection } from './features/auth/components/LivexPricingSection';
+export { default as LivexUpdateScreen, default as StudioUpdateScreen } from './features/updater/components/LivexUpdateScreen';
 export { default as ProfileDropdown } from './features/auth/components/ProfileDropdown';
 
 // Animata
 export { default as AnimatedActionButton } from './shared/animata/container/animated-border-trail';
-export { default as StudioSpinner } from './shared/animata/progress/spinner';
+export { default as LivexSpinner, default as StudioSpinner } from './shared/animata/progress/spinner';
 
 // Motion
 export { Loader, type LoaderProps, type LoaderVariant } from './components/motion';
@@ -86,13 +88,14 @@ export { default as WebAppSectionDock } from './shared/layout/WebAppSectionDock'
 export { default as DevToolsDashboard } from './features/devtools/components/DevToolsDashboard';
 export const DevToolsApp = lazy(() => import('./features/devtools/DevToolsApp'));
 
+export * from './shared/layout/LivexLayoutSystem';
 export * from './shared/layout/StudioLayoutSystem';
 export * from './shared/layout/useScrollMorph';
 export * from './shared/layout/useOverscrollSpring';
 export * from './shared/layout/ScrollMorphHeader';
 export { ProgressiveBlur } from './shared/design-system/ProgressiveBlur';
-export { StudioHeader } from './shared/layout/StudioHeader';
-export { ActionButton } from './shared/design-system/StudioDesignSystem';
+export { LivexHeader, StudioHeader } from './shared/layout/LivexHeader';
+export { ActionButton } from './shared/design-system/LivexDesignSystem';
 export { SharedNavigationBar } from './features/hub/navigation/SharedNavigationBar';
 export { BottomNavigationController } from './features/hub/navigation/BottomNavigationController';
 

@@ -17,7 +17,7 @@ import {
   DRUM_INSTRUMENTS,
   INSTRUMENT_COLOR,
   BackDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import DrumPaperPreview, {
   type DrumExportConfig,

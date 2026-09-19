@@ -4,7 +4,7 @@ import {
   ACCENT_COLORS,
   useT,
   useSettingsStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React from 'react';
 import {
   APP_VERSION,
@@ -13,7 +13,7 @@ import {
   getChangelogSections,
   type ChangelogSection,
   sanitizeUTF8String,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 type Props = {
   open: boolean;
   onClose: () => void;

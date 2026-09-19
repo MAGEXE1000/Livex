@@ -1,12 +1,12 @@
-// Export everything from studio-core
+// Export everything from livex-core
 export { useShallow } from 'zustand/react/shallow';
 export * from './store/useChordStore';
 export * from './store/useDrumStore';
 export * from './store/useMetronomeStore';
 export * from './store/useSessionStore';
 export * from './hooks/useIsWebDesktop';
-export * from './hooks/useStudioPreferences';
-export * from './hooks/useStudioShortcuts';
+export * from './hooks/useLivexPreferences';
+export * from './hooks/useLivexShortcuts';
 export * from './data/chords';
 export * from './data/progressions';
 export * from './data/songs';
@@ -36,7 +36,8 @@ export * from './lib/permissions';
 export * from './lib/pushNotifications';
 export * from './lib/security';
 export * from './lib/studioAppNavigationRegistry';
-export * from './lib/studioShortcutRegistry';
+export * from './lib/livexAppNavigationRegistry';
+export * from './lib/livexShortcutRegistry';
 export * from './lib/supabaseClient';
 export * from './lib/sync';
 export * from './lib/transpose';
@@ -52,7 +53,7 @@ export * from './lib/audio/saxophoneSamples';
 export * from './lib/audio/saxophoneSampleAudio';
 export * from './lib/syncBackends/index';
 
-export { type Language, default as translations } from './lib/i18n';
+export { type Language } from './lib/i18n';
 export * from './lib/devTools';
 export * from './lib/diagnostics/index';
 export * from './lib/devtools/developerInspectorStore';

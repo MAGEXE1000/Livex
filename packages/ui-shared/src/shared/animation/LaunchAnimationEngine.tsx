@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { StartupCoordinator, getStartupAnimationThemeSpec } from '@workspace/studio-core';
+import { StartupCoordinator, getStartupAnimationThemeSpec } from '@workspace/livex-core';
 import { triggerIntroReveal } from './introSignal';
 import livexForm1Url from '../../assets/livex-form1.png';
 import livexForm2Url from '../../assets/livex-form2.png';

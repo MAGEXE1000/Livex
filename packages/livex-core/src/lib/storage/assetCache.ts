@@ -103,6 +103,8 @@ export async function drumAssetUrl(p: string): Promise<string> {
   }
 }
 
+export const audioAssetUrl = drumAssetUrl;
+
 /** Idempotent: returns the same in-flight promise on repeat calls. */
 export function seedAudioAssets(): Promise<void> {
   if (!isNative()) return Promise.resolve();

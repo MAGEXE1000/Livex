@@ -15,7 +15,7 @@ export async function runReleaseDryRun(options = {}) {
   console.log('                 RUNNING RELEASE DRY RUN (NO PUBLISH)              ');
   console.log('====================================================================');
 
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
   let currentVersion = '4.3.54';
   if (fs.existsSync(appVersionPath)) {
     const src = fs.readFileSync(appVersionPath, 'utf8');

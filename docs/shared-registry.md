@@ -1,4 +1,4 @@
-import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/studio-core';
+import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/livex-core';
 # Livex Shared Systems Registry
 
 > **Lead Architect Document** · July 2026 · Version 4.2.4
@@ -362,7 +362,7 @@ Before implementing **any** feature, search this registry. If a shared system ex
 | **Owner**   | `packages/studio-core/src/lib/i18n.ts` + `i18nSetup.ts` + `useT.ts` |
 | **Status**  | ✅ Unified                                                          |
 
-**Public API:** `useT()` hook returns translation function. All apps import from `@workspace/studio-core`.
+**Public API:** `useT()` hook returns translation function. All apps import from `@workspace/livex-core`.
 
 ---
 

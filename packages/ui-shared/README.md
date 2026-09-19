@@ -80,7 +80,7 @@ Each sub-app has its own directory under `features/`:
 
 ## Dependencies
 
-- **Workspace**: `@workspace/studio-core` (stores, navigation, audio, sync, theme, version)
+- **Workspace**: `@workspace/livex-core` (stores, navigation, audio, sync, theme, version)
 - **External**: react, react-dom, motion/react, lucide-react, lottie-react, @capacitor/core, html2canvas
 
 ## Files That Should Rarely Be Modified

@@ -18,17 +18,14 @@ const root = path.resolve(__dirname, '..');
 const drumsDir = path.join(root, 'public/drums');
 const outPath = path.join(root, 'public/audio-manifest.json');
 
-if (!fs.existsSync(drumsDir)) {
-  console.warn('build-audio-manifest: ⚠ public/drums/ missing — writing empty manifest.');
-  fs.writeFileSync(
-    outPath,
-    JSON.stringify({ generatedAt: new Date().toISOString(), files: [] }, null, 2) + '\n'
-  );
-  process.exit(0);
-}
+const audioRoots = [
+  path.join(root, 'public/drums'),
+  path.join(root, 'public/audio'),
+];
 
 const files = [];
 function walk(dir) {
+  if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -43,7 +40,10 @@ function walk(dir) {
     }
   }
 }
-walk(drumsDir);
+
+for (const dir of audioRoots) {
+  walk(dir);
+}
 
 // Sort for deterministic output — keeps git diffs of the manifest
 // minimal when only a handful of files change.

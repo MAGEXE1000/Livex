@@ -15,9 +15,9 @@ export function runReleaseLint() {
   const warnings = [];
 
   // 1. Single Source of Truth for Version
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
   if (!fs.existsSync(appVersionPath)) {
-    errors.push('Canonical version file packages/studio-core/src/lib/startup/appVersion.ts is missing!');
+    errors.push('Canonical version file packages/livex-core/src/lib/startup/appVersion.ts is missing!');
   } else {
     const src = fs.readFileSync(appVersionPath, 'utf8');
     if (!src.includes('NATIVE_VERSION')) {
@@ -55,7 +55,7 @@ export function runReleaseLint() {
   }
 
   console.log(`Audited Architecture:`);
-  console.log(`- Version Source:       packages/studio-core/src/lib/startup/appVersion.ts (NATIVE_VERSION)`);
+  console.log(`- Version Source:       packages/livex-core/src/lib/startup/appVersion.ts (NATIVE_VERSION)`);
   console.log(`- Release Manifest:    release-manifest.json`);
   console.log(`- Release Entry Point:  apps/studio-android/scripts/release-firebase.mjs`);
   console.log(`- Doctor Engine:        apps/studio-android/scripts/releaseDoctor/`);

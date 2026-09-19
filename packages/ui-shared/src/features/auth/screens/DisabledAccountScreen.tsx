@@ -4,7 +4,7 @@ import {
   authRepository,
   userRepository,
   useSettingsStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useState } from 'react';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 

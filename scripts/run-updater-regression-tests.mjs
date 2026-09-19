@@ -179,7 +179,7 @@ globalThis.fetch = async (url, options) => {
 };
 
 // Import compiled modules (require build to be completed first)
-const otaModulePath = path.join(repoRoot, 'packages/studio-core/dist/src/lib/updater/index.js');
+const otaModulePath = path.join(repoRoot, 'packages/livex-core/dist/src/lib/updater/index.js');
 if (!fs.existsSync(otaModulePath)) {
   console.error(
     `Error: Compiled updater index not found at ${otaModulePath}. Run pnpm build first.`
@@ -214,12 +214,12 @@ if (globalThis.window) {
 }
 
 // authoritatively mock the AppInstaller exported object
-const apkDownloaderUrl = `file://${path.join(repoRoot, 'packages/studio-core/dist/src/lib/apkDownloader.js').replace(/\\/g, '/')}`;
+const apkDownloaderUrl = `file://${path.join(repoRoot, 'packages/livex-core/dist/src/lib/apkDownloader.js').replace(/\\/g, '/')}`;
 const { AppInstaller } = await import(apkDownloaderUrl);
 Object.assign(AppInstaller, mockAppInstaller);
 
 const { APP_VERSION } = await import(
-  `file://${path.join(repoRoot, 'packages/studio-core/dist/src/lib/appVersion.js').replace(/\\/g, '/')}`
+  `file://${path.join(repoRoot, 'packages/livex-core/dist/src/lib/appVersion.js').replace(/\\/g, '/')}`
 );
 const [major, minor, patch] = APP_VERSION.split('.').map(Number);
 const currentVersion = APP_VERSION;
@@ -441,7 +441,7 @@ async function runRegressionTests() {
   // Scenario 9: PackageInstaller error mapping
   await runTest('PackageInstaller error status mapping', async () => {
     const { processLastInstallResult } = await import(
-      `file://${path.join(repoRoot, 'packages/studio-core/dist/src/lib/updater/installer.js').replace(/\\/g, '/')}`
+      `file://${path.join(repoRoot, 'packages/livex-core/dist/src/lib/updater/installer.js').replace(/\\/g, '/')}`
     );
 
     const res3 = processLastInstallResult({ statusCode: 3, statusMessage: 'Aborted' });
@@ -472,7 +472,7 @@ async function runRegressionTests() {
 
     // 2. Setup 100 simulated PackageInstaller statuses
     const { triggerSimulatedStatus, updaterSimulation } = await import(
-      `file://${path.join(repoRoot, 'packages/studio-core/dist/src/lib/updater/updaterSimulation.js').replace(/\\/g, '/')}`
+      `file://${path.join(repoRoot, 'packages/livex-core/dist/src/lib/updater/updaterSimulation.js').replace(/\\/g, '/')}`
     );
     updaterSimulation.forceUpdateAvailable = true;
     for (let i = 0; i < 100; i++) {
@@ -488,7 +488,7 @@ async function runRegressionTests() {
 
     // 4. Verify no stuck state listeners or memory leaks
     const { stateListeners } = await import(
-      `file://${path.join(repoRoot, 'packages/studio-core/dist/src/lib/updater/stateMachine.js').replace(/\\/g, '/')}`
+      `file://${path.join(repoRoot, 'packages/livex-core/dist/src/lib/updater/stateMachine.js').replace(/\\/g, '/')}`
     );
     assert.ok(
       stateListeners.size < 5,

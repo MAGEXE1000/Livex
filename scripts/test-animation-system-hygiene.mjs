@@ -69,7 +69,7 @@ runTest('loader.tsx: Spinner offloaded to CSS compositor, no JS motion.svg loop'
 runTest('renderScheduler.ts: Obsolete ota_update enum removed, native_updater present', () => {
   const filePath = path.join(
     rootDir,
-    'packages/studio-core/src/lib/performance/renderScheduler.ts'
+    'packages/livex-core/src/lib/performance/renderScheduler.ts'
   );
   const content = fs.readFileSync(filePath, 'utf-8');
 
@@ -147,7 +147,7 @@ runTest('AnimatedIcon.tsx: State prop connected to animate, no console spam or u
 runTest('performanceProfiler.ts: Visibility change handling and pause/resume lifecycle', () => {
   const filePath = path.join(
     rootDir,
-    'packages/studio-core/src/lib/performance/performanceProfiler.ts'
+    'packages/livex-core/src/lib/performance/performanceProfiler.ts'
   );
   const content = fs.readFileSync(filePath, 'utf-8');
 
@@ -173,7 +173,7 @@ runTest('performanceProfiler.ts: Visibility change handling and pause/resume lif
 runTest('motionProfiler.ts: 15-second safety watchdog to prevent orphaned rAF loops', () => {
   const filePath = path.join(
     rootDir,
-    'packages/studio-core/src/lib/performance/motionProfiler.ts'
+    'packages/livex-core/src/lib/performance/motionProfiler.ts'
   );
   const content = fs.readFileSync(filePath, 'utf-8');
 

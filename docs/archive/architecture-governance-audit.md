@@ -1,4 +1,4 @@
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 # Livex Architecture Governance Audit
 
 > **Principal Architect Review** · July 2026 · Version 4.2.4
@@ -198,7 +198,7 @@ For each subsystem, I answer 7 questions:
 >
 > - Merge the two systems into one canonical file
 > - ESLint custom rule: ban inline `{ type: 'spring', stiffness: ..., damping: ... }` objects
-> - Require all spring configs to be imported from `@workspace/studio-core` SpringPresets
+> - Require all spring configs to be imported from `@workspace/livex-core` SpringPresets
 > - CI grep: count inline spring configs, fail if count increases
 >
 > **Priority:** 🔴 Critical
@@ -462,7 +462,7 @@ Listed in order of impact:
 
 - Verify every app registers bottom nav items
 - Verify every store lives in `studio-core`
-- Verify every feature module imports from `@workspace/studio-core` (not deep paths)
+- Verify every feature module imports from `@workspace/livex-core` (not deep paths)
 - Verify component counts don't increase unexpectedly
 
 ---
@@ -489,11 +489,11 @@ Listed in order of impact:
 
 ### Gap 12: No Dependency Visibility
 
-**Current:** `studio-core/src/index.ts` has 84 `export *` statements. Everything is exported in a flat namespace. Feature modules import 10-15 items per import line from `@workspace/studio-core`.
+**Current:** `studio-core/src/index.ts` has 84 `export *` statements. Everything is exported in a flat namespace. Feature modules import 10-15 items per import line from `@workspace/livex-core`.
 
 **Impact:** It's impossible to know which features depend on which core modules. Import statements become unreadable. Tree-shaking is impaired.
 
-**Recommendation:** Consider sub-path exports (`@workspace/studio-core/navigation`, `@workspace/studio-core/theme`, etc.) to make dependencies explicit and enforce module boundaries.
+**Recommendation:** Consider sub-path exports (`@workspace/livex-core/navigation`, `@workspace/livex-core/theme`, etc.) to make dependencies explicit and enforce module boundaries.
 
 ---
 

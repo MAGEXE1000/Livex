@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { checkForUpdate, downloadUpdate, applyUpdate } from '@workspace/studio-core';
+import { checkForUpdate, downloadUpdate, applyUpdate } from '@workspace/livex-core';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 
 interface ProductionActionsProps {

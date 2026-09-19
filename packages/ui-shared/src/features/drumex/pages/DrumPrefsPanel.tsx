@@ -9,7 +9,7 @@ import {
   resetNav,
   useSettingsStore,
   NavigationDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useRef, useState, useEffect } from 'react';
 import { Toggle, SectionHeader, SettingRow, StartOnSelector } from '../../../shared/settings/SettingControls';

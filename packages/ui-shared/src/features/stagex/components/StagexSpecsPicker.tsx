@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useT, useSettingsStore } from '@workspace/studio-core';
+import { useT, useSettingsStore } from '@workspace/livex-core';
 
 export type SpecsPickerType = 'performer' | 'channel' | 'source' | 'destination';
 

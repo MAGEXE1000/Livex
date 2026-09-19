@@ -5,7 +5,7 @@ import {
   NavigationDispatcher,
   useSettingsStore,
   groovexStemRepository,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { SONG_CATALOG, getArtists, getGenres } from '../services/songCatalog';

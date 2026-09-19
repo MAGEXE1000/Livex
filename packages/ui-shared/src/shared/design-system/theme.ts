@@ -4,7 +4,7 @@ import {
   resolveAccent,
   type AppKey,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 export function useStudioDesignSystem() {
   const settings = useSettingsStore(

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { type AppKey } from '@workspace/studio-core';
+import { type AppKey } from '@workspace/livex-core';
 import { Loader } from '../../components/motion/loader';
 import {
   ChordexLogo,

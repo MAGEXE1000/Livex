@@ -12,7 +12,7 @@ import {
   type TunerLifecycleState,
   type InstrumentStringTarget,
   type InstrumentTuningDefinition,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { TuningSelectorModal } from './TuningSelectorModal';
 import { getInstrumentGeometry } from './instrumentPegGeometry';
 import { useTunerArtwork } from './tunerArtworkHelper';

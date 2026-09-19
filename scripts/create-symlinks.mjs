@@ -18,7 +18,7 @@ for (const pkg of uiPackages) {
 
   for (const dir of targetDirs) {
     const linkPath = path.join(pkgSrc, dir);
-    const targetPath = path.join(repoRoot, 'packages/studio-core/src', dir);
+    const targetPath = path.join(repoRoot, 'packages/livex-core/src', dir);
 
     if (fs.existsSync(linkPath)) {
       const lstat = fs.lstatSync(linkPath);

@@ -1,4 +1,4 @@
-import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/studio-core';
+import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/livex-core';
 # Shared UI Components
 
 All shared UI lives in `packages/ui-shared/src/`. This package provides cross-platform React components, feature modules, the animation framework, and navigation containers.

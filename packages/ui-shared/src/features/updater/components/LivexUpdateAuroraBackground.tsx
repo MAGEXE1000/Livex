@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
 
-interface StudioUpdateAuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
+export interface LivexUpdateAuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   children?: React.ReactNode;
   showRadialGradient?: boolean;
   accentFrom: string;
   accentTo: string;
 }
 
-export default function StudioUpdateAuroraBackground({
+export type StudioUpdateAuroraBackgroundProps = LivexUpdateAuroraBackgroundProps;
+
+export default function LivexUpdateAuroraBackground({
   className,
   children,
   showRadialGradient = true,
   accentFrom,
   accentTo,
   ...props
-}: StudioUpdateAuroraBackgroundProps) {
+}: LivexUpdateAuroraBackgroundProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -112,3 +114,5 @@ export default function StudioUpdateAuroraBackground({
     </div>
   );
 }
+
+export const StudioUpdateAuroraBackground = LivexUpdateAuroraBackground;

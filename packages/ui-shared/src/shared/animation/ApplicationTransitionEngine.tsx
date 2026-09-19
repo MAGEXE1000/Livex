@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { AppKey, useApplicationTransitionStore } from '@workspace/studio-core';
+import { AppKey, useApplicationTransitionStore } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { triggerIntroReveal } from './introSignal';
 

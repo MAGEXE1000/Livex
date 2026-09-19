@@ -1,10 +1,10 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
 import React from 'react';
 import { FEATURES_DATA } from '../landingData';
 import { motion } from 'motion/react';
 
 export default function LandingFeatureGrid() {
-  const { preferences } = useStudioPreferences();
+  const { preferences } = useLivexPreferences();
   const isReduced = preferences.reduceMotion;
 
   const containerVariants = {
@@ -42,7 +42,7 @@ export default function LandingFeatureGrid() {
             Technical Design Core
           </h2>
           <p className="text-zinc-400 text-xs md:text-sm leading-relaxed landing-font-body">
-            Studio is engineered to withstand the demanding conditions of live music performance and
+            Livex is engineered to withstand the demanding conditions of live music performance and
             band rehearsal settings.
           </p>
         </div>

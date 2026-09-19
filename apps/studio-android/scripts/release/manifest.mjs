@@ -10,7 +10,7 @@ const repoRoot = path.resolve(__dirname, '../../..');
 const appRoot = path.resolve(__dirname, '..');
 const manifestPath = path.join(repoRoot, 'release-manifest.json');
 const apkPath = path.join(appRoot, 'android/app/build/outputs/apk/release/app-release.apk');
-const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 
 export async function generateReleaseManifest(options = {}) {
   const fetchFn = options.fetchFn || globalThis.fetch;

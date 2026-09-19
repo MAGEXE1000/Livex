@@ -11,7 +11,7 @@ import {
   useSettingsStore,
   useNavigationStore,
   useApplicationTransitionStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
 

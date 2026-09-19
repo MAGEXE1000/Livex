@@ -35,7 +35,7 @@ import {
   type AppKey,
   useDeveloperInspectorStore,
   lockOrientation,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 import { StudioHubSkeleton } from '../loading/StudioSkeleton';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';

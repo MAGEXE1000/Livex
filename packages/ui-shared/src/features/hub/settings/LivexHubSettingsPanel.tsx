@@ -6,7 +6,7 @@ import {
   useT,
   resolveAccent,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
@@ -28,14 +28,14 @@ import { Button } from '../../../shared/design-system/buttons';
 import { AccentColorPicker } from './AccentColorPicker';
 
 /**
- * StudioHubSettingsPanel — Completely Rebuilt Settings & Appearance Reference Implementation
+ * LivexHubSettingsPanel — Settings & Appearance Reference Implementation
  *
  * Design System Specifications:
  * - Cleaner, elevated visual hierarchy matching Drumex/Groovex Preferences.
  * - Reuses existing segmented controls, cards, spacing tokens, and typography.
  * - Premium theme switcher animation via motion wrapper.
  */
-export default function StudioHubSettingsPanel() {
+export default function LivexHubSettingsPanel() {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
   const settings = useSettingsStore(
@@ -206,3 +206,5 @@ export default function StudioHubSettingsPanel() {
     </>
   );
 }
+
+export const StudioHubSettingsPanel = LivexHubSettingsPanel;

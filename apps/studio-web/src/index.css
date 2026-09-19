@@ -3,7 +3,7 @@
 
 @source "../../../packages/ui-shared/src/**/*.tsx";
 @source "../../../packages/ui-web/src/**/*.tsx";
-@source "../../../packages/studio-core/src/**/*.ts";
+@source "../../../packages/livex-core/src/**/*.ts";
 
 /* ── Platform-Specific Overrides (Web) ──────────────────────────────────── */
 

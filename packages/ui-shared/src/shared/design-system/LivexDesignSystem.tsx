@@ -6,6 +6,6 @@ export * from './layout';
 export * from './inputs';
 export * from './feedback';
 export * from './progress';
-export { Toggle, Toggle as Switch } from './StudioToggle';
-export type { ToggleProps } from './StudioToggle';
+export { Toggle, Toggle as Switch } from './LivexToggle';
+export type { ToggleProps } from './LivexToggle';
 export { ProgressiveBlur } from './ProgressiveBlur';

@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import { StudioHeader as AnimatedAppHeader } from '../layout/StudioHeader';
 import { ProgressiveBlur } from './ProgressiveBlur';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';

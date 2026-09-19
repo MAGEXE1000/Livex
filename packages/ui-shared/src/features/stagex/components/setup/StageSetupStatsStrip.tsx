@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 
 export interface SetupStatItem {
   label: string;

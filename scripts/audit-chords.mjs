@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const chordsJsPath = path.join(repoRoot, 'packages/studio-core/dist/src/data/chords.js');
+const chordsJsPath = path.join(repoRoot, 'packages/livex-core/dist/src/data/chords.js');
 
 if (!fs.existsSync(chordsJsPath)) {
   console.error(

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import { Loader } from '../../components/motion/loader';
 import { Button } from './buttons';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';

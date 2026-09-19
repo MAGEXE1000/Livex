@@ -34,42 +34,42 @@ async function runNavigationCoreTests() {
 
   const storePath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/store/useNavigationStore.js'
+    'packages/livex-core/dist/src/store/useNavigationStore.js'
   );
   const storeUrl = `file://${storePath.replace(/\\/g, '/')}`;
   const { useNavigationStore } = await import(storeUrl);
 
   const dispatcherPath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/NavigationDispatcher.js'
+    'packages/livex-core/dist/src/lib/navigation/NavigationDispatcher.js'
   );
   const dispatcherUrl = `file://${dispatcherPath.replace(/\\/g, '/')}`;
   const { NavigationDispatcher } = await import(dispatcherUrl);
 
   const coordinatorPath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/NavigationCoordinator.js'
+    'packages/livex-core/dist/src/lib/navigation/NavigationCoordinator.js'
   );
   const coordinatorUrl = `file://${coordinatorPath.replace(/\\/g, '/')}`;
   const { NavigationCoordinator } = await import(coordinatorUrl);
 
   const backPath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/BackDispatcher.js'
+    'packages/livex-core/dist/src/lib/navigation/BackDispatcher.js'
   );
   const backUrl = `file://${backPath.replace(/\\/g, '/')}`;
   const { BackDispatcher } = await import(backUrl);
 
   const gesturePath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/GestureDispatcher.js'
+    'packages/livex-core/dist/src/lib/navigation/GestureDispatcher.js'
   );
   const gestureUrl = `file://${gesturePath.replace(/\\/g, '/')}`;
   const { GestureDispatcher } = await import(gestureUrl);
 
   const transitionPath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/TransitionCoordinator.js'
+    'packages/livex-core/dist/src/lib/navigation/TransitionCoordinator.js'
   );
   const transitionUrl = `file://${transitionPath.replace(/\\/g, '/')}`;
   const { TransitionCoordinator } = await import(transitionUrl);

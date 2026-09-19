@@ -1,5 +1,5 @@
 import React from 'react';
-import { type AppKey, NavigationDispatcher, SpringPresets } from '@workspace/studio-core';
+import { type AppKey, NavigationDispatcher, SpringPresets } from '@workspace/livex-core';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';

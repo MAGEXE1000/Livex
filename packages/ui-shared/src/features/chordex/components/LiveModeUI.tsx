@@ -3,7 +3,7 @@ import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import { type LiveModeState } from './useLiveModeState';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 
 export function LiveModeHeader({ state }: { state: LiveModeState }) {
   const {

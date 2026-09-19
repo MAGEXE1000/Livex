@@ -1,4 +1,4 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useStudioPreferences } from '@workspace/livex-core';
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 

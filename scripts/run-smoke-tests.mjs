@@ -121,7 +121,7 @@ try {
 
   // 8. Run Chord Normalization & Resolution Tests
   console.log('Running Chord Normalization & Resolution Tests...');
-  const chordsModulePath = path.join(repoRoot, 'packages/studio-core/dist/src/data/chords.js');
+  const chordsModulePath = path.join(repoRoot, 'packages/livex-core/dist/src/data/chords.js');
   fileExists(
     chordsModulePath,
     'TypeScript must compile chords.ts to dist/src/data/chords.js first.'

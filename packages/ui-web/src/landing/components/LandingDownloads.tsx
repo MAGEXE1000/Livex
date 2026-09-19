@@ -1,4 +1,4 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useStudioPreferences } from '@workspace/livex-core';
 import React from 'react';
 import { Globe, Smartphone, Monitor, Download } from 'lucide-react';
 import { formatBytes } from '../landingUtils';

@@ -1,12 +1,4 @@
-import en from '../../i18n/en.json';
-import es from '../../i18n/es.json';
-import de from '../../i18n/de.json';
-import fr from '../../i18n/fr.json';
-import zh from '../../i18n/zh.json';
-import pt from '../../i18n/pt.json';
-import it from '../../i18n/it.json';
-import ja from '../../i18n/ja.json';
-import ko from '../../i18n/ko.json';
+import type en from '../../i18n/en.json';
 
 export type Language = 'en' | 'es' | 'de' | 'fr' | 'zh' | 'pt' | 'it' | 'ja' | 'ko';
 
@@ -22,8 +14,6 @@ export function detectDeviceLanguage(): Language {
   }
   return 'en';
 }
-
-export const translations = { en, es, de, fr, zh, pt, it, ja, ko } as const;
 
 export type Translations = Omit<
   typeof en,
@@ -115,7 +105,4 @@ type WidenStrings<T> = T extends string
           : T;
 type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
 
-const partialOverrides: { [K in Language]?: DeepPartial<WidenStrings<Translations>> } =
-  translations;
-
-export default translations;
+export default {};

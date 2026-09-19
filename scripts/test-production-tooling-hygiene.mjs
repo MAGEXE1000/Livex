@@ -33,9 +33,9 @@ assert(!rootTsConfig.includes('lib/db'), 'root tsconfig.json does not reference 
 assert(!rootTsConfig.includes('lib/api-client-react'), 'root tsconfig.json does not reference api-client-react');
 assert(!rootTsConfig.includes('lib/api-zod'), 'root tsconfig.json does not reference api-zod');
 
-const coreTsConfig = readFileSync(resolve(ROOT_DIR, 'packages/studio-core/tsconfig.json'), 'utf8');
-assert(!coreTsConfig.includes('lib/db'), 'studio-core tsconfig.json does not reference lib/db');
-assert(!coreTsConfig.includes('lib/api-client-react'), 'studio-core tsconfig.json does not reference api-client-react');
+const coreTsConfig = readFileSync(resolve(ROOT_DIR, 'packages/livex-core/tsconfig.json'), 'utf8');
+assert(!coreTsConfig.includes('lib/db'), 'livex-core tsconfig.json does not reference lib/db');
+assert(!coreTsConfig.includes('lib/api-client-react'), 'livex-core tsconfig.json does not reference api-client-react');
 
 const webTsConfig = readFileSync(resolve(ROOT_DIR, 'apps/studio-web/tsconfig.json'), 'utf8');
 assert(!webTsConfig.includes('lib/api-client-react'), 'studio-web tsconfig.json does not reference api-client-react');
@@ -43,7 +43,7 @@ assert(!webTsConfig.includes('lib/api-client-react'), 'studio-web tsconfig.json 
 const androidTsConfig = readFileSync(resolve(ROOT_DIR, 'apps/studio-android/tsconfig.json'), 'utf8');
 assert(!androidTsConfig.includes('lib/api-client-react'), 'studio-android tsconfig.json does not reference api-client-react');
 
-const pkgs = ['packages/studio-core', 'packages/ui-shared', 'packages/ui-web', 'packages/ui-android'];
+const pkgs = ['packages/livex-core', 'packages/ui-shared', 'packages/ui-web', 'packages/ui-android'];
 for (const p of pkgs) {
   const pkgJson = JSON.parse(readFileSync(resolve(ROOT_DIR, p, 'package.json'), 'utf8'));
   const deps = { ...(pkgJson.dependencies || {}), ...(pkgJson.devDependencies || {}) };
@@ -78,7 +78,7 @@ assert(
 );
 
 const devToolsSource = readFileSync(
-  resolve(ROOT_DIR, 'packages/studio-core/src/lib/diagnostics/devTools.ts'),
+  resolve(ROOT_DIR, 'packages/livex-core/src/lib/diagnostics/devTools.ts'),
   'utf8'
 );
 assert(

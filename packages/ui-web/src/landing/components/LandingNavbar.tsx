@@ -1,5 +1,5 @@
-import { useStudioPreferences } from '@workspace/studio-core';
-import { StudioLogo } from '@workspace/ui-shared';
+import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
+import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 
@@ -8,7 +8,7 @@ interface LandingNavbarProps {
 }
 
 export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
-  const { preferences } = useStudioPreferences();
+  const { preferences } = useLivexPreferences();
   const isReduced = preferences.reduceMotion;
   const [activeSection, setActiveSection] = useState<string>('');
 
@@ -73,13 +73,13 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="text-white flex-shrink-0">
-            <StudioLogo size={28} />
+            <LivexLogo size={28} />
           </div>
           <span
             className="font-extrabold text-base tracking-tight text-white"
             style={{ fontFamily: 'var(--studio-font-display)', letterSpacing: '-0.02em' }}
           >
-            Studio
+            Livex
           </span>
         </div>
 

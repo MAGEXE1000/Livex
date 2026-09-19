@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 
 export interface SaveFilenameModalProps {

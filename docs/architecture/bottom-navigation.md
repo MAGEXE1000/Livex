@@ -67,7 +67,7 @@ graph TB
 | ------------------------ | ------------- | -------------------------------------------------------------- |
 | `zustand`                | `studio-core` | `useBottomNavigationStore`, `useApplicationTransitionStore`    |
 | `motion/react`           | `ui-shared`   | Spring animations, `useMotionValue`, `useTransform`, `animate` |
-| `@workspace/studio-core` | `ui-shared`   | Store access, scroll hooks, navigation dispatcher              |
+| `@workspace/livex-core` | `ui-shared`   | Store access, scroll hooks, navigation dispatcher              |
 | Material Symbols         | `ui-shared`   | Icon font for string-based `BottomNavItem.icon` values         |
 
 ## Data Flow

@@ -8,7 +8,7 @@ import {
   type SaxophoneVariant,
   type SaxKeyId,
   NavigationDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { SaxophoneView } from '../components/SaxophoneView';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';

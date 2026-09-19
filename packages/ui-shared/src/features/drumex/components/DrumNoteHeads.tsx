@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { type DrumInstrument, type NoteVariation } from '@workspace/studio-core';
+import { type DrumInstrument, type NoteVariation } from '@workspace/livex-core';
 
 const CircleHead = memo(function CircleHead({
   r,

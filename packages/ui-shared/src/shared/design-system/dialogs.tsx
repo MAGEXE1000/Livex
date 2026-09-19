@@ -26,7 +26,7 @@ export const activeOverlaysRegistry = {
 
 import React, { useEffect } from 'react';
 import { StudioIcon } from '../icons/StudioIcon';
-import { BackDispatcher } from '@workspace/studio-core';
+import { BackDispatcher } from '@workspace/livex-core';
 import {
   AlertDialog,
   AlertDialogBackdrop,

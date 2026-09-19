@@ -32,7 +32,7 @@ Studio/
 | ---------------------- | --------------------------- | ------- | --------------------------- |
 | `apps/studio-android`  | `@workspace/studio-android` | 4.0.84  | Android Capacitor shell     |
 | `apps/studio-web`      | `@workspace/studio-web`     | 4.0.84  | Web SPA shell               |
-| `packages/studio-core` | `@workspace/studio-core`    | 4.0.83  | Business logic & state      |
+| `packages/studio-core` | `@workspace/livex-core`    | 4.0.83  | Business logic & state      |
 | `packages/ui-shared`   | `@workspace/ui-shared`      | 4.0.83  | Shared React components     |
 | `packages/ui-android`  | `@workspace/ui-android`     | 4.0.83  | Android UI wrapper          |
 | `packages/ui-web`      | `@workspace/ui-web`         | 4.0.83  | Web UI wrapper              |

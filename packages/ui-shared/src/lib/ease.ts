@@ -1,4 +1,4 @@
-import { EasingPresets, SpringPresets } from '@workspace/studio-core';
+import { EasingPresets, SpringPresets } from '@workspace/livex-core';
 
 export const EASE_OUT = EasingPresets.decelerate;
 export const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;

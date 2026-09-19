@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const coreVocalexDir = path.join(repoRoot, 'packages/studio-core/src/vocalex');
+const coreVocalexDir = path.join(repoRoot, 'packages/livex-core/src/vocalex');
 const sharedVocalexDir = path.join(repoRoot, 'packages/ui-shared/src/vocalex');
 
 if (!fs.existsSync(coreVocalexDir)) {
@@ -29,7 +29,7 @@ for (const file of dbFiles) {
 
   // Create relative symlink
   console.log(`Creating file symlink for ${file}`);
-  const targetRelative = `../../../studio-core/src/vocalex/${file}`;
+  const targetRelative = `../../../livex-core/src/vocalex/${file}`;
   fs.symlinkSync(coreFilePath, sharedFilePath, 'file');
 }
 

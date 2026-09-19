@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import type { SaxFingering, SaxKeyId } from '@workspace/studio-core';
+import type { SaxFingering, SaxKeyId } from '@workspace/livex-core';
 
 export interface SaxophoneViewProps {
   fingering: SaxFingering;

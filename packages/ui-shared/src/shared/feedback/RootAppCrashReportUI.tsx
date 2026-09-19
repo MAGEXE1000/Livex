@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { generateCrashReport, CrashReport, StackFrame, CrashTimelineEvent } from '@workspace/studio-core';
+import { generateCrashReport, CrashReport, StackFrame, CrashTimelineEvent } from '@workspace/livex-core';
 import CopyButton from '../../features/devtools/components/CopyButton';
 
 export interface RootAppCrashReportUIProps {
@@ -95,7 +95,7 @@ ${crashReport.evidence.unknown.map(u => `- ${u}`).join('\n')}
 - **Lazy Loading Race Condition (60% confidence):** Asset or dynamic chunk loading race at runtime startup.
 
 ## 9. Recommended Investigation
-- **Inspect File:** \`packages/studio-core/src/lib/navigation/NavigationCoordinator.ts\` (Verify useChordStore barrel imports)
+- **Inspect File:** \`packages/livex-core/src/lib/navigation/NavigationCoordinator.ts\` (Verify useChordStore barrel imports)
 - **Inspect File:** \`packages/ui-shared/src/features/updater/components/UpdateIndicator.tsx\` (Verify local minified variable declarations)
 
 ## 10. Recommended Fix
@@ -661,7 +661,7 @@ ${crashReport.diagnostics.map(d => `${d.variable}: ${d.value} (${d.description})
                     <div>
                       <h4 style={{ margin: '0 0 8px 0', fontSize: 13, color: '#60a5fa', fontWeight: 700 }}>Recommended Investigation</h4>
                       <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.6 }}>
-                        <li>Inspect file: <code style={{ color: '#60a5fa' }}>packages/studio-core/src/lib/navigation/NavigationCoordinator.ts</code></li>
+                        <li>Inspect file: <code style={{ color: '#60a5fa' }}>packages/livex-core/src/lib/navigation/NavigationCoordinator.ts</code></li>
                         <li>Inspect file: <code style={{ color: '#60a5fa' }}>packages/ui-shared/src/features/updater/components/UpdateIndicator.tsx</code></li>
                       </ul>
                     </div>

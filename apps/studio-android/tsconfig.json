@@ -12,7 +12,7 @@
     "types": ["node", "vite/client"]
   },
   "references": [
-    { "path": "../../packages/studio-core" },
+    { "path": "../../packages/livex-core" },
     { "path": "../../packages/ui-shared" },
     { "path": "../../packages/ui-android" }
   ]

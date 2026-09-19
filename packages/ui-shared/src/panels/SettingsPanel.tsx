@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigationStore } from '@workspace/studio-core';
+import { useNavigationStore } from '@workspace/livex-core';
 import ChordexPreferencesPanel from '../features/chordex/preferences/ChordexPreferencesPanel';
 import StudioHubSettingsPanel from '../features/hub/settings/StudioHubSettingsPanel';
 

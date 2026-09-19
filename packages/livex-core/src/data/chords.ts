@@ -1422,22 +1422,31 @@ function generateMissingChords(): Chord[] {
   return generated;
 }
 
-// Merge generated chords into the database (hand-crafted take priority)
-const generatedChords = generateMissingChords();
-chordDatabase.push(...generatedChords);
+// Merge generated chords into the database lazily upon first access
+let _isChordDbInitialized = false;
 
-export function getAllChords(): Chord[] {
+function ensureChordDb(): Chord[] {
+  if (!_isChordDbInitialized) {
+    _isChordDbInitialized = true;
+    const generatedChords = generateMissingChords();
+    chordDatabase.push(...generatedChords);
+  }
   return chordDatabase;
 }
 
+export function getAllChords(): Chord[] {
+  return ensureChordDb();
+}
+
 export function getChordById(id: string): Chord | undefined {
-  return chordDatabase.find((c) => c.id === id);
+  return ensureChordDb().find((c) => c.id === id);
 }
 
 export function searchChords(query: string): Chord[] {
+  const db = ensureChordDb();
   const q = query.toLowerCase().trim();
-  if (!q) return chordDatabase;
-  return chordDatabase.filter(
+  if (!q) return db;
+  return db.filter(
     (c) =>
       c.name.toLowerCase().includes(q) ||
       c.root.toLowerCase().includes(q) ||
@@ -1448,13 +1457,15 @@ export function searchChords(query: string): Chord[] {
 
 export function getRelatedChords(chord: Chord): Chord[] {
   if (!chord.relatedChords) return [];
+  const db = ensureChordDb();
   return chord.relatedChords
-    .map((name) => chordDatabase.find((c) => c.name === name))
+    .map((name) => db.find((c) => c.name === name))
     .filter(Boolean) as Chord[];
 }
 
 export function suggestNextChord(progression: Chord[]): Chord[] {
-  if (progression.length === 0) return chordDatabase.slice(0, 4);
+  const db = ensureChordDb();
+  if (progression.length === 0) return db.slice(0, 4);
   const lastChord = progression[progression.length - 1];
   return getRelatedChords(lastChord)
     .filter((c) => !progression.find((p) => p.id === c.id))
@@ -1717,19 +1728,20 @@ function toCanonicalRoot(root: string): string {
 }
 
 export function getChordByName(name: string): Chord | undefined {
+  const db = ensureChordDb();
   const normName = normalizeChordName(name);
   const normalized = normName.toLowerCase();
 
   // 1. Direct name match
-  let found = chordDatabase.find((c) => c.name.replace(/\s/g, '').toLowerCase() === normalized);
+  let found = db.find((c) => c.name.replace(/\s/g, '').toLowerCase() === normalized);
   if (found) return found;
 
   // 2. ID match
-  found = chordDatabase.find((c) => c.id.toLowerCase() === normalized);
+  found = db.find((c) => c.id.toLowerCase() === normalized);
   if (found) return found;
 
   // 3. Match parts of a slash-separated name (e.g. "C#/Db" matching "C#" or "Db")
-  found = chordDatabase.find((c) => {
+  found = db.find((c) => {
     const cName = c.name.replace(/\s/g, '').toLowerCase();
     if (cName.includes('/')) {
       const parts = cName.split('/');
@@ -1745,7 +1757,7 @@ export function getChordByName(name: string): Chord | undefined {
     const queryRoot = toCanonicalRoot(match[1].charAt(0).toUpperCase() + match[1].slice(1));
     const querySuffix = match[2];
 
-    found = chordDatabase.find((c) => {
+    found = db.find((c) => {
       const baseName = c.name.split('/')[0].trim();
       const cMatch = baseName.toLowerCase().match(/^([a-g][#b]?)(.*)$/);
       if (cMatch) {

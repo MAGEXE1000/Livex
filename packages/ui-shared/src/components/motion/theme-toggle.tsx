@@ -2,7 +2,7 @@
 // beui.dev/components/motion/theme-toggle
 
 import { Moon, Sun, Eclipse } from 'lucide-react';
-import { useSettingsStore, settingsController } from '@workspace/studio-core';
+import { useSettingsStore, settingsController } from '@workspace/livex-core';
 import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
 import { ActionSwapIcon } from './action-swap';
 import { cn } from '../../lib/utils';

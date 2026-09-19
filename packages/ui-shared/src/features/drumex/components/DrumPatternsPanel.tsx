@@ -13,7 +13,7 @@ import {
   DRUM_LIBRARY,
   useT,
   NavigationDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';

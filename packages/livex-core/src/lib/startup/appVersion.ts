@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.22';
-export const NATIVE_VERSION_CODE = 40622;
-export const WEB_VERSION = '4.6.22';
+export const NATIVE_VERSION = '4.6.23';
+export const NATIVE_VERSION_CODE = 40623;
+export const WEB_VERSION = '4.6.23';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -67,19 +67,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '8/12/2026';
+export const APP_VERSION_DATE = '9/18/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '5e296cb1';
+export const APP_COMMIT_SHA = '8a12d3c8';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/17/2026, 4:07:50 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/18/2026, 11:30:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,20 +98,8 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Decommissioned Obsolete Prototype Packages: Completely removed legacy direct-postgres prototype package `lib/db/` and purged obsolete workspace dependencies and tsconfig references.',
-      'Sync Provider Canonicalization: Pruned dead ghost options (`firebase-firestore-legacy`, `supabase-powersync`) in favor of canonical `supabase-realtime` sync engine.',
-      'Theme Token & Visual Hierarchy Unification: Consolidated Chordex and Drumex tuner surfaces to canonical Livex theme tokens, guaranteeing true AMOLED pitch black and adaptive light mode backgrounds.',
-      'Animation & Motion Performance: Optimized animation lifecycles with CSS compositor offloading and strict reduced-motion accessibility enforcement.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Native Updater State Machine Deadlock Resolution: Corrected unhandled transition paths in updater pipeline that previously left the updater stuck in downloading/verifying states on unhandled transitions.',
-      'Updater Download Cancellation Support: Added comprehensive `AbortController` cancellation for in-flight APK downloads when dialogs are closed or dismissed, cleanly terminating connections and resetting state to `INSTALL_CANCELLED`.',
-      'Native Android PackageInstaller Callbacks: Connected native Android `PackageInstaller` broadcast events (`STATUS_SUCCESS`, `STATUS_PENDING_USER_ACTION`, `STATUS_FAILURE_*`) to the JavaScript runtime.',
-      'Silent Catch Block Remediation: Replaced silent empty catch blocks across metadata retrieval, SHA-256 verification, and installation recovery with structured diagnostic flight recorder telemetry.',
-      'Theme Cold-Boot Initialization Flash: Eliminated theme flicker and initialization lag during cold boots and page transitions.',
+      'Dead Dependency & Bundle Optimization: Completely purged unused drizzle-orm, @tanstack/react-query, and class-variance-authority. Dynamically code-split jspdf (411 kB) out of critical paths.',
+      'Deterministic Vector Iconography: Standardized app-wide icons to deterministic SVG vectors, permanently eliminating unstyled font ligature flash and layout jitter.',
     ],
   },
 ];
@@ -123,6 +111,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.23',
+    date: '2026-09-18',
+    highlights: [
+      'Lifecycle-Gated Background Activity: Gated the 15-minute APK update polling and 60-second device presence heartbeat to halt while backgrounded, saving device battery and native wakeups with immediate catch-up on resume.',
+      'Native Theme Transition & Liquid Glass Memory: Slashed peak native allocation during theme transitions by 75% to 96.4% via cached Canvas displacement maps, zero-re-render DOM updates, and compositor offloading.',
+      'Connection-Gated Realtime Synchronization: Eliminated redundant 30s background queries during active Supabase Realtime connections, dropping idle network traffic to zero.',
+      'Cold-Start Sequence Streamlined: Accelerated application boot, aligned splash screen dismissal with DOM hydration, and isolated DevTools diagnostics out of production builds.',
+      'Dead Dependency & Bundle Optimization: Completely purged unused drizzle-orm, @tanstack/react-query, and class-variance-authority. Dynamically code-split jspdf (411 kB) out of critical paths.',
+      'Deterministic Vector Iconography: Standardized app-wide icons to deterministic SVG vectors, permanently eliminating unstyled font ligature flash and layout jitter.',
+    ],
+  },
   {
     version: '4.6.22',
     date: '2026-09-17',
@@ -223,28 +223,24 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Navigation Dispatcher Safety: Standardized on `NavigationDispatcher.canGoBack()` before popping history across all subviews.',
     ],
   },
-  {
-    version: '4.6.13',
-    date: '2026-09-15',
-    highlights: [
-      'Cross-App Canonical Liquid Glass Top Bar Integration: Completed repository-wide unification of the persistent Liquid Glass top bar across Chordex, Stagex, Drumex, Vocalex, Groovex, Hub, and Settings.',
-      'Scroll Morph Engine Wiring: Connected `scrollContainerRef` to `CategoryScreenView`, `LibraryChordDetail`, and `PdfPreviewModal` in Chordex, and `StageSetupDetailLayout` and `StageExportPdfView` in Stagex, activating smooth scroll-driven geometry morphing on all drill-down pages.',
-      'Composable ScrollScaffold Architecture: Enhanced `ScrollScaffold` with `React.forwardRef` to support seamless ref forwarding for scroll-driven animations while preserving automated navigation scroll-hide behavior.',
-      'Mobile DAW Transport Bar Material Parity: Elevated DrumEditor mobile sequencer header from legacy styling to the canonical Liquid Glass design tokens with specular highlights and paint containment.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
 export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Performance',
     items: [
-      'Chordex Library Bento Redesign: Completely overhauled the Chordex Library section with a modern Bento card layout and ambient glowing accents.',
-      'Dynamic Mini Fretboard Recesses: Introduced high-fidelity 6-string dynamic fretboard recess components with realistic gauge lines and glowing finger dots.',
-      'Interactive Chord Preview Section: Integrated rich multi-instrument visualizers supporting instant toggles across Guitar, Bass, and Piano.',
-      'Harmonic Categories Grid: Expanded category browser to 31 distinct harmonic flavors with signature 3-string mini recesses.',
-      'Universal Theme Parity: Full adaptive styling across Dark, Light, and AMOLED modes.',
+      'Lifecycle-Gated Background Activity: Update polling and presence heartbeat pause while backgrounded to conserve battery and CPU.',
+      'Theme Transition & Liquid Glass Memory: Up to 96% reduction in native memory allocation during theme changes and glass morphs.',
+      'Connection-Gated Realtime Sync: Eliminated redundant background queries during active connections (0 idle requests).',
+      'Cold-Start Streamlining: Faster app startup with aligned splash screen release and DevTools isolated from production.',
+    ],
+  },
+  {
+    heading: 'Improved',
+    items: [
+      'Dependency & Bundle Optimization: Removed unused dependencies and code-split PDF generation out of critical path.',
+      'Deterministic Vector Icons: Vector SVG iconography across all apps, eliminating font ligature flash.',
     ],
   },
 ];
@@ -253,13 +249,19 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
  *  by `ChangelogSheet` based on `settings.language`. */
 export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
-    heading: 'Añadido',
+    heading: 'Rendimiento',
     items: [
-      'Rediseño Bento de la Biblioteca Chordex: Renovación completa de la biblioteca con diseño Bento moderno, acentos luminosos y experiencia adaptable.',
-      'Cavidades dinámicas de diapasón: Nuevos componentes dinámicos de 6 cuerdas con líneas realistas de calibre y puntos guía luminosos.',
-      'Visualizador interactivo de acordes: Visualizadores multi-instrumento para Guitarra, Bajo y Piano con reproducción de audio y acordes sugeridos.',
-      'Cuadrícula de categorías armónicas: 31 estilos armónicos con mini cavidades de 3 cuerdas y filtros rápidos por nota fundamental.',
-      'Paridad universal de temas: Adaptación visual completa en modos Oscuro, Claro y AMOLED.',
+      'Actividad en segundo plano controlada: La comprobación de actualizaciones y presencia se detienen en segundo plano para ahorrar batería.',
+      'Memoria de transición de temas y Liquid Glass: Reducción de hasta el 96% en asignación de memoria nativa durante cambios de tema.',
+      'Sincronización en tiempo real optimizada: Eliminación de consultas redundantes durante conexiones activas (0 peticiones en reposo).',
+      'Arranque en frío acelerado: Inicio de la aplicación optimizado con DevTools aislado de producción.',
+    ],
+  },
+  {
+    heading: 'Mejoras',
+    items: [
+      'Optimización de dependencias y paquetes: Eliminación de librerías en desuso y carga dinámica de generación de PDF.',
+      'Iconos vectoriales deterministas: Iconografía SVG en todas las aplicaciones, eliminando parpadeos de fuentes.',
     ],
   },
 ];
@@ -267,13 +269,19 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
 /** German version of the current changelog. */
 export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
-    heading: 'Hinzugefügt',
+    heading: 'Leistung',
     items: [
-      'Chordex Bibliothek Bento-Neugestaltung: Vollständige Überarbeitung mit modernem Bento-Kartenlayout und responsiver Ansicht.',
-      'Dynamische Mini-Griffbrett-Aussparungen: Hochpräzise 6-Saiten-Griffbrettkomponenten mit Bundlinien und leuchtenden Griffpunkten.',
-      'Interaktive Akkord-Vorschau: Multi-Instrument-Visualisierungen für Gitarre, Bass und Klavier mit Audio-Wiedergabe.',
-      'Harmonisches Kategoriengitter: Erweiterte Kategorieübersicht mit 31 harmonischen Varianten.',
-      'Universelle Theme-Parität: Vollständige visuelle Anpassung für Dark-, Light- und AMOLED-Modi.',
+      'Lebenszyklus-gesteuerte Hintergrundaktivität: Update-Prüfung und Präsenz-Heartbeat pausieren im Hintergrund.',
+      'Theme-Übergänge & Liquid Glass Speicher: Bis zu 96% Speicherreduktion bei Theme-Wechseln und Glas-Effekten.',
+      'Echtzeit-Synchronisierung: Beseitigung redundanter Hintergrundabfragen bei aktiver Verbindung.',
+      'Beschleunigter Kaltstart: Schnellere App-Initialisierung und DevTools-Isolierung.',
+    ],
+  },
+  {
+    heading: 'Verbesserungen',
+    items: [
+      'Paket- und Abhängigkeitsoptimierung: Ungenutzte Abhängigkeiten entfernt und PDF-Erzeugung dynamisch ausgelagert.',
+      'Deterministische Vektor-Icons: SVG-Vektor-Icons in allen Apps ohne Schriftarten-Flackern.',
     ],
   },
 ];

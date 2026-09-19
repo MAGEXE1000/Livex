@@ -39,7 +39,7 @@ function testPolicyDocumentExistence() {
 
 function testSingleVersionSource() {
   console.log('\n[Test 3] Single Source of Truth: Version Definition');
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
   const src = fs.readFileSync(appVersionPath, 'utf8');
 
   const matches = [...src.matchAll(/export\s+const\s+NATIVE_VERSION\s*=\s*['"]([^'"]+)['"]/g)];

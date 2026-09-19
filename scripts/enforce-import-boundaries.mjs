@@ -71,7 +71,7 @@ const rules = {
     {
       pattern:
         /@workspace\/ui-web|ui-web|@workspace\/ui-android|ui-android|@workspace\/ui-shared|ui-shared/i,
-      description: 'studio-core cannot import from platform UI packages or ui-shared',
+      description: 'livex-core cannot import from platform UI packages or ui-shared',
     },
   ],
   uiShared: [
@@ -86,7 +86,7 @@ const rules = {
 
 checkFolder(path.join(repoRoot, 'apps/studio-web'), rules.webApp);
 checkFolder(path.join(repoRoot, 'apps/studio-android'), rules.androidApp);
-checkFolder(path.join(repoRoot, 'packages/studio-core'), rules.core);
+checkFolder(path.join(repoRoot, 'packages/livex-core'), rules.core);
 checkFolder(path.join(repoRoot, 'packages/ui-shared'), rules.uiShared);
 
 if (violationsCount > 0) {

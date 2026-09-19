@@ -1,4 +1,4 @@
-import { createAudioContext } from '@workspace/studio-core';
+import { createAudioContext } from '@workspace/livex-core';
 import SignalsmithStretch, { StretchNode } from 'signalsmith-stretch';
 import { isPercussionStem } from './stemClassifier';
 

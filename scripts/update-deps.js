@@ -33,7 +33,7 @@ const packageJsonPaths = [
   'package.json',
   'apps/studio-android/package.json',
   'apps/studio-web/package.json',
-  'packages/studio-core/package.json',
+  'packages/livex-core/package.json',
 ];
 
 for (const p of packageJsonPaths) {

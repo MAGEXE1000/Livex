@@ -1,4 +1,3 @@
-import { ENJAMBRE_SONGS } from '../../data/songs';
 import { NavigationDispatcher } from './NavigationDispatcher';
 
 export interface SearchableItem {
@@ -20,6 +19,7 @@ export interface SearchableItem {
 
 class CentralizedSearchIndex {
   private items: SearchableItem[] = [];
+  private songsRegistered = false;
 
   constructor() {
     this.registerDefaults();
@@ -35,6 +35,9 @@ class CentralizedSearchIndex {
   }
 
   public getItems(): SearchableItem[] {
+    if (!this.songsRegistered) {
+      void this.registerSongs();
+    }
     return this.items;
   }
 
@@ -273,31 +276,38 @@ class CentralizedSearchIndex {
       },
     });
 
-    // 5. Catalog Songs
-    ENJAMBRE_SONGS.forEach((song) => {
-      this.register({
-        id: `song-${song.id}`,
-        category: 'songs',
-        titleEn: song.title,
-        titleEs: song.title,
-        subtitleEn: `by ${song.artist} (${song.genre})`,
-        subtitleEs: `de ${song.artist} (${song.genre})`,
-        keywordsEn: [song.artist, song.genre, 'song', 'catalog', 'chords', 'chart'],
-        keywordsEs: [song.artist, song.genre, 'canción', 'catálogo', 'acordes'],
-        target: {
-          app: 'chordex',
-          action: () => {
-            // Launch Chords app and direct to practice view
-            NavigationDispatcher.push({
-              app: 'chordex',
-              tab: 'songs',
-              page: 'practice',
-              params: { songId: song.id },
-            } as any);
+  }
+
+  public async registerSongs(): Promise<void> {
+    if (this.songsRegistered) return;
+    this.songsRegistered = true;
+    try {
+      const { ENJAMBRE_SONGS } = await import('../../data/songs');
+      ENJAMBRE_SONGS.forEach((song) => {
+        this.register({
+          id: `song-${song.id}`,
+          category: 'songs',
+          titleEn: song.title,
+          titleEs: song.title,
+          subtitleEn: `by ${song.artist} (${song.genre})`,
+          subtitleEs: `de ${song.artist} (${song.genre})`,
+          keywordsEn: [song.artist, song.genre, 'song', 'catalog', 'chords', 'chart'],
+          keywordsEs: [song.artist, song.genre, 'canción', 'catálogo', 'acordes'],
+          target: {
+            app: 'chordex',
+            action: () => {
+              // Launch Chords app and direct to practice view
+              NavigationDispatcher.push({
+                app: 'chordex',
+                tab: 'songs',
+                page: 'practice',
+                params: { songId: song.id },
+              } as any);
+            },
           },
-        },
+        });
       });
-    });
+    } catch (_) {}
   }
 }
 

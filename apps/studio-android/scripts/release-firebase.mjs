@@ -55,7 +55,7 @@ const otaBase = 'https://studio-30f44.web.app';
 const firebasePublicDir = path.join(repoRoot, 'firebase-public');
 const firebaseOtaDir = path.join(firebasePublicDir, 'ota');
 
-// —— Parse NATIVE_VERSION in packages/studio-core/src/lib/startup/appVersion.ts ————————
+// —— Parse NATIVE_VERSION in packages/livex-core/src/lib/startup/appVersion.ts ————————
 let version = '0.0.0';
 try {
   const versionInfo = getAppVersionInfo();

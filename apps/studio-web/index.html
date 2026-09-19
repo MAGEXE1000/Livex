@@ -823,7 +823,7 @@
         }
 
         function reactMounted() {
-          return !!window.__studioHubReady;
+          return !!(window.__livexHubReady || window.__studioHubReady);
         }
 
         function frame(now) {
@@ -943,19 +943,29 @@
 
         function startFade() {
           if (dismissed) return;
+          window.dispatchEvent(new Event('livex-intro-done'));
           window.dispatchEvent(new Event('studio-intro-done'));
 
           function handleReady() {
+            window.removeEventListener('livex:hub-ready', handleReady);
             window.removeEventListener('studio:hub-ready', handleReady);
+            window.removeEventListener('livex-hub-ready', handleReady);
+            window.removeEventListener('studio-hub-ready', handleReady);
             doFade();
           }
 
           if (reactMounted()) {
             doFade();
           } else {
+            window.addEventListener('livex:hub-ready', handleReady);
             window.addEventListener('studio:hub-ready', handleReady);
+            window.addEventListener('livex-hub-ready', handleReady);
+            window.addEventListener('studio-hub-ready', handleReady);
             setTimeout(function () {
+              window.removeEventListener('livex:hub-ready', handleReady);
               window.removeEventListener('studio:hub-ready', handleReady);
+              window.removeEventListener('livex-hub-ready', handleReady);
+              window.removeEventListener('studio-hub-ready', handleReady);
               doFade();
             }, 3000);
           }
@@ -995,8 +1005,8 @@
             return;
 
           // Prevent infinite reload loops — only attempt once per session
-          var RELOAD_KEY = 'studio:web-auto-reload-done';
-          if (sessionStorage.getItem(RELOAD_KEY)) return;
+          var RELOAD_KEY = 'livex:web-auto-reload-done';
+          if (sessionStorage.getItem(RELOAD_KEY) || sessionStorage.getItem('studio:web-auto-reload-done')) return;
 
           fetch('/version.json?t=' + Date.now(), { cache: 'no-store' })
             .then(function (r) {

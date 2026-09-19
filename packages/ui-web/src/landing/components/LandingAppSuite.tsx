@@ -1,14 +1,14 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
 import React from 'react';
 import { motion } from 'motion/react';
 import {
   ChordexFeatureSkeleton,
   StagexFeatureSkeleton,
   GroovexFeatureSkeleton,
-} from './StudioFeatureSkeletons';
+} from './LivexFeatureSkeletons';
 
 export default function LandingAppSuite() {
-  const { preferences } = useStudioPreferences();
+  const { preferences } = useLivexPreferences();
   const isReduced = preferences.reduceMotion;
 
   const containerVariants = {
@@ -71,7 +71,7 @@ export default function LandingAppSuite() {
             Built for focused music workflows.
           </h2>
           <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl mx-auto landing-font-body">
-            Studio connects the core parts of a modern music workflow: organizing songs and chords,
+            Livex connects the core parts of a modern music workflow: organizing songs and chords,
             preparing stage layouts, and practicing with groove-focused tools.
           </p>
         </div>

@@ -39,8 +39,8 @@ const testCases = [
     expectedBuild: true, // Run Netlify build
   },
   {
-    name: 'Shared core change (packages/studio-core/**)',
-    files: ['packages/studio-core/src/lib/sync.ts'],
+    name: 'Shared core change (packages/livex-core/**)',
+    files: ['packages/livex-core/src/lib/sync.ts'],
     expectedBuild: true, // Run Netlify build
   },
   {

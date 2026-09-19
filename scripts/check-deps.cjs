@@ -20,7 +20,7 @@ const files = walk('.');
 const graph = {};
 const aliases = {
   '@workspace/ui-shared': 'packages/ui-shared/src',
-  '@workspace/studio-core': 'packages/studio-core/src',
+  '@workspace/livex-core': 'packages/livex-core/src',
   '@workspace/ui-android': 'packages/ui-android/src',
   '@workspace/ui-web': 'packages/ui-web/src'
 };

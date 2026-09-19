@@ -12,6 +12,8 @@ export const Toggle: React.FC<ToggleProps> = (props) => {
   return <LiquidSwitch {...props} />;
 };
 
+export const LivexToggle = Toggle;
+export const StudioToggle = Toggle;
 export { LiquidSwitch };
 export default Toggle;
 

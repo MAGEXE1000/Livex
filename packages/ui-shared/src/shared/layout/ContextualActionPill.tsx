@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { SpringPresets, useSettingsStore, useShallow } from '@workspace/studio-core';
+import { SpringPresets, useSettingsStore, useShallow } from '@workspace/livex-core';
 
 export interface ContextualActionItem {
   id: string;

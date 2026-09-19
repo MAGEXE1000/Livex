@@ -2,6 +2,8 @@ export {};
 
 declare global {
   interface Window {
+    __livexStartupComplete?: boolean;
+    __livexHubReady?: boolean;
     __studioStartupComplete?: boolean;
     studioTransitionActive?: boolean;
     __navigationTraceHistory?: Array<{

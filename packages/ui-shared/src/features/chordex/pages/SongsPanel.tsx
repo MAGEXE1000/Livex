@@ -24,7 +24,7 @@ import {
   logActivity,
   useNavigationStore,
   useSettingsStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { SongCardGrid } from '../components/SongCardGrid';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';

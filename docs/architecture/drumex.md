@@ -47,7 +47,7 @@ Drum module preferences:
 
 ## State Management
 
-Uses `useDrumStore` from `@workspace/studio-core` (859 lines, 35 KB):
+Uses `useDrumStore` from `@workspace/livex-core` (859 lines, 35 KB):
 
 ### Key State
 

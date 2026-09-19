@@ -1,4 +1,4 @@
-import { useSettingsStore, SpringPresets } from '@workspace/studio-core';
+import { useSettingsStore, SpringPresets } from '@workspace/livex-core';
 import React from 'react';
 import { motion } from 'motion/react';
 

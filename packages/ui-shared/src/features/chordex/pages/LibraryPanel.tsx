@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { useScrollHide, useT, preloadGuitarAudio } from '@workspace/studio-core';
+import { useScrollHide, useT, preloadGuitarAudio } from '@workspace/livex-core';
 import { EmptyState } from '../../../shared/design-system/StudioDesignSystem';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';

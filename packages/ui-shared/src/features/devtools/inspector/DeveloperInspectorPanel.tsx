@@ -8,7 +8,7 @@ import {
   useNavigationStore,
   FilterCategory,
   APP_VERSION,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { Toggle as StudioToggle } from '../../../shared/design-system/StudioToggle';
 import {
   getFiberInfoFromDOMNode,

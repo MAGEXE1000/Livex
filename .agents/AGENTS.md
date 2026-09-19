@@ -204,7 +204,7 @@ The Mobile Web Preview (`pnpm dev:mobile`) is NOT a separate UI implementation.
 It is the browser-based development and visual-preview representation of the SAME mobile experience that runs inside the Android/Capacitor APK.
 
 1. **Single Source of Truth**:
-   - Mobile UI must have one canonical implementation in shared packages (`packages/ui-shared`, `packages/studio-core`).
+   - Mobile UI must have one canonical implementation in shared packages (`packages/ui-shared`, `packages/livex-core`).
    - Prefer shared components, shared styles, shared design tokens, shared animation systems, shared navigation logic, and shared interaction logic.
    - Do not duplicate mobile UI implementations between Mobile Web Preview and Android.
    - Do not create one implementation "for preview" and another "for APK" when the same shared implementation can be used.

@@ -6,7 +6,7 @@ import {
   updateDiagnostics,
   isNative,
   PerformanceProfiler,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 interface TelemetryGridProps {
   nativeDeviceInfo: any;

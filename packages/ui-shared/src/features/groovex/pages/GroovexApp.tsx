@@ -14,7 +14,7 @@ import {
   setNavHidden,
   useSettingsStore,
   useSessionStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useGroovexStore, type GroovexView } from '../state/useGroovexStore';

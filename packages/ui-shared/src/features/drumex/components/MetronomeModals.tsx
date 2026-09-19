@@ -6,7 +6,7 @@ import {
   type MetronomeTempoRampConfig,
   SpringPresets,
   BackDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 

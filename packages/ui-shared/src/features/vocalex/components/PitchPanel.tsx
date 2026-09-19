@@ -1,4 +1,4 @@
-import { useT, createAudioContext, useSettingsStore, resolveAccent, useShallow } from '@workspace/studio-core';
+import { useT, createAudioContext, useSettingsStore, resolveAccent, useShallow } from '@workspace/livex-core';
 import { Capacitor } from '@capacitor/core';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { detectPitch, type PitchResult } from '../services/pitchYin';
@@ -144,7 +144,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
 
       // Check and request native permission if running on Capacitor (Android/iOS)
       if (Capacitor.isNativePlatform()) {
-        const { AppInstaller } = await import('@workspace/studio-core');
+        const { AppInstaller } = await import('@workspace/livex-core');
         const check = await AppInstaller.checkPermissions();
         if (check.microphone !== 'granted') {
           const req = await AppInstaller.requestPermissions({ aliases: ['microphone'] });
@@ -942,7 +942,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                 type="button"
                 onClick={async () => {
                   try {
-                    const { AppInstaller } = await import('@workspace/studio-core');
+                    const { AppInstaller } = await import('@workspace/livex-core');
                     await AppInstaller.openAppSettings();
                   } catch (e) {
                     console.error('Failed to open app settings:', e);

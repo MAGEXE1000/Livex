@@ -16,7 +16,7 @@
   "include": ["src/**/*", "src/**/*.json", "firebase.config.json"],
   "references": [
     {
-      "path": "../studio-core"
+      "path": "../livex-core"
     },
     {
       "path": "../ui-shared"

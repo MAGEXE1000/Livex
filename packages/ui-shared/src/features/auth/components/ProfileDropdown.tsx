@@ -1,4 +1,4 @@
-import { cn } from '@workspace/studio-core';
+import { cn } from '@workspace/livex-core';
 import React, { useState, useRef, useEffect, CSSProperties } from 'react';
 
 interface AuthUser {

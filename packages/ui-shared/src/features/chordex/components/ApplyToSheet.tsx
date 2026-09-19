@@ -1,6 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
-import { NavigationDispatcher } from '@workspace/studio-core';
+import { NavigationDispatcher } from '@workspace/livex-core';
 import {
   useChordStore,
   ACCENT_COLORS,
@@ -9,9 +9,10 @@ import {
   useT,
   useSettingsStore,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React, { useState, useEffect } from 'react';
 import {
+  LivexLogo,
   StudioLogo,
   ChordexLogo,
   DrumexLogo,
@@ -28,7 +29,7 @@ interface AppCard {
 }
 
 const APP_CARDS: AppCard[] = [
-  { key: 'hub', label: 'Studio', Logo: StudioLogo },
+  { key: 'hub', label: 'Livex', Logo: LivexLogo },
   { key: 'chordex', label: 'Chordex', Logo: ChordexLogo },
   { key: 'drumex', label: 'Drumex', Logo: DrumexLogo },
   { key: 'stagex', label: 'Stagex', Logo: StagexLogoIcon },

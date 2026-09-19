@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const appVersionTsPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionTsPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 
 export function getAppVersionInfo() {
   if (!fs.existsSync(appVersionTsPath)) {

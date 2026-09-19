@@ -6,7 +6,7 @@ import {
   useSettingsStore,
   groovexStemRepository,
   type SongCacheInfo,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGroovexStore } from '../state/useGroovexStore';

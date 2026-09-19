@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { type TakeRecord, useT, BackDispatcher } from '@workspace/studio-core';
+import { type TakeRecord, useT, BackDispatcher } from '@workspace/livex-core';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import { useHarmonizerState } from './useHarmonizerState';

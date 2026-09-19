@@ -9,7 +9,7 @@ import {
   resolveAccent,
   useShallow,
   NavigationDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   Toggle,
   SectionHeader,

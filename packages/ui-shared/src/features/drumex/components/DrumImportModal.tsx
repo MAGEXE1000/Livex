@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button } from '../../../shared/design-system/buttons';
-import { type DrumPattern, type KitType } from '@workspace/studio-core';
+import { type DrumPattern, type KitType } from '@workspace/livex-core';
 
 export interface DrumImportContentProps {
   accent: { from: string; to: string };

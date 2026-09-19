@@ -432,10 +432,10 @@ test('AppInstallerPlugin.java validates trusted URLs before starting service', (
   );
 });
 
-test('packages/studio-core/apkDownloader.ts removed empty/zero hash bypass', () => {
+test('packages/livex-core/apkDownloader.ts removed empty/zero hash bypass', () => {
   const filePath = path.join(
     repoRoot,
-    'packages/studio-core/src/lib/platform/apkDownloader.ts'
+    'packages/livex-core/src/lib/platform/apkDownloader.ts'
   );
   const src = fs.readFileSync(filePath, 'utf8');
   assert.ok(
@@ -448,10 +448,10 @@ test('packages/studio-core/apkDownloader.ts removed empty/zero hash bypass', () 
   );
 });
 
-test('packages/studio-core/pipeline.ts removed missing hash skip bypass', () => {
+test('packages/livex-core/pipeline.ts removed missing hash skip bypass', () => {
   const filePath = path.join(
     repoRoot,
-    'packages/studio-core/src/lib/updater/pipeline.ts'
+    'packages/livex-core/src/lib/updater/pipeline.ts'
   );
   const src = fs.readFileSync(filePath, 'utf8');
   assert.ok(

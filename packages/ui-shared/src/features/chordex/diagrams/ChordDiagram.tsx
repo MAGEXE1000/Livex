@@ -1,4 +1,4 @@
-import { type GuitarChordData } from '@workspace/studio-core';
+import { type GuitarChordData } from '@workspace/livex-core';
 import { memo } from 'react';
 
 interface Props {

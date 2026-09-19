@@ -146,15 +146,15 @@ function RealAppLayoutWrapper({
   );
 }
 
-// ── 1. Studio Hub Mockup ───────────────────────────────────────────────────
-export function StudioHubMockup() {
+// ── 1. Livex Hub Mockup ───────────────────────────────────────────────────
+export function LivexHubMockup() {
   return (
-    <RealAppLayoutWrapper activeApp="hub" appTitle="Studio Hub">
+    <RealAppLayoutWrapper activeApp="hub" appTitle="Livex Hub">
       <div className="w-full h-full flex flex-col items-center justify-center p-3 select-none">
         <div className="w-full max-w-[190px] bg-zinc-950 border border-zinc-900 rounded-xl p-3 flex flex-col gap-2 shadow-2xl">
           <div className="pb-1.5 border-b border-zinc-900/60">
             <div className="text-[9px] font-extrabold text-white uppercase tracking-tight">
-              Welcome to Studio
+              Welcome to Livex
             </div>
             <div className="text-[6.5px] text-zinc-500 mt-0.5">
               Select a sub-app below to start practicing.
@@ -667,9 +667,11 @@ export function PreferencesMockup() {
   );
 }
 
+export const StudioHubMockup = LivexHubMockup;
+
 // ── Mockup Map ─────────────────────────────────────────────────────────────
 const MOCKUP_MAP: Record<string, React.ComponentType> = {
-  hub: StudioHubMockup,
+  hub: LivexHubMockup,
   chordLib: ChordexLibraryMockup,
   chordSongs: ChordexSongsMockup,
   chordChords: ChordexChordsMockup,
@@ -681,6 +683,7 @@ const MOCKUP_MAP: Record<string, React.ComponentType> = {
 };
 
 export function renderMockupByName(name: string) {
-  const Comp = MOCKUP_MAP[name] || StudioHubMockup;
+  const Comp = MOCKUP_MAP[name] || LivexHubMockup;
   return <Comp />;
 }
+

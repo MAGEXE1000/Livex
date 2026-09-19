@@ -6,14 +6,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../../../../..');
 
 export async function checkOtaAndUpdater(options = {}) {
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 
   if (!fs.existsSync(appVersionPath)) {
     return {
       name: 'OTA',
       pass: false,
       rootCause: `appVersion.ts configuration file missing at ${appVersionPath}.`,
-      suggestedFix: 'Restore packages/studio-core/src/lib/startup/appVersion.ts.',
+      suggestedFix: 'Restore packages/livex-core/src/lib/startup/appVersion.ts.',
       priority: 'CRITICAL',
       expectedResolution: 'appVersion.ts file present with NATIVE_VERSION.',
     };

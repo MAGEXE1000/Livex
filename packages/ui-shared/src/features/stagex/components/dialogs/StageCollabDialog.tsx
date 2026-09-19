@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavigationDispatcher, useT, useSettingsStore } from '@workspace/studio-core';
+import { NavigationDispatcher, useT, useSettingsStore } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 
 import { Loader } from '../../../../components/motion/loader';

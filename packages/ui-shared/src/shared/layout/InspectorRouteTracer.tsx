@@ -6,7 +6,7 @@ import {
   useBottomNavigationStore,
   NavigationDispatcher,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 /* ── INSPECTOR ROUTE TRACER DEBUG TOOL ────────────────────────────────── */
 export function InspectorRouteTracer() {

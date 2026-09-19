@@ -1,5 +1,5 @@
 import React from 'react';
-import { transitionHistory } from '@workspace/studio-core';
+import { transitionHistory } from '@workspace/livex-core';
 
 export default function StateMachineVisualizer() {
   const history = transitionHistory || [];

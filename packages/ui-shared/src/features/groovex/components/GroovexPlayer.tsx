@@ -5,7 +5,7 @@ import {
   NavigationDispatcher,
   useSettingsStore,
   mediaSessionCoordinator,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -37,7 +37,7 @@ import {
   resumeAudioContext,
   type AudioEngine,
 } from '../services/audioEngine';
-import { groovexStemRepository, type DownloadProgress } from '@workspace/studio-core';
+import { groovexStemRepository, type DownloadProgress } from '@workspace/livex-core';
 import StudioProgressBar from '../../../shared/progress/StudioProgressBar';
 import StudioCountUpPercentage from '../../../shared/progress/StudioCountUpPercentage';
 

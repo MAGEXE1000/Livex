@@ -1,5 +1,5 @@
 import React from 'react';
-import { type GuitarChordData } from '@workspace/studio-core';
+import { type GuitarChordData } from '@workspace/livex-core';
 
 /* ── Full-size chord diagram ───────────────────────────────── */
 export function LiveDiagram({

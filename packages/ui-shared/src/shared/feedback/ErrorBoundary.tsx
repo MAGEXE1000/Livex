@@ -1,11 +1,11 @@
-import { NavigationDispatcher, addError, processDiagnosticReport } from '@workspace/studio-core';
+import { NavigationDispatcher, addError, processDiagnosticReport } from '@workspace/livex-core';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import {
   useChordStore,
   globalUpdateState,
   useSettingsStore,
   useBottomNavigationStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { Error as ErrorCard, Button } from '../design-system/StudioDesignSystem';
 import CopyButton from '../../features/devtools/components/CopyButton';
 import RootAppCrashReportUI from './RootAppCrashReportUI';

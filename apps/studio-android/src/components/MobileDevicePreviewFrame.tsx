@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 import { ThemeToggle } from '@workspace/ui-shared/src/components/motion/theme-toggle';
 
 export interface DevicePreset {

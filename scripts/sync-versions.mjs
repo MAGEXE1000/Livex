@@ -67,7 +67,7 @@ const buildTimestamp = new Date().toLocaleString('en-US', { timeZoneName: 'short
 const secondaryPkgPaths = [
   path.join(repoRoot, 'apps/studio-android/package.json'),
   path.join(repoRoot, 'apps/studio-web/package.json'),
-  path.join(repoRoot, 'packages/studio-core/package.json'),
+  path.join(repoRoot, 'packages/livex-core/package.json'),
   path.join(repoRoot, 'packages/ui-shared/package.json'),
   path.join(repoRoot, 'packages/ui-android/package.json'),
   path.join(repoRoot, 'packages/ui-web/package.json')
@@ -110,7 +110,7 @@ if (fs.existsSync(gradlePath)) {
 }
 
 // --- 5. Update appVersion.ts ---
-const appVersionTsPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionTsPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 if (fs.existsSync(appVersionTsPath)) {
   let src = fs.readFileSync(appVersionTsPath, 'utf8');
 

@@ -1,4 +1,4 @@
-import { DurationPresets, EasingPresets } from '@workspace/studio-core';
+import { DurationPresets, EasingPresets } from '@workspace/livex-core';
 # Performance Architecture
 
 ## Overview

@@ -21,7 +21,7 @@ const paths = {
   ),
   apkDownloaderTs: path.join(
     appRoot,
-    '../../packages/studio-core/src/lib/platform/apkDownloader.ts'
+    '../../packages/livex-core/src/lib/platform/apkDownloader.ts'
   ),
   apkPath: path.join(appRoot, 'android/app/build/outputs/apk/release/app-release.apk'),
 };
@@ -319,12 +319,12 @@ export async function runValidation() {
       const nativeFiles = changedFiles.filter(
         (f) =>
           f.startsWith('apps/studio-android/android/') ||
-          f === 'packages/studio-core/src/lib/apkDownloader.ts' ||
-          f === 'packages/studio-core/src/lib/platform/apkDownloader.ts' ||
-          f === 'packages/studio-core/src/lib/capgoUpdater.ts' ||
-          f === 'packages/studio-core/src/lib/platform/capgoUpdater.ts' ||
-          f === 'packages/studio-core/src/lib/otaUpdate.ts' ||
-          f === 'packages/studio-core/src/lib/updater/useOtaUpdate.ts' ||
+          f === 'packages/livex-core/src/lib/apkDownloader.ts' ||
+          f === 'packages/livex-core/src/lib/platform/apkDownloader.ts' ||
+          f === 'packages/livex-core/src/lib/capgoUpdater.ts' ||
+          f === 'packages/livex-core/src/lib/platform/capgoUpdater.ts' ||
+          f === 'packages/livex-core/src/lib/otaUpdate.ts' ||
+          f === 'packages/livex-core/src/lib/updater/useOtaUpdate.ts' ||
           f === 'apps/studio-android/scripts/validate-app-installer.mjs' ||
           f === 'apps/studio-android/scripts/generate-release-metadata.mjs'
       );
@@ -572,7 +572,7 @@ export async function runValidation() {
   if (fs.existsSync(paths.apkPath)) {
     const appVersionPath = path.join(
       repoRoot,
-      'packages/studio-core/src/lib/startup/appVersion.ts'
+      'packages/livex-core/src/lib/startup/appVersion.ts'
     );
     const appVersionSrc = fs.readFileSync(appVersionPath, 'utf8');
 

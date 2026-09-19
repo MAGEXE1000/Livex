@@ -6,9 +6,9 @@ import {
   useT,
   sanitizeUTF8String,
   extractStructuredReleaseNotes,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
-export interface StudioUpdateScreenProps {
+export interface LivexUpdateScreenProps {
   state: string;
   progress?: number;
   accentFrom?: string;
@@ -43,6 +43,8 @@ export interface StudioUpdateScreenProps {
   bottomSection?: React.ReactNode;
 }
 
+export type StudioUpdateScreenProps = LivexUpdateScreenProps;
+
 interface SubtleValueProps {
   value: React.ReactNode;
   className?: string;
@@ -56,7 +58,7 @@ const SubtleValue = memo(function SubtleValue({ value, className }: SubtleValueP
   );
 });
 
-export default memo(function StudioUpdateScreen({
+export const LivexUpdateScreen = memo(function LivexUpdateScreen({
   state,
   progress = 0,
   accentFrom = '#679cff',
@@ -83,7 +85,7 @@ export default memo(function StudioUpdateScreen({
   totalBytes,
   error,
   releaseNotes,
-}: StudioUpdateScreenProps) {
+}: LivexUpdateScreenProps) {
   // Flight recorder telemetry
   useEffect(() => {
     UpdaterFlightRecorder.record({
@@ -1165,3 +1167,6 @@ export default memo(function StudioUpdateScreen({
     </div>
   );
 });
+
+export const StudioUpdateScreen = LivexUpdateScreen;
+export default LivexUpdateScreen;

@@ -1,7 +1,7 @@
-import { useT, useChordStore, authRepository, useSettingsStore } from '@workspace/studio-core';
+import { useT, useChordStore, authRepository, useSettingsStore } from '@workspace/livex-core';
 import { useEffect, useState } from 'react';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
-import { type AccountState, userRepository } from '@workspace/studio-core';
+import { type AccountState, userRepository } from '@workspace/livex-core';
 
 type Props = Extract<AccountState, { phase: 'pending' }>;
 

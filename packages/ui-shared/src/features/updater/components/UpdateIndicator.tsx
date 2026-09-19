@@ -23,7 +23,7 @@ import {
   extractStructuredReleaseNotes,
   sanitizeUTF8String,
   useT,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   applyUpdateDirect,
   shareDownloadedApk,
@@ -33,7 +33,7 @@ import {
   logTimelineEvent,
   clearInstallationJustCompleted,
   endPostInstallSession,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 /**
  * Floating "update available" indicator — top of the Hub.
  *
@@ -75,7 +75,7 @@ import ChangelogSheet from '../../chordex/components/ChangelogSheet';
 import { DownloadIcon } from '../../../shared/icons/DownloadIcon';
 import { Progress } from '@base-ui/react/progress';
 
-import { enableLiquidGlass, tagLiquidTarget, untagLiquidTarget } from '@workspace/studio-core';
+import { enableLiquidGlass, tagLiquidTarget, untagLiquidTarget } from '@workspace/livex-core';
 
 const isUpdateInProgress = (state: string) => {
   const isSim = false;
@@ -361,7 +361,7 @@ export default function UpdateIndicator({
     if (true && isAppInstallerAvailable()) {
       (async () => {
         try {
-          const { AppInstaller } = await import('@workspace/studio-core');
+          const { AppInstaller } = await import('@workspace/livex-core');
           const result = await AppInstaller['getLastInstallResult']();
           if (result.statusCode === 0) {
             const expectedVerName = result.expectedVersionName;
@@ -1250,7 +1250,7 @@ function UpdateModal({
   const handleStartUpdate = async () => {
     try {
       if (true && isAppInstallerAvailable()) {
-        const { AppInstaller } = await import('@workspace/studio-core');
+        const { AppInstaller } = await import('@workspace/livex-core');
         await AppInstaller.clearInstallerLogHistory();
       }
       await updater.downloadUpdate('UpdateIndicator: UpdateModal');
@@ -1272,7 +1272,7 @@ function UpdateModal({
   const handleInstallApk = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
-        const { AppInstaller, updateActiveSession } = await import('@workspace/studio-core');
+        const { AppInstaller, updateActiveSession } = await import('@workspace/livex-core');
         const hasPerm = (await AppInstaller.canRequestPackageInstalls()).value;
         if (!hasPerm) {
           setPermissionBlocked(true);
@@ -1291,7 +1291,7 @@ function UpdateModal({
 
   const handleOpenSettings = async () => {
     try {
-      const { AppInstaller, updateActiveSession } = await import('@workspace/studio-core');
+      const { AppInstaller, updateActiveSession } = await import('@workspace/livex-core');
       updateActiveSession({ installStep: 'permission_settings' });
       await AppInstaller.openUnknownAppSourcesSettings();
     } catch (err) {
@@ -1306,7 +1306,7 @@ function UpdateModal({
 
     const checkPerm = async () => {
       try {
-        const { AppInstaller } = await import('@workspace/studio-core');
+        const { AppInstaller } = await import('@workspace/livex-core');
         const hasPerm = (await AppInstaller.canRequestPackageInstalls()).value;
         if (hasPerm && active) {
           setPermissionBlocked(false);

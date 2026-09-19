@@ -1,8 +1,8 @@
 import livexSymbolUrl from '../../../assets/livex-symbol.png';
 import livexSymbolLightUrl from '../../../assets/livex-symbol-light.png';
 
-export function StudioLogo({ size = 14 }: { size?: number }) {
-  /* Studio / Livex — approved abstract symbol mark */
+export function LivexLogo({ size = 14 }: { size?: number }) {
+  /* Livex — approved abstract symbol mark */
   return (
     <picture>
       <source media="(prefers-color-scheme: dark)" srcSet={livexSymbolUrl} />
@@ -39,6 +39,8 @@ export function StudioLogo({ size = 14 }: { size?: number }) {
     </picture>
   );
 }
+
+export const StudioLogo = LivexLogo;
 
 export function DrumexLogo({ size = 14 }: { size?: number }) {
   /* Snare drum — top-down view: outer rim, head ring, 6 tension lugs, centre dot */

@@ -1,4 +1,4 @@
-import { isNative, AppInstaller } from '@workspace/studio-core';
+import { isNative, AppInstaller } from '@workspace/livex-core';
 
 export async function copyToClipboard(text: string, label: string = 'Content'): Promise<string> {
   const maxLen = 400000;

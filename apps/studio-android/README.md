@@ -37,7 +37,7 @@ vite.config.ts                 # Vite config for Android
 
 ## Imports (workspace)
 
-- `@workspace/studio-core` — all business logic
+- `@workspace/livex-core` — all business logic
 - `@workspace/ui-shared` — all shared UI
 - `@workspace/ui-android` — Android-specific components
 

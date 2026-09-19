@@ -3,10 +3,10 @@ import { useEffect } from 'react';
 import React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 
-import { useScrollHide, SpringPresets, useSettingsStore, useShallow } from '@workspace/studio-core';
+import { useScrollHide, SpringPresets, useSettingsStore, useShallow } from '@workspace/livex-core';
 import { ProgressiveBlur } from '../design-system/ProgressiveBlur';
-import { StudioLogo } from '../../features/chordex/icons/ChordexLogo';
-import { StudioHeader } from './StudioHeader';
+import { LivexLogo, StudioLogo } from '../../features/chordex/icons/ChordexLogo';
+import { LivexHeader, StudioHeader } from './LivexHeader';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { useScrollMorph } from './useScrollMorph';

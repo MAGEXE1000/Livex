@@ -1,4 +1,4 @@
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 "use client";
 
 import type { Variants } from "motion/react";

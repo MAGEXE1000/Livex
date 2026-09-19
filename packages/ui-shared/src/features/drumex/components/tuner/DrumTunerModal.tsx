@@ -17,7 +17,7 @@ import {
   type DrumTensionId,
   type TunerLifecycleState,
   type InstrumentStringTarget,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useTunerArtwork } from '../../../chordex/components/tuner/tunerArtworkHelper';
 
 interface DrumTunerModalProps {

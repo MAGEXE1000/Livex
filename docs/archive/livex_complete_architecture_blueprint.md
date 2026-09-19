@@ -709,7 +709,7 @@ Livex primarily uses **Zustand stores** (global singletons) rather than React Co
 
 **Languages:** English (en), Spanish (es)
 
-**API:** `useT()` hook returns translation function. All apps import from `@workspace/studio-core`.
+**API:** `useT()` hook returns translation function. All apps import from `@workspace/livex-core`.
 
 **Provider:** `<TolgeeProvider>` wraps the entire app tree in both Android and Web entry points.
 
@@ -1168,7 +1168,7 @@ graph TD
 11. **Extract shared CSS base** from platform CSS files
 12. **Merge WebDesignSystem** into StudioDesignSystem as responsive variants
 13. **Merge StageCorePanel forks** into one implementation with platform conditionals
-14. **Introduce sub-path exports** for studio-core (`@workspace/studio-core/navigation`, etc.)
+14. **Introduce sub-path exports** for studio-core (`@workspace/livex-core/navigation`, etc.)
 
 ### Long-term
 

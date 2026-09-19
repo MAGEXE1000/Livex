@@ -32,14 +32,14 @@ async function runNavigationTests() {
 
   const storePath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/store/useNavigationStore.js'
+    'packages/livex-core/dist/src/store/useNavigationStore.js'
   );
   const storeUrl = `file://${storePath.replace(/\\/g, '/')}`;
   const { useNavigationStore } = await import(storeUrl);
 
   const dispatcherPath = path.join(
     repoRoot,
-    'packages/studio-core/dist/src/lib/navigation/NavigationDispatcher.js'
+    'packages/livex-core/dist/src/lib/navigation/NavigationDispatcher.js'
   );
   const dispatcherUrl = `file://${dispatcherPath.replace(/\\/g, '/')}`;
   const { NavigationDispatcher } = await import(dispatcherUrl);

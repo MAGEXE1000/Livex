@@ -1,4 +1,4 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useStudioPreferences } from '@workspace/livex-core';
 import React from 'react';
 import {
   ChordexSongsMockup,

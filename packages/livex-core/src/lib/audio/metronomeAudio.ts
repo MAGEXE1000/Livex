@@ -1,4 +1,5 @@
 import { createAudioContext } from './audioContextOptions';
+import { loadAudioSample } from './audioSampleLoader';
 
 export type MetronomeTimeSignature = '4/4' | '3/4' | '6/8' | '2/4' | '5/4' | '7/8' | '9/8' | '12/8';
 export type MetronomeSubdivision = '1/4' | '1/8' | '1/16' | '1/32' | '3let' | '6let';
@@ -175,7 +176,9 @@ export class MetronomeAudioEngine {
       this._voiceGain.connect(this._masterGain);
 
       this.synthesizeAllSounds();
-      this.preloadVoiceBuffers();
+      if (this._countInVoiceEnabled) {
+        this.preloadVoiceBuffers();
+      }
     }
     if (this._ctx.state === 'suspended') {
       this._ctx.resume().catch(() => {});
@@ -189,20 +192,13 @@ export class MetronomeAudioEngine {
   private async preloadVoiceBuffers() {
     if (!this._ctx || typeof this._ctx.decodeAudioData !== 'function') return;
     const ctx = this._ctx;
-    const { VOICE_COUNT_BASE64 } = await import('./metronomeVoiceData');
     for (let i = 1; i <= 12; i++) {
       if (this._voiceBuffers.has(i)) continue;
-      const b64 = VOICE_COUNT_BASE64[i];
-      if (!b64) continue;
       try {
-        const binStr =
-          typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
-        const bytes = new Uint8Array(binStr.length);
-        for (let j = 0; j < binStr.length; j++) {
-          bytes[j] = binStr.charCodeAt(j);
+        const buf = await loadAudioSample(ctx, `/audio/metronome/${i}.wav`);
+        if (buf) {
+          this._voiceBuffers.set(i, buf);
         }
-        const buf = await ctx.decodeAudioData(bytes.buffer.slice(0));
-        this._voiceBuffers.set(i, buf);
       } catch {
         // Silently continue if decoding is unsupported in test mock
       }
@@ -969,6 +965,9 @@ export class MetronomeAudioEngine {
         this._ctx.currentTime
       );
     }
+    if (this._countInVoiceEnabled && this._countInEnabled) {
+      this.preloadVoiceBuffers();
+    }
   }
 
   public setVoiceCountIn(enabled: boolean) {
@@ -978,6 +977,9 @@ export class MetronomeAudioEngine {
         this._countInVoiceEnabled ? 1.0 : 0.0,
         this._ctx.currentTime
       );
+    }
+    if (this._countInVoiceEnabled) {
+      this.preloadVoiceBuffers();
     }
   }
 

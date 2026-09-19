@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore, type RiderNeed } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { StageSetupEmptyState } from './StageSetupEmptyState';
-import { useSettingsStore, useT, EasingPresets } from '@workspace/studio-core';
+import { useSettingsStore, useT, EasingPresets } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 

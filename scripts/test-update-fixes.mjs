@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * App Update State Machine Regression Tests v2
  * Validates fixes against the uppercase state machine (IDLE, RECOVERY, etc.)
@@ -27,11 +27,11 @@ function test(name, fn) {
 }
 
 // == Load source files ==
-const smPath = path.join(repoRoot, 'packages/studio-core/src/lib/updater/stateMachine.ts');
+const smPath = path.join(repoRoot, 'packages/livex-core/src/lib/updater/stateMachine.ts');
 const smContent = fs.readFileSync(smPath, 'utf8');
-const otaPath = path.join(repoRoot, 'packages/studio-core/src/lib/otaUpdate.ts');
+const otaPath = path.join(repoRoot, 'packages/livex-core/src/lib/otaUpdate.ts');
 const otaContent = fs.readFileSync(otaPath, 'utf8');
-const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 const appVersionContent = fs.readFileSync(appVersionPath, 'utf8');
 const gradlePath = path.join(repoRoot, 'apps/studio-android/android/app/build.gradle');
 const gradleContent = fs.readFileSync(gradlePath, 'utf8');

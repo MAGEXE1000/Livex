@@ -11,7 +11,7 @@ import {
   type MetronomeSubdivision,
   type MetronomeSoundId,
   type MetronomePreset,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import {

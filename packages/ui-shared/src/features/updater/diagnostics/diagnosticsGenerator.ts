@@ -1,4 +1,4 @@
-import { APP_VERSION, isNative, updateDiagnostics, updateDebugLogs, activityLifecycleTimeline, getTransitionHistory, getRejectedTransitions, getErrors, getLogs, getPerfStats, getStagexDiagnostics, useNavigationStore, PerformanceProfiler, getUpdateSessions, getActiveSession, isInstallationLocked, isPostInstallSessionActive, globalUpdateState, updaterSimulation, stateListeners, UpdaterFlightRecorder, isSimulationActive, shouldUseAndroidApkUpdater, useChordStore, useSettingsStore, compressReportText } from '@workspace/studio-core';
+import { APP_VERSION, isNative, updateDiagnostics, updateDebugLogs, activityLifecycleTimeline, getTransitionHistory, getRejectedTransitions, getErrors, getLogs, getPerfStats, getStagexDiagnostics, useNavigationStore, PerformanceProfiler, getUpdateSessions, getActiveSession, isInstallationLocked, isPostInstallSessionActive, globalUpdateState, updaterSimulation, stateListeners, UpdaterFlightRecorder, isSimulationActive, shouldUseAndroidApkUpdater, useChordStore, useSettingsStore, compressReportText } from '@workspace/livex-core';
 
 export interface DiagnosticsData {
   appVersion: string;

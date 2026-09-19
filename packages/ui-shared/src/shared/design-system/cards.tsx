@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import { StudioIcon } from '../icons/StudioIcon';

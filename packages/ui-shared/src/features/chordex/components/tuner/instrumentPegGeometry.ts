@@ -1,4 +1,4 @@
-import type { InstrumentTuningMode } from '@workspace/studio-core';
+import type { InstrumentTuningMode } from '@workspace/livex-core';
 
 export interface PegTargetDefinition {
   readonly stringNumber: number;

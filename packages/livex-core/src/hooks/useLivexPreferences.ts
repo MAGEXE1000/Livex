@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export interface StudioPreferences {
+export interface LivexPreferences {
   autoHideSidebarInApps: boolean;
   hoverRevealSidebar: boolean;
   autoCloseHoverSidebar: boolean;
@@ -10,7 +10,9 @@ export interface StudioPreferences {
   compactDesktopSpacing: boolean;
 }
 
-const PREF_DEFAULTS: StudioPreferences = {
+export type StudioPreferences = LivexPreferences;
+
+const PREF_DEFAULTS: LivexPreferences = {
   autoHideSidebarInApps: true,
   hoverRevealSidebar: true,
   autoCloseHoverSidebar: true,
@@ -20,45 +22,45 @@ const PREF_DEFAULTS: StudioPreferences = {
   compactDesktopSpacing: false,
 };
 
-const PREF_KEYS: Record<keyof StudioPreferences, string> = {
-  autoHideSidebarInApps: 'studio:pref:autoHideSidebarInApps',
-  hoverRevealSidebar: 'studio:pref:hoverRevealSidebar',
-  autoCloseHoverSidebar: 'studio:pref:autoCloseHoverSidebar',
-  showWebAppDock: 'studio:pref:showWebAppDock',
-  rememberLastAppSection: 'studio:pref:rememberLastAppSection',
-  reduceMotion: 'studio:pref:reduceMotion',
-  compactDesktopSpacing: 'studio:pref:compactDesktopSpacing',
+const PREF_KEYS: Record<keyof LivexPreferences, { canonical: string; legacy: string }> = {
+  autoHideSidebarInApps: { canonical: 'livex:pref:autoHideSidebarInApps', legacy: 'studio:pref:autoHideSidebarInApps' },
+  hoverRevealSidebar: { canonical: 'livex:pref:hoverRevealSidebar', legacy: 'studio:pref:hoverRevealSidebar' },
+  autoCloseHoverSidebar: { canonical: 'livex:pref:autoCloseHoverSidebar', legacy: 'studio:pref:autoCloseHoverSidebar' },
+  showWebAppDock: { canonical: 'livex:pref:showWebAppDock', legacy: 'studio:pref:showWebAppDock' },
+  rememberLastAppSection: { canonical: 'livex:pref:rememberLastAppSection', legacy: 'studio:pref:rememberLastAppSection' },
+  reduceMotion: { canonical: 'livex:pref:reduceMotion', legacy: 'studio:pref:reduceMotion' },
+  compactDesktopSpacing: { canonical: 'livex:pref:compactDesktopSpacing', legacy: 'studio:pref:compactDesktopSpacing' },
 };
 
-function getPreference<K extends keyof StudioPreferences>(key: K): StudioPreferences[K] {
+function getPreference<K extends keyof LivexPreferences>(key: K): LivexPreferences[K] {
   if (typeof window === 'undefined') return PREF_DEFAULTS[key];
   try {
-    const raw = localStorage.getItem(PREF_KEYS[key]);
+    const raw = localStorage.getItem(PREF_KEYS[key].canonical) ?? localStorage.getItem(PREF_KEYS[key].legacy);
     if (raw === null) return PREF_DEFAULTS[key];
-    return JSON.parse(raw) as StudioPreferences[K];
+    return JSON.parse(raw) as LivexPreferences[K];
   } catch {
     return PREF_DEFAULTS[key];
   }
 }
 
-function getAllPreferences(): StudioPreferences {
-  const prefs = {} as StudioPreferences;
-  for (const k of Object.keys(PREF_DEFAULTS) as Array<keyof StudioPreferences>) {
+function getAllPreferences(): LivexPreferences {
+  const prefs = {} as LivexPreferences;
+  for (const k of Object.keys(PREF_DEFAULTS) as Array<keyof LivexPreferences>) {
     prefs[k] = getPreference(k);
   }
   return prefs;
 }
 
-interface StudioPreferencesState {
-  preferences: StudioPreferences;
-  setPreference: <K extends keyof StudioPreferences>(key: K, value: StudioPreferences[K]) => void;
+interface LivexPreferencesState {
+  preferences: LivexPreferences;
+  setPreference: <K extends keyof LivexPreferences>(key: K, value: LivexPreferences[K]) => void;
 }
 
-export const useStudioPreferencesStore = create<StudioPreferencesState>((set) => ({
+export const useLivexPreferencesStore = create<LivexPreferencesState>((set) => ({
   preferences: getAllPreferences(),
   setPreference: (key, value) => {
     try {
-      localStorage.setItem(PREF_KEYS[key], JSON.stringify(value));
+      localStorage.setItem(PREF_KEYS[key].canonical, JSON.stringify(value));
     } catch (e) {
       console.error('Failed to save preference', key, value, e);
     }
@@ -71,8 +73,13 @@ export const useStudioPreferencesStore = create<StudioPreferencesState>((set) =>
   },
 }));
 
-export function useStudioPreferences() {
-  const preferences = useStudioPreferencesStore((s) => s.preferences);
-  const setPreference = useStudioPreferencesStore((s) => s.setPreference);
+export const useStudioPreferencesStore = useLivexPreferencesStore;
+
+export function useLivexPreferences() {
+  const preferences = useLivexPreferencesStore((s) => s.preferences);
+  const setPreference = useLivexPreferencesStore((s) => s.setPreference);
   return { preferences, setPreference };
 }
+
+export const useStudioPreferences = useLivexPreferences;
+

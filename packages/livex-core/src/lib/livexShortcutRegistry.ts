@@ -1,1 +1,1 @@
-export * from './events/studioShortcutRegistry';
+export * from './events/livexShortcutRegistry';

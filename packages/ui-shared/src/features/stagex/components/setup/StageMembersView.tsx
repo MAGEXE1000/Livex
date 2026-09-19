@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useSettingsStore, useT } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 

@@ -34,7 +34,7 @@ export function verifyDependencyLocks() {
     verifiedPackages: [
       'apps/studio-web/package.json',
       'apps/studio-android/package.json',
-      'packages/studio-core/package.json',
+      'packages/livex-core/package.json',
       'packages/ui-shared/package.json',
     ],
     graphIntegrity: 'CONSISTENT',

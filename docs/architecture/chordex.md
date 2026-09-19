@@ -59,7 +59,7 @@ Song practice and management:
 
 ## State Management
 
-Uses `useChordStore` from `@workspace/studio-core` (881 lines, 33 KB):
+Uses `useChordStore` from `@workspace/livex-core` (881 lines, 33 KB):
 
 ### Key State
 

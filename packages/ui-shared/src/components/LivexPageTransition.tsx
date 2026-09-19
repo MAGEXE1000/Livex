@@ -111,7 +111,7 @@ export const SECTION_DRILLDOWN_TRANSITION = {
   },
 };
 
-interface StudioPageTransitionProps {
+export interface LivexPageTransitionProps {
   pageKey: string;
   children: React.ReactNode;
   className?: string;
@@ -120,7 +120,9 @@ interface StudioPageTransitionProps {
   initial?: boolean;
 }
 
-export const StudioPageTransition: React.FC<StudioPageTransitionProps> = ({
+export type StudioPageTransitionProps = LivexPageTransitionProps;
+
+export const LivexPageTransition: React.FC<LivexPageTransitionProps> = ({
   pageKey,
   children,
   className = '',
@@ -163,3 +165,5 @@ export const StudioPageTransition: React.FC<StudioPageTransitionProps> = ({
     </AnimatePresence>
   );
 };
+
+export const StudioPageTransition = LivexPageTransition;

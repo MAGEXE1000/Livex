@@ -1,5 +1,5 @@
-import { useStudioPreferences } from '@workspace/studio-core';
-import { StudioLogo } from '@workspace/ui-shared';
+import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
+import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import LandingNavbar from './components/LandingNavbar';
@@ -12,9 +12,11 @@ import Landing3DMarquee from './components/Landing3DMarquee';
 import LandingDownloads from './components/LandingDownloads';
 import LandingFooter from './components/LandingFooter';
 
-interface StudioLandingPageProps {
+export interface LivexLandingPageProps {
   navigateTo: (path: string) => void;
 }
+
+export type StudioLandingPageProps = LivexLandingPageProps;
 
 interface ReleaseInfo {
   version: string;
@@ -22,7 +24,7 @@ interface ReleaseInfo {
   apkSizeBytes?: number;
 }
 
-export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps) {
+export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loadingRelease, setLoadingRelease] = useState(true);
 
@@ -31,12 +33,19 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
 
   const [showIntro, setShowIntro] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return !sessionStorage.getItem('studio:landingIntroSeen');
+    return !(
+      sessionStorage.getItem('livex:landingIntroSeen') ??
+      sessionStorage.getItem('studio:landingIntroSeen')
+    );
   });
 
   const [introStep, setIntroStep] = useState<'logo-in' | 'logo-hold' | 'logo-out' | 'done'>(() => {
     if (typeof window === 'undefined') return 'done';
-    if (sessionStorage.getItem('studio:landingIntroSeen')) return 'done';
+    if (
+      sessionStorage.getItem('livex:landingIntroSeen') ??
+      sessionStorage.getItem('studio:landingIntroSeen')
+    )
+      return 'done';
     return 'logo-in';
   });
 
@@ -47,7 +56,7 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
     }
 
     if (isReduced) {
-      sessionStorage.setItem('studio:landingIntroSeen', 'true');
+      sessionStorage.setItem('livex:landingIntroSeen', 'true');
       setShowIntro(false);
       setIntroStep('done');
       return;
@@ -67,7 +76,7 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
       }, 800);
     } else if (introStep === 'logo-out') {
       t3 = setTimeout(() => {
-        sessionStorage.setItem('studio:landingIntroSeen', 'true');
+        sessionStorage.setItem('livex:landingIntroSeen', 'true');
         setIntroStep('done');
         setShowIntro(false);
       }, 650);
@@ -201,3 +210,5 @@ export default function StudioLandingPage({ navigateTo }: StudioLandingPageProps
     </>
   );
 }
+
+export const StudioLandingPage = LivexLandingPage;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useBackHandler, useT } from '@workspace/studio-core';
+import { useBackHandler, useT } from '@workspace/livex-core';
 import { StudioPageTransition } from '../../../../components/StudioPageTransition';
 import { StageSetupHub } from './StageSetupHub';
 import { StageRiderView } from './StageRiderView';

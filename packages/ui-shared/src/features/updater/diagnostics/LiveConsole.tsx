@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { getLogs, stateTimeline } from '@workspace/studio-core';
+import { getLogs, stateTimeline } from '@workspace/livex-core';
 import { Button, ButtonGroup } from '../../../shared/design-system/buttons';
 import { copyToClipboard } from './centralizedClipboard';
 

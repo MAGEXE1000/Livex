@@ -1,4 +1,4 @@
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 # Livex Dependency Graph
 
 > **Principal Architect Document** · July 2026 · Version 4.2.4
@@ -469,17 +469,17 @@ Exports all feature modules (StudioHub, DrumEditor, etc.), all shared components
 
 ### 13.1 Sub-Path Exports
 
-Replace flat `@workspace/studio-core` with sub-paths:
+Replace flat `@workspace/livex-core` with sub-paths:
 
 ```
-@workspace/studio-core/navigation  → useNavigationStore, NavigationDispatcher, etc.
-@workspace/studio-core/theme       → themeEngine, themeTransitionEngine
-@workspace/studio-core/settings    → useSettingsStore (renamed from useChordStore)
-@workspace/studio-core/sync        → sync, syncEngine
-@workspace/studio-core/auth        → auth, accountStatus
-@workspace/studio-core/tokens      → designTokens (all token exports)
-@workspace/studio-core/updater     → stateMachine, pipeline, etc.
-@workspace/studio-core/audio       → guitarAudio, drumAudio, etc.
+@workspace/livex-core/navigation  → useNavigationStore, NavigationDispatcher, etc.
+@workspace/livex-core/theme       → themeEngine, themeTransitionEngine
+@workspace/livex-core/settings    → useSettingsStore (renamed from useChordStore)
+@workspace/livex-core/sync        → sync, syncEngine
+@workspace/livex-core/auth        → auth, accountStatus
+@workspace/livex-core/tokens      → designTokens (all token exports)
+@workspace/livex-core/updater     → stateMachine, pipeline, etc.
+@workspace/livex-core/audio       → guitarAudio, drumAudio, etc.
 ```
 
 ### 13.2 Eliminate Dead Paths

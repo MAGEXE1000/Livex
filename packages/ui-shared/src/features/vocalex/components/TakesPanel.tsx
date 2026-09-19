@@ -6,7 +6,7 @@ import {
   useSettingsStore,
   type TakeRecord,
   vocalexRepository,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import SmartLoading from '../../../shared/loading/SmartLoading';

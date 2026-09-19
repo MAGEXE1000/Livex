@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 
-interface StudioCountUpPercentageProps {
+export interface LivexCountUpPercentageProps {
   value: number; // raw value, can be 0-100 or 0-1 (we'll detect and handle both!)
   className?: string;
   style?: React.CSSProperties;
 }
 
-export default function StudioCountUpPercentage({
+export type StudioCountUpPercentageProps = LivexCountUpPercentageProps;
+
+export default function LivexCountUpPercentage({
   value,
   className,
   style,
-}: StudioCountUpPercentageProps) {
+}: LivexCountUpPercentageProps) {
   // Gracefully handle values passed as decimal ratios (0 to 1) or percentage values (0 to 100)
   const isDecimal = value <= 1.05 && value > 0;
   const rawTarget = isDecimal ? value * 100 : value;
@@ -74,3 +76,6 @@ export default function StudioCountUpPercentage({
     </span>
   );
 }
+
+export const StudioCountUpPercentage = LivexCountUpPercentage;
+export { LivexCountUpPercentage };

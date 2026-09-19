@@ -17,7 +17,7 @@ import {
   useBackHandler,
   StartupCoordinator,
   useT,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   StudioLogo,
   ChordexLogo,

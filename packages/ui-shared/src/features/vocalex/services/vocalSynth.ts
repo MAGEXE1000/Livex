@@ -1,4 +1,4 @@
-import { createAudioContext } from '@workspace/studio-core';
+import { createAudioContext } from '@workspace/livex-core';
 import { NOTE_FREQ } from './exerciseData';
 
 let ctx: AudioContext | null = null;

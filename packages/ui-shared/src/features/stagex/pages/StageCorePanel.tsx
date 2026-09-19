@@ -13,7 +13,7 @@ import {
   setNavHidden,
   type AppKey,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { motion } from 'motion/react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { UNIFIED_NAV_TRANSITION } from '../../../components/StudioPageTransition';

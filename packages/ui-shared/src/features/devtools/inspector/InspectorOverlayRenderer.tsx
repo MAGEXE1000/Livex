@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useDeveloperInspectorStore } from '@workspace/studio-core';
+import { useDeveloperInspectorStore } from '@workspace/livex-core';
 import {
   getBoxModel,
   getInspectableElementAtPoint,

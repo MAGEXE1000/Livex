@@ -16,7 +16,7 @@ export function runReleaseAudit() {
       id: 'GOV-1',
       name: 'Single Version Source Governance',
       check: () => {
-        const file = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+        const file = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
         if (!fs.existsSync(file)) return { pass: false, error: 'appVersion.ts missing' };
         const content = fs.readFileSync(file, 'utf8');
         const matches = [...content.matchAll(/export\s+const\s+NATIVE_VERSION\b/g)];

@@ -2,7 +2,7 @@ import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 
 export interface StageSetupDetailLayoutProps {
   title: string;

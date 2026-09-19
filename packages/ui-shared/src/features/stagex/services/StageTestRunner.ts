@@ -1,5 +1,5 @@
-import { NavigationDispatcher } from '@workspace/studio-core';
-import { useChordStore } from '@workspace/studio-core';
+import { NavigationDispatcher } from '@workspace/livex-core';
+import { useChordStore } from '@workspace/livex-core';
 
 export const runInteractionTest = async (
   testActive: boolean,

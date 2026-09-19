@@ -454,7 +454,7 @@ try {
 } catch (e) {
   // ignore
 }
-const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 const appVersionSrc = fs.existsSync(appVersionPath) ? fs.readFileSync(appVersionPath, 'utf8') : '';
 
 if (gitCommitSha === 'unknown') {

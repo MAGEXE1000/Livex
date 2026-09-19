@@ -11,7 +11,7 @@ import {
   APP_VERSION,
   getChangelogSections,
   APP_VERSION_DATE,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { HubTab, HelpPageId } from './hubConstants';
 import { FAQ_ITEMS, HelpAccordion } from './faqConstants';
 import { BouncyAccordion } from '../../../components/motion/bouncy-accordion';
@@ -21,7 +21,7 @@ import {
 } from '../../../shared/layout/StudioLayoutSystem';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
-import { HUB_SETTINGS_CSS } from '../settings/HubSettings';
+import { HUB_SETTINGS_CSS } from '../settings/hubSettingsStyles';
 
 function IconDocs({ active }: { active?: boolean }) {
   return (

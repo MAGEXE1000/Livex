@@ -36,7 +36,7 @@ const RELEASE_CRITICAL_FILES = [
   'apps/studio-android/public/app-release.json',
   'apps/studio-android/public/version.json',
   'package.json',
-  'packages/studio-core/src/lib/startup/appVersion.ts',
+  'packages/livex-core/src/lib/startup/appVersion.ts',
 ].sort();
 
 /**

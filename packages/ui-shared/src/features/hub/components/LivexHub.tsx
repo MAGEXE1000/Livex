@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
-import { StudioIcon } from '../../../shared/icons/StudioIcon';
+import { LivexIcon, StudioIcon } from '../../../shared/icons/LivexIcon';
 import { subscribeIntroDone } from '../../../shared/animation/introSignal';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
@@ -56,7 +56,7 @@ import {
   EasingPresets,
   SpringPresets,
   authRepository,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   getUpdateHistory,
   StartupCoordinator,
@@ -65,7 +65,7 @@ import {
   getTimelineReport,
   getUserCover,
   subscribeUserCover,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React, { useState, useRef, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -77,6 +77,7 @@ import {
   Reorder,
 } from 'motion/react';
 import {
+  LivexLogo,
   StudioLogo,
   ChordexLogo,
   DrumexLogo,
@@ -86,9 +87,9 @@ import {
 } from '../../chordex/icons/ChordexLogo';
 import { TuningForkIcon } from '../../chordex/components/tuner/TuningForkIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
-import HubSettings from '../settings/HubSettings';
-import HubHelp from './HubHelp';
-import HubChangelogView from './HubChangelogView';
+
+const HubSettings = lazy(() => import('../settings/HubSettings'));
+const HubHelp = lazy(() => import('./HubHelp'));
 import {
   Toggle,
   SectionHeader,
@@ -105,10 +106,9 @@ import {
 } from '../navigation/navStyles';
 import ProfileDropdown from '../../auth/components/ProfileDropdown';
 import SmartLoading from '../../../shared/loading/SmartLoading';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
+import { LivexHeader, StudioHeader } from '../../../shared/layout/LivexHeader';
 import { SharedNavigationBar } from '../navigation/SharedNavigationBar';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
-import PremiumThemeSwitcher from '../settings/PremiumThemeSwitcher';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import { useStagexStore } from '../../stagex/state/useStagexStore';
 
@@ -478,7 +478,7 @@ function useStartupComplete() {
   return complete;
 }
 
-export default function StudioHub() {
+export default function LivexHub() {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
   const lang = useSettingsStore((s) => s.settings.language ?? 'en');
@@ -528,7 +528,7 @@ export default function StudioHub() {
 
   useEffect(() => {
     console.log(
-      `[STARTUP-TRACE] StudioHub: mount useEffect fired at ${performance.now().toFixed(0)}ms, calling notifyHubMounted()`
+      `[STARTUP-TRACE] LivexHub: mount useEffect fired at ${performance.now().toFixed(0)}ms, calling notifyHubMounted()`
     );
     StartupCoordinator.notifyHubMounted();
   }, []);
@@ -765,7 +765,7 @@ export default function StudioHub() {
   useEffect(() => {
     registerDebugProvider({
       id: 'hub',
-      name: 'Studio Hub',
+      name: 'Livex Hub',
       getDebugState: () => {
         const diag = getFirestoreDiagnostics();
         const navEntries = getNavigationEntries();
@@ -2183,28 +2183,11 @@ export default function StudioHub() {
                 )}
                 {/* ⚙️ SETTINGS TAB */}
                 {tabId === 'settings' && (
-                  <HubSettings
-                    accent={accent}
-                    scrollRef={settingsScrollRef}
-                    authUser={authUser}
-                    tab={tab}
-                    setTab={setTab}
-                    showDevToast={showDevToast}
-                    handleLogoTap={handleLogoTap}
-                    devToast={devToast}
-                    renderDevToast={renderDevToast}
-                  />
-                )}
-                {/* 👤 PROFILE TAB */}
-                {tabId === 'profile' && (
-                  <>
+                  <Suspense fallback={null}>
                     <HubSettings
                       accent={accent}
-                      scrollRef={profileScrollRef}
+                      scrollRef={settingsScrollRef}
                       authUser={authUser}
-                      onProfile={() => {
-                        NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
-                      }}
                       tab={tab}
                       setTab={setTab}
                       showDevToast={showDevToast}
@@ -2212,6 +2195,27 @@ export default function StudioHub() {
                       devToast={devToast}
                       renderDevToast={renderDevToast}
                     />
+                  </Suspense>
+                )}
+                {/* 👤 PROFILE TAB */}
+                {tabId === 'profile' && (
+                  <>
+                    <Suspense fallback={null}>
+                      <HubSettings
+                        accent={accent}
+                        scrollRef={profileScrollRef}
+                        authUser={authUser}
+                        onProfile={() => {
+                          NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+                        }}
+                        tab={tab}
+                        setTab={setTab}
+                        showDevToast={showDevToast}
+                        handleLogoTap={handleLogoTap}
+                        devToast={devToast}
+                        renderDevToast={renderDevToast}
+                      />
+                    </Suspense>
 
                     {/* Premium Login Success Check Overlay */}
                     {successAnimationState !== 'hidden' && (
@@ -2377,7 +2381,9 @@ export default function StudioHub() {
                 )}
                 {/* ❓ HELP TAB */}
                 {tabId === 'help' && (
-                  <HubHelp accent={accent} authUser={authUser} tab={tab} setTab={setTab} />
+                  <Suspense fallback={null}>
+                    <HubHelp accent={accent} authUser={authUser} tab={tab} setTab={setTab} />
+                  </Suspense>
                 )}
               </div>
             );
@@ -2572,3 +2578,5 @@ function AppRow({
     </button>
   );
 }
+
+export const StudioHub = LivexHub;

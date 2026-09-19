@@ -10,7 +10,7 @@ Chordex Studio is a high-performance, cross-platform audio station, chords pract
 
 ### Key Objectives
 
-- **Unified Core Logic**: Leverage a shared core package (`@workspace/studio-core`) across both web and native Android builds to guarantee consistency in business rules, local storage caching, and state machine behaviors.
+- **Unified Core Logic**: Leverage a shared core package (`@workspace/livex-core`) across both web and native Android builds to guarantee consistency in business rules, local storage caching, and state machine behaviors.
 - **Low-Latency Audio Engine**: Deliver real-time audio playback, tuning, and sequencing capabilities natively on Android and in HTML5 browser environments.
 - **Resilient Offline-First Sync**: Sync user configurations, practice sessions, and custom song databases seamlessly to Firestore or Supabase Realtime synchronization backends.
 - **Robust OTA Updates**: Deploy bug fixes, performance upgrades, and assets dynamically via a secure native OTA (Over-the-Air) updater engine.

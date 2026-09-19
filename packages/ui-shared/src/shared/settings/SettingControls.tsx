@@ -1,4 +1,4 @@
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';

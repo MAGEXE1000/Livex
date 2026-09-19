@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { type GuitarChordData } from '@workspace/studio-core';
+import { type GuitarChordData } from '@workspace/livex-core';
 
 export interface MiniFretboardRecessProps {
   chordData?: GuitarChordData | null;

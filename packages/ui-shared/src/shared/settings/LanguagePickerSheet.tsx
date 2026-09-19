@@ -5,7 +5,7 @@ import {
   ACCENT_COLORS,
   resolveAccent,
   SpringPresets,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { Dialog } from '../design-system/dialogs';
 import { motion } from 'motion/react';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';

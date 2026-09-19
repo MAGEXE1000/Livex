@@ -26,6 +26,8 @@ export interface StudioBootTimings {
 
 declare global {
   interface Window {
+    __livexStartupComplete?: boolean;
+    __livexHubReady?: boolean;
     __studioStartupComplete?: boolean;
     __studio_debug_mode?: boolean;
     __studioStableKey?: string;

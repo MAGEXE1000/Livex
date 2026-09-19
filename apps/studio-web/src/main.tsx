@@ -4,7 +4,7 @@ import {
   NavigationDispatcher,
   useSettingsStore,
   useNavigationStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 // Initialize DevTools in development builds only (compile-time eliminated in production)
 if (import.meta.env.DEV) {

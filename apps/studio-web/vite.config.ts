@@ -88,11 +88,11 @@ export default defineConfig(async ({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@/lib': path.resolve(import.meta.dirname, '../../packages/studio-core/src/lib'),
-        '@/store': path.resolve(import.meta.dirname, '../../packages/studio-core/src/store'),
-        '@/hooks': path.resolve(import.meta.dirname, '../../packages/studio-core/src/hooks'),
-        '@/data': path.resolve(import.meta.dirname, '../../packages/studio-core/src/data'),
-        '@/i18n': path.resolve(import.meta.dirname, '../../packages/studio-core/src/i18n'),
+        '@/lib': path.resolve(import.meta.dirname, '../../packages/livex-core/src/lib'),
+        '@/store': path.resolve(import.meta.dirname, '../../packages/livex-core/src/store'),
+        '@/hooks': path.resolve(import.meta.dirname, '../../packages/livex-core/src/hooks'),
+        '@/data': path.resolve(import.meta.dirname, '../../packages/livex-core/src/data'),
+        '@/i18n': path.resolve(import.meta.dirname, '../../packages/livex-core/src/i18n'),
         '@': path.resolve(import.meta.dirname, 'src'),
         '@assets': path.resolve(import.meta.dirname, '..', '..', 'attached_assets'),
       },

@@ -72,7 +72,7 @@ for (const entry of fileLinks) {
 }
 
 // 3. firebase.config.json symlinks in package roots
-const firebaseTarget = path.join(repoRoot, 'packages/studio-core/firebase.config.json');
+const firebaseTarget = path.join(repoRoot, 'packages/livex-core/firebase.config.json');
 
 const firebasePkgs = ['ui-shared', 'ui-web', 'ui-android'];
 for (const pkg of firebasePkgs) {

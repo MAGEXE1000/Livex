@@ -3,7 +3,7 @@ import {
   analyzeDiagnosticError,
   analyzeRootAppError,
   clearDiagnosticHistory,
-} from '../packages/studio-core/src/lib/diagnostics/diagnosticEngine.ts';
+} from '../packages/livex-core/src/lib/diagnostics/diagnosticEngine.ts';
 
 console.log('================================================================');
 console.log('       DIAGNOSTIC INTELLIGENCE LAYER VALIDATION SUITE');

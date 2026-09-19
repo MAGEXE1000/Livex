@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useSettingsStore, useT } from '@workspace/studio-core';
+import { useSettingsStore, useT } from '@workspace/livex-core';
 
 export interface StageHistoryItem {
   index: number;

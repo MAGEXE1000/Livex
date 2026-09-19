@@ -1,4 +1,4 @@
-import { type ChordType } from '@workspace/studio-core';
+import { type ChordType } from '@workspace/livex-core';
 
 export interface CategoryItem {
   type: ChordType;

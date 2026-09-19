@@ -89,11 +89,11 @@ export default defineConfig(async ({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@/lib': path.resolve(import.meta.dirname, '../../packages/studio-core/src/lib'),
-        '@/store': path.resolve(import.meta.dirname, '../../packages/studio-core/src/store'),
-        '@/hooks': path.resolve(import.meta.dirname, '../../packages/studio-core/src/hooks'),
-        '@/data': path.resolve(import.meta.dirname, '../../packages/studio-core/src/data'),
-        '@/i18n': path.resolve(import.meta.dirname, '../../packages/studio-core/src/i18n'),
+        '@/lib': path.resolve(import.meta.dirname, '../../packages/livex-core/src/lib'),
+        '@/store': path.resolve(import.meta.dirname, '../../packages/livex-core/src/store'),
+        '@/hooks': path.resolve(import.meta.dirname, '../../packages/livex-core/src/hooks'),
+        '@/data': path.resolve(import.meta.dirname, '../../packages/livex-core/src/data'),
+        '@/i18n': path.resolve(import.meta.dirname, '../../packages/livex-core/src/i18n'),
         '@': path.resolve(import.meta.dirname, 'src'),
         '@assets': path.resolve(import.meta.dirname, '..', '..', 'attached_assets'),
       },
@@ -125,7 +125,7 @@ export default defineConfig(async ({ command, mode }) => {
         'idb-keyval',
         'zod',
       ],
-      exclude: ['@workspace/studio-core', '@workspace/ui-shared', '@workspace/ui-android'],
+      exclude: ['@workspace/livex-core', '@workspace/ui-shared', '@workspace/ui-android'],
     },
     build: {
       outDir: path.resolve(import.meta.dirname, '../../dist/android-web'),
@@ -137,9 +137,6 @@ export default defineConfig(async ({ command, mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('/packages/studio-core/')) {
-              return 'studio-core';
-            }
             if (id.includes('node_modules')) {
               if (
                 id.includes('/react-dom/') ||

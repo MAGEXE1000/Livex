@@ -1,5 +1,5 @@
 import React from 'react';
-import { useIsWebDesktop, resolveAccent } from '@workspace/studio-core';
+import { useIsWebDesktop, resolveAccent } from '@workspace/livex-core';
 import { AnimatedNavigationIcon } from '../../features/hub/navigation/AnimatedNavigationIcon';
 
 export interface StartOnOption<T extends string> {

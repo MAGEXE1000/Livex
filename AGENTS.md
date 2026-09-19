@@ -65,7 +65,7 @@ Every task must be classified into one of the following platform scopes:
   - `apps/studio-android/**`
   - `packages/ui-android/**`
 - **SHARED**:
-  - `packages/studio-core/**`
+  - `packages/livex-core/**`
   - `packages/ui-shared/**`
 
 ---
@@ -87,18 +87,18 @@ pnpm scope:check --platform shared
 ### A. OTA Update Banner System & Dev Testing
 
 - **Trigger**: The application checks `public/version.json` on boot. An in-app update banner morphs (width/height/border-radius transition) into a small pulsing pill after ~6 seconds (or on user minimize). Tapping it launches the update modal.
-- **Single Source of Truth**: The coordinate constant `APP_VERSION` in `packages/studio-core/src/lib/appVersion.ts` is the single source of truth.
+- **Single Source of Truth**: The coordinate constant `APP_VERSION` in `packages/livex-core/src/lib/appVersion.ts` is the single source of truth.
 - **Dev Banner Testing Override**: The `predev` workspace hook runs version synchronization with the `--preserve-newer` flag. This allows developers to manually edit `public/version.json` to a higher version (e.g. `3.0.1`) and add a custom changelog mock to demo banner morphs and animation behavior locally without the file being overwritten on package restarts.
 - **Production Builds**: The `prebuild` hook deliberately omits `--preserve-newer`, overwriting `public/version.json` to prevent local overrides from entering production release tracks.
 
 ### B. Android APK Native Updater & Release Procedure
 
-- **Architecture**: The updater is modularized under `packages/studio-core/src/lib/updater/` with dedicated modules for `stateMachine`, `releaseMetadata`, `versionComparison`, `downloadManager`, `integrityVerification`, `eligibilityVerification`, `installer`, `recovery`, `diagnostics`, and `versionManager`.
+- **Architecture**: The updater is modularized under `packages/livex-core/src/lib/updater/` with dedicated modules for `stateMachine`, `releaseMetadata`, `versionComparison`, `downloadManager`, `integrityVerification`, `eligibilityVerification`, `installer`, `recovery`, `diagnostics`, and `versionManager`.
 - **State Machine**: A single authoritative state machine manages transitions with strict validation guards and watchdog timeouts for transient states (`checking`, `downloading`, `verifying`).
 - **Check Priority**: Manual update checks always take priority and automatically obsolete active background checks using a `latestCheckId` sequence, discarding background results to prevent deadlock.
 - **OTA Base URL Config**: The APK build requires `VITE_OTA_BASE_URL` baked into the bundle pointing to the Firebase public tracking endpoint (e.g. `https://studio-30f44.web.app`). If empty, `versionJsonUrl()` fails closed and logs a Native Updater configuration error, disabling background update polling.
 - **APK Release Flow**:
-  1. Bump the coordinates `APP_VERSION` in `packages/studio-core/src/lib/appVersion.ts`.
+  1. Bump the coordinates `APP_VERSION` in `packages/livex-core/src/lib/appVersion.ts`.
   2. Build and sign the production APK, upload it to Firebase Hosting and GitHub Releases, and update the `version.json` and `app-release.json` metadata manifests on Firebase.
 
 ### C. Cloud Sync Engine Queue Architecture

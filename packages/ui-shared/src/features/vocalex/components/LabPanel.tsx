@@ -14,7 +14,7 @@ import {
   NavigationDispatcher,
   vocalexRepository,
   useBackHandler,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';

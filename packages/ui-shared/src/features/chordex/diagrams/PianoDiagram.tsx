@@ -1,4 +1,4 @@
-import { type PianoChordData } from '@workspace/studio-core';
+import { type PianoChordData } from '@workspace/livex-core';
 import { memo } from 'react';
 
 interface PianoDiagramProps {

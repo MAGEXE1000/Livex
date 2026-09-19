@@ -10,7 +10,7 @@ import {
   createAudioContext,
   vocalexRepository,
   type TakeRecord,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader } from '../../../components/motion/loader';

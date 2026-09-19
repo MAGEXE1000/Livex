@@ -1,4 +1,4 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useStudioPreferences } from '@workspace/livex-core';
 import React, { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { renderMockupByName } from './StudioScreenMockups';

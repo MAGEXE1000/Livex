@@ -51,7 +51,7 @@ console.log('================================================================\n'
 // 1. Check manifests for orphan packages
 test('Orphan packages (@fontsource/*, material-symbols) removed from all manifests', () => {
   const manifests = [
-    'packages/studio-core/package.json',
+    'packages/livex-core/package.json',
     'packages/ui-shared/package.json',
     'packages/ui-web/package.json',
     'packages/ui-android/package.json',

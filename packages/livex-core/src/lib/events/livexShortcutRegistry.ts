@@ -7,7 +7,7 @@ export interface ShortcutRegistryItem {
 }
 
 export const SHORTCUT_REGISTRY: ShortcutRegistryItem[] = [
-  { id: 'hub_home', label: 'Studio Hub', icon: 'home', type: 'hub', payload: 'home' },
+  { id: 'hub_home', label: 'Livex Hub', icon: 'home', type: 'hub', payload: 'home' },
   { id: 'chordex', label: 'Chordex', icon: 'chordex', type: 'app', payload: 'chords' },
   { id: 'drumex', label: 'Drumex', icon: 'drumex', type: 'app', payload: 'drums' },
   { id: 'stagex', label: 'Stagex', icon: 'stagex', type: 'app', payload: 'stage' },

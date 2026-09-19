@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SongPreset } from '@workspace/studio-core';
+import type { SongPreset } from '@workspace/livex-core';
 import { useLiveModeState } from './useLiveModeState';
 import {
   LiveModeHeader,

@@ -256,7 +256,7 @@
               window.location.hostname === 'localhost' ||
               window.location.hostname === '127.0.0.1' ||
               window.location.port === '5174';
-            alreadyShown = isLocalDev || !!sessionStorage.getItem('studio-intro-shown');
+            alreadyShown = isLocalDev || !!sessionStorage.getItem('livex-intro-shown') || !!sessionStorage.getItem('studio-intro-shown');
           } catch (e) {}
 
           if (isApp && !alreadyShown && appMode === 'hub') {
@@ -453,7 +453,9 @@
         }, 2000);
 
         var handleReactReady = function () {
+          window.removeEventListener('livex-hub-ready', handleReactReady);
           window.removeEventListener('studio-hub-ready', handleReactReady);
+          window.removeEventListener('livex:hub-ready', handleReactReady);
           window.removeEventListener('studio:hub-ready', handleReactReady);
           if (intro) {
             intro.style.transition = 'opacity 80ms ease-out';
@@ -465,10 +467,17 @@
           }
         };
 
-        if (window.__studioHubReady || window.__studioStartupComplete) {
+        if (
+          window.__livexHubReady ||
+          window.__livexStartupComplete ||
+          window.__studioHubReady ||
+          window.__studioStartupComplete
+        ) {
           handleReactReady();
         } else {
+          window.addEventListener('livex-hub-ready', handleReactReady);
           window.addEventListener('studio-hub-ready', handleReactReady);
+          window.addEventListener('livex:hub-ready', handleReactReady);
           window.addEventListener('studio:hub-ready', handleReactReady);
         }
       })();
@@ -490,8 +499,8 @@
             return;
 
           // Prevent infinite reload loops — only attempt once per session
-          var RELOAD_KEY = 'studio:web-auto-reload-done';
-          if (sessionStorage.getItem(RELOAD_KEY)) return;
+          var RELOAD_KEY = 'livex:web-auto-reload-done';
+          if (sessionStorage.getItem(RELOAD_KEY) || sessionStorage.getItem('studio:web-auto-reload-done')) return;
 
           fetch('/version.json?t=' + Date.now(), { cache: 'no-store' })
             .then(function (r) {
@@ -524,7 +533,7 @@
                   if (r.ok) return; // assets exist, HTML is current
                   // Assets are missing — this HTML is stale. Reload.
                   console.log(
-                    '[Studio Web Updater] Stale HTML detected, reloading for v' + data.version
+                    '[Livex Web Updater] Stale HTML detected, reloading for v' + data.version
                   );
                   sessionStorage.setItem(RELOAD_KEY, '1');
                   window.location.reload();

@@ -1,4 +1,4 @@
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore } from '@workspace/livex-core';
 import { useReducedMotion } from 'motion/react';
 
 /**

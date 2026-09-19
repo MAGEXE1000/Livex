@@ -1,15 +1,15 @@
 import { SharedAppShell } from '@workspace/ui-shared/src/shared/layout/SharedAppShell';
 import { lazy, useEffect, useRef, useState } from 'react';
-import { tolgee, useSettingsStore, useNavigationStore } from '@workspace/studio-core';
+import { tolgee, useSettingsStore, useNavigationStore } from '@workspace/livex-core';
 
 import { TolgeeProvider } from '@tolgee/react';
 
 import {
-  StudioHub,
+  LivexHub,
   BottomNavigationController,
   LaunchAnimationEngine,
 } from '@workspace/ui-shared/src/features/hub';
-import SettingsPanel from '@workspace/ui-shared/src/panels/SettingsPanel';
+const SettingsPanel = lazy(() => import('@workspace/ui-shared/src/panels/SettingsPanel'));
 import { triggerIntroReveal } from '@workspace/ui-shared/src/shared/animation/introSignal';
 
 const DrumEditor = lazy(() => import('@workspace/ui-shared/src/features/drumex/pages/DrumEditor'));
@@ -71,6 +71,7 @@ export default function App() {
         intro.style.display = 'none';
         if (intro.parentNode) intro.parentNode.removeChild(intro);
         (window as any).__introDone = true;
+        window.dispatchEvent(new Event('livex-intro-done'));
         window.dispatchEvent(new Event('studio-intro-done'));
         triggerIntroReveal();
       }
@@ -119,7 +120,7 @@ export default function App() {
           : undefined
       }
       renderBottomNav={!showLaunchOverlay ? () => <BottomNavigationController /> : undefined}
-      hubElement={<StudioHub />}
+      hubElement={<LivexHub />}
       subApps={{
         devtools: <DevToolsApp />,
         groovex: <GroovexApp />,

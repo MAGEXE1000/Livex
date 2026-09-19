@@ -5,13 +5,13 @@ import {
   NavigationDispatcher,
   useBackHandler,
   useSettingsStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import {
   blobToAudioBuffer,
   extractWaveformPeaks,
   type TakeRecord,
   vocalexRepository,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 const SMOOTHING_FACTOR = 0.8;
 const VIZ_BARS = 64;

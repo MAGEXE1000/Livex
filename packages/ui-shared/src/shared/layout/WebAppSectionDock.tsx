@@ -11,7 +11,7 @@ import {
   DurationPresets,
   EasingPresets,
   SpringPresets,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React, { useRef, useState } from 'react';
 import {
   motion,

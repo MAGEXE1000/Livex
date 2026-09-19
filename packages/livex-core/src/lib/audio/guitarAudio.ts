@@ -1,4 +1,5 @@
 import type { GuitarChordData } from '../../data/chords';
+import { loadAudioSample } from './audioSampleLoader';
 
 // ── Open String MIDI Constants (Standard Tuning E-A-D-G-B-e) ──────────────────
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // E2, A2, D3, G3, B3, E4
@@ -21,7 +22,6 @@ const NAME_TO_MIDI: Record<string, number> = {
 
 let audioCtx: AudioContext | null = null;
 const decodedBufferCache = new Map<number, AudioBuffer>();
-let sampleBankPromise: Promise<Record<string, string>> | null = null;
 
 let activeSources: AudioBufferSourceNode[] = [];
 let activeGainNodes: GainNode[] = [];
@@ -45,23 +45,6 @@ function getCtx(): AudioContext | null {
 }
 
 /**
- * Lazy loads the 37-note base64 sample bank as an isolated chunk.
- * Keeps initial application bundle small and startup instantaneous.
- */
-async function getSampleBank(): Promise<Record<string, string>> {
-  if (!sampleBankPromise) {
-    sampleBankPromise = import('./guitarSampleData')
-      .then((mod) => mod.GUITAR_SAMPLE_DATA)
-      .catch((err) => {
-        sampleBankPromise = null;
-        console.warn('[guitarAudio] Failed to load guitar sample bank:', err);
-        return {};
-      });
-  }
-  return sampleBankPromise;
-}
-
-/**
  * Decodes and caches a note buffer by MIDI pitch.
  * Resolves exact recorded samples in range [40, 76] (E2-E5).
  * Falls back to nearest anchor with pitch resampling outside this range.
@@ -78,55 +61,35 @@ async function getOrDecodeNoteBuffer(
     return { buffer, playbackRate };
   }
 
-  const bank = await getSampleBank();
   const noteName = MIDI_TO_NAME[clampedMidi];
-  const b64 = noteName ? bank[noteName] : null;
-  if (!b64) return null;
+  if (!noteName) return null;
 
-  try {
-    const binStr =
-      typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
-    const bytes = new Uint8Array(binStr.length);
-    for (let i = 0; i < binStr.length; i++) {
-      bytes[i] = binStr.charCodeAt(i);
-    }
-    buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-    decodedBufferCache.set(clampedMidi, buffer);
-    return { buffer, playbackRate };
-  } catch (err) {
-    console.warn('[guitarAudio] Failed to decode sample for note', noteName, err);
-    return null;
-  }
+  const sample = await loadAudioSample(ctx, `/audio/guitar/${noteName}.mp3`);
+  if (!sample) return null;
+
+  decodedBufferCache.set(clampedMidi, sample);
+  return { buffer: sample, playbackRate };
 }
 
 /**
- * Pre-decodes all acoustic guitar sample buffers in the background.
+ * Pre-decodes acoustic guitar sample buffers in the background.
  * Call on Chordex mount to eliminate first-playback decode latency.
  */
 export async function preloadGuitarAudio(): Promise<void> {
   const ctx = getCtx();
   if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
 
-  try {
-    const bank = await getSampleBank();
-    const notes = Object.keys(bank);
-    for (const noteName of notes) {
+  const notes = Object.keys(NAME_TO_MIDI);
+  await Promise.all(
+    notes.map(async (noteName) => {
       const midi = NAME_TO_MIDI[noteName];
-      if (!midi || decodedBufferCache.has(midi)) continue;
-      const b64 = bank[noteName];
-      if (!b64) continue;
-      try {
-        const binStr =
-          typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
-        const bytes = new Uint8Array(binStr.length);
-        for (let i = 0; i < binStr.length; i++) {
-          bytes[i] = binStr.charCodeAt(i);
-        }
-        const buf = await ctx.decodeAudioData(bytes.buffer.slice(0));
+      if (!midi || decodedBufferCache.has(midi)) return;
+      const buf = await loadAudioSample(ctx, `/audio/guitar/${noteName}.mp3`);
+      if (buf) {
         decodedBufferCache.set(midi, buf);
-      } catch {}
-    }
-  } catch {}
+      }
+    })
+  );
 }
 
 /**

@@ -19,7 +19,7 @@ This map defines the absolute minimal context targets for future AI sessions. To
   - [knowledge/ota/rollback.md](file:///${workspaceRoot.replace(/\\/g, '/')}/knowledge/ota/rollback.md)
   - [knowledge/updater/packageinstaller.md](file:///${workspaceRoot.replace(/\\/g, '/')}/knowledge/updater/packageinstaller.md)
 - **Inspect directory**:
-  - \`packages/studio-core/src/lib/updater/\`
+  - \`packages/livex-core/src/lib/updater/\`
 
 ### If working on Firebase & Sync Backend:
 - **Read only**:
@@ -28,7 +28,7 @@ This map defines the absolute minimal context targets for future AI sessions. To
   - [knowledge/firebase/client.md](file:///${workspaceRoot.replace(/\\/g, '/')}/knowledge/firebase/client.md)
   - [knowledge/firebase/security.md](file:///${workspaceRoot.replace(/\\/g, '/')}/knowledge/firebase/security.md)
 - **Inspect directory**:
-  - \`packages/studio-core/src/lib/syncBackends/\`
+  - \`packages/livex-core/src/lib/syncBackends/\`
 
 ### If working on Android UI & Safe Areas:
 - **Read only**:
@@ -50,7 +50,7 @@ This map defines the absolute minimal context targets for future AI sessions. To
   - [engineering_guide.md](file:///${workspaceRoot.replace(/\\/g, '/')}/docs/engineering_guide.md)
   - [knowledge/react/hooks.md](file:///${workspaceRoot.replace(/\\/g, '/')}/knowledge/react/hooks.md)
 - **Inspect directory**:
-  - \`packages/studio-core/src/store/\`
+  - \`packages/livex-core/src/store/\`
 
 ### If Debugging WebView or Database states:
 - **Read only**:

@@ -18,7 +18,7 @@ const repoRoot = path.resolve(__dirname, '../../../..');
 
 export async function runReleaseDoctor(options = {}) {
   const fetchFn = options.fetchFn || globalThis.fetch;
-  const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+  const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
   let currentVersion = '4.3.54';
 
   if (fs.existsSync(appVersionPath)) {

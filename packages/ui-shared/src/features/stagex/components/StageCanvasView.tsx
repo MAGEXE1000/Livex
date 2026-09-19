@@ -15,7 +15,7 @@ import {
   useBackHandler,
   useBottomNavigationStore,
   useSettingsStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { StageToolbar } from './StageToolbar';
 import { StageLibraryPanel } from './StageLibraryPanel';
 import { StageBottomPanelSlot } from './StageBottomPanelSlot';
@@ -31,7 +31,7 @@ import {
 } from '../services/StageBridgeService';
 import { useStagexStore } from '../state/useStagexStore';
 import SmartLoading from '../../../shared/loading/SmartLoading';
-import { resolveAccent } from '@workspace/studio-core';
+import { resolveAccent } from '@workspace/livex-core';
 
 export interface StageCanvasViewProps {
   isLight: boolean;

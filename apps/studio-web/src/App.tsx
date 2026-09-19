@@ -4,17 +4,18 @@ import {
   useNavigationStore,
   NavigationDispatcher,
   type ActivePanel,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 import {
   SharedAppShell,
-  StudioHub,
+  LivexHub,
   WebAppSectionDock,
   LibraryPanel,
-  SettingsPanel,
   SongsPanel,
   triggerIntroReveal,
 } from '@workspace/ui-shared';
+
+const SettingsPanel = lazy(() => import('@workspace/ui-shared/src/panels/SettingsPanel'));
 
 const DrumEditor = lazy(() => import('@workspace/ui-shared/src/features/drumex/pages/DrumEditor'));
 const GroovexApp = lazy(() => import('@workspace/ui-shared/src/features/groovex/pages/GroovexApp'));
@@ -34,7 +35,7 @@ import {
   SidebarProvider,
   SidebarInset,
   useSidebar,
-  StudioLandingPage,
+  LivexLandingPage,
 } from '@workspace/ui-web';
 
 import './index.css';
@@ -139,7 +140,7 @@ export default function App() {
   }, []);
 
   if (route === '/') {
-    return <StudioLandingPage navigateTo={navigateTo} />;
+    return <LivexLandingPage navigateTo={navigateTo} />;
   }
 
   return (
@@ -158,7 +159,7 @@ export default function App() {
           <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
       )}
-      hubElement={<StudioHub />}
+      hubElement={<LivexHub />}
       subApps={{
         devtools: <DevToolsApp />,
         groovex: <GroovexApp />,

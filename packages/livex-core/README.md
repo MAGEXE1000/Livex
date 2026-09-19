@@ -1,4 +1,4 @@
-# @workspace/studio-core
+# @workspace/livex-core
 
 > **Platform scope**: SHARED  
 > **Entry point**: `src/index.ts`  

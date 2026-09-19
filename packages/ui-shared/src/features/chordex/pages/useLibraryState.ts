@@ -15,7 +15,7 @@ import {
   type ActivePanel,
   useSettingsStore,
   type Instrument,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { CATEGORIES } from './LibraryCategories';
 

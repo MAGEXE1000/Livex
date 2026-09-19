@@ -15,11 +15,11 @@ const paths = {
   rootPkg: path.join(repoRoot, 'package.json'),
   webPkg: path.join(repoRoot, 'apps/studio-web/package.json'),
   androidPkg: path.join(repoRoot, 'apps/studio-android/package.json'),
-  corePkg: path.join(repoRoot, 'packages/studio-core/package.json'),
+  corePkg: path.join(repoRoot, 'packages/livex-core/package.json'),
   uiSharedPkg: path.join(repoRoot, 'packages/ui-shared/package.json'),
   uiAndroidPkg: path.join(repoRoot, 'packages/ui-android/package.json'),
   uiWebPkg: path.join(repoRoot, 'packages/ui-web/package.json'),
-  appVersionTs: path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts'),
+  appVersionTs: path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts'),
   buildGradle: path.join(repoRoot, 'apps/studio-android/android/app/build.gradle'),
   changelog: path.join(repoRoot, 'CHANGELOG.md'),
   releaseNotes: path.join(repoRoot, 'release-notes.md'),
@@ -87,7 +87,7 @@ if (fs.existsSync(paths.androidPkg)) {
 
 // 4b. Core & Shared Packages
 const internalPackages = [
-  { path: paths.corePkg, label: 'packages/studio-core/package.json' },
+  { path: paths.corePkg, label: 'packages/livex-core/package.json' },
   { path: paths.uiSharedPkg, label: 'packages/ui-shared/package.json' },
   { path: paths.uiAndroidPkg, label: 'packages/ui-android/package.json' },
   { path: paths.uiWebPkg, label: 'packages/ui-web/package.json' },

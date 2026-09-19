@@ -81,7 +81,7 @@ console.log(`Auditing ${changedFiles.length} changed files...`);
 const ownershipMap = {
   web: [/^apps\/studio-web\//, /^packages\/ui-web\//],
   apk: [/^apps\/studio-android\//, /^packages\/ui-android\//],
-  shared: [/^packages\/studio-core\//, /^packages\/ui-shared\//],
+  shared: [/^packages\/livex-core\//, /^packages\/ui-shared\//],
 };
 
 let violations = [];

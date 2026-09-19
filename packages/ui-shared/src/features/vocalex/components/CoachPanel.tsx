@@ -1,4 +1,4 @@
-import { useT, resolveAccent, useSettingsStore, useShallow } from '@workspace/studio-core';
+import { useT, resolveAccent, useSettingsStore, useShallow } from '@workspace/livex-core';
 import { useState } from 'react';
 import PitchPanel from './PitchPanel';
 import PracticePanel from './PracticePanel';

@@ -16,7 +16,7 @@ import {
   STRING_LABELS,
   notesFromFrets,
   notesFromPianoKeys,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';

@@ -30,7 +30,7 @@ const EXPECTED_PROD_FINGERPRINT = '900cf259185c81100cda8bb08571fa23552e9789131cf
 // -----------------------------------------------------------------------------
 console.log('--- Suite 1: Production Signing Fingerprint Alignment ---');
 
-const appVersionPath = path.join(repoRoot, 'packages/studio-core/src/lib/startup/appVersion.ts');
+const appVersionPath = path.join(repoRoot, 'packages/livex-core/src/lib/startup/appVersion.ts');
 assert(fs.existsSync(appVersionPath), 'appVersion.ts must exist');
 const appVersionContent = fs.readFileSync(appVersionPath, 'utf8');
 

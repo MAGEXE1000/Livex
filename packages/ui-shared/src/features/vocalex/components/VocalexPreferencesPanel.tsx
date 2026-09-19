@@ -6,7 +6,7 @@ import {
   useShallow,
   NavigationDispatcher,
   useIsWebDesktop,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   SettingSection,

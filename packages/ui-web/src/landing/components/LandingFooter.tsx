@@ -1,4 +1,4 @@
-import { StudioLogo } from '@workspace/ui-shared';
+import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
 import React from 'react';
 
 interface LandingFooterProps {
@@ -30,17 +30,17 @@ export default function LandingFooter({
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-2">
               <div className="text-white flex-shrink-0">
-                <StudioLogo size={28} />
+                <LivexLogo size={28} />
               </div>
               <span
                 className="font-extrabold text-base tracking-tight text-white"
                 style={{ fontFamily: 'var(--studio-font-display)', letterSpacing: '-0.02em' }}
               >
-                Studio
+                Livex
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 leading-relaxed max-w-sm landing-font-body">
-              Studio is a specialized, integrated single-page application containing tools for
+              Livex is a specialized, integrated single-page application containing tools for
               guitarists, drummers, audio engineers, vocalists, and music directors. Built for live
               setups.
             </p>
@@ -159,9 +159,9 @@ export default function LandingFooter({
             Licenses & Rights
           </h5>
           <p>
-            Studio is distributed as a web application and Android APK for personal and project use.
-            All Studio interface design, product names, app modules, and original assets are part of
-            the Studio project unless otherwise noted.
+            Livex is distributed as a web application and Android APK for personal and project use.
+            All Livex interface design, product names, app modules, and original assets are part of
+            the Livex project unless otherwise noted.
           </p>
           <p>Third-party libraries remain under their respective licenses.</p>
           <p>
@@ -169,13 +169,13 @@ export default function LandingFooter({
             as interface examples.
           </p>
           <p>
-            Studio does not include or distribute copyrighted songs, lyrics, or audio recordings.
+            Livex does not include or distribute copyrighted songs, lyrics, or audio recordings.
           </p>
           <p>License details will be published with the public release.</p>
         </div>
 
         <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase font-bold tracking-wider text-zinc-600 landing-font-heading">
-          <p>© 2026 Studio. All rights reserved.</p>
+          <p>© 2026 Livex. All rights reserved.</p>
           <div className="flex gap-6">
             <span>Web v4.0.0</span>
             <span>Android v{apkVersion}</span>

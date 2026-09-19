@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useT, useSettingsStore } from '@workspace/studio-core';
+import { useT, useSettingsStore } from '@workspace/livex-core';
 import type { StageLibraryItem } from '../types';
 import { STAGEX_LIBRARY, STAGEX_ICON_MAP, localizeElementName } from '../constants';
 

@@ -23,7 +23,7 @@ import {
   useSettingsStore,
   useSessionStore,
   useMetronomeStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { DrumTransportBar } from '../components/DrumTransportBar';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -103,7 +103,7 @@ import {
   useBottomNavigationStore,
   defaultPattern,
   mediaSessionCoordinator,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 import { NoteHead } from '../components/DrumNoteHeads';
 import { InstrumentRow } from '../components/InstrumentRow';
@@ -135,7 +135,7 @@ import {
   getAudioCtx,
   type SampleStatus,
   type HouseInstName,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 import DrumPrefsPanel from './DrumPrefsPanel';
 import { StaggeredReveal } from '../../../shared/animation';

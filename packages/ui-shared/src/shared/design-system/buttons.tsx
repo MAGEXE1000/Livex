@@ -11,7 +11,7 @@ import {
   ButtonGroupSeparator,
   buttonGroupVariants,
 } from '@heroui/react/button-group';
-import { SpringPresets } from '@workspace/studio-core';
+import { SpringPresets } from '@workspace/livex-core';
 import { AnimatedIcon } from '../icons/AnimatedIcon';
 import { StudioIcon } from '../icons/StudioIcon';
 import { EASE_OUT } from '../../lib/ease';

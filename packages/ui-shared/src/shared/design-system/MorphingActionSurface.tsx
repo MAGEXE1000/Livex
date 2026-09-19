@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useLayoutEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { BackDispatcher, MotionProfiler } from '@workspace/studio-core';
+import { BackDispatcher, MotionProfiler } from '@workspace/livex-core';
 import { activeOverlaysRegistry } from './dialogs';
 import { SPRING_PANEL, EASE_OUT } from '../../lib/ease';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';

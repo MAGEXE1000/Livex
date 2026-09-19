@@ -83,7 +83,7 @@ srcFiles.forEach((file) => {
       importTargets.add(resolvedRel + '.js');
       importTargets.add(resolvedRel + '.jsx');
     } else {
-      // workspace reference imports (e.g. @workspace/studio-core)
+      // workspace reference imports (e.g. @workspace/livex-core)
       importTargets.add(importPath);
     }
   }

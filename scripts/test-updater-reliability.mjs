@@ -20,7 +20,7 @@ const result = spawnSync(
   pnpmCmd,
   [
     '--filter',
-    '@workspace/studio-core',
+    '@workspace/livex-core',
     'test',
     'src/lib/updater/__tests__/updater_reliability.test.ts',
     '--run',

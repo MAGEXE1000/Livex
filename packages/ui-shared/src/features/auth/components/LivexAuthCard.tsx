@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { NavigationDispatcher } from '@workspace/studio-core';
+import { NavigationDispatcher } from '@workspace/livex-core';
 import AppSpinner from '../../../shared/loading/AppSpinner';
 import { Loader } from '../../../components/motion/loader';
 import { motion } from 'motion/react';
 import { Input } from '../../../shared/design-system/StudioDesignSystem';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 
-interface StudioAuthCardProps {
+export interface LivexAuthCardProps {
   accent: { from: string; to: string; mid: string };
   t: any; // Translation object
   busy: boolean;
@@ -22,7 +22,9 @@ interface StudioAuthCardProps {
   initialMode?: 'idle' | 'email-signin' | 'email-register';
 }
 
-export default function StudioAuthCard({
+export type StudioAuthCardProps = LivexAuthCardProps;
+
+export default function LivexAuthCard({
   accent,
   t,
   busy,
@@ -31,7 +33,7 @@ export default function StudioAuthCard({
   doGoogle,
   doEmailSubmit,
   initialMode = 'idle',
-}: StudioAuthCardProps) {
+}: LivexAuthCardProps) {
   const [mode, setMode] = useState<'idle' | 'email-signin' | 'email-register'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -383,3 +385,6 @@ export default function StudioAuthCard({
     </div>
   );
 }
+
+export const StudioAuthCard = LivexAuthCard;
+export { LivexAuthCard };

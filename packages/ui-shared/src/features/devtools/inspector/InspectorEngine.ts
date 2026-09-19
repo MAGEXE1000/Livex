@@ -1,4 +1,4 @@
-import { ComponentFiberInfo, BreadcrumbItem } from '@workspace/studio-core';
+import { ComponentFiberInfo, BreadcrumbItem } from '@workspace/livex-core';
 
 /**
  * InspectorEngine

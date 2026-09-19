@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BouncyAccordion } from '../../../components/motion/bouncy-accordion';
-import { APP_VERSION, getChangelogSections, RELEASE_HISTORY } from '@workspace/studio-core';
+import { APP_VERSION, getChangelogSections, RELEASE_HISTORY } from '@workspace/livex-core';
 
 function getCategoryIcon(category: string): string {
   switch (category) {

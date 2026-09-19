@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via `@workspace/studio-core` and UI components via `@workspace/ui-shared`. Uses web-only layout components from `@workspace/ui-web`.
+The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via `@workspace/livex-core` and UI components via `@workspace/ui-shared`. Uses web-only layout components from `@workspace/ui-web`.
 
 ## Internal Structure
 
@@ -23,7 +23,7 @@ index.html             # HTML shell: Google Fonts, Material Symbols, meta tags
 
 ## Imports (workspace)
 
-- `@workspace/studio-core` — stores, navigation, sync, auth, version
+- `@workspace/livex-core` — stores, navigation, sync, auth, version
 - `@workspace/ui-shared` — StudioHub, SmartLoading, all panels, SharedNavigationContainer, ErrorBoundary
 - `@workspace/ui-web` — WebSidebarLayout, SidebarProvider, SidebarInset, useSidebar, StudioLandingPage
 

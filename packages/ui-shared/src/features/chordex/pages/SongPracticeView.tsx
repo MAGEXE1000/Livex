@@ -19,7 +19,7 @@ import {
   type SongChartSection,
   useSettingsStore,
   SpringPresets,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import ChordDiagram from '../diagrams/ChordDiagram';
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';

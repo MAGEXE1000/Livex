@@ -1,4 +1,4 @@
-import { useT, useBackHandler, useSettingsStore, useShallow } from '@workspace/studio-core';
+import { useT, useBackHandler, useSettingsStore, useShallow } from '@workspace/livex-core';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 interface Tip {

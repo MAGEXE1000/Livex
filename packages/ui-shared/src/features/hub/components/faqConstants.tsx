@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '../../../shared/design-system';
-import { useT, useSettingsStore, APP_VERSION } from '@workspace/studio-core';
+import { useT, useSettingsStore, APP_VERSION } from '@workspace/livex-core';
 
 export interface FAQItem {
   question: string;

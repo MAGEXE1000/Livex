@@ -1,4 +1,4 @@
-import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/studio-core';
+import { DurationPresets, EasingPresets, SpringPresets } from '@workspace/livex-core';
 # Material 3 Motion System
 
 The Studio application implements a unified, premium motion system based on the **Material 3 (M3) Design Guidelines**. All animations are managed centrally by the Motion Engine to ensure visual consistency, performance optimization, and full accessibility support across platforms.

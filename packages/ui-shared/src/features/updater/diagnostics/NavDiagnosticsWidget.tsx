@@ -1,8 +1,8 @@
 import React from 'react';
-import { useNavigationStore } from '@workspace/studio-core';
+import { useNavigationStore } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
-import { NavigationDispatcher } from '@workspace/studio-core';
-import { TransitionCoordinator } from '@workspace/studio-core';
+import { NavigationDispatcher } from '@workspace/livex-core';
+import { TransitionCoordinator } from '@workspace/livex-core';
 
 export default function NavDiagnosticsWidget() {
   const store = useNavigationStore(

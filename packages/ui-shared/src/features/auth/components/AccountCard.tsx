@@ -25,7 +25,7 @@ import {
   userRepository,
   SpringPresets,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button, StatefulButton } from '../../../shared/design-system/StudioDesignSystem';
@@ -37,7 +37,7 @@ import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import StudioAuthCard from './StudioAuthCard';
-import { isFirebaseConfigured, type AuthUser, authRepository } from '@workspace/studio-core';
+import { isFirebaseConfigured, type AuthUser, authRepository } from '@workspace/livex-core';
 import {
   AVATAR_ICONS,
   getUserAvatar,
@@ -47,7 +47,7 @@ import {
   setUserCover,
   subscribeUserCover,
   type AvatarIcon,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import StudioPricingSection from './StudioPricingSection';
 import { AccountProfileHeader } from './sections/AccountProfileHeader';
 import { AccountSyncSection } from './sections/AccountSyncSection';
@@ -101,7 +101,7 @@ async function selectAvatarIcon(user: AuthUser | null, icon: AvatarIcon | null) 
   if (!user?.uid) return;
   setUserAvatar(user.uid, icon);
   try {
-    const { syncWriteProfileMain } = await import('@workspace/studio-core');
+    const { syncWriteProfileMain } = await import('@workspace/livex-core');
     await syncWriteProfileMain(user.displayName, user.photoURL, icon);
   } catch (e) {
     console.error('Failed to sync avatar icon selection:', e);
@@ -117,7 +117,7 @@ import {
   hasProAccessUser,
   type UserProfile,
   type UserRole,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 const CLOUD_SYNC_FEATURE_ENABLED = false;
 
@@ -2399,7 +2399,7 @@ export function AccountSettingsPage({
 
     let dbBytes = 0;
     try {
-      const { groovexStemRepository } = await import('@workspace/studio-core');
+      const { groovexStemRepository } = await import('@workspace/livex-core');
       const sizeInfo = await groovexStemRepository.getCacheSize();
       dbBytes = sizeInfo.totalBytes;
     } catch (e) {
@@ -2448,7 +2448,7 @@ export function AccountSettingsPage({
 
       if (Capacitor.isNativePlatform()) {
         try {
-          const { AppInstaller } = await import('@workspace/studio-core');
+          const { AppInstaller } = await import('@workspace/livex-core');
           await AppInstaller.requestPermissions({ aliases: ['storage'] });
         } catch (e) {
           console.warn('[Export] Permissions request failed:', e);
@@ -2507,7 +2507,7 @@ export function AccountSettingsPage({
   async function doClearCache() {
     setClearingCache(true);
     try {
-      const { groovexStemRepository } = await import('@workspace/studio-core');
+      const { groovexStemRepository } = await import('@workspace/livex-core');
       await groovexStemRepository.clearAllCache();
       showToast(lang === 'es' ? 'Caché de audio eliminada' : 'Audio cache cleared successfully');
       await refreshStorageSize();
@@ -2764,7 +2764,7 @@ export function AccountSettingsPage({
     setErr(null);
     try {
       await authRepository.updateDisplayName(nameInput.trim());
-      const { syncWriteProfileMain } = await import('@workspace/studio-core');
+      const { syncWriteProfileMain } = await import('@workspace/livex-core');
       await syncWriteProfileMain(nameInput.trim(), user.photoURL, avatarIcon);
       setUser({ ...user, displayName: nameInput.trim() });
       showToast(L.nameSaved);
@@ -6695,7 +6695,7 @@ export function AccountSettingsPage({
                                 setBusy(true);
                                 try {
                                   const { getActiveSyncProvider } =
-                                    await import('@workspace/studio-core');
+                                    await import('@workspace/livex-core');
                                   const res = await getActiveSyncProvider().sendSyncProbe();
                                   if (res.success) {
                                     showToast(
@@ -6741,7 +6741,7 @@ export function AccountSettingsPage({
                                 setBusy(true);
                                 try {
                                   const { getActiveSyncProvider } =
-                                    await import('@workspace/studio-core');
+                                    await import('@workspace/livex-core');
                                   await getActiveSyncProvider().clearSyncProbe();
                                   showToast(lang === 'es' ? 'Sonda eliminada.' : 'Probe cleared.');
                                 } catch (e: any) {
@@ -6779,7 +6779,7 @@ export function AccountSettingsPage({
                                 setBusy(true);
                                 try {
                                   const { getActiveSyncProvider } =
-                                    await import('@workspace/studio-core');
+                                    await import('@workspace/livex-core');
                                   const res = await getActiveSyncProvider().directWriteTest();
                                   if (res.success) {
                                     showToast(
@@ -6829,7 +6829,7 @@ export function AccountSettingsPage({
                                 setBusy(true);
                                 try {
                                   const { getActiveSyncProvider } =
-                                    await import('@workspace/studio-core');
+                                    await import('@workspace/livex-core');
                                   const res =
                                     await getActiveSyncProvider().registerCurrentDevice(
                                       'manual-button'
@@ -6889,7 +6889,7 @@ export function AccountSettingsPage({
                                 setBusy(true);
                                 try {
                                   const { reconnectDevices } =
-                                    await import('@workspace/studio-core');
+                                    await import('@workspace/livex-core');
                                   await reconnectDevices();
                                   showToast(
                                     lang === 'es'

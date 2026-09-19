@@ -1,4 +1,4 @@
-import { createAudioContext } from '@workspace/studio-core';
+import { createAudioContext } from '@workspace/livex-core';
 import { detectPitch, type PitchResult } from './pitchYin';
 import { NOTE_FREQ } from './exerciseData';
 

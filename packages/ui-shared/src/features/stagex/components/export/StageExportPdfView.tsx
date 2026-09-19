@@ -8,7 +8,7 @@ import {
   useSettingsStore,
   useSessionStore,
   NavigationDispatcher,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { STAGEX_ICON_MAP, localizeElementName } from '../../constants';
 import {

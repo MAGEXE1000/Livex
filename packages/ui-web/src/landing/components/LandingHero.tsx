@@ -1,4 +1,4 @@
-import { useStudioPreferences } from '@workspace/studio-core';
+import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Download, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -106,7 +106,7 @@ function FlipWords({
 }
 
 export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
-  const { preferences } = useStudioPreferences();
+  const { preferences } = useLivexPreferences();
   const isReduced = preferences.reduceMotion;
 
   const containerVariants = {
@@ -153,7 +153,7 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/40 text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-8 select-none landing-font-heading"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
-          Studio Platform Suite v4.0
+          Livex Platform Suite v4.0
         </motion.div>
 
         {/* Headline */}
@@ -189,7 +189,7 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
           variants={itemVariants}
           className="max-w-xl mx-auto text-sm md:text-base text-zinc-400 leading-relaxed mb-10 landing-font-body"
         >
-          Studio brings songs, chords, stage planning, groove practice, and vocal tools into a
+          Livex brings songs, chords, stage planning, groove practice, and vocal tools into a
           single cross-platform workspace. Built for instant performance.
         </motion.p>
 
@@ -205,12 +205,12 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
           >
             <button
               onClick={() => {
-                sessionStorage.setItem('studio:entered_from_landing', 'true');
+                sessionStorage.setItem('livex:entered_from_landing', 'true');
                 navigateTo('/app');
               }}
               className="w-full sm:w-[180px] h-12 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 text-xs uppercase tracking-wider font-bold rounded-lg border border-transparent flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98]"
             >
-              Use Studio Web
+              Use Livex Web
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </LandingLinkPreview>

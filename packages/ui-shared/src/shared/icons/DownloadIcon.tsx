@@ -1,4 +1,4 @@
-import { cn } from '@workspace/studio-core';
+import { cn } from '@workspace/livex-core';
 ('use client');
 
 import type { Variants } from 'motion/react';

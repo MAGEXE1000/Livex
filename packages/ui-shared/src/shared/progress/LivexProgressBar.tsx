@@ -1,7 +1,7 @@
 import React from 'react';
 import CossProgress from '../../components/ui/progress';
 
-export interface StudioProgressBarProps {
+export interface LivexProgressBarProps {
   value: number;
   max?: number;
   label?: string;
@@ -13,16 +13,18 @@ export interface StudioProgressBarProps {
   style?: React.CSSProperties;
 }
 
+export type StudioProgressBarProps = LivexProgressBarProps;
+
 /**
- * StudioProgressBar — Official COSS Progress Component Wrapper
+ * LivexProgressBar — Official COSS Progress Component Wrapper
  *
- * Implements COSS UI Progress specification across Studio:
+ * Implements COSS UI Progress specification across Livex:
  * - Real download progress & value representation.
  * - Header row with label on left and percentage on far right.
  * - Accessible ARIA attributes (`role="progressbar"`).
  * - Theme & spring motion support.
  */
-export function StudioProgressBar({
+export function LivexProgressBar({
   value = 0,
   max = 100,
   label = 'Downloading update',
@@ -32,7 +34,7 @@ export function StudioProgressBar({
   height = 8,
   className = '',
   style,
-}: StudioProgressBarProps) {
+}: LivexProgressBarProps) {
   return (
     <CossProgress
       value={value}
@@ -48,4 +50,5 @@ export function StudioProgressBar({
   );
 }
 
-export default StudioProgressBar;
+export const StudioProgressBar = LivexProgressBar;
+export default LivexProgressBar;

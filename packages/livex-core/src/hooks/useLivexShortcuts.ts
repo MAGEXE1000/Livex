@@ -1,11 +1,12 @@
 import { useState } from 'react';
 
-const STORAGE_KEY = 'studio:shortcuts';
+const CANONICAL_STORAGE_KEY = 'livex:shortcuts';
+const LEGACY_STORAGE_KEY = 'studio:shortcuts';
 
-export function useStudioShortcuts() {
+export function useLivexShortcuts() {
   const [shortcuts, setShortcuts] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(CANONICAL_STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -17,7 +18,7 @@ export function useStudioShortcuts() {
       if (prev.includes(id)) return prev;
       const next = [...prev, id];
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -27,7 +28,7 @@ export function useStudioShortcuts() {
     setShortcuts((prev) => {
       const next = prev.filter((item) => item !== id);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        localStorage.setItem(CANONICAL_STORAGE_KEY, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -35,3 +36,6 @@ export function useStudioShortcuts() {
 
   return { shortcuts, addShortcut, removeShortcut };
 }
+
+export const useStudioShortcuts = useLivexShortcuts;
+

@@ -12,7 +12,7 @@ import {
   useSettingsStore,
   vocalexRepository,
   useSessionStore,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';

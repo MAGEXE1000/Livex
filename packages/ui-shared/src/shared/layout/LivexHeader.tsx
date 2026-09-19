@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface StudioHeaderProps {
+export interface LivexHeaderProps {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
@@ -16,7 +16,9 @@ export interface StudioHeaderProps {
   delayOffset?: number;
 }
 
-export function StudioHeader({
+export type StudioHeaderProps = LivexHeaderProps;
+
+export function LivexHeader({
   title,
   subtitle,
   actions,
@@ -28,7 +30,7 @@ export function StudioHeader({
   titleStyle = {},
   subtitleStyle = {},
   containerStyle = {},
-}: StudioHeaderProps) {
+}: LivexHeaderProps) {
   const mergedTitleStyle: React.CSSProperties = {
     fontFamily: 'var(--type-title-font, var(--font-title, "Inter Tight", sans-serif))',
     color: 'var(--c-text-primary)',
@@ -120,3 +122,6 @@ export function StudioHeader({
     </div>
   );
 }
+
+export const StudioHeader = LivexHeader;
+

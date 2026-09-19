@@ -11,7 +11,7 @@ const rootDir = path.resolve(__dirname, '..');
 console.log('=== RUNNING REPOSITORY-WIDE CIRCULAR DEPENDENCY DETECTOR ===');
 
 const aliasMap = {
-  '@workspace/studio-core': path.join(rootDir, 'packages/studio-core/src/index.ts'),
+  '@workspace/livex-core': path.join(rootDir, 'packages/livex-core/src/index.ts'),
   '@workspace/ui-shared': path.join(rootDir, 'packages/ui-shared/src/index.ts'),
   '@workspace/ui-web': path.join(rootDir, 'packages/ui-web/src/index.ts'),
   '@workspace/ui-android': path.join(rootDir, 'packages/ui-android/src/index.ts'),

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const tsconfigs = [
-  'packages/studio-core/tsconfig.json',
+  'packages/livex-core/tsconfig.json',
   'packages/ui-shared/tsconfig.json',
   'packages/ui-web/tsconfig.json',
   'packages/ui-android/tsconfig.json',

@@ -6,7 +6,7 @@ import {
   type DrumMeasure,
   DRUM_INSTRUMENTS,
   INSTRUMENT_COLOR,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 export interface DrumExportConfig {
   theme: 'dark' | 'light';

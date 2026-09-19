@@ -104,7 +104,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export interface StudioIconProps extends React.SVGProps<SVGSVGElement> {
+export interface LivexIconProps extends React.SVGProps<SVGSVGElement> {
   name: string;
   size?: number | string;
   color?: string;
@@ -115,6 +115,8 @@ export interface StudioIconProps extends React.SVGProps<SVGSVGElement> {
   'aria-hidden'?: boolean | 'true' | 'false';
   'aria-label'?: string;
 }
+
+export type StudioIconProps = LivexIconProps;
 
 // Custom Piano SVG Icon
 const PianoIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
@@ -457,19 +459,21 @@ export function normalizeIconName(name: string | undefined | null): string {
 /**
  * Checks whether an icon name is known to the StudioIcon registry.
  */
-export function hasStudioIcon(name: string): boolean {
+export function hasLivexIcon(name: string): boolean {
   const norm = normalizeIconName(name);
   return !!ICON_MAP[norm];
 }
 
+export const hasStudioIcon = hasLivexIcon;
+
 /**
- * Canonical StudioIcon Component
+ * Canonical LivexIcon Component
  *
  * Deterministically renders an icon as an SVG component.
  * Physically eliminates any possibility of ligature text fallback ("chevron_right", "close", etc.).
  */
-export const StudioIcon = memo(
-  forwardRef<SVGSVGElement, StudioIconProps>(
+export const LivexIcon = memo(
+  forwardRef<SVGSVGElement, LivexIconProps>(
     (
       {
         name,
@@ -517,4 +521,7 @@ export const StudioIcon = memo(
   )
 );
 
-StudioIcon.displayName = 'StudioIcon';
+LivexIcon.displayName = 'LivexIcon';
+
+export const StudioIcon = LivexIcon;
+

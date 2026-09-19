@@ -1,7 +1,7 @@
 import React from 'react';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import { type HarmonizerState } from './useHarmonizerState';
-import { useT } from '@workspace/studio-core';
+import { useT } from '@workspace/livex-core';
 import { HARMONIES, layerSemitones, type HarmonyLayerState } from '../services/harmonyEngine';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 

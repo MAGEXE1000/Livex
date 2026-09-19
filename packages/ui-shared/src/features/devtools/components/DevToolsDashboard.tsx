@@ -65,7 +65,7 @@ import {
   useSettingsStore,
   useSessionStore,
   useShallow,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 
 import { decodeReactError } from '../../../shared/feedback/ErrorBoundary';
 import {

@@ -946,3 +946,11 @@ export function GroovexMixerSkeleton({ tracksCount = 4 }: { tracksCount?: number
     </div>
   );
 }
+
+export const LivexSkeletonCard = StudioSkeletonCard;
+export const LivexSkeletonRow = StudioSkeletonRow;
+export const LivexSkeletonList = StudioSkeletonList;
+export const LivexSkeletonHeader = StudioSkeletonHeader;
+export const LivexSkeletonProfile = StudioSkeletonProfile;
+export const LivexSkeletonGrid = StudioSkeletonGrid;
+export const LivexHubSkeleton = StudioHubSkeleton;

@@ -34,7 +34,7 @@ export { default as StudioLandingPage } from './landing/StudioLandingPage';
 
 ## Dependencies
 
-- **Workspace**: `@workspace/studio-core` (limited — hooks and stores only)
+- **Workspace**: `@workspace/livex-core` (limited — hooks and stores only)
 - **External**: react
 
 ## Files That Should Rarely Be Modified

@@ -3943,13 +3943,41 @@ const ORIGINAL_SONGS: SongProgression[] = [
   },
 ];
 
-export const SONGS: SongChart[] = [
-  ...ORIGINAL_SONGS.map((s) => ({
-    ...s,
-    difficulty: 'easy' as const,
-    tags: [s.genre],
-    availabilityStatus: 'available' as const,
-    sections: s.sections || [],
-  })),
-  ...ENJAMBRE_SONGS,
-];
+let _cachedSongs: SongChart[] | null = null;
+
+export function getSongs(): SongChart[] {
+  if (!_cachedSongs) {
+    _cachedSongs = [
+      ...ORIGINAL_SONGS.map((s) => ({
+        ...s,
+        difficulty: 'easy' as const,
+        tags: [s.genre],
+        availabilityStatus: 'available' as const,
+        sections: s.sections || [],
+      })),
+      ...ENJAMBRE_SONGS,
+    ];
+  }
+  return _cachedSongs;
+}
+
+// Proxied array for zero-overhead backwards compatibility and deferred evaluation
+export const SONGS: SongChart[] = new Proxy([] as SongChart[], {
+  get(target, prop, receiver) {
+    const list = getSongs();
+    const val = Reflect.get(list, prop, receiver);
+    if (typeof val === 'function') {
+      return val.bind(list);
+    }
+    return val;
+  },
+  has(target, prop) {
+    return Reflect.has(getSongs(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getSongs());
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getSongs(), prop);
+  },
+});

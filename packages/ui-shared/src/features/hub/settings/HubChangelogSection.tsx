@@ -6,7 +6,7 @@ import {
   resolveAccent,
   useSettingsStore,
   sanitizeUTF8String,
-} from '@workspace/studio-core';
+} from '@workspace/livex-core';
 import { SectionHeader } from '../../../shared/settings/SettingControls';
 
 export default function HubChangelogSection() {

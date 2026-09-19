@@ -1,4 +1,4 @@
-import { type TakeRecord, blobToAudioBuffer, extractWaveformPeaks } from '@workspace/studio-core';
+import { type TakeRecord, blobToAudioBuffer, extractWaveformPeaks } from '@workspace/livex-core';
 /**
  * Harmony Engine (Vocalex)
  * ────────────────────────

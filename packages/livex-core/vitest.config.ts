@@ -5,7 +5,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**/*.test.{ts,tsx}'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'src/**/__tests__/**/*.test.{ts,tsx}',
+      'test/tunerReferenceAudio.test.ts',
+      'test/tuningDefinitions.test.ts',
+    ],
     exclude: [
       'node_modules',
       'dist',
