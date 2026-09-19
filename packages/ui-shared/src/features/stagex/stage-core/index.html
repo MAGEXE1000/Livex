@@ -519,6 +519,8 @@
    VERTICAL STAGE TOOLBAR  (#sc-vtools)
 ══════════════════════════════════════════ */
       #sc-vtools {
+        display: none !important;
+        pointer-events: none !important;
         position: absolute;
         left: calc(max(14px, env(safe-area-inset-left, 0px) + 6px));
         top: 50%;
@@ -4098,7 +4100,7 @@
         style="left: 0; right: 0; top: 0; bottom: 0"
       >
         <!-- ══════════ VERTICAL STAGE TOOLBAR ══════════ -->
-        <div id="sc-vtools" class="vtools-collapsed">
+        <div id="sc-vtools" class="vtools-collapsed" style="display: none !important; pointer-events: none !important;">
           <!-- Collapse / expand handle (morphs between more_vert and close) -->
           <button id="sc-vtools-toggle" onclick="toggleSCVTools()" title="Show tools">
             <span
@@ -6162,6 +6164,9 @@
               'resetView',
               'saveProject',
               '_persistCurrentScene',
+              'clearStage',
+              'setLayer',
+              'toggleLayerPanel',
             ];
             var handler = null;
             if (ALLOWED_FN.indexOf(fn) !== -1 && typeof window[fn] === 'function') {
@@ -6871,8 +6876,7 @@
       </div>
     </div>
 
-
-══════════ -->
+    <!-- ══════════ EXPORT VIEW ══════════ -->
     <div
       id="view-Export"
       class="view-page"

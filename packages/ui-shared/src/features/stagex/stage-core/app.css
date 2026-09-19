@@ -4587,6 +4587,8 @@ body.is-landscape #presets-panel {
 
   /* ── Left toolbar: centered vertically and respecting safe-area-inset-left ── */
   #sc-vtools {
+    display: none !important;
+    pointer-events: none !important;
     left: calc(max(10px, env(safe-area-inset-left))) !important;
     top: 50%;
     transform: translateY(-50%);

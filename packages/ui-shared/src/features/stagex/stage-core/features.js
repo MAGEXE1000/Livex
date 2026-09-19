@@ -1696,10 +1696,19 @@ function toggleLayerPanel() {
 }
 
 function setLayer(key, visible) {
+  if (typeof key === 'object' && key !== null) {
+    visible = key.visible;
+    key = key.key;
+  }
   if (LAYERS[key]) LAYERS[key].visible = visible;
   applyLayers();
-  renderLayerPanel();
+  try {
+    renderLayerPanel();
+  } catch (e) {}
 }
+window.setLayer = setLayer;
+window.LAYERS = LAYERS;
+window.toggleLayerPanel = toggleLayerPanel;
 
 function applyLayers() {
   if (typeof state === 'undefined') return;

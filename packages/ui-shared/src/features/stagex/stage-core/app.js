@@ -5226,6 +5226,7 @@ function clearStage() {
     updateDropHint();
   });
 }
+window.clearStage = clearStage;
 
 // ══════════════════════════════════════════════════════════
 //  RIDER VIEW

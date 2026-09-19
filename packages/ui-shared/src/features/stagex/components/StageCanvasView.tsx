@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   useIsWebDesktop,
   useT,
@@ -102,6 +102,19 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const [selectedElement, setSelectedElement] = useState<any | null>(null);
   const [specsOpen, setSpecsOpen] = useState(false);
   const [isCanvasDragging, setIsCanvasDragging] = useState(false);
+
+  // Layers Floating Surface State
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [layers, setLayers] = useState<
+    Record<string, { label: string; labelEs: string; color: string; visible: boolean }>
+  >({
+    stage: { label: 'Stage Layout', labelEs: 'Escenario', color: '#7aafff', visible: true },
+    audio: { label: 'Audio', labelEs: 'Audio', color: '#ff7439', visible: true },
+    power: { label: 'Power', labelEs: 'Energía', color: '#c5ffc9', visible: true },
+    connections: { label: 'Connections', labelEs: 'Conexiones', color: '#c8a2ff', visible: true },
+    utilities: { label: 'Utilities', labelEs: 'Utilidades', color: '#ffd700', visible: true },
+  });
+  const layersRef = useRef<HTMLDivElement>(null);
 
   const userExitedLandscapeRef = useRef(false);
 
@@ -268,11 +281,15 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     }
   }, []);
 
-  // Dismiss Specs editor, bottom panel (drawer/history), or selection on Android hardware back button
+  // Dismiss Layers popup, Specs editor, bottom panel (drawer/history), or selection on Android hardware back button
   // In landscape editing mode, intercept back events to safely consume them and prevent accidental exit
   useBackHandler(
     'overlay',
     () => {
+      if (layersOpen) {
+        setLayersOpen(false);
+        return true;
+      }
       if (specsOpen) {
         setSpecsOpen(false);
         return true;
@@ -292,8 +309,65 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
       return false;
     },
-    [specsOpen, panelOpen, selectedElement, isLandscape, callIframe]
+    [layersOpen, specsOpen, panelOpen, selectedElement, isLandscape, callIframe]
   );
+
+  // Close Layers popup when clicking outside
+  useEffect(() => {
+    if (!layersOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (layersRef.current && !layersRef.current.contains(e.target as Node)) {
+        setLayersOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
+  }, [layersOpen]);
+
+  const handleToggleLayers = useCallback(() => {
+    setLayersOpen((prev) => {
+      const next = !prev;
+      if (next && iframeRef.current) {
+        try {
+          const win = iframeRef.current.contentWindow as any;
+          if (win?.LAYERS) {
+            setLayers((current) => {
+              const updated = { ...current };
+              for (const k of Object.keys(updated)) {
+                if (win.LAYERS[k] && typeof win.LAYERS[k].visible === 'boolean') {
+                  updated[k] = { ...updated[k], visible: win.LAYERS[k].visible };
+                }
+              }
+              return updated;
+            });
+          }
+        } catch {}
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleLayer = useCallback(
+    (key: string) => {
+      setLayers((prev) => {
+        const nextVis = !prev[key].visible;
+        callIframe('setLayer', { key, visible: nextVis });
+        return {
+          ...prev,
+          [key]: { ...prev[key], visible: nextVis },
+        };
+      });
+    },
+    [callIframe]
+  );
+
+  const handleClearStage = useCallback(() => {
+    callIframe('clearStage');
+  }, [callIframe]);
 
   const refreshHistoryState = useCallback(() => {
     if (!iframeRef.current) return;
@@ -593,6 +667,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const stageShape = preferences?.stageShape || 'rectangular';
 
   const currentLang = useSettingsStore((s) => s.settings.language) ?? 'en';
+  const isSpanish = currentLang === 'es';
   const isHistoryActive = panelOpen && panelMode === 'history';
 
   // Handle iframe load
@@ -659,133 +734,274 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       {/* Seamless Floating Actions (Overlaid on canvas in mobile or landscape mode) */}
       {(!isWebDesktop || isLandscape) && !liveMode && (
         <div
-          className="absolute top-0 left-0 right-0 z-20 pointer-events-none flex items-center justify-end px-4"
+          className="absolute top-0 left-0 right-0 z-20 pointer-events-none flex items-center justify-end px-4 gap-2"
           style={{
             paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
           }}
         >
-          <div
-            className="stagex-floating-actions-pill pointer-events-auto flex items-center gap-1 p-1 rounded-full"
+          {/* TopBar Container (Pill + Morphing Layers Popup) */}
+          <div className="relative">
+            <div
+              className="stagex-floating-actions-pill pointer-events-auto flex items-center gap-1 p-1 rounded-full"
+              style={{
+                background: 'var(--surface-pill-bg)',
+                border: 'var(--surface-pill-border)',
+                backdropFilter: 'var(--surface-pill-backdrop)',
+                WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+                boxShadow: 'var(--surface-pill-shadow)',
+              }}
+            >
+              {/* 0. Layers (Far-left action) */}
+              <button
+                type="button"
+                data-testid="stagex-layers-btn"
+                onClick={handleToggleLayers}
+                title={tr.stagex?.layers || (isSpanish ? 'Capas' : 'Layers')}
+                aria-label={tr.stagex?.layers || (isSpanish ? 'Capas' : 'Layers')}
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+                style={{
+                  color: layersOpen
+                    ? 'var(--accent, #7aafff)'
+                    : isLight
+                      ? 'rgba(0, 0, 0, 0.75)'
+                      : 'rgba(255, 255, 255, 0.85)',
+                  background: layersOpen ? 'rgba(122, 175, 255, 0.15)' : undefined,
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  layers
+                </span>
+              </button>
+
+              {/* Exit Landscape Button (Active in landscape mode) */}
+              {isLandscape && (
+                <button
+                  type="button"
+                  data-testid="stagex-exit-landscape-btn"
+                  onClick={handleExitLandscape}
+                  title={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
+                  aria-label={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all shadow-md flex-shrink-0 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[15px]">screen_rotation</span>
+                  <span className="whitespace-nowrap">{currentLang === 'es' ? 'Salir' : 'Exit'}</span>
+                </button>
+              )}
+
+              {/* 1. Ruler */}
+              <button
+                type="button"
+                data-testid="stagex-ruler-btn"
+                onClick={() => callIframe('scActivateMeasure')}
+                title={tr.stagex?.toolMeasure || 'Measure'}
+                aria-label={tr.stagex?.toolMeasure || 'Measure'}
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
+                style={{
+                  color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  straighten
+                </span>
+              </button>
+
+              {/* 2. Cloud (Collaboration) */}
+              <button
+                type="button"
+                data-testid="stagex-collab-btn"
+                onClick={() => setCollabModalOpen(true)}
+                title="Collaboration"
+                aria-label="Collaboration"
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
+                style={{
+                  color:
+                    collabState === 'connected'
+                      ? '#10b981'
+                      : isLight
+                        ? 'rgba(0,0,0,0.75)'
+                        : 'rgba(255,255,255,0.85)',
+                  background: collabState === 'connected' ? 'rgba(16,185,129,0.15)' : undefined,
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  {collabState === 'connected' ? 'cloud' : 'cloud_queue'}
+                </span>
+              </button>
+
+              {/* 3. History */}
+              <button
+                type="button"
+                data-testid="stagex-history-btn"
+                onClick={handleToggleHistory}
+                title={tr.stagex?.toolHistory || 'History'}
+                aria-label={tr.stagex?.toolHistory || 'History'}
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
+                style={{
+                  color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+                  background:
+                    panelOpen && panelMode === 'history'
+                      ? isLight
+                        ? 'rgba(0, 0, 0, 0.12)'
+                        : 'rgba(255, 255, 255, 0.18)'
+                      : undefined,
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  history
+                </span>
+              </button>
+
+              {/* 4. Stage Position Reset */}
+              <button
+                type="button"
+                data-testid="stagex-reset-view-btn"
+                onClick={() => callIframe('resetView')}
+                title={tr.stagex?.resetView || 'Reset View'}
+                aria-label={tr.stagex?.resetView || 'Reset View'}
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
+                style={{
+                  color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  filter_center_focus
+                </span>
+              </button>
+
+              {/* 5. PDF (rightmost action) */}
+              <button
+                type="button"
+                data-testid="stagex-export-doc-btn"
+                onClick={openProductionDocumentWorkflow}
+                title={tr.stagex?.productionDoc || 'Production Document (PDF)'}
+                aria-label={tr.stagex?.productionDoc || 'Production Document (PDF)'}
+                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
+                style={{
+                  color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+                }}
+              >
+                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
+                  picture_as_pdf
+                </span>
+              </button>
+            </div>
+
+            {/* Morphing Layers Surface Popup */}
+            <AnimatePresence>
+              {layersOpen && (
+                <motion.div
+                  ref={layersRef}
+                  key="stagex-layers-popup"
+                  initial={{ opacity: 0, scale: 0.9, y: -6, transformOrigin: 'top left' }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+                  className="absolute top-[calc(100%+8px)] left-0 z-30 pointer-events-auto w-56 p-3 rounded-2xl flex flex-col gap-1.5 shadow-2xl"
+                  style={{
+                    background: isLight
+                      ? 'rgba(255, 255, 255, 0.94)'
+                      : isAmoled
+                        ? '#000000'
+                        : 'var(--surface-pill-bg, rgba(20, 20, 24, 0.92))',
+                    border: 'var(--surface-pill-border)',
+                    backdropFilter: 'var(--surface-pill-backdrop, blur(24px))',
+                    WebkitBackdropFilter: 'var(--surface-pill-backdrop, blur(24px))',
+                    boxShadow: 'var(--surface-pill-shadow, 0 16px 36px rgba(0,0,0,0.35))',
+                  }}
+                >
+                  <div className="flex items-center justify-between pb-1 px-1 border-b border-black/10 dark:border-white/10">
+                    <span
+                      className="font-headline text-[10px] font-extrabold uppercase tracking-wider select-none"
+                      style={{
+                        color: isLight ? '#64748b' : '#a1a1aa',
+                      }}
+                    >
+                      {isSpanish ? 'Capas en escenario' : 'Show on stage'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLayersOpen(false)}
+                      className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      style={{ color: isLight ? '#64748b' : '#a1a1aa' }}
+                    >
+                      <span className="material-symbols-outlined text-[13px] leading-none">close</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-1 pt-1">
+                    {Object.entries(layers).map(([key, item]) => {
+                      const isVis = item.visible;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          data-testid={`stagex-layer-toggle-${key}`}
+                          onClick={() => handleToggleLayer(key)}
+                          className="flex items-center justify-between px-2.5 py-2 rounded-xl transition-all select-none cursor-pointer"
+                          style={{
+                            background: isVis
+                              ? isLight
+                                ? 'rgba(0, 0, 0, 0.04)'
+                                : 'rgba(255, 255, 255, 0.06)'
+                              : 'transparent',
+                            opacity: isVis ? 1 : 0.45,
+                          }}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{
+                                backgroundColor: item.color,
+                                boxShadow: isVis ? `0 0 8px ${item.color}66` : 'none',
+                              }}
+                            />
+                            <span
+                              className="text-[12px] font-medium truncate"
+                              style={{
+                                color: isLight ? '#1e293b' : '#f4f4f5',
+                              }}
+                            >
+                              {isSpanish ? item.labelEs : item.label}
+                            </span>
+                          </div>
+                          <span
+                            className="material-symbols-outlined text-[16px] flex-shrink-0"
+                            style={{
+                              color: isVis ? item.color : isLight ? '#94a3b8' : '#71717a',
+                            }}
+                          >
+                            {isVis ? 'visibility' : 'visibility_off'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Dedicated Circular Trash Control */}
+          <button
+            type="button"
+            data-testid="stagex-clear-stage-btn"
+            onClick={handleClearStage}
+            title={tr.stagex?.clearStage || (isSpanish ? 'Limpiar escenario' : 'Clear stage')}
+            aria-label={tr.stagex?.clearStage || (isSpanish ? 'Limpiar escenario' : 'Clear stage')}
+            className="stagex-floating-trash-btn pointer-events-auto w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-lg"
             style={{
               background: 'var(--surface-pill-bg)',
               border: 'var(--surface-pill-border)',
               backdropFilter: 'var(--surface-pill-backdrop)',
               WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
               boxShadow: 'var(--surface-pill-shadow)',
+              color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
             }}
           >
-            {/* 0. Exit Landscape Button (Active in landscape mode) */}
-            {isLandscape && (
-              <button
-                type="button"
-                data-testid="stagex-exit-landscape-btn"
-                onClick={handleExitLandscape}
-                title={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
-                aria-label={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all shadow-md flex-shrink-0 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[15px]">screen_rotation</span>
-                <span className="whitespace-nowrap">{currentLang === 'es' ? 'Salir' : 'Exit'}</span>
-              </button>
-            )}
-
-            {/* 1. Ruler */}
-            <button
-              type="button"
-              data-testid="stagex-ruler-btn"
-              onClick={() => callIframe('scActivateMeasure')}
-              title={tr.stagex?.toolMeasure || 'Measure'}
-              aria-label={tr.stagex?.toolMeasure || 'Measure'}
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-              style={{
-                color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-              }}
-            >
-              <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                straighten
-              </span>
-            </button>
-
-            {/* 2. Cloud (Collaboration) */}
-            <button
-              type="button"
-              data-testid="stagex-collab-btn"
-              onClick={() => setCollabModalOpen(true)}
-              title="Collaboration"
-              aria-label="Collaboration"
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-              style={{
-                color:
-                  collabState === 'connected'
-                    ? '#10b981'
-                    : isLight
-                      ? 'rgba(0,0,0,0.75)'
-                      : 'rgba(255,255,255,0.85)',
-                background: collabState === 'connected' ? 'rgba(16,185,129,0.15)' : undefined,
-              }}
-            >
-              <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                {collabState === 'connected' ? 'cloud' : 'cloud_queue'}
-              </span>
-            </button>
-
-            {/* 3. History */}
-            <button
-              type="button"
-              data-testid="stagex-history-btn"
-              onClick={handleToggleHistory}
-              title={tr.stagex?.toolHistory || 'History'}
-              aria-label={tr.stagex?.toolHistory || 'History'}
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-              style={{
-                color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-                background:
-                  panelOpen && panelMode === 'history'
-                    ? isLight
-                      ? 'rgba(0, 0, 0, 0.12)'
-                      : 'rgba(255, 255, 255, 0.18)'
-                    : undefined,
-              }}
-            >
-              <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                history
-              </span>
-            </button>
-
-            {/* 4. Stage Position Reset */}
-            <button
-              type="button"
-              data-testid="stagex-reset-view-btn"
-              onClick={() => callIframe('resetView')}
-              title={tr.stagex?.resetView || 'Reset View'}
-              aria-label={tr.stagex?.resetView || 'Reset View'}
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-              style={{
-                color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-              }}
-            >
-              <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                filter_center_focus
-              </span>
-            </button>
-
-            {/* 5. PDF (rightmost action) */}
-            <button
-              type="button"
-              data-testid="stagex-export-doc-btn"
-              onClick={openProductionDocumentWorkflow}
-              title={tr.stagex?.productionDoc || 'Production Document (PDF)'}
-              aria-label={tr.stagex?.productionDoc || 'Production Document (PDF)'}
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-              style={{
-                color: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-              }}
-            >
-              <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                picture_as_pdf
-              </span>
-            </button>
-          </div>
+            <span className="material-symbols-outlined text-[19px] select-none block overflow-hidden leading-none">
+              delete
+            </span>
+          </button>
         </div>
       )}
 
