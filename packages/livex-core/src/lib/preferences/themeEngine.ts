@@ -413,8 +413,7 @@ export function applyThemeTokens(settings: any) {
 }
 
 export function resolveGlassTier(settings: any, isAmoledMode: boolean): GlassTier {
-  if (isAmoledMode) return 'solid';
-  if (settings?.performanceMode) return 'translucent';
+  if (settings?.performanceMode) return isAmoledMode ? 'solid' : 'translucent';
   return 'blur';
 }
 

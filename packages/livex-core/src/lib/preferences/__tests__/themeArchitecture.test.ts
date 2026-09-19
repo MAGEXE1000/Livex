@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useSettingsStore, settingsController } from '../../../store/useSettingsStore';
-import { applyThemeTokens, resetThemeEngineCache } from '../themeEngine';
+import { applyThemeTokens, resetThemeEngineCache, resolveGlassTier } from '../themeEngine';
 
 describe('Livex Three-State Theme Architecture', () => {
   let originalDocument: any;
@@ -201,6 +201,38 @@ describe('Livex Three-State Theme Architecture', () => {
 
       applyThemeTokens({ theme: 'dark', amoledMode: true });
       expect(localStorage.getItem('livex-persisted-theme')).toBe('amoled');
+    });
+
+    it('enforces data-glass-tier="blur" for AMOLED mode during standard performance', () => {
+      applyThemeTokens({ theme: 'dark', amoledMode: true, performanceMode: false });
+      const root = document.documentElement;
+      expect(root.setAttribute).toHaveBeenCalledWith('data-glass-tier', 'blur');
+    });
+
+    it('enforces data-glass-tier="solid" for AMOLED mode when performanceMode is active', () => {
+      applyThemeTokens({ theme: 'dark', amoledMode: true, performanceMode: true });
+      const root = document.documentElement;
+      expect(root.setAttribute).toHaveBeenCalledWith('data-glass-tier', 'solid');
+    });
+  });
+
+  describe('resolveGlassTier logic', () => {
+    it('returns "blur" for AMOLED when performanceMode is off', () => {
+      expect(resolveGlassTier({ performanceMode: false }, true)).toBe('blur');
+      expect(resolveGlassTier({}, true)).toBe('blur');
+    });
+
+    it('returns "solid" for AMOLED when performanceMode is on', () => {
+      expect(resolveGlassTier({ performanceMode: true }, true)).toBe('solid');
+    });
+
+    it('returns "translucent" for non-AMOLED when performanceMode is on', () => {
+      expect(resolveGlassTier({ performanceMode: true }, false)).toBe('translucent');
+    });
+
+    it('returns "blur" for standard Dark/Light mode', () => {
+      expect(resolveGlassTier({ performanceMode: false }, false)).toBe('blur');
+      expect(resolveGlassTier({}, false)).toBe('blur');
     });
   });
 

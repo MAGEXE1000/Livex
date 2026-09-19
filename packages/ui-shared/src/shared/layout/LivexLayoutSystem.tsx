@@ -262,7 +262,14 @@ export function SharedFloatingHeader({
     }))
   );
   const isLight = isLightProp !== undefined ? isLightProp : theme === 'light';
-  const isAmoled = isAmoledProp !== undefined ? isAmoledProp : amoledMode;
+  const isAmoled =
+    isAmoledProp !== undefined
+      ? isAmoledProp
+      : Boolean(
+          amoledMode ||
+            (typeof document !== 'undefined' &&
+              document.documentElement.classList.contains('amoled'))
+        );
 
   const fallbackHeaderRef = React.useRef<HTMLDivElement | null>(null);
   const fallbackTitleRef = React.useRef<HTMLDivElement | null>(null);
