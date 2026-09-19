@@ -24,7 +24,6 @@ const standardDeps = {
   clsx: 'catalog:',
   firebase: '^12.12.0',
   i18next: '^26.0.10',
-  jspdf: '^4.2.1',
   'lottie-react': '^2.4.1',
   'lucide-react': 'catalog:',
   motion: '^12.40.0',
@@ -37,21 +36,21 @@ const standardDeps = {
 };
 
 const packageWorkspaceDeps = {
-  'studio-core': {},
+  'livex-core': {},
   'ui-shared': {
-    '@workspace/studio-core': 'workspace:*',
+    '@workspace/livex-core': 'workspace:*',
   },
   'ui-web': {
-    '@workspace/studio-core': 'workspace:*',
+    '@workspace/livex-core': 'workspace:*',
     '@workspace/ui-shared': 'workspace:*',
   },
   'ui-android': {
-    '@workspace/studio-core': 'workspace:*',
+    '@workspace/livex-core': 'workspace:*',
     '@workspace/ui-shared': 'workspace:*',
   },
 };
 
-const packages = ['studio-core', 'ui-shared', 'ui-web', 'ui-android'];
+const packages = ['livex-core', 'ui-shared', 'ui-web', 'ui-android'];
 
 for (const pkg of packages) {
   const pkgJsonPath = path.join(repoRoot, 'packages', pkg, 'package.json');

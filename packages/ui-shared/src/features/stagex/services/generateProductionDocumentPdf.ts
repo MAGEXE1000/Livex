@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf';
+import type { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
 import type {
   ProductionDocumentData,
@@ -361,6 +361,7 @@ export async function generateProductionDocumentPdf(
   );
 
   // Initialize jsPDF with EXACT single-page long-format dimensions
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

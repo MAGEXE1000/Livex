@@ -69,17 +69,17 @@ Studio/
 
 ```
 studio-web
-  → @workspace/studio-core
+  → @workspace/livex-core
   → @workspace/ui-shared
   → @workspace/ui-web
 
 studio-android
-  → @workspace/studio-core
+  → @workspace/livex-core
   → @workspace/ui-shared
   → @workspace/ui-android
 
 ui-shared
-  → @workspace/studio-core
+  → @workspace/livex-core
 
 ui-android
   → @workspace/ui-shared  (re-exports via index.ts)
@@ -107,7 +107,7 @@ lib/*            — standalone (no workspace deps)
 
 #### Purpose
 
-The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via @workspace/studio-core and UI components via @workspace/ui-shared. Uses web-only layout components from @workspace/ui-web.
+The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via @workspace/livex-core and UI components via @workspace/ui-shared. Uses web-only layout components from @workspace/ui-web.
 
 #### Main Files
 
@@ -121,7 +121,7 @@ The browser-based responsive web application. Provides all studio modes (Chordex
 
 #### Imports (workspace)
 
-- @workspace/studio-core — stores, navigation, sync, auth, version
+- @workspace/livex-core — stores, navigation, sync, auth, version
 - @workspace/ui-shared — StudioHub, SmartLoading, all panels, skeletons, SharedNavigationContainer, ErrorBoundary
 - @workspace/ui-web — WebSidebarLayout, SidebarProvider, SidebarInset, useSidebar, StudioLandingPage
 
@@ -176,7 +176,7 @@ The native Android application rendered inside a Capacitor WebView. Has access t
 
 #### Imports (workspace)
 
-- @workspace/studio-core
+- @workspace/livex-core
 - @workspace/ui-shared
 - @workspace/ui-android
 
@@ -202,11 +202,11 @@ None (leaf node).
 
 ## 4. Packages
 
-### 4.1 @workspace/studio-core
+### 4.1 @workspace/livex-core
 
 | Field               | Value                             |
 | ------------------- | --------------------------------- |
-| **Package name**    | @workspace/studio-core            |
+| **Package name**    | @workspace/livex-core            |
 | **Path**            | packages/studio-core/             |
 | **Entry point**     | packages/studio-core/src/index.ts |
 | **Ownership scope** | SHARED                            |
@@ -279,7 +279,7 @@ export * from './lib/navigation/validation';
 export * from './lib/navigation/useBackHandler';
 
 // Sync
-export * from './lib/sync'; // syncNow, requestFlush, attachSync, detachSync
+export * from './lib/sync'; // syncNow, requestFlush, syncController
 export * from './lib/syncBackends/index'; // getActiveSyncProvider, initSyncBackends
 
 // OTA
@@ -404,7 +404,7 @@ Cross-platform React component library consumed by both studio-web and studio-an
 
 #### Imports
 
-- @workspace/studio-core — all stores, navigation, audio, sync, theme, version
+- @workspace/livex-core — all stores, navigation, audio, sync, theme, version
 -
 
 eact,
@@ -439,7 +439,7 @@ export * from './components/StudioSkeleton';
 
 #### Dependencies
 
-@workspace/studio-core
+@workspace/livex-core
 
 #### Consumers
 
@@ -494,7 +494,7 @@ export { default as StudioLandingPage } from './landing/StudioLandingPage';
 
 #### Dependencies
 
-@workspace/studio-core (limited: hooks and stores only)
+@workspace/livex-core (limited: hooks and stores only)
 
 #### Consumers
 
@@ -768,8 +768,7 @@ Provider selection reads settings.syncBackendProvider from useChordStore. Defaul
 
 #### Key Exports
 
-syncNow,
-equestFlush, ttachSync, detachSync, getGlobalSyncState, subscribeToSyncState, getActiveSyncProvider, initSyncBackends, disposeSyncBackends
+syncNow, requestFlush, syncController, getGlobalSyncState, subscribeToSyncState, getActiveSyncProvider, initSyncBackends, disposeSyncBackends
 
 #### Known Technical Debt
 
@@ -985,7 +984,7 @@ lrclib.net API client. Exports etchLyricsOnline, LyricsResult.
 
 ### 7.1 Panels
 
-All panels live under packages/ui-shared/src/panels/. They are self-contained feature panels rendered inside StudioHub.tsx. Each panel imports state from @workspace/studio-core stores and renders independently with no cross-panel direct imports.
+All panels live under packages/ui-shared/src/panels/. They are self-contained feature panels rendered inside StudioHub.tsx. Each panel imports state from @workspace/livex-core stores and renders independently with no cross-panel direct imports.
 
 | Panel              | File               | Size    | Role                                                       |
 | ------------------ | ------------------ | ------- | ---------------------------------------------------------- |
