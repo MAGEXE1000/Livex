@@ -59,7 +59,11 @@ export default function LandingAppSuite() {
   return (
     <section
       id="suite"
-      className="py-24 border-t border-zinc-900 bg-[#050508]/40 relative select-none"
+      className="py-24 border-t relative select-none transition-colors duration-200"
+      style={{
+        backgroundColor: 'var(--landing-surface-subtle)',
+        borderColor: 'var(--landing-border)',
+      }}
     >
       {/* Decorative background grid effect */}
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
@@ -67,10 +71,16 @@ export default function LandingAppSuite() {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white uppercase mb-5 leading-tight landing-font-heading">
+          <h2
+            className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase mb-5 leading-tight landing-font-heading"
+            style={{ color: 'var(--landing-text-primary)' }}
+          >
             Built for focused music workflows.
           </h2>
-          <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl mx-auto landing-font-body">
+          <p
+            className="text-xs md:text-sm leading-relaxed max-w-2xl mx-auto landing-font-body"
+            style={{ color: 'var(--landing-text-secondary)' }}
+          >
             Livex connects the core parts of a modern music workflow: organizing songs and chords,
             preparing stage layouts, and practicing with groove-focused tools.
           </p>
@@ -88,20 +98,37 @@ export default function LandingAppSuite() {
             <motion.div
               key={app}
               variants={cardVariants}
-              className="group relative flex flex-col rounded-2xl bg-zinc-950/40 border border-zinc-900 overflow-hidden transition-all duration-300 hover:border-zinc-800 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.8)]"
+              className="group relative flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-lg"
+              style={{
+                backgroundColor: 'var(--landing-surface-card)',
+                borderColor: 'var(--landing-border)',
+              }}
             >
               {/* Skeleton Area */}
-              <div className="h-[210px] w-full border-b border-zinc-900 bg-[#020202] relative overflow-hidden shadow-[inset_0_4px_24px_rgba(0,0,0,0.6)]">
+              <div className="h-[210px] w-full border-b relative overflow-hidden mockup-viewport"
+                style={{
+                  backgroundColor: '#050508',
+                  borderColor: 'var(--landing-border)',
+                }}
+              >
                 <div className="absolute inset-0 bg-grid-pattern opacity-[0.015] pointer-events-none" />
                 <Skeleton />
               </div>
 
               {/* Text Description Area */}
               <div className="p-6 flex flex-col flex-1 gap-2">
-                <h3 className="text-sm md:text-base font-bold text-white uppercase tracking-wider leading-snug landing-font-heading">
+                <h3
+                  className="text-sm md:text-base font-bold uppercase tracking-wider leading-snug landing-font-heading"
+                  style={{ color: 'var(--landing-text-primary)' }}
+                >
                   {title}
                 </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed landing-font-body">{desc}</p>
+                <p
+                  className="text-xs leading-relaxed landing-font-body"
+                  style={{ color: 'var(--landing-text-secondary)' }}
+                >
+                  {desc}
+                </p>
               </div>
             </motion.div>
           ))}

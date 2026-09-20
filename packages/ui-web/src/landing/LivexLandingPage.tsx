@@ -157,7 +157,11 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
         initial={showIntro ? { opacity: 0 } : { opacity: 1 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen bg-[#030303] text-[#f2f1ef] font-sans selection:bg-zinc-800/40 overflow-x-hidden"
+        className="min-h-screen font-sans selection:bg-zinc-500/30 overflow-x-hidden transition-colors duration-200"
+        style={{
+          backgroundColor: 'var(--landing-bg)',
+          color: 'var(--landing-text-primary)',
+        }}
       >
         {/* Navbar */}
         <LandingNavbar navigateTo={navigateTo} />
@@ -166,9 +170,19 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
         <LandingHero navigateTo={navigateTo} apkUrl={release?.apkUrl} />
 
         {/* MacBook Scroll Showcase */}
-        <section id="showcase" className="py-12 bg-[#030303] border-t border-zinc-900/60">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-xl md:text-3xl font-extrabold tracking-tight uppercase text-zinc-400 select-none">
+        <section
+          id="showcase"
+          className="py-12 border-t transition-colors duration-200"
+          style={{
+            backgroundColor: 'var(--landing-bg)',
+            borderColor: 'var(--landing-border)',
+          }}
+        >
+          <div className="max-w-4xl mx-auto px-6 text-center mb-4">
+            <h2
+              className="text-xl md:text-3xl font-extrabold tracking-tight uppercase select-none landing-font-heading"
+              style={{ color: 'var(--landing-text-primary)' }}
+            >
               A Live Music Suite in Your Hands
             </h2>
           </div>
@@ -181,7 +195,7 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
         {/* Container Scroll Section */}
         <LandingContainerScroll
           titleText="From songs to stage-ready workflows."
-          descriptionText="Start with songs and chords, plan your live setup, then practice with groove and vocal tools without leaving Studio."
+          descriptionText="Start with songs and chords, plan your live setup, then practice with groove and vocal tools without leaving Livex."
           mockupName="stage"
         />
 

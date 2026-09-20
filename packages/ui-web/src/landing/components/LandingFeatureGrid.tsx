@@ -34,14 +34,24 @@ export default function LandingFeatureGrid() {
   return (
     <section
       id="features"
-      className="py-24 border-t border-zinc-900 bg-[#030303] relative select-none"
+      className="py-24 border-t relative select-none transition-colors duration-200"
+      style={{
+        backgroundColor: 'var(--landing-bg)',
+        borderColor: 'var(--landing-border)',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white uppercase mb-4 landing-font-heading">
+          <h2
+            className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase mb-4 landing-font-heading"
+            style={{ color: 'var(--landing-text-primary)' }}
+          >
             Technical Design Core
           </h2>
-          <p className="text-zinc-400 text-xs md:text-sm leading-relaxed landing-font-body">
+          <p
+            className="text-xs md:text-sm leading-relaxed landing-font-body"
+            style={{ color: 'var(--landing-text-secondary)' }}
+          >
             Livex is engineered to withstand the demanding conditions of live music performance and
             band rehearsal settings.
           </p>
@@ -60,15 +70,32 @@ export default function LandingFeatureGrid() {
               <motion.div
                 key={idx}
                 variants={itemVariants}
-                className="p-6 rounded-lg bg-zinc-950/40 border border-zinc-900 flex flex-col gap-4 transition-all duration-300 hover:border-zinc-800"
+                className="p-6 rounded-2xl border flex flex-col gap-4 transition-all duration-300 shadow-md"
+                style={{
+                  backgroundColor: 'var(--landing-surface-card)',
+                  borderColor: 'var(--landing-border)',
+                }}
               >
-                <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800/80 flex items-center justify-center text-zinc-100">
+                <div
+                  className="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors"
+                  style={{
+                    backgroundColor: 'var(--landing-surface-subtle)',
+                    borderColor: 'var(--landing-border)',
+                    color: 'var(--landing-text-primary)',
+                  }}
+                >
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider landing-font-heading">
+                <h3
+                  className="text-sm font-bold uppercase tracking-wider landing-font-heading"
+                  style={{ color: 'var(--landing-text-primary)' }}
+                >
                   {feat.title}
                 </h3>
-                <p className="text-xs text-zinc-500 leading-relaxed landing-font-body">
+                <p
+                  className="text-xs leading-relaxed landing-font-body"
+                  style={{ color: 'var(--landing-text-secondary)' }}
+                >
                   {feat.desc}
                 </p>
               </motion.div>

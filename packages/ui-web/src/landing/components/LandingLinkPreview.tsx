@@ -92,9 +92,9 @@ function PreviewAppRow({ Logo, name, desc }: PreviewAppRowProps) {
   );
 }
 
-function StudioHubPreviewCard() {
+function LivexHubPreviewCard() {
   return (
-    <div className="w-full h-full bg-[#050505] text-[#ffffff] font-sans flex flex-col p-3 relative overflow-hidden select-none border border-zinc-900 rounded-lg">
+    <div className="w-full h-full bg-[#050505] text-[#ffffff] font-sans flex flex-col p-3 relative overflow-hidden select-none border border-zinc-900 rounded-lg mockup-viewport">
       {/* Centered logo area */}
       <div
         style={{
@@ -245,7 +245,7 @@ export default function LandingLinkPreview({
             }}
           >
             <div className="w-[300px] h-[350px] p-1.5 bg-zinc-950/90 backdrop-blur-md border border-zinc-900 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] overflow-hidden">
-              <StudioHubPreviewCard />
+              <LivexHubPreviewCard />
             </div>
           </motion.div>
         )}

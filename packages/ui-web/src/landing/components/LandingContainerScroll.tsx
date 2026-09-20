@@ -43,33 +43,48 @@ export default function LandingContainerScroll({
   return (
     <div
       ref={containerRef}
-      className="w-full flex flex-col items-center py-20 px-6 overflow-hidden bg-[#030303]"
-      style={{ perspective: '1000px' }}
+      className="w-full flex flex-col items-center py-20 px-6 overflow-hidden select-none transition-colors duration-200"
+      style={{
+        perspective: '1000px',
+        backgroundColor: 'var(--landing-bg)',
+      }}
     >
       <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
         {/* Title Block */}
         <div className="mb-10 text-center max-w-2xl">
-          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white mb-4 landing-font-heading">
+          <h2
+            className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight mb-4 landing-font-heading"
+            style={{ color: 'var(--landing-text-primary)' }}
+          >
             {titleText}
           </h2>
-          <p className="text-zinc-400 text-xs md:text-sm leading-relaxed landing-font-body">
+          <p
+            className="text-xs md:text-sm leading-relaxed landing-font-body"
+            style={{ color: 'var(--landing-text-secondary)' }}
+          >
             {descriptionText}
           </p>
         </div>
 
         {/* Step Switcher */}
-        <div className="mb-4 flex flex-wrap justify-center gap-1.5 p-1.5 bg-[#0a0a0c] border border-zinc-900 rounded-xl max-w-md w-full">
+        <div
+          className="mb-4 flex flex-wrap justify-center gap-1.5 p-1.5 rounded-2xl max-w-md w-full border transition-colors"
+          style={{
+            backgroundColor: 'var(--landing-surface-subtle)',
+            borderColor: 'var(--landing-border)',
+          }}
+        >
           {steps.map((step) => {
             const isActive = activeStep === step.id;
             return (
               <button
                 key={step.id}
                 onClick={() => setActiveStep(step.id as any)}
-                className={`flex-1 min-w-[90px] px-3 py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border-none outline-none ${
-                  isActive
-                    ? 'bg-zinc-100 text-[#030303] shadow-md shadow-white/5'
-                    : 'text-zinc-500 hover:text-zinc-300 bg-transparent'
-                }`}
+                className="flex-1 min-w-[90px] px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border-none outline-none shadow-sm"
+                style={{
+                  backgroundColor: isActive ? 'var(--landing-cta-bg)' : 'transparent',
+                  color: isActive ? 'var(--landing-cta-text)' : 'var(--landing-text-secondary)',
+                }}
               >
                 {step.label}
               </button>
@@ -79,7 +94,10 @@ export default function LandingContainerScroll({
 
         {/* Active Step Subtext */}
         <div className="mb-8 h-4 text-center">
-          <span className="text-[9px] md:text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
+          <span
+            className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest leading-none"
+            style={{ color: 'var(--landing-text-muted)' }}
+          >
             {steps.find((s) => s.id === activeStep)?.desc}
           </span>
         </div>
@@ -91,10 +109,14 @@ export default function LandingContainerScroll({
             scale: isReduced ? 1 : scale,
             y: isReduced ? 0 : translateY,
             transformStyle: 'preserve-3d',
+            backgroundColor: 'var(--landing-surface-card)',
+            borderColor: 'var(--landing-border)',
           }}
-          className="w-full border border-zinc-800 bg-zinc-950 p-2 sm:p-4 rounded-2xl md:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative"
+          className="w-full border p-2 sm:p-4 rounded-2xl md:rounded-3xl shadow-2xl relative"
         >
-          <div className="w-full overflow-hidden rounded-xl bg-black aspect-video border border-zinc-900 flex items-center justify-center relative min-h-[300px] md:min-h-[480px]">
+          <div className="w-full overflow-hidden rounded-xl bg-black aspect-video border flex items-center justify-center relative min-h-[300px] md:min-h-[480px] mockup-viewport"
+            style={{ borderColor: 'var(--landing-border)' }}
+          >
             {renderMockupByName(activeStep)}
           </div>
         </motion.div>

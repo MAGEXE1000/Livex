@@ -25,22 +25,35 @@ export default function LandingFooter({
   };
 
   return (
-    <footer className="border-t border-zinc-900 bg-[#030303] py-16 relative overflow-hidden select-none">
+    <footer
+      className="border-t py-16 relative overflow-hidden select-none transition-colors duration-200"
+      style={{
+        backgroundColor: 'var(--landing-surface-subtle)',
+        borderColor: 'var(--landing-border)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start mb-16">
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-2">
-              <div className="text-white flex-shrink-0">
+              <div className="flex-shrink-0" style={{ color: 'var(--landing-text-primary)' }}>
                 <LivexLogo size={28} />
               </div>
               <span
-                className="font-extrabold text-base tracking-tight text-white"
-                style={{ fontFamily: 'var(--studio-font-display)', letterSpacing: '-0.02em' }}
+                className="font-extrabold text-base tracking-tight"
+                style={{
+                  fontFamily: 'var(--studio-font-display)',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--landing-text-primary)',
+                }}
               >
                 Livex
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 leading-relaxed max-w-sm landing-font-body">
+            <p
+              className="text-[11px] leading-relaxed max-w-sm landing-font-body"
+              style={{ color: 'var(--landing-text-muted)' }}
+            >
               Livex is a specialized, integrated single-page application containing tools for
               guitarists, drummers, audio engineers, vocalists, and music directors. Built for live
               setups.
@@ -49,7 +62,10 @@ export default function LandingFooter({
 
           <div className="md:col-span-7 grid grid-cols-3 gap-6">
             <div>
-              <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 mb-4 landing-font-heading">
+              <h4
+                className="text-[10px] font-extrabold uppercase tracking-widest mb-4 landing-font-heading"
+                style={{ color: 'var(--landing-text-primary)' }}
+              >
                 Suite Tools
               </h4>
               <ul className="space-y-2 text-xs text-zinc-500 font-semibold uppercase tracking-wider landing-font-heading">
@@ -155,8 +171,17 @@ export default function LandingFooter({
           </div>
         </div>
 
-        <div className="border-t border-zinc-900 pt-8 pb-8 text-[11px] text-zinc-500 leading-relaxed landing-font-body space-y-2">
-          <h5 className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 mb-3 landing-font-heading">
+        <div
+          className="border-t pt-8 pb-8 text-[11px] leading-relaxed landing-font-body space-y-2"
+          style={{
+            borderColor: 'var(--landing-border)',
+            color: 'var(--landing-text-muted)',
+          }}
+        >
+          <h5
+            className="text-[10px] font-extrabold uppercase tracking-widest mb-3 landing-font-heading"
+            style={{ color: 'var(--landing-text-primary)' }}
+          >
             Licenses & Rights
           </h5>
           <p>
@@ -175,7 +200,13 @@ export default function LandingFooter({
           <p>License details will be published with the public release.</p>
         </div>
 
-        <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase font-bold tracking-wider text-zinc-600 landing-font-heading">
+        <div
+          className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase font-bold tracking-wider landing-font-heading"
+          style={{
+            borderColor: 'var(--landing-border)',
+            color: 'var(--landing-text-muted)',
+          }}
+        >
           <p>© 2026 Livex. All rights reserved.</p>
           <div className="flex gap-6">
             <span>Web v4.0.0</span>

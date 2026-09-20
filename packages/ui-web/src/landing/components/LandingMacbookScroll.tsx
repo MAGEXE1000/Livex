@@ -50,14 +50,14 @@ export default function LandingMacbookScroll({ mockupName = 'hub' }: LandingMacb
             <div className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-zinc-800 z-10" />
 
             {/* Screen Content */}
-            <div className="flex-1 w-full h-full overflow-hidden bg-black relative">
+            <div className="flex-1 w-full h-full overflow-hidden bg-black relative mockup-viewport">
               {renderMockupByName(mockupName)}
             </div>
 
             {/* Bottom bezel bar */}
             <div className="h-4 sm:h-5 md:h-6 bg-[#1d1d1f] w-full flex items-center justify-center border-t border-black/25">
-              <span className="text-[5px] sm:text-[7px] font-bold text-zinc-500 tracking-wider uppercase">
-                Studio Dashboard
+              <span className="text-[5px] sm:text-[7px] font-bold text-zinc-400 tracking-wider uppercase">
+                Livex Platform
               </span>
             </div>
           </div>

@@ -35,7 +35,7 @@ function RealAppLayoutWrapper({
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-[#050505]">
+    <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-[#050505] mockup-viewport">
       <div
         style={{
           width: '480px',
@@ -66,7 +66,7 @@ function RealAppLayoutWrapper({
                 </svg>
               </div>
               <span className="font-extrabold text-[8px] tracking-tight text-white uppercase select-none">
-                Studio
+                Livex
               </span>
             </div>
 
@@ -173,7 +173,7 @@ export function LivexHubMockup() {
                 className="flex items-center gap-2 p-1 rounded-lg border border-zinc-900 bg-zinc-900/40"
               >
                 <div className="w-4 h-4 rounded bg-zinc-900 border border-zinc-800/80 flex items-center justify-center text-white font-extrabold text-[7px]">
-                  S
+                  L
                 </div>
                 <div className="min-w-0">
                   <div className="text-[7.5px] font-bold text-zinc-300 leading-none">

@@ -15,64 +15,145 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global Tailwind light mode class overrides */
-html.light .bg-zinc-950\/40,
-html.light .bg-zinc-950\/20,
-html.light .bg-zinc-950\/10 {
+/* ── Landing Page Semantic Theme Tokens ───────────────────────────────── */
+:root {
+  --landing-bg: #141414;
+  --landing-surface: #1a1a1e;
+  --landing-surface-card: #202024;
+  --landing-surface-subtle: #18181c;
+  --landing-text-primary: #f4f4f6;
+  --landing-text-secondary: #a1a1aa;
+  --landing-text-muted: #71717a;
+  --landing-border: rgba(255, 255, 255, 0.08);
+  --landing-border-subtle: rgba(255, 255, 255, 0.04);
+  --landing-nav-bg: rgba(20, 20, 20, 0.85);
+  --landing-cta-bg: #ffffff;
+  --landing-cta-text: #09090b;
+  --landing-cta-hover: #e4e4e7;
+  --landing-secondary-btn-bg: rgba(255, 255, 255, 0.06);
+  --landing-secondary-btn-text: #f4f4f5;
+  --landing-secondary-btn-border: rgba(255, 255, 255, 0.12);
+  --landing-marquee-mask: #141414;
+}
+
+html.light {
+  --landing-bg: #f8f9fa;
+  --landing-surface: #ffffff;
+  --landing-surface-card: #ffffff;
+  --landing-surface-subtle: #f1f3f5;
+  --landing-text-primary: #18181b;
+  --landing-text-secondary: #52525b;
+  --landing-text-muted: #71717a;
+  --landing-border: rgba(0, 0, 0, 0.08);
+  --landing-border-subtle: rgba(0, 0, 0, 0.04);
+  --landing-nav-bg: rgba(248, 249, 250, 0.88);
+  --landing-cta-bg: #18181b;
+  --landing-cta-text: #ffffff;
+  --landing-cta-hover: #27272a;
+  --landing-secondary-btn-bg: #ffffff;
+  --landing-secondary-btn-text: #18181b;
+  --landing-secondary-btn-border: rgba(0, 0, 0, 0.14);
+  --landing-marquee-mask: #f8f9fa;
+}
+
+html.dark {
+  --landing-bg: #141414;
+  --landing-surface: #1a1a1e;
+  --landing-surface-card: #202024;
+  --landing-surface-subtle: #18181c;
+  --landing-text-primary: #f4f4f6;
+  --landing-text-secondary: #a1a1aa;
+  --landing-text-muted: #71717a;
+  --landing-border: rgba(255, 255, 255, 0.08);
+  --landing-border-subtle: rgba(255, 255, 255, 0.04);
+  --landing-nav-bg: rgba(20, 20, 20, 0.85);
+  --landing-cta-bg: #ffffff;
+  --landing-cta-text: #09090b;
+  --landing-cta-hover: #e4e4e7;
+  --landing-secondary-btn-bg: rgba(255, 255, 255, 0.06);
+  --landing-secondary-btn-text: #f4f4f5;
+  --landing-secondary-btn-border: rgba(255, 255, 255, 0.12);
+  --landing-marquee-mask: #141414;
+}
+
+html.amoled {
+  --landing-bg: #000000;
+  --landing-surface: #0a0a0c;
+  --landing-surface-card: #0f0f12;
+  --landing-surface-subtle: #050507;
+  --landing-text-primary: #ffffff;
+  --landing-text-secondary: #a1a1aa;
+  --landing-text-muted: #71717a;
+  --landing-border: rgba(255, 255, 255, 0.12);
+  --landing-border-subtle: rgba(255, 255, 255, 0.06);
+  --landing-nav-bg: rgba(0, 0, 0, 0.88);
+  --landing-cta-bg: #ffffff;
+  --landing-cta-text: #000000;
+  --landing-cta-hover: #e4e4e7;
+  --landing-secondary-btn-bg: #0d0d10;
+  --landing-secondary-btn-text: #ffffff;
+  --landing-secondary-btn-border: rgba(255, 255, 255, 0.18);
+  --landing-marquee-mask: #000000;
+}
+
+/* Global Tailwind light mode class overrides (excluding mockup device screens) */
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-zinc-950\/40,
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-zinc-950\/20,
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-zinc-950\/10 {
   background-color: var(--app-surface-low) !important;
 }
-html.light .bg-zinc-950 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-zinc-950 {
   background-color: var(--app-surface-highest) !important;
 }
-html.light .border-zinc-900 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-900 {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
-html.light .border-zinc-900\/60,
-html.light .border-zinc-900\/80,
-html.light .border-zinc-900\/40,
-html.light .border-zinc-900\/10 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-900\/60,
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-900\/80,
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-900\/40,
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-900\/10 {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
-html.light .border-zinc-800 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .border-zinc-800 {
   border-color: rgba(0, 0, 0, 0.1) !important;
 }
-html.light .text-zinc-400 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .text-zinc-400 {
   color: var(--c-text-secondary) !important;
 }
-html.light .text-zinc-500 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .text-zinc-500 {
   color: var(--c-text-muted) !important;
 }
-html.light .text-zinc-300 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .text-zinc-300 {
   color: var(--c-text-primary) !important;
 }
-html.light .bg-\[\#050505\] {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-\[\#050505\] {
   background-color: var(--app-bg) !important;
 }
-html.light .bg-\[\#080808\]\/40 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-\[\#080808\]\/40 {
   background-color: var(--app-surface-low) !important;
 }
-html.light .bg-black {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-black {
   background-color: var(--app-surface-highest) !important;
 }
-html.light .text-\[\#f2f1ef\],
-html.light .text-\[\#f4f4f5\] {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .text-\[\#f2f1ef\],
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .text-\[\#f4f4f5\] {
   color: var(--c-text-primary) !important;
 }
-html.light div.bg-\[\#080808\]\/40 span.text-white {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) div.bg-\[\#080808\]\/40 span.text-white {
   color: var(--c-text-primary) !important;
 }
-html.light .bg-zinc-800 {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .bg-zinc-800 {
   background-color: var(--app-surface-lowest) !important;
   color: var(--c-text-primary) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
 }
-html.light .hover\:text-zinc-200:hover {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .hover\:text-zinc-200:hover {
   color: var(--c-text-primary) !important;
 }
-html.light .hover\:bg-zinc-900\/30:hover {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .hover\:bg-zinc-900\/30:hover {
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
-html.light .hover\:border-zinc-800:hover {
+html.light :not(.mockup-viewport):not(.mockup-viewport *) .hover\:border-zinc-800:hover {
   border-color: rgba(0, 0, 0, 0.15) !important;
 }
 

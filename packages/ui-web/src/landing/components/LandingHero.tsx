@@ -134,12 +134,15 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
   };
 
   return (
-    <section className="relative pt-24 pb-20 px-6 overflow-hidden bg-[#030303] select-none">
+    <section
+      className="relative pt-24 pb-20 px-6 overflow-hidden select-none transition-colors duration-200"
+      style={{ backgroundColor: 'var(--landing-bg)' }}
+    >
       {/* Premium Minimal Grid Overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
 
       {/* Subtle Minimal Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full bg-zinc-100/[0.015] blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full bg-zinc-500/[0.03] blur-[100px] pointer-events-none" />
 
       <motion.div
         variants={containerVariants}
@@ -150,19 +153,25 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
         {/* Upper Brand tag */}
         <motion.div
           variants={itemVariants}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/40 text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-8 select-none landing-font-heading"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] uppercase tracking-widest font-bold mb-8 select-none landing-font-heading"
+          style={{
+            backgroundColor: 'var(--landing-surface-subtle)',
+            borderColor: 'var(--landing-border)',
+            color: 'var(--landing-text-secondary)',
+          }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
           Livex Platform Suite v4.0
         </motion.div>
 
         {/* Headline */}
         <motion.h1
           variants={itemVariants}
-          className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.08] uppercase landing-font-heading"
+          className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.08] uppercase landing-font-heading"
+          style={{ color: 'var(--landing-text-primary)' }}
         >
           Your music workflow, <br />
-          <span className="text-zinc-500">
+          <span style={{ color: 'var(--landing-text-muted)' }}>
             in one{' '}
             <FlipWords
               words={[
@@ -178,7 +187,7 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
                 'modern',
               ]}
               isReduced={isReduced}
-              className="text-white"
+              className="font-extrabold"
             />{' '}
             workspace.
           </span>
@@ -187,7 +196,8 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
         {/* Subtitle */}
         <motion.p
           variants={itemVariants}
-          className="max-w-xl mx-auto text-sm md:text-base text-zinc-400 leading-relaxed mb-10 landing-font-body"
+          className="max-w-xl mx-auto text-sm md:text-base leading-relaxed mb-10 landing-font-body"
+          style={{ color: 'var(--landing-text-secondary)' }}
         >
           Livex brings songs, chords, stage planning, groove practice, and vocal tools into a
           single cross-platform workspace. Built for instant performance.
@@ -208,7 +218,11 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
                 sessionStorage.setItem('livex:entered_from_landing', 'true');
                 navigateTo('/app');
               }}
-              className="w-full sm:w-[180px] h-12 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 text-xs uppercase tracking-wider font-bold rounded-lg border border-transparent flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98]"
+              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border border-transparent flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] shadow-md cursor-pointer"
+              style={{
+                backgroundColor: 'var(--landing-cta-bg)',
+                color: 'var(--landing-cta-text)',
+              }}
             >
               Use Livex Web
               <ArrowRight className="w-3.5 h-3.5" />
@@ -218,15 +232,25 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
           {apkUrl ? (
             <a
               href={apkUrl}
-              className="w-full sm:w-[180px] h-12 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs uppercase tracking-wider font-bold rounded-lg border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-2 transition-all duration-300"
+              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border flex items-center justify-center gap-2 transition-all duration-200 shadow-sm cursor-pointer"
+              style={{
+                backgroundColor: 'var(--landing-secondary-btn-bg)',
+                color: 'var(--landing-secondary-btn-text)',
+                borderColor: 'var(--landing-secondary-btn-border)',
+              }}
             >
-              <Download className="w-3.5 h-3.5 text-zinc-400" />
+              <Download className="w-3.5 h-3.5" style={{ color: 'var(--landing-text-secondary)' }} />
               Download APK
             </a>
           ) : (
             <button
               disabled
-              className="w-full sm:w-[180px] h-12 bg-zinc-950 text-zinc-600 text-xs uppercase tracking-wider font-bold rounded-lg border border-zinc-900 cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border cursor-not-allowed flex items-center justify-center gap-2 opacity-50"
+              style={{
+                backgroundColor: 'var(--landing-surface-subtle)',
+                color: 'var(--landing-text-muted)',
+                borderColor: 'var(--landing-border)',
+              }}
             >
               APK Unavailable
             </button>
@@ -234,9 +258,14 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
 
           <button
             disabled
-            className="w-full sm:w-[180px] h-12 bg-zinc-950 text-zinc-600 text-xs uppercase tracking-wider font-bold rounded-lg border border-zinc-900 cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border cursor-not-allowed flex items-center justify-center gap-2 opacity-50"
+            style={{
+              backgroundColor: 'var(--landing-surface-subtle)',
+              color: 'var(--landing-text-muted)',
+              borderColor: 'var(--landing-border)',
+            }}
           >
-            <Monitor className="w-3.5 h-3.5 text-zinc-700" />
+            <Monitor className="w-3.5 h-3.5" style={{ color: 'var(--landing-text-muted)' }} />
             Windows App
           </button>
         </motion.div>

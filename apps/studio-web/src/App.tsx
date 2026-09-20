@@ -174,9 +174,18 @@ export default function App() {
       document.documentElement.classList.remove('landing-route');
 
       const intro = document.getElementById('intro');
-      if (intro && (window as any).__introReturnedEarly) {
-        triggerIntroReveal();
+      if (intro) {
+        intro.style.display = 'none';
+        if (intro.parentNode) intro.parentNode.removeChild(intro);
       }
+      (window as any).__introDone = true;
+      (window as any).__livexHubReady = true;
+      (window as any).__studioHubReady = true;
+      window.dispatchEvent(new Event('livex-intro-done'));
+      window.dispatchEvent(new Event('studio-intro-done'));
+      window.dispatchEvent(new Event('livex-hub-ready'));
+      window.dispatchEvent(new Event('studio-hub-ready'));
+      triggerIntroReveal();
     }
   }, [route]);
 

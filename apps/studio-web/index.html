@@ -363,6 +363,9 @@
         var intro = document.getElementById('intro');
         if (window.__introReturnedEarly || !intro) {
           window.__introReturnedEarly = true;
+          if (intro && intro.parentNode) {
+            intro.parentNode.removeChild(intro);
+          }
           try {
             if (
               window.Capacitor &&
