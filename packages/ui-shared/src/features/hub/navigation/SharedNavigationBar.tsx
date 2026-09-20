@@ -359,15 +359,15 @@ export function SharedNavigationBar({
   const totalSlots = N;
 
   const idealSlotWidth = isSwitcherOpen
-    ? 46
+    ? 48
     : isHub
-      ? 82
+      ? Math.min(116, Math.max(96, Math.round((windowWidth - 40) / 3)))
       : totalSlots >= 4
-        ? 60
+        ? 68
         : totalSlots === 2
-          ? 88
-          : 76;
-  const paddingX = isSwitcherOpen ? 6 : 8;
+          ? 96
+          : 84;
+  const paddingX = isSwitcherOpen ? 6 : 4;
 
   // hasRightBubble: true when App Changer satellite button is shown (non-hub apps only)
   const hasRightBubble = showSwitcherButton;
@@ -404,18 +404,18 @@ export function SharedNavigationBar({
   }, [currentItems, currentApp, isSwitcherOpen]);
 
   // Canonical slot-filling highlight geometry:
-  // The selected highlight occupies most of the selected tab's available slot,
-  // providing generous padding around icons and labels without clipping the outer pill boundary.
+  // The selected highlight occupies approximately the full width and vertical height of its slot,
+  // extending from top: 4px to bottom: 4px with a small 4px inset from slot boundaries.
   // Within any active navigation state, all tabs have identical slot width (itemWidth),
   // ensuring invariant geometry and zero size-jumping during tab transitions.
   const NAV_HIGHLIGHT_HEIGHT = 50;
 
-  const horizontalGap = isSwitcherOpen ? 8 : totalSlots >= 5 ? 4 : totalSlots >= 4 ? 6 : 8;
+  const horizontalGap = isSwitcherOpen ? 6 : 8;
   const pillWidthVal = Math.round(itemWidth - horizontalGap);
-  const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
+  const pillHeightVal = isSwitcherOpen ? 42 : NAV_HIGHLIGHT_HEIGHT;
   const pillRadiusVal = 9999;
 
-  const centerOffset = (itemWidth - pillWidthVal) / 2;
+  const centerOffset = Math.round((itemWidth - pillWidthVal) / 2);
 
   const getPillX = useCallback(
     (index: number) => {
@@ -915,8 +915,8 @@ export function SharedNavigationBar({
                 justifyContent: 'space-around',
                 paddingLeft: paddingX,
                 paddingRight: paddingX,
-                paddingTop: '3px',
-                paddingBottom: '3px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
                 position: 'relative',
                 touchAction: 'none',
                 userSelect: 'none',
@@ -978,7 +978,7 @@ export function SharedNavigationBar({
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? 7 : 1,
+                    top: isSwitcherOpen ? 4 : 0,
                     left: 0,
                     x: animatedPillX,
                     background: 'var(--surface-glass-lens-bg)',
@@ -1001,7 +1001,7 @@ export function SharedNavigationBar({
                       borderRadius: '9999px',
                       background: isLight
                         ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 28%, transparent 60%)'
-                        : 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.035) 28%, transparent 60%)',
+                        : 'linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.045) 28%, transparent 62%)',
                       pointerEvents: 'none',
                     }}
                   />
@@ -1017,8 +1017,8 @@ export function SharedNavigationBar({
                       borderRadius: '9999px',
                       background: isLight
                         ? 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.20) 20%, rgba(255, 255, 255, 0.60) 50%, rgba(255, 255, 255, 0.20) 80%, transparent 100%)'
-                        : 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0.08) 80%, transparent 100%)',
-                      opacity: 0.75,
+                        : 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.07) 18%, rgba(255, 255, 255, 0.30) 50%, rgba(255, 255, 255, 0.07) 82%, transparent 100%)',
+                      opacity: 0.85,
                       pointerEvents: 'none',
                     }}
                   />
