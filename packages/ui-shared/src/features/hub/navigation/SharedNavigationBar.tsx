@@ -404,12 +404,13 @@ export function SharedNavigationBar({
   }, [currentItems, currentApp, isSwitcherOpen]);
 
   // Invariant canonical highlight geometry:
-  // The selected highlight has an identical, invariant geometry across all tabs and apps.
-  // It never resizes based on label length, icon dimensions, tab name, or localized text.
+  // The selected highlight occupies a generous portion of the selected-tab slot (~92-94%),
+  // with stable, identical geometry across all tabs within each view.
   // When changing tabs, it moves purely via GPU transform (translateX) with spring physics.
-  const NAV_HIGHLIGHT_WIDTH = 64;
-  const NAV_HIGHLIGHT_HEIGHT = 48;
-  const NAV_HIGHLIGHT_RADIUS = 24;
+  const slotPadding = totalSlots >= 5 ? 4 : totalSlots >= 4 ? 4 : 6;
+  const NAV_HIGHLIGHT_WIDTH = Math.round(itemWidth - slotPadding);
+  const NAV_HIGHLIGHT_HEIGHT = 50;
+  const NAV_HIGHLIGHT_RADIUS = 25;
 
   const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
   const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
@@ -506,6 +507,21 @@ export function SharedNavigationBar({
   const animatedPillX = pillX;
 
   const pillPressScale = useTransform(pressPressureRaw, [0, 5], [1, 0.96]);
+
+  // Dynamic Motion Physics for Liquid Glass Active Indicator & Restrained Chromatic Aberration
+  const motionDelta = useTransform(
+    [activeIdxRaw, activeIdxSpring],
+    ([raw, spring]) => (raw as number) - (spring as number)
+  );
+  const motionSpeed = useTransform(motionDelta, (d: number) => Math.min(1, Math.abs(d) * 1.5));
+
+  const pillStretchX = useTransform(motionSpeed, [0, 1], [1, 1.05]);
+  const pillSquishY = useTransform(motionSpeed, [0, 1], [1, 0.97]);
+
+  // Subtle, restrained chromatic aberration fringe (RGB split lens effect during motion)
+  const chromaticOpacity = useTransform(motionSpeed, [0, 0.04, 0.5], [0, 0.45, 0.70]);
+  const chromaticOffsetCyan = useTransform(motionDelta, [-1, 0, 1], [-2, 0, 1.5]);
+  const chromaticOffsetMagenta = useTransform(motionDelta, [-1, 0, 1], [1.5, 0, -2]);
 
   // Derived continuous profile menu transformations
   const profileCardOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
@@ -963,7 +979,7 @@ export function SharedNavigationBar({
                   borderRadius: '26px',
                 }}
               >
-                {/* Active lens pill */}
+                {/* Active lens pill with Liquid Glass & Chromatic Aberration */}
                 <motion.div
                   animate={{
                     width: pillWidthVal,
@@ -978,37 +994,99 @@ export function SharedNavigationBar({
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? 7 : 2,
+                    top: isSwitcherOpen ? 7 : 1,
                     left: 0,
                     x: animatedPillX,
-                    background: isLight
-                      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.90) 100%)'
-                      : 'var(--surface-glass-lens-bg)',
-                    border: isLight
-                      ? '1px solid rgba(0, 0, 0, 0.06)'
-                      : 'var(--surface-glass-lens-border)',
-                    boxShadow: isLight
-                      ? '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff'
-                      : 'var(--surface-glass-lens-shadow)',
+                    borderRadius: pillRadiusVal,
                     pointerEvents: 'none',
                     zIndex: 0,
                     skewX: dragSkewRaw,
+                    scaleX: pillStretchX,
+                    scaleY: pillSquishY,
                     scale: pillPressScale,
                     willChange: 'transform',
                   }}
                 >
-                  {/* Inner Lens — Radial Center Glow (specular center highlight) */}
+                  {/* Chromatic Aberration Fringe: Cyan Shift (Cool Edge Refraction) */}
+                  <motion.div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: pillRadiusVal,
+                      border: isLight
+                        ? '1.5px solid rgba(0, 180, 255, 0.45)'
+                        : '1.5px solid rgba(0, 230, 255, 0.55)',
+                      x: chromaticOffsetCyan,
+                      opacity: chromaticOpacity,
+                      filter: 'blur(0.5px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+
+                  {/* Chromatic Aberration Fringe: Magenta Shift (Warm Edge Refraction) */}
+                  <motion.div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: pillRadiusVal,
+                      border: isLight
+                        ? '1.5px solid rgba(255, 40, 130, 0.40)'
+                        : '1.5px solid rgba(255, 30, 140, 0.50)',
+                      x: chromaticOffsetMagenta,
+                      opacity: chromaticOpacity,
+                      filter: 'blur(0.5px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+
+                  {/* Liquid Glass Highlight Core Surface */}
                   <div
                     style={{
                       position: 'absolute',
                       inset: 0,
                       borderRadius: pillRadiusVal,
                       background: isLight
-                        ? 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.40) 0%, transparent 100%)'
-                        : 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)',
-                      pointerEvents: 'none',
+                        ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(242, 245, 255, 0.88) 100%)'
+                        : 'var(--surface-glass-lens-bg)',
+                      border: isLight
+                        ? '1px solid rgba(0, 0, 0, 0.06)'
+                        : 'var(--surface-glass-lens-border)',
+                      boxShadow: isLight
+                        ? '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff'
+                        : 'var(--surface-glass-lens-shadow)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      overflow: 'hidden',
                     }}
-                  />
+                  >
+                    {/* Chromatic Top Specular Rim — subtle optical refraction along upper lens boundary */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: '10%',
+                        right: '10%',
+                        height: '1.5px',
+                        background: 'var(--surface-glass-rim)',
+                        opacity: isLight ? 0.7 : 0.85,
+                        filter: 'blur(0.4px)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+
+                    {/* Inner Lens — Radial Center Glow (specular center highlight) */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: pillRadiusVal,
+                        background: isLight
+                          ? 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.40) 0%, transparent 100%)'
+                          : 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </div>
                 </motion.div>
 
                 {/* Navigation items — fluid liquid continuous transformation */}
