@@ -5,7 +5,6 @@ import { STAGEX_LIBRARY, STAGEX_ICON_MAP, localizeElementName } from '../constan
 
 export interface StageElementLibrarySurfaceProps {
   onClose: () => void;
-  onSwitchToHistory?: () => void;
   onSelectElement: (item: StageLibraryItem) => void;
   isLight: boolean;
   isAmoled: boolean;
@@ -14,7 +13,6 @@ export interface StageElementLibrarySurfaceProps {
 
 export const StageElementLibrarySurface: React.FC<StageElementLibrarySurfaceProps> = ({
   onClose,
-  onSwitchToHistory,
   onSelectElement,
   isLight,
   accent: _accent,
@@ -145,27 +143,8 @@ export const StageElementLibrarySurface: React.FC<StageElementLibrarySurfaceProp
           })}
         </div>
 
-        {/* Right Header Actions: History Switch & Dedicated Close Button */}
+        {/* Right Header Actions: Dedicated Close Button */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {onSwitchToHistory && (
-            <button
-              type="button"
-              data-testid="stagex-library-to-history-btn"
-              onClick={onSwitchToHistory}
-              className="h-7 px-2 rounded-full flex items-center gap-1 flex-shrink-0 cursor-pointer active:scale-95 transition-all text-[11px] font-semibold"
-              style={{
-                background: 'var(--app-surface-low)',
-                color: 'var(--c-text-secondary)',
-                border: '1px solid var(--c-border)',
-              }}
-              aria-label={isSpanish ? 'Ver historial' : 'View history'}
-              title={isSpanish ? 'Historial de Edición' : 'Edit History'}
-            >
-              <span className="material-symbols-outlined text-[15px] text-pink-500">history</span>
-              <span className="hidden sm:inline">{isSpanish ? 'Historial' : 'History'}</span>
-            </button>
-          )}
-
           <button
             type="button"
             data-testid="stagex-drawer-close-btn"

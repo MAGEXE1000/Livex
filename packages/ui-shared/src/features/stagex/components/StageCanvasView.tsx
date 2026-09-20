@@ -1206,7 +1206,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         {isHistoryActive ? (
           <StageHistorySurface
             onClose={handleClosePanel}
-            onSwitchToElements={() => handleModeChange('elements')}
             historyEntries={historyState.entries}
             currentIndex={historyState.currentIndex}
             canUndo={historyState.canUndo}
@@ -1221,7 +1220,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         ) : (
           <StageElementLibrarySurface
             onClose={handleClosePanel}
-            onSwitchToHistory={() => handleModeChange('history')}
             onSelectElement={handleAddElement}
             isLight={isLight}
             isAmoled={isAmoled}
