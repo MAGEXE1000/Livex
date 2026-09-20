@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.30';
-export const NATIVE_VERSION_CODE = 40630;
-export const WEB_VERSION = '4.6.30';
+export const NATIVE_VERSION = '4.6.31';
+export const NATIVE_VERSION_CODE = 40631;
+export const WEB_VERSION = '4.6.31';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '8752a0c4';
+export const APP_COMMIT_SHA = '26633ac0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/20/2026, 5:47:56 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/20/2026, 7:00:43 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,17 +96,10 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Fixed',
     items: [
-      'Native Liquid Glass Material Architecture: Upgraded Topbar and Bottom Navigation surfaces with optical curvature gradients, calibrated 20px blur, and vibrant saturation (190% dark / 180% light), delivering Apple-grade frosted depth and real background separation across all screens.',
-      'Physical Specular Edge Rims: Added micro-refined translucent borders (`1px solid rgba(255, 255, 255, 0.12)`) and inset specular top highlights (`inset 0 1px 0 0 rgba(255, 255, 255, 0.16)`) to Topbar and Bottom Navigation surfaces.',
-    ],
-  },
-  {
-    heading: 'Improved',
-    items: [
-      'Enlarged Bottom Navigation Selected Highlight: Upgraded active tab highlight capsule from `56×46px` (radius `21px`) to `64×48px` (radius `24px`) with exact 2px vertical centering in `SharedNavigationBar`, comfortably containing tab icons and labels across all apps.',
-      'Liquid Glass Lens Material Tokens: Refined `--surface-glass-lens-*` tokens across Dark, Light, and AMOLED themes with physical specular center glow and subtle depth shadows.',
+      'Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.',
+      'Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.',
     ],
   },
 ];
@@ -118,6 +111,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.31',
+    date: '2026-09-20',
+    highlights: [
+      'Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.',
+      'Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.',
+    ],
+  },
   {
     version: '4.6.30',
     date: '2026-09-20',
@@ -214,16 +215,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Native Updater State Machine Deadlock Resolution: Corrected unhandled transition paths in updater pipeline that previously left the updater stuck in downloading/verifying states on unhandled transitions.',
       'Updater Download Cancellation Support: Added comprehensive `AbortController` cancellation for in-flight APK downloads when dialogs are closed or dismissed, cleanly terminating connections and resetting state to `INSTALL_CANCELLED`.',
       'Native Android PackageInstaller Callbacks: Connected native Android `PackageInstaller` broadcast events (`STATUS_SUCCESS`, `STATUS_PENDING_USER_ACTION`, `STATUS_FAILURE_*`) to the JavaScript runtime.',
-    ],
-  },
-  {
-    version: '4.6.21',
-    date: '2026-09-17',
-    highlights: [
-      'Profile & RootApp Runtime Crash Resolved: Eliminated critical production crash (`Minified React error #310: Rendered more hooks than during the previous render`) occurring when navigating to the Profile/Account settings screen.',
-      'Rules of Hooks Architectural Alignment: Hoisted all store selectors, theme attributes, and modal origin geometry hooks to the top level of `AccountSettingsPage` before early returns, ensuring constant hook allocation counts on both unauthenticated mount and authenticated update renders.',
-      'Component Lifecycle & Stability Guard: Extracted `AccountDeviceRow` out of inline JSX IIFE closures into module scope with explicit props, eliminating component type churning and local hook allocation jitter across re-renders.',
-      'Chordex Library Detail Hook Rule Alignment: Hoisted `detailScrollRef` above early return conditions in `LibraryChordDetail`.',
     ],
   },
 ];
