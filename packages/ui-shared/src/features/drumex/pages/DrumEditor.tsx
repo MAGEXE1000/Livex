@@ -2831,9 +2831,10 @@ export default function DrumEditor() {
               className="sticky z-30 mx-2 sm:mx-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full grid grid-cols-1 items-center transition-all select-none"
               style={{
                 gridTemplateColumns: '100%',
-                top: isLandscape
+                marginTop: isLandscape
                   ? 'calc(env(safe-area-inset-top, 0px) + 6px)'
                   : 'calc(env(safe-area-inset-top, 0px) + 10px)',
+                marginBottom: isLandscape ? '6px' : '8px',
                 background: 'var(--surface-topbar-bg)',
                 border: 'var(--surface-topbar-border)',
                 backdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
@@ -4707,11 +4708,6 @@ export default function DrumEditor() {
                             flexDirection: 'column',
                             overflow: 'hidden',
                             position: 'relative',
-                            paddingTop: !isWebDesktop
-                              ? isLandscape
-                                ? 'calc(env(safe-area-inset-top, 0px) + 48px)'
-                                : 'calc(env(safe-area-inset-top, 0px) + 58px)'
-                              : undefined,
                           }}
                         >
                           {/* ── Grid Toolbar ── */}
