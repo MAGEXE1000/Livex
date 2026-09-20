@@ -2034,6 +2034,7 @@ export default function LivexHub() {
                           ).map(({ app, Logo, name, desc, color, active }) => (
                             <motion.button
                               key={app}
+                              data-app={app}
                               onClick={(e) => launchApp(app, e.currentTarget)}
                               whileTap={prefersReduced ? undefined : { scale: 0.975 }}
                               whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}

@@ -4,6 +4,7 @@ import {
   type TransitionType,
 } from './navigationTypes';
 import { useNavigationStore } from '../../store/useNavigationStore.js';
+import { useSettingsStore } from '../../store/useSettingsStore.js';
 import { NavigationCoordinator } from './NavigationCoordinator.js';
 import {
   normalizeAndValidateRoute,
@@ -203,3 +204,10 @@ export class NavigationDispatcher {
     }, 300); // 300ms matches visual transition timing
   }
 }
+
+if (typeof window !== 'undefined') {
+  (window as any).__studioNavigationDispatcher = NavigationDispatcher;
+  (window as any).__useNavigationStore = useNavigationStore;
+  (window as any).__useSettingsStore = useSettingsStore;
+}
+
