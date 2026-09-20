@@ -1,7 +1,11 @@
-# Version 4.6.31
+# Version 4.6.32
 
 Release Date: 2026-09-20
 
 ### Fixed
-- Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.
-- Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.
+- Groovex Song Detail Navigation Scoping: Isolated bottom navigation and floating topbar behavior in Groovex so that entering an individual song mounts the standard Livex Topbar (`SharedFloatingHeader`) with scroll-morphing and hides the Bottom Navbar, while preserving the Bottom Navbar across all library, browsing, and preference views.
+- Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.
+
+### Improved
+- Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).
+- Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.

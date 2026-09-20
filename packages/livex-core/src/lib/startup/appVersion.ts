@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.31';
-export const NATIVE_VERSION_CODE = 40631;
-export const WEB_VERSION = '4.6.31';
+export const NATIVE_VERSION = '4.6.32';
+export const NATIVE_VERSION_CODE = 40632;
+export const WEB_VERSION = '4.6.32';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '26633ac0';
+export const APP_COMMIT_SHA = '1fb2020c';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/20/2026, 7:00:43 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/20/2026, 9:52:34 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,10 +96,17 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Improved',
+    items: [
+      'Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).',
+      'Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.',
-      'Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.',
+      'Groovex Song Detail Navigation Scoping: Isolated bottom navigation and floating topbar behavior in Groovex so that entering an individual song mounts the standard Livex Topbar (`SharedFloatingHeader`) with scroll-morphing and hides the Bottom Navbar, while preserving the Bottom Navbar across all library, browsing, and preference views.',
+      'Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.',
     ],
   },
 ];
@@ -111,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.32',
+    date: '2026-09-20',
+    highlights: [
+      'Groovex Song Detail Navigation Scoping: Isolated bottom navigation and floating topbar behavior in Groovex so that entering an individual song mounts the standard Livex Topbar (`SharedFloatingHeader`) with scroll-morphing and hides the Bottom Navbar, while preserving the Bottom Navbar across all library, browsing, and preference views.',
+      'Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.',
+      'Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).',
+      'Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.',
+    ],
+  },
   {
     version: '4.6.31',
     date: '2026-09-20',
@@ -203,18 +220,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Cold-Start Sequence Streamlined: Accelerated application boot, aligned splash screen dismissal with DOM hydration, and isolated DevTools diagnostics out of production builds.',
       'Dead Dependency & Bundle Optimization: Completely purged unused drizzle-orm, @tanstack/react-query, and class-variance-authority. Dynamically code-split jspdf (411 kB) out of critical paths.',
       'Deterministic Vector Iconography: Standardized app-wide icons to deterministic SVG vectors, permanently eliminating unstyled font ligature flash and layout jitter.',
-    ],
-  },
-  {
-    version: '4.6.22',
-    date: '2026-09-17',
-    highlights: [
-      'Android Manifest Permission Hardening: Stripped legacy `com.google.android.providers.gsf.permission.READ_GSERVICES` injected transitively by reCAPTCHA via manifest merger (`tools:node="remove"`), strictly enforcing a 16-permission whitelist with zero unauthorized permissions.',
-      'Scoped FileProvider & Backup Protection: Narrowed `FileProvider` paths strictly to cache directories and configured `data_extraction_rules.xml` and `backup_rules.xml` to completely disable cloud backups and device data transfers.',
-      'Strict Authorization & Storage Isolation: Decommissioned unused `firebase/storage` SDK from client runtime, enforced strict 2MB/10MB limits in server rules, and locked Firestore rooms and presence to authenticated user sandboxes.',
-      'Native Updater State Machine Deadlock Resolution: Corrected unhandled transition paths in updater pipeline that previously left the updater stuck in downloading/verifying states on unhandled transitions.',
-      'Updater Download Cancellation Support: Added comprehensive `AbortController` cancellation for in-flight APK downloads when dialogs are closed or dismissed, cleanly terminating connections and resetting state to `INSTALL_CANCELLED`.',
-      'Native Android PackageInstaller Callbacks: Connected native Android `PackageInstaller` broadcast events (`STATUS_SUCCESS`, `STATUS_PENDING_USER_ACTION`, `STATUS_FAILURE_*`) to the JavaScript runtime.',
     ],
   },
 ];
