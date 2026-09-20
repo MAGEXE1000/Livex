@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import {
   type AppKey,
@@ -85,6 +85,7 @@ export function ApplicationTransitionEngine({
   const startZoom = useApplicationTransitionStore((s) => s.startZoom);
   const prefersReduced = useAppReducedMotion();
   const completedRef = useRef(false);
+  const waitingForPreload = useRef(false);
 
   const isHub = appKey === 'hub';
   const profile = APP_PROFILES[appKey] || DEFAULT_PROFILE;
@@ -109,23 +110,37 @@ export function ApplicationTransitionEngine({
   }, [preloaded, isHub, startZoom]);
 
   // Completion coordinator: ensures atomic single-fire transition finalization
-  const handleTransitionEnd = useMemo(
-    () => () => {
-      if (completedRef.current) return;
-      completedRef.current = true;
-      triggerIntroReveal();
-      completeTransition();
-      if (onComplete) onComplete();
-    },
-    [completeTransition, onComplete]
-  );
+  const handleTransitionEnd = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    triggerIntroReveal();
+    completeTransition();
+    if (onComplete) onComplete();
+  }, [completeTransition, onComplete]);
 
-  // Safety watchdog: guarantees transition always completes even if animation interrupts
+  // Invoked when card expansion animation completes
+  const handleAnimationComplete = useCallback(() => {
+    if (preloaded) {
+      handleTransitionEnd();
+    } else {
+      // Hold continuous surface until destination readiness arrives
+      waitingForPreload.current = true;
+    }
+  }, [preloaded, handleTransitionEnd]);
+
+  // React immediately when destination finishes preloading after animation
+  useEffect(() => {
+    if (preloaded && waitingForPreload.current) {
+      handleTransitionEnd();
+    }
+  }, [preloaded, handleTransitionEnd]);
+
+  // Safety watchdog: guarantees transition always completes even under unexpected delays
   useEffect(() => {
     if (isHub) return;
     const watchdogTimer = setTimeout(() => {
       handleTransitionEnd();
-    }, 450);
+    }, 1800);
     return () => clearTimeout(watchdogTimer);
   }, [isHub, handleTransitionEnd]);
 
@@ -171,16 +186,18 @@ export function ApplicationTransitionEngine({
       : 'var(--app-bg, #0b0d13)';
 
   const cardInitialBg = isLight
-    ? 'rgba(255, 255, 255, 0.92)'
+    ? 'rgba(255, 255, 255, 0.96)'
     : isAmoled
       ? '#000000'
       : 'rgba(20, 22, 30, 0.96)';
 
   const cardInitialBorder = isLight
-    ? '1px solid rgba(0, 0, 0, 0.08)'
-    : '1px solid rgba(255, 255, 255, 0.12)';
+    ? 'rgba(0, 0, 0, 0.08)'
+    : isAmoled
+      ? 'rgba(255, 255, 255, 0.14)'
+      : 'rgba(255, 255, 255, 0.12)';
 
-  const duration = prefersReduced ? 0.15 : 0.32;
+  const duration = prefersReduced ? 0.16 : 0.44;
   const fluidEase: [number, number, number, number] = [0.16, 1, 0.3, 1]; // Apple-grade physical deceleration curve
 
   return (
@@ -203,7 +220,7 @@ export function ApplicationTransitionEngine({
         style={{
           position: 'absolute',
           inset: 0,
-          background: isAmoled ? '#000000' : 'rgba(0, 0, 0, 0.28)',
+          background: isAmoled ? '#000000' : isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.40)',
           willChange: 'opacity',
         }}
       />
@@ -220,8 +237,8 @@ export function ApplicationTransitionEngine({
                 height: startBounds.height,
                 borderRadius: startBounds.borderRadius,
                 backgroundColor: cardInitialBg,
-                border: cardInitialBorder,
-                boxShadow: `0 16px 36px -10px ${color}35, 0 0 0 1px ${color}20`,
+                borderColor: cardInitialBorder,
+                boxShadow: `0 16px 36px -10px ${color}40, 0 0 0 1px ${color}25`,
                 opacity: 1,
               }
         }
@@ -232,49 +249,58 @@ export function ApplicationTransitionEngine({
           height: '100dvh',
           borderRadius: 0,
           backgroundColor: targetBg,
-          border: '1px solid rgba(0, 0, 0, 0)',
+          borderColor: 'transparent',
           boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
-          // Smoothly cross-fade card surface during final 25% of expansion to reveal preloaded sub-app
-          opacity: [1, 1, 0],
+          // Solid visual continuity during first 48% of expansion, then progressive reveal of destination
+          opacity: [1, 1, 0.85, 0],
         }}
         transition={{
           top: { duration, ease: fluidEase },
           left: { duration, ease: fluidEase },
           width: { duration, ease: fluidEase },
           height: { duration, ease: fluidEase },
-          borderRadius: { duration: duration * 0.95, ease: fluidEase },
-          backgroundColor: { duration: duration * 0.85, ease: 'easeOut' },
-          border: { duration: duration * 0.6, ease: 'easeOut' },
-          boxShadow: { duration: duration * 0.6, ease: 'easeOut' },
+          borderRadius: { duration: duration * 0.92, ease: fluidEase },
+          backgroundColor: { duration: duration * 0.82, ease: 'easeOut' },
+          borderColor: { duration: duration * 0.45, ease: 'easeOut' },
+          boxShadow: { duration: duration * 0.55, ease: 'easeOut' },
           opacity: {
             duration,
-            times: [0, 0.72, 1],
-            ease: 'easeOut',
+            times: [0, 0.48, 0.78, 1],
+            ease: 'easeInOut',
           },
         }}
-        onAnimationComplete={handleTransitionEnd}
+        onAnimationComplete={handleAnimationComplete}
         style={{
           position: 'absolute',
+          borderStyle: 'solid',
+          borderWidth: '1px',
           overflow: 'hidden',
           willChange: 'transform, top, left, width, height, opacity, border-radius',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
-          transformStyle: 'preserve-3d',
+          transform: 'translateZ(0)',
         }}
       >
         {/* Glowing brand aura expanding from card origin */}
         <motion.div
-          initial={{ opacity: 0.25, scale: 0.8 }}
-          animate={{ opacity: [0.35, 0.15, 0], scale: [0.8, 1.4, 2] }}
-          transition={{ duration, times: [0, 0.6, 1], ease: 'easeOut' }}
+          initial={{ opacity: 0.35, scale: 0.85 }}
+          animate={{
+            opacity: [0.45, 0.60, 0.25, 0],
+            scale: [0.85, 1.3, 2.0, 2.8],
+          }}
+          transition={{
+            duration,
+            times: [0, 0.35, 0.70, 1.0],
+            ease: fluidEase,
+          }}
           style={{
             position: 'absolute',
             top: '20px',
             left: '20px',
-            width: '160px',
-            height: '160px',
+            width: '180px',
+            height: '180px',
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${color}45 0%, ${color}10 50%, transparent 75%)`,
+            background: `radial-gradient(circle, ${color}60 0%, ${color}20 50%, transparent 75%)`,
             pointerEvents: 'none',
             transform: 'translate(-35%, -35%)',
             willChange: 'transform, opacity',
@@ -283,14 +309,15 @@ export function ApplicationTransitionEngine({
 
         {/* Card visual content morph: stays anchored to card header and dissolves seamlessly */}
         <motion.div
-          initial={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 1, y: 0, scale: 1 }}
           animate={{
-            opacity: [1, 0.85, 0],
-            scale: [1, 1.04, 1.08],
+            opacity: [1, 1, 0.6, 0],
+            y: [0, -4, -8, -12],
+            scale: [1, 1.03, 1.06, 1.08],
           }}
           transition={{
-            duration: duration * 0.88,
-            times: [0, 0.45, 1],
+            duration: duration * 0.95,
+            times: [0, 0.45, 0.75, 1.0],
             ease: fluidEase,
           }}
           style={{
@@ -314,13 +341,13 @@ export function ApplicationTransitionEngine({
               height: '44px',
               borderRadius: '14px',
               background: isLight ? `${color}18` : `${color}22`,
-              border: `1px solid ${color}40`,
+              border: `1px solid ${color}45`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: color,
               flexShrink: 0,
-              boxShadow: `0 4px 14px ${color}25`,
+              boxShadow: `0 4px 16px ${color}35`,
             }}
           >
             <Logo size={24} />
@@ -336,9 +363,9 @@ export function ApplicationTransitionEngine({
           >
             <span
               style={{
-                fontSize: '16px',
+                fontSize: '16.5px',
                 fontWeight: 800,
-                color: 'var(--c-text-primary)',
+                color: isLight ? '#0f172a' : '#f8fafc',
                 fontFamily: 'var(--studio-font-display)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.2,
@@ -349,12 +376,12 @@ export function ApplicationTransitionEngine({
             <span
               style={{
                 fontSize: '12px',
-                color: 'var(--c-text-secondary)',
+                color: isLight ? '#64748b' : '#94a3b8',
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 500,
                 marginTop: '3px',
                 lineHeight: 1.3,
-                opacity: 0.85,
+                opacity: 0.9,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',

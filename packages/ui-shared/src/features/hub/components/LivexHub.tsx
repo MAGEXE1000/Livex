@@ -897,7 +897,12 @@ export default function LivexHub() {
 
     (window as any).studioTransitionActive = true;
     setZooming(true);
-    NavigationDispatcher.push({ app: appMode });
+
+    // Yield 1 rAF frame before dispatching navigation so the browser paints the
+    // initial frame of the expanding card before heavy sub-app tree mounting
+    requestAnimationFrame(() => {
+      NavigationDispatcher.push({ app: appMode });
+    });
 
     // Clear any pending launch timers
     launchTimers.current.forEach(clearTimeout);
@@ -905,6 +910,7 @@ export default function LivexHub() {
 
     const t2 = setTimeout(() => {
       (window as any).studioTransitionActive = false;
+      setZooming(false);
       recordNavigation({
         fromApp: currentApp,
         toApp: appMode,
@@ -913,7 +919,7 @@ export default function LivexHub() {
         activeAppAfterTransition: appMode,
         fallbackRendered: false,
       });
-    }, 360);
+    }, 480);
     launchTimers.current.push(t2);
     // updateSettings is stable (Zustand action), setZooming is React setState
   }, []);
@@ -1110,7 +1116,7 @@ export default function LivexHub() {
         transform: zooming ? 'scale(0.985)' : 'scale(1)',
         opacity: zooming ? 0.35 : 1,
         transition: zooming
-          ? 'transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-in, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
+          ? 'transform 440ms cubic-bezier(0.16, 1, 0.3, 1), opacity 360ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
           : 'transform 285ms cubic-bezier(0.16, 1, 0.3, 1), opacity 285ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents: introFinished ? 'auto' : 'none',
       }}
