@@ -61,6 +61,12 @@ export interface MorphMenuProps {
    * Defaults to true.
    */
   asOverlay?: boolean;
+  /**
+   * Whether this menu floats above surrounding content when expanded, maintaining its compact footprint in document flow.
+   */
+  floating?: boolean;
+  /** Custom render function for the trigger button when closed */
+  customTrigger?: (helpers: { isOpen: boolean; toggle: (e?: any) => void; close: () => void }) => React.ReactNode;
   /** Additional CSS class name */
   className?: string;
   /** Inline styles */
@@ -132,6 +138,8 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
       subtitle,
       rows,
       asOverlay = true,
+      floating = false,
+      customTrigger,
       className = '',
       style,
       children,
@@ -164,8 +172,10 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
     }, [setOpen]);
 
     const handleToggle = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
+      (e?: React.MouseEvent) => {
+        if (e && typeof e.stopPropagation === 'function') {
+          e.stopPropagation();
+        }
         setOpen((v) => !v);
       },
       [setOpen]
@@ -240,7 +250,7 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
       ...style,
     } as React.CSSProperties;
 
-    return (
+    const morphElement = (
       <div
         ref={(node) => {
           localRef.current = node;
@@ -256,7 +266,19 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
         data-anchor={anchor}
         data-reduced-motion={prefersReduced ? 'true' : undefined}
         className={`t-morph ${className}`}
-        style={dynamicVars}
+        style={{
+          ...dynamicVars,
+          ...(floating
+            ? {
+                position: 'absolute',
+                top: anchor.startsWith('bottom') ? 'auto' : 0,
+                bottom: anchor.startsWith('bottom') ? 0 : 'auto',
+                left: anchor.endsWith('right') ? 'auto' : 0,
+                right: anchor.endsWith('right') ? 0 : 'auto',
+                zIndex: isOpen ? 50 : 1,
+              }
+            : {}),
+        }}
       >
         {/* Expanded Menu Container */}
         <div
@@ -320,29 +342,79 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
                 </button>
               ))}
             </div>
-          ) : typeof children === 'function' ? (
-            children({ close: handleClose, isOpen })
           ) : (
-            children
+            <div className="flex flex-col w-full h-full overflow-hidden">
+              {title && (
+                <div className="px-3 pt-2 pb-1.5 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-white tracking-wide truncate">{title}</div>
+                    {subtitle && <div className="text-[10px] text-zinc-400 truncate">{subtitle}</div>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer ml-1"
+                    aria-label="Close"
+                  >
+                    <StudioIcon name="close" size={14} />
+                  </button>
+                </div>
+              )}
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                {typeof children === 'function' ? children({ close: handleClose, isOpen }) : children}
+              </div>
+            </div>
           )}
         </div>
 
         {/* Trigger Button (Remains permanently mounted in DOM) */}
-        <button
-          type="button"
-          className={`t-morph-plus ${triggerClassName}`}
-          style={triggerStyle}
-          aria-expanded={isOpen}
-          aria-label={triggerAriaLabel}
-          aria-haspopup="menu"
-          onClick={handleToggle}
-          tabIndex={isOpen ? -1 : 0}
-        >
-          {triggerIcon || <PlusIcon />}
-          {triggerLabel && <span className="ml-1 text-xs font-semibold">{triggerLabel}</span>}
-        </button>
+        {customTrigger ? (
+          <div
+            className={`t-morph-plus ${triggerClassName}`}
+            style={{ width: '100%', height: '100%', ...triggerStyle }}
+          >
+            {customTrigger({ isOpen, toggle: handleToggle, close: handleClose })}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`t-morph-plus ${triggerClassName}`}
+            style={triggerStyle}
+            aria-expanded={isOpen}
+            aria-label={triggerAriaLabel}
+            aria-haspopup="menu"
+            onClick={handleToggle}
+            tabIndex={isOpen ? -1 : 0}
+          >
+            {triggerIcon || <PlusIcon />}
+            {triggerLabel && <span className="ml-1 text-xs font-semibold">{triggerLabel}</span>}
+          </button>
+        )}
       </div>
     );
+
+    if (floating) {
+      return (
+        <div
+          className="t-morph-anchor-wrapper"
+          style={{
+            position: 'relative',
+            width: resolvedClosedW,
+            height: resolvedClosedH,
+            display:
+              typeof resolvedClosedW === 'string' && resolvedClosedW.endsWith('%')
+                ? 'block'
+                : 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0,
+          }}
+        >
+          {morphElement}
+        </div>
+      );
+    }
+
+    return morphElement;
   }
 );
 

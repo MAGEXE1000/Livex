@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { type TakeRecord, useT, BackDispatcher } from '@workspace/livex-core';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import { useHarmonizerState } from './useHarmonizerState';
 import {
@@ -209,99 +210,81 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
           </div>
         </div>
 
+        {/* Advanced Processing Morphing Surface */}
         <div style={{ padding: '12px 16px 0' }}>
-          <button
-            onClick={() => setShowAdvanced((v) => !v)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '10px 13px',
-              borderRadius: 10,
-              background: 'var(--c-surface-low)',
-              border: '1px solid var(--c-border)',
-              cursor: 'pointer',
-              color: 'var(--c-text-secondary)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
+          <MorphMenu
+            floating
+            anchor="top-left"
+            closedWidth="100%"
+            closedHeight={38}
+            closedRadius={10}
+            openWidth="100%"
+            openHeight={240}
+            openRadius={16}
+            title={t.vocalex.advancedProcessing || 'Advanced Processing'}
+            triggerLabel={t.vocalex.advancedProcessing || 'Advanced Processing'}
+            triggerAriaLabel={t.vocalex.advancedProcessing || 'Advanced Processing'}
+            triggerIcon={
               <span
                 className="material-symbols-outlined"
                 style={{ fontSize: 16, color: 'var(--c-text-muted)' }}
               >
                 tune
               </span>
-              {t.vocalex.advancedProcessing || 'Advanced Processing'}
-            </div>
-            <span
-              className="material-symbols-outlined"
-              style={{
-                fontSize: 18,
-                transform: showAdvanced ? 'rotate(180deg)' : 'none',
-                transition: 'transform 200ms ease',
-              }}
-            >
-              expand_more
-            </span>
-          </button>
-
-          {showAdvanced && (
-            <div
-              style={{
-                marginTop: 6,
-                padding: '14px 13px',
-                borderRadius: 10,
-                background: 'var(--c-surface-low)',
-                border: '1px solid var(--c-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-              }}
-            >
-              <AdvSlider
-                label={t.vocalex.humanize || 'Humanize'}
-                hint={
-                  t.vocalex.humanizeDesc ||
-                  'Adds natural micro-timing and pitch variation between layers'
-                }
-                value={humanize}
-                color="#32d74b"
-                icon="person"
-                onChange={setHumanize}
-              />
-              <AdvSlider
-                label={t.vocalex.formantCorrection || 'Formant Correction'}
-                hint={
-                  t.vocalex.formantCorrectionDesc ||
-                  'Preserves vocal character when shifting large intervals'
-                }
-                value={formant}
-                color="#ff9f0a"
-                icon="graphic_eq"
-                onChange={setFormant}
-              />
-              <p
+            }
+            style={{
+              background: 'var(--c-surface-low)',
+              borderColor: 'var(--c-border)',
+              color: 'var(--c-text-secondary)',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            {() => (
+              <div
                 style={{
-                  fontSize: 10,
-                  color: 'rgba(255,255,255,0.25)',
-                  margin: 0,
-                  lineHeight: 1.5,
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
                 }}
               >
-                {t.vocalex.changesApplyHint ||
-                  'Changes apply on next playback. Larger corrections increase generation time.'}
-              </p>
-            </div>
-          )}
+                <AdvSlider
+                  label={t.vocalex.humanize || 'Humanize'}
+                  hint={
+                    t.vocalex.humanizeDesc ||
+                    'Adds natural micro-timing and pitch variation between layers'
+                  }
+                  value={humanize}
+                  color="#32d74b"
+                  icon="person"
+                  onChange={setHumanize}
+                />
+                <AdvSlider
+                  label={t.vocalex.formantCorrection || 'Formant Correction'}
+                  hint={
+                    t.vocalex.formantCorrectionDesc ||
+                    'Preserves vocal character when shifting large intervals'
+                  }
+                  value={formant}
+                  color="#ff9f0a"
+                  icon="graphic_eq"
+                  onChange={setFormant}
+                />
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.25)',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {t.vocalex.changesApplyHint ||
+                    'Changes apply on next playback. Larger corrections increase generation time.'}
+                </p>
+              </div>
+            )}
+          </MorphMenu>
         </div>
 
         {bounceError && (

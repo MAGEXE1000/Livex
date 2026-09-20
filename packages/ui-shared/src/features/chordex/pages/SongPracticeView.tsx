@@ -1,4 +1,5 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -237,7 +238,6 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
   // Playback/scrolling states
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [showSettings, setShowSettings] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -1222,329 +1222,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
         </div>
       )}
 
-      {/* Settings Dialog */}
-      <Dialog
-        open={showSettings}
-        onClose={() => setShowSettings(false)}
-        title={t.practice.settingsTitle}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Font Size Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label
-              style={{
-                fontSize: '10px',
-                color: 'var(--c-text-muted)',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-            >
-              {t.practice.settingsFont}
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
-              {(['sm', 'md', 'lg', 'xl'] as const).map((sz) => (
-                <button
-                  key={sz}
-                  onClick={() => setFontSize(sz)}
-                  style={{
-                    padding: '6px 2px',
-                    borderRadius: 6,
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    background: fontSize === sz ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
-                    border: 'none',
-                    color: fontSize === sz ? '#ffffff' : 'var(--c-text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {sz.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {/* Chord Size Selector (Only shown if chart contains real chords) */}
-          {hasRealChords && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--c-text-muted)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {t.practice.settingsChords}
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-                {(['sm', 'md', 'lg'] as const).map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setChordSize(sz)}
-                    style={{
-                      padding: '6px 2px',
-                      borderRadius: 6,
-                      fontSize: '10px',
-                      fontWeight: 800,
-                      background: chordSize === sz ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
-                      border: 'none',
-                      color: chordSize === sz ? '#ffffff' : 'var(--c-text-secondary)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {sz.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Line Spacing Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label
-              style={{
-                fontSize: '10px',
-                color: 'var(--c-text-muted)',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-            >
-              {t.practice.spacing}
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-              {(['tight', 'normal', 'wide'] as const).map((sp) => (
-                <button
-                  key={sp}
-                  onClick={() => setSpacing(sp)}
-                  style={{
-                    padding: '6px 2px',
-                    borderRadius: 6,
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    background: spacing === sp ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
-                    border: 'none',
-                    color: spacing === sp ? '#ffffff' : 'var(--c-text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {sp === 'tight'
-                    ? t.practice.spacingTight
-                    : sp === 'wide'
-                      ? t.practice.spacingWide
-                      : t.practice.spacingNormal}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Show/Hide Chord Overlay (Only shown if chart contains real chords) */}
-          {hasRealChords && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 0',
-                borderTop: '1px solid rgba(128,128,128,0.06)',
-                borderBottom: '1px solid rgba(128,128,128,0.06)',
-              }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--c-text-secondary)' }}>
-                {t.practice.showOverlay}
-              </span>
-              <LiquidSwitch
-                size="sm"
-                checked={showChordOverlay}
-                onChange={(checked) => {
-                  setShowChordOverlay(checked);
-                  localStorage.setItem('chordex:practice:showOverlay', String(checked));
-                }}
-                accentFrom="var(--c-accent, #f59e0b)"
-                ariaLabel={t.practice.showOverlay}
-              />
-            </div>
-          )}
-
-          {/* Tempo Speed Modifier */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: '4px' }}>
-            <label
-              style={{
-                fontSize: '10px',
-                color: 'var(--c-text-muted)',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-            >
-              {t.practice.tempoSpeed}
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={() => setTempo((t) => Math.max(40, t - 5))}
-                style={{
-                  background: 'rgba(128,128,128,0.1)',
-                  border: 'none',
-                  borderRadius: 6,
-                  width: 28,
-                  height: 28,
-                  color: 'var(--c-text-primary)',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                -
-              </button>
-              <span
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  color: 'var(--c-text-primary)',
-                }}
-              >
-                {tempo} BPM
-              </span>
-              <button
-                onClick={() => setTempo((t) => Math.min(240, t + 5))}
-                style={{
-                  background: 'rgba(128,128,128,0.1)',
-                  border: 'none',
-                  borderRadius: 6,
-                  width: 28,
-                  height: 28,
-                  color: 'var(--c-text-primary)',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Diagnostics */}
-          {chartDiagnostics && (
-            <div
-              style={{
-                borderTop: '1px solid rgba(128,128,128,0.1)',
-                paddingTop: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                fontSize: '9px',
-                color: 'var(--c-text-muted)',
-                fontFamily: 'monospace',
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'var(--c-text-secondary)',
-                  fontSize: '8px',
-                  marginBottom: 2,
-                }}
-              >
-                Diagnostics
-              </div>
-              <div>Provider: {chartDiagnostics.provider}</div>
-              <div>Status: {chartDiagnostics.success ? 'Success' : 'Unavailable'}</div>
-              <div>Type: {chartDiagnostics.type}</div>
-              <div>Match Score: {chartDiagnostics.confidence.toFixed(2)}</div>
-              <div>Fetch Time: {chartDiagnostics.duration}ms</div>
-            </div>
-          )}
-
-          {/* Clear Cache Button */}
-          <button
-            onClick={handleClearCacheAndRetry}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              fontSize: '10px',
-              fontWeight: 800,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'var(--c-text-secondary)',
-              cursor: 'pointer',
-              textAlign: 'center',
-              marginTop: 4,
-            }}
-          >
-            {isSpanish ? 'Refrescar Cache de Acordes' : 'Refresh Chords Cache'}
-          </button>
-
-          {/* Custom Chart Options */}
-          {activeChart && activeChart.chartStatus === 'user' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
-              <button
-                onClick={() => {
-                  const rawText =
-                    localStorage.getItem(`chordex:practice:custom_chart_text:${song.id}`) || '';
-                  setImportText(rawText);
-                  setShowImportModal(true);
-                  setShowSettings(false);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: 8,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  color: 'var(--c-text-primary)',
-                  cursor: 'pointer',
-                  fontFamily: 'Inter',
-                }}
-              >
-                {t.practice.editBtn || 'Edit Chords & Lyrics'}
-              </button>
-              <button
-                onClick={handleClearCustomChart}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: 8,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.2)',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  fontFamily: 'Inter',
-                }}
-              >
-                {t.practice.clearCustomBtn || 'Reset to Default'}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                setImportText('');
-                setShowImportModal(true);
-                setShowSettings(false);
-              }}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: 8,
-                fontSize: '11px',
-                fontWeight: 700,
-                background: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-                marginTop: 'auto',
-                fontFamily: 'Inter',
-              }}
-            >
-              {t.practice.importBtn}
-            </button>
-          )}
-        </div>
-      </Dialog>
 
       {/* Importer Modal */}
       {showImportModal && (
@@ -2190,20 +1868,297 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
               </span>
             </button>
 
-            <button
-              onClick={() => setShowSettings(!showSettings)}
+            {/* Display & Playback Options Morphing Surface */}
+            <MorphMenu
+              floating
+              anchor="bottom-right"
+              closedWidth={36}
+              closedHeight={36}
+              closedRadius={18}
+              openWidth={290}
+              openHeight={360}
+              openRadius={16}
+              title={t.practice.settingsTitle}
+              triggerAriaLabel={t.practice.settingsTitle}
+              triggerIcon={
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  tune
+                </span>
+              }
               style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--c-text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
+                background: 'rgba(20,20,28,0.95)',
+                borderColor: 'rgba(255,255,255,0.12)',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-                tune
-              </span>
-            </button>
+              {({ close }) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '12px 14px' }}>
+                  {/* Font Size Selector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--c-text-muted)',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {t.practice.settingsFont}
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+                      {(['sm', 'md', 'lg', 'xl'] as const).map((sz) => (
+                        <button
+                          key={sz}
+                          onClick={() => setFontSize(sz)}
+                          style={{
+                            padding: '6px 2px',
+                            borderRadius: 6,
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            background: fontSize === sz ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
+                            border: 'none',
+                            color: fontSize === sz ? '#ffffff' : 'var(--c-text-secondary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {sz.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Chord Size Selector */}
+                  {hasRealChords && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <label
+                        style={{
+                          fontSize: '10px',
+                          color: 'var(--c-text-muted)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {t.practice.settingsChords}
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                        {(['sm', 'md', 'lg'] as const).map((sz) => (
+                          <button
+                            key={sz}
+                            onClick={() => setChordSize(sz)}
+                            style={{
+                              padding: '6px 2px',
+                              borderRadius: 6,
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              background: chordSize === sz ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
+                              border: 'none',
+                              color: chordSize === sz ? '#ffffff' : 'var(--c-text-secondary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {sz.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Line Spacing Selector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--c-text-muted)',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {t.practice.spacing}
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                      {(['tight', 'normal', 'wide'] as const).map((sp) => (
+                        <button
+                          key={sp}
+                          onClick={() => setSpacing(sp)}
+                          style={{
+                            padding: '6px 2px',
+                            borderRadius: 6,
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            background: spacing === sp ? 'var(--c-accent)' : 'rgba(128,128,128,0.1)',
+                            border: 'none',
+                            color: spacing === sp ? '#ffffff' : 'var(--c-text-secondary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {sp === 'tight'
+                            ? t.practice.spacingTight
+                            : sp === 'wide'
+                              ? t.practice.spacingWide
+                              : t.practice.spacingNormal}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Show/Hide Chord Overlay */}
+                  {hasRealChords && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 0',
+                        borderTop: '1px solid rgba(128,128,128,0.08)',
+                        borderBottom: '1px solid rgba(128,128,128,0.08)',
+                      }}
+                    >
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--c-text-secondary)' }}>
+                        {t.practice.showOverlay}
+                      </span>
+                      <LiquidSwitch
+                        size="sm"
+                        checked={showChordOverlay}
+                        onChange={(checked) => {
+                          setShowChordOverlay(checked);
+                          localStorage.setItem('chordex:practice:showOverlay', String(checked));
+                        }}
+                        accentFrom="var(--c-accent, #f59e0b)"
+                        ariaLabel={t.practice.showOverlay}
+                      />
+                    </div>
+                  )}
+
+                  {/* Tempo Speed Modifier */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--c-text-muted)',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {t.practice.tempoSpeed}
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        onClick={() => setTempo((t) => Math.max(40, t - 5))}
+                        style={{
+                          background: 'rgba(128,128,128,0.1)',
+                          border: 'none',
+                          borderRadius: 6,
+                          width: 28,
+                          height: 28,
+                          color: 'var(--c-text-primary)',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        -
+                      </button>
+                      <span
+                        style={{
+                          flex: 1,
+                          textAlign: 'center',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          color: 'var(--c-text-primary)',
+                        }}
+                      >
+                        {tempo} BPM
+                      </span>
+                      <button
+                        onClick={() => setTempo((t) => Math.min(240, t + 5))}
+                        style={{
+                          background: 'rgba(128,128,128,0.1)',
+                          border: 'none',
+                          borderRadius: 6,
+                          width: 28,
+                          height: 28,
+                          color: 'var(--c-text-primary)',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Chart Options */}
+                  {activeChart && activeChart.chartStatus === 'user' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                      <button
+                        onClick={() => {
+                          const rawText =
+                            localStorage.getItem(`chordex:practice:custom_chart_text:${song.id}`) || '';
+                          setImportText(rawText);
+                          setShowImportModal(true);
+                          close();
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          borderRadius: 8,
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          background: 'rgba(255,255,255,0.07)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          color: 'var(--c-text-primary)',
+                          cursor: 'pointer',
+                          fontFamily: 'Inter',
+                        }}
+                      >
+                        {t.practice.editBtn || 'Edit Chords & Lyrics'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleClearCustomChart();
+                          close();
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          borderRadius: 8,
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid rgba(239,68,68,0.2)',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontFamily: 'Inter',
+                        }}
+                      >
+                        {t.practice.clearCustomBtn || 'Reset to Default'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setImportText('');
+                        setShowImportModal(true);
+                        close();
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        borderRadius: 8,
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        background: 'rgba(255,255,255,0.07)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: 'var(--c-text-primary)',
+                        cursor: 'pointer',
+                        marginTop: 4,
+                        fontFamily: 'Inter',
+                      }}
+                    >
+                      {t.practice.importBtn}
+                    </button>
+                  )}
+                </div>
+              )}
+            </MorphMenu>
           </div>
         </div>
       )}

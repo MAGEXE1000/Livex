@@ -80,7 +80,6 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
 
   const element = elementProp || lastElementRef.current;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [moreFieldsExpanded, setMoreFieldsExpanded] = useState(false);
   const [activePicker, setActivePicker] = useState<SpecsPickerType | null>(null);
 
   // Read existing domain sources of truth
@@ -959,122 +958,129 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                     </div>
                   </div>
 
-                  {/* Collapsible Advanced / Secondary Specs */}
-                  <div className="pt-1.5 border-t border-white/5">
-                    <button
-                      type="button"
-                      data-testid="specs-more-toggle"
-                      onClick={() => setMoreFieldsExpanded((prev) => !prev)}
-                      className="flex items-center justify-between w-full py-1 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
-                      style={{ color: '#ec4899' }}
+                  {/* Collapsible Advanced / Secondary Specs Morphing Surface */}
+                  <div className="pt-2 border-t border-white/5 flex justify-end">
+                    <MorphMenu
+                      floating
+                      anchor="bottom-right"
+                      closedWidth={140}
+                      closedHeight={30}
+                      closedRadius={15}
+                      openWidth={310}
+                      openHeight={200}
+                      openRadius={16}
+                      title={tr.stagex?.specs?.moreSpecs || 'Advanced Specs'}
+                      triggerLabel={tr.stagex?.specs?.moreSpecs || 'Advanced Specs'}
+                      triggerAriaLabel={tr.stagex?.specs?.moreSpecs || 'Advanced Specs'}
+                      triggerIcon={<span className="material-symbols-outlined text-[15px]">tune</span>}
+                      testId="specs-more-toggle"
+                      style={{
+                        background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(236, 72, 153, 0.12)',
+                        borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(236, 72, 153, 0.25)',
+                        color: '#ec4899',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                      }}
                     >
-                      <span>
-                        {moreFieldsExpanded
-                          ? tr.stagex?.specs?.lessSpecs || 'Less Specifications'
-                          : tr.stagex?.specs?.moreSpecs || 'Advanced Specs'}
-                      </span>
-                      <span
-                        className="material-symbols-outlined text-[16px] transition-transform"
-                        style={{
-                          transform: moreFieldsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        }}
-                      >
-                        expand_more
-                      </span>
-                    </button>
+                      {({ close }) => (
+                        <div className="grid grid-cols-2 gap-2 p-2.5">
+                          {/* Phantom Power Toggle */}
+                          <div className="flex flex-col gap-1">
+                            <label
+                              className="text-[9px] font-bold uppercase tracking-wider"
+                              style={{ color: isLight ? '#71717a' : '#a1a1aa' }}
+                            >
+                              {tr.stagex?.specs?.phantomPower || '48V Phantom'}
+                            </label>
+                            <button
+                              type="button"
+                              data-testid="input-specs-phantom"
+                              onClick={() => onUpdateElement({ phantom: !element.phantom })}
+                              className="w-full h-[32px] rounded-xl flex items-center justify-between px-3 text-[11px] font-bold cursor-pointer transition-all active:scale-95"
+                              style={{
+                                background: element.phantom
+                                  ? 'rgba(236, 72, 153, 0.20)'
+                                  : 'var(--app-surface-low)',
+                                border: element.phantom
+                                  ? '1px solid #ec4899'
+                                  : '1px solid var(--c-border)',
+                                color: element.phantom ? '#ec4899' : 'var(--c-text-secondary)',
+                              }}
+                            >
+                              <span>{tr.stagex?.specs?.phantomPower || '48V Power'}</span>
+                              <span className="text-[10px]">
+                                {element.phantom
+                                  ? isSpanish
+                                    ? 'SÍ'
+                                    : 'ON'
+                                  : isSpanish
+                                    ? 'NO'
+                                    : 'OFF'}
+                              </span>
+                            </button>
+                          </div>
 
-                    {moreFieldsExpanded && (
-                      <div className="grid grid-cols-2 gap-2 pt-1 pb-1">
-                        {/* Phantom Power Toggle */}
-                        <div className="flex flex-col gap-1">
-                          <label
-                            className="text-[9px] font-bold uppercase tracking-wider"
-                            style={{ color: isLight ? '#71717a' : '#a1a1aa' }}
-                          >
-                            {tr.stagex?.specs?.phantomPower || '48V Phantom'}
-                          </label>
-                          <button
-                            type="button"
-                            data-testid="input-specs-phantom"
-                            onClick={() => onUpdateElement({ phantom: !element.phantom })}
-                            className="w-full h-[32px] rounded-xl flex items-center justify-between px-3 text-[11px] font-bold cursor-pointer transition-all active:scale-95"
-                            style={{
-                              background: element.phantom
-                                ? 'rgba(236, 72, 153, 0.20)'
-                                : 'var(--app-surface-low)',
-                              border: element.phantom
-                                ? '1px solid #ec4899'
-                                : '1px solid var(--c-border)',
-                              color: element.phantom ? '#ec4899' : 'var(--c-text-secondary)',
+                          {/* Input Source Selectable Control */}
+                          <SpecsSelectorControl
+                            label={tr.stagex?.specs?.source || 'Source'}
+                            testId="input-specs-source"
+                            value={currentSourceVal}
+                            displayValue={getSourceDisplay(currentSourceVal)}
+                            placeholder={isSpanish ? '— Directo / Ninguno —' : '— Direct / None —'}
+                            icon="cable"
+                            onClick={() => {
+                              close();
+                              setActivePicker('source');
                             }}
-                          >
-                            <span>{tr.stagex?.specs?.phantomPower || '48V Power'}</span>
-                            <span className="text-[10px]">
-                              {element.phantom
-                                ? isSpanish
-                                  ? 'SÍ'
-                                  : 'ON'
-                                : isSpanish
-                                  ? 'NO'
-                                  : 'OFF'}
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Input Source Selectable Control */}
-                        <SpecsSelectorControl
-                          label={tr.stagex?.specs?.source || 'Source'}
-                          testId="input-specs-source"
-                          value={currentSourceVal}
-                          displayValue={getSourceDisplay(currentSourceVal)}
-                          placeholder={isSpanish ? '— Directo / Ninguno —' : '— Direct / None —'}
-                          icon="cable"
-                          onClick={() => setActivePicker('source')}
-                          isLight={isLight}
-                        />
-
-                        {/* Output Destination Selectable Control */}
-                        <SpecsSelectorControl
-                          label={tr.stagex?.specs?.destination || 'Destination'}
-                          testId="input-specs-destination"
-                          secondaryTestId="input-specs-output"
-                          value={currentDestinationVal}
-                          displayValue={getDestinationDisplay(currentDestinationVal)}
-                          placeholder={isSpanish ? '— Predeterminado / FOH —' : '— Default / FOH —'}
-                          icon="volume_up"
-                          onClick={() => setActivePicker('destination')}
-                          isLight={isLight}
-                        />
-
-                        {/* Notes Input */}
-                        <div className="flex flex-col gap-1">
-                          <label
-                            className="text-[9px] font-bold uppercase tracking-wider"
-                            style={{ color: isLight ? '#71717a' : '#a1a1aa' }}
-                          >
-                            {tr.stagex?.specs?.notes || 'Notes'}
-                          </label>
-                          <input
-                            data-testid="input-specs-notes"
-                            type="text"
-                            value={element.notes || ''}
-                            onChange={(e) => onUpdateElement({ notes: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-[11px] font-semibold outline-none transition-all"
-                            style={{
-                              background: isLight
-                                ? 'rgba(0, 0, 0, 0.04)'
-                                : 'rgba(255, 255, 255, 0.05)',
-                              border: isLight
-                                ? '1px solid rgba(0, 0, 0, 0.08)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                              color: isLight ? '#09090b' : '#ffffff',
-                              height: '32px',
-                            }}
-                            placeholder={isSpanish ? 'ej. IEM Inalámbrico' : 'e.g. Wireless IEM'}
+                            isLight={isLight}
                           />
+
+                          {/* Output Destination Selectable Control */}
+                          <SpecsSelectorControl
+                            label={tr.stagex?.specs?.destination || 'Destination'}
+                            testId="input-specs-destination"
+                            secondaryTestId="input-specs-output"
+                            value={currentDestinationVal}
+                            displayValue={getDestinationDisplay(currentDestinationVal)}
+                            placeholder={isSpanish ? '— Predeterminado / FOH —' : '— Default / FOH —'}
+                            icon="volume_up"
+                            onClick={() => {
+                              close();
+                              setActivePicker('destination');
+                            }}
+                            isLight={isLight}
+                          />
+
+                          {/* Notes Input */}
+                          <div className="flex flex-col gap-1">
+                            <label
+                              className="text-[9px] font-bold uppercase tracking-wider"
+                              style={{ color: isLight ? '#71717a' : '#a1a1aa' }}
+                            >
+                              {tr.stagex?.specs?.notes || 'Notes'}
+                            </label>
+                            <input
+                              data-testid="input-specs-notes"
+                              type="text"
+                              value={element.notes || ''}
+                              onChange={(e) => onUpdateElement({ notes: e.target.value })}
+                              className="w-full px-2.5 py-1.5 rounded-xl text-[11px] font-semibold outline-none transition-all"
+                              style={{
+                                background: isLight
+                                  ? 'rgba(0, 0, 0, 0.04)'
+                                  : 'rgba(255, 255, 255, 0.05)',
+                                border: isLight
+                                  ? '1px solid rgba(0, 0, 0, 0.08)'
+                                  : '1px solid rgba(255, 255, 255, 0.08)',
+                                color: isLight ? '#09090b' : '#ffffff',
+                                height: '32px',
+                              }}
+                              placeholder={isSpanish ? 'ej. IEM Inalámbrico' : 'e.g. Wireless IEM'}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </MorphMenu>
                   </div>
                 </>
               )}

@@ -1,5 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { motion } from 'motion/react';
 import {
   BouncyAccordion,
@@ -3967,277 +3968,272 @@ export default function DrumEditor() {
                   style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '8px 4px 4px' }}
                 />
 
-                {/* ── Per-instrument velocity flavor (collapsible) ── */}
+                {/* ── Per-instrument velocity flavor (Morphing Surface) ── */}
                 <div style={{ padding: '4px 4px 6px' }}>
-                  <button
-                    onClick={() => setShowSoundCharacter((s) => !s)}
+                  <MorphMenu
+                    floating
+                    anchor="top-left"
+                    closedWidth="100%"
+                    closedHeight={34}
+                    closedRadius={10}
+                    openWidth="100%"
+                    openHeight={340}
+                    openRadius={16}
+                    title="Sound Character"
+                    triggerLabel="Sound Character"
+                    triggerAriaLabel="Sound Character"
+                    triggerIcon={
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    }
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      width: '100%',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '2px 0 6px',
+                      background: 'rgba(128,128,128,0.06)',
+                      borderColor: 'rgba(128,128,128,0.12)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    <span
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        flex: 1,
-                        textAlign: 'left',
-                      }}
-                    >
-                      Sound Character
-                    </span>
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="var(--c-text-muted)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      style={{
-                        transition: 'transform 200ms',
-                        transform: showSoundCharacter ? 'rotate(180deg)' : 'rotate(0deg)',
-                      }}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {showSoundCharacter && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
-                      {(['kick', 'snare', 'tom10', 'tom12', 'tom14'] as HouseInstName[]).map(
-                        (hInst) => {
-                          const locked = houseInstVelOverride[hInst];
-                          return (
-                            <div key={hInst}>
-                              <div
-                                style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: 11.5,
-                                    fontWeight: 600,
-                                    color: 'var(--c-text-primary)',
-                                    flex: 1,
-                                    fontFamily: 'var(--studio-font-body)',
-                                  }}
+                    {() => (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '10px 12px' }}>
+                        {(['kick', 'snare', 'tom10', 'tom12', 'tom14'] as HouseInstName[]).map(
+                          (hInst) => {
+                            const locked = houseInstVelOverride[hInst];
+                            return (
+                              <div key={hInst}>
+                                <div
+                                  style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}
                                 >
-                                  {HOUSE_INST_LABELS[hInst]}
-                                </span>
-                                {locked && (
-                                  <button
-                                    onClick={() => storeSetInstVelOverride(hInst, undefined)}
+                                  <span
                                     style={{
-                                      fontSize: 9.5,
-                                      fontWeight: 700,
-                                      color: 'var(--c-text-muted)',
-                                      background: 'none',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      padding: '0 2px',
+                                      fontSize: 11.5,
+                                      fontWeight: 600,
+                                      color: 'var(--c-text-primary)',
+                                      flex: 1,
                                       fontFamily: 'var(--studio-font-body)',
-                                      letterSpacing: '0.04em',
                                     }}
                                   >
-                                    AUTO
-                                  </button>
-                                )}
-                              </div>
-                              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                {HOUSE_VEL_CONFIGS[hInst].map((v) => {
-                                  const active = locked === v.id;
-                                  return (
+                                    {HOUSE_INST_LABELS[hInst]}
+                                  </span>
+                                  {locked && (
                                     <button
-                                      key={v.id}
-                                      className="btn-smooth"
-                                      onClick={() =>
-                                        storeSetInstVelOverride(hInst, active ? undefined : v.id)
-                                      }
+                                      onClick={() => storeSetInstVelOverride(hInst, undefined)}
                                       style={{
-                                        height: 26,
-                                        padding: '0 10px',
-                                        borderRadius: 6,
-                                        border: active
-                                          ? `1.5px solid ${accent.from}66`
-                                          : '1.5px solid rgba(128,128,128,0.14)',
-                                        background: active
-                                          ? `${accent.from}1a`
-                                          : 'rgba(128,128,128,0.06)',
-                                        color: active ? accent.from : 'var(--c-text-secondary)',
-                                        fontSize: 10.5,
+                                        fontSize: 9.5,
                                         fontWeight: 700,
+                                        color: 'var(--c-text-muted)',
+                                        background: 'none',
+                                        border: 'none',
                                         cursor: 'pointer',
-                                        transition: 'all 140ms',
+                                        padding: '0 2px',
                                         fontFamily: 'var(--studio-font-body)',
-                                        whiteSpace: 'nowrap',
+                                        letterSpacing: '0.04em',
                                       }}
                                     >
-                                      {v.label}
+                                      AUTO
                                     </button>
-                                  );
-                                })}
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                  {HOUSE_VEL_CONFIGS[hInst].map((v) => {
+                                    const active = locked === v.id;
+                                    return (
+                                      <button
+                                        key={v.id}
+                                        className="btn-smooth"
+                                        onClick={() =>
+                                          storeSetInstVelOverride(hInst, active ? undefined : v.id)
+                                        }
+                                        style={{
+                                          height: 26,
+                                          padding: '0 10px',
+                                          borderRadius: 6,
+                                          border: active
+                                            ? `1.5px solid ${accent.from}66`
+                                            : '1.5px solid rgba(128,128,128,0.14)',
+                                          background: active
+                                            ? `${accent.from}1a`
+                                            : 'rgba(128,128,128,0.06)',
+                                          color: active ? accent.from : 'var(--c-text-secondary)',
+                                          fontSize: 10.5,
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          transition: 'all 140ms',
+                                          fontFamily: 'var(--studio-font-body)',
+                                          whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        {v.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }
-                      )}
-
-                      {/* ── Crash Cymbal model selector ── */}
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                          <span
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              color: 'var(--c-text-primary)',
-                              flex: 1,
-                              fontFamily: 'var(--studio-font-body)',
-                            }}
-                          >
-                            Crash Cymbal
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          {HOUSE_CRASH_MODELS.map((m) => {
-                            const active = houseCrashModel === m.id;
-                            return (
-                              <button
-                                key={m.id}
-                                className="btn-smooth"
-                                onClick={() => storeSetHouseCrashModel(m.id as HouseCrashModel)}
-                                title={m.desc}
-                                style={{
-                                  height: 26,
-                                  padding: '0 10px',
-                                  borderRadius: 6,
-                                  border: active
-                                    ? `1.5px solid ${accent.from}66`
-                                    : '1.5px solid rgba(128,128,128,0.14)',
-                                  background: active
-                                    ? `${accent.from}1a`
-                                    : 'rgba(128,128,128,0.06)',
-                                  color: active ? accent.from : 'var(--c-text-secondary)',
-                                  fontSize: 10.5,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  transition: 'all 140ms',
-                                  fontFamily: 'var(--studio-font-body)',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {m.label}
-                              </button>
                             );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* ── Cymbal Pack selector ── */}
-                      <div style={{ marginTop: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                          <span
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              color: 'var(--c-text-primary)',
-                              flex: 1,
-                              fontFamily: 'var(--studio-font-body)',
-                            }}
-                          >
-                            Cymbal Pack
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          {CYMBAL_PACKS.map((p) => {
-                            const active = cymbalPack === p.id;
-                            return (
-                              <button
-                                key={p.id}
-                                className="btn-smooth"
-                                onClick={() => storeSetCymbalPack(p.id as CymbalPack)}
-                                title={p.desc}
-                                style={{
-                                  height: 26,
-                                  padding: '0 10px',
-                                  borderRadius: 6,
-                                  border: active
-                                    ? `1.5px solid ${accent.from}66`
-                                    : '1.5px solid rgba(128,128,128,0.14)',
-                                  background: active
-                                    ? `${accent.from}1a`
-                                    : 'rgba(128,128,128,0.06)',
-                                  color: active ? accent.from : 'var(--c-text-secondary)',
-                                  fontSize: 10.5,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  transition: 'all 140ms',
-                                  fontFamily: 'var(--studio-font-body)',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {p.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* ── Random Variations toggle ── */}
-                      <div style={{ display: 'flex', alignItems: 'center', marginTop: 10 }}>
-                        <span
-                          style={{
-                            flex: 1,
-                            fontSize: 11.5,
-                            fontWeight: 600,
-                            color: 'var(--c-text-primary)',
-                            fontFamily: 'var(--studio-font-body)',
-                          }}
-                        >
-                          Random Variations
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateDrumPrefs({ randomVariations: !drumPrefs.randomVariations })
                           }
-                          style={{
-                            width: 36,
-                            height: 20,
-                            borderRadius: 10,
-                            background: drumPrefs.randomVariations
-                              ? `linear-gradient(135deg,${accent.from},${accent.to})`
-                              : 'rgba(128,128,128,0.18)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            transition: 'background 220ms',
-                            flexShrink: 0,
-                          }}
-                        >
+                        )}
+
+                        {/* ── Crash Cymbal model selector ── */}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                            <span
+                              style={{
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                color: 'var(--c-text-primary)',
+                                flex: 1,
+                                fontFamily: 'var(--studio-font-body)',
+                              }}
+                            >
+                              Crash Cymbal
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {HOUSE_CRASH_MODELS.map((m) => {
+                              const active = houseCrashModel === m.id;
+                              return (
+                                <button
+                                  key={m.id}
+                                  className="btn-smooth"
+                                  onClick={() => storeSetHouseCrashModel(m.id as HouseCrashModel)}
+                                  title={m.desc}
+                                  style={{
+                                    height: 26,
+                                    padding: '0 10px',
+                                    borderRadius: 6,
+                                    border: active
+                                      ? `1.5px solid ${accent.from}66`
+                                      : '1.5px solid rgba(128,128,128,0.14)',
+                                    background: active
+                                      ? `${accent.from}1a`
+                                      : 'rgba(128,128,128,0.06)',
+                                    color: active ? accent.from : 'var(--c-text-secondary)',
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 140ms',
+                                    fontFamily: 'var(--studio-font-body)',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {m.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* ── Cymbal Pack selector ── */}
+                        <div style={{ marginTop: 2 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                            <span
+                              style={{
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                color: 'var(--c-text-primary)',
+                                flex: 1,
+                                fontFamily: 'var(--studio-font-body)',
+                              }}
+                            >
+                              Cymbal Pack
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {CYMBAL_PACKS.map((p) => {
+                              const active = cymbalPack === p.id;
+                              return (
+                                <button
+                                  key={p.id}
+                                  className="btn-smooth"
+                                  onClick={() => storeSetCymbalPack(p.id as CymbalPack)}
+                                  title={p.desc}
+                                  style={{
+                                    height: 26,
+                                    padding: '0 10px',
+                                    borderRadius: 6,
+                                    border: active
+                                      ? `1.5px solid ${accent.from}66`
+                                      : '1.5px solid rgba(128,128,128,0.14)',
+                                    background: active
+                                      ? `${accent.from}1a`
+                                      : 'rgba(128,128,128,0.06)',
+                                    color: active ? accent.from : 'var(--c-text-secondary)',
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 140ms',
+                                    fontFamily: 'var(--studio-font-body)',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {p.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* ── Random Variations toggle ── */}
+                        <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
                           <span
                             style={{
-                              position: 'absolute',
-                              top: 2.5,
-                              left: drumPrefs.randomVariations ? 18 : 2.5,
-                              width: 15,
-                              height: 15,
-                              borderRadius: '50%',
-                              background: '#fff',
-                              transition: 'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
-                              display: 'block',
+                              flex: 1,
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              color: 'var(--c-text-primary)',
+                              fontFamily: 'var(--studio-font-body)',
                             }}
-                          />
-                        </button>
+                          >
+                            Random Variations
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateDrumPrefs({ randomVariations: !drumPrefs.randomVariations })
+                            }
+                            style={{
+                              width: 36,
+                              height: 20,
+                              borderRadius: 10,
+                              background: drumPrefs.randomVariations
+                                ? `linear-gradient(135deg,${accent.from},${accent.to})`
+                                : 'rgba(128,128,128,0.18)',
+                              border: 'none',
+                              cursor: 'pointer',
+                              position: 'relative',
+                              transition: 'background 220ms',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: 2.5,
+                                left: drumPrefs.randomVariations ? 18 : 2.5,
+                                width: 15,
+                                height: 15,
+                                borderRadius: '50%',
+                                background: '#fff',
+                                transition: 'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
+                                display: 'block',
+                              }}
+                            />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </MorphMenu>
                 </div>
 
                 <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />

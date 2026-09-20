@@ -14,6 +14,7 @@ import {
 } from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
+import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import {
   TimeSignatureModal,
   SubdivisionModal,
@@ -108,7 +109,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   const [showCountInModal, setShowCountInModal] = useState(false);
   const [bottomBarMode, setBottomBarMode] = useState<'normal' | 'volume' | 'stopwatch'>('normal');
   const [presetSearch, setPresetSearch] = useState('');
-  const [showSoundMenu, setShowSoundMenu] = useState(false);
   const [activePresetMenuId, setActivePresetMenuId] = useState<string | null>(null);
   const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
 
@@ -316,10 +316,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
         setIsPresetsOpen(false);
         return true;
       }
-      if (showSoundMenu) {
-        setShowSoundMenu(false);
-        return true;
-      }
       return false;
     },
     [
@@ -327,7 +323,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       bottomBarMode,
       presetFormMode,
       isPresetsOpen,
-      showSoundMenu,
       deletingPresetId,
       activePresetMenuId,
     ]
@@ -1139,71 +1134,68 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
           } rounded-2xl p-3.5 border flex items-center justify-between relative`}
         >
-          {/* Click Sound Selector */}
+          {/* Click Sound Selector (Morphing Surface) */}
           <div className="flex items-center gap-2 relative">
             <div
               className={`w-7 h-7 rounded-full ${
                 isAmoled
                   ? 'bg-[#007aff]/15 text-[#007aff]'
                   : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-              } flex items-center justify-center`}
+              } flex items-center justify-center shrink-0`}
             >
               <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
             </div>
-            <div className="cursor-pointer" onClick={() => setShowSoundMenu(!showSoundMenu)}>
-              <div className="text-[10px] font-extrabold text-slate-400 dark:text-zinc-500 uppercase font-manrope">
-                CLICK SOUND
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                  {SOUND_LABELS[sound]}
-                </span>
-                <span className="material-symbols-outlined text-[14px] text-slate-400">
-                  expand_more
-                </span>
-              </div>
-            </div>
-
-            {/* Sound Dropdown Popover */}
-            {showSoundMenu && (
-              <div
-                className={`absolute top-10 left-0 z-50 ${
-                  isAmoled
-                    ? 'bg-black border-white/15'
-                    : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'
-                } border rounded-xl shadow-lg p-1 min-w-[170px] flex flex-col gap-0.5`}
-              >
-                {(
-                  [
-                    'woodblock',
-                    'click',
-                    'sidestick',
-                    'drystick',
-                    'studioclick',
-                    'rimclick',
-                    'digital',
-                  ] as MetronomeSoundId[]
-                ).map((sId) => (
-                  <button
-                    key={sId}
-                    onClick={() => {
-                      setSound(sId);
-                      setShowSoundMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between ${
-                      sound === sId
-                        ? 'bg-[#007aff] text-white'
-                        : isAmoled
-                          ? 'text-zinc-200 hover:bg-white/10'
-                          : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
-                    }`}
-                  >
-                    <span>{SOUND_LABELS[sId]}</span>
-                    {sound === sId && <span className="text-[10px]">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
+            <MorphMenu
+              floating
+              anchor="top-left"
+              closedWidth={130}
+              closedHeight={36}
+              closedRadius={10}
+              openWidth={180}
+              openHeight={240}
+              openRadius={16}
+              title="Click Sound"
+              style={{
+                background: isAmoled ? '#000000' : undefined,
+              }}
+              customTrigger={({ toggle }) => (
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className="flex flex-col text-left px-1.5 py-0.5 cursor-pointer w-full h-full justify-center bg-transparent border-0"
+                  aria-label="Select Click Sound"
+                >
+                  <div className="text-[9px] font-extrabold text-slate-400 dark:text-zinc-500 uppercase font-manrope leading-tight">
+                    CLICK SOUND
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 leading-tight">
+                      {SOUND_LABELS[sound]}
+                    </span>
+                    <span className="material-symbols-outlined text-[14px] text-slate-400">
+                      expand_more
+                    </span>
+                  </div>
+                </button>
+              )}
+              rows={(
+                [
+                  'woodblock',
+                  'click',
+                  'sidestick',
+                  'drystick',
+                  'studioclick',
+                  'rimclick',
+                  'digital',
+                ] as MetronomeSoundId[]
+              ).map((sId) => ({
+                id: sId,
+                label: SOUND_LABELS[sId],
+                active: sound === sId,
+                badge: sound === sId ? '✓' : undefined,
+                onPress: () => setSound(sId),
+              }))}
+            />
           </div>
 
           {/* Count-in Trigger & Bars */}
