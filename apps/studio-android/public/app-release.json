@@ -1,23 +1,15 @@
 {
   "platform": "android",
-  "version": "4.6.29",
-  "versionName": "4.6.29",
-  "versionCode": 40629,
-  "version_code": 40629,
-  "commit": "90e6b7a0",
-  "releasedAt": "9/20/2026, 1:01:43 AM CST",
-  "buildTimestamp": "9/20/2026, 1:01:43 AM CST",
+  "version": "4.6.30",
+  "versionName": "4.6.30",
+  "versionCode": 40630,
+  "version_code": 40630,
+  "commit": "8752a0c4",
+  "releasedAt": "9/20/2026, 5:47:56 AM CST",
+  "buildTimestamp": "9/20/2026, 5:47:56 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.\n• Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.\n• Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.",
-  "whatsNew": "• Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.\n• Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.\n• Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.",
-  "releaseNotes": {
-    "added": [
-      "Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.",
-      "Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces."
-    ],
-    "fixed": [
-      "Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab."
-    ]
-  },
+  "changelog": "",
+  "whatsNew": "",
+  "releaseNotes": {},
   "mandatory": false
 }
