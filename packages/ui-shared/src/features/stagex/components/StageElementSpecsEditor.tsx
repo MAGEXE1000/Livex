@@ -460,7 +460,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
               data-testid="stagex-specs-editor"
               role="dialog"
               aria-label="Element Specs Editor"
-              className="fixed z-40 flex flex-col pointer-events-auto"
+              className="fixed z-40 flex flex-col pointer-events-auto relative overflow-hidden"
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -490,128 +490,123 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                 padding: '12px 14px',
               }}
             >
-              {activePicker ? (
-                /* ── IN-APP SELECTION SURFACE ───────────────────────────── */
-                <StagexSpecsPicker
-                  type={activePicker}
-                  currentValue={
-                    activePicker === 'performer'
-                      ? currentPerformerVal
-                      : activePicker === 'channel'
-                        ? currentChannelVal
-                        : activePicker === 'source'
-                          ? currentSourceVal
-                          : currentDestinationVal
-                  }
-                  options={
-                    activePicker === 'performer'
-                      ? performerOptions
-                      : activePicker === 'channel'
-                        ? channelOptions
-                        : activePicker === 'source'
-                          ? sourceOptions
-                          : destinationOptions
-                  }
-                  onSelect={handlePickerSelect}
-                  onBack={() => setActivePicker(null)}
-                  isLight={isLight}
-                  isAmoled={isAmoled}
-                />
-              ) : (
-                /* ── REGULAR SPECS FORM ─────────────────────────────────── */
-                <>
-                  {/* Header: Identity, Overflow Actions, and Close */}
-                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/5">
-                    {/* Element Identity */}
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
-                          border: isLight
-                            ? '1px solid rgba(0, 0, 0, 0.06)'
-                            : '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                      >
-                        {iconContent}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="text-[13px] font-bold truncate leading-tight"
-                            style={{
-                              color: isLight ? '#09090b' : '#ffffff',
-                              fontFamily: 'Inter, sans-serif',
-                            }}
-                          >
-                            {element.label ||
-                              localizeElementName(
-                                element.name,
-                                element.type,
-                                isSpanish ? 'es' : 'en'
-                              )}
-                          </span>
-                          {element.locked && (
-                            <span
-                              className="flex items-center text-amber-400"
-                              title={tr.stagex?.specs?.lock || 'Locked'}
-                            >
-                              <span className="material-symbols-outlined text-[13px]">lock</span>
-                            </span>
-                          )}
-                          {element.pinned && (
-                            <span
-                              className="flex items-center text-pink-400"
-                              title={tr.stagex?.specs?.pin || 'Pinned'}
-                            >
-                              <span className="material-symbols-outlined text-[13px]">
-                                push_pin
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          className="text-[9.5px] font-semibold uppercase tracking-wider truncate"
+              {/* ── REGULAR SPECS FORM ─────────────────────────────────── */}
+              <div
+                className={`flex flex-col transition-opacity duration-150 ${
+                  activePicker ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                }`}
+                aria-hidden={!!activePicker}
+              >
+                {/* Header: Identity, Overflow Actions, and Close */}
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/5">
+                  {/* Element Identity */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                        border: isLight
+                          ? '1px solid rgba(0, 0, 0, 0.06)'
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                      }}
+                    >
+                      {iconContent}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-[13px] font-bold truncate leading-tight"
                           style={{
-                            color: isLight ? '#71717a' : '#a1a1aa',
+                            color: isLight ? '#09090b' : '#ffffff',
+                            fontFamily: 'Inter, sans-serif',
                           }}
                         >
-                          {element.type
-                            ? localizeElementName(element.type, undefined, isSpanish ? 'es' : 'en')
-                            : tr.stagex?.specs?.title || 'Stage Element'}{' '}
-                          {element.channelId ? `· ${element.channelId}` : ''}
-                        </div>
+                          {element.label ||
+                            localizeElementName(
+                              element.name,
+                              element.type,
+                              isSpanish ? 'es' : 'en'
+                            )}
+                        </span>
+                        {element.locked && (
+                          <span
+                            className="flex items-center text-amber-400"
+                            title={tr.stagex?.specs?.lock || 'Locked'}
+                          >
+                            <span className="material-symbols-outlined text-[13px]">lock</span>
+                          </span>
+                        )}
+                        {element.pinned && (
+                          <span
+                            className="flex items-center text-pink-400"
+                            title={tr.stagex?.specs?.pin || 'Pinned'}
+                          >
+                            <span className="material-symbols-outlined text-[13px]">
+                              push_pin
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="text-[9.5px] font-semibold uppercase tracking-wider truncate"
+                        style={{
+                          color: isLight ? '#71717a' : '#a1a1aa',
+                        }}
+                      >
+                        {element.type
+                          ? localizeElementName(element.type, undefined, isSpanish ? 'es' : 'en')
+                          : tr.stagex?.specs?.title || 'Stage Element'}{' '}
+                        {element.channelId ? `· ${element.channelId}` : ''}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Header Controls: Actions Dropdown Trigger + Close */}
-                    <div className="relative flex items-center gap-1.5 flex-shrink-0">
-                      {/* Secondary Actions Morphing Surface */}
-                      <MorphMenu
-                        anchor="top-right"
-                        closedWidth={78}
-                        closedHeight={28}
-                        closedRadius={14}
-                        openWidth={180}
-                        openHeight={200}
-                        openRadius={14}
-                        triggerAriaLabel={tr.stagex?.specs?.actions || 'Actions'}
-                        triggerIcon={
-                          <span className="material-symbols-outlined text-[15px]">more_horiz</span>
-                        }
-                        triggerLabel={tr.stagex?.specs?.actions || 'Actions'}
-                        testId="specs-actions-menu-btn"
-                        style={{
-                          background: isLight
-                            ? 'rgba(0, 0, 0, 0.05)'
-                            : 'rgba(255, 255, 255, 0.08)',
-                          color: isLight ? '#3f3f46' : '#d4d4d8',
-                          borderColor: isLight
-                            ? 'rgba(0, 0, 0, 0.06)'
-                            : 'rgba(255, 255, 255, 0.08)',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                        }}
+                  {/* Header Controls: Actions Dropdown Trigger + Close */}
+                  <div className="relative flex items-center gap-1.5 flex-shrink-0">
+                    {/* Secondary Actions Morphing Surface */}
+                    <MorphMenu
+                      floating
+                      anchor="top-right"
+                      closedWidth={78}
+                      closedHeight={28}
+                      closedRadius={14}
+                      openWidth={180}
+                      openHeight={200}
+                      openRadius={14}
+                      triggerAriaLabel={tr.stagex?.specs?.actions || 'Actions'}
+                      triggerIcon={
+                        <span className="material-symbols-outlined text-[15px]">more_horiz</span>
+                      }
+                      triggerLabel={tr.stagex?.specs?.actions || 'Actions'}
+                      testId="specs-actions-menu-btn"
+                      style={{
+                        background: isLight
+                          ? 'rgba(0, 0, 0, 0.05)'
+                          : 'rgba(255, 255, 255, 0.08)',
+                        color: isLight ? '#3f3f46' : '#d4d4d8',
+                        borderColor: isLight
+                          ? 'rgba(0, 0, 0, 0.06)'
+                          : 'rgba(255, 255, 255, 0.08)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                      }}
+                      openStyle={{
+                        background: isAmoled
+                          ? 'rgba(12, 12, 16, 0.96)'
+                          : isLight
+                            ? 'rgba(255, 255, 255, 0.96)'
+                            : 'rgba(24, 24, 30, 0.94)',
+                        borderColor: isAmoled
+                          ? 'rgba(255, 255, 255, 0.14)'
+                          : isLight
+                            ? 'rgba(0, 0, 0, 0.10)'
+                            : 'rgba(255, 255, 255, 0.12)',
+                        boxShadow: isLight
+                          ? '0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.06)'
+                          : '0 16px 40px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.35)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                      }}
                         rows={[
                           {
                             id: 'duplicate',
@@ -770,6 +765,8 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                       icon="person"
                       onClick={() => setActivePicker('performer')}
                       isLight={isLight}
+                      layoutId="specs-field-performer"
+                      isActive={activePicker === 'performer'}
                     />
 
                     {/* Channel Selectable Control */}
@@ -782,6 +779,8 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                       icon="tune"
                       onClick={() => setActivePicker('channel')}
                       isLight={isLight}
+                      layoutId="specs-field-channel"
+                      isActive={activePicker === 'channel'}
                     />
 
                     {/* Color Swatches */}
@@ -975,14 +974,32 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                       triggerIcon={<span className="material-symbols-outlined text-[15px]">tune</span>}
                       testId="specs-more-toggle"
                       style={{
-                        background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(236, 72, 153, 0.12)',
-                        borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(236, 72, 153, 0.25)',
-                        color: '#ec4899',
+                        background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                        borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
+                        color: isLight ? '#be185d' : '#f472b6',
                         fontSize: '11px',
                         fontWeight: 700,
                       }}
+                      openStyle={{
+                        background: isAmoled
+                          ? 'rgba(12, 12, 16, 0.96)'
+                          : isLight
+                            ? 'rgba(255, 255, 255, 0.96)'
+                            : 'rgba(22, 22, 28, 0.94)',
+                        borderColor: isAmoled
+                          ? 'rgba(255, 255, 255, 0.14)'
+                          : isLight
+                            ? 'rgba(0, 0, 0, 0.12)'
+                            : 'rgba(255, 255, 255, 0.12)',
+                        boxShadow: isLight
+                          ? '0 16px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.06)'
+                          : '0 20px 48px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.40)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        color: isLight ? '#09090b' : '#ffffff',
+                      }}
                     >
-                      {({ close }) => (
+                      {({ close: _close }) => (
                         <div className="grid grid-cols-2 gap-2 p-2.5">
                           {/* Phantom Power Toggle */}
                           <div className="flex flex-col gap-1">
@@ -1029,10 +1046,11 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                             placeholder={isSpanish ? '— Directo / Ninguno —' : '— Direct / None —'}
                             icon="cable"
                             onClick={() => {
-                              close();
                               setActivePicker('source');
                             }}
                             isLight={isLight}
+                            layoutId="specs-field-source"
+                            isActive={activePicker === 'source'}
                           />
 
                           {/* Output Destination Selectable Control */}
@@ -1045,10 +1063,11 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                             placeholder={isSpanish ? '— Predeterminado / FOH —' : '— Default / FOH —'}
                             icon="volume_up"
                             onClick={() => {
-                              close();
                               setActivePicker('destination');
                             }}
                             isLight={isLight}
+                            layoutId="specs-field-destination"
+                            isActive={activePicker === 'destination'}
                           />
 
                           {/* Notes Input */}
@@ -1082,8 +1101,64 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                       )}
                     </MorphMenu>
                   </div>
-                </>
-              )}
+                </div>
+
+              {/* Morphing In-App Selection Surface Overlay */}
+              <AnimatePresence>
+                {activePicker && (
+                  <motion.div
+                    key={`specs-picker-overlay-${activePicker}`}
+                    layoutId={`specs-field-${activePicker}`}
+                    className="absolute inset-0 z-50 flex flex-col p-3 rounded-[24px] overflow-hidden"
+                    style={{
+                      background: isAmoled
+                        ? 'rgba(10, 10, 14, 0.98)'
+                        : isLight
+                          ? 'rgba(255, 255, 255, 0.98)'
+                          : 'rgba(18, 18, 24, 0.96)',
+                      backdropFilter: 'var(--surface-float-blur)',
+                      WebkitBackdropFilter: 'var(--surface-float-blur)',
+                      border: isAmoled
+                        ? '1px solid rgba(255, 255, 255, 0.14)'
+                        : isLight
+                          ? '1px solid rgba(0, 0, 0, 0.08)'
+                          : '1px solid rgba(255, 255, 255, 0.12)',
+                      boxShadow: isLight
+                        ? '0 12px 36px rgba(0, 0, 0, 0.16)'
+                        : '0 16px 40px rgba(0, 0, 0, 0.70)',
+                    }}
+                    transition={{
+                      layout: { type: 'spring', damping: 28, stiffness: 340 },
+                    }}
+                  >
+                    <StagexSpecsPicker
+                      type={activePicker}
+                      currentValue={
+                        activePicker === 'performer'
+                          ? currentPerformerVal
+                          : activePicker === 'channel'
+                            ? currentChannelVal
+                            : activePicker === 'source'
+                              ? currentSourceVal
+                              : currentDestinationVal
+                      }
+                      options={
+                        activePicker === 'performer'
+                          ? performerOptions
+                          : activePicker === 'channel'
+                            ? channelOptions
+                            : activePicker === 'source'
+                              ? sourceOptions
+                              : destinationOptions
+                      }
+                      onSelect={handlePickerSelect}
+                      onBack={() => setActivePicker(null)}
+                      isLight={isLight}
+                      isAmoled={isAmoled}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </>
         )}

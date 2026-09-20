@@ -71,6 +71,8 @@ export interface MorphMenuProps {
   className?: string;
   /** Inline styles */
   style?: React.CSSProperties;
+  /** Inline styles when expanded */
+  openStyle?: React.CSSProperties;
   /** Menu content or render-prop helper */
   children?: React.ReactNode | ((helpers: { close: () => void; isOpen: boolean }) => React.ReactNode);
   /** Test identifier */
@@ -142,6 +144,7 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
       customTrigger,
       className = '',
       style,
+      openStyle,
       children,
       testId,
     },
@@ -268,6 +271,7 @@ export const MorphMenu = React.forwardRef<HTMLDivElement, MorphMenuProps>(
         className={`t-morph ${className}`}
         style={{
           ...dynamicVars,
+          ...(isOpen ? openStyle : {}),
           ...(floating
             ? {
                 position: 'absolute',

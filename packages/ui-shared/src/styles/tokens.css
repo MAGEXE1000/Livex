@@ -3811,6 +3811,8 @@ html.light .button--secondary {
   background: var(--surface-dialog-bg, var(--app-surface-high, #1e1e1e));
   border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   box-sizing: border-box;
   transition:
     width var(--morph-close-dur, 250ms) var(--morph-close-ease, cubic-bezier(0.22, 1, 0.36, 1)),

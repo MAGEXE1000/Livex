@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { useT, useSettingsStore } from '@workspace/livex-core';
 
 export type SpecsPickerType = 'performer' | 'channel' | 'source' | 'destination';
@@ -61,6 +62,8 @@ export interface SpecsSelectorControlProps {
   secondaryTestId?: string;
   onClick: () => void;
   isLight: boolean;
+  layoutId?: string;
+  isActive?: boolean;
 }
 
 export const SpecsSelectorControl: React.FC<SpecsSelectorControlProps> = ({
@@ -73,6 +76,8 @@ export const SpecsSelectorControl: React.FC<SpecsSelectorControlProps> = ({
   secondaryTestId,
   onClick,
   isLight,
+  layoutId,
+  isActive = false,
 }) => {
   const hasValue = Boolean(value && value.trim());
   const text = displayValue || value;
@@ -85,8 +90,9 @@ export const SpecsSelectorControl: React.FC<SpecsSelectorControlProps> = ({
       >
         {label}
       </label>
-      <button
+      <motion.button
         type="button"
+        layoutId={layoutId}
         data-testid={testId}
         {...(secondaryTestId ? { 'data-secondary-testid': secondaryTestId } : {})}
         onClick={onClick}
@@ -96,6 +102,8 @@ export const SpecsSelectorControl: React.FC<SpecsSelectorControlProps> = ({
           border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
           color: isLight ? '#09090b' : '#ffffff',
           height: '32px',
+          visibility: isActive ? 'hidden' : 'visible',
+          pointerEvents: isActive ? 'none' : 'auto',
         }}
         title={`Select ${label}`}
       >
@@ -120,7 +128,7 @@ export const SpecsSelectorControl: React.FC<SpecsSelectorControlProps> = ({
         >
           unfold_more
         </span>
-      </button>
+      </motion.button>
     </div>
   );
 };
