@@ -418,6 +418,12 @@ export function BottomNavigationController() {
       (currentRoute as any)?.subView === 'editor' ||
       (currentRoute as any)?.subView === 'song' ||
       (currentRoute as any)?.subView === 'form');
+  const isGroovexSong =
+    currentApp === 'groovex' &&
+    (activeTab === 'player' ||
+      activePage === 'player' ||
+      currentRoute?.page === 'player' ||
+      (currentRoute as any)?.tab === 'player');
   const visible =
     !hidden &&
     !isKeyboardFocused &&
@@ -425,7 +431,8 @@ export function BottomNavigationController() {
     storeVisible &&
     !isDrumexEditor &&
     !isDrumexMetronome &&
-    !isChordexSong;
+    !isChordexSong &&
+    !isGroovexSong;
 
   return (
     <NavigationAnimationProvider activeTab={activeTab} items={computedItems}>

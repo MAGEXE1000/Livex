@@ -25,8 +25,6 @@ import {
 } from '../../hub/navigation/navStyles';
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
-import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
-import { SONG_CATALOG } from '../services/songCatalog';
 import {
   SharedNavigationBar,
   type SharedNavigationItem,
@@ -128,8 +126,10 @@ export default function GroovexApp() {
   useEffect(() => {
     if (isWebDesktop) return;
     setNavHidden(view === 'player');
+    return () => {
+      setNavHidden(false);
+    };
   }, [view, isWebDesktop]);
-  const currentSong = SONG_CATALOG.find((s) => s.id === activeSongId);
 
   return (
     <div
@@ -143,13 +143,6 @@ export default function GroovexApp() {
         overflow: 'hidden',
       }}
     >
-      {!isWebDesktop && view === 'player' && (
-        <SharedFloatingHeader
-          title={currentSong?.title || 'Player'}
-          onBack={handleBack}
-        />
-      )}
-
       <div
         style={{
           display: 'flex',

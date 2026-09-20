@@ -11,6 +11,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } fr
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import VinylLottie from '../../../shared/lottie/VinylLottie';
 import { Loader } from '../../../components/motion/loader';
+import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { SONG_CATALOG } from '../services/songCatalog';
 import { useGroovexStore } from '../state/useGroovexStore';
 import {
@@ -120,6 +121,14 @@ export default function GroovexPlayer() {
   const activeSongId = useGroovexStore((s) => s.activeSongId);
   const preferences = useGroovexStore((s) => s.preferences);
   const song = useMemo(() => SONG_CATALOG.find((s) => s.id === activeSongId), [activeSongId]);
+
+  const handleBack = useCallback(() => {
+    if (NavigationDispatcher.canGoBack()) {
+      NavigationDispatcher.pop();
+    } else {
+      NavigationDispatcher.push({ app: 'groovex', page: 'library' });
+    }
+  }, []);
 
   const engineRef = useRef<AudioEngine | null>(null);
   const rafRef = useRef<number>(0);
@@ -897,15 +906,30 @@ export default function GroovexPlayer() {
 
   return (
     <div
-      ref={scrollRef}
-      data-purpose="groovex-player-scroll"
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        background: isWebDesktop ? 'var(--app-bg)' : 'transparent',
-      }}
+      className="flex flex-col w-full h-full relative overflow-hidden"
+      style={{ background: isWebDesktop ? 'var(--app-bg)' : 'transparent' }}
+      data-purpose="groovex-player-container"
     >
+      {!isWebDesktop && (
+        <SharedFloatingHeader
+          title={song?.title || (t as any).groovex?.player || 'Player'}
+          onBack={handleBack}
+          scrollContainerRef={scrollRef}
+          isLight={isLight}
+          isAmoled={isAmoled}
+        />
+      )}
+
+      <div
+        ref={scrollRef}
+        data-purpose="groovex-player-scroll"
+        className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar"
+        style={{
+          height: '100%',
+          WebkitOverflowScrolling: 'touch',
+          background: isWebDesktop ? 'var(--app-bg)' : 'transparent',
+        }}
+      >
       <style>{`
         @keyframes gxFadeSlideUp {
           from {
@@ -2433,5 +2457,6 @@ export default function GroovexPlayer() {
         )}
       </div>
     </div>
+  </div>
   );
 }
