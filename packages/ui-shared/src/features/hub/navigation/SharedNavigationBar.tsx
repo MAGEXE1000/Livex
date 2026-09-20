@@ -144,7 +144,7 @@ const NavigationItem = React.memo(
           justifyContent: 'center',
           background: 'transparent',
           border: 'none',
-          borderRadius: '22px',
+          borderRadius: '24px',
           cursor: 'pointer',
           position: 'relative',
           zIndex: 1,
@@ -403,17 +403,17 @@ export function SharedNavigationBar({
     return idx >= 0 ? idx : 0;
   }, [currentItems, currentApp, isSwitcherOpen]);
 
-  // Invariant canonical highlight geometry:
-  // The selected highlight has an identical, invariant geometry across all tabs and apps.
-  // It never resizes based on label length, icon dimensions, tab name, or localized text.
-  // When changing tabs, it moves purely via GPU transform (translateX) with spring physics.
-  const NAV_HIGHLIGHT_WIDTH = 64;
+  // Canonical slot-filling highlight geometry:
+  // The selected highlight occupies most of the selected tab's available slot,
+  // providing generous padding around icons and labels without clipping the outer pill boundary.
+  // Within any active navigation state, all tabs have identical slot width (itemWidth),
+  // ensuring invariant geometry and zero size-jumping during tab transitions.
   const NAV_HIGHLIGHT_HEIGHT = 48;
-  const NAV_HIGHLIGHT_RADIUS = 24;
 
-  const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
+  const horizontalGap = isSwitcherOpen ? 8 : totalSlots >= 4 ? 6 : 8;
+  const pillWidthVal = Math.round(itemWidth - horizontalGap);
   const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
-  const pillRadiusVal = isSwitcherOpen ? 19 : NAV_HIGHLIGHT_RADIUS;
+  const pillRadiusVal = Math.round(pillHeightVal / 2);
 
   const centerOffset = (itemWidth - pillWidthVal) / 2;
 
@@ -904,7 +904,7 @@ export function SharedNavigationBar({
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: '58px',
-                borderRadius: '26px',
+                borderRadius: '29px',
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
                 boxShadow: 'var(--surface-topbar-shadow)',
@@ -934,7 +934,7 @@ export function SharedNavigationBar({
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  borderRadius: '26px',
+                  borderRadius: '29px',
                   background: isLight
                     ? 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                     : 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 100%)',
@@ -1207,7 +1207,7 @@ export function SharedNavigationBar({
                   style={{
                     width: '58px',
                     height: '58px',
-                    borderRadius: '26px',
+                    borderRadius: '29px',
                     background: 'var(--surface-topbar-bg)',
                     border: 'var(--surface-topbar-border)',
                     backdropFilter: 'var(--surface-topbar-backdrop)',
@@ -1239,7 +1239,7 @@ export function SharedNavigationBar({
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      borderRadius: '26px',
+                      borderRadius: '29px',
                       background: isLight
                         ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                         : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
