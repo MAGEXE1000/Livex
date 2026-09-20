@@ -1,5 +1,6 @@
 import {
   tolgee,
+  seedAudioAssets,
   initDevToolsFramework,
   NavigationDispatcher,
   useSettingsStore,
@@ -10,6 +11,11 @@ import {
 if (import.meta.env.DEV) {
   initDevToolsFramework();
 }
+
+// Defer non-critical background initialization by 8 seconds to keep critical frames clear
+setTimeout(() => {
+  void seedAudioAssets();
+}, 8000);
 
 import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useState, useEffect } from 'react';

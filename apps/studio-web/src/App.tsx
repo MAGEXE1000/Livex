@@ -1,7 +1,8 @@
-import { lazy, useCallback, useEffect, useState } from 'react';
+import { lazy, useCallback, useEffect, useRef, useState } from 'react';
 import {
   useIsWebDesktop,
   useNavigationStore,
+  useSettingsStore,
   NavigationDispatcher,
   type ActivePanel,
 } from '@workspace/livex-core';
@@ -12,6 +13,8 @@ import {
   WebAppSectionDock,
   LibraryPanel,
   SongsPanel,
+  BottomNavigationController,
+  LaunchAnimationEngine,
   triggerIntroReveal,
 } from '@workspace/ui-shared';
 
@@ -53,6 +56,18 @@ if (typeof window !== 'undefined') {
 }
 
 export default function App() {
+  const theme = useSettingsStore((s) => s.settings.theme);
+  const globalAmoled = useSettingsStore((s) => s.settings.amoledMode);
+  const hubAmoled = useSettingsStore((s) => s.settings.perApp?.hub?.amoledMode);
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(hubAmoled !== undefined ? hubAmoled : globalAmoled);
+  const isDev = import.meta.env.DEV;
+  const initialPresetRef = useRef<any>('default');
+
   const [route, setRoute] = useState(() => {
     if (typeof window === 'undefined') return '/';
     let path = window.location.pathname;
@@ -76,10 +91,21 @@ export default function App() {
       path.startsWith('/app/') ||
       path.startsWith('/chordex') ||
       path.startsWith('/drumex') ||
-      path.startsWith('/stagex')
+      path.startsWith('/stagex') ||
+      path.startsWith('/groovex') ||
+      path.startsWith('/vocalex')
     )
       return '/app';
     return '/';
+  });
+
+  const [showLaunchOverlay, setShowLaunchOverlay] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (isDev) return false;
+    const alreadyShown =
+      sessionStorage.getItem('livex-intro-shown') ||
+      sessionStorage.getItem('studio-intro-shown');
+    return !alreadyShown && route === '/app';
   });
 
   const navigateTo = (path: string) => {
@@ -95,7 +121,9 @@ export default function App() {
         path.startsWith('/app/') ||
         path.startsWith('/chordex') ||
         path.startsWith('/drumex') ||
-        path.startsWith('/stagex')
+        path.startsWith('/stagex') ||
+        path.startsWith('/groovex') ||
+        path.startsWith('/vocalex')
       ) {
         setRoute('/app');
       } else {
@@ -105,6 +133,37 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Initial sub-app dispatch if navigating directly to a sub-app URL
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname;
+    if (path.startsWith('/chordex')) {
+      NavigationDispatcher.openApp('chordex');
+    } else if (path.startsWith('/drumex')) {
+      NavigationDispatcher.openApp('drumex');
+    } else if (path.startsWith('/stagex')) {
+      NavigationDispatcher.openApp('stagex');
+    } else if (path.startsWith('/groovex')) {
+      NavigationDispatcher.openApp('groovex');
+    } else if (path.startsWith('/vocalex')) {
+      NavigationDispatcher.openApp('vocalex');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDev) {
+      const intro = document.getElementById('intro');
+      if (intro) {
+        intro.style.display = 'none';
+        if (intro.parentNode) intro.parentNode.removeChild(intro);
+        (window as any).__introDone = true;
+        window.dispatchEvent(new Event('livex-intro-done'));
+        window.dispatchEvent(new Event('studio-intro-done'));
+        triggerIntroReveal();
+      }
+    }
+  }, [isDev]);
 
   useEffect(() => {
     if (route === '/') {
@@ -146,19 +205,39 @@ export default function App() {
   return (
     <SharedAppShell
       isWeb={true}
-      wrapProviders={(children) => (
-        <SidebarProvider>
-          <SidebarHoverSync hoverShowSidebar={hoverShowSidebar} />
-          <div
-            onMouseEnter={() => setHoverShowSidebar(true)}
-            onMouseLeave={() => setHoverShowSidebar(false)}
-            style={{ display: 'flex', height: '100%' }}
-          >
-            <WebSidebarLayout shouldHideSidebar={isWebDesktop && !hoverShowSidebar} />
-          </div>
-          <SidebarInset>{children}</SidebarInset>
-        </SidebarProvider>
-      )}
+      wrapProviders={(children) =>
+        isWebDesktop ? (
+          <SidebarProvider>
+            <SidebarHoverSync hoverShowSidebar={hoverShowSidebar} />
+            <div
+              onMouseEnter={() => setHoverShowSidebar(true)}
+              onMouseLeave={() => setHoverShowSidebar(false)}
+              style={{ display: 'flex', height: '100%' }}
+            >
+              <WebSidebarLayout shouldHideSidebar={!hoverShowSidebar} />
+            </div>
+            <SidebarInset>{children}</SidebarInset>
+          </SidebarProvider>
+        ) : (
+          <>{children}</>
+        )
+      }
+      renderLaunchOverlay={
+        showLaunchOverlay
+          ? () => (
+              <LaunchAnimationEngine
+                preset={initialPresetRef.current}
+                skipIntro={false}
+                onComplete={() => setShowLaunchOverlay(false)}
+                isLight={isLight}
+                isAmoled={isAmoled}
+              />
+            )
+          : undefined
+      }
+      renderBottomNav={
+        !isWebDesktop && !showLaunchOverlay ? () => <BottomNavigationController /> : undefined
+      }
       hubElement={<LivexHub />}
       subApps={{
         devtools: <DevToolsApp />,

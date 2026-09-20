@@ -1,5 +1,5 @@
 import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
-import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
+import { LivexLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 

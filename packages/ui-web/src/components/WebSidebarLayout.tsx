@@ -16,7 +16,7 @@ import {
   subscribeUserCover,
 } from '@workspace/livex-core';
 import {
-  StudioLogo,
+  LivexLogo,
   ChordexLogo,
   DrumexLogo,
   StagexLogoIcon,
@@ -185,7 +185,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
           onClick={() => handleGoToHub('home')}
         >
           <div className="flex-shrink-0">
-            <StudioLogo size={28} />
+            <LivexLogo size={28} />
           </div>
           <motion.span
             initial={false}
@@ -198,16 +198,16 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
               whiteSpace: 'nowrap',
             }}
           >
-            Studio
+            Livex
           </motion.span>
         </div>
       </SidebarHeader>
 
       {/* Main content scroll */}
       <SidebarContent>
-        {/* Studio Apps Group */}
+        {/* Livex Apps Group */}
         <SidebarGroup>
-          <SidebarGroupLabel>Studio Apps</SidebarGroupLabel>
+          <SidebarGroupLabel>Livex Apps</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -223,7 +223,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
                     home
                   </span>
                 </div>
-                <SidebarLabel open={open}>Studio Hub</SidebarLabel>
+                <SidebarLabel open={open}>Livex Hub</SidebarLabel>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
@@ -338,7 +338,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
                     className="truncate font-bold text-xs text-[var(--c-text-primary)]"
                     style={{ fontFamily: 'var(--studio-font-display)' }}
                   >
-                    {authUser ? authUser.displayName || 'Studio User' : 'Guest User'}
+                    {authUser ? authUser.displayName || 'Livex User' : 'Guest User'}
                   </span>
                   <span className="truncate text-[10px] text-[var(--c-text-secondary)] font-medium">
                     {authUser ? email : 'Not signed in'}
@@ -405,7 +405,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
                         }}
                         className="truncate"
                       >
-                        {authUser ? authUser.displayName || 'Studio User' : 'Guest User'}
+                        {authUser ? authUser.displayName || 'Livex User' : 'Guest User'}
                       </p>
                       <p
                         style={{

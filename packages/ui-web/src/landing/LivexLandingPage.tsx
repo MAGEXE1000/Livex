@@ -1,5 +1,5 @@
 import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
-import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
+import { LivexLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import LandingNavbar from './components/LandingNavbar';
@@ -139,14 +139,14 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
               transition={{ duration: introStep === 'logo-out' ? 0.5 : 0.55, ease: 'easeInOut' }}
               className="text-white flex flex-col items-center gap-4"
             >
-              <StudioLogo size={80} />
+              <LivexLogo size={80} />
               <motion.span
                 initial={{ opacity: 0, y: 4 }}
                 animate={introStep !== 'logo-out' ? { opacity: 0.6, y: 0 } : { opacity: 0, y: -2 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
                 className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-400 select-none landing-font-heading"
               >
-                Studio
+                Livex
               </motion.span>
             </motion.div>
           </motion.div>

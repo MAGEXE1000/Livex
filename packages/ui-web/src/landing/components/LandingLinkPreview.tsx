@@ -1,5 +1,5 @@
 import {
-  StudioLogo,
+  LivexLogo,
   ChordexLogo,
   DrumexLogo,
   StagexLogoIcon,
@@ -114,7 +114,7 @@ function StudioHubPreviewCard() {
             justifyContent: 'center',
           }}
         >
-          <StudioLogo size={32} />
+          <LivexLogo size={32} />
         </div>
         <p
           style={{
@@ -127,7 +127,7 @@ function StudioHubPreviewCard() {
             fontFamily: 'var(--studio-font-display)',
           }}
         >
-          Studio
+          Livex
         </p>
       </div>
 

@@ -1,4 +1,5 @@
-import { LivexLogo, StudioLogo } from '@workspace/ui-shared';
+import { APP_VERSION_LABEL } from '@workspace/livex-core';
+import { LivexLogo } from '@workspace/ui-shared';
 import React from 'react';
 
 interface LandingFooterProps {
@@ -10,7 +11,7 @@ interface LandingFooterProps {
 export default function LandingFooter({
   navigateTo,
   apkUrl,
-  apkVersion = '3.6.28',
+  apkVersion = APP_VERSION_LABEL,
 }: LandingFooterProps) {
   const handleScrollTo = (
     e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
