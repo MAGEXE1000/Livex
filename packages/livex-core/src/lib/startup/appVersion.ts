@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.28';
-export const NATIVE_VERSION_CODE = 40628;
-export const WEB_VERSION = '4.6.28';
+export const NATIVE_VERSION = '4.6.29';
+export const NATIVE_VERSION_CODE = 40629;
+export const WEB_VERSION = '4.6.29';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '024463fa';
+export const APP_COMMIT_SHA = '90e6b7a0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/19/2026, 11:13:16 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/20/2026, 1:01:43 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,18 +96,16 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Added',
     items: [
-      'Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.',
-      'Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.',
-      'App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.',
+      'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.',
+      'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.',
-      'Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.',
+      'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.',
     ],
   },
 ];
@@ -119,6 +117,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.29',
+    date: '2026-09-20',
+    highlights: [
+      'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.',
+      'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.',
+      'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.',
+    ],
+  },
   {
     version: '4.6.28',
     date: '2026-09-19',
@@ -219,28 +226,21 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Vocalex Preferences Geometry Alignment: Normalized Vocalex Preferences layout width and margins to canonical settings geometry matching other internal apps.',
     ],
   },
-  {
-    version: '4.6.19',
-    date: '2026-09-16',
-    highlights: [
-      'Realistic House Kit Drum Samples for Drumex Tuner: Equipped the Drumex Tuner reference sound system with authentic high-definition House Kit room-blend samples (Snare, Tom 1, Tom 2, Floor Tom, Kick) replacing synthetic oscillator tones.',
-      'Pitch-Calibrated Shell Resampling: Calibrated Web Audio playback rates dynamically to exact target tension frequencies (Tight, Normal, Loose) in Hz with physical 3ms anti-click attack envelopes and natural room acoustic decay.',
-      'Interactive Photographic Drum Graphic: Enabled direct touch interaction on both the center photographic drumhead render and the dedicated Referencia trigger for immediate reference playback.',
-      'Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.',
-      "Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.",
-      'High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
 export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right menu in Drumex beat-editor into a seamless contextual toolbar morph for instant access to beat actions.',
+      'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for expandable contextual tool surfaces.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Updater Download Reliability: Fixed issue where update downloads could regress from 100% to 0% and become stuck.',
-      'Native Service Synchronization: Eliminated service sleep deadlocks and ensured clean progress delivery.',
-      'Strict Progress Monotonicity: Prevented progress metrics from resetting during transfer and verification.',
+      'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications.',
     ],
   },
 ];
@@ -249,11 +249,16 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
  *  by `ChangelogSheet` based on `settings.language`. */
 export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
+    heading: 'Novedades',
+    items: [
+      'Barra de herramientas contextual en Drumex: Transformación del menú superior derecho del editor de ritmos en una barra de herramientas contextual fluida para acceder instantáneamente a las acciones del ritmo.',
+      'Patrón de interacción de metamorfosis reutilizable: Establecido componente de animación compartido en `ui-shared` para superficies de herramientas expandibles.',
+    ],
+  },
+  {
     heading: 'Correcciones',
     items: [
-      'Fiabilidad de descarga del actualizador: Se solucionó el problema por el cual las descargas regresaban del 100% al 0% y se quedaban atascadas.',
-      'Sincronización del servicio nativo: Eliminación de bloqueos por espera en segundo plano y entrega limpia del progreso.',
-      'Monotonía estricta de progreso: Protección del progreso y bytes descargados durante la transferencia y verificación.',
+      'Indicador de navegación inferior con geometría fija: Establecida una geometría canónica estricta para el indicador de pestaña seleccionada en todas las aplicaciones de Livex.',
     ],
   },
 ];
@@ -261,11 +266,16 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
 /** German version of the current changelog. */
 export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
+    heading: 'Neu',
+    items: [
+      'Kontextuelle Aktions-Toolbar im Drumex Beat-Editor: Das Menü oben rechts wurde in eine nahtlose kontextuelle Toolbar umgewandelt.',
+      'Wiederverwendbares Morph-Interaktionsmuster: Gemeinsames animiertes Morph-Primitiv in `ui-shared` für erweiterbare Werkzeugoberflächen etabliert.',
+    ],
+  },
+  {
     heading: 'Fehlerbehebungen',
     items: [
-      'Zuverlässigkeit des Download-Updaters: Behoben, dass Update-Downloads von 100% auf 0% zurückfielen und hängen blieben.',
-      'Native Service-Synchronisierung: Beseitigung von Service-Deadlocks und saubere Fortschrittsübertragung.',
-      'Strikte Fortschritts-Monotonie: Verhindert das Zurücksetzen von Download-Metriken während der Übertragung.',
+      'Feste geometrische Hervorhebung der unteren Navigation: Strikte kanonische Geometrie für den Tab-Auswahlindikator in allen Livex-Anwendungen durchgesetzt.',
     ],
   },
 ];

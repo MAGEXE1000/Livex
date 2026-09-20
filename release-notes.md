@@ -1,14 +1,10 @@
-# Version 4.6.28
+# Version 4.6.29
 
-Release Date: 2026-09-19
+Release Date: 2026-09-20
+
+### Added
+- Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.
+- Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.
 
 ### Fixed
-- Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.
-- Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.
-
-### Improved
-- Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.
-
-### Performance
-- Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.
-- App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.
+- Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.
