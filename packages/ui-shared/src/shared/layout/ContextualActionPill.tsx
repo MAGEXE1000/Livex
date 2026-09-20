@@ -42,8 +42,10 @@ export const ContextualActionPill: React.FC<ContextualActionPillProps> = ({
   return (
     <div
       data-testid="contextual-action-pill"
-      className={`contextual-action-pill pointer-events-auto flex items-center p-0.5 rounded-full ${className}`}
+      className={`contextual-action-pill pointer-events-auto flex items-center rounded-full ${className}`}
       style={{
+        height: 38,
+        padding: '0 3px',
         background: 'var(--surface-pill-bg)',
         border: 'var(--surface-pill-border)',
         backdropFilter: 'var(--surface-pill-backdrop)',
@@ -79,7 +81,7 @@ export const ContextualActionPill: React.FC<ContextualActionPillProps> = ({
                 background: item.active
                   ? isLight
                     ? 'rgba(0, 0, 0, 0.08)'
-                    : 'rgba(255, 255, 255, 0.14)'
+                    : 'rgba(255, 255, 255, 0.16)'
                   : 'transparent',
                 border: 'none',
                 color: isLight
@@ -117,10 +119,10 @@ export const ContextualActionPill: React.FC<ContextualActionPillProps> = ({
               <div
                 style={{
                   width: '1px',
-                  height: '14px',
-                  background: isLight ? 'rgba(0, 0, 0, 0.10)' : 'rgba(255, 255, 255, 0.12)',
+                  height: '16px',
+                  background: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.10)',
                   flexShrink: 0,
-                  margin: '0 1px',
+                  margin: '0 2px',
                 }}
                 aria-hidden="true"
               />

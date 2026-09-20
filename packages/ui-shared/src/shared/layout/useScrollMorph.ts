@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 
 export interface UseScrollMorphOptions {
   /** The scrollable element whose scrollTop drives the morph */
-  scrollContainerRef: React.RefObject<HTMLElement | null>;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
   /** The floating header container element */
   headerRef: React.RefObject<HTMLElement | null>;
   /** The title element being transformed */
@@ -111,9 +111,10 @@ export function useScrollMorph({
     const rightMargin = actionsWidth > 0 ? actionsWidth + 8 : 16;
     const minContentWidth = titleWidth + leftMargin + rightMargin;
 
-    // Canonical global top bar: maintains consistent full-surface presence across the
-    // content column in both resting and morphed states, eliminating capsule contraction and title truncation.
-    const compactWidth = expandedWidth;
+    // Subtle horizontal compression (max 8px each side) when content allows,
+    // otherwise maintaining full width so titles never truncate.
+    const targetCompact = Math.max(minContentWidth + 16, expandedWidth - 12);
+    const compactWidth = Math.min(expandedWidth, targetCompact);
 
     metricsRef.current = {
       expandedWidth,
@@ -129,6 +130,7 @@ export function useScrollMorph({
       const headerEl = headerRef.current;
       const titleEl = titleRef.current;
       const glassEl = glassSurfaceRef?.current;
+      const blurEl = progressiveBlurRef?.current;
 
       if (!headerEl) return;
 
@@ -148,12 +150,13 @@ export function useScrollMorph({
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
       // ── 4. Geometry: Corner curvature (Continuous monotonic rounding) ──────
-      // Starts at smooth 18px and smoothly tightens to 28px (exact capsule radius for 56px height)
-      // At p >= 0.96, clamps to 9999px capsule pill with zero visual step jump
+      // Starts unformed at 0px and smoothly rounds to 24px, clamping to 9999px capsule pill
       if (p >= 0.96) {
         headerEl.style.borderRadius = '9999px';
+      } else if (p <= 0.005) {
+        headerEl.style.borderRadius = '0px';
       } else {
-        const currentRadius = 18 + p * 10;
+        const currentRadius = p * 24;
         headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
       }
 
@@ -164,83 +167,147 @@ export function useScrollMorph({
       headerEl.style.paddingRight = `${currentPaddingRight.toFixed(1)}px`;
 
       // Child button scale property for back button and action items
-      headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.05).toFixed(3));
+      headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.04).toFixed(3));
 
       // ── 6. Title typography scale (Dead-centered throughout) ───────────────
       // Title is centered in the surface across all frames: zero horizontal translation
       if (titleEl) {
-        const currentScale = 1 - p * 0.08; // 1.0 -> 0.92
+        const currentScale = 1 - p * 0.06; // 1.0 -> 0.94
         titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
         titleEl.style.transformOrigin = 'center center';
       }
 
       // ── 7. Liquid Glass Material Progressive Emergence ────────────────────
       if (glassEl) {
-        glassEl.style.visibility = 'visible';
-        // Continuous physical emergence: subtle resting translucency (0.45) scaling smoothly to full definition (1.0)
-        const surfaceAlpha = 0.45 + 0.55 * Math.min(1, Math.pow(p, 0.85));
-        glassEl.style.opacity = surfaceAlpha.toFixed(3);
+        if (p <= 0.005) {
+          glassEl.style.opacity = '0';
+          glassEl.style.visibility = 'hidden';
+        } else {
+          glassEl.style.visibility = 'visible';
+          // Continuous smoother physical emergence
+          const surfaceAlpha = Math.min(1, Math.max(0, p));
+          glassEl.style.opacity = surfaceAlpha.toFixed(3);
+        }
       }
 
       // ── 8. Progressive Blur Zone Interpolation ────────────────────────────
-      const blurEl = progressiveBlurRef?.current;
       if (blurEl) {
-        const blurAlpha = 0.28 + 0.72 * Math.min(1, Math.pow(p, 0.85));
-        blurEl.style.opacity = blurAlpha.toFixed(3);
+        if (p <= 0.005) {
+          blurEl.style.opacity = '0';
+        } else {
+          const blurAlpha = Math.min(1, Math.max(0, p * 0.95));
+          blurEl.style.opacity = blurAlpha.toFixed(3);
+        }
       }
     },
     [headerRef, titleRef, glassSurfaceRef, progressiveBlurRef]
   );
 
   useEffect(() => {
-    if (!enabled) return;
-
-    const scrollEl = scrollContainerRef.current;
-    if (!scrollEl) {
+    if (!enabled) {
       applyMorph(0);
       return;
     }
 
-    updateMetrics();
+    const headerEl = headerRef.current;
+    if (!headerEl) return;
 
-    // Initial positioning at current scroll position
-    const initialP = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
-    lastP.current = initialP;
-    applyMorph(initialP);
-
-    const onScroll = () => {
-      if (rafId.current === null) {
-        rafId.current = requestAnimationFrame(() => {
-          rafId.current = null;
-          const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
-          if (Math.abs(p - lastP.current) < 0.002) return;
-          lastP.current = p;
-          applyMorph(p);
-        });
+    const findScrollElement = (): HTMLElement | null => {
+      if (scrollContainerRef?.current) {
+        return scrollContainerRef.current;
       }
+      const parentEl = headerEl.parentElement;
+      if (parentEl) {
+        const dedicated = parentEl.querySelector<HTMLElement>(
+          '[data-purpose*="scroll"], [data-purpose*="scaffold"], [data-purpose*="container"], [class*="overflow-y-auto"]'
+        );
+        if (dedicated && dedicated !== headerEl && !headerEl.contains(dedicated)) {
+          return dedicated;
+        }
+
+        let curr: HTMLElement | null = parentEl;
+        while (curr && curr !== document.body && curr !== document.documentElement) {
+          const style = window.getComputedStyle(curr);
+          if (
+            (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+            curr.scrollHeight > curr.clientHeight
+          ) {
+            return curr;
+          }
+          curr = curr.parentElement;
+        }
+      }
+      return null;
     };
 
-    const onResize = () => {
+    let cleanupScroll: (() => void) | null = null;
+
+    const attachListeners = (scrollEl: HTMLElement) => {
       updateMetrics();
-      const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
-      lastP.current = p;
-      applyMorph(p);
+
+      // Initial positioning at current scroll position
+      const initialP = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
+      lastP.current = initialP;
+      applyMorph(initialP);
+
+      const onScroll = () => {
+        if (rafId.current === null) {
+          rafId.current = requestAnimationFrame(() => {
+            rafId.current = null;
+            const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
+            if (Math.abs(p - lastP.current) < 0.002) return;
+            lastP.current = p;
+            applyMorph(p);
+          });
+        }
+      };
+
+      const onResize = () => {
+        updateMetrics();
+        const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
+        lastP.current = p;
+        applyMorph(p);
+      };
+
+      scrollEl.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onResize);
+
+      return () => {
+        scrollEl.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onResize);
+        if (rafId.current !== null) {
+          cancelAnimationFrame(rafId.current);
+          rafId.current = null;
+        }
+      };
     };
 
-    scrollEl.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
+    const targetEl = findScrollElement();
+    if (targetEl) {
+      cleanupScroll = attachListeners(targetEl);
+    } else {
+      applyMorph(0);
+      const timer = setTimeout(() => {
+        const deferredEl = findScrollElement();
+        if (deferredEl) {
+          cleanupScroll = attachListeners(deferredEl);
+        }
+      }, 50);
+      return () => {
+        clearTimeout(timer);
+        if (cleanupScroll) cleanupScroll();
+      };
+    }
 
     return () => {
-      scrollEl.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current);
-        rafId.current = null;
+      if (cleanupScroll) {
+        cleanupScroll();
       }
     };
   }, [
     enabled,
     scrollContainerRef,
+    headerRef,
     startOffset,
     morphDistance,
     updateMetrics,

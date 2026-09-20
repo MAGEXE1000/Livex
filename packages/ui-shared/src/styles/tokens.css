@@ -1815,10 +1815,11 @@ html[data-perf-mode='on'] *::after {
   --surface-float-blur: var(--glass-blur); /* shared backdrop-filter */
   --surface-scrim-blur: none;
   /* Floating Control Pills (Back buttons, Tuner, Finder, Metronome) */
-  --surface-pill-bg: rgba(255, 255, 255, 0.07);
-  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.10);
+  --surface-pill-bg: rgba(26, 26, 32, 0.72);
+  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.11);
   --surface-pill-shadow:
-    0 2px 8px -1px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 3px 10px -1px rgba(0, 0, 0, 0.36), 0 1px 3px 0 rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13);
   --surface-pill-blur: blur(12px);
   --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(
@@ -1866,10 +1867,11 @@ html[data-perf-mode='on'] *::after {
   --surface-float-blur: var(--glass-blur);
   --surface-scrim-blur: none;
   --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
-  --surface-pill-bg: rgba(0, 0, 0, 0.045);
-  --surface-pill-border: 1px solid rgba(0, 0, 0, 0.07);
+  --surface-pill-bg: rgba(255, 255, 255, 0.84);
+  --surface-pill-border: 1px solid rgba(0, 0, 0, 0.08);
   --surface-pill-shadow:
-    0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 3px 10px -1px rgba(0, 0, 0, 0.07), 0 1px 2px 0 rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --surface-pill-blur: blur(12px);
   --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(
@@ -1913,10 +1915,11 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
   --surface-topbar-fallback: #000000;
-  --surface-pill-bg: rgba(255, 255, 255, 0.085);
-  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.12);
+  --surface-pill-bg: rgba(20, 20, 24, 0.82);
+  --surface-pill-border: 1px solid rgba(255, 255, 255, 0.13);
   --surface-pill-shadow:
-    0 2px 10px -1px rgba(0, 0, 0, 0.60), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 4px 14px -1px rgba(0, 0, 0, 0.85), 0 1px 4px 0 rgba(0, 0, 0, 0.60),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --surface-pill-blur: blur(8px);
   --surface-pill-backdrop: var(--surface-pill-blur) saturate(140%);
   --surface-glass-rim: linear-gradient(

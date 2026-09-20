@@ -280,10 +280,10 @@ export function SharedFloatingHeader({
   const specularRef = React.useRef<HTMLDivElement | null>(null);
   const progressiveBlurRef = React.useRef<HTMLDivElement | null>(null);
 
-  const morphActive = Boolean(enableMorph && scrollContainerRef);
+  const morphActive = Boolean(enableMorph);
 
   useScrollMorph({
-    scrollContainerRef: scrollContainerRef || { current: null },
+    scrollContainerRef,
     headerRef: actualHeaderRef,
     titleRef: actualTitleRef,
     glassSurfaceRef,
@@ -327,9 +327,8 @@ export function SharedFloatingHeader({
           height: 'calc(env(safe-area-inset-top, 0px) + 88px)',
           pointerEvents: 'none',
           zIndex: 0,
-          opacity: 0.28,
+          opacity: 0,
           overflow: 'hidden',
-          transition: 'opacity 250ms ease-out',
         }}
       >
         <ProgressiveBlur
@@ -364,7 +363,7 @@ export function SharedFloatingHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '60px',
-          borderRadius: '18px',
+          borderRadius: '0px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -392,8 +391,8 @@ export function SharedFloatingHeader({
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
-            opacity: 0.45,
-            visibility: 'visible',
+            opacity: 0,
+            visibility: 'hidden',
             zIndex: 0,
           }}
         >
