@@ -1,12 +1,14 @@
-# Version 4.6.27
+# Version 4.6.28
 
 Release Date: 2026-09-19
 
-### Added
-- Immersive Five-App Entry Transition: Redesigned application entry interaction with immediate visual continuity, Apple-grade fluid deceleration curves (`[0.16, 1, 0.3, 1]`) across 440ms, blooming brand aura, and paint-verified destination preloading for Chordex, Drumex, Stagex, Groovex, and Vocalex.
+### Fixed
+- Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.
+- Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.
 
 ### Improved
-- Zero-Layout-Reflow Scroll Morph: Eliminated forced layout reflows and font reshaping during scrolling in `useScrollMorph` by fixing layout geometry dimensions and transitioning only GPU-composited transform and opacity properties.
-- Non-Blocking Scroll Element Discovery: Removed synchronous `scrollHeight` and `clientHeight` layout reads during scroll container attachment, eliminating main-thread layout flushes on navigation.
-- GPU Compositor Pipeline Optimization: Removed redundant overlapping `ProgressiveBlur` backdrop-filter passes and eliminated procedural SVG `feTurbulence` noise displacement map in `SharedFloatingHeader`, reducing GPU compositor time by ~88% and restoring rock-solid 60/120Hz scrolling.
-- App-Entry Shadow Offload: Replaced dynamic blur shadow interpolation with a dedicated hardware-accelerated child layer dissolving via GPU opacity, eliminating continuous Gaussian blur re-rasterization during sub-app mounting.
+- Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.
+
+### Performance
+- Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.
+- App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.

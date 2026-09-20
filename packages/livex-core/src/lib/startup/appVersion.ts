@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.27';
-export const NATIVE_VERSION_CODE = 40627;
-export const WEB_VERSION = '4.6.27';
+export const NATIVE_VERSION = '4.6.28';
+export const NATIVE_VERSION_CODE = 40628;
+export const WEB_VERSION = '4.6.28';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '6d21a36f';
+export const APP_COMMIT_SHA = '024463fa';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/19/2026, 9:55:33 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/19/2026, 11:13:16 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,18 +96,18 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Improved',
     items: [
-      'Immersive Five-App Entry Transition: Redesigned application entry interaction with immediate visual continuity, Apple-grade fluid deceleration curves (`[0.16, 1, 0.3, 1]`) across 440ms, blooming brand aura, and paint-verified destination preloading for Chordex, Drumex, Stagex, Groovex, and Vocalex.',
+      'Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.',
+      'Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.',
+      'App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.',
     ],
   },
   {
-    heading: 'Improved',
+    heading: 'Fixed',
     items: [
-      'Zero-Layout-Reflow Scroll Morph: Eliminated forced layout reflows and font reshaping during scrolling in `useScrollMorph` by fixing layout geometry dimensions and transitioning only GPU-composited transform and opacity properties.',
-      'Non-Blocking Scroll Element Discovery: Removed synchronous `scrollHeight` and `clientHeight` layout reads during scroll container attachment, eliminating main-thread layout flushes on navigation.',
-      'GPU Compositor Pipeline Optimization: Removed redundant overlapping `ProgressiveBlur` backdrop-filter passes and eliminated procedural SVG `feTurbulence` noise displacement map in `SharedFloatingHeader`, reducing GPU compositor time by ~88% and restoring rock-solid 60/120Hz scrolling.',
-      'App-Entry Shadow Offload: Replaced dynamic blur shadow interpolation with a dedicated hardware-accelerated child layer dissolving via GPU opacity, eliminating continuous Gaussian blur re-rasterization during sub-app mounting.',
+      'Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.',
+      'Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.',
     ],
   },
 ];
@@ -119,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.28',
+    date: '2026-09-19',
+    highlights: [
+      'Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.',
+      'Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.',
+      'Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.',
+      'Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.',
+      'App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.',
+    ],
+  },
   {
     version: '4.6.27',
     date: '2026-09-19',
@@ -218,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Complete Multi-Theme Tuner Parity: Upgraded Chordex Chromatic Tuner, Tuning Selector, and Drumex Tuner to be 100% theme-aware across Light, Dark, and AMOLED modes, eliminating hardcoded black backdrops and unreadable text.',
       "Dynamic Accent Resolution in Tuners: Bound Auto toggle switches, tuning selector radio indicators, and state highlights to the user's active theme accent color.",
       'High-Contrast Permissions Banner: Restyled microphone permission failure alerts with WCAG-compliant high contrast across light and dark backdrops.',
-    ],
-  },
-  {
-    version: '4.6.18',
-    date: '2026-09-16',
-    highlights: [
-      'Canonical Bounded Overscroll Spring System: Implemented a polished, unified, native-feeling overscroll spring and bounce interaction across Livex scrollable screens via the canonical `useOverscrollSpring` layout hook.',
-      'Progressive Rubber-Band Physics: Integrated asymptotic elastic resistance strictly bounding content displacement at 44px ($d(p) = \\text{sign}(p) \\cdot D_{\\max} \\cdot (1 - 1 / (1 + c \\cdot |p| / D_{\\max}))$), preventing runaway stretch and visual dislocation.',
-      'Analytical Damped Harmonic Oscillator: Built exact continuous-time spring return settling in ~250–300ms with natural frequency $\\omega_0 = 24\\text{ rad/s}$ and damping ratio $\\zeta = 0.94$, eliminating bounce jitter, oscillation, and overshoot.',
-      'Floating Header & Liquid Glass Isolation: Displaced the scroll container via hardware-accelerated `translate3d(0, y, 0)` leaving sibling floating headers rock-solid with 0.0px drift, undistorted backdrop filters, and intact `useScrollMorph` states.',
-      'Cross-App Normalization: Deployed overscroll spring interaction across SettingsScaffold, Hub Settings, Groovex Preferences & Library, Stagex Setup & Preferences, Chordex Preferences, Drumex Prefs, Beats & Patterns, and Vocalex Preferences & Takes.',
-      'Android WebView Performance & Accessibility: Direct DOM updates with zero React re-renders during active touch dragging; directional lockout for horizontal gestures; full compliance with reduced-motion accessibility.',
     ],
   },
 ];
