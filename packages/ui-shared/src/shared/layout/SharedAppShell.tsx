@@ -398,10 +398,10 @@ export function SharedAppShell({
               <motion.div
                 key={stableKey}
                 className="sc-subapp-wrapper"
-                initial={launchingApp ? { opacity: 0, scale: 0.96 } : { opacity: 1, scale: 1 }}
+                initial={{ opacity: 1, scale: 1 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98, pointerEvents: 'none' as any }}
-                transition={{ duration: 0.44 * speedScale, ease: [0.16, 1, 0.3, 1] }}
+                exit={{ opacity: 0, pointerEvents: 'none' as any }}
+                transition={{ duration: 0.28 * speedScale, ease: [0.16, 1, 0.3, 1] }}
                 style={{
                   position: 'absolute',
                   inset: 0,

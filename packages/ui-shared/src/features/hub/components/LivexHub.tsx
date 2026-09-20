@@ -52,7 +52,6 @@ import {
   NavigationDispatcher,
   useBottomNavigationStore,
   useApplicationTransitionStore,
-  type CardMorphSourceRect,
   useSettingsStore,
   DurationPresets,
   EasingPresets,
@@ -862,28 +861,13 @@ export default function LivexHub() {
     });
   }, []);
 
-  const launchApp = useCallback((appMode: AppKey, sourceElement?: HTMLElement | null) => {
+  const launchApp = useCallback((appMode: AppKey, _sourceElement?: HTMLElement | null) => {
     if ((window as any).studioTransitionActive) {
       console.warn('[Navigation] App switch request ignored: transition in progress.');
       return;
     }
 
-    let sourceRect: CardMorphSourceRect | null = null;
-    if (sourceElement && typeof sourceElement.getBoundingClientRect === 'function') {
-      const r = sourceElement.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        sourceRect = {
-          x: Math.round(r.left),
-          y: Math.round(r.top),
-          width: Math.round(r.width),
-          height: Math.round(r.height),
-          borderRadius: 20,
-        };
-      }
-    }
-
-    // Arm the shared-element transition store with exact source card coordinates
-    useApplicationTransitionStore.getState().requestTransition(appMode, sourceRect);
+    useApplicationTransitionStore.getState().requestTransition(appMode);
 
     const currentApp = NavigationDispatcher.currentApp();
     recordNavigation({
@@ -898,11 +882,7 @@ export default function LivexHub() {
     (window as any).studioTransitionActive = true;
     setZooming(true);
 
-    // Yield 1 rAF frame before dispatching navigation so the browser paints the
-    // initial frame of the expanding card before heavy sub-app tree mounting
-    requestAnimationFrame(() => {
-      NavigationDispatcher.push({ app: appMode });
-    });
+    NavigationDispatcher.push({ app: appMode });
 
     // Clear any pending launch timers
     launchTimers.current.forEach(clearTimeout);
