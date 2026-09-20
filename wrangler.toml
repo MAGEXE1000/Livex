@@ -2,4 +2,5 @@ name = "livex"
 pages_build_output_dir = "dist/web"
 
 [vars]
-NODE_VERSION = "20"
+NODE_VERSION = "24"
+PNPM_VERSION = "11.24.0"
