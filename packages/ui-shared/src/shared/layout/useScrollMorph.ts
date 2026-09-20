@@ -61,9 +61,9 @@ export function useScrollMorph({
     compactHeight: number;
   }>({
     expandedWidth: 360,
-    compactWidth: 360,
-    expandedHeight: 60,
-    compactHeight: 56,
+    compactWidth: 280,
+    expandedHeight: 58,
+    compactHeight: 54,
   });
 
   // Calculate layout geometry outside the active scroll frame to avoid layout thrashing
@@ -87,8 +87,8 @@ export function useScrollMorph({
       640;
     const maxHeaderW = contentMaxW - pageInsetH * 2;
     const expandedWidth = Math.min(parentWidth - pageInsetH * 2, maxHeaderW);
-    const expandedHeight = 60;
-    const compactHeight = 56;
+    const expandedHeight = 58;
+    const compactHeight = 54;
 
     // Calculate content width for title + left button + right actions
     const textEl = (titleEl?.firstElementChild as HTMLElement) || titleEl;
@@ -106,15 +106,26 @@ export function useScrollMorph({
     ) as HTMLElement | null;
     const actionsWidth = actionsEl && actionsEl.offsetWidth > 0 ? actionsEl.offsetWidth : 0;
 
-    // Symmetrically bounded content width ensuring title and any existing controls never collide
-    const leftMargin = backWidth > 0 ? backWidth + 8 : 16;
-    const rightMargin = actionsWidth > 0 ? actionsWidth + 8 : 16;
-    const minContentWidth = titleWidth + leftMargin + rightMargin;
+    // Symmetrically bounded content width ensuring title is dead-centered
+    // Left clearance: backWidth + padding; Right clearance: actionsWidth + padding
+    const sideClearance = Math.max(
+      backWidth > 0 ? backWidth + 12 : 18,
+      actionsWidth > 0 ? actionsWidth + 12 : 18
+    );
+    const minContentWidth = titleWidth + sideClearance * 2 + 16;
 
-    // Subtle horizontal compression (max 8px each side) when content allows,
-    // otherwise maintaining full width so titles never truncate.
-    const targetCompact = Math.max(minContentWidth + 16, expandedWidth - 12);
-    const compactWidth = Math.min(expandedWidth, targetCompact);
+    // Compact pill width: contracts into an elegant centered capsule pill
+    // On mobile screens (<= 480px), contracts by 48px - 72px (~18%)
+    // On tablet/desktop (> 480px), forms a refined floating capsule (~320px - 380px)
+    let targetCompact: number;
+    if (expandedWidth > 480) {
+      targetCompact = Math.min(Math.max(expandedWidth * 0.56, 320), 400);
+    } else {
+      const compression = Math.max(48, Math.min(72, expandedWidth * 0.18));
+      targetCompact = expandedWidth - compression;
+    }
+
+    const compactWidth = Math.min(expandedWidth, Math.max(minContentWidth, targetCompact));
 
     metricsRef.current = {
       expandedWidth,
@@ -134,33 +145,37 @@ export function useScrollMorph({
 
       if (!headerEl) return;
 
-      // ── 1. Geometry: Vertical position (Snug floating placement via GPU transform) ──
+      const { expandedWidth, compactWidth, expandedHeight, compactHeight } = metricsRef.current;
+
+      // ── 1. Geometry: Horizontal width (Clean direct morph from unformed to compact pill bounds) ──
+      const currentWidth = expandedWidth - p * (expandedWidth - compactWidth);
+      headerEl.style.width = `${currentWidth.toFixed(1)}px`;
+      headerEl.style.maxWidth = '100%';
+
+      // ── 2. Geometry: Vertical dimensions & snug placement (GPU transform) ──
+      const currentHeight = expandedHeight - p * (expandedHeight - compactHeight);
+      headerEl.style.height = `${currentHeight.toFixed(1)}px`;
       const currentTranslateY = -p * 2;
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
-      // ── 2. Geometry: Corner curvature (Continuous monotonic rounding) ──────────────
-      // Starts unformed at 0px and smoothly rounds to 24px, clamping to 9999px capsule pill
-      let currentRadius = '0px';
-      if (p >= 0.96) {
-        currentRadius = '9999px';
-      } else if (p > 0.005) {
-        currentRadius = `${(p * 24).toFixed(1)}px`;
-      }
-      headerEl.style.borderRadius = currentRadius;
+      // ── 3. Geometry: Pill Curvature (Strict Pill Curvature at ALL frames — ZERO rectangular stage) ──
+      // The surface is ALWAYS an absolute capsule pill (9999px) whenever visible.
+      // There is NO card-like rectangular stage (0px -> 24px) at any point in the scroll trajectory.
+      headerEl.style.borderRadius = '9999px';
 
-      // ── 3. Child button scale property for back button and action items ────────────
+      // ── 4. Child button scale property for back button and action items ────────────
       headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.04).toFixed(3));
 
-      // ── 4. Title typography scale (Dead-centered throughout) ────────────────────────
+      // ── 5. Title typography scale (Dead-centered throughout) ────────────────────────
       if (titleEl) {
         const currentScale = 1 - p * 0.06; // 1.0 -> 0.94
         titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
         titleEl.style.transformOrigin = 'center center';
       }
 
-      // ── 5. Liquid Glass Material Progressive Emergence ─────────────────────────────
+      // ── 6. Liquid Glass Material Progressive Emergence ─────────────────────────────
       if (glassEl) {
-        glassEl.style.borderRadius = currentRadius;
+        glassEl.style.borderRadius = '9999px';
         if (p <= 0.005) {
           glassEl.style.opacity = '0';
           glassEl.style.visibility = 'hidden';
@@ -171,12 +186,12 @@ export function useScrollMorph({
         }
       }
 
-      // ── 6. Progressive Blur Zone Interpolation ─────────────────────────────────────
+      // ── 7. Progressive Blur Zone Interpolation (Subtle ambience without rectangular boundary) ──
       if (blurEl) {
         if (p <= 0.005) {
           blurEl.style.opacity = '0';
         } else {
-          const blurAlpha = Math.min(1, Math.max(0, p * 0.95));
+          const blurAlpha = Math.min(0.35, Math.max(0, p * 0.35));
           blurEl.style.opacity = blurAlpha.toFixed(3);
         }
       }

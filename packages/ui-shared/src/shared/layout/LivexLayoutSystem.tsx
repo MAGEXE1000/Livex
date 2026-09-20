@@ -290,6 +290,8 @@ export function SharedFloatingHeader({
           zIndex: 0,
           opacity: 0,
           overflow: 'hidden',
+          maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.6) 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.6) 40%, transparent 100%)',
         }}
       >
         {/* Ambient atmospheric gradient scrim to preserve theme luminance without redundant GPU blur passes */}
@@ -314,7 +316,7 @@ export function SharedFloatingHeader({
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
           height: '58px',
-          borderRadius: '0px',
+          borderRadius: '9999px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -334,7 +336,7 @@ export function SharedFloatingHeader({
           style={{
             position: 'absolute',
             inset: 0,
-            borderRadius: 'inherit',
+            borderRadius: '9999px',
             background: 'var(--surface-topbar-bg)',
             border: 'var(--surface-topbar-border)',
             backdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',

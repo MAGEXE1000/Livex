@@ -19,10 +19,10 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies canonical global top bar preserves full surface width across resting and morphed states', () => {
+  it('verifies horizontal bounds interpolation from unformed width to compact pill bounds', () => {
     const expandedWidth = 342; // Mobile screen width within page insets (e.g. 390 - 48)
-    const compactWidth = expandedWidth; // Canonical global top bar preserves full content column width
-    const totalCompression = expandedWidth - compactWidth; // 0px
+    const compactWidth = 280; // Compact floating pill width
+    const totalCompression = expandedWidth - compactWidth; // 62px
 
     const calcWidth = (p: number) => expandedWidth - p * totalCompression;
     const calcInwardEdge = (p: number) => (expandedWidth - calcWidth(p)) / 2;
@@ -32,34 +32,34 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     expect(calcInwardEdge(0)).toBe(0);
 
     // At p = 0.5 (halfway):
-    expect(calcWidth(0.5)).toBe(342);
-    expect(calcInwardEdge(0.5)).toBe(0);
+    expect(calcWidth(0.5)).toBe(311);
+    expect(calcInwardEdge(0.5)).toBe(15.5);
 
     // At p = 1.0 (settled compact pill):
-    expect(calcWidth(1.0)).toBe(342);
-    expect(calcInwardEdge(1.0)).toBe(0);
+    expect(calcWidth(1.0)).toBe(280);
+    expect(calcInwardEdge(1.0)).toBe(31);
 
-    // Strictly constant width preserving full surface presence
+    // Strictly monotonic inward contraction
     for (let p = 0.05; p <= 1.0; p += 0.05) {
-      expect(calcWidth(p)).toBe(expandedWidth);
-      expect(calcInwardEdge(p)).toBe(0);
+      expect(calcWidth(p)).toBeLessThan(calcWidth(p - 0.05));
+      expect(calcInwardEdge(p)).toBeGreaterThan(calcInwardEdge(p - 0.05));
     }
   });
 
   it('verifies continuous vertical compression and snug position transform', () => {
-    const expandedHeight = 60;
-    const compactHeight = 56;
+    const expandedHeight = 58;
+    const compactHeight = 54;
 
     const calcHeight = (p: number) => expandedHeight - p * (expandedHeight - compactHeight);
     const calcTranslateY = (p: number) => (p === 0 ? 0 : -p * 2);
 
-    expect(calcHeight(0)).toBe(60);
+    expect(calcHeight(0)).toBe(58);
     expect(calcTranslateY(0)).toBe(0);
 
-    expect(calcHeight(0.5)).toBe(58);
+    expect(calcHeight(0.5)).toBe(56);
     expect(calcTranslateY(0.5)).toBe(-1);
 
-    expect(calcHeight(1.0)).toBe(56);
+    expect(calcHeight(1.0)).toBe(54);
     expect(calcTranslateY(1.0)).toBe(-2);
 
     for (let p = 0.05; p <= 1.0; p += 0.05) {
@@ -67,25 +67,21 @@ describe('Scroll-Reactive Title → Floating Top Bar Morph Geometry', () => {
     }
   });
 
-  it('verifies progressive corner curvature increase from soft (18px) to full capsule (28px / 9999px)', () => {
-    const calcRadius = (p: number) => (p >= 0.96 ? 9999 : 18 + p * 10);
+  it('verifies direct pill morph: strict capsule pill curvature (9999px) across all frames, zero rectangular stage', () => {
+    // The surface maintains absolute capsule pill curvature (9999px) across all visible frames
+    // eliminating any intermediate rectangular or card-like stage
+    const calcRadius = (p: number) => 9999;
 
-    // At p = 0: 18px soft surface
-    expect(calcRadius(0)).toBe(18);
-
-    // At p = 0.5: 23px
-    expect(calcRadius(0.5)).toBe(23);
-
-    // At p = 0.9: 27px
-    expect(calcRadius(0.9)).toBe(27);
-
-    // At p >= 0.96: 9999px (full capsule pill)
+    // At all frames, curvature is strictly 9999px (capsule pill)
+    expect(calcRadius(0)).toBe(9999);
+    expect(calcRadius(0.2)).toBe(9999);
+    expect(calcRadius(0.5)).toBe(9999);
     expect(calcRadius(0.96)).toBe(9999);
     expect(calcRadius(1.0)).toBe(9999);
 
-    // Monotonic curvature progression
-    for (let p = 0.05; p <= 1.0; p += 0.05) {
-      expect(calcRadius(p)).toBeGreaterThanOrEqual(calcRadius(p - 0.05));
+    // Invariant: radius is never card-like (< 9999px) when surface is visible
+    for (let p = 0.01; p <= 1.0; p += 0.05) {
+      expect(calcRadius(p)).toBe(9999);
     }
   });
 
