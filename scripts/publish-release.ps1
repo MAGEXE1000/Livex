@@ -3,43 +3,50 @@
 
 param (
     [string]$BumpType = "patch",
-    [string]$ReleaseNote = "Automated release via Single Source of Truth architecture."
+    [string]$ReleaseNote = "Automated release via Single Source of Truth architecture.",
+    [switch]$SkipBump = $false
 )
 
-# 1. Single Source of Truth Version Bump
-Write-Host "1. Bumping Single Source of Truth (root package.json)..."
-$npmResult = npm.cmd version $BumpType --no-git-tag-version
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to bump root package.json version."
-    exit 1
-}
+if (-not $SkipBump) {
+    # 1. Single Source of Truth Version Bump
+    Write-Host "1. Bumping Single Source of Truth (root package.json)..."
+    $npmResult = npm.cmd version $BumpType --no-git-tag-version
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to bump root package.json version."
+        exit 1
+    }
 
-$VersionName = $npmResult.Trim().Substring(1) # Remove 'v' prefix
-Write-Host "New Version: $VersionName"
+    $VersionName = $npmResult.Trim().Substring(1) # Remove 'v' prefix
+    Write-Host "New Version: $VersionName"
 
-# 2. Synchronize versions across the repository
-Write-Host "2. Synchronizing version across all manifests..."
-node scripts/sync-versions.mjs
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to synchronize versions."
-    exit 1
-}
+    # 2. Synchronize versions across the repository
+    Write-Host "2. Synchronizing version across all manifests..."
+    node scripts/sync-versions.mjs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to synchronize versions."
+        exit 1
+    }
 
-# 3. Commit and push
-$BranchName = (git symbolic-ref --short HEAD).Trim()
-Write-Host "Current branch: $BranchName"
+    # 3. Commit and push
+    $BranchName = (git symbolic-ref --short HEAD).Trim()
+    Write-Host "Current branch: $BranchName"
 
-Write-Host "3. Committing and pushing version changes to Git..."
-git add -u
+    Write-Host "3. Committing and pushing version changes to Git..."
+    git add -u
 
-if (git diff --staged --quiet) {
-    Write-Host "No changes to commit."
+    if (git diff --staged --quiet) {
+        Write-Host "No changes to commit."
+    } else {
+        git commit -m "Release v${VersionName} - ${ReleaseNote}" --no-verify
+    }
+
+    Write-Host "Pushing HEAD to origin/$BranchName..."
+    git push origin HEAD
 } else {
-    git commit -m "Release v${VersionName} - ${ReleaseNote}" --no-verify
+    $VersionName = (node scripts/get-version.mjs).Trim()
+    $BranchName = (git symbolic-ref --short HEAD).Trim()
+    Write-Host "Skipping bump. Current version: $VersionName on branch $BranchName"
 }
-
-Write-Host "Pushing HEAD to origin/$BranchName..."
-git push origin HEAD
 
 # 4. Trigger Pipeline
 Write-Host "4. Triggering GitHub Actions Release Pipeline on branch $BranchName..."
