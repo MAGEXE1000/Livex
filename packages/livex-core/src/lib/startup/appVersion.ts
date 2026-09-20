@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.32';
-export const NATIVE_VERSION_CODE = 40632;
-export const WEB_VERSION = '4.6.32';
+export const NATIVE_VERSION = '4.6.33';
+export const NATIVE_VERSION_CODE = 40633;
+export const WEB_VERSION = '4.6.33';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '1fb2020c';
+export const APP_COMMIT_SHA = '4afaff96';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/20/2026, 9:52:34 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/20/2026, 12:19:57 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,9 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).',
-      'Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Groovex Song Detail Navigation Scoping: Isolated bottom navigation and floating topbar behavior in Groovex so that entering an individual song mounts the standard Livex Topbar (`SharedFloatingHeader`) with scroll-morphing and hides the Bottom Navbar, while preserving the Bottom Navbar across all library, browsing, and preference views.',
-      'Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.',
+      'Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.',
+      'Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.',
+      'Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.',
     ],
   },
 ];
@@ -118,6 +112,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.33',
+    date: '2026-09-20',
+    highlights: [
+      'Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.',
+      'Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.',
+      'Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.',
+    ],
+  },
   {
     version: '4.6.32',
     date: '2026-09-20',
@@ -208,18 +211,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Decoupled Error & Status Broadcasting: Guarded native download progress listeners to ensure error and completion statuses never emit zero progress across the Capacitor bridge.',
       'Strict Progress Monotonicity: Enforced non-decreasing download progress in downloadManager and protected post-download verification states against late bridge events.',
       'Active Call Safety: Safely resolved and cleaned up superseded download plugin calls to prevent dangling promises.',
-    ],
-  },
-  {
-    version: '4.6.23',
-    date: '2026-09-18',
-    highlights: [
-      'Lifecycle-Gated Background Activity: Gated the 15-minute APK update polling and 60-second device presence heartbeat to halt while backgrounded, saving device battery and native wakeups with immediate catch-up on resume.',
-      'Native Theme Transition & Liquid Glass Memory: Slashed peak native allocation during theme transitions by 75% to 96.4% via cached Canvas displacement maps, zero-re-render DOM updates, and compositor offloading.',
-      'Connection-Gated Realtime Synchronization: Eliminated redundant 30s background queries during active Supabase Realtime connections, dropping idle network traffic to zero.',
-      'Cold-Start Sequence Streamlined: Accelerated application boot, aligned splash screen dismissal with DOM hydration, and isolated DevTools diagnostics out of production builds.',
-      'Dead Dependency & Bundle Optimization: Completely purged unused drizzle-orm, @tanstack/react-query, and class-variance-authority. Dynamically code-split jspdf (411 kB) out of critical paths.',
-      'Deterministic Vector Iconography: Standardized app-wide icons to deterministic SVG vectors, permanently eliminating unstyled font ligature flash and layout jitter.',
     ],
   },
 ];
