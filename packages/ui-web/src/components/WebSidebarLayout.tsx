@@ -22,6 +22,7 @@ import {
   StagexLogoIcon,
   GroovexLogo,
   VocalexLogo,
+  AnimatedIcon,
 } from '@workspace/ui-shared';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -49,18 +50,19 @@ function SidebarLabel({ children, open }: { children: React.ReactNode; open: boo
         opacity: open ? 1 : 0,
         x: open ? 0 : -8,
         width: open ? 'auto' : 0,
-        marginLeft: open ? 0 : -12,
+        marginLeft: open ? 0 : 0,
+        display: open ? 'inline-block' : 'none',
       }}
       transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
       className="truncate"
-      style={{ display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden' }}
+      style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
     >
       {children}
     </motion.span>
   );
 }
 
-export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSidebar: boolean }) {
+export default function WebSidebarLayout({ shouldHideSidebar = false }: { shouldHideSidebar?: boolean }) {
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
 
@@ -180,26 +182,42 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
     <Sidebar shouldHideSidebar={shouldHideSidebar} style={accentVars}>
       {/* Header */}
       <SidebarHeader>
-        <div
-          className="flex items-center gap-3 overflow-hidden cursor-pointer text-[var(--c-text-primary)]"
-          onClick={() => handleGoToHub('home')}
-        >
-          <div className="flex-shrink-0">
-            <LivexLogo size={28} />
-          </div>
-          <motion.span
-            initial={false}
-            animate={{ opacity: open ? 1 : 0, x: open ? 0 : -8 }}
-            transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
-            className="font-extrabold text-base tracking-tight text-[var(--c-text-primary)]"
-            style={{
-              fontFamily: 'var(--studio-font-display)',
-              letterSpacing: '-0.02em',
-              whiteSpace: 'nowrap',
-            }}
+        <div className="flex items-center justify-between w-full overflow-hidden text-[var(--c-text-primary)]">
+          <div
+            className="flex items-center gap-3 overflow-hidden cursor-pointer flex-1 min-w-0"
+            onClick={() => handleGoToHub('home')}
+            title="Livex Hub"
           >
-            Livex
-          </motion.span>
+            <div className="flex-shrink-0">
+              <LivexLogo size={28} />
+            </div>
+            <motion.span
+              initial={false}
+              animate={{ opacity: open ? 1 : 0, x: open ? 0 : -8 }}
+              transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
+              className="font-extrabold text-base tracking-tight text-[var(--c-text-primary)] truncate"
+              style={{
+                fontFamily: 'var(--studio-font-display)',
+                letterSpacing: '-0.02em',
+                whiteSpace: 'nowrap',
+                display: open ? 'inline-block' : 'none',
+              }}
+            >
+              Livex
+            </motion.span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleSidebar}
+            title={open ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="p-1 rounded-lg border-none bg-transparent hover:bg-[rgba(128,128,128,0.12)] text-[var(--c-text-secondary)] hover:text-[var(--c-text-primary)] cursor-pointer flex items-center justify-center transition-colors flex-shrink-0"
+            style={{ width: '28px', height: '28px' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              {open ? 'keyboard_double_arrow_left' : 'keyboard_double_arrow_right'}
+            </span>
+          </button>
         </div>
       </SidebarHeader>
 
@@ -211,11 +229,14 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                active={currentApp === 'hub'}
+                active={currentApp === 'hub' && activeHubTab !== 'settings'}
                 onClick={() => handleGoToHub('home')}
                 tooltip="Hub Home"
               >
-                <div className="flex-shrink-0" style={{ opacity: currentApp === 'hub' ? 1 : 0.65 }}>
+                <div
+                  className="flex-shrink-0"
+                  style={{ opacity: currentApp === 'hub' && activeHubTab !== 'settings' ? 1 : 0.65 }}
+                >
                   <span
                     className="material-symbols-outlined"
                     style={{ fontSize: 20, display: 'block' }}
@@ -227,7 +248,7 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            {REGISTERED_APPS.map((app) => (
+            {REGISTERED_APPS.filter((app) => app.id !== 'hub').map((app) => (
               <SidebarMenuItem key={app.id}>
                 <SidebarMenuButton
                   active={currentApp === app.id}
@@ -247,6 +268,8 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
                           return <GroovexLogo size={20} />;
                         case 'vocalex':
                           return <VocalexLogo size={20} />;
+                        case 'devtools':
+                          return <AnimatedIcon name="bug" size={20} color="currentColor" />;
                         default:
                           return (
                             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -260,6 +283,33 @@ export default function WebSidebarLayout({ shouldHideSidebar }: { shouldHideSide
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Global Navigation / Settings */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Preferences</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                active={currentApp === 'hub' && activeHubTab === 'settings'}
+                onClick={() => handleGoToHub('settings')}
+                tooltip="Settings"
+              >
+                <div
+                  className="flex-shrink-0"
+                  style={{ opacity: currentApp === 'hub' && activeHubTab === 'settings' ? 1 : 0.65 }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 20, display: 'block' }}
+                  >
+                    settings
+                  </span>
+                </div>
+                <SidebarLabel open={open}>Settings</SidebarLabel>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

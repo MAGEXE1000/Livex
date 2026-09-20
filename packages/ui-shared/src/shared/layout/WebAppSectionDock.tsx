@@ -23,6 +23,7 @@ import {
 } from 'motion/react';
 import { useHoverCapable } from '../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
+import { AnimatedNavigationIcon } from '../../features/hub/navigation/AnimatedNavigationIcon';
 
 interface DockItemProps {
   id: string;
@@ -167,15 +168,32 @@ function DockItem({
         data-testid={`dock-item-${id}`}
         data-section={id}
       >
-        <motion.span
-          className="material-symbols-outlined"
+        <div
           style={{
-            fontSize: reduceMotion ? 20 : iconSize,
-            fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
           }}
         >
-          {icon}
-        </motion.span>
+          <AnimatedNavigationIcon
+            itemKey={id}
+            iconName={icon}
+            size={22}
+            color={
+              isActive
+                ? isLight
+                  ? '#ffffff'
+                  : '#09090b'
+                : isLight
+                  ? 'rgba(0, 0, 0, 0.75)'
+                  : 'rgba(255, 255, 255, 0.75)'
+            }
+            isActive={isActive}
+          />
+        </div>
       </motion.button>
     </div>
   );

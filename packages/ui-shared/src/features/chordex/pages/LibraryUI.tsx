@@ -426,13 +426,19 @@ export function LibraryChordDetail({
         }}
       >
         <div
-          className={`w-full max-w-md mx-auto ${inModal ? 'pb-6 px-3 space-y-4' : 'pb-28 px-4 space-y-5'}`}
+          className={`w-full mx-auto ${
+            isWebDesktop
+              ? 'max-w-4xl px-8 pb-32 space-y-6'
+              : `max-w-md ${inModal ? 'pb-6 px-3 space-y-4' : 'pb-28 px-4 space-y-5'}`
+          }`}
           style={{
             paddingTop: inModal
               ? '8px'
-              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+              : isWebDesktop
+                ? '32px'
+                : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           }}
-          data-purpose="mobile-viewport"
+          data-purpose={isWebDesktop ? 'desktop-viewport' : 'mobile-viewport'}
         >
           {/* ACTIVE CHORD HERO CARD */}
           <section
@@ -623,8 +629,11 @@ export function LibraryChordDetail({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3" data-purpose="related-chords-grid">
-                {relatedChords.slice(0, 4).map((rel) => {
+              <div
+                className={`grid ${isWebDesktop ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'} gap-2.5 sm:gap-3`}
+                data-purpose="related-chords-grid"
+              >
+                {relatedChords.slice(0, isWebDesktop ? 8 : 4).map((rel) => {
                   const degree = getHarmonicDegree(chord.root, rel.root, rel.type);
                   return (
                     <article

@@ -43,13 +43,6 @@ import {
 
 import './index.css';
 
-function SidebarHoverSync({ hoverShowSidebar }: { hoverShowSidebar: boolean }) {
-  const { setOpen } = useSidebar();
-  useEffect(() => {
-    setOpen(hoverShowSidebar);
-  }, [hoverShowSidebar, setOpen]);
-  return null;
-}
 
 if (typeof window !== 'undefined') {
   (window as any).NavigationDispatcher = NavigationDispatcher;
@@ -190,9 +183,6 @@ export default function App() {
   }, [route]);
 
   const isWebDesktop = useIsWebDesktop();
-  const [hoverShowSidebar, setHoverShowSidebar] = useState(false);
-  const isLargeDesktop =
-    typeof window !== 'undefined' && window.matchMedia('(min-width: 1300px)').matches;
 
   const activePanel = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
@@ -217,14 +207,7 @@ export default function App() {
       wrapProviders={(children) =>
         isWebDesktop ? (
           <SidebarProvider>
-            <SidebarHoverSync hoverShowSidebar={hoverShowSidebar} />
-            <div
-              onMouseEnter={() => setHoverShowSidebar(true)}
-              onMouseLeave={() => setHoverShowSidebar(false)}
-              style={{ display: 'flex', height: '100%' }}
-            >
-              <WebSidebarLayout shouldHideSidebar={!hoverShowSidebar} />
-            </div>
+            <WebSidebarLayout />
             <SidebarInset>{children}</SidebarInset>
           </SidebarProvider>
         ) : (
@@ -256,7 +239,7 @@ export default function App() {
         drumex: <DrumEditor />,
         chordex: {
           sidebar:
-            isWebDesktop && isLargeDesktop ? (
+            isWebDesktop ? (
               <WebAppSectionDock
                 app="chordex"
                 activeSection={activePanel}

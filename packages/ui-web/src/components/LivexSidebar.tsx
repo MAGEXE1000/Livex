@@ -54,7 +54,7 @@ export function SidebarProvider({
   }, []);
 
   const state: 'expanded' | 'collapsed' = open ? 'expanded' : 'collapsed';
-  const width = open ? '240px' : '0px';
+  const width = open ? '240px' : '68px';
 
   const contextValue = useMemo(
     () => ({ state, open, setOpen, isMobile, toggleSidebar }),
@@ -68,7 +68,7 @@ export function SidebarProvider({
         style={
           {
             '--sidebar-width': '240px',
-            '--sidebar-width-icon': '0px',
+            '--sidebar-width-icon': '68px',
             '--sidebar-current-width': width,
             ...style,
           } as React.CSSProperties
@@ -97,11 +97,7 @@ export function Sidebar({
   const { preferences } = useStudioPreferences();
   const isReduced = preferences.reduceMotion;
 
-  const targetWidth = open ? '240px' : '0px';
-  const targetMargin = open ? '12px' : '0px';
-  const targetBorderColor = open ? 'rgba(128,128,128,0.15)' : 'rgba(128,128,128,0)';
-  const targetBorderWidth = open ? '1px' : '0px';
-
+  const targetWidth = open ? '240px' : '68px';
   const duration = isReduced ? 0 : 0.22;
 
   return (
@@ -109,62 +105,44 @@ export function Sidebar({
       className={`flex flex-col select-none flex-shrink-0 relative ${className}`}
       animate={{
         width: targetWidth,
-        margin: targetMargin,
-        borderColor: targetBorderColor,
-        borderWidth: targetBorderWidth,
       }}
       transition={{
         width: {
           duration,
           ease: [0.22, 1, 0.36, 1],
         },
-        margin: {
-          duration,
-          ease: [0.22, 1, 0.36, 1],
-        },
-        borderColor: {
-          duration,
-          ease: 'linear',
-        },
-        borderWidth: {
-          duration,
-          ease: 'linear',
-        },
       }}
       style={{
-        height: open ? 'calc(100dvh - 24px)' : '100dvh',
-        borderRadius: open ? '16px' : '0px',
+        height: 'calc(100dvh - 24px)',
+        margin: '12px',
+        borderRadius: '16px',
         borderStyle: 'solid',
+        borderWidth: '1px',
+        borderColor: 'rgba(128,128,128,0.15)',
         background: 'var(--sidebar-bg, rgba(15, 15, 15, 0.70))',
         backdropFilter: 'blur(30px)',
         WebkitBackdropFilter: 'blur(30px)',
-        boxShadow: open ? 'var(--sidebar-shadow, 0 10px 30px rgba(0,0,0,0.5))' : 'none',
+        boxShadow: 'var(--sidebar-shadow, 0 10px 30px rgba(0,0,0,0.5))',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        willChange: 'width, margin, border-color, border-width',
+        willChange: 'width',
         zIndex: 40,
         ...style,
       }}
       {...props}
     >
-      <motion.div
-        animate={{
-          opacity: open ? 1 : 0,
-        }}
-        transition={{
-          duration: isReduced ? 0 : open ? 0.18 : 0.08,
-          ease: 'easeInOut',
-        }}
+      <div
         style={{
-          width: '240px',
+          width: open ? '240px' : '68px',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
+          transition: isReduced ? 'none' : 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         {children}
-      </motion.div>
+      </div>
     </motion.aside>
   );
 }
@@ -321,8 +299,8 @@ export function SidebarMenuButton({
       onClick={onClick}
       whileTap={{ scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-      className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-xl border-none text-left cursor-pointer relative group hover:bg-[var(--sidebar-hover-bg)] ${className}`}
-      title={!open ? tooltip || undefined : undefined}
+      className={`w-full flex items-center ${open ? 'justify-start px-3' : 'justify-center px-0'} gap-3 py-2.5 rounded-xl border-none text-left cursor-pointer relative group hover:bg-[var(--sidebar-hover-bg)] ${className}`}
+      title={tooltip}
       style={{
         background: active ? 'var(--sidebar-active-bg, rgba(255, 255, 255, 0.07))' : 'transparent',
         color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
@@ -341,7 +319,7 @@ export function SidebarMenuButton({
       {active && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className="absolute left-1 w-1 h-5 rounded-full"
+          className={`absolute ${open ? 'left-1' : 'left-0.5'} w-1 h-5 rounded-full`}
           style={{
             background:
               'linear-gradient(135deg, var(--studio-accent-from, #679cff), var(--studio-accent-to, #007aff))',

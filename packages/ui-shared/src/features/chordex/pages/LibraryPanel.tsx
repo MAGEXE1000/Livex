@@ -191,7 +191,7 @@ export default function LibraryPanel() {
         isOpen={showTuner}
         originRect={state.tunerOriginRect}
         placement="sheet"
-        maxWidth={480}
+        maxWidth={isWebDesktop ? 680 : 480}
         maxHeight="calc(100dvh - 72px)"
         onOpenChange={(open) => {
           if (!open) {

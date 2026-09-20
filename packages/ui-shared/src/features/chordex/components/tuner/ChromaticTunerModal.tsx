@@ -370,7 +370,7 @@ export const ChromaticTunerModal: React.FC<ChromaticTunerModalProps> = ({
       }}
       data-testid="chromatic-tuner-modal"
     >
-      <div className="max-w-[440px] mx-auto w-full flex flex-col gap-2.5 flex-1 h-full min-h-0">
+      <div className="max-w-[440px] md:max-w-[580px] mx-auto w-full flex flex-col gap-2.5 flex-1 h-full min-h-0">
         {/* 1. Header: Integrated Instrument Selector on Left + Close Button on Right */}
         <div className="flex items-center justify-between gap-3 w-full px-0.5 pt-0.5">
           {/* Segmented Instrument Selector */}
