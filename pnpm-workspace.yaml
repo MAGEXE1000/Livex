@@ -26,10 +26,24 @@ catalog:
 
 minimumReleaseAge: 1440
 
+allowBuilds:
+  '@firebase/util': true
+  '@swc/core': true
+  core-js: true
+  esbuild: true
+  msw: true
+  protobufjs: true
+  puppeteer: true
+  unrs-resolver: true
+
 onlyBuiltDependencies:
+  - '@firebase/util'
   - '@swc/core'
+  - core-js
   - esbuild
   - msw
+  - protobufjs
+  - puppeteer
   - unrs-resolver
 
 overrides:
