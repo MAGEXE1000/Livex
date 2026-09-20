@@ -407,9 +407,9 @@ export function SharedNavigationBar({
   // The selected highlight has an identical, invariant geometry across all tabs and apps.
   // It never resizes based on label length, icon dimensions, tab name, or localized text.
   // When changing tabs, it moves purely via GPU transform (translateX) with spring physics.
-  const NAV_HIGHLIGHT_WIDTH = 56;
-  const NAV_HIGHLIGHT_HEIGHT = 46;
-  const NAV_HIGHLIGHT_RADIUS = 21;
+  const NAV_HIGHLIGHT_WIDTH = 64;
+  const NAV_HIGHLIGHT_HEIGHT = 48;
+  const NAV_HIGHLIGHT_RADIUS = 24;
 
   const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
   const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
@@ -978,17 +978,17 @@ export function SharedNavigationBar({
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? 7 : 3,
+                    top: isSwitcherOpen ? 7 : 2,
                     left: 0,
                     x: animatedPillX,
                     background: isLight
-                      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 244, 255, 0.85) 100%)'
+                      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.90) 100%)'
                       : 'var(--surface-glass-lens-bg)',
                     border: isLight
-                      ? '1px solid rgba(0, 0, 0, 0.05)'
+                      ? '1px solid rgba(0, 0, 0, 0.06)'
                       : 'var(--surface-glass-lens-border)',
                     boxShadow: isLight
-                      ? '0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)'
+                      ? '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff'
                       : 'var(--surface-glass-lens-shadow)',
                     pointerEvents: 'none',
                     zIndex: 0,
