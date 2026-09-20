@@ -111,8 +111,19 @@ const NavigationItem = React.memo(
 
     const labelLen = item.label ? item.label.length : 0;
     const fontSize =
-      labelLen >= 12 ? '9.5px' : totalSlots >= 4 || labelLen >= 10 ? '10px' : '10.5px';
-    const letterSpacing = labelLen >= 11 ? '-0.025em' : '-0.015em';
+      labelLen >= 13
+        ? '9px'
+        : labelLen >= 11
+          ? '9.5px'
+          : totalSlots >= 4 || labelLen >= 9
+            ? '10px'
+            : '10.5px';
+    const letterSpacing =
+      labelLen >= 12
+        ? '-0.03em'
+        : labelLen >= 10
+          ? '-0.02em'
+          : '-0.01em';
 
     return (
       <motion.button
@@ -392,23 +403,17 @@ export function SharedNavigationBar({
     return idx >= 0 ? idx : 0;
   }, [currentItems, currentApp, isSwitcherOpen]);
 
-  // Symmetrical lens pill sizing and exact slot-centering.
-  // The selected highlight dimensions are calculated independently: they fully contain
-  // the icon and label with consistent internal padding, without enlarging or shifting the navbar.
-  const pillWidthVal = useMemo(() => {
-    if (isSwitcherOpen) {
-      return Math.min(40, Math.max(32, itemWidth - 8));
-    }
-    const activeItem = currentItems[activeIndex];
-    const labelStr = typeof activeItem?.label === 'string' ? activeItem.label : '';
-    const labelLen = labelStr.length;
-    const charWidth = totalSlots >= 4 || labelLen >= 10 ? 5.8 : 6.2;
-    const contentWidth = Math.max(22, Math.round(labelLen * charWidth));
-    const desiredPillWidth = contentWidth + 18;
-    const maxPillWidth = itemWidth - (totalSlots >= 4 ? 6 : 8);
-    const minPillWidth = Math.min(38, maxPillWidth);
-    return Math.min(maxPillWidth, Math.max(minPillWidth, desiredPillWidth));
-  }, [isSwitcherOpen, currentItems, activeIndex, itemWidth, totalSlots]);
+  // Invariant canonical highlight geometry:
+  // The selected highlight has an identical, invariant geometry across all tabs and apps.
+  // It never resizes based on label length, icon dimensions, tab name, or localized text.
+  // When changing tabs, it moves purely via GPU transform (translateX) with spring physics.
+  const NAV_HIGHLIGHT_WIDTH = 56;
+  const NAV_HIGHLIGHT_HEIGHT = 46;
+  const NAV_HIGHLIGHT_RADIUS = 21;
+
+  const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
+  const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
+  const pillRadiusVal = isSwitcherOpen ? 19 : NAV_HIGHLIGHT_RADIUS;
 
   const centerOffset = (itemWidth - pillWidthVal) / 2;
 
@@ -962,6 +967,8 @@ export function SharedNavigationBar({
                 <motion.div
                   animate={{
                     width: pillWidthVal,
+                    height: pillHeightVal,
+                    borderRadius: pillRadiusVal,
                   }}
                   transition={{
                     type: 'spring',
@@ -971,11 +978,9 @@ export function SharedNavigationBar({
                   }}
                   style={{
                     position: 'absolute',
-                    top: 3,
-                    bottom: 3,
+                    top: isSwitcherOpen ? 7 : 3,
                     left: 0,
                     x: animatedPillX,
-                    borderRadius: '21px',
                     background: isLight
                       ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 244, 255, 0.85) 100%)'
                       : 'var(--surface-glass-lens-bg)',
@@ -989,7 +994,7 @@ export function SharedNavigationBar({
                     zIndex: 0,
                     skewX: dragSkewRaw,
                     scale: pillPressScale,
-                    willChange: 'transform, width',
+                    willChange: 'transform',
                   }}
                 >
                   {/* Inner Lens — Radial Center Glow (specular center highlight) */}
@@ -997,7 +1002,7 @@ export function SharedNavigationBar({
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      borderRadius: '21px',
+                      borderRadius: pillRadiusVal,
                       background: isLight
                         ? 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.40) 0%, transparent 100%)'
                         : 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)',
