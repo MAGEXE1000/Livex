@@ -96,11 +96,20 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Dedicated Vocalex Track Effects Surface (`TakeEffectsSheet`): Introduced a professional mobile effects overlay featuring real-time Web Audio API DSP processors (Reverb, Delay/Echo, Chorus/Modulation, Drive/Distortion, High-Pass, and Low-Pass filters) with live auditioning and Android `BackDispatcher` integration.',
+      'Integrated Vocal Harmonizer Suite: Embedded the multi-part vocal harmonizer and pitch-shift layer generator as a dedicated capability inside the Track Effects surface while preserving all existing harmony logic.',
+    ],
+  },
+  {
     heading: 'Improved',
     items: [
-      'Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.',
-      'Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.',
-      'Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.',
+      'Vocalex Takes Action Hierarchy: Redesigned the post-recording take experience in `TakeDetailView`, moving "Re-record" and "Harmonize" away from the top header into a dedicated, organized track processing area below playback.',
+      'Safe Destructive Action Placement: Separated the delete take action into the dedicated track action area with subtle red tone and modal confirmation to prevent accidental taps while keeping it easily accessible.',
+      'Stagex History Theme Awareness: Replaced hardcoded pink/magenta visual values across `StageHistorySurface` and `StageCanvasView` with semantic theme accent tokens (`--studio-accent`), ensuring cohesive appearance across Dark, Light, and AMOLED themes.',
+      'Stagex Toolbar Cleanup: Removed duplicate History navigation from the elements toolbar to maintain focused, single-purpose toolbars.',
+      'Profile Privacy & Data Controls: Revamped the Privacy & Data section with actionable local data controls, privacy guarantee banners, and streamlined diagnostics.',
     ],
   },
 ];
@@ -112,6 +121,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.34',
+    date: '2026-09-20',
+    highlights: [
+      'Dedicated Vocalex Track Effects Surface (`TakeEffectsSheet`): Introduced a professional mobile effects overlay featuring real-time Web Audio API DSP processors (Reverb, Delay/Echo, Chorus/Modulation, Drive/Distortion, High-Pass, and Low-Pass filters) with live auditioning and Android `BackDispatcher` integration.',
+      'Integrated Vocal Harmonizer Suite: Embedded the multi-part vocal harmonizer and pitch-shift layer generator as a dedicated capability inside the Track Effects surface while preserving all existing harmony logic.',
+      'Vocalex Takes Action Hierarchy: Redesigned the post-recording take experience in `TakeDetailView`, moving "Re-record" and "Harmonize" away from the top header into a dedicated, organized track processing area below playback.',
+      'Safe Destructive Action Placement: Separated the delete take action into the dedicated track action area with subtle red tone and modal confirmation to prevent accidental taps while keeping it easily accessible.',
+      'Stagex History Theme Awareness: Replaced hardcoded pink/magenta visual values across `StageHistorySurface` and `StageCanvasView` with semantic theme accent tokens (`--studio-accent`), ensuring cohesive appearance across Dark, Light, and AMOLED themes.',
+      'Stagex Toolbar Cleanup: Removed duplicate History navigation from the elements toolbar to maintain focused, single-purpose toolbars.',
+    ],
+  },
   {
     version: '4.6.33',
     date: '2026-09-20',
@@ -201,16 +222,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Android Loudspeaker Routing: Resolved `MODE_IN_COMMUNICATION` native routing bug in MainActivity, ensuring tuner reference tones play clearly through device loudspeakers rather than being routed to the silent earpiece receiver.',
       'Guitar Audio Preview Resolution: Fixed relative asset path resolution for guitar chord previews in Android native Capacitor builds.',
       'TopBar Specular Curvature Highlight: Tuned upper curvature radial highlight for AMOLED to catch subtle natural light along the floating pill rim.',
-    ],
-  },
-  {
-    version: '4.6.24',
-    date: '2026-09-19',
-    highlights: [
-      'Android Updater Download Progress Reliability: Resolved race condition and service sleep deadlock in UpdateDownloadService that caused completed downloads to regress from 100% to 0% in active downloading state.',
-      'Decoupled Error & Status Broadcasting: Guarded native download progress listeners to ensure error and completion statuses never emit zero progress across the Capacitor bridge.',
-      'Strict Progress Monotonicity: Enforced non-decreasing download progress in downloadManager and protected post-download verification states against late bridge events.',
-      'Active Call Safety: Safely resolved and cleaned up superseded download plugin calls to prevent dangling promises.',
     ],
   },
 ];
