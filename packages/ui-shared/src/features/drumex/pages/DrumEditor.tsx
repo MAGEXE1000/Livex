@@ -2828,16 +2828,9 @@ export default function DrumEditor() {
       {!isWebDesktop
         ? inEditor && (
             <header
-              className={`fixed left-3 right-3 z-50 rounded-full px-3.5 ${
-                isLandscape ? 'py-1.5' : 'py-2'
-              } flex items-center justify-between select-none ${
-                isAmoled
-                  ? 'text-white'
-                  : isLight
-                    ? 'text-slate-800'
-                    : 'text-zinc-100'
-              }`}
+              className="sticky z-30 mx-2 sm:mx-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full grid grid-cols-1 items-center transition-all select-none"
               style={{
+                gridTemplateColumns: '100%',
                 top: isLandscape
                   ? 'calc(env(safe-area-inset-top, 0px) + 6px)'
                   : 'calc(env(safe-area-inset-top, 0px) + 10px)',
@@ -2849,15 +2842,15 @@ export default function DrumEditor() {
                 contain: 'paint layout',
               }}
             >
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence initial={false}>
                 {!showHamburger ? (
                   <motion.div
                     key="normal-bar"
-                    initial={{ opacity: 0, scale: 0.96, y: -2 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96, y: 2 }}
-                    transition={{ type: 'spring', stiffness: 440, damping: 28, mass: 0.7 }}
-                    className="flex items-center justify-between w-full min-w-0"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97, pointerEvents: 'none' }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="col-start-1 row-start-1 flex items-center justify-between w-full min-w-0"
                   >
                     {/* Left: Back Button */}
                     <div className="flex items-center gap-1.5 w-16 sm:w-20 flex-shrink-0">
@@ -2961,11 +2954,11 @@ export default function DrumEditor() {
                 ) : (
                   <motion.div
                     key="toolbar-bar"
-                    initial={{ opacity: 0, scale: 0.96, y: 2 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96, y: -2 }}
-                    transition={{ type: 'spring', stiffness: 440, damping: 28, mass: 0.7 }}
-                    className="flex items-center justify-between w-full min-w-0 gap-1.5"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97, pointerEvents: 'none' }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="col-start-1 row-start-1 flex items-center justify-between w-full min-w-0 gap-1.5"
                   >
                     {/* Left: Return to normal top bar */}
                     <button
@@ -3051,60 +3044,6 @@ export default function DrumEditor() {
                         <span>{humanizeFeedback ? 'Done' : 'Humanize'}</span>
                       </button>
 
-                      {/* Divider */}
-                      <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 flex-shrink-0 mx-0.5" />
-
-                      {/* Preferences */}
-                      <button
-                        onClick={() => {
-                          setShowHamburger(false);
-                          handleSetTab('prefs');
-                        }}
-                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
-                        style={{
-                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-                          color: 'var(--c-text-secondary)',
-                        }}
-                        title="Preferences"
-                        aria-label="Preferences"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">tune</span>
-                      </button>
-
-                      {/* Export JSON */}
-                      <button
-                        onClick={() => {
-                          exportDrumSongJSON(patterns, activeSong);
-                          setShowHamburger(false);
-                        }}
-                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
-                        style={{
-                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-                          color: 'var(--c-text-secondary)',
-                        }}
-                        title="Export as JSON"
-                        aria-label="Export as JSON"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">data_object</span>
-                      </button>
-
-                      {/* Export PDF */}
-                      <button
-                        onClick={() => {
-                          setShowHamburger(false);
-                          setShowExportModal(true);
-                        }}
-                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
-                        style={{
-                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-                          color: 'var(--c-text-secondary)',
-                        }}
-                        title="Export as PDF"
-                        aria-label="Export as PDF"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                      </button>
-
                       {/* House Kit Controls if kit === 'house' */}
                       {kit === 'house' && (
                         <>
@@ -3116,21 +3055,21 @@ export default function DrumEditor() {
                               storeSetHouseKitMic(next.id);
                               setHouseKitMic(next.id);
                             }}
-                            className="inline-flex items-center gap-1 px-2 h-7 rounded-full text-[10px] font-bold uppercase transition active:scale-95 cursor-pointer flex-shrink-0"
+                            className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
                             style={{
                               background: `${accent.from}18`,
                               border: `1px solid ${accent.from}33`,
                               color: accent.from,
                             }}
-                            title={`Mic Position: ${houseKitMic} (tap to cycle)`}
+                            title={`Mic Position: ${HOUSE_MICS.find((m) => m.id === houseKitMic)?.label ?? houseKitMic} (tap to cycle)`}
                             aria-label="Cycle Mic Position"
                           >
-                            <span className="material-symbols-outlined text-[13px]">mic</span>
-                            <span>{houseKitMic}</span>
+                            <span className="material-symbols-outlined text-[14px]">mic</span>
+                            <span>{HOUSE_MICS.find((m) => m.id === houseKitMic)?.label ?? houseKitMic}</span>
                           </button>
                           <button
                             onClick={() => setShowSoundCharacter(true)}
-                            className="inline-flex items-center gap-1 px-2 h-7 rounded-full text-[10px] font-bold uppercase transition active:scale-95 cursor-pointer flex-shrink-0"
+                            className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
                             style={{
                               background: `${accent.from}18`,
                               border: `1px solid ${accent.from}33`,
@@ -3139,11 +3078,33 @@ export default function DrumEditor() {
                             title="Sound Character"
                             aria-label="Sound Character"
                           >
-                            <span className="material-symbols-outlined text-[13px]">equalizer</span>
+                            <span className="material-symbols-outlined text-[14px]">equalizer</span>
                             <span>Sound</span>
                           </button>
                         </>
                       )}
+
+                      {/* Divider */}
+                      <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 flex-shrink-0 mx-0.5" />
+
+                      {/* Export JSON */}
+                      <button
+                        onClick={() => {
+                          exportDrumSongJSON(patterns, activeSong);
+                          setShowHamburger(false);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                          border: '1px solid rgba(128,128,128,0.14)',
+                          color: 'var(--c-text-secondary)',
+                        }}
+                        title="Export Pattern JSON"
+                        aria-label="Export Pattern JSON"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">data_object</span>
+                        <span>JSON</span>
+                      </button>
                     </div>
 
                     {/* Right: Close Toolbar */}
