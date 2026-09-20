@@ -39,6 +39,7 @@ export interface TakeRecord {
   audioBlob: Blob;
   waveformPeaks: number[];
   sampleRate: number;
+  effects?: TrackEffect[];
 }
 
 export function createDefaultEffects(): TrackEffect[] {

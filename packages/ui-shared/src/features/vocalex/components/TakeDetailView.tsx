@@ -9,13 +9,17 @@ import {
   extractWaveformPeaks,
   createAudioContext,
   vocalexRepository,
+  createDefaultEffects,
   type TakeRecord,
+  type TrackEffect,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader } from '../../../components/motion/loader';
 import { analyzeAudio, type VocalAnalysis, type AnalysisLabels } from '../services/vocalAnalysis';
 import HarmonizerSheet from './HarmonizerSheet';
+import TakeEffectsSheet from './TakeEffectsSheet';
+import { connectEffectChain, disconnectNodes } from '../services/effectsEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 
@@ -326,10 +330,25 @@ export default function TakeDetailView({
   const [analyzing, setAnalyzing] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showHarmonizer, setShowHarmonizer] = useState(false);
+  const [showEffectsSheet, setShowEffectsSheet] = useState(false);
+
+  const [effects, setEffects] = useState<TrackEffect[]>(() => take.effects || createDefaultEffects());
+
+  useEffect(() => {
+    if (take.effects) {
+      setEffects(take.effects);
+    }
+  }, [take.effects]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const rafRef = useRef<number>(0);
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const effectNodesRef = useRef<AudioNode[]>([]);
+  const inputGainRef = useRef<GainNode | null>(null);
+  const outputGainRef = useRef<GainNode | null>(null);
 
   useBackHandler(
     'nested',
@@ -355,6 +374,26 @@ export default function TakeDetailView({
     const audio = new Audio(url);
     audioRef.current = audio;
 
+    // Web Audio API DSP routing
+    try {
+      const ctx = audioContextRef.current ?? createAudioContext();
+      audioContextRef.current = ctx;
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+      const inputGain = ctx.createGain();
+      const outputGain = ctx.createGain();
+      inputGainRef.current = inputGain;
+      outputGainRef.current = outputGain;
+
+      source.connect(inputGain);
+      outputGain.connect(ctx.destination);
+
+      const nodes = connectEffectChain(ctx, effects, inputGain, outputGain);
+      effectNodesRef.current = nodes;
+    } catch (err) {
+      console.warn('Vocalex: Web Audio graph setup error or fallback', err);
+    }
+
     audio.onended = () => {
       setPlaying(false);
       setProgress(0);
@@ -364,6 +403,13 @@ export default function TakeDetailView({
       audio.pause();
       URL.revokeObjectURL(url);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (effectNodesRef.current.length > 0) {
+        disconnectNodes(effectNodesRef.current);
+        effectNodesRef.current = [];
+      }
+      sourceNodeRef.current = null;
+      inputGainRef.current = null;
+      outputGainRef.current = null;
     };
   }, [take.audioBlob, take.durationMs]);
 
@@ -426,6 +472,30 @@ export default function TakeDetailView({
     }
   }, []);
 
+  const handleUpdateEffects = useCallback(
+    async (newEffects: TrackEffect[]) => {
+      setEffects(newEffects);
+      const updatedTake = { ...take, effects: newEffects };
+      setTake(updatedTake);
+      await vocalexRepository.saveTake(updatedTake);
+      if (onUpdateTake) {
+        await onUpdateTake(updatedTake);
+      }
+
+      const ctx = audioContextRef.current;
+      if (ctx && inputGainRef.current && outputGainRef.current) {
+        disconnectNodes(effectNodesRef.current);
+        effectNodesRef.current = connectEffectChain(
+          ctx,
+          newEffects,
+          inputGainRef.current,
+          outputGainRef.current
+        );
+      }
+    },
+    [take, onUpdateTake]
+  );
+
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -434,7 +504,10 @@ export default function TakeDetailView({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setPlaying(false);
     } else {
-      audio.play();
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume().catch(() => {});
+      }
+      audio.play().catch(() => {});
       rafRef.current = requestAnimationFrame(updateProgress);
       setPlaying(true);
     }
@@ -456,6 +529,7 @@ export default function TakeDetailView({
 
   const currentTimeSec = audioRef.current?.currentTime ?? 0;
   const totalTimeSec = take.durationMs / 1000;
+  const activeEffectsCount = (effects || []).filter((e) => e.enabled).length;
 
   const cardBg = 'var(--c-bg-card)';
   const cardBorder = '1px solid var(--c-border)';
@@ -475,98 +549,26 @@ export default function TakeDetailView({
       <SharedFloatingHeader
         title={take.name || 'Take Details'}
         onBack={onBack}
-        toolbarActions={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {take.durationMs > 0 && (
-              <button
-                data-testid="open-harmonizer-btn"
-                onClick={() => {
-                  if (audioRef.current && !audioRef.current.paused) {
-                    audioRef.current.pause();
-                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-                    setPlaying(false);
-                  }
-                  setShowHarmonizer(true);
-                }}
-                style={{
-                  background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
-                  border: '1px solid var(--studio-accent, #007aff)',
-                  cursor: 'pointer',
-                  color: 'var(--studio-accent, #007aff)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 10px',
-                  borderRadius: 9999,
-                  fontFamily: 'var(--studio-font-display)',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 15, fontVariationSettings: "'FILL' 1" }}
-                >
-                  graphic_eq
-                </span>
-                Harmonize
-              </button>
-            )}
-            {take.durationMs > 0 && !isRecordingMode && (
-              <button
-                onClick={() => {
-                  if (audioRef.current && !audioRef.current.paused) {
-                    audioRef.current.pause();
-                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-                    setPlaying(false);
-                  }
-                  setIsRecordingMode(true);
-                }}
-                style={{
-                  background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
-                  border: '1px solid var(--studio-accent, #007aff)',
-                  cursor: 'pointer',
-                  color: 'var(--studio-accent, #007aff)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 10px',
-                  borderRadius: 9999,
-                  fontFamily: 'var(--studio-font-display)',
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 15, fontVariationSettings: "'FILL' 1" }}
-                >
-                  mic
-                </span>
-                {isSpanish ? 'Re-grabar' : 'Re-record'}
-              </button>
-            )}
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#ef4444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 4,
-              }}
-              title={t.vocalex.deleteTake}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                delete
-              </span>
-            </button>
-          </div>
-        }
       />
+
+      {showEffectsSheet && (
+        <TakeEffectsSheet
+          take={take}
+          effects={effects}
+          isOpen={showEffectsSheet}
+          isPlaying={playing}
+          currentTimeSec={currentTimeSec}
+          durationSec={totalTimeSec}
+          isSpanish={isSpanish}
+          onClose={() => setShowEffectsSheet(false)}
+          onTogglePlay={togglePlay}
+          onUpdateEffects={handleUpdateEffects}
+          onOpenHarmonizer={() => {
+            setShowEffectsSheet(false);
+            setShowHarmonizer(true);
+          }}
+        />
+      )}
 
       {showHarmonizer && (
         <HarmonizerSheet
@@ -1364,6 +1366,210 @@ export default function TakeDetailView({
             >
               <span>{formatDuration(currentTimeSec * 1000)}</span>
               <span>-{formatDuration((totalTimeSec - currentTimeSec) * 1000)}</span>
+            </div>
+          </div>
+
+          {/* Track Processing & Actions Card */}
+          <div
+            style={{
+              background: cardBg,
+              border: cardBorder,
+              boxShadow: cardShadow,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 18, color: 'var(--studio-accent, #007aff)' }}
+                >
+                  tune
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-display)',
+                    fontWeight: 700,
+                    fontSize: 12.5,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: 'var(--c-text-secondary)',
+                  }}
+                >
+                  {isSpanish ? 'Procesamiento de Pista' : 'Track Processing'}
+                </span>
+              </div>
+
+              {activeEffectsCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 9999,
+                    background: 'rgba(var(--studio-accent-rgb, 0, 122, 255), 0.12)',
+                    color: 'var(--studio-accent, #007aff)',
+                    border: '1px solid rgba(var(--studio-accent-rgb, 0, 122, 255), 0.25)',
+                  }}
+                >
+                  {isSpanish ? `${activeEffectsCount} activos` : `${activeEffectsCount} active`}
+                </span>
+              )}
+            </div>
+
+            {/* Primary Action: Effects Launcher */}
+            <button
+              type="button"
+              data-testid="open-effects-btn"
+              onClick={() => setShowEffectsSheet(true)}
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(var(--studio-accent-rgb, 0,122,255), 0.14) 0%, rgba(var(--studio-accent-rgb, 0,122,255), 0.04) 100%)',
+                border: '1px solid var(--studio-accent, #007aff)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: 'var(--studio-accent, #007aff)',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}
+                  >
+                    auto_fix_high
+                  </span>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 14.5,
+                      color: 'var(--c-text-primary)',
+                    }}
+                  >
+                    {isSpanish ? 'Efectos' : 'Effects'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: 'var(--c-text-secondary)',
+                      marginTop: 1,
+                    }}
+                  >
+                    {isSpanish
+                      ? 'Reverb, Delay, Coros, Saturación, Filtros y Armonizador'
+                      : 'Reverb, Delay, Chorus, Drive, Filters & Harmonizer'}
+                  </div>
+                </div>
+              </div>
+
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 20, color: 'var(--studio-accent, #007aff)' }}
+              >
+                chevron_right
+              </span>
+            </button>
+
+            {/* Secondary Action Row: Re-record & Delete */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                marginTop: 2,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (audioRef.current && !audioRef.current.paused) {
+                    audioRef.current.pause();
+                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                    setPlaying(false);
+                  }
+                  setIsRecordingMode(true);
+                }}
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--c-border)',
+                  borderRadius: 10,
+                  padding: '9px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  color: 'var(--c-text-primary)',
+                  fontFamily: 'var(--studio-font-display)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  mic
+                </span>
+                <span>{isSpanish ? 'Re-grabar toma' : 'Re-record take'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                aria-label={t.vocalex.deleteTake}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.22)',
+                  borderRadius: 10,
+                  padding: '9px 14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  color: '#ef4444',
+                  fontFamily: 'var(--studio-font-display)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  delete
+                </span>
+                <span>{isSpanish ? 'Eliminar' : 'Delete'}</span>
+              </button>
             </div>
           </div>
 
