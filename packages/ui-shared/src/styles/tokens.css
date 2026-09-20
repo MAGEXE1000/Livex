@@ -1842,11 +1842,33 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.1) 50%,
     transparent 100%
   );
-  /* Active lens pill — clean translucent inner glass */
-  --surface-glass-lens-bg: rgba(255, 255, 255, 0.10);
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.12);
+  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
+  --surface-bottomnav-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.075) 0%,
+    rgba(255, 255, 255, 0.035) 45%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  --surface-bottomnav-border: 1px solid rgba(255, 255, 255, 0.12);
+  --surface-bottomnav-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+  --surface-bottomnav-backdrop: blur(18px) saturate(135%);
+
+  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
+  --surface-glass-lens-bg: radial-gradient(
+    ellipse 75% 65% at 50% 8%,
+    rgba(255, 255, 255, 0.17) 0%,
+    rgba(255, 255, 255, 0.075) 42%,
+    rgba(255, 255, 255, 0.035) 100%
+  );
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.16);
   --surface-glass-lens-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.14),
+    inset 0 0 18px rgba(255, 255, 255, 0.025);
+  --surface-glass-lens-backdrop: blur(14px) saturate(150%);
   --surface-modal-bg: rgba(0, 0, 0, 0.6); /* sheet / modal scrim      */
   --surface-dialog-bg: var(--app-surface-high, #151518);
   --surface-modal-surface: var(--app-surface-high, #151518);
@@ -1902,13 +1924,31 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.03) 50%,
     transparent 100%
   );
-  --surface-glass-lens-bg: linear-gradient(
+  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
+  --surface-bottomnav-bg: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(242, 245, 255, 0.90) 100%
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.42) 100%
   );
-  --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.06);
-  --surface-glass-lens-shadow: 0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff;
+  --surface-bottomnav-border: 1px solid rgba(0, 0, 0, 0.10);
+  --surface-bottomnav-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.10);
+  --surface-bottomnav-backdrop: blur(18px) saturate(135%);
+
+  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
+  --surface-glass-lens-bg: radial-gradient(
+    ellipse 75% 65% at 50% 8%,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.48) 50%,
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.08);
+  --surface-glass-lens-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.08);
+  --surface-glass-lens-backdrop: blur(14px) saturate(150%);
   --surface-modal-bg: rgba(0, 0, 0, 0.35);
   --surface-dialog-bg: var(--app-surface-highest, #ffffff);
   --surface-modal-surface: var(--app-surface-highest, #ffffff);
@@ -1950,10 +1990,30 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.15) 50%,
     transparent 100%
   );
-  --surface-glass-lens-bg: rgba(255, 255, 255, 0.10);
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.13);
+  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
+  --surface-bottomnav-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.055) 0%,
+    rgba(255, 255, 255, 0.018) 100%
+  );
+  --surface-bottomnav-border: 1px solid rgba(255, 255, 255, 0.11);
+  --surface-bottomnav-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45);
+  --surface-bottomnav-backdrop: blur(18px) saturate(135%);
+
+  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
+  --surface-glass-lens-bg: radial-gradient(
+    ellipse 75% 65% at 50% 8%,
+    rgba(255, 255, 255, 0.13) 0%,
+    rgba(255, 255, 255, 0.055) 55%,
+    rgba(255, 255, 255, 0.025) 100%
+  );
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.14);
   --surface-glass-lens-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+  --surface-glass-lens-backdrop: blur(14px) saturate(150%);
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
   --surface-dialog-bg: #000000;
   --surface-modal-surface: #000000;
@@ -1974,6 +2034,8 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-float-bg: rgba(18, 18, 22, 0.92);
   --surface-topbar-bg: rgba(18, 18, 22, 0.92);
+  --surface-bottomnav-backdrop: none;
+  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: rgba(255, 255, 255, 0.08);
@@ -1985,6 +2047,8 @@ html[data-perf-mode='on'] *::after {
   --surface-float-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-backdrop: none;
+  --surface-bottomnav-backdrop: none;
+  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: rgba(0, 0, 0, 0.05);
@@ -1996,6 +2060,8 @@ html[data-perf-mode='on'] *::after {
   --glass-blur: none;
   --surface-topbar-blur: none;
   --surface-topbar-backdrop: none;
+  --surface-bottomnav-backdrop: none;
+  --surface-glass-lens-backdrop: none;
   --surface-float-blur: none;
   --surface-scrim-blur: none;
   --surface-float-bg: #121216;
@@ -2014,6 +2080,8 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-blur: none;
   --surface-float-blur: none;
   --surface-topbar-backdrop: none;
+  --surface-bottomnav-backdrop: none;
+  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: #141418;
@@ -2023,6 +2091,8 @@ html[data-perf-mode='on'] *::after {
   --surface-float-bg: #ffffff;
   --surface-topbar-bg: #ffffff;
   --surface-topbar-backdrop: none;
+  --surface-bottomnav-backdrop: none;
+  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: #f1f5f9;
