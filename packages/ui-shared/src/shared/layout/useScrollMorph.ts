@@ -124,7 +124,7 @@ export function useScrollMorph({
     };
   }, [headerRef, titleRef]);
 
-  // Direct DOM style applicator — zero React re-renders during active scrolling
+  // Direct DOM style applicator — zero layout reflows during active scrolling
   const applyMorph = useCallback(
     (p: number) => {
       const headerEl = headerRef.current;
@@ -134,63 +134,44 @@ export function useScrollMorph({
 
       if (!headerEl) return;
 
-      const { expandedWidth, compactWidth, expandedHeight, compactHeight } = metricsRef.current;
-
-      // ── 1. Geometry: Horizontal compression (Left/right edges move inward) ──
-      const currentWidth = expandedWidth - p * (expandedWidth - compactWidth);
-      headerEl.style.width = `${currentWidth.toFixed(1)}px`;
-      headerEl.style.maxWidth = '100%';
-
-      // ── 2. Geometry: Vertical compression (Top/bottom dimensions compress) ──
-      const currentHeight = expandedHeight - p * (expandedHeight - compactHeight);
-      headerEl.style.height = `${currentHeight.toFixed(1)}px`;
-
-      // ── 3. Geometry: Vertical position (Snug floating placement) ───────────
+      // ── 1. Geometry: Vertical position (Snug floating placement via GPU transform) ──
       const currentTranslateY = -p * 2;
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 
-      // ── 4. Geometry: Corner curvature (Continuous monotonic rounding) ──────
+      // ── 2. Geometry: Corner curvature (Continuous monotonic rounding) ──────────────
       // Starts unformed at 0px and smoothly rounds to 24px, clamping to 9999px capsule pill
+      let currentRadius = '0px';
       if (p >= 0.96) {
-        headerEl.style.borderRadius = '9999px';
-      } else if (p <= 0.005) {
-        headerEl.style.borderRadius = '0px';
-      } else {
-        const currentRadius = p * 24;
-        headerEl.style.borderRadius = `${currentRadius.toFixed(1)}px`;
+        currentRadius = '9999px';
+      } else if (p > 0.005) {
+        currentRadius = `${(p * 24).toFixed(1)}px`;
       }
+      headerEl.style.borderRadius = currentRadius;
 
-      // ── 5. Internal spacing compression (Tight back-button inset) ─────────
-      const currentPaddingLeft = 4 - p * 1.5; // 4px -> 2.5px
-      const currentPaddingRight = 8 - p * 3;  // 8px -> 5px
-      headerEl.style.paddingLeft = `${currentPaddingLeft.toFixed(1)}px`;
-      headerEl.style.paddingRight = `${currentPaddingRight.toFixed(1)}px`;
-
-      // Child button scale property for back button and action items
+      // ── 3. Child button scale property for back button and action items ────────────
       headerEl.style.setProperty('--morph-btn-scale', (1 - p * 0.04).toFixed(3));
 
-      // ── 6. Title typography scale (Dead-centered throughout) ───────────────
-      // Title is centered in the surface across all frames: zero horizontal translation
+      // ── 4. Title typography scale (Dead-centered throughout) ────────────────────────
       if (titleEl) {
         const currentScale = 1 - p * 0.06; // 1.0 -> 0.94
         titleEl.style.transform = `scale(${currentScale.toFixed(3)})`;
         titleEl.style.transformOrigin = 'center center';
       }
 
-      // ── 7. Liquid Glass Material Progressive Emergence ────────────────────
+      // ── 5. Liquid Glass Material Progressive Emergence ─────────────────────────────
       if (glassEl) {
+        glassEl.style.borderRadius = currentRadius;
         if (p <= 0.005) {
           glassEl.style.opacity = '0';
           glassEl.style.visibility = 'hidden';
         } else {
           glassEl.style.visibility = 'visible';
-          // Continuous smoother physical emergence
           const surfaceAlpha = Math.min(1, Math.max(0, p));
           glassEl.style.opacity = surfaceAlpha.toFixed(3);
         }
       }
 
-      // ── 8. Progressive Blur Zone Interpolation ────────────────────────────
+      // ── 6. Progressive Blur Zone Interpolation ─────────────────────────────────────
       if (blurEl) {
         if (p <= 0.005) {
           blurEl.style.opacity = '0';
@@ -228,10 +209,7 @@ export function useScrollMorph({
         let curr: HTMLElement | null = parentEl;
         while (curr && curr !== document.body && curr !== document.documentElement) {
           const style = window.getComputedStyle(curr);
-          if (
-            (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-            curr.scrollHeight > curr.clientHeight
-          ) {
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
             return curr;
           }
           curr = curr.parentElement;

@@ -192,46 +192,7 @@ export interface SharedFloatingHeaderProps {
 
 // ── Livex Liquid Glass SVG Filter (Displacement mapping via feTurbulence & feDisplacementMap) ──
 export function LivexLiquidGlassFilter() {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      width="0"
-      height="0"
-      style={{
-        position: 'absolute',
-        width: 0,
-        height: 0,
-        overflow: 'hidden',
-        pointerEvents: 'none',
-      }}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <filter
-        id="livex-liquid-glass-filter"
-        x="-10%"
-        y="-10%"
-        width="120%"
-        height="120%"
-        colorInterpolationFilters="sRGB"
-      >
-        <feTurbulence
-          type="fractalNoise"
-          baseFrequency="0.04 0.04"
-          numOctaves="2"
-          seed="7"
-          result="noise"
-        />
-        <feDisplacementMap
-          in="SourceGraphic"
-          in2="noise"
-          scale="2"
-          xChannelSelector="R"
-          yChannelSelector="G"
-        />
-      </filter>
-    </svg>
-  );
+  return null;
 }
 
 export function SharedFloatingHeader({
@@ -314,7 +275,7 @@ export function SharedFloatingHeader({
         boxSizing: 'border-box',
       }}
     >
-      {/* Flagship Progressive Blur Backdrop Layer at Top of Scroll Container */}
+      {/* Flagship Progressive Scrim Layer at Top of Scroll Container */}
       <div
         ref={progressiveBlurRef}
         aria-hidden="true"
@@ -331,16 +292,7 @@ export function SharedFloatingHeader({
           overflow: 'hidden',
         }}
       >
-        <ProgressiveBlur
-          direction="top"
-          blurLayers={2}
-          maxBlur={14}
-          style={{
-            position: 'absolute',
-            inset: 0,
-          }}
-        />
-        {/* Ambient atmospheric gradient scrim to preserve theme luminance */}
+        {/* Ambient atmospheric gradient scrim to preserve theme luminance without redundant GPU blur passes */}
         <div
           style={{
             position: 'absolute',
@@ -355,14 +307,13 @@ export function SharedFloatingHeader({
         />
       </div>
 
-      <LivexLiquidGlassFilter />
       <header
         ref={actualHeaderRef}
         data-testid="shared-floating-header"
         style={{
           width: '100%',
           maxWidth: 'calc(var(--content-max-w) - calc(var(--page-inset-h, 24px) * 2))',
-          height: '60px',
+          height: '58px',
           borderRadius: '0px',
           display: 'flex',
           alignItems: 'center',
@@ -396,15 +347,14 @@ export function SharedFloatingHeader({
             zIndex: 0,
           }}
         >
-          {/* Internal Optical Refraction Plane (Applies micro-refraction without distorting container border) */}
+          {/* Internal Optical Specular Reflection Plane (Hardware-accelerated subtle gradient reflection) */}
           <div
             className="liquid-glass-refraction"
             style={{
               position: 'absolute',
               inset: '-2px',
               borderRadius: 'inherit',
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%)',
-              filter: 'url(#livex-liquid-glass-filter)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%, rgba(255, 255, 255, 0.02) 100%)',
               pointerEvents: 'none',
             }}
           />

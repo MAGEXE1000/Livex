@@ -209,6 +209,7 @@ export function ApplicationTransitionEngine({
         zIndex: 99999,
         pointerEvents: 'none',
         overflow: 'hidden',
+        contain: 'strict',
       }}
     >
       {/* Dimmed Hub backdrop to focus visual attention on expanding card */}
@@ -238,7 +239,6 @@ export function ApplicationTransitionEngine({
                 borderRadius: startBounds.borderRadius,
                 backgroundColor: cardInitialBg,
                 borderColor: cardInitialBorder,
-                boxShadow: `0 16px 36px -10px ${color}40, 0 0 0 1px ${color}25`,
                 opacity: 1,
               }
         }
@@ -250,7 +250,6 @@ export function ApplicationTransitionEngine({
           borderRadius: 0,
           backgroundColor: targetBg,
           borderColor: 'transparent',
-          boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
           // Solid visual continuity during first 48% of expansion, then progressive reveal of destination
           opacity: [1, 1, 0.85, 0],
         }}
@@ -262,7 +261,6 @@ export function ApplicationTransitionEngine({
           borderRadius: { duration: duration * 0.92, ease: fluidEase },
           backgroundColor: { duration: duration * 0.82, ease: 'easeOut' },
           borderColor: { duration: duration * 0.45, ease: 'easeOut' },
-          boxShadow: { duration: duration * 0.55, ease: 'easeOut' },
           opacity: {
             duration,
             times: [0, 0.48, 0.78, 1],
@@ -281,6 +279,21 @@ export function ApplicationTransitionEngine({
           transform: 'translateZ(0)',
         }}
       >
+        {/* Hardware-accelerated brand glow / elevation layer (dissolves via GPU opacity, zero shadow re-rasterization) */}
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: duration * 0.55, ease: 'easeOut' }}
+          style={{
+            position: 'absolute',
+            inset: -1,
+            borderRadius: 'inherit',
+            boxShadow: `0 16px 36px -10px ${color}40, 0 0 0 1px ${color}25`,
+            pointerEvents: 'none',
+            willChange: 'opacity',
+          }}
+        />
+
         {/* Glowing brand aura expanding from card origin */}
         <motion.div
           initial={{ opacity: 0.35, scale: 0.85 }}
