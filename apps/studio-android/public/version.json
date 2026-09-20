@@ -1,21 +1,15 @@
 {
   "platform": "android",
-  "version": "4.6.33",
-  "versionName": "4.6.33",
-  "versionCode": 40633,
-  "version_code": 40633,
-  "commit": "4afaff96",
-  "releasedAt": "9/20/2026, 12:19:57 PM CST",
-  "buildTimestamp": "9/20/2026, 12:19:57 PM CST",
+  "version": "4.6.34",
+  "versionName": "4.6.34",
+  "versionCode": 40634,
+  "version_code": 40634,
+  "commit": "5d5ad643",
+  "releasedAt": "9/20/2026, 1:44:14 PM CST",
+  "buildTimestamp": "9/20/2026, 1:44:14 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.\n• Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.\n• Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.",
-  "whatsNew": "• Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.\n• Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.\n• Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.",
-  "releaseNotes": {
-    "improved": [
-      "Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.",
-      "Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.",
-      "Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability."
-    ]
-  },
+  "changelog": "",
+  "whatsNew": "",
+  "releaseNotes": {},
   "mandatory": false
 }
