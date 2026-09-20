@@ -1,7 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
-import { MorphMenu } from '../../../shared/design-system/MorphMenu';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   BouncyAccordion,
   type BouncyAccordionItem,
@@ -1107,7 +1106,6 @@ export default function DrumEditor() {
 
   const [showLoopPanel, setShowLoopPanel] = useState(false);
   const [showHamburger, setShowHamburger] = useState(false);
-  const [hamburgerClosing, setHamburgerClosing] = useState(false);
   const [showSoundCharacter, setShowSoundCharacter] = useState(false);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(() => new Set(['acoustic']));
   const [focusedInst, setFocusedInst] = useState<DrumInstrument | null>(null);
@@ -2851,115 +2849,319 @@ export default function DrumEditor() {
                 contain: 'paint layout',
               }}
             >
-              {/* Left: Back Button */}
-              <div className="flex items-center gap-1.5 w-16 sm:w-20">
-                <button
-                  onClick={handleBack}
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer"
-                  style={{
-                    background: 'var(--surface-pill-bg)',
-                    border: 'var(--surface-pill-border)',
-                    backdropFilter: 'var(--surface-pill-backdrop)',
-                    WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
-                    boxShadow: 'var(--surface-pill-shadow)',
-                    color: 'var(--c-text-primary)',
-                  }}
-                  aria-label="Back"
-                >
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                </button>
-              </div>
-
-              {/* Center: Pattern Metadata & Info */}
-              <div className="flex flex-col items-center justify-center text-center flex-1 min-w-0 px-1">
-                <div className="flex items-center gap-1.5 justify-center max-w-full">
-                  <span className="text-xs sm:text-sm font-bold tracking-tight truncate max-w-[110px] sm:max-w-[160px]">
-                    {activeSong?.name ?? pattern.name ?? '01'}
-                  </span>
-                  <button
-                    onClick={() => setShowBpmPanel((s) => !s)}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border transition active:scale-95 cursor-pointer"
-                    style={{
-                      background: isLight ? '#eff6ff' : 'rgba(0,122,255,0.15)',
-                      color: '#007aff',
-                      borderColor: isLight ? '#dbeafe' : 'rgba(0,122,255,0.35)',
-                    }}
-                    title="Adjust BPM & Swing"
+              <AnimatePresence mode="wait" initial={false}>
+                {!showHamburger ? (
+                  <motion.div
+                    key="normal-bar"
+                    initial={{ opacity: 0, scale: 0.96, y: -2 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 2 }}
+                    transition={{ type: 'spring', stiffness: 440, damping: 28, mass: 0.7 }}
+                    className="flex items-center justify-between w-full min-w-0"
                   >
-                    {pattern.bpm} BPM
-                  </button>
-                  <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">
-                    {pattern.timeSignature[0]}/{pattern.timeSignature[1]}
-                  </span>
-                </div>
-                {!isLandscape && (
-                  <p className="text-[9px] text-slate-400 dark:text-zinc-500 font-medium tracking-wide truncate mt-0.5 max-w-[220px]">
-                    {KIT_LABEL[kit] ?? 'Acoustic • House Kit'} • {pattern.subdivision}th Master
-                  </p>
-                )}
-              </div>
+                    {/* Left: Back Button */}
+                    <div className="flex items-center gap-1.5 w-16 sm:w-20 flex-shrink-0">
+                      <button
+                        onClick={handleBack}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer"
+                        style={{
+                          background: 'var(--surface-pill-bg)',
+                          border: 'var(--surface-pill-border)',
+                          backdropFilter: 'var(--surface-pill-backdrop)',
+                          WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+                          boxShadow: 'var(--surface-pill-shadow)',
+                          color: 'var(--c-text-primary)',
+                        }}
+                        aria-label="Back"
+                        title="Back"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                      </button>
+                    </div>
 
-              {/* Right: Actions (Undo, Redo, Landscape Play, Menu) */}
-              <div className="flex items-center justify-end gap-1 w-16 sm:w-20">
-                {isLandscape && (
-                  <button
-                    onClick={handlePlay}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#007aff] transition active:scale-95 cursor-pointer"
-                    aria-label={playing ? 'Pause' : 'Play'}
-                    title={playing ? 'Pause' : 'Play'}
+                    {/* Center: Pattern Metadata & Info */}
+                    <div className="flex flex-col items-center justify-center text-center flex-1 min-w-0 px-1">
+                      <div className="flex items-center gap-1.5 justify-center max-w-full">
+                        <span className="text-xs sm:text-sm font-bold tracking-tight truncate max-w-[110px] sm:max-w-[160px]">
+                          {activeSong?.name ?? pattern.name ?? '01'}
+                        </span>
+                        <button
+                          onClick={() => setShowBpmPanel((s) => !s)}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border transition active:scale-95 cursor-pointer flex-shrink-0"
+                          style={{
+                            background: isLight ? '#eff6ff' : 'rgba(0,122,255,0.15)',
+                            color: '#007aff',
+                            borderColor: isLight ? '#dbeafe' : 'rgba(0,122,255,0.35)',
+                          }}
+                          title="Adjust BPM & Swing"
+                        >
+                          {pattern.bpm} BPM
+                        </button>
+                        <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 flex-shrink-0">
+                          {pattern.timeSignature[0]}/{pattern.timeSignature[1]}
+                        </span>
+                      </div>
+                      {!isLandscape && (
+                        <p className="text-[9px] text-slate-400 dark:text-zinc-500 font-medium tracking-wide truncate mt-0.5 max-w-[220px]">
+                          {KIT_LABEL[kit] ?? 'Acoustic • House Kit'} • {pattern.subdivision}th Master
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Right: Actions (Undo, Redo, Landscape Play, Menu) */}
+                    <div className="flex items-center justify-end gap-1 w-16 sm:w-20 flex-shrink-0">
+                      {isLandscape && (
+                        <button
+                          onClick={handlePlay}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#007aff] transition active:scale-95 cursor-pointer flex-shrink-0"
+                          aria-label={playing ? 'Pause' : 'Play'}
+                          title={playing ? 'Pause' : 'Play'}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            {playing ? 'pause' : 'play_arrow'}
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        onClick={handleUndo}
+                        disabled={historyCount === 0}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer disabled:opacity-30 disabled:pointer-events-none flex-shrink-0"
+                        style={{ color: 'var(--c-text-secondary)' }}
+                        title="Undo (Ctrl+Z)"
+                        aria-label="Undo"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">undo</span>
+                      </button>
+                      <button
+                        onClick={handleRedo}
+                        disabled={redoStack.current.length === 0}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer disabled:opacity-30 disabled:pointer-events-none flex-shrink-0"
+                        style={{ color: 'var(--c-text-secondary)' }}
+                        title="Redo (Ctrl+Y)"
+                        aria-label="Redo"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">redo</span>
+                      </button>
+                      <button
+                        onClick={() => setShowHamburger(true)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: isLight
+                            ? 'rgba(0,0,0,0.05)'
+                            : 'rgba(255,255,255,0.08)',
+                          color: 'var(--c-text-primary)',
+                        }}
+                        title="Beat Tools"
+                        aria-label="Beat Tools"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">more_horiz</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="toolbar-bar"
+                    initial={{ opacity: 0, scale: 0.96, y: 2 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -2 }}
+                    transition={{ type: 'spring', stiffness: 440, damping: 28, mass: 0.7 }}
+                    className="flex items-center justify-between w-full min-w-0 gap-1.5"
                   >
-                    <span className="material-symbols-outlined text-[16px]">
-                      {playing ? 'pause' : 'play_arrow'}
-                    </span>
-                  </button>
+                    {/* Left: Return to normal top bar */}
+                    <button
+                      onClick={() => setShowHamburger(false)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                      style={{
+                        background: 'var(--surface-pill-bg)',
+                        border: 'var(--surface-pill-border)',
+                        backdropFilter: 'var(--surface-pill-backdrop)',
+                        WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
+                        boxShadow: 'var(--surface-pill-shadow)',
+                        color: 'var(--c-text-primary)',
+                      }}
+                      aria-label="Back to Beat"
+                      title="Back to Beat"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    </button>
+
+                    {/* Middle: Scrollable Action Toolbar */}
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar py-0.5 justify-start sm:justify-center">
+                      {/* Loop Toggle */}
+                      <button
+                        onClick={() => {
+                          setLooping((l) => {
+                            const n = !l;
+                            updateDrumPrefs({ loopPlayback: n });
+                            return n;
+                          });
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: looping
+                            ? `${accent.from}22`
+                            : isLight
+                              ? 'rgba(0,0,0,0.05)'
+                              : 'rgba(255,255,255,0.08)',
+                          border: `1px solid ${looping ? accent.from + '66' : 'rgba(128,128,128,0.14)'}`,
+                          color: looping ? accent.from : 'var(--c-text-secondary)',
+                        }}
+                        title={looping ? 'Loop: On' : 'Loop: Off'}
+                        aria-label={looping ? 'Loop: On' : 'Loop: Off'}
+                      >
+                        <span className="material-symbols-outlined text-[15px]">repeat</span>
+                        <span>Loop</span>
+                      </button>
+
+                      {/* Step Resolution Toggle */}
+                      <button
+                        onClick={toggleSub}
+                        className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: `${accent.from}18`,
+                          border: `1px solid ${accent.from}33`,
+                          color: accent.from,
+                        }}
+                        title={`Step Resolution: 1/${pattern.subdivision}`}
+                        aria-label="Toggle Step Resolution"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">grid_view</span>
+                        <span>1/{pattern.subdivision}</span>
+                      </button>
+
+                      {/* Humanize */}
+                      <button
+                        onClick={handleHumanize}
+                        className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-bold transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: humanizeFeedback
+                            ? `${accent.from}26`
+                            : isLight
+                              ? 'rgba(0,0,0,0.05)'
+                              : 'rgba(255,255,255,0.08)',
+                          border: `1px solid ${humanizeFeedback ? accent.from + '66' : 'rgba(128,128,128,0.14)'}`,
+                          color: humanizeFeedback ? accent.from : 'var(--c-text-secondary)',
+                        }}
+                        title="Humanize pattern timing & velocity"
+                        aria-label="Humanize pattern"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {humanizeFeedback ? 'check' : 'auto_fix_high'}
+                        </span>
+                        <span>{humanizeFeedback ? 'Done' : 'Humanize'}</span>
+                      </button>
+
+                      {/* Divider */}
+                      <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 flex-shrink-0 mx-0.5" />
+
+                      {/* Preferences */}
+                      <button
+                        onClick={() => {
+                          setShowHamburger(false);
+                          handleSetTab('prefs');
+                        }}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                          color: 'var(--c-text-secondary)',
+                        }}
+                        title="Preferences"
+                        aria-label="Preferences"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">tune</span>
+                      </button>
+
+                      {/* Export JSON */}
+                      <button
+                        onClick={() => {
+                          exportDrumSongJSON(patterns, activeSong);
+                          setShowHamburger(false);
+                        }}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                          color: 'var(--c-text-secondary)',
+                        }}
+                        title="Export as JSON"
+                        aria-label="Export as JSON"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">data_object</span>
+                      </button>
+
+                      {/* Export PDF */}
+                      <button
+                        onClick={() => {
+                          setShowHamburger(false);
+                          setShowExportModal(true);
+                        }}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                        style={{
+                          background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                          color: 'var(--c-text-secondary)',
+                        }}
+                        title="Export as PDF"
+                        aria-label="Export as PDF"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                      </button>
+
+                      {/* House Kit Controls if kit === 'house' */}
+                      {kit === 'house' && (
+                        <>
+                          <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-700 flex-shrink-0 mx-0.5" />
+                          <button
+                            onClick={() => {
+                              const idx = HOUSE_MICS.findIndex((m) => m.id === houseKitMic);
+                              const next = HOUSE_MICS[(idx + 1) % HOUSE_MICS.length];
+                              storeSetHouseKitMic(next.id);
+                              setHouseKitMic(next.id);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 h-7 rounded-full text-[10px] font-bold uppercase transition active:scale-95 cursor-pointer flex-shrink-0"
+                            style={{
+                              background: `${accent.from}18`,
+                              border: `1px solid ${accent.from}33`,
+                              color: accent.from,
+                            }}
+                            title={`Mic Position: ${houseKitMic} (tap to cycle)`}
+                            aria-label="Cycle Mic Position"
+                          >
+                            <span className="material-symbols-outlined text-[13px]">mic</span>
+                            <span>{houseKitMic}</span>
+                          </button>
+                          <button
+                            onClick={() => setShowSoundCharacter(true)}
+                            className="inline-flex items-center gap-1 px-2 h-7 rounded-full text-[10px] font-bold uppercase transition active:scale-95 cursor-pointer flex-shrink-0"
+                            style={{
+                              background: `${accent.from}18`,
+                              border: `1px solid ${accent.from}33`,
+                              color: accent.from,
+                            }}
+                            title="Sound Character"
+                            aria-label="Sound Character"
+                          >
+                            <span className="material-symbols-outlined text-[13px]">equalizer</span>
+                            <span>Sound</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Right: Close Toolbar */}
+                    <button
+                      onClick={() => setShowHamburger(false)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0"
+                      style={{
+                        background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                        color: 'var(--c-text-primary)',
+                      }}
+                      title="Close Toolbar"
+                      aria-label="Close Toolbar"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </motion.div>
                 )}
-                <button
-                  onClick={handleUndo}
-                  disabled={historyCount === 0}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-                  style={{ color: 'var(--c-text-secondary)' }}
-                  title="Undo (Ctrl+Z)"
-                  aria-label="Undo"
-                >
-                  <span className="material-symbols-outlined text-[17px]">undo</span>
-                </button>
-                <button
-                  onClick={handleRedo}
-                  disabled={redoStack.current.length === 0}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-                  style={{ color: 'var(--c-text-secondary)' }}
-                  title="Redo (Ctrl+Y)"
-                  aria-label="Redo"
-                >
-                  <span className="material-symbols-outlined text-[17px]">redo</span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (showHamburger) {
-                      setHamburgerClosing(true);
-                      setTimeout(() => {
-                        setShowHamburger(false);
-                        setHamburgerClosing(false);
-                      }, 170);
-                    } else {
-                      setShowHamburger(true);
-                    }
-                  }}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer"
-                  style={{
-                    background: showHamburger
-                      ? `${accent.from}1e`
-                      : isLight
-                        ? 'rgba(0,0,0,0.05)'
-                        : 'rgba(255,255,255,0.08)',
-                    color: showHamburger ? accent.from : 'var(--c-text-primary)',
-                  }}
-                  title="Toggle Menu"
-                  aria-label="Toggle Menu"
-                >
-                  <span className="material-symbols-outlined text-[18px]">menu</span>
-                </button>
-              </div>
+              </AnimatePresence>
             </header>
           )
         : inEditor && (
@@ -3855,636 +4057,7 @@ export default function DrumEditor() {
             </div>
           )}
 
-      {/* ── Hamburger panel ──────────────────────────────────────────────── */}
-      {inEditor && (showHamburger || hamburgerClosing) && (
-        <div
-          style={{
-            flexShrink: 0,
-            overflow: 'hidden',
-            background: isAmoled
-              ? '#000'
-              : isLight
-                ? 'rgba(250,249,247,0.98)'
-                : 'rgba(14,14,17,0.98)',
-            borderBottom: '1px solid rgba(128,128,128,0.10)',
-            backdropFilter: 'var(--surface-float-blur)',
-            WebkitBackdropFilter: 'var(--surface-float-blur)',
-            animation: hamburgerClosing
-              ? 'drumHamburgerOut 170ms cubic-bezier(0.4,0,1,1) both'
-              : 'drumHamburgerIn 200ms cubic-bezier(0.22,1,0.36,1)',
-            maxHeight: kit === 'house' ? '70vh' : undefined,
-          }}
-        >
-          <div
-            className="no-scrollbar"
-            style={{
-              padding: '10px 16px 14px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              overflowY: kit === 'house' ? 'auto' : 'visible',
-              maxHeight: kit === 'house' ? '70vh' : undefined,
-            }}
-          >
-            {/* ── House Kit mic selector ──────────────────────────────────── */}
-            {kit === 'house' && (
-              <>
-                <div style={{ padding: '8px 4px 4px' }}>
-                  <span
-                    style={{
-                      color: 'var(--c-text-secondary)',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Mic Position
-                  </span>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    {HOUSE_MICS.map((m) => {
-                      const active = houseKitMic === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          className="btn-smooth"
-                          onClick={() => {
-                            storeSetHouseKitMic(m.id);
-                            setHouseKitMic(m.id);
-                          }}
-                          style={{
-                            flex: 1,
-                            height: 30,
-                            borderRadius: 8,
-                            border: active
-                              ? `1.5px solid ${accent.from}66`
-                              : '1.5px solid rgba(128,128,128,0.12)',
-                            background: active ? `${accent.from}1a` : 'rgba(128,128,128,0.06)',
-                            color: active ? accent.from : 'var(--c-text-secondary)',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 160ms',
-                            fontFamily: 'var(--studio-font-body)',
-                          }}
-                        >
-                          {m.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {!houseLoaded && (
-                    <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Loader variant="dots" size={16} />
-                      <span
-                        style={{
-                          fontSize: 10.5,
-                          color: 'var(--c-text-muted)',
-                          fontFamily: 'Inter,sans-serif',
-                        }}
-                      >
-                        {houseProgress.total > 0
-                          ? `${houseProgress.loaded}/${houseProgress.total}`
-                          : 'Loading…'}
-                      </span>
-                    </div>
-                  )}
-                  {houseLoaded && (
-                    <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <SuccessLottie size={16} isLight={isLight} />
-                      <span
-                        style={{
-                          fontSize: 10.5,
-                          color: accent.from,
-                          fontFamily: 'Inter,sans-serif',
-                        }}
-                      >
-                        Samples ready
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div
-                  style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '8px 4px 4px' }}
-                />
 
-                {/* ── Per-instrument velocity flavor (Morphing Surface) ── */}
-                <div style={{ padding: '4px 4px 6px' }}>
-                  <MorphMenu
-                    floating
-                    anchor="top-left"
-                    closedWidth="100%"
-                    closedHeight={34}
-                    closedRadius={10}
-                    openWidth="100%"
-                    openHeight={340}
-                    openRadius={16}
-                    title="Sound Character"
-                    triggerLabel="Sound Character"
-                    triggerAriaLabel="Sound Character"
-                    triggerIcon={
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
-                    }
-                    style={{
-                      background: 'rgba(128,128,128,0.06)',
-                      borderColor: 'rgba(128,128,128,0.12)',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {() => (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '10px 12px' }}>
-                        {(['kick', 'snare', 'tom10', 'tom12', 'tom14'] as HouseInstName[]).map(
-                          (hInst) => {
-                            const locked = houseInstVelOverride[hInst];
-                            return (
-                              <div key={hInst}>
-                                <div
-                                  style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}
-                                >
-                                  <span
-                                    style={{
-                                      fontSize: 11.5,
-                                      fontWeight: 600,
-                                      color: 'var(--c-text-primary)',
-                                      flex: 1,
-                                      fontFamily: 'var(--studio-font-body)',
-                                    }}
-                                  >
-                                    {HOUSE_INST_LABELS[hInst]}
-                                  </span>
-                                  {locked && (
-                                    <button
-                                      onClick={() => storeSetInstVelOverride(hInst, undefined)}
-                                      style={{
-                                        fontSize: 9.5,
-                                        fontWeight: 700,
-                                        color: 'var(--c-text-muted)',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0 2px',
-                                        fontFamily: 'var(--studio-font-body)',
-                                        letterSpacing: '0.04em',
-                                      }}
-                                    >
-                                      AUTO
-                                    </button>
-                                  )}
-                                </div>
-                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                  {HOUSE_VEL_CONFIGS[hInst].map((v) => {
-                                    const active = locked === v.id;
-                                    return (
-                                      <button
-                                        key={v.id}
-                                        className="btn-smooth"
-                                        onClick={() =>
-                                          storeSetInstVelOverride(hInst, active ? undefined : v.id)
-                                        }
-                                        style={{
-                                          height: 26,
-                                          padding: '0 10px',
-                                          borderRadius: 6,
-                                          border: active
-                                            ? `1.5px solid ${accent.from}66`
-                                            : '1.5px solid rgba(128,128,128,0.14)',
-                                          background: active
-                                            ? `${accent.from}1a`
-                                            : 'rgba(128,128,128,0.06)',
-                                          color: active ? accent.from : 'var(--c-text-secondary)',
-                                          fontSize: 10.5,
-                                          fontWeight: 700,
-                                          cursor: 'pointer',
-                                          transition: 'all 140ms',
-                                          fontFamily: 'var(--studio-font-body)',
-                                          whiteSpace: 'nowrap',
-                                        }}
-                                      >
-                                        {v.label}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          }
-                        )}
-
-                        {/* ── Crash Cymbal model selector ── */}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                            <span
-                              style={{
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                color: 'var(--c-text-primary)',
-                                flex: 1,
-                                fontFamily: 'var(--studio-font-body)',
-                              }}
-                            >
-                              Crash Cymbal
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {HOUSE_CRASH_MODELS.map((m) => {
-                              const active = houseCrashModel === m.id;
-                              return (
-                                <button
-                                  key={m.id}
-                                  className="btn-smooth"
-                                  onClick={() => storeSetHouseCrashModel(m.id as HouseCrashModel)}
-                                  title={m.desc}
-                                  style={{
-                                    height: 26,
-                                    padding: '0 10px',
-                                    borderRadius: 6,
-                                    border: active
-                                      ? `1.5px solid ${accent.from}66`
-                                      : '1.5px solid rgba(128,128,128,0.14)',
-                                    background: active
-                                      ? `${accent.from}1a`
-                                      : 'rgba(128,128,128,0.06)',
-                                    color: active ? accent.from : 'var(--c-text-secondary)',
-                                    fontSize: 10.5,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 140ms',
-                                    fontFamily: 'var(--studio-font-body)',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {m.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* ── Cymbal Pack selector ── */}
-                        <div style={{ marginTop: 2 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                            <span
-                              style={{
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                color: 'var(--c-text-primary)',
-                                flex: 1,
-                                fontFamily: 'var(--studio-font-body)',
-                              }}
-                            >
-                              Cymbal Pack
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {CYMBAL_PACKS.map((p) => {
-                              const active = cymbalPack === p.id;
-                              return (
-                                <button
-                                  key={p.id}
-                                  className="btn-smooth"
-                                  onClick={() => storeSetCymbalPack(p.id as CymbalPack)}
-                                  title={p.desc}
-                                  style={{
-                                    height: 26,
-                                    padding: '0 10px',
-                                    borderRadius: 6,
-                                    border: active
-                                      ? `1.5px solid ${accent.from}66`
-                                      : '1.5px solid rgba(128,128,128,0.14)',
-                                    background: active
-                                      ? `${accent.from}1a`
-                                      : 'rgba(128,128,128,0.06)',
-                                    color: active ? accent.from : 'var(--c-text-secondary)',
-                                    fontSize: 10.5,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 140ms',
-                                    fontFamily: 'var(--studio-font-body)',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {p.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* ── Random Variations toggle ── */}
-                        <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
-                          <span
-                            style={{
-                              flex: 1,
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              color: 'var(--c-text-primary)',
-                              fontFamily: 'var(--studio-font-body)',
-                            }}
-                          >
-                            Random Variations
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateDrumPrefs({ randomVariations: !drumPrefs.randomVariations })
-                            }
-                            style={{
-                              width: 36,
-                              height: 20,
-                              borderRadius: 10,
-                              background: drumPrefs.randomVariations
-                                ? `linear-gradient(135deg,${accent.from},${accent.to})`
-                                : 'rgba(128,128,128,0.18)',
-                              border: 'none',
-                              cursor: 'pointer',
-                              position: 'relative',
-                              transition: 'background 220ms',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: 2.5,
-                                left: drumPrefs.randomVariations ? 18 : 2.5,
-                                width: 15,
-                                height: 15,
-                                borderRadius: '50%',
-                                background: '#fff',
-                                transition: 'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
-                                display: 'block',
-                              }}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </MorphMenu>
-                </div>
-
-                <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />
-              </>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', padding: '9px 4px', gap: 12 }}>
-              <span
-                style={{ flex: 1, color: 'var(--c-text-primary)', fontSize: 13, fontWeight: 500 }}
-              >
-                Loop
-              </span>
-              <button
-                onClick={() => {
-                  setLooping((l) => {
-                    const n = !l;
-                    updateDrumPrefs({ loopPlayback: n });
-                    return n;
-                  });
-                }}
-                style={{
-                  width: 40,
-                  height: 22,
-                  borderRadius: 11,
-                  background: looping
-                    ? `linear-gradient(135deg,${accent.from},${accent.to})`
-                    : 'rgba(128,128,128,0.18)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'background 220ms',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 3,
-                    left: looping ? 20 : 3,
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#fff',
-                    transition: 'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
-                    display: 'block',
-                  }}
-                />
-              </button>
-            </div>
-            <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', padding: '9px 4px', gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ color: 'var(--c-text-primary)', fontSize: 13, fontWeight: 500 }}>
-                  Step Resolution
-                </span>
-                <span
-                  style={{
-                    display: 'block',
-                    color: 'var(--c-text-muted)',
-                    fontSize: 11,
-                    marginTop: 1,
-                  }}
-                >
-                  {pattern.subdivision === 16 ? '16th notes' : '8th notes'}
-                </span>
-              </div>
-              <button
-                onClick={toggleSub}
-                style={{
-                  height: 28,
-                  padding: '0 14px',
-                  borderRadius: 8,
-                  background: `${accent.from}18`,
-                  border: `1px solid ${accent.from}33`,
-                  cursor: 'pointer',
-                  color: accent.from,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                1/{pattern.subdivision}
-              </button>
-            </div>
-            {/* ── Humanize ──────────────────────────────────────────────── */}
-            <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', padding: '9px 4px', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ color: 'var(--c-text-primary)', fontSize: 13, fontWeight: 500 }}>
-                  Humanize
-                </span>
-                <span
-                  style={{
-                    display: 'block',
-                    color: 'var(--c-text-muted)',
-                    fontSize: 11,
-                    marginTop: 1,
-                  }}
-                >
-                  {humanizeFeedback ? 'Applied!' : 'Add subtle variation to the pattern'}
-                </span>
-              </div>
-              <button
-                onClick={handleHumanize}
-                className="btn-smooth"
-                style={{
-                  height: 28,
-                  padding: '0 12px',
-                  borderRadius: 8,
-                  background: humanizeFeedback ? `${accent.from}22` : `${accent.from}18`,
-                  border: `1px solid ${humanizeFeedback ? accent.from + '55' : accent.from + '33'}`,
-                  cursor: 'pointer',
-                  color: accent.from,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  flexShrink: 0,
-                  transition: 'all 200ms',
-                  fontFamily: 'var(--studio-font-body)',
-                }}
-              >
-                {humanizeFeedback ? '✓ Done' : 'Apply'}
-              </button>
-            </div>
-
-            {/* ── Preferences ───────────────────────────────────────────── */}
-            <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />
-            <button
-              onClick={() => {
-                setShowHamburger(false);
-                handleSetTab('prefs');
-              }}
-              className="btn-smooth"
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 4px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--c-text-secondary)',
-                fontSize: 13,
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 500,
-                textAlign: 'left',
-              }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ flexShrink: 0 }}
-              >
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="8" y1="6" x2="8" y2="3" />
-                <line x1="8" y1="6" x2="8" y2="9" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="14" y1="12" x2="14" y2="9" />
-                <line x1="14" y1="12" x2="14" y2="15" />
-                <line x1="4" y1="18" x2="20" y2="18" />
-                <line x1="10" y1="18" x2="10" y2="15" />
-                <line x1="10" y1="18" x2="10" y2="21" />
-              </svg>
-              <span>Preferences</span>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ marginLeft: 'auto' }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            <div style={{ height: 1, background: 'rgba(128,128,128,0.08)', margin: '0 4px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', padding: '9px 4px', gap: 8 }}>
-              <span
-                style={{ flex: 1, color: 'var(--c-text-secondary)', fontSize: 13, fontWeight: 500 }}
-              >
-                Export
-              </span>
-              {/* JSON icon button */}
-              <button
-                onClick={() => {
-                  exportDrumSongJSON(patterns, activeSong);
-                  setShowHamburger(false);
-                }}
-                title="Export as JSON"
-                className="btn-smooth"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: 'var(--app-surface-high)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-secondary)', fontSize: 17 }}
-                >
-                  data_object
-                </span>
-              </button>
-              {/* PDF icon button */}
-              <button
-                onClick={() => {
-                  setShowHamburger(false);
-                  setShowExportModal(true);
-                }}
-                title="Export as PDF"
-                className="btn-smooth"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: 'var(--app-surface-high)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-secondary)', fontSize: 17 }}
-                >
-                  picture_as_pdf
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
       <div
@@ -8142,6 +7715,227 @@ export default function DrumEditor() {
         isAmoled={isAmoled}
         hidden={isWebDesktop || inEditor || activeTab === 'metronome'}
       />
+
+      {/* ── Sound Character Dialog (House Kit) ─────────────────────────── */}
+      {kit === 'house' && showSoundCharacter && (
+        <Dialog
+          open={showSoundCharacter}
+          onClose={() => setShowSoundCharacter(false)}
+          title="Sound Character"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '10px 12px' }}>
+            {(['kick', 'snare', 'tom10', 'tom12', 'tom14'] as HouseInstName[]).map((hInst) => {
+              const locked = houseInstVelOverride[hInst];
+              return (
+                <div key={hInst}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                    <span
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        color: 'var(--c-text-primary)',
+                        flex: 1,
+                        fontFamily: 'var(--studio-font-body)',
+                      }}
+                    >
+                      {HOUSE_INST_LABELS[hInst]}
+                    </span>
+                    {locked && (
+                      <button
+                        onClick={() => storeSetInstVelOverride(hInst, undefined)}
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          color: 'var(--c-text-muted)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '0 2px',
+                          fontFamily: 'var(--studio-font-body)',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        AUTO
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {HOUSE_VEL_CONFIGS[hInst].map((v) => {
+                      const active = locked === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          className="btn-smooth"
+                          onClick={() => storeSetInstVelOverride(hInst, active ? undefined : v.id)}
+                          style={{
+                            height: 26,
+                            padding: '0 10px',
+                            borderRadius: 6,
+                            border: active
+                              ? `1.5px solid ${accent.from}66`
+                              : '1.5px solid rgba(128,128,128,0.14)',
+                            background: active ? `${accent.from}1a` : 'rgba(128,128,128,0.06)',
+                            color: active ? accent.from : 'var(--c-text-secondary)',
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 140ms',
+                            fontFamily: 'var(--studio-font-body)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {v.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* ── Crash Cymbal model selector ── */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    color: 'var(--c-text-primary)',
+                    flex: 1,
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  Crash Cymbal
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {HOUSE_CRASH_MODELS.map((m) => {
+                  const active = houseCrashModel === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      className="btn-smooth"
+                      onClick={() => storeSetHouseCrashModel(m.id as HouseCrashModel)}
+                      title={m.desc}
+                      style={{
+                        height: 26,
+                        padding: '0 10px',
+                        borderRadius: 6,
+                        border: active
+                          ? `1.5px solid ${accent.from}66`
+                          : '1.5px solid rgba(128,128,128,0.14)',
+                        background: active ? `${accent.from}1a` : 'rgba(128,128,128,0.06)',
+                        color: active ? accent.from : 'var(--c-text-secondary)',
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 140ms',
+                        fontFamily: 'var(--studio-font-body)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Cymbal Pack selector ── */}
+            <div style={{ marginTop: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    color: 'var(--c-text-primary)',
+                    flex: 1,
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  Cymbal Pack
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {CYMBAL_PACKS.map((p) => {
+                  const active = cymbalPack === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      className="btn-smooth"
+                      onClick={() => storeSetCymbalPack(p.id as CymbalPack)}
+                      title={p.desc}
+                      style={{
+                        height: 26,
+                        padding: '0 10px',
+                        borderRadius: 6,
+                        border: active
+                          ? `1.5px solid ${accent.from}66`
+                          : '1.5px solid rgba(128,128,128,0.14)',
+                        background: active ? `${accent.from}1a` : 'rgba(128,128,128,0.06)',
+                        color: active ? accent.from : 'var(--c-text-secondary)',
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 140ms',
+                        fontFamily: 'var(--studio-font-body)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Random Variations toggle ── */}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--c-text-primary)',
+                  fontFamily: 'var(--studio-font-body)',
+                }}
+              >
+                Random Variations
+              </span>
+              <button
+                onClick={() => updateDrumPrefs({ randomVariations: !drumPrefs.randomVariations })}
+                style={{
+                  width: 36,
+                  height: 20,
+                  borderRadius: 10,
+                  background: drumPrefs.randomVariations
+                    ? `linear-gradient(135deg,${accent.from},${accent.to})`
+                    : 'rgba(128,128,128,0.18)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'background 220ms',
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2.5,
+                    left: drumPrefs.randomVariations ? 18 : 2.5,
+                    width: 15,
+                    height: 15,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    transition: 'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
+                    display: 'block',
+                  }}
+                />
+              </button>
+            </div>
+          </div>
+        </Dialog>
+      )}
 
       {/* ── Export modal (full-screen) ────────────────────────────────────── */}
       {showExportModal && (
