@@ -1798,21 +1798,29 @@ html[data-perf-mode='on'] *::after {
 
   /* ── Glass Tiering & Floating-surface tokens — dark (default) ───────────── */
   --glass-tier: blur;
-  --glass-blur-radius: 14px;
+  --glass-blur-radius: 20px;
   --glass-blur: blur(var(--glass-blur-radius));
-  /* Translucent obsidian glass with softly diffused background visibility */
-  --surface-float-bg: rgba(20, 20, 24, 0.70);
-  --surface-topbar-bg: rgba(20, 20, 24, 0.70);
+  /* Translucent obsidian liquid glass with softly diffused background visibility */
+  --surface-float-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(20, 20, 26, 0.68) 100%
+  );
+  --surface-topbar-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(20, 20, 26, 0.68) 100%
+  );
   /* Outer border: crisp, micro-refined translucent rim */
-  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.09);
+  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.12);
   /* Premium physical depth: dual ambient/directional shadow + top specular rim highlight */
   --surface-topbar-shadow:
-    0 8px 24px -4px rgba(0, 0, 0, 0.32), 0 2px 6px -1px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    0 10px 28px -4px rgba(0, 0, 0, 0.36), 0 2px 8px -1px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
   --surface-topbar-blur: var(--glass-blur);
-  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(150%);
+  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(190%) contrast(105%) brightness(102%);
   --surface-topbar-fallback: rgba(20, 20, 24, 0.96);
-  --surface-float-blur: var(--glass-blur); /* shared backdrop-filter */
+  --surface-float-blur: var(--surface-topbar-backdrop); /* shared backdrop-filter */
   --surface-scrim-blur: none;
   /* Floating Control Pills (Back buttons, Tuner, Finder, Metronome) */
   --surface-pill-bg: rgba(26, 26, 32, 0.72);
@@ -1854,17 +1862,25 @@ html[data-perf-mode='on'] *::after {
 /* Light-theme overrides — translucent frosted white glass */
 :root.light {
   --glass-tier: blur;
-  --glass-blur-radius: 14px;
+  --glass-blur-radius: 20px;
   --glass-blur: blur(var(--glass-blur-radius));
-  --surface-float-bg: rgba(255, 255, 255, 0.76);
-  --surface-topbar-bg: rgba(255, 255, 255, 0.76);
-  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.08);
+  --surface-float-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(242, 245, 252, 0.72) 100%
+  );
+  --surface-topbar-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(242, 245, 252, 0.72) 100%
+  );
+  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.07);
   --surface-topbar-shadow:
-    0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    0 8px 24px -4px rgba(0, 0, 0, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --surface-topbar-blur: var(--glass-blur);
-  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(150%);
-  --surface-float-blur: var(--glass-blur);
+  --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(180%) contrast(102%) brightness(104%);
+  --surface-float-blur: var(--surface-topbar-backdrop);
   --surface-scrim-blur: none;
   --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
   --surface-pill-bg: rgba(255, 255, 255, 0.84);
@@ -1911,7 +1927,7 @@ html[data-perf-mode='on'] *::after {
     inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
     inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   --surface-topbar-blur: var(--glass-blur);
-  --surface-float-blur: var(--glass-blur);
+  --surface-float-blur: var(--surface-topbar-backdrop);
   --surface-scrim-blur: none;
   --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
   --surface-topbar-fallback: #000000;
