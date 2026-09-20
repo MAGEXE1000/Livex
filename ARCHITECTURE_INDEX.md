@@ -980,6 +980,28 @@ lrclib.net API client. Exports etchLyricsOnline, LyricsResult.
 
 ---
 
+### 6.11 Groovex Subsystem
+
+#### GroovexStemRepository.ts — packages/livex-core/src/repositories/GroovexStemRepository.ts
+
+| Field            | Detail                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Purpose**      | IndexedDB local stem storage (`groovex-stems-cache`), download manager, cache queries, and eviction listeners |
+| **Key exports**  | `groovexStemRepository`, `GroovexStemRepository`, `DownloadProgress`, `SongCacheInfo`                        |
+| **Methods**      | `getCachedSongStems`, `getSongCacheStatus`, `downloadStem`, `clearSongCache`, `clearAllCache`, `onCacheCleared`|
+| **Consumers**    | `GroovexPlayer.tsx`, `GroovexLibrary.tsx`, `GroovexPreferences.tsx`, `AccountCard.tsx`, `audioEngine.ts`       |
+
+#### audioEngine.ts — packages/ui-shared/src/features/groovex/services/audioEngine.ts
+
+| Field            | Detail                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Purpose**      | Multi-track Web Audio engine for Groovex: stem mixing, in-memory decoded AudioBuffer LRU cache, pitch shifting|
+| **Key exports**  | `createEngine`, `destroyEngine`, `loadAudioBuffer`, `setTrackBuffer`, `getCachedSongAudioBuffers`, `setCachedSongAudioBuffers`, `evictCachedSongAudioBuffers`, `play`, `pause`, `stop`, `seek`, `startScrub` |
+| **Dependencies** | `@workspace/livex-core`, `signalsmith-stretch`, `stemClassifier.ts`                                           |
+| **Consumers**    | `GroovexPlayer.tsx`                                                                                           |
+
+---
+
 ## 7. UI Sub-Modules (ui-shared)
 
 ### 7.1 Panels

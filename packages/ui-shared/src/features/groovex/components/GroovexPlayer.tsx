@@ -36,6 +36,9 @@ import {
   getCurrentTime,
   destroyEngine,
   resumeAudioContext,
+  getCachedSongAudioBuffers,
+  setCachedSongAudioBuffers,
+  evictCachedSongAudioBuffers,
   type AudioEngine,
 } from '../services/audioEngine';
 import { groovexStemRepository, type DownloadProgress } from '@workspace/livex-core';
@@ -253,6 +256,59 @@ export default function GroovexPlayer() {
     }
     setMasterVolume(engine, preferences.masterVolume);
     initSoundTouch(engine).catch(() => {});
+    setIsPlaying(false);
+    setTonearmState('parked');
+    setCurrentStemLabel('');
+    setFailedStems([]);
+    setPitchShift(0);
+    setActivePreset('full');
+    currentAngleRef.current = 35;
+    currentVelocityRef.current = 0;
+    lastTimeUpdateRef.current = 0;
+    if (vinylRef.current) {
+      vinylRef.current.style.transform = 'rotate(35deg)';
+    }
+    cancelAnimationFrame(rafRef.current);
+
+    // 1. FAST-PATH: Check in-memory decoded AudioBuffer cache
+    const inMemoryBuffers = getCachedSongAudioBuffers(song.id);
+    if (
+      inMemoryBuffers &&
+      song.stems.length > 0 &&
+      song.stems.every((s) => inMemoryBuffers.has(s.name))
+    ) {
+      song.stems.forEach((s, idx) => {
+        const buf = inMemoryBuffers.get(s.name)!;
+        setTrackBuffer(engine, idx, buf);
+      });
+      setTracks(
+        trackStates.map((t) => ({
+          name: t.name,
+          label: t.label,
+          icon: t.icon,
+          volume: t.volume,
+          muted: t.muted,
+          solo: t.solo,
+          loaded: true,
+        }))
+      );
+      setCurrentTime(0);
+      setDuration(engine.duration);
+      setOverallProgress(100);
+      setPhase('ready');
+
+      return () => {
+        cancelAnimationFrame(rafRef.current);
+        sessionIdRef.current++;
+        destroyEngine(engine);
+        engineRef.current = null;
+        if (typeof window !== 'undefined' && (window as any).__groovexEngine === engine) {
+          (window as any).__groovexEngine = null;
+        }
+      };
+    }
+
+    // 2. DISK / DOWNLOAD PATH: Initialize loading state
     setTracks(
       trackStates.map((t) => ({
         name: t.name,
@@ -267,36 +323,10 @@ export default function GroovexPlayer() {
     setCurrentTime(0);
     setDuration(0);
     setPhase('loading');
-    setIsPlaying(false);
-    setTonearmState('parked');
     setOverallProgress(0);
-    setCurrentStemLabel('');
-    setFailedStems([]);
-    setPitchShift(0);
-    setActivePreset('full');
-    currentAngleRef.current = 35;
-    currentVelocityRef.current = 0;
-    lastTimeUpdateRef.current = 0;
-    if (vinylRef.current) {
-      vinylRef.current.style.transform = 'rotate(35deg)';
-    }
-    cancelAnimationFrame(rafRef.current);
 
     if (song.hasStems) {
-      groovexStemRepository
-        .getSongCacheStatus(
-          song.id,
-          song.stems.map((s) => s.name)
-        )
-        .then((status) => {
-          if (sessionIdRef.current !== sid) return;
-          const allCached = song.stems.every((s) => status[s.name]);
-          loadAllStems(engine, song, sid, allCached);
-        })
-        .catch(() => {
-          if (sessionIdRef.current !== sid) return;
-          loadAllStems(engine, song, sid, false);
-        });
+      loadAllStems(engine, song, sid);
     }
 
     return () => {
@@ -325,17 +355,64 @@ export default function GroovexPlayer() {
   async function loadAllStems(
     engine: AudioEngine,
     songData: (typeof SONG_CATALOG)[0],
-    sid: number,
-    allCached = false
+    sid: number
   ) {
     setPhase('loading');
     setFailedStems([]);
     const total = songData.stems.length;
-    const failed: number[] = [];
-
-    if (allCached) {
-      setOverallProgress(100);
+    if (total === 0) {
+      setPhase('ready');
+      return;
     }
+
+    // A. LOCAL DISK PATH: Check if all stems are already cached in IndexedDB
+    try {
+      const stemNames = songData.stems.map((s) => s.name);
+      const cachedStems = await groovexStemRepository.getCachedSongStems(songData.id, stemNames);
+
+      if (cachedStems && sessionIdRef.current === sid) {
+        // All stems exist in local IndexedDB and pass integrity check (>= 1000 bytes)
+        resumeAudioContext();
+        setOverallProgress(100);
+        const buffersMap = new Map<string, AudioBuffer>();
+        const failedIndices: number[] = [];
+
+        // Decompress all stems concurrently via Promise.all
+        const decodePromises = songData.stems.map(async (stem, i) => {
+          if (sessionIdRef.current !== sid) return;
+          try {
+            const data = cachedStems[stem.name];
+            const buffer = await loadAudioBuffer(data);
+            if (sessionIdRef.current !== sid) return;
+            buffersMap.set(stem.name, buffer);
+            setTrackBuffer(engine, i, buffer);
+            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          } catch (e) {
+            console.error(`Failed to decode local stem ${stem.name}:`, e);
+            failedIndices.push(i);
+          }
+        });
+
+        await Promise.all(decodePromises);
+        if (sessionIdRef.current !== sid) return;
+
+        if (failedIndices.length === 0 && buffersMap.size === total) {
+          setCachedSongAudioBuffers(songData.id, buffersMap);
+          setDuration(engine.duration);
+          setPhase('ready');
+          setCurrentStemLabel('');
+          return;
+        }
+      }
+    } catch {
+      // Fall through to standard download pipeline if local retrieval fails
+    }
+
+    if (sessionIdRef.current !== sid) return;
+
+    // B. NETWORK DOWNLOAD PATH: Sequential download & decode for missing/new stems
+    const failed: number[] = [];
+    const buffersMap = new Map<string, AudioBuffer>();
 
     for (let i = 0; i < total; i++) {
       if (sessionIdRef.current !== sid) return;
@@ -347,7 +424,7 @@ export default function GroovexPlayer() {
           songData.id,
           stem.name,
           (p: DownloadProgress) => {
-            if (sessionIdRef.current !== sid || allCached) return;
+            if (sessionIdRef.current !== sid) return;
             const stemProgress = p.percent / 100;
             updateProgressThrottled(((i + stemProgress) / total) * 100);
           }
@@ -355,6 +432,7 @@ export default function GroovexPlayer() {
         if (sessionIdRef.current !== sid) return;
         const buffer = await loadAudioBuffer(data);
         if (sessionIdRef.current !== sid) return;
+        buffersMap.set(stem.name, buffer);
         setTrackBuffer(engine, i, buffer);
         setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
         setDuration(engine.duration);
@@ -363,9 +441,7 @@ export default function GroovexPlayer() {
         failed.push(i);
       }
       if (sessionIdRef.current !== sid) return;
-      if (!allCached) {
-        updateProgressThrottled(((i + 1) / total) * 100);
-      }
+      updateProgressThrottled(((i + 1) / total) * 100);
     }
 
     if (sessionIdRef.current !== sid) return;
@@ -373,10 +449,10 @@ export default function GroovexPlayer() {
       setFailedStems(failed);
       setPhase('error');
     } else {
+      if (buffersMap.size === total) {
+        setCachedSongAudioBuffers(songData.id, buffersMap);
+      }
       setOverallProgress(100);
-      // Fluid settle delay before revealing ready player controls
-      await new Promise((r) => setTimeout(r, allCached ? 160 : 320));
-      if (sessionIdRef.current !== sid) return;
       setPhase('ready');
       setCurrentStemLabel('');
     }
@@ -391,6 +467,7 @@ export default function GroovexPlayer() {
   async function handleRedownload() {
     const engine = engineRef.current;
     if (!engine || !song) return;
+    evictCachedSongAudioBuffers(song.id);
     const sid = ++sessionIdRef.current;
     stop(engine);
     setIsPlaying(false);
@@ -444,9 +521,14 @@ export default function GroovexPlayer() {
       setFailedStems(newFailed);
       setPhase('error');
     } else {
+      if (engine.tracks.every((t) => t.buffer !== null)) {
+        const buffersMap = new Map<string, AudioBuffer>();
+        engine.tracks.forEach((t) => {
+          if (t.buffer) buffersMap.set(t.name, t.buffer);
+        });
+        setCachedSongAudioBuffers(song.id, buffersMap);
+      }
       setOverallProgress(100);
-      await new Promise((r) => setTimeout(r, 260));
-      if (sessionIdRef.current !== sid) return;
       setPhase('ready');
       setCurrentStemLabel('');
     }

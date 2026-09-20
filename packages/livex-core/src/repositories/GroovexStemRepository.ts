@@ -90,6 +90,13 @@ export class GroovexStemRepository {
     }
   }
   
+  private clearListeners = new Set<(songId?: string) => void>();
+
+  public onCacheCleared(listener: (songId?: string) => void): () => void {
+    this.clearListeners.add(listener);
+    return () => this.clearListeners.delete(listener);
+  }
+
   public async isStemCached(songId: string, stemName: string): Promise<boolean> {
     try {
       const db = await openDB();
@@ -107,15 +114,87 @@ export class GroovexStemRepository {
       return false;
     }
   }
-  
+
   public async getSongCacheStatus(songId: string, stemNames: string[]): Promise<Record<string, boolean>> {
-    const result: Record<string, boolean> = {};
-    for (const name of stemNames) {
-      result[name] = await this.isStemCached(songId, name);
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const result: Record<string, boolean> = {};
+
+        const promises = stemNames.map((name) => {
+          return new Promise<void>((res) => {
+            const req = store.get(stemKey(songId, name));
+            req.onsuccess = () => {
+              const entry = req.result as CachedStem | undefined;
+              result[name] = entry !== undefined && entry.size >= 1000;
+              res();
+            };
+            req.onerror = () => {
+              result[name] = false;
+              res();
+            };
+          });
+        });
+
+        Promise.all(promises)
+          .then(() => resolve(result))
+          .catch(() => resolve(result));
+      });
+    } catch {
+      const fallback: Record<string, boolean> = {};
+      for (const name of stemNames) fallback[name] = false;
+      return fallback;
     }
-    return result;
   }
-  
+
+  public async getCachedSongStems(
+    songId: string,
+    stemNames: string[]
+  ): Promise<Record<string, ArrayBuffer> | null> {
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const results: Record<string, ArrayBuffer> = {};
+        let missingOrCorrupted = false;
+
+        const promises = stemNames.map((name) => {
+          return new Promise<void>((res) => {
+            const req = store.get(stemKey(songId, name));
+            req.onsuccess = () => {
+              const entry = req.result as CachedStem | undefined;
+              if (entry && entry.data && entry.size >= 1000) {
+                results[name] = entry.data;
+              } else {
+                missingOrCorrupted = true;
+              }
+              res();
+            };
+            req.onerror = () => {
+              missingOrCorrupted = true;
+              res();
+            };
+          });
+        });
+
+        Promise.all(promises)
+          .then(() => {
+            if (missingOrCorrupted || Object.keys(results).length !== stemNames.length) {
+              resolve(null);
+            } else {
+              resolve(results);
+            }
+          })
+          .catch(() => resolve(null));
+      });
+    } catch {
+      return null;
+    }
+  }
+
   public async getCacheSize(): Promise<{ totalBytes: number; songCount: number; stemCount: number }> {
     try {
       const db = await openDB();
@@ -186,7 +265,10 @@ export class GroovexStemRepository {
         req.onsuccess = () => {
           const keys = req.result;
           keys.forEach(k => store.delete(k));
-          tx.oncomplete = () => resolve();
+          tx.oncomplete = () => {
+            this.clearListeners.forEach((l) => l(songId));
+            resolve();
+          };
         };
         req.onerror = () => reject(req.error);
       });
@@ -200,7 +282,10 @@ export class GroovexStemRepository {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         const req = store.clear();
-        req.onsuccess = () => resolve();
+        req.onsuccess = () => {
+          this.clearListeners.forEach((l) => l());
+          resolve();
+        };
         req.onerror = () => reject(req.error);
       });
     } catch {}

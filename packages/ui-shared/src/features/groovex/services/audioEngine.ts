@@ -1,4 +1,4 @@
-import { createAudioContext } from '@workspace/livex-core';
+import { createAudioContext, groovexStemRepository } from '@workspace/livex-core';
 import SignalsmithStretch, { StretchNode } from 'signalsmith-stretch';
 import { isPercussionStem } from './stemClassifier';
 
@@ -32,6 +32,50 @@ export function resumeAudioContext(): void {
     ctx.resume();
   }
 }
+
+// ── IN-MEMORY DECODED AUDIOBUFFER LRU CACHE ──────────────────────────────
+// Caches decoded PCM AudioBuffers in memory for recent songs (up to 3 songs)
+// so that navigating between library and player or switching songs opens in 0ms.
+const MAX_CACHED_DECODED_SONGS = 3;
+const decodedAudioBufferCache = new Map<string, Map<string, AudioBuffer>>();
+
+export function getCachedSongAudioBuffers(songId: string): Map<string, AudioBuffer> | null {
+  const cached = decodedAudioBufferCache.get(songId);
+  if (!cached) return null;
+  // Refresh LRU order (delete & re-insert)
+  decodedAudioBufferCache.delete(songId);
+  decodedAudioBufferCache.set(songId, cached);
+  return cached;
+}
+
+export function setCachedSongAudioBuffers(
+  songId: string,
+  buffers: Map<string, AudioBuffer> | Record<string, AudioBuffer>
+): void {
+  const map = buffers instanceof Map ? buffers : new Map(Object.entries(buffers));
+  if (decodedAudioBufferCache.has(songId)) {
+    decodedAudioBufferCache.delete(songId);
+  } else if (decodedAudioBufferCache.size >= MAX_CACHED_DECODED_SONGS) {
+    const oldestKey = decodedAudioBufferCache.keys().next().value;
+    if (oldestKey) {
+      decodedAudioBufferCache.delete(oldestKey);
+    }
+  }
+  decodedAudioBufferCache.set(songId, map);
+}
+
+export function evictCachedSongAudioBuffers(songId?: string): void {
+  if (songId) {
+    decodedAudioBufferCache.delete(songId);
+  } else {
+    decodedAudioBufferCache.clear();
+  }
+}
+
+// Auto-evict from in-memory cache when IndexedDB cache is deleted/cleared
+groovexStemRepository.onCacheCleared((songId) => {
+  evictCachedSongAudioBuffers(songId);
+});
 
 export const VINYL_STOP_DURATION = 0.65; // 650ms turntable platter deceleration
 export const VINYL_STOP_MIN_RATE = 0.04; // Lowest playback rate before full stop
