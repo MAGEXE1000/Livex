@@ -134,7 +134,10 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
       );
     }
     return (
-      <span className="material-symbols-outlined text-[20px] text-pink-400">
+      <span
+        className="material-symbols-outlined text-[20px]"
+        style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+      >
         {element.icon || 'music_note'}
       </span>
     );
@@ -538,7 +541,8 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                         )}
                         {element.pinned && (
                           <span
-                            className="flex items-center text-pink-400"
+                            className="flex items-center"
+                            style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
                             title={tr.stagex?.specs?.pin || 'Pinned'}
                           >
                             <span className="material-symbols-outlined text-[13px]">
@@ -811,7 +815,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                               className="w-4 h-4 rounded-full flex-shrink-0 cursor-pointer transition-all active:scale-90"
                               style={{
                                 background: swatch.hex,
-                                outline: active ? '2px solid #ec4899' : 'none',
+                                outline: active ? '2px solid var(--c-accent-to, var(--studio-accent, #007aff))' : 'none',
                                 outlineOffset: '1.5px',
                               }}
                               title={swatch.name}
@@ -827,7 +831,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                               (s) => s.hex.toUpperCase() === currentColor
                             )
                               ? 'none'
-                              : '2px solid #ec4899',
+                              : '2px solid var(--c-accent-to, var(--studio-accent, #007aff))',
                             outlineOffset: '1.5px',
                           }}
                           title="Custom Color"
@@ -1016,12 +1020,14 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
                               className="w-full h-[32px] rounded-xl flex items-center justify-between px-3 text-[11px] font-bold cursor-pointer transition-all active:scale-95"
                               style={{
                                 background: element.phantom
-                                  ? 'rgba(236, 72, 153, 0.20)'
+                                  ? 'var(--c-accent-soft, var(--studio-accent-soft, rgba(0, 122, 255, 0.14)))'
                                   : 'var(--app-surface-low)',
                                 border: element.phantom
-                                  ? '1px solid #ec4899'
+                                  ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
                                   : '1px solid var(--c-border)',
-                                color: element.phantom ? '#ec4899' : 'var(--c-text-secondary)',
+                                color: element.phantom
+                                  ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
+                                  : 'var(--c-text-secondary)',
                               }}
                             >
                               <span>{tr.stagex?.specs?.phantomPower || '48V Power'}</span>

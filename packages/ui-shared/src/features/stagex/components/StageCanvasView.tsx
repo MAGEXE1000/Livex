@@ -781,7 +781,11 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                   onClick={handleExitLandscape}
                   title={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
                   aria-label={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all shadow-md flex-shrink-0 cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold active:scale-95 transition-all shadow-md flex-shrink-0 cursor-pointer"
+                  style={{
+                    background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
+                    color: 'var(--studio-accent-contrast, #ffffff)',
+                  }}
                 >
                   <span className="material-symbols-outlined text-[15px]">screen_rotation</span>
                   <span className="whitespace-nowrap">{currentLang === 'es' ? 'Salir' : 'Exit'}</span>
@@ -1084,22 +1088,22 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                     width: 44,
                     height: 44,
                     background: isLandscape
-                      ? '#ec4899'
+                      ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
                       : isAmoled
                         ? 'rgba(10, 10, 12, 0.88)'
                         : isLight
                           ? 'rgba(255, 255, 255, 0.85)'
                           : 'rgba(20, 20, 26, 0.80)',
                     border: isLandscape
-                      ? '1px solid #ec4899'
+                      ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
                       : isAmoled
                         ? '1px solid rgba(255, 255, 255, 0.12)'
                         : isLight
                           ? '1px solid rgba(0, 0, 0, 0.08)'
                           : '1px solid rgba(255, 255, 255, 0.10)',
-                    color: isLandscape ? '#ffffff' : isLight ? '#09090b' : '#ffffff',
+                    color: isLandscape ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
                     boxShadow: isLandscape
-                      ? '0 4px 14px rgba(236, 72, 153, 0.45)'
+                      ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))'
                       : '0 4px 16px rgba(0, 0, 0, 0.35)',
                     backdropFilter: 'var(--surface-float-blur)',
                     WebkitBackdropFilter: 'var(--surface-float-blur)',
@@ -1135,10 +1139,10 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                     right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
                     width: 44,
                     height: 44,
-                    background: '#ec4899',
+                    background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
                     border: 'none',
-                    color: '#ffffff',
-                    boxShadow: '0 4px 14px rgba(236, 72, 153, 0.45)',
+                    color: 'var(--studio-accent-contrast, #ffffff)',
+                    boxShadow: 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))',
                   }}
                   aria-label={currentLang === 'es' ? 'Añadir Elemento' : 'Add Element'}
                   title={currentLang === 'es' ? 'Añadir Elemento' : 'Add Element'}
@@ -1163,22 +1167,22 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                 width: 44,
                 height: 44,
                 background: liveMode
-                  ? '#ec4899'
+                  ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
                   : isAmoled
                     ? 'rgba(10, 10, 12, 0.88)'
                     : isLight
                       ? 'rgba(255, 255, 255, 0.85)'
                       : 'rgba(20, 20, 26, 0.80)',
                 border: liveMode
-                  ? '1px solid #ec4899'
+                  ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
                   : isAmoled
                     ? '1px solid rgba(255, 255, 255, 0.12)'
                     : isLight
                       ? '1px solid rgba(0, 0, 0, 0.08)'
                       : '1px solid rgba(255, 255, 255, 0.10)',
-                color: liveMode ? '#ffffff' : isLight ? '#09090b' : '#ffffff',
+                color: liveMode ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
                 boxShadow: liveMode
-                  ? '0 4px 14px rgba(236, 72, 153, 0.45)'
+                  ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))'
                   : '0 4px 16px rgba(0, 0, 0, 0.35)',
                 backdropFilter: 'var(--surface-float-blur)',
                 WebkitBackdropFilter: 'var(--surface-float-blur)',
@@ -1269,7 +1273,10 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           >
             {selectedElement.label || selectedElement.name}
           </span>
-          <span className="text-[11px] font-bold text-pink-400 uppercase tracking-wider flex items-center gap-1">
+          <span
+            className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"
+            style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+          >
             Specs
             <span className="material-symbols-outlined text-[15px]">tune</span>
           </span>

@@ -3223,9 +3223,9 @@ body.share-mode::after {
   height: 18px;
   border-radius: 9999px;
   background: rgba(20, 20, 24, 0.88);
-  border: 1px solid rgba(236, 72, 153, 0.65);
+  border: 1px solid var(--accent, rgba(59, 130, 246, 0.65));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-  color: #ec4899;
+  color: var(--accent, #3b82f6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3240,8 +3240,8 @@ html[data-theme='light'] .sc-lock-badge {
 }
 html[data-theme='light'] .sc-pin-badge {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(219, 39, 119, 0.7);
-  color: #db2777;
+  border-color: var(--accent, rgba(37, 99, 235, 0.7));
+  color: var(--accent, #2563eb);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 html[data-theme='light'] .stage-element.sc-locked {
