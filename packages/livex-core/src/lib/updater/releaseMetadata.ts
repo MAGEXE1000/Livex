@@ -190,15 +190,18 @@ export function versionJsonUrls(): string[] {
 
   const remoteBase =
     (import.meta.env.VITE_APK_BASE_URL as string | undefined)?.replace(/\/$/, '') ||
+    (import.meta.env.VITE_OTA_BASE_URL as string | undefined)?.replace(/\/$/, '') ||
     'https://studio-30f44.web.app';
   const urls: string[] = [];
 
   if (Capacitor.isNativePlatform()) {
     urls.push(`${remoteBase}/app-release.json?t=${t}`);
+    urls.push(`${remoteBase}/version.json?t=${t}`);
   } else {
     const localBase = import.meta.env.BASE_URL || '/';
     urls.push(`${localBase}version.json?t=${t}`);
     urls.push(`${remoteBase}/version.json?t=${t}`);
+    urls.push(`${remoteBase}/app-release.json?t=${t}`);
   }
   return urls;
 }
@@ -452,6 +455,7 @@ interface GitHubReleaseAsset {
   name: string;
   browser_download_url: string;
   size?: number;
+  digest?: string;
 }
 
 interface GitHubRelease {
@@ -535,9 +539,48 @@ async function fetchLatestFromGitHub(signal: AbortSignal): Promise<RemoteVersion
     }
     logPipelineTrace(caller, 'VERSION_CODE_ASSIGNMENT', { version }, { versionCode });
 
-    // Attempt to fetch the SHA-256 hash from the .sha256 asset
+    // Extract SHA-256 with multiple resilient fallbacks:
+    // 1. Direct asset digest on apkAsset or shaAsset (returned by GitHub Releases API, zero network, CORS-safe)
     let apkSha256 = '';
-    if (shaAsset) {
+    if (apkAsset.digest) {
+      const match = apkAsset.digest.match(/sha256:([a-fA-F0-9]{64})/i);
+      if (match) {
+        apkSha256 = match[1].toLowerCase();
+        logPipelineTrace(
+          caller,
+          'SHA_EXTRACTED_FROM_ASSET_DIGEST',
+          { digest: apkAsset.digest },
+          { apkSha256 }
+        );
+      }
+    }
+
+    if (!apkSha256 && shaAsset?.digest) {
+      const match = shaAsset.digest.match(/sha256:([a-fA-F0-9]{64})/i);
+      if (match) {
+        apkSha256 = match[1].toLowerCase();
+        logPipelineTrace(
+          caller,
+          'SHA_EXTRACTED_FROM_SHA_ASSET_DIGEST',
+          { digest: shaAsset.digest },
+          { apkSha256 }
+        );
+      }
+    }
+
+    // 2. Release body text parsing (e.g. "SHA-256: <hash>" or "sha256: <hash>")
+    if (!apkSha256 && targetRelease.body) {
+      const bodyMatch =
+        targetRelease.body.match(/(?:sha-?256|checksum|hash)[:\s=]+([a-fA-F0-9]{64})/i) ||
+        targetRelease.body.match(/\b([a-fA-F0-9]{64})\b/);
+      if (bodyMatch) {
+        apkSha256 = bodyMatch[1].toLowerCase();
+        logPipelineTrace(caller, 'SHA_EXTRACTED_FROM_RELEASE_BODY', {}, { apkSha256 });
+      }
+    }
+
+    // 3. Fallback: fetch .sha256 asset over network
+    if (!apkSha256 && shaAsset) {
       const shaUrl = shaAsset.browser_download_url;
       logPipelineTrace(caller, 'HTTP_REQUEST_URL', { url: shaUrl }, 'N/A');
       try {
@@ -598,57 +641,55 @@ export async function fetchRemoteVersion(signal?: AbortSignal): Promise<RemoteVe
   const ctrl = signal ? null : new AbortController();
   const sig = signal ?? ctrl!.signal;
 
-  // 1. Primary path: Query Firebase metadata
+  // 1. Primary path: Query Firebase metadata manifests
   let firebaseRes: RemoteVersionInfo | null = null;
   if (urls.length > 0) {
     try {
-      firebaseRes = await new Promise<RemoteVersionInfo | null>((resolve) => {
-        let completed = false;
-        let resolved = false;
-        let failedCount = 0;
-        const total = urls.length;
-
-        urls.forEach((url) => {
+      const results = await Promise.all(
+        urls.map(async (url) => {
           logPipelineTrace(caller, 'HTTP_REQUEST_URL', { url }, 'N/A');
-          fetchOne(url, sig)
-            .then((res) => {
-              if (resolved || completed) return;
-              if (res) {
-                logPipelineTrace(caller, 'HTTP_RESPONSE', { url }, { status: 200 });
-                logPipelineTrace(
-                  caller,
-                  'RELEASE_METADATA_OBJECT',
-                  { source: 'firebase', url },
-                  res
-                );
-                resolved = true;
-                completed = true;
-                resolve(res);
-              } else {
-                logPipelineTrace(caller, 'HTTP_RESPONSE', { url }, { status: 'failed/null' });
-                failedCount++;
-                if (failedCount === total) {
-                  completed = true;
-                  resolve(null);
-                }
-              }
-            })
-            .catch((err) => {
-              logPipelineTrace(
-                caller,
-                'HTTP_RESPONSE',
-                { url },
-                { error: err?.message || String(err) }
-              );
-              if (resolved || completed) return;
-              failedCount++;
-              if (failedCount === total) {
-                completed = true;
-                resolve(null);
-              }
-            });
-        });
-      });
+          try {
+            const res = await fetchOne(url, sig);
+            if (res) {
+              logPipelineTrace(caller, 'HTTP_RESPONSE', { url }, { status: 200 });
+              logPipelineTrace(caller, 'RELEASE_METADATA_OBJECT', { source: 'firebase', url }, res);
+              return res;
+            } else {
+              logPipelineTrace(caller, 'HTTP_RESPONSE', { url }, { status: 'failed/null' });
+              return null;
+            }
+          } catch (err: any) {
+            logPipelineTrace(caller, 'HTTP_RESPONSE', { url }, { error: err?.message || String(err) });
+            return null;
+          }
+        })
+      );
+
+      const validResults = results.filter(
+        (r): r is RemoteVersionInfo => r !== null && validateRemoteMetadata(r)
+      );
+
+      if (validResults.length > 0) {
+        // Sort by semver descending
+        validResults.sort((a, b) => compareSemver(b.version, a.version));
+        const highest = validResults[0];
+        const sameVersion = validResults.filter((r) => r.version === highest.version);
+        if (sameVersion.length > 1) {
+          firebaseRes = sameVersion.reduce((acc, curr) => ({
+            ...acc,
+            ...curr,
+            apkSha256: curr.apkSha256 || acc.apkSha256,
+            apkUrl: curr.apkUrl || acc.apkUrl,
+            downloadUrl: curr.downloadUrl || acc.downloadUrl || curr.apkUrl || acc.apkUrl,
+            signatures: curr.signatures || acc.signatures,
+            apkSizeBytes: curr.apkSizeBytes || acc.apkSizeBytes,
+            releaseNotes: curr.releaseNotes || acc.releaseNotes,
+            changelog: curr.changelog || acc.changelog,
+          }));
+        } else {
+          firebaseRes = highest;
+        }
+      }
     } catch (e: any) {
       logPipelineTrace(
         caller,
@@ -663,6 +704,15 @@ export async function fetchRemoteVersion(signal?: AbortSignal): Promise<RemoteVe
   let githubRes: RemoteVersionInfo | null = null;
   try {
     githubRes = await fetchLatestFromGitHub(sig);
+    if (githubRes && !validateRemoteMetadata(githubRes)) {
+      logPipelineTrace(
+        caller,
+        'GITHUB_METADATA_VALIDATION_FAILED',
+        { version: githubRes.version },
+        'Rejected by validateRemoteMetadata'
+      );
+      githubRes = null;
+    }
   } catch (err: any) {
     logPipelineTrace(
       caller,
@@ -682,6 +732,32 @@ export async function fetchRemoteVersion(signal?: AbortSignal): Promise<RemoteVe
         { selected: 'github' }
       );
       return githubRes;
+    }
+    if (comp === 0) {
+      // Merge identical version coordinates so metadata from both sources are unified
+      const merged: RemoteVersionInfo = {
+        ...firebaseRes,
+        ...githubRes,
+        apkSha256: githubRes.apkSha256 || firebaseRes.apkSha256,
+        apkUrl: githubRes.apkUrl || firebaseRes.apkUrl,
+        downloadUrl:
+          githubRes.downloadUrl ||
+          firebaseRes.downloadUrl ||
+          githubRes.apkUrl ||
+          firebaseRes.apkUrl,
+        signatures: firebaseRes.signatures || githubRes.signatures,
+        apkSizeBytes: githubRes.apkSizeBytes || firebaseRes.apkSizeBytes,
+        releaseNotes: githubRes.releaseNotes || firebaseRes.releaseNotes,
+        changelog: githubRes.changelog || firebaseRes.changelog,
+        versionCode: githubRes.versionCode || firebaseRes.versionCode,
+      };
+      logPipelineTrace(
+        caller,
+        'METADATA_SOURCE_SELECTION',
+        { firebase: firebaseRes.version, github: githubRes.version },
+        { selected: 'merged_equal' }
+      );
+      return merged;
     }
     logPipelineTrace(
       caller,
@@ -760,13 +836,39 @@ export function validateRemoteMetadata(remote: RemoteVersionInfo | null): boolea
     isVerCodeValid = true; // Not required on web
   }
 
-  if (!isVerNameValid || !isVerCodeValid || !isTagValid || !isReleaseNameValid) {
+  // Fail-closed verification for native/APK updates:
+  // Native APK updates strictly require a valid 64-character hex SHA-256 and APK URL
+  const isApkUpdate = isNativeCheck || remote.updateType === 'apk' || remote.updateType === 'both';
+  let isShaValid = true;
+  let isApkUrlValid = true;
+
+  if (isApkUpdate) {
+    const sha = remote.apkSha256 || (remote as any).sha256;
+    if (!sha || typeof sha !== 'string' || !/^[a-fA-F0-9]{64}$/.test(sha.trim())) {
+      isShaValid = false;
+    }
+    const apkUrl = remote.apkUrl || remote.downloadUrl;
+    if (!apkUrl || typeof apkUrl !== 'string' || apkUrl.trim().length === 0) {
+      isApkUrlValid = false;
+    }
+  }
+
+  if (
+    !isVerNameValid ||
+    !isVerCodeValid ||
+    !isTagValid ||
+    !isReleaseNameValid ||
+    !isShaValid ||
+    !isApkUrlValid
+  ) {
     console.error(
       `[AppUpdater] [METADATA REJECTED] Validation failure: ` +
         `versionName: "${versionName}" (${isVerNameValid ? 'VALID' : 'INVALID'}), ` +
         `versionCode: ${versionCode} (${isVerCodeValid ? 'VALID' : 'INVALID'}), ` +
         `tag: "${tag}" (${isTagValid ? 'VALID' : 'INVALID'}), ` +
-        `releaseName: "${releaseName}" (${isReleaseNameValid ? 'VALID' : 'INVALID'})`
+        `releaseName: "${releaseName}" (${isReleaseNameValid ? 'VALID' : 'INVALID'}), ` +
+        `sha256: "${remote.apkSha256 || (remote as any).sha256 || ''}" (${isShaValid ? 'VALID' : 'INVALID'}), ` +
+        `apkUrl: "${remote.apkUrl || remote.downloadUrl || ''}" (${isApkUrlValid ? 'VALID' : 'INVALID'})`
     );
     return false;
   }

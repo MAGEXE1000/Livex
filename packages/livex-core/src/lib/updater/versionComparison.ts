@@ -84,10 +84,35 @@ export function compareVersions(
 
   details.metadataIntegrity = true;
 
-  if (!apkUrl) {
-  }
+  // Fail-closed verification for native / APK updates
+  const isApkUpdate =
+    Capacitor.isNativePlatform() || remote.updateType === 'apk' || remote.updateType === 'both';
 
-  if (!remote.apkSha256) {
+  if (isApkUpdate) {
+    if (!apkUrl || typeof apkUrl !== 'string' || apkUrl.trim().length === 0) {
+      details.metadataIntegrity = false;
+      return {
+        updateAvailable: false,
+        isDowngrade: false,
+        isUpgrade: false,
+        isUpToDate: false,
+        explanation: `Remote metadata validation failed: missing valid APK download URL for native platform update.`,
+        details,
+      };
+    }
+
+    const sha = remote.apkSha256;
+    if (!sha || typeof sha !== 'string' || !/^[a-fA-F0-9]{64}$/.test(sha.trim())) {
+      details.metadataIntegrity = false;
+      return {
+        updateAvailable: false,
+        isDowngrade: false,
+        isUpgrade: false,
+        isUpToDate: false,
+        explanation: `Remote metadata validation failed: missing or malformed SHA-256 checksum ("${sha || ''}"). Native APK updates require a 64-character hex SHA-256 hash.`,
+        details,
+      };
+    }
   }
 
   const nameComparison = compareSemver(remote.version, localVersionName);

@@ -217,4 +217,49 @@ describe('E2E Updater Flow Validation (v4.3.33 to v4.3.34)', () => {
     expect(globalUpdateState.updateState).toBe('INSTALL_SUCCESS');
     console.log('[DEBUG] Final State after install callback =', globalUpdateState.updateState);
   }, 30000);
+
+  it('should fail closed and refuse update if remote metadata is missing SHA-256', async () => {
+    const invalidRemoteData = {
+      platform: 'android',
+      version: '4.3.35',
+      versionName: '4.3.35',
+      versionCode: 40335,
+      apkUrl: 'https://github.com/MAGEXE1000/Livex/releases/download/v4.3.35/studio-4.3.35.apk',
+      // Missing apkSha256 / sha256
+      changelog: 'Missing SHA release',
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(invalidRemoteData),
+      json: async () => invalidRemoteData,
+    });
+
+    const checkState = await checkForUpdate(true);
+    expect(checkState.updateAvailable).toBe(false);
+    expect(checkState.updateState).toBe('RECOVERY');
+  });
+
+  it('should fail closed and refuse update if remote metadata has malformed SHA-256', async () => {
+    const invalidRemoteData = {
+      platform: 'android',
+      version: '4.3.35',
+      versionName: '4.3.35',
+      versionCode: 40335,
+      apkUrl: 'https://github.com/MAGEXE1000/Livex/releases/download/v4.3.35/studio-4.3.35.apk',
+      apkSha256: 'not-a-valid-sha256-hash',
+      changelog: 'Malformed SHA release',
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(invalidRemoteData),
+      json: async () => invalidRemoteData,
+    });
+
+    const checkState = await checkForUpdate(true);
+    expect(checkState.updateAvailable).toBe(false);
+    expect(checkState.updateState).toBe('RECOVERY');
+  });
 });
+

@@ -1686,11 +1686,11 @@ function UpdateModal({
       }
   }
 
-  if (isNearCompletion) {
+  if (state === 'downloading' && isNearCompletion) {
     title = 'Almost ready...';
     description = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
-        <div>Finalizing installation before handing over to Android installer.</div>
+        <div>Finalizing download before verifying package.</div>
         <div style={{ fontSize: 13, color: 'var(--c-text-secondary)' }}>
           Please wait... Do not close the application.
         </div>
@@ -1928,7 +1928,7 @@ function UpdateModal({
       );
     }
 
-    if (state === 'ready_to_install') {
+    if (state === 'ready_to_install' || state === 'readyForInstallPrompt') {
       return (
         <div style={{ display: 'flex', gap: 8, marginTop: 18, width: '100%' }}>
           <ActionButton type="button" onClick={onLater} style={secondaryButtonStyle}>
@@ -2305,8 +2305,14 @@ function UpdateModal({
   // Render buttons
   const actionButtons = renderButtons();
 
+  const isProgressActiveState =
+    state === 'downloading' ||
+    state === 'verifying_sha' ||
+    state === 'verifying_eligibility' ||
+    state === 'verifying';
+
   let progressComponent: React.ReactNode = undefined;
-  if (state === 'downloading' && !isNearCompletion) {
+  if (isProgressActiveState) {
     progressComponent = (
       <DownloadProgressIndicator
         updater={updater}
