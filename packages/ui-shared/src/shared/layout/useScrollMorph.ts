@@ -152,9 +152,7 @@ export function useScrollMorph({
       headerEl.style.width = `${currentWidth.toFixed(1)}px`;
       headerEl.style.maxWidth = '100%';
 
-      // ── 2. Geometry: Vertical dimensions & snug placement (GPU transform) ──
-      const currentHeight = expandedHeight - p * (expandedHeight - compactHeight);
-      headerEl.style.height = `${currentHeight.toFixed(1)}px`;
+      // ── 2. Geometry: Vertical snug placement via GPU transform (Zero height reflows) ──
       const currentTranslateY = -p * 2;
       headerEl.style.transform = `translate3d(0, ${currentTranslateY.toFixed(1)}px, 0)`;
 

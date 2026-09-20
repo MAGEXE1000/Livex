@@ -65,6 +65,29 @@ export default function App() {
   }, [routeApp]);
 
   useEffect(() => {
+    // Idle background preloading for sub-app bundles so card clicks have zero script evaluation latency
+    const preloadModules = () => {
+      void import('@workspace/ui-shared/src/features/drumex/pages/DrumEditor');
+      void import('@workspace/ui-shared/src/features/stagex/pages/StageCorePanel');
+      void import('@workspace/ui-shared/src/features/groovex/pages/GroovexApp');
+      void import('@workspace/ui-shared/src/features/vocalex/pages/VocalexApp');
+      void loadSongsPanel();
+      void loadLibraryPanel();
+    };
+
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        const handle = (window as any).requestIdleCallback(preloadModules, { timeout: 3000 });
+        return () => (window as any).cancelIdleCallback(handle);
+      } else {
+        const timer = setTimeout(preloadModules, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+    return undefined;
+  }, []);
+
+  useEffect(() => {
     if (isDev) {
       const intro = document.getElementById('intro');
       if (intro) {

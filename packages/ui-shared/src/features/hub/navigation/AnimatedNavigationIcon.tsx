@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { useNavigationAnimation } from './NavigationAnimationProvider';
-import { getMotionVariantForIcon } from './NavigationMotionVariants';
 
 export interface AnimatedNavigationIconProps {
   itemKey: string;
@@ -248,37 +247,22 @@ const AnimatedNavigationIconComponent = React.forwardRef<any, AnimatedNavigation
       />
     );
 
-    const isMatched = MATCHED_NAMES.has(resolvedName);
-
-    const outerVariants = isMatched
-      ? {
-          active: { opacity: 1 },
-          inactive: { opacity: 0.85 },
-        }
-      : getMotionVariantForIcon(resolvedName, direction)();
-
     return (
       <motion.div
         key={`nav-icon-${resolvedName}`}
-        initial="inactive"
-        animate={isActive ? 'active' : 'inactive'}
-        variants={outerVariants}
+        animate={{
+          opacity: isActive ? 1 : 0.85,
+          scaleX,
+          scaleY,
+          rotate,
+        }}
+        transition={{
+          duration: 0.38,
+          ease: [0.25, 1, 0.5, 1], // premium elastic curve
+        }}
         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        <motion.div
-          animate={{
-            scaleX,
-            scaleY,
-            rotate,
-          }}
-          transition={{
-            duration: 0.42,
-            ease: [0.25, 1, 0.5, 1], // premium elastic curve
-          }}
-          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          {content}
-        </motion.div>
+        {content}
       </motion.div>
     );
   }

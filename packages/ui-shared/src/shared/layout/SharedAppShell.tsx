@@ -39,7 +39,7 @@ import {
 
 import { StudioHubSkeleton } from '../loading/StudioSkeleton';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
-import { AppEntryTransition, useAnimationSpeed } from '../../shared/animation';
+import { useAnimationSpeed } from '../../shared/animation';
 import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
 import { SharedNavigationContainer } from '../../navigation/SharedNavigationContainer';
 import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/animation';
@@ -129,10 +129,10 @@ const SubAppWrapper = memo(function SubAppWrapper({
       {app === 'devtools' && subApps.devtools && (
         <SubAppScaffold appKey="devtools">
           <ErrorBoundary moduleName="DevTools">
-            <AppReadyNotifier app="devtools" onReady={onReady} />
-            <AppEntryTransition>
-              <Suspense fallback={<StudioHubSkeleton />}>{subApps.devtools}</Suspense>
-            </AppEntryTransition>
+            <Suspense fallback={<StudioHubSkeleton />}>
+              <AppReadyNotifier app="devtools" onReady={onReady} />
+              {subApps.devtools}
+            </Suspense>
           </ErrorBoundary>
         </SubAppScaffold>
       )}
@@ -140,10 +140,10 @@ const SubAppWrapper = memo(function SubAppWrapper({
       {app === 'groovex' && subApps.groovex && (
         <SubAppScaffold appKey="groovex">
           <ErrorBoundary moduleName="Groovex">
-            <AppReadyNotifier app="groovex" onReady={onReady} />
-            <AppEntryTransition>
-              <Suspense fallback={<StudioHubSkeleton />}>{subApps.groovex}</Suspense>
-            </AppEntryTransition>
+            <Suspense fallback={<StudioHubSkeleton />}>
+              <AppReadyNotifier app="groovex" onReady={onReady} />
+              {subApps.groovex}
+            </Suspense>
           </ErrorBoundary>
         </SubAppScaffold>
       )}
@@ -151,10 +151,10 @@ const SubAppWrapper = memo(function SubAppWrapper({
       {app === 'vocalex' && subApps.vocalex && (
         <SubAppScaffold appKey="vocalex">
           <ErrorBoundary moduleName="Vocalex">
-            <AppReadyNotifier app="vocalex" onReady={onReady} />
-            <AppEntryTransition>
-              <Suspense fallback={<StudioHubSkeleton />}>{subApps.vocalex}</Suspense>
-            </AppEntryTransition>
+            <Suspense fallback={<StudioHubSkeleton />}>
+              <AppReadyNotifier app="vocalex" onReady={onReady} />
+              {subApps.vocalex}
+            </Suspense>
           </ErrorBoundary>
         </SubAppScaffold>
       )}
@@ -162,10 +162,10 @@ const SubAppWrapper = memo(function SubAppWrapper({
       {app === 'stagex' && subApps.stagex && (
         <SubAppScaffold appKey="stagex">
           <ErrorBoundary moduleName="Stagex">
-            <AppReadyNotifier app="stagex" onReady={onReady} />
-            <AppEntryTransition>
-              <Suspense fallback={<StudioHubSkeleton />}>{subApps.stagex}</Suspense>
-            </AppEntryTransition>
+            <Suspense fallback={<StudioHubSkeleton />}>
+              <AppReadyNotifier app="stagex" onReady={onReady} />
+              {subApps.stagex}
+            </Suspense>
           </ErrorBoundary>
         </SubAppScaffold>
       )}
@@ -173,19 +173,19 @@ const SubAppWrapper = memo(function SubAppWrapper({
       {app === 'drumex' && subApps.drumex && (
         <SubAppScaffold appKey="drumex">
           <ErrorBoundary moduleName="Drumex">
-            <AppReadyNotifier app="drumex" onReady={onReady} />
-            <AppEntryTransition>
-              <Suspense fallback={<StudioHubSkeleton />}>{subApps.drumex}</Suspense>
-            </AppEntryTransition>
+            <Suspense fallback={<StudioHubSkeleton />}>
+              <AppReadyNotifier app="drumex" onReady={onReady} />
+              {subApps.drumex}
+            </Suspense>
           </ErrorBoundary>
         </SubAppScaffold>
       )}
 
       {app === 'chordex' && subApps.chordex && (
         <SubAppScaffold appKey="chordex">
-          <AppEntryTransition
+          <div
             className="flex flex-col w-full overflow-hidden select-none"
-            style={{ position: 'relative', height: '100%' } as any}
+            style={{ position: 'relative', height: '100%' }}
           >
             <div
               style={{
@@ -200,10 +200,10 @@ const SubAppWrapper = memo(function SubAppWrapper({
               {subApps.chordex.sidebar}
               <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
                 <ErrorBoundary moduleName="Chordex">
-                  <AppReadyNotifier app="chordex" onReady={onReady} />
                   <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
                     {(panel) => (
                       <Suspense fallback={<StudioHubSkeleton />}>
+                        <AppReadyNotifier app="chordex" onReady={onReady} />
                         {panel === 'songs' && subApps.chordex?.songs}
                         {panel === 'practice' && subApps.chordex?.practice}
                         {panel === 'library' && subApps.chordex?.library}
@@ -214,7 +214,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
                 </ErrorBoundary>
               </div>
             </div>
-          </AppEntryTransition>
+          </div>
         </SubAppScaffold>
       )}
       <Toaster />
