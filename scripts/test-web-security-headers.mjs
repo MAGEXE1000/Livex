@@ -243,6 +243,31 @@ test('firebase.json includes X-Content-Type-Options: nosniff, Referrer-Policy, a
   assert.equal(keys['X-Frame-Options'], 'DENY');
 });
 
+const publicRedirectsPath = path.join(process.cwd(), 'apps/studio-web/public/_redirects');
+const distRedirectsPath = path.join(process.cwd(), 'dist/web/_redirects');
+const wranglerTomlPath = path.join(process.cwd(), 'wrangler.toml');
+
+test('apps/studio-web/public/_redirects exists and defines Cloudflare Pages SPA and external redirects', () => {
+  assert(fs.existsSync(publicRedirectsPath), 'public/_redirects must exist');
+  const content = fs.readFileSync(publicRedirectsPath, 'utf-8');
+  assert(content.includes('/* /index.html 200'), '_redirects must define SPA fallback /* /index.html 200');
+  assert(content.includes('/version.json'), '_redirects must define /version.json');
+  assert(content.includes('/app-release.json'), '_redirects must define /app-release.json');
+  assert(content.includes('/apk/*'), '_redirects must define /apk/*');
+});
+
+test('dist/web/_redirects exists in built production bundle', () => {
+  assert(fs.existsSync(distRedirectsPath), 'dist/web/_redirects must exist after build');
+  const content = fs.readFileSync(distRedirectsPath, 'utf-8');
+  assert(content.includes('/* /index.html 200'));
+});
+
+test('wrangler.toml exists and configures Cloudflare Pages output directory', () => {
+  assert(fs.existsSync(wranglerTomlPath), 'wrangler.toml must exist');
+  const content = fs.readFileSync(wranglerTomlPath, 'utf-8');
+  assert(content.includes('pages_build_output_dir = "dist/web"'));
+});
+
 
 // ── 4. Live Static Server Verification ───────────────────────────────────────
 console.log('\n--- Suite 4: Live HTTP Server Header Verification ---');

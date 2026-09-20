@@ -1,0 +1,5 @@
+name = "livex"
+pages_build_output_dir = "dist/web"
+
+[vars]
+NODE_VERSION = "20"
