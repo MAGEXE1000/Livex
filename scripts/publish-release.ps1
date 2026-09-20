@@ -110,18 +110,42 @@ if (-not $ShaAsset) {
 Write-Host "Release SHA asset exists."
 
 Write-Host "8. Verifying Firebase Metadata & In-App Updater..."
-Write-Host "Fetching app-release.json from production..."
-$AppReleaseJson = Invoke-RestMethod -Uri "https://studio-30f44.web.app/app-release.json" -Headers @{ "Cache-Control" = "no-cache" }
-Write-Host "Production app-release.json version: $($AppReleaseJson.version), versionCode: $($AppReleaseJson.versionCode)"
-if ($AppReleaseJson.version -ne $VersionName) {
+$verifiedAppRelease = $false
+for ($i = 1; $i -le 8; $i++) {
+    Write-Host "Fetching app-release.json from production (attempt $i/8)..."
+    try {
+        $AppReleaseJson = Invoke-RestMethod -Uri "https://studio-30f44.web.app/app-release.json?t=$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" -Headers @{ "Cache-Control" = "no-cache" }
+        Write-Host "Production app-release.json version: $($AppReleaseJson.version), versionCode: $($AppReleaseJson.versionCode)"
+        if ($AppReleaseJson.version -eq $VersionName) {
+            $verifiedAppRelease = $true
+            break
+        }
+    } catch {
+        Write-Warning "Failed to fetch app-release.json: $_"
+    }
+    Start-Sleep -Seconds 5
+}
+if (-not $verifiedAppRelease) {
     Write-Error "Production app-release.json version mismatch! Expected $VersionName, got $($AppReleaseJson.version)"
     exit 1
 }
 
-Write-Host "Fetching version.json from production..."
-$VersionJson = Invoke-RestMethod -Uri "https://studio-30f44.web.app/version.json" -Headers @{ "Cache-Control" = "no-cache" }
-Write-Host "Production version.json version: $($VersionJson.version)"
-if ($VersionJson.version -ne $VersionName) {
+$verifiedVersionJson = $false
+for ($i = 1; $i -le 8; $i++) {
+    Write-Host "Fetching version.json from production (attempt $i/8)..."
+    try {
+        $VersionJson = Invoke-RestMethod -Uri "https://studio-30f44.web.app/version.json?t=$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" -Headers @{ "Cache-Control" = "no-cache" }
+        Write-Host "Production version.json version: $($VersionJson.version)"
+        if ($VersionJson.version -eq $VersionName) {
+            $verifiedVersionJson = $true
+            break
+        }
+    } catch {
+        Write-Warning "Failed to fetch version.json: $_"
+    }
+    Start-Sleep -Seconds 5
+}
+if (-not $verifiedVersionJson) {
     Write-Error "Production version.json version mismatch! Expected $VersionName, got $($VersionJson.version)"
     exit 1
 }
