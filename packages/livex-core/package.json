@@ -45,6 +45,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "vite": "catalog:",
-    "vitest": "^3.2.3"
+    "vitest": "^4.1.11"
   }
 }
