@@ -207,7 +207,7 @@ export default function App() {
       wrapProviders={(children) =>
         isWebDesktop ? (
           <SidebarProvider>
-            <WebSidebarLayout />
+            <WebSidebarLayout shouldHideSidebar={false} />
             <SidebarInset>{children}</SidebarInset>
           </SidebarProvider>
         ) : (

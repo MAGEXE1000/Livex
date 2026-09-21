@@ -18,6 +18,7 @@ import {
 } from '@workspace/livex-core';
 import { StageToolbar } from './StageToolbar';
 import { StageLibraryPanel } from './StageLibraryPanel';
+import { StagexRightSidebar, type RightSidebarTab } from './StagexRightSidebar';
 import { StageBottomPanelSlot } from './StageBottomPanelSlot';
 import { StageElementLibrarySurface } from './StageElementLibrarySurface';
 import { StageHistorySurface } from './StageHistorySurface';
@@ -74,25 +75,19 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
 
-  // Desktop Right Stage Elements Sidebar State
+  // Desktop Right Stage Elements & Specs Sidebar State
+  const [rightSidebarTab, setRightSidebarTab] = useState<RightSidebarTab>('elements');
   const [isRightSidebarHovered, setIsRightSidebarHovered] = useState(false);
   const [isRightSidebarPinned, setIsRightSidebarPinned] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const rightSidebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [customElements, setCustomElements] = useState<any[]>([]);
-  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({
-    presets: true,
-    custom: true,
-    mics: true,
-  });
 
   // The sidebar expands when hovered, pinned, actively searching, or search input focused
   const isRightSidebarExpanded =
     isRightSidebarPinned ||
     isRightSidebarHovered ||
-    isSearchFocused ||
-    searchQuery.trim().length > 0;
+    isSearchFocused;
 
   const handleRightSidebarMouseEnter = useCallback(() => {
     if (rightSidebarTimeoutRef.current) {
@@ -103,14 +98,14 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   }, []);
 
   const handleRightSidebarMouseLeave = useCallback(() => {
-    if (isRightSidebarPinned || isSearchFocused || searchQuery.trim().length > 0) return;
+    if (isRightSidebarPinned || isSearchFocused) return;
     if (rightSidebarTimeoutRef.current) {
       clearTimeout(rightSidebarTimeoutRef.current);
     }
     rightSidebarTimeoutRef.current = setTimeout(() => {
       setIsRightSidebarHovered(false);
-    }, 200);
-  }, [isRightSidebarPinned, isSearchFocused, searchQuery]);
+    }, 280);
+  }, [isRightSidebarPinned, isSearchFocused]);
 
   const handleTogglePinSidebar = useCallback(() => {
     setIsRightSidebarPinned((prev) => !prev);
@@ -230,6 +225,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         setSelectedElement(el);
         if (!el) {
           setSpecsOpen(false);
+        } else if (isWebDesktop) {
+          setRightSidebarTab('specs');
         }
       } else if (type === 'sc-open-specs') {
         if (e.data.element && typeof e.data.element === 'object') {
@@ -237,6 +234,10 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         } else if (iframeRef.current) {
           const el = StageBridge.getSelectedElement(iframeRef.current);
           if (el) setSelectedElement(el);
+        }
+        if (isWebDesktop) {
+          setRightSidebarTab('specs');
+          setIsRightSidebarPinned(true);
         }
       } else if (type === 'sc-drag-start') {
         setIsCanvasDragging(true);
@@ -1100,114 +1101,39 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           )}
         </div>
 
-        {/* Desktop Collapsible Elements Library Sidebar */}
+        {/* Desktop Collapsible Right Sidebar (Elements & Specs) */}
         {isWebDesktop && (
-          <motion.div
-            initial={false}
-            animate={{ width: isRightSidebarExpanded ? 290 : 48 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          <StagexRightSidebar
+            isLight={isLight}
+            isAmoled={isAmoled}
+            accent={accent}
+            isExpanded={isRightSidebarExpanded}
+            isPinned={isRightSidebarPinned}
+            onTogglePin={handleTogglePinSidebar}
+            onClose={handleCollapseSidebar}
             onMouseEnter={handleRightSidebarMouseEnter}
             onMouseLeave={handleRightSidebarMouseLeave}
             onAnimationComplete={() => {
               callIframe('_triggerRescale');
             }}
-            className="flex flex-col h-full flex-shrink-0 box-border overflow-hidden select-none relative z-10"
-            style={{
-              borderLeft: isLight
-                ? '1px solid rgba(0, 0, 0, 0.08)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-              background: isLight
-                ? 'rgba(255, 255, 255, 0.75)'
-                : isAmoled
-                  ? 'rgba(10, 10, 12, 0.85)'
-                  : 'rgba(18, 18, 22, 0.75)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: isLight
-                ? '-4px 0 20px rgba(0, 0, 0, 0.03)'
-                : '-4px 0 24px rgba(0, 0, 0, 0.35)',
-              willChange: 'width',
+            handleAddElement={handleAddElement}
+            customElements={customElements}
+            selectedElement={selectedElement}
+            onUpdateElement={handleUpdateElement}
+            onDuplicateElement={handleDuplicateElement}
+            onDeleteElement={handleDeleteElement}
+            onToggleLock={handleToggleLock}
+            onTogglePinElement={handleTogglePin}
+            onSavePreset={handleSavePreset}
+            bandMembers={bandMembers}
+            onDeselectElement={() => {
+              callIframe('deselectAll');
+              setSelectedElement(null);
             }}
-          >
-            <div
-              style={{
-                width: 290,
-                minWidth: 290,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-              }}
-            >
-              <AnimatePresence mode="wait">
-                {!isRightSidebarExpanded ? (
-                  <motion.div
-                    key="collapsed-rail"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.12 }}
-                    className="w-12 h-full flex flex-col items-center pt-3 pb-3 gap-3 cursor-pointer"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                      style={{
-                        background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.07)',
-                        color: accent.from,
-                      }}
-                      title={
-                        currentLang === 'es'
-                          ? 'Elementos (Pasa el cursor)'
-                          : 'Stage Elements (Hover to expand)'
-                      }
-                    >
-                      <span className="material-symbols-outlined text-[20px]">widgets</span>
-                    </div>
-                    <div
-                      className="text-[9px] font-extrabold uppercase tracking-widest opacity-40 select-none mt-2"
-                      style={{
-                        writingMode: 'vertical-rl',
-                        textOrientation: 'mixed',
-                        letterSpacing: '0.14em',
-                        color: isLight ? '#000' : '#fff',
-                      }}
-                    >
-                      {currentLang === 'es' ? 'ELEMENTOS' : 'ELEMENTS'}
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="expanded-content"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="w-full h-full flex flex-col overflow-hidden p-3"
-                  >
-                    <div className="flex-1 overflow-y-auto pr-1">
-                      <StageLibraryPanel
-                        isLight={isLight}
-                        accent={accent}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        customElements={customElements}
-                        expandedCats={expandedCats}
-                        setExpandedCats={setExpandedCats}
-                        callIframe={callIframe}
-                        iframeRef={iframeRef}
-                        handleAddElement={handleAddElement}
-                        isPinned={isRightSidebarPinned}
-                        onTogglePin={handleTogglePinSidebar}
-                        onClose={handleCollapseSidebar}
-                        onSearchFocus={() => setIsSearchFocused(true)}
-                        onSearchBlur={() => setIsSearchFocused(false)}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
+            activeTab={rightSidebarTab}
+            setActiveTab={setRightSidebarTab}
+            onSearchFocusChange={setIsSearchFocused}
+          />
         )}
       </div>
 
@@ -1373,16 +1299,14 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         )}
       </StageBottomPanelSlot>
 
-      {/* Selected Element Specs Pill Button */}
-      {selectedElement && !panelOpen && !specsOpen && !liveMode && (
+      {/* Mobile Selected Element Specs Pill Button */}
+      {!isWebDesktop && selectedElement && !panelOpen && !specsOpen && !liveMode && (
         <button
           data-testid="stagex-specs-btn"
           onClick={() => setSpecsOpen(true)}
           className="absolute z-30 flex items-center gap-2 h-10 px-3.5 rounded-full cursor-pointer active:scale-95 transition-all"
           style={{
-            bottom: isWebDesktop
-              ? '24px'
-              : 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 84px)',
+            bottom: 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 84px)',
             left: '50%',
             transform: 'translateX(-50%)',
             background: isAmoled
@@ -1424,22 +1348,24 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         </button>
       )}
 
-      {/* Compact Floating Specs Editor */}
-      <StageElementSpecsEditor
-        isOpen={specsOpen && !!selectedElement}
-        element={selectedElement}
-        onClose={() => setSpecsOpen(false)}
-        onUpdateElement={handleUpdateElement}
-        onDuplicate={handleDuplicateElement}
-        onDelete={handleDeleteElement}
-        onToggleLock={handleToggleLock}
-        onTogglePin={handleTogglePin}
-        onSavePreset={handleSavePreset}
-        bandMembers={bandMembers}
-        isLight={isLight}
-        isAmoled={isAmoled}
-        accent={accent}
-      />
+      {/* Compact Floating Specs Editor (Mobile only) */}
+      {!isWebDesktop && (
+        <StageElementSpecsEditor
+          isOpen={specsOpen && !!selectedElement}
+          element={selectedElement}
+          onClose={() => setSpecsOpen(false)}
+          onUpdateElement={handleUpdateElement}
+          onDuplicate={handleDuplicateElement}
+          onDelete={handleDeleteElement}
+          onToggleLock={handleToggleLock}
+          onTogglePin={handleTogglePin}
+          onSavePreset={handleSavePreset}
+          bandMembers={bandMembers}
+          isLight={isLight}
+          isAmoled={isAmoled}
+          accent={accent}
+        />
+      )}
 
 
       {/* Collaboration Dialog */}

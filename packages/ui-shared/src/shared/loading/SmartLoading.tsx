@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { type AppKey } from '@workspace/livex-core';
 import { Loader } from '../../components/motion/loader';
 import {
+  LivexLogo,
   ChordexLogo,
   DrumexLogo,
   StagexLogoIcon,
@@ -17,19 +18,45 @@ interface SmartLoadingProps {
   app?: AppKey;
 }
 
-export function AppLoadingScreen({ app }: { app: AppKey }) {
-  const logos = {
+export function AppLoadingScreen({ app }: { app?: AppKey | string }) {
+  const logos: Record<
+    string,
+    { Logo: React.ComponentType<{ size?: number }>; name: string; desc: string; color: string }
+  > = {
+    chordex: {
+      Logo: ChordexLogo,
+      name: 'Chordex',
+      desc: 'Preparing chord theory engine...',
+      color: '#a855f7',
+    },
     chords: {
       Logo: ChordexLogo,
       name: 'Chordex',
       desc: 'Preparing chord theory engine...',
       color: '#a855f7',
     },
-    drums: { Logo: DrumexLogo, name: 'Drumex', desc: 'Loading drum patterns...', color: '#ec4899' },
+    drumex: {
+      Logo: DrumexLogo,
+      name: 'Drumex',
+      desc: 'Loading drum patterns...',
+      color: '#ec4899',
+    },
+    drums: {
+      Logo: DrumexLogo,
+      name: 'Drumex',
+      desc: 'Loading drum patterns...',
+      color: '#ec4899',
+    },
+    stagex: {
+      Logo: StagexLogoIcon,
+      name: 'Stagex',
+      desc: 'Initializing stage plot canvas...',
+      color: '#3b82f6',
+    },
     stage: {
       Logo: StagexLogoIcon,
       name: 'Stagex',
-      desc: 'Initializing 3D stage setup...',
+      desc: 'Initializing stage plot canvas...',
       color: '#3b82f6',
     },
     groovex: {
@@ -44,9 +71,22 @@ export function AppLoadingScreen({ app }: { app: AppKey }) {
       desc: 'Preparing vocal recorder...',
       color: '#f59e0b',
     },
+    hub: {
+      Logo: LivexLogo,
+      name: 'Livex Hub',
+      desc: 'Loading Livex...',
+      color: '#3b82f6',
+    },
   };
 
-  const config = logos[app] || logos.chords;
+  const defaultLivexConfig = {
+    Logo: LivexLogo,
+    name: 'Livex',
+    desc: 'Loading workspace...',
+    color: '#3b82f6',
+  };
+
+  const config = (app && logos[app]) || defaultLivexConfig;
   const Logo = config.Logo;
 
   return (

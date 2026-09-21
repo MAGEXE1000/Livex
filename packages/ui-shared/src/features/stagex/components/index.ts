@@ -8,3 +8,4 @@ export { StageElementDrawer } from './StageElementDrawer';
 export { StageSetupDetailLayout } from './setup/StageSetupDetailLayout';
 export { StageSetupStatsStrip } from './setup/StageSetupStatsStrip';
 export { StageSetupEmptyState } from './setup/StageSetupEmptyState';
+export { StagexRightSidebar } from './StagexRightSidebar';
