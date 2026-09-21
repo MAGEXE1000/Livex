@@ -1,14 +1,13 @@
-# Version 4.6.34
+# Version 4.6.35
 
-Release Date: 2026-09-20
+Release Date: 2026-09-21
 
-### Added
-- Dedicated Vocalex Track Effects Surface (`TakeEffectsSheet`): Introduced a professional mobile effects overlay featuring real-time Web Audio API DSP processors (Reverb, Delay/Echo, Chorus/Modulation, Drive/Distortion, High-Pass, and Low-Pass filters) with live auditioning and Android `BackDispatcher` integration.
-- Integrated Vocal Harmonizer Suite: Embedded the multi-part vocal harmonizer and pitch-shift layer generator as a dedicated capability inside the Track Effects surface while preserving all existing harmony logic.
+### Security
+- Comprehensive Security Hardening: Remediated all GitHub Dependabot security alerts, upgrading Vitest to 4.1.11, overriding uuid to ^11.1.1 (CVE-2026-41907), and overriding esbuild to 0.28.1 (GHSA-g7r4-m6w7-qqqr).
+- Remediated CodeQL Code Scanning Alerts: Resolved command injection vectors in release orchestration scripts, sanitized Android SafeContentResolver URI operations, hardened URL validation in updater security checks, and eliminated prototype pollution vectors in StageCanvasView.
+- Closed Secret Scanning False Positives: Audited and verified all repository tokens and credentials, confirming zero open secret scanning alerts.
 
 ### Improved
-- Vocalex Takes Action Hierarchy: Redesigned the post-recording take experience in `TakeDetailView`, moving "Re-record" and "Harmonize" away from the top header into a dedicated, organized track processing area below playback.
-- Safe Destructive Action Placement: Separated the delete take action into the dedicated track action area with subtle red tone and modal confirmation to prevent accidental taps while keeping it easily accessible.
-- Stagex History Theme Awareness: Replaced hardcoded pink/magenta visual values across `StageHistorySurface` and `StageCanvasView` with semantic theme accent tokens (`--studio-accent`), ensuring cohesive appearance across Dark, Light, and AMOLED themes.
-- Stagex Toolbar Cleanup: Removed duplicate History navigation from the elements toolbar to maintain focused, single-purpose toolbars.
-- Profile Privacy & Data Controls: Revamped the Privacy & Data section with actionable local data controls, privacy guarantee banners, and streamlined diagnostics.
+- CI/CD & Release Pipeline Modernization: Updated all GitHub Actions workflows to align dynamic package manager resolution (pnpm 11.24.0), modernized runner action versions, corrected CI paths to packages/livex-core/**, and ensured release workflows dynamically target github.repository.
+- CodeQL Java/Kotlin Analysis Resilience: Configured Android Gradle analysis in CodeQL to rerun compilation tasks without stale build cache interference.
+- Workspace Quality Gates: Resolved all TypeScript and ESLint linting discrepancies across workspace tests and documentation validation.
