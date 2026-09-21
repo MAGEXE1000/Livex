@@ -91,8 +91,8 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
   let mockProvider: any;
   let originalWindow: any;
   let originalDocument: any;
-  let windowListeners: Record<string, Function[]>;
-  let documentListeners: Record<string, Function[]>;
+  let windowListeners: Record<string, ((...args: any[]) => void)[]>;
+  let documentListeners: Record<string, ((...args: any[]) => void)[]>;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -106,11 +106,11 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
     originalDocument = (globalThis as any).document;
 
     (globalThis as any).window = {
-      addEventListener: vi.fn((event: string, cb: Function) => {
+      addEventListener: vi.fn((event: string, cb: (...args: any[]) => void) => {
         windowListeners[event] = windowListeners[event] || [];
         windowListeners[event].push(cb);
       }),
-      removeEventListener: vi.fn((event: string, cb: Function) => {
+      removeEventListener: vi.fn((event: string, cb: (...args: any[]) => void) => {
         if (windowListeners[event]) {
           windowListeners[event] = windowListeners[event].filter((fn) => fn !== cb);
         }
@@ -123,11 +123,11 @@ describe('SupabaseRealtime Sync Traffic & Connection-Gated Fallback', () => {
 
     (globalThis as any).document = {
       visibilityState: 'visible',
-      addEventListener: vi.fn((event: string, cb: Function) => {
+      addEventListener: vi.fn((event: string, cb: (...args: any[]) => void) => {
         documentListeners[event] = documentListeners[event] || [];
         documentListeners[event].push(cb);
       }),
-      removeEventListener: vi.fn((event: string, cb: Function) => {
+      removeEventListener: vi.fn((event: string, cb: (...args: any[]) => void) => {
         if (documentListeners[event]) {
           documentListeners[event] = documentListeners[event].filter((fn) => fn !== cb);
         }

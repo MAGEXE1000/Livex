@@ -73,6 +73,7 @@ export default tseslint.config(
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+      'react/prop-types': 'off', // Prop validation enforced by TypeScript compiler
 
       // ── Tier 1: ERROR — violations cause runtime crashes or logic bugs ──
       'react-hooks/rules-of-hooks': 'error',   // Hook ordering violations = runtime crash

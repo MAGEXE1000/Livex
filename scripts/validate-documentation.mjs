@@ -69,7 +69,7 @@ function verifyPathExists(filePath, docFile, lineNum) {
     // If the exact relative path doesn't exist, try searching for the basename in packages/ and apps/
     const baseName = path.basename(cleanUrl);
     let resolvedFallback = null;
-    if (baseName.endsWith('.tsx') || baseName.endsWith('.ts') || baseName.endsWith('.js') || baseName.endsWith('.json')) {
+    if (baseName.endsWith('.tsx') || baseName.endsWith('.ts') || baseName.endsWith('.js') || baseName.endsWith('.json') || baseName.endsWith('.css') || baseName.endsWith('.html') || baseName.endsWith('.md')) {
       const findCandidate = (dir) => {
         if (!fs.existsSync(dir)) return null;
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

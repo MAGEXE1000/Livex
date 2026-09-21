@@ -105,5 +105,5 @@
 
 ## 5. Largest CSS Files in Source
 
-1. **[app.css](file:///c:/Users/ayuda/.gemini/antigravity/scratch/Studio/apps/studio-android/public/stage-core/app.css)**: 113.2 KB / 2,961 lines — Stagex layouts.
-2. **[index.css](file:///c:/Users/ayuda/.gemini/antigravity/scratch/Studio/apps/studio-android/src/index.css)**: 64.5 KB / 2,001 lines — Android app CSS styling definitions.
+1. **[app.css](../apps/studio-android/public/stage-core/app.css)**: 113.2 KB / 2,961 lines — Stagex layouts.
+2. **[index.css](../apps/studio-android/src/index.css)**: 64.5 KB / 2,001 lines — Android app CSS styling definitions.
