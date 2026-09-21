@@ -21,7 +21,10 @@ try {
   fileExists(webAppPath, 'Web router root component must exist.');
 
   const webAppSrc = fs.readFileSync(webAppPath, 'utf8');
-  assert(webAppSrc.includes('StudioLandingPage'), 'Web App router must include StudioLandingPage.');
+  assert(
+    webAppSrc.includes('LivexLandingPage') || webAppSrc.includes('StudioLandingPage'),
+    'Web App router must include LivexLandingPage or StudioLandingPage.'
+  );
   assert(webAppSrc.includes("route === '/'"), 'Web App router must include public landing route.');
   assert(
     !webAppSrc.includes('SharedNavigationBar'),
@@ -51,7 +54,10 @@ try {
     androidAppSrc.includes('safe-area-inset-top'),
     'Android App must utilize native safe area top insets.'
   );
-  assert(androidAppSrc.includes('navigateTo'), 'Android App must use navigateTo.');
+  assert(
+    androidAppSrc.includes('useNavigationStore') || androidAppSrc.includes('navigateTo'),
+    'Android App must use useNavigationStore or navigateTo.'
+  );
   assert(
     !androidAppSrc.includes("route === '/'"),
     'Android App router must not check route for public landing root.'

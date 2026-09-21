@@ -236,6 +236,9 @@ console.log(
   `[TESTS] Dynamic versioning: prev=${prevVersion}, current=${currentVersion}, next=${nextVersion}, nextNext=${nextNextVersion}`
 );
 
+const validSha256 = '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206';
+const validApkUrl = (v) => `https://studio-30f44.web.app/studio-${v}.apk`;
+
 async function runRegressionTests() {
   console.log('=== RUNNING UPDATER REGRESSION TEST SUITE ===\n');
 
@@ -271,7 +274,12 @@ async function runRegressionTests() {
     mockFetchHandler = (url) => {
       return {
         ok: true,
-        json: async () => ({ version: currentVersion, versionCode: 8 }),
+        json: async () => ({
+          version: currentVersion,
+          versionCode: 8,
+          apkSha256: validSha256,
+          apkUrl: validApkUrl(currentVersion),
+        }),
       };
     };
     const state = await checkForUpdate(false);
@@ -287,7 +295,8 @@ async function runRegressionTests() {
         json: async () => ({
           version: nextVersion,
           versionCode: 136,
-          apkUrl: `https://cdn.example.com/studio-${nextVersion}.apk`,
+          apkSha256: validSha256,
+          apkUrl: validApkUrl(nextVersion),
         }),
       };
     };
@@ -307,10 +316,26 @@ async function runRegressionTests() {
           bgFetchStarted = true;
           // Simulate slow background fetch
           await new Promise((r) => setTimeout(r, 100));
-          return { ok: true, json: async () => ({ version: nextVersion, versionCode: 136 }) };
+          return {
+            ok: true,
+            json: async () => ({
+              version: nextVersion,
+              versionCode: 136,
+              apkSha256: validSha256,
+              apkUrl: validApkUrl(nextVersion),
+            }),
+          };
         } else {
           manualFetchStarted = true;
-          return { ok: true, json: async () => ({ version: nextNextVersion, versionCode: 137 }) };
+          return {
+            ok: true,
+            json: async () => ({
+              version: nextNextVersion,
+              versionCode: 137,
+              apkSha256: validSha256,
+              apkUrl: validApkUrl(nextNextVersion),
+            }),
+          };
         }
       }
     };
@@ -328,7 +353,12 @@ async function runRegressionTests() {
   await runTest('Automatic startup check rate limiting', async () => {
     mockFetchHandler = () => ({
       ok: true,
-      json: async () => ({ version: nextVersion, versionCode: 136 }),
+      json: async () => ({
+        version: nextVersion,
+        versionCode: 136,
+        apkSha256: validSha256,
+        apkUrl: validApkUrl(nextVersion),
+      }),
     });
 
     // First check
@@ -355,7 +385,8 @@ async function runRegressionTests() {
       json: async () => ({
         version: nextVersion,
         versionCode: 136,
-        apkUrl: `https://cdn.example.com/studio-${nextVersion}.apk`,
+        apkSha256: validSha256,
+        apkUrl: validApkUrl(nextVersion),
       }),
     });
 
@@ -395,7 +426,8 @@ async function runRegressionTests() {
       json: async () => ({
         version: nextVersion,
         versionCode: 136,
-        apkUrl: `https://cdn.example.com/studio-${nextVersion}.apk`,
+        apkSha256: validSha256,
+        apkUrl: validApkUrl(nextVersion),
       }),
     });
 
@@ -419,7 +451,15 @@ async function runRegressionTests() {
         isGithub = false;
       }
       if (isGithub) {
-        return { ok: true, json: async () => ({ version: nextVersion }) };
+        return {
+          ok: true,
+          json: async () => ({
+            version: nextVersion,
+            versionCode: 136,
+            apkSha256: validSha256,
+            apkUrl: `https://github.com/MAGEXE1000/Livex/releases/download/v${nextVersion}/studio-${nextVersion}.apk`,
+          }),
+        };
       }
       return { ok: false };
     };
@@ -430,7 +470,12 @@ async function runRegressionTests() {
   await runTest('Downgrade verification block', async () => {
     mockFetchHandler = () => ({
       ok: true,
-      json: async () => ({ version: prevVersion, versionCode: 5 }), // Lower than 3.7.8 (mocked local is 8)
+      json: async () => ({
+        version: prevVersion,
+        versionCode: 5,
+        apkSha256: validSha256,
+        apkUrl: validApkUrl(prevVersion),
+      }),
     });
 
     const state = await checkForUpdate(true);

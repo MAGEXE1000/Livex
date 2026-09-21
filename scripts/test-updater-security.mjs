@@ -359,11 +359,11 @@ test('UpdateDownloadService.java contains isTrustedReleaseUrl method', () => {
     'Expected isTrustedReleaseUrl method in UpdateDownloadService.java'
   );
   assert.ok(
-    src.includes('studio-30f44.web.app'),
+    src.includes('"studio-30f44.web.app"'),
     'Expected Firebase host allowlist in UpdateDownloadService.java'
   );
   assert.ok(
-    src.includes('github.com'),
+    src.includes('"github.com"'),
     'Expected GitHub host allowlist in UpdateDownloadService.java'
   );
 });

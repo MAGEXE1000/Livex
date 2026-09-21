@@ -618,8 +618,19 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
             e.id === selectedElement.id ? { ...e, ...updates } : e
           );
           proj.elements = updated;
-          if (Array.isArray(proj.scenes) && proj.scenes[proj.currentSceneIdx || 0]) {
-            proj.scenes[proj.currentSceneIdx || 0].elements = updated;
+          const sceneIdx =
+            typeof proj.currentSceneIdx === 'number' &&
+            Number.isInteger(proj.currentSceneIdx) &&
+            proj.currentSceneIdx >= 0
+              ? proj.currentSceneIdx
+              : 0;
+          if (
+            Array.isArray(proj.scenes) &&
+            sceneIdx < proj.scenes.length &&
+            proj.scenes[sceneIdx] &&
+            typeof proj.scenes[sceneIdx] === 'object'
+          ) {
+            proj.scenes[sceneIdx].elements = updated;
           }
           localStorage.setItem('stagecoreProject', JSON.stringify(proj));
         }

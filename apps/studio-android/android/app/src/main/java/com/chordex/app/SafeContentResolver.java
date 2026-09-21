@@ -60,6 +60,22 @@ public final class SafeContentResolver {
             return false;
         }
 
+        // 1b. Block access to internal private directories like /data (CWE-441 / CWE-610)
+        String path = uri.getPath();
+        if (path != null) {
+            try {
+                java.io.File file = new java.io.File(path);
+                String canonical = file.getCanonicalPath();
+                if (canonical.startsWith("/data") || canonical.contains("/data/")) {
+                    return false;
+                }
+            } catch (Exception ignored) {
+                if (path.startsWith("/data") || path.contains("/data/")) {
+                    return false;
+                }
+            }
+        }
+
         // 2. Require non-empty authority
         String rawAuthority = uri.getAuthority();
         if (rawAuthority == null || rawAuthority.trim().isEmpty()) {

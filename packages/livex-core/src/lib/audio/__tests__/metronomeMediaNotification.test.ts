@@ -56,10 +56,13 @@ class MockAudioContext {
   close = vi.fn().mockResolvedValue(undefined);
 }
 
-// Setup global mocks for Vitest (Node environment)
 const globalAudioCtx = new MockAudioContext();
-(globalThis as any).AudioContext = vi.fn(() => globalAudioCtx);
-(globalThis as any).webkitAudioContext = vi.fn(() => globalAudioCtx);
+(globalThis as any).AudioContext = vi.fn(function () {
+  return globalAudioCtx;
+});
+(globalThis as any).webkitAudioContext = vi.fn(function () {
+  return globalAudioCtx;
+});
 
 const mockMediaSession = {
   metadata: null as any,

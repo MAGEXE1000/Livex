@@ -60,10 +60,10 @@ runTest('Signature Verification Rejects Missing SHA256 Checksum Cleanly', () => 
   }
 });
 
-// 5. Version Manager Argument Validation
-runTest('Version Manager Correctly Rejects Invalid Semver', () => {
-  const res = spawnSync('node', [path.join(repoRoot, 'scripts/version-manager.mjs'), 'android', '--name', 'invalid_ver', '--code', '40000'], { encoding: 'utf8' });
-  return res.status === 1 && res.stderr.includes('Invalid Android versionName format');
+// 5. Version Code Safety Validation
+runTest('Version Code Validator Correctly Rejects Invalid Semver', () => {
+  const res = spawnSync('node', [path.join(repoRoot, 'scripts/validate-version-code.mjs'), 'invalid_ver'], { encoding: 'utf8' });
+  return res.status === 1 && res.stderr.includes('is not valid strict SemVer');
 });
 
 // 6. Release Script Dry Run Flag Support
