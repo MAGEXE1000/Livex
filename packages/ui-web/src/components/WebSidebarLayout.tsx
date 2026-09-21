@@ -24,7 +24,7 @@ import {
   VocalexLogo,
   AnimatedIcon,
 } from '@workspace/ui-shared';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   useSidebar,
@@ -66,15 +66,11 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
 
-  const { open, toggleSidebar } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const { preferences } = useStudioPreferences();
   const isReduced = preferences.reduceMotion;
   const t = useT();
   const updater = useAppUpdate();
-
-  const handleToggleSidebar = () => {
-    toggleSidebar();
-  };
 
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [customPhoto, setCustomPhoto] = useState<string | null>(null);
@@ -89,6 +85,33 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
   ) as string;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setOpen(true);
+  }, [setOpen]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (showProfileMenu) return; // Keep expanded while profile popover is active
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 180);
+  }, [showProfileMenu, setOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const profileMenuBtnStyle = {
     width: '100%',
@@ -138,13 +161,14 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
     const handleClickOutside = (e: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
         setShowProfileMenu(false);
+        setOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showProfileMenu]);
+  }, [showProfileMenu, setOpen]);
 
   // Accent color resolved from global user settings
   const accent = resolveAccent(accentColor);
@@ -179,45 +203,37 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
   } as React.CSSProperties;
 
   return (
-    <Sidebar shouldHideSidebar={shouldHideSidebar} style={accentVars}>
+    <Sidebar
+      shouldHideSidebar={shouldHideSidebar}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={accentVars}
+    >
       {/* Header */}
-      <SidebarHeader>
-        <div className="flex items-center justify-between w-full overflow-hidden text-[var(--c-text-primary)]">
-          <div
-            className="flex items-center gap-3 overflow-hidden cursor-pointer flex-1 min-w-0"
-            onClick={() => handleGoToHub('home')}
-            title="Livex Hub"
-          >
-            <div className="flex-shrink-0">
-              <LivexLogo size={28} />
-            </div>
-            <motion.span
-              initial={false}
-              animate={{ opacity: open ? 1 : 0, x: open ? 0 : -8 }}
-              transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
-              className="font-extrabold text-base tracking-tight text-[var(--c-text-primary)] truncate"
-              style={{
-                fontFamily: 'var(--studio-font-display)',
-                letterSpacing: '-0.02em',
-                whiteSpace: 'nowrap',
-                display: open ? 'inline-block' : 'none',
-              }}
-            >
-              Livex
-            </motion.span>
+      <SidebarHeader style={{ padding: 0 }}>
+        <div
+          className="flex items-center cursor-pointer select-none overflow-hidden w-full h-full text-[var(--c-text-primary)]"
+          onClick={() => handleGoToHub('home')}
+          title="Livex Hub"
+          style={{ padding: '0 19px', gap: '12px' }}
+        >
+          <div className="flex-shrink-0 flex items-center justify-center" style={{ width: '28px', height: '28px' }}>
+            <LivexLogo size={28} />
           </div>
-
-          <button
-            type="button"
-            onClick={handleToggleSidebar}
-            title={open ? 'Collapse sidebar' : 'Expand sidebar'}
-            className="p-1 rounded-lg border-none bg-transparent hover:bg-[rgba(128,128,128,0.12)] text-[var(--c-text-secondary)] hover:text-[var(--c-text-primary)] cursor-pointer flex items-center justify-center transition-colors flex-shrink-0"
-            style={{ width: '28px', height: '28px' }}
+          <motion.span
+            initial={false}
+            animate={{ opacity: open ? 1 : 0, x: open ? 0 : -8 }}
+            transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
+            className="font-extrabold text-base tracking-tight text-[var(--c-text-primary)] truncate"
+            style={{
+              fontFamily: 'var(--studio-font-display)',
+              letterSpacing: '-0.02em',
+              whiteSpace: 'nowrap',
+              display: open ? 'inline-block' : 'none',
+            }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {open ? 'keyboard_double_arrow_left' : 'keyboard_double_arrow_right'}
-            </span>
-          </button>
+            Livex
+          </motion.span>
         </div>
       </SidebarHeader>
 
@@ -231,11 +247,15 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
               <SidebarMenuButton
                 active={currentApp === 'hub' && activeHubTab !== 'settings'}
                 onClick={() => handleGoToHub('home')}
-                tooltip="Hub Home"
+                tooltip="Livex Hub"
               >
                 <div
-                  className="flex-shrink-0"
-                  style={{ opacity: currentApp === 'hub' && activeHubTab !== 'settings' ? 1 : 0.65 }}
+                  className="flex-shrink-0 flex items-center justify-center"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    opacity: currentApp === 'hub' && activeHubTab !== 'settings' ? 1 : 0.65,
+                  }}
                 >
                   <span
                     className="material-symbols-outlined"
@@ -248,14 +268,17 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            {REGISTERED_APPS.filter((app) => app.id !== 'hub').map((app) => (
+            {REGISTERED_APPS.filter((app) => app.id !== 'hub' && app.id !== 'devtools').map((app) => (
               <SidebarMenuItem key={app.id}>
                 <SidebarMenuButton
                   active={currentApp === app.id}
                   onClick={() => handleLaunchApp(app.id as any)}
                   tooltip={app.labelKey}
                 >
-                  <div className="flex-shrink-0">
+                  <div
+                    className="flex-shrink-0 flex items-center justify-center"
+                    style={{ width: '24px', height: '24px' }}
+                  >
                     {(() => {
                       switch (app.id) {
                         case 'chordex':
@@ -268,8 +291,6 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                           return <GroovexLogo size={20} />;
                         case 'vocalex':
                           return <VocalexLogo size={20} />;
-                        case 'devtools':
-                          return <AnimatedIcon name="bug" size={20} color="currentColor" />;
                         default:
                           return (
                             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -283,33 +304,6 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        {/* Global Navigation / Settings */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Preferences</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                active={currentApp === 'hub' && activeHubTab === 'settings'}
-                onClick={() => handleGoToHub('settings')}
-                tooltip="Settings"
-              >
-                <div
-                  className="flex-shrink-0"
-                  style={{ opacity: currentApp === 'hub' && activeHubTab === 'settings' ? 1 : 0.65 }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 20, display: 'block' }}
-                  >
-                    settings
-                  </span>
-                </div>
-                <SidebarLabel open={open}>Settings</SidebarLabel>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
@@ -475,6 +469,7 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                         onClick={() => {
                           handleGoToSettingsPage('profile');
                           setShowProfileMenu(false);
+                          setOpen(false);
                         }}
                         style={profileMenuBtnStyle}
                         className="btn-smooth hover:bg-[var(--sidebar-hover-bg)]"
@@ -489,6 +484,7 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                         onClick={() => {
                           handleGoToSettingsPage('general');
                           setShowProfileMenu(false);
+                          setOpen(false);
                         }}
                         style={profileMenuBtnStyle}
                         className="btn-smooth hover:bg-[var(--sidebar-hover-bg)]"
@@ -503,6 +499,7 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                         onClick={() => {
                           handleGoToSettingsPage('release-notes');
                           setShowProfileMenu(false);
+                          setOpen(false);
                         }}
                         style={profileMenuBtnStyle}
                         className="btn-smooth hover:bg-[var(--sidebar-hover-bg)]"
@@ -517,6 +514,7 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                         onClick={() => {
                           handleGoToHub('help');
                           setShowProfileMenu(false);
+                          setOpen(false);
                         }}
                         style={profileMenuBtnStyle}
                         className="btn-smooth hover:bg-[var(--sidebar-hover-bg)]"

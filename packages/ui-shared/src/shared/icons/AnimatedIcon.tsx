@@ -13,10 +13,12 @@ import {
   EyeOff,
   Globe,
   Grid,
+  Info,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
   Music,
+  Palette,
   Pencil,
   Share2,
   Shield,
@@ -150,10 +152,12 @@ const staticLucideIcons: Record<string, LucideIcon> = {
   'eye-off': EyeOff,
   globe: Globe,
   grid: Grid,
+  info: Info,
   'layout-dashboard': LayoutDashboard,
   'loader-circle': LoaderCircle,
   'log-out': LogOut,
   music: Music,
+  palette: Palette,
   pencil: Pencil,
   edit: Pencil,
   'share-2': Share2,
@@ -209,7 +213,7 @@ function getAnimatedIconComponent(name: string) {
   }
 
   // Normalize names that are Material symbols or aliases to their Lucide/local counterparts
-  let normName = (name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  let normName = (name || '').toLowerCase().replace(/_/g, '-').replace(/[^a-z0-9-]/g, '');
   if (normName === 'chevron_left' || normName === 'chevron-left') {
     normName = 'chevron-left';
   } else if (normName === 'chevron_right' || normName === 'chevron-right') {
@@ -233,10 +237,17 @@ function getAnimatedIconComponent(name: string) {
   ) {
     normName = 'arrow-right';
   } else if (
+    normName === 'system-update' ||
+    normName === 'systemupdate' ||
     normName === 'system_update' ||
     normName === 'sync' ||
     normName === 'refresh' ||
-    normName === 'restart_alt'
+    normName === 'restart-alt' ||
+    normName === 'restart_alt' ||
+    normName === 'updater' ||
+    normName === 'update' ||
+    normName === 'refresh-cw' ||
+    normName === 'refreshcw'
   ) {
     normName = 'refresh-cw';
   } else if (
@@ -246,8 +257,20 @@ function getAnimatedIconComponent(name: string) {
     normName === 'circle-help'
   ) {
     normName = 'circle-help';
-  } else if (normName === 'info' || normName === 'about' || normName === 'badge-alert') {
-    normName = 'badge-alert';
+  } else if (
+    normName === 'info' ||
+    normName === 'about' ||
+    normName === 'badge-info' ||
+    normName === 'badge-alert'
+  ) {
+    normName = 'info';
+  } else if (
+    normName === 'palette' ||
+    normName === 'theme' ||
+    normName === 'color' ||
+    normName === 'appearance'
+  ) {
+    normName = 'palette';
   } else if (normName === 'code' || normName === 'terminal') {
     normName = 'terminal';
   } else if (

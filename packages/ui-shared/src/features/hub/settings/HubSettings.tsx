@@ -668,11 +668,6 @@ export function HubSettings({
             label: t.hub.studioSettings.generalTitle || (lang === 'es' ? 'Ajustes' : 'Settings'),
           },
           {
-            id: 'updater' as const,
-            icon: 'system_update',
-            label: lang === 'es' ? 'Actualizador' : 'Updater',
-          },
-          {
             id: 'notifications' as const,
             icon: 'notifications',
             label: lang === 'es' ? 'Centro de Notificaciones' : 'Notification Center',
@@ -707,7 +702,7 @@ export function HubSettings({
           },
           {
             id: 'about' as const,
-            icon: 'badge-alert',
+            icon: 'info',
             label: lang === 'es' ? 'Acerca de' : 'About',
           },
           ...(settings.developerMode

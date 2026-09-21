@@ -22,7 +22,7 @@ export function useSidebar() {
 
 export function SidebarProvider({
   children,
-  defaultOpen = true,
+  defaultOpen = false,
   className = '',
   style = {},
   ...props
@@ -32,25 +32,12 @@ export function SidebarProvider({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [open, setOpen] = useState(() => {
-    try {
-      const saved = localStorage.getItem('studio:sidebarOpen');
-      return saved !== null ? saved === 'true' : defaultOpen;
-    } catch {
-      return defaultOpen;
-    }
-  });
+  const [open, setOpen] = useState(defaultOpen);
 
   const isMobile = false; // Strictly desktop web layout helper
 
   const toggleSidebar = useCallback(() => {
-    setOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('studio:sidebarOpen', String(next));
-      } catch {}
-      return next;
-    });
+    setOpen((prev) => !prev);
   }, []);
 
   const state: 'expanded' | 'collapsed' = open ? 'expanded' : 'collapsed';
@@ -86,12 +73,16 @@ export function Sidebar({
   className = '',
   style = {},
   shouldHideSidebar = false,
+  onMouseEnter,
+  onMouseLeave,
   ...props
 }: {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   shouldHideSidebar?: boolean;
+  onMouseEnter?: React.MouseEventHandler<HTMLElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLElement>;
 }) {
   const { open } = useSidebar();
   const { preferences } = useStudioPreferences();
@@ -103,6 +94,8 @@ export function Sidebar({
   return (
     <motion.aside
       className={`flex flex-col select-none flex-shrink-0 relative ${className}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       animate={{
         width: targetWidth,
       }}
@@ -133,12 +126,12 @@ export function Sidebar({
     >
       <div
         style={{
-          width: open ? '240px' : '68px',
+          width: '240px',
+          minWidth: '240px',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
-          transition: isReduced ? 'none' : 'width 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         {children}
@@ -299,9 +292,11 @@ export function SidebarMenuButton({
       onClick={onClick}
       whileTap={{ scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-      className={`w-full flex items-center ${open ? 'justify-start px-3' : 'justify-center px-0'} gap-3 py-2.5 rounded-xl border-none text-left cursor-pointer relative group hover:bg-[var(--sidebar-hover-bg)] ${className}`}
+      className={`w-full flex items-center justify-start gap-3 py-2.5 rounded-xl border-none text-left cursor-pointer relative group hover:bg-[var(--sidebar-hover-bg)] ${className}`}
       title={tooltip}
       style={{
+        paddingLeft: '13px',
+        paddingRight: '12px',
         background: active ? 'var(--sidebar-active-bg, rgba(255, 255, 255, 0.07))' : 'transparent',
         color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
         fontFamily: 'var(--type-nav-font, var(--studio-font-body))',
@@ -319,7 +314,7 @@ export function SidebarMenuButton({
       {active && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className={`absolute ${open ? 'left-1' : 'left-0.5'} w-1 h-5 rounded-full`}
+          className="absolute left-1 w-1 h-5 rounded-full"
           style={{
             background:
               'linear-gradient(135deg, var(--studio-accent-from, #679cff), var(--studio-accent-to, #007aff))',
