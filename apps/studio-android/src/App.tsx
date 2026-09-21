@@ -1,5 +1,5 @@
 import { SharedAppShell } from '@workspace/ui-shared/src/shared/layout/SharedAppShell';
-import { lazy, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { tolgee, useSettingsStore, useNavigationStore } from '@workspace/livex-core';
 
 import { TolgeeProvider } from '@tolgee/react';
@@ -121,6 +121,24 @@ export default function App() {
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
   /* Note: SharedNavigationBar is rendered via BottomNavigationController */
 
+  const subApps = useMemo(
+    () => ({
+      devtools: <DevToolsApp />,
+      groovex: <GroovexApp />,
+      vocalex: <VocalexApp />,
+      stagex: <StageCorePanel />,
+      drumex: <DrumEditor />,
+      chordex: {
+        sidebar: null,
+        songs: <SongsPanel />,
+        practice: <SaxophonePracticePanel />,
+        library: <LibraryPanel />,
+        preferences: <SettingsPanel />,
+      },
+    }),
+    []
+  );
+
   const appShell = (
     <SharedAppShell
       isWeb={false}
@@ -144,20 +162,7 @@ export default function App() {
       }
       renderBottomNav={!showLaunchOverlay ? () => <BottomNavigationController /> : undefined}
       hubElement={<LivexHub />}
-      subApps={{
-        devtools: <DevToolsApp />,
-        groovex: <GroovexApp />,
-        vocalex: <VocalexApp />,
-        stagex: <StageCorePanel />,
-        drumex: <DrumEditor />,
-        chordex: {
-          sidebar: null,
-          songs: <SongsPanel />,
-          practice: <SaxophonePracticePanel />,
-          library: <LibraryPanel />,
-          preferences: <SettingsPanel />,
-        },
-      }}
+      subApps={subApps}
     />
   );
 

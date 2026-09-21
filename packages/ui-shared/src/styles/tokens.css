@@ -2635,6 +2635,21 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
   ) !important;
 }
 
+/* Smooth content reveal animation for resolving loading states without abrupt pop-ins */
+@keyframes app-content-reveal-anim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.app-content-reveal {
+  animation: app-content-reveal-anim 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
+}
+
 /* Subtle accent loading line for smart loading (150-400ms) */
 @keyframes studio-accent-loader-anim {
   0% {

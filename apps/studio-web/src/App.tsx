@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useIsWebDesktop,
   useNavigationStore,
@@ -197,6 +197,30 @@ export default function App() {
     }
   }, []);
 
+  const subApps = useMemo(
+    () => ({
+      devtools: <DevToolsApp />,
+      groovex: <GroovexApp />,
+      vocalex: <VocalexApp />,
+      stagex: <StageCorePanel />,
+      drumex: <DrumEditor />,
+      chordex: {
+        sidebar: isWebDesktop ? (
+          <WebAppSectionDock
+            app="chordex"
+            activeSection={activePanel}
+            onChangeSection={handleSetActivePanel as any}
+          />
+        ) : null,
+        songs: <SongsPanel />,
+        practice: <SaxophonePracticePanel />,
+        library: <LibraryPanel />,
+        preferences: <SettingsPanel />,
+      },
+    }),
+    [isWebDesktop, activePanel, handleSetActivePanel]
+  );
+
   if (route === '/') {
     return <LivexLandingPage navigateTo={navigateTo} />;
   }
@@ -231,27 +255,7 @@ export default function App() {
         !isWebDesktop && !showLaunchOverlay ? () => <BottomNavigationController /> : undefined
       }
       hubElement={<LivexHub />}
-      subApps={{
-        devtools: <DevToolsApp />,
-        groovex: <GroovexApp />,
-        vocalex: <VocalexApp />,
-        stagex: <StageCorePanel />,
-        drumex: <DrumEditor />,
-        chordex: {
-          sidebar:
-            isWebDesktop ? (
-              <WebAppSectionDock
-                app="chordex"
-                activeSection={activePanel}
-                onChangeSection={handleSetActivePanel as any}
-              />
-            ) : null,
-          songs: <SongsPanel />,
-          practice: <SaxophonePracticePanel />,
-          library: <LibraryPanel />,
-          preferences: <SettingsPanel />,
-        },
-      }}
+      subApps={subApps}
     />
   );
 }

@@ -37,7 +37,14 @@ import {
   lockOrientation,
 } from '@workspace/livex-core';
 
-import { StudioHubSkeleton } from '../loading/StudioSkeleton';
+import {
+  StudioHubSkeleton,
+  GroovexAppSkeleton,
+  StagexPanelSkeleton,
+  DrumEditorSkeleton,
+  ChordexPanelSkeleton,
+  VocalexTakesSkeleton,
+} from '../loading/StudioSkeleton';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
 import { useAnimationSpeed } from '../../shared/animation';
 import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
@@ -124,98 +131,171 @@ const SubAppWrapper = memo(function SubAppWrapper({
   onReady: (app: AppKey) => void;
   subApps: SharedAppShellProps['subApps'];
 }) {
+  const [visitedApps, setVisitedApps] = useState<Set<AppKey>>(() => new Set(app && app !== 'hub' ? [app] : []));
+  if (app && app !== 'hub' && !visitedApps.has(app)) {
+    const next = new Set(visitedApps);
+    next.add(app);
+    setVisitedApps(next);
+  }
+
   return (
     <>
-      {app === 'devtools' && subApps.devtools && (
-        <SubAppScaffold appKey="devtools">
-          <ErrorBoundary moduleName="DevTools">
-            <Suspense fallback={<StudioHubSkeleton />}>
-              <AppReadyNotifier app="devtools" onReady={onReady} />
-              {subApps.devtools}
-            </Suspense>
-          </ErrorBoundary>
-        </SubAppScaffold>
+      {visitedApps.has('devtools') && subApps.devtools && (
+        <div
+          style={{
+            display: app === 'devtools' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="devtools">
+            <ErrorBoundary moduleName="DevTools">
+              <Suspense fallback={<StudioHubSkeleton />}>
+                <AppReadyNotifier app="devtools" onReady={onReady} />
+                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                  {subApps.devtools}
+                </div>
+              </Suspense>
+            </ErrorBoundary>
+          </SubAppScaffold>
+        </div>
       )}
 
-      {app === 'groovex' && subApps.groovex && (
-        <SubAppScaffold appKey="groovex">
-          <ErrorBoundary moduleName="Groovex">
-            <Suspense fallback={<StudioHubSkeleton />}>
-              <AppReadyNotifier app="groovex" onReady={onReady} />
-              {subApps.groovex}
-            </Suspense>
-          </ErrorBoundary>
-        </SubAppScaffold>
+      {visitedApps.has('groovex') && subApps.groovex && (
+        <div
+          style={{
+            display: app === 'groovex' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="groovex">
+            <ErrorBoundary moduleName="Groovex">
+              <Suspense fallback={<GroovexAppSkeleton />}>
+                <AppReadyNotifier app="groovex" onReady={onReady} />
+                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                  {subApps.groovex}
+                </div>
+              </Suspense>
+            </ErrorBoundary>
+          </SubAppScaffold>
+        </div>
       )}
 
-      {app === 'vocalex' && subApps.vocalex && (
-        <SubAppScaffold appKey="vocalex">
-          <ErrorBoundary moduleName="Vocalex">
-            <Suspense fallback={<StudioHubSkeleton />}>
-              <AppReadyNotifier app="vocalex" onReady={onReady} />
-              {subApps.vocalex}
-            </Suspense>
-          </ErrorBoundary>
-        </SubAppScaffold>
+      {visitedApps.has('vocalex') && subApps.vocalex && (
+        <div
+          style={{
+            display: app === 'vocalex' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="vocalex">
+            <ErrorBoundary moduleName="Vocalex">
+              <Suspense fallback={<VocalexTakesSkeleton />}>
+                <AppReadyNotifier app="vocalex" onReady={onReady} />
+                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                  {subApps.vocalex}
+                </div>
+              </Suspense>
+            </ErrorBoundary>
+          </SubAppScaffold>
+        </div>
       )}
 
-      {app === 'stagex' && subApps.stagex && (
-        <SubAppScaffold appKey="stagex">
-          <ErrorBoundary moduleName="Stagex">
-            <Suspense fallback={<StudioHubSkeleton />}>
-              <AppReadyNotifier app="stagex" onReady={onReady} />
-              {subApps.stagex}
-            </Suspense>
-          </ErrorBoundary>
-        </SubAppScaffold>
+      {visitedApps.has('stagex') && subApps.stagex && (
+        <div
+          style={{
+            display: app === 'stagex' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="stagex">
+            <ErrorBoundary moduleName="Stagex">
+              <Suspense fallback={<StagexPanelSkeleton />}>
+                <AppReadyNotifier app="stagex" onReady={onReady} />
+                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                  {subApps.stagex}
+                </div>
+              </Suspense>
+            </ErrorBoundary>
+          </SubAppScaffold>
+        </div>
       )}
 
-      {app === 'drumex' && subApps.drumex && (
-        <SubAppScaffold appKey="drumex">
-          <ErrorBoundary moduleName="Drumex">
-            <Suspense fallback={<StudioHubSkeleton />}>
-              <AppReadyNotifier app="drumex" onReady={onReady} />
-              {subApps.drumex}
-            </Suspense>
-          </ErrorBoundary>
-        </SubAppScaffold>
+      {visitedApps.has('drumex') && subApps.drumex && (
+        <div
+          style={{
+            display: app === 'drumex' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="drumex">
+            <ErrorBoundary moduleName="Drumex">
+              <Suspense fallback={<DrumEditorSkeleton />}>
+                <AppReadyNotifier app="drumex" onReady={onReady} />
+                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                  {subApps.drumex}
+                </div>
+              </Suspense>
+            </ErrorBoundary>
+          </SubAppScaffold>
+        </div>
       )}
 
-      {app === 'chordex' && subApps.chordex && (
-        <SubAppScaffold appKey="chordex">
-          <div
-            className="flex flex-col w-full overflow-hidden select-none"
-            style={{ position: 'relative', height: '100%' }}
-          >
+      {visitedApps.has('chordex') && subApps.chordex && (
+        <div
+          style={{
+            display: app === 'chordex' ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <SubAppScaffold appKey="chordex">
             <div
-              style={{
-                display: 'flex',
-                flexDirection: subApps.chordex.sidebar ? 'row' : 'column',
-                flex: 1,
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-              }}
+              className="flex flex-col w-full overflow-hidden select-none"
+              style={{ position: 'relative', height: '100%' }}
             >
-              {subApps.chordex.sidebar}
-              <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
-                <ErrorBoundary moduleName="Chordex">
-                  <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
-                    {(panel) => (
-                      <Suspense fallback={<StudioHubSkeleton />}>
-                        <AppReadyNotifier app="chordex" onReady={onReady} />
-                        {panel === 'songs' && subApps.chordex?.songs}
-                        {panel === 'practice' && subApps.chordex?.practice}
-                        {panel === 'library' && subApps.chordex?.library}
-                        {panel === 'preferences' && subApps.chordex?.preferences}
-                      </Suspense>
-                    )}
-                  </SharedNavigationContainer>
-                </ErrorBoundary>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: subApps.chordex.sidebar ? 'row' : 'column',
+                  flex: 1,
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                {subApps.chordex.sidebar}
+                <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
+                  <ErrorBoundary moduleName="Chordex">
+                    <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
+                      {(panel) => (
+                        <Suspense fallback={<ChordexPanelSkeleton />}>
+                          <AppReadyNotifier app="chordex" onReady={onReady} />
+                          <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                            {panel === 'songs' && subApps.chordex?.songs}
+                            {panel === 'practice' && subApps.chordex?.practice}
+                            {panel === 'library' && subApps.chordex?.library}
+                            {panel === 'preferences' && subApps.chordex?.preferences}
+                          </div>
+                        </Suspense>
+                      )}
+                    </SharedNavigationContainer>
+                  </ErrorBoundary>
+                </div>
               </div>
             </div>
-          </div>
-        </SubAppScaffold>
+          </SubAppScaffold>
+        </div>
       )}
       <Toaster />
     </>
@@ -314,6 +394,7 @@ export function SharedAppShell({
   const splashVisible = transitionState !== 'IDLE';
   const transitionPreviousAppModeRef = useRef<AppKey | 'hub'>(routeApp || 'hub');
   const transitionActive = useNavigationStore((s) => s.isTransitioning);
+  const preloadedAppsRef = useRef<Set<AppKey>>(new Set());
 
   useEffect(() => {
     if (isWebDesktop) return; // Desktop Web uses instant direct navigation without mobile transition engine
@@ -323,7 +404,7 @@ export function SharedAppShell({
       const ok = requestTransition(appMode as any);
       if (ok) {
         transitionPreviousAppModeRef.current = appMode as any;
-        if (appMode === 'hub') {
+        if (appMode === 'hub' || (appMode !== 'hub' && preloadedAppsRef.current.has(appMode as AppKey))) {
           setAppPreloaded(true);
         }
       }
@@ -332,6 +413,7 @@ export function SharedAppShell({
 
   const handleAppPreloaded = useCallback(
     (app: AppKey) => {
+      preloadedAppsRef.current.add(app);
       if (routeApp !== app) return;
       setAppPreloaded(true);
     },
@@ -380,7 +462,7 @@ export function SharedAppShell({
               pointerEvents: isSubAppActive ? 'none' : 'auto',
               opacity: isSubAppActive && !transitionActive ? 0 : 1,
               visibility: isSubAppActive && !transitionActive ? 'hidden' : 'visible',
-              transition: 'opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), visibility 200ms',
+              transition: 'opacity 240ms cubic-bezier(0.16, 1, 0.3, 1), visibility 240ms',
             }}
           >
             {renderSidebar?.()}
@@ -399,7 +481,7 @@ export function SharedAppShell({
           <AnimatePresence>
             {isSubAppActive && stableKey !== 'hub' && (
               <motion.div
-                key={stableKey}
+                key="sc-subapp-container"
                 className="sc-subapp-wrapper"
                 initial={isWebDesktop ? { opacity: 0.98 } : { opacity: 1, scale: 1 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -407,7 +489,7 @@ export function SharedAppShell({
                 transition={
                   isWebDesktop
                     ? { duration: 0.12, ease: 'easeOut' }
-                    : { duration: 0.28 * speedScale, ease: [0.16, 1, 0.3, 1] }
+                    : { duration: 0.24 * speedScale, ease: [0.16, 1, 0.3, 1] }
                 }
                 style={{
                   position: 'absolute',

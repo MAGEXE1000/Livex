@@ -899,7 +899,7 @@ export default function LivexHub() {
         activeAppAfterTransition: appMode,
         fallbackRendered: false,
       });
-    }, 480);
+    }, 280);
     launchTimers.current.push(t2);
     // updateSettings is stable (Zustand action), setZooming is React setState
   }, []);
@@ -1096,8 +1096,8 @@ export default function LivexHub() {
         transform: zooming ? 'scale(0.985)' : 'scale(1)',
         opacity: zooming ? 0.35 : 1,
         transition: zooming
-          ? 'transform 440ms cubic-bezier(0.16, 1, 0.3, 1), opacity 360ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
-          : 'transform 285ms cubic-bezier(0.16, 1, 0.3, 1), opacity 285ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
+          ? 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
+          : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents: introFinished ? 'auto' : 'none',
       }}
     >

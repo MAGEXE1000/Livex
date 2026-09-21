@@ -11,6 +11,7 @@ interface SharedNavigationContainerProps {
   style?: React.CSSProperties;
   variant?: 'slide' | 'fade-through' | 'drilldown' | 'tab';
   preMountViews?: string[];
+  mode?: 'wait' | 'sync' | 'popLayout';
 }
 
 export function SharedNavigationContainer({
@@ -19,13 +20,14 @@ export function SharedNavigationContainer({
   className = '',
   style,
   variant = 'tab',
+  mode,
 }: SharedNavigationContainerProps) {
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className}`}
       style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', ...style }}
     >
-      <StudioPageTransition pageKey={activeView} variant={variant}>
+      <StudioPageTransition pageKey={activeView} variant={variant} mode={mode}>
         {children(activeView)}
       </StudioPageTransition>
       <InspectorOverlayRenderer />

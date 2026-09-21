@@ -118,6 +118,7 @@ export interface LivexPageTransitionProps {
   style?: React.CSSProperties;
   variant?: 'tab' | 'drilldown' | 'fade-through' | 'slide';
   initial?: boolean;
+  mode?: 'wait' | 'sync' | 'popLayout';
 }
 
 export type StudioPageTransitionProps = LivexPageTransitionProps;
@@ -129,6 +130,7 @@ export const LivexPageTransition: React.FC<LivexPageTransitionProps> = ({
   style = {},
   variant = 'tab',
   initial,
+  mode,
 }) => {
   const prefersReduced = useAppReducedMotion();
 
@@ -143,9 +145,11 @@ export const LivexPageTransition: React.FC<LivexPageTransitionProps> = ({
           : UNIFIED_NAV_TRANSITION;
 
   const shouldAnimateInitial = initial !== undefined ? initial : variant === 'drilldown';
+  const effectiveMode =
+    mode ?? (variant === 'tab' || variant === 'fade-through' ? 'popLayout' : 'wait');
 
   return (
-    <AnimatePresence mode="wait" initial={shouldAnimateInitial}>
+    <AnimatePresence mode={effectiveMode} initial={shouldAnimateInitial}>
       <motion.div
         key={pageKey}
         initial="initial"

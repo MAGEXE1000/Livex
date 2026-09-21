@@ -29,6 +29,7 @@ import {
   SharedNavigationBar,
   type SharedNavigationItem,
 } from '../../hub/navigation/SharedNavigationBar';
+import { GroovexAppSkeleton } from '../../../shared/loading/StudioSkeleton';
 
 const GroovexLibrary = lazy(() => import('../components/GroovexLibrary'));
 const GroovexPlayer = lazy(() => import('../components/GroovexPlayer'));
@@ -173,7 +174,7 @@ export default function GroovexApp() {
         >
           <SharedNavigationContainer activeView={view} viewOrder={VIEW_ORDER}>
             {(viewId) => (
-              <Suspense fallback={null}>
+              <Suspense fallback={<GroovexAppSkeleton />}>
                 {viewId === 'library' && <GroovexLibrary />}
                 {viewId === 'player' && <GroovexPlayer />}
                 {viewId === 'preferences' && <GroovexPreferences />}
