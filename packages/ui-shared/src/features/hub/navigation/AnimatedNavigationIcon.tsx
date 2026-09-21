@@ -260,7 +260,7 @@ const AnimatedNavigationIconComponent = React.forwardRef<any, AnimatedNavigation
           duration: 0.38,
           ease: [0.25, 1, 0.5, 1], // premium elastic curve
         }}
-        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color }}
       >
         {content}
       </motion.div>

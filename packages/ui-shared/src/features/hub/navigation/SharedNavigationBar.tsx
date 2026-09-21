@@ -144,7 +144,7 @@ const NavigationItem = React.memo(
           justifyContent: 'center',
           background: 'transparent',
           border: 'none',
-          borderRadius: '9999px',
+          borderRadius: '22px',
           cursor: 'pointer',
           position: 'relative',
           zIndex: 1,
@@ -359,15 +359,15 @@ export function SharedNavigationBar({
   const totalSlots = N;
 
   const idealSlotWidth = isSwitcherOpen
-    ? 48
+    ? 46
     : isHub
-      ? Math.min(116, Math.max(96, Math.round((windowWidth - 40) / 3)))
+      ? 82
       : totalSlots >= 4
-        ? 68
+        ? 60
         : totalSlots === 2
-          ? 96
-          : 84;
-  const paddingX = isSwitcherOpen ? 6 : 4;
+          ? 88
+          : 76;
+  const paddingX = isSwitcherOpen ? 6 : 8;
 
   // hasRightBubble: true when App Changer satellite button is shown (non-hub apps only)
   const hasRightBubble = showSwitcherButton;
@@ -403,17 +403,18 @@ export function SharedNavigationBar({
     return idx >= 0 ? idx : 0;
   }, [currentItems, currentApp, isSwitcherOpen]);
 
-  // Canonical slot-filling highlight geometry:
-  // The selected highlight occupies approximately the full width and vertical height of its slot,
-  // extending from top: 4px to bottom: 4px with a small 4px inset from slot boundaries.
-  // Within any active navigation state, all tabs have identical slot width (itemWidth),
-  // ensuring invariant geometry and zero size-jumping during tab transitions.
-  const NAV_HIGHLIGHT_HEIGHT = 50;
+  // Canonical selected-item highlight geometry:
+  // Substantially larger than the previous highlight, occupying ~92% of the slot
+  // to read as an integrated selected segment/capsule within the navigation bar.
+  // Maintains stable, invariant geometry within each active screen.
+  const horizontalGap = isSwitcherOpen ? 6 : totalSlots >= 4 ? 4 : 6;
+  const NAV_HIGHLIGHT_WIDTH = Math.round(itemWidth - horizontalGap);
+  const NAV_HIGHLIGHT_HEIGHT = 48;
+  const NAV_HIGHLIGHT_RADIUS = isSwitcherOpen ? 19 : 23;
 
-  const horizontalGap = isSwitcherOpen ? 6 : 8;
-  const pillWidthVal = Math.round(itemWidth - horizontalGap);
-  const pillHeightVal = isSwitcherOpen ? 42 : NAV_HIGHLIGHT_HEIGHT;
-  const pillRadiusVal = 9999;
+  const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
+  const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
+  const pillRadiusVal = NAV_HIGHLIGHT_RADIUS;
 
   const centerOffset = Math.round((itemWidth - pillWidthVal) / 2);
 
@@ -438,12 +439,12 @@ export function SharedNavigationBar({
   const dragSkewRaw = useMotionValue(0);
   const pressPressureRaw = useMotionValue(0);
 
-  // Synchronized Apple-grade spring physics (critically damped for zero overshoot & rapid stability)
+  // Synchronized Apple-grade spring physics
   const activeIdxSpring = useSpring(
     activeIdxRaw,
     prefersReduced
       ? { stiffness: 1000, damping: 50, mass: 0.01 }
-      : { stiffness: 420, damping: 41, mass: 0.4 }
+      : { stiffness: 360, damping: 30, mass: 0.8 }
   );
   const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 30, mass: 0.7 });
   const profileOpenSpring = useSpring(profileOpenRaw, { stiffness: 420, damping: 28, mass: 0.8 });
@@ -904,19 +905,19 @@ export function SharedNavigationBar({
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: '58px',
-                borderRadius: '9999px',
-                border: 'var(--surface-bottomnav-border, var(--surface-topbar-border))',
-                background: 'var(--surface-bottomnav-bg, var(--surface-topbar-bg))',
-                boxShadow: 'var(--surface-bottomnav-shadow, var(--surface-topbar-shadow))',
-                backdropFilter: 'var(--surface-bottomnav-backdrop, var(--surface-topbar-backdrop))',
-                WebkitBackdropFilter: 'var(--surface-bottomnav-backdrop, var(--surface-topbar-backdrop))',
+                borderRadius: '26px',
+                border: 'var(--surface-topbar-border)',
+                background: 'var(--surface-topbar-bg)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                backdropFilter: 'var(--surface-topbar-backdrop)',
+                WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-around',
                 paddingLeft: paddingX,
                 paddingRight: paddingX,
-                paddingTop: '4px',
-                paddingBottom: '4px',
+                paddingTop: '3px',
+                paddingBottom: '3px',
                 position: 'relative',
                 touchAction: 'none',
                 userSelect: 'none',
@@ -927,7 +928,6 @@ export function SharedNavigationBar({
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
-                overflow: 'hidden',
               }}
             >
               {/* Inner Radial Vignette — realistic optical depth / gentle fresnel reflection */}
@@ -935,7 +935,7 @@ export function SharedNavigationBar({
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  borderRadius: '9999px',
+                  borderRadius: '26px',
                   background: isLight
                     ? 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                     : 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 100%)',
@@ -961,14 +961,15 @@ export function SharedNavigationBar({
                   // keeps nav items clipped to pill shape without breaking
                   // Android WebView's compositing of the parent's backdrop-filter.
                   overflow: 'hidden',
-                  borderRadius: '9999px',
+                  borderRadius: '26px',
                 }}
               >
-                {/* Active lens pill — large integrated Liquid Glass capsule */}
+                {/* Active lens pill — enlarged integrated Liquid Glass capsule */}
                 <motion.div
                   animate={{
                     width: pillWidthVal,
                     height: pillHeightVal,
+                    borderRadius: pillRadiusVal,
                   }}
                   transition={{
                     type: 'spring',
@@ -978,47 +979,34 @@ export function SharedNavigationBar({
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? 4 : 0,
+                    top: isSwitcherOpen ? 7 : 2,
                     left: 0,
                     x: animatedPillX,
-                    background: 'var(--surface-glass-lens-bg)',
-                    border: 'var(--surface-glass-lens-border)',
-                    boxShadow: 'var(--surface-glass-lens-shadow)',
-                    backdropFilter: 'var(--surface-glass-lens-backdrop)',
-                    WebkitBackdropFilter: 'var(--surface-glass-lens-backdrop)',
-                    borderRadius: '9999px',
+                    background: isLight
+                      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.90) 100%)'
+                      : 'var(--surface-glass-lens-bg)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.06)'
+                      : 'var(--surface-glass-lens-border)',
+                    boxShadow: isLight
+                      ? '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff'
+                      : 'var(--surface-glass-lens-shadow)',
                     pointerEvents: 'none',
                     zIndex: 0,
+                    skewX: dragSkewRaw,
+                    scale: pillPressScale,
                     willChange: 'transform',
-                    overflow: 'hidden',
                   }}
                 >
-                  {/* Upper Optical Reflection Overlay */}
+                  {/* Inner Lens — Radial Center Glow (specular center highlight) */}
                   <div
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      borderRadius: '9999px',
+                      borderRadius: pillRadiusVal,
                       background: isLight
-                        ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 28%, transparent 60%)'
-                        : 'linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.045) 28%, transparent 62%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-
-                  {/* Subtle Upper Specular Line */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: '10%',
-                      right: '10%',
-                      height: '1px',
-                      borderRadius: '9999px',
-                      background: isLight
-                        ? 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.20) 20%, rgba(255, 255, 255, 0.60) 50%, rgba(255, 255, 255, 0.20) 80%, transparent 100%)'
-                        : 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.07) 18%, rgba(255, 255, 255, 0.30) 50%, rgba(255, 255, 255, 0.07) 82%, transparent 100%)',
-                      opacity: 0.85,
+                        ? 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.40) 0%, transparent 100%)'
+                        : 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)',
                       pointerEvents: 'none',
                     }}
                   />
@@ -1220,12 +1208,12 @@ export function SharedNavigationBar({
                   style={{
                     width: '58px',
                     height: '58px',
-                    borderRadius: '9999px',
-                    background: 'var(--surface-bottomnav-bg, var(--surface-topbar-bg))',
-                    border: 'var(--surface-bottomnav-border, var(--surface-topbar-border))',
-                    backdropFilter: 'var(--surface-bottomnav-backdrop, var(--surface-topbar-backdrop))',
-                    WebkitBackdropFilter: 'var(--surface-bottomnav-backdrop, var(--surface-topbar-backdrop))',
-                    boxShadow: 'var(--surface-bottomnav-shadow, var(--surface-topbar-shadow))',
+                    borderRadius: '26px',
+                    background: 'var(--surface-topbar-bg)',
+                    border: 'var(--surface-topbar-border)',
+                    backdropFilter: 'var(--surface-topbar-backdrop)',
+                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                    boxShadow: 'var(--surface-topbar-shadow)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1252,7 +1240,7 @@ export function SharedNavigationBar({
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      borderRadius: '9999px',
+                      borderRadius: '26px',
                       background: isLight
                         ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                         : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',

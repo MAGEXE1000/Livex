@@ -1845,38 +1845,11 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.1) 50%,
     transparent 100%
   );
-  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
-  --surface-bottomnav-bg:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.075) 0%,
-      rgba(255, 255, 255, 0.035) 45%,
-      rgba(255, 255, 255, 0.018) 100%
-    ),
-    rgba(24, 24, 30, 0.72);
-  --surface-bottomnav-border: 1px solid rgba(255, 255, 255, 0.13);
-  --surface-bottomnav-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
-    0 6px 20px rgba(0, 0, 0, 0.16);
-  --surface-bottomnav-backdrop: blur(18px) saturate(140%);
-
-  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
-  --surface-glass-lens-bg:
-    radial-gradient(
-      ellipse 85% 70% at 50% 8%,
-      rgba(255, 255, 255, 0.19) 0%,
-      rgba(255, 255, 255, 0.10) 42%,
-      rgba(255, 255, 255, 0.055) 72%,
-      rgba(255, 255, 255, 0.035) 100%
-    ),
-    rgba(255, 255, 255, 0.06);
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.18);
+  /* Active lens pill — clean translucent inner glass */
+  --surface-glass-lens-bg: rgba(255, 255, 255, 0.10);
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.12);
   --surface-glass-lens-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.14),
-    inset 0 0 16px rgba(255, 255, 255, 0.025);
-  --surface-glass-lens-backdrop: blur(16px) saturate(150%);
+    0 4px 14px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   --surface-modal-bg: rgba(0, 0, 0, 0.6); /* sheet / modal scrim      */
   --surface-dialog-bg: var(--app-surface-high, #151518);
   --surface-modal-surface: var(--app-surface-high, #151518);
@@ -1932,33 +1905,13 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.03) 50%,
     transparent 100%
   );
-  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
-  --surface-bottomnav-bg:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.78) 0%,
-      rgba(255, 255, 255, 0.58) 100%
-    );
-  --surface-bottomnav-border: 1px solid rgba(0, 0, 0, 0.08);
-  --surface-bottomnav-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.90),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-    0 6px 20px rgba(0, 0, 0, 0.08);
-  --surface-bottomnav-backdrop: blur(18px) saturate(140%);
-
-  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
-  --surface-glass-lens-bg:
-    radial-gradient(
-      ellipse 85% 70% at 50% 8%,
-      rgba(255, 255, 255, 0.92) 0%,
-      rgba(255, 255, 255, 0.70) 42%,
-      rgba(255, 255, 255, 0.45) 100%
-    );
+  --surface-glass-lens-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(242, 245, 255, 0.90) 100%
+  );
   --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.06);
-  --surface-glass-lens-shadow:
-    inset 0 1px 0 #ffffff,
-    inset 0 -1px 1px rgba(0, 0, 0, 0.06);
-  --surface-glass-lens-backdrop: blur(16px) saturate(150%);
+  --surface-glass-lens-shadow: 0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff;
   --surface-modal-bg: rgba(0, 0, 0, 0.35);
   --surface-dialog-bg: var(--app-surface-highest, #ffffff);
   --surface-modal-surface: var(--app-surface-highest, #ffffff);
@@ -2000,38 +1953,10 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.15) 50%,
     transparent 100%
   );
-  /* Bottom Navigation Surface — Liquid Glass Continuous Pill */
-  --surface-bottomnav-bg:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.075) 0%,
-      rgba(255, 255, 255, 0.035) 45%,
-      rgba(255, 255, 255, 0.018) 100%
-    ),
-    rgba(14, 14, 18, 0.72);
-  --surface-bottomnav-border: 1px solid rgba(255, 255, 255, 0.13);
-  --surface-bottomnav-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-    0 6px 20px rgba(0, 0, 0, 0.28);
-  --surface-bottomnav-backdrop: blur(18px) saturate(140%);
-
-  /* Bottom Navigation Selected Capsule — Liquid Glass Integrated Lens */
-  --surface-glass-lens-bg:
-    radial-gradient(
-      ellipse 85% 70% at 50% 8%,
-      rgba(255, 255, 255, 0.19) 0%,
-      rgba(255, 255, 255, 0.10) 42%,
-      rgba(255, 255, 255, 0.055) 72%,
-      rgba(255, 255, 255, 0.035) 100%
-    ),
-    rgba(255, 255, 255, 0.06);
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.18);
+  --surface-glass-lens-bg: rgba(255, 255, 255, 0.10);
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.13);
   --surface-glass-lens-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.25),
-    inset 0 0 16px rgba(255, 255, 255, 0.025);
-  --surface-glass-lens-backdrop: blur(16px) saturate(150%);
+    0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
   --surface-dialog-bg: #000000;
   --surface-modal-surface: #000000;
@@ -2052,8 +1977,6 @@ html[data-perf-mode='on'] *::after {
   --surface-scrim-blur: none;
   --surface-float-bg: rgba(18, 18, 22, 0.92);
   --surface-topbar-bg: rgba(18, 18, 22, 0.92);
-  --surface-bottomnav-backdrop: none;
-  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: rgba(255, 255, 255, 0.08);
@@ -2065,8 +1988,6 @@ html[data-perf-mode='on'] *::after {
   --surface-float-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-bg: rgba(255, 255, 255, 0.94);
   --surface-topbar-backdrop: none;
-  --surface-bottomnav-backdrop: none;
-  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: rgba(0, 0, 0, 0.05);
@@ -2078,8 +1999,6 @@ html[data-perf-mode='on'] *::after {
   --glass-blur: none;
   --surface-topbar-blur: none;
   --surface-topbar-backdrop: none;
-  --surface-bottomnav-backdrop: none;
-  --surface-glass-lens-backdrop: none;
   --surface-float-blur: none;
   --surface-scrim-blur: none;
   --surface-float-bg: #121216;
@@ -2098,8 +2017,6 @@ html[data-perf-mode='on'] *::after {
   --surface-topbar-blur: none;
   --surface-float-blur: none;
   --surface-topbar-backdrop: none;
-  --surface-bottomnav-backdrop: none;
-  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: #141418;
@@ -2109,8 +2026,6 @@ html[data-perf-mode='on'] *::after {
   --surface-float-bg: #ffffff;
   --surface-topbar-bg: #ffffff;
   --surface-topbar-backdrop: none;
-  --surface-bottomnav-backdrop: none;
-  --surface-glass-lens-backdrop: none;
   --surface-pill-blur: none;
   --surface-pill-backdrop: none;
   --surface-pill-bg: #f1f5f9;
