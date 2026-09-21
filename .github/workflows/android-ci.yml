@@ -10,7 +10,7 @@ on:
     branches: [main]
     paths:
       - 'apps/studio-android/**'
-      - 'packages/studio-core/**'
+      - 'packages/livex-core/**'
       - 'packages/ui-shared/**'
       - 'packages/ui-android/**'
       - 'package.json'
@@ -23,7 +23,7 @@ on:
     branches: [main]
     paths:
       - 'apps/studio-android/**'
-      - 'packages/studio-core/**'
+      - 'packages/livex-core/**'
       - 'packages/ui-shared/**'
       - 'packages/ui-android/**'
       - 'package.json'
@@ -61,8 +61,6 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10.26.1
 
       - uses: actions/setup-node@v7
         with:
