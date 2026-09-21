@@ -69,64 +69,92 @@ const AudioLinesIcon = forwardRef<AudioLinesIconHandle, AudioLinesIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M2 10v3" />
-          <motion.path
+          <line x1="2" y1="10" x2="2" y2="13" />
+          <motion.line
             animate={controls}
-            d="M6 6v11"
+            initial="normal"
             variants={{
-              normal: { d: "M6 6v11" },
+              normal: { scaleY: 1 },
+              inactive: { scaleY: 1 },
+              active: { scaleY: 1 },
               animate: {
-                d: ["M6 6v11", "M6 10v3", "M6 6v11"],
+                scaleY: [1, 0.35, 1],
                 transition: {
                   duration: 0.6,
                   repeat: 0,
                 },
               },
             }}
+            style={{ originY: 0.5 }}
+            x1="6"
+            y1="6"
+            x2="6"
+            y2="17"
           />
-          <motion.path
+          <motion.line
             animate={controls}
-            d="M10 3v18"
+            initial="normal"
             variants={{
-              normal: { d: "M10 3v18" },
+              normal: { scaleY: 1 },
+              inactive: { scaleY: 1 },
+              active: { scaleY: 1 },
               animate: {
-                d: ["M10 3v18", "M10 9v5", "M10 3v18"],
+                scaleY: [1, 0.45, 1],
                 transition: {
                   duration: 0.6,
                   repeat: 0,
                 },
               },
             }}
+            style={{ originY: 0.5 }}
+            x1="10"
+            y1="3"
+            x2="10"
+            y2="21"
           />
-          <motion.path
+          <motion.line
             animate={controls}
-            d="M14 8v7"
+            initial="normal"
             variants={{
-              normal: { d: "M14 8v7" },
+              normal: { scaleY: 1 },
+              inactive: { scaleY: 1 },
+              active: { scaleY: 1 },
               animate: {
-                d: ["M14 8v7", "M14 6v11", "M14 8v7"],
+                scaleY: [1, 1.35, 1],
                 transition: {
                   duration: 0.6,
                   repeat: 0,
                 },
               },
             }}
+            style={{ originY: 0.5 }}
+            x1="14"
+            y1="8"
+            x2="14"
+            y2="15"
           />
-          <motion.path
+          <motion.line
             animate={controls}
-            d="M18 5v13"
+            initial="normal"
             variants={{
-              normal: { d: "M18 5v13" },
+              normal: { scaleY: 1 },
+              inactive: { scaleY: 1 },
+              active: { scaleY: 1 },
               animate: {
-                d: ["M18 5v13", "M18 7v9", "M18 5v13"],
+                scaleY: [1, 0.3, 1],
                 transition: {
                   duration: 0.6,
                   repeat: 0,
                 },
               },
             }}
+            style={{ originY: 0.5 }}
+            x1="18"
+            y1="5"
+            x2="18"
+            y2="18"
           />
-          <path d="M22 10v3" />
+          <line x1="22" y1="10" x2="22" y2="13" />
         </svg>
       </div>
     );

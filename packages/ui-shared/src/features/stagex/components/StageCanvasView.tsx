@@ -1126,6 +1126,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
               boxShadow: isLight
                 ? '-4px 0 20px rgba(0, 0, 0, 0.03)'
                 : '-4px 0 24px rgba(0, 0, 0, 0.35)',
+              willChange: 'width',
             }}
           >
             <div

@@ -77,13 +77,19 @@ const SlidersHorizontalIcon = forwardRef<
       >
         <motion.line
           animate={controls}
-          initial={false}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 21,
+              x2: 14,
+            },
+            inactive: {
+              x1: 21,
               x2: 14,
             },
             animate: {
+              x1: 21,
               x2: 10,
             },
           }}
@@ -94,13 +100,20 @@ const SlidersHorizontalIcon = forwardRef<
         />
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
               x1: 10,
+              x2: 3,
+            },
+            inactive: {
+              x1: 10,
+              x2: 3,
             },
             animate: {
               x1: 5,
+              x2: 3,
             },
           }}
           x1="10"
@@ -111,12 +124,19 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 21,
+              x2: 12,
+            },
+            inactive: {
+              x1: 21,
               x2: 12,
             },
             animate: {
+              x1: 21,
               x2: 18,
             },
           }}
@@ -128,13 +148,20 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
               x1: 8,
+              x2: 3,
+            },
+            inactive: {
+              x1: 8,
+              x2: 3,
             },
             animate: {
               x1: 13,
+              x2: 3,
             },
           }}
           x1="8"
@@ -145,12 +172,19 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 3,
+              x2: 12,
+            },
+            inactive: {
+              x1: 3,
               x2: 12,
             },
             animate: {
+              x1: 3,
               x2: 4,
             },
           }}
@@ -162,13 +196,20 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
               x1: 16,
+              x2: 21,
+            },
+            inactive: {
+              x1: 16,
+              x2: 21,
             },
             animate: {
               x1: 8,
+              x2: 21,
             },
           }}
           x1="16"
@@ -179,9 +220,14 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 14,
+              x2: 14,
+            },
+            inactive: {
               x1: 14,
               x2: 14,
             },
@@ -198,9 +244,14 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 8,
+              x2: 8,
+            },
+            inactive: {
               x1: 8,
               x2: 8,
             },
@@ -217,9 +268,14 @@ const SlidersHorizontalIcon = forwardRef<
 
         <motion.line
           animate={controls}
+          initial="normal"
           transition={DEFAULT_TRANSITION}
           variants={{
             normal: {
+              x1: 16,
+              x2: 16,
+            },
+            inactive: {
               x1: 16,
               x2: 16,
             },

@@ -26,6 +26,14 @@ const PATH_VARIANTS: Variants = {
       damping: 13,
     },
   },
+  inactive: {
+    translateY: 0,
+    opacity: 1,
+  },
+  active: {
+    translateY: 0,
+    opacity: 1,
+  },
   animate: (i: number) => ({
     translateY: [2 * i, 0],
     opacity: [0, 1],
@@ -96,12 +104,14 @@ const GalleryVerticalEndIcon = forwardRef<
       >
         <motion.path
           animate={controls}
+          initial="normal"
           custom={1}
           d="M7 2h10"
           variants={PATH_VARIANTS}
         />
         <motion.path
           animate={controls}
+          initial="normal"
           custom={2}
           d="M5 6h14"
           variants={PATH_VARIANTS}

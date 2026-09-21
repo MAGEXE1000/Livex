@@ -48,14 +48,16 @@ function SidebarLabel({ children, open }: { children: React.ReactNode; open: boo
       initial={false}
       animate={{
         opacity: open ? 1 : 0,
-        x: open ? 0 : -8,
-        width: open ? 'auto' : 0,
-        marginLeft: open ? 0 : 0,
-        display: open ? 'inline-block' : 'none',
+        x: open ? 0 : -6,
       }}
       transition={isReduced ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
       className="truncate"
-      style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
+      style={{
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        display: open ? 'inline-block' : 'none',
+        pointerEvents: open ? 'auto' : 'none',
+      }}
     >
       {children}
     </motion.span>

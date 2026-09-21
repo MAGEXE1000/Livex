@@ -232,6 +232,7 @@ export function SharedAppShell({
   hubElement,
   subApps,
 }: SharedAppShellProps) {
+  const isWebDesktop = useIsWebDesktop();
   const activePanel = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
     if (
@@ -262,15 +263,16 @@ export function SharedAppShell({
     };
   }, []);
 
-  // Global Orientation Policy: Lock non-stage views to Portrait mode
+  // Global Orientation Policy: Lock non-stage views to Portrait mode (native mobile only)
   useEffect(() => {
+    if (isWebDesktop) return;
     const enforcePortrait = async () => {
       if (routeApp !== 'stagex') {
         await lockOrientation('portrait');
       }
     };
     enforcePortrait();
-  }, [routeApp]);
+  }, [routeApp, isWebDesktop]);
 
   // Sync loop removed
 
@@ -314,6 +316,7 @@ export function SharedAppShell({
   const transitionActive = useNavigationStore((s) => s.isTransitioning);
 
   useEffect(() => {
+    if (isWebDesktop) return; // Desktop Web uses instant direct navigation without mobile transition engine
     const appMode = routeApp || 'hub';
     if (appMode !== transitionPreviousAppModeRef.current) {
       resetIntroSignal();
@@ -325,7 +328,7 @@ export function SharedAppShell({
         }
       }
     }
-  }, [routeApp, requestTransition, setAppPreloaded]);
+  }, [routeApp, requestTransition, setAppPreloaded, isWebDesktop]);
 
   const handleAppPreloaded = useCallback(
     (app: AppKey) => {
@@ -398,16 +401,20 @@ export function SharedAppShell({
               <motion.div
                 key={stableKey}
                 className="sc-subapp-wrapper"
-                initial={{ opacity: 1, scale: 1 }}
+                initial={isWebDesktop ? { opacity: 0.98 } : { opacity: 1, scale: 1 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, pointerEvents: 'none' as any }}
-                transition={{ duration: 0.28 * speedScale, ease: [0.16, 1, 0.3, 1] }}
+                exit={isWebDesktop ? { opacity: 0 } : { opacity: 0, pointerEvents: 'none' as any }}
+                transition={
+                  isWebDesktop
+                    ? { duration: 0.12, ease: 'easeOut' }
+                    : { duration: 0.28 * speedScale, ease: [0.16, 1, 0.3, 1] }
+                }
                 style={{
                   position: 'absolute',
                   inset: 0,
                   zIndex: 2,
                   background: 'var(--app-bg)',
-                  pointerEvents: isSubAppActive && !splashVisible ? 'auto' : 'none',
+                  pointerEvents: isSubAppActive && (isWebDesktop || !splashVisible) ? 'auto' : 'none',
                 }}
               >
                 <SubAppWrapper
@@ -421,7 +428,7 @@ export function SharedAppShell({
           </AnimatePresence>
 
           <AnimatePresence>
-            {launchingApp && (
+            {!isWebDesktop && launchingApp && (
               <ApplicationTransitionEngine
                 appKey={launchingApp}
                 preloaded={appPreloaded}

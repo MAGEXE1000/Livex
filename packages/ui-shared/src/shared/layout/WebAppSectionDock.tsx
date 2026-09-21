@@ -12,7 +12,7 @@ import {
   EasingPresets,
   SpringPresets,
 } from '@workspace/livex-core';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   motion,
   AnimatePresence,
@@ -51,10 +51,27 @@ function DockItem({
   const ref = useRef<HTMLButtonElement>(null);
   const canHover = useHoverCapable();
   const [isHovered, setIsHovered] = useState(false);
+  const boundsRef = useRef<{ x: number; width: number } | null>(null);
 
-  // Proximity magnification logic
+  useEffect(() => {
+    const handleResize = () => {
+      boundsRef.current = null;
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Proximity magnification logic without continuous layout thrashing
   const distance = useTransform(mouseX, (val) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    if (!Number.isFinite(val)) {
+      boundsRef.current = null;
+      return Infinity;
+    }
+    if (!boundsRef.current && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      boundsRef.current = { x: rect.x, width: rect.width };
+    }
+    const bounds = boundsRef.current ?? { x: 0, width: 0 };
     return val - bounds.x - bounds.width / 2;
   });
 

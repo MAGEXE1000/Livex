@@ -41,8 +41,6 @@ export function SidebarProvider({
   }, []);
 
   const state: 'expanded' | 'collapsed' = open ? 'expanded' : 'collapsed';
-  const width = open ? '240px' : '68px';
-
   const contextValue = useMemo(
     () => ({ state, open, setOpen, isMobile, toggleSidebar }),
     [state, open, isMobile, toggleSidebar]
@@ -56,7 +54,6 @@ export function SidebarProvider({
           {
             '--sidebar-width': '240px',
             '--sidebar-width-icon': '68px',
-            '--sidebar-current-width': width,
             ...style,
           } as React.CSSProperties
         }
@@ -211,25 +208,25 @@ export function SidebarGroupLabel({
 }) {
   const { open } = useSidebar();
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 0.45, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.15 }}
-          className={`px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase text-[var(--c-text-primary)] ${className}`}
-          style={{
-            letterSpacing: '0.12em',
-            fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
-            ...style,
-          }}
-          {...props}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={false}
+      animate={{ opacity: open ? 0.45 : 0 }}
+      transition={{ duration: 0.15 }}
+      className={`px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase text-[var(--c-text-primary)] ${className}`}
+      style={{
+        letterSpacing: '0.12em',
+        fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        height: open ? 'auto' : 0,
+        visibility: open ? 'visible' : 'hidden',
+        pointerEvents: open ? 'auto' : 'none',
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </motion.div>
   );
 }
 
