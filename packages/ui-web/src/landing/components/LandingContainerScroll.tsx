@@ -32,12 +32,14 @@ export default function LandingContainerScroll({
   const scale = useSpring(scaleTransform, { stiffness: 100, damping: 20 });
   const translateY = useSpring(translateYTransform, { stiffness: 100, damping: 20 });
 
-  const [activeStep, setActiveStep] = useState<'chordSongs' | 'chordLib' | 'stage'>('chordSongs');
+  const [activeStep, setActiveStep] = useState<string>('chordSongs');
 
   const steps = [
-    { id: 'chordSongs', label: '1. Songs', desc: 'Organize setlists and chord sheets' },
-    { id: 'chordLib', label: '2. Chords', desc: 'Explore chords and fingering' },
-    { id: 'stage', label: '3. Stage', desc: 'Design stage plots and tech riders' },
+    { id: 'chordSongs', label: '1. Songs', desc: 'Organize song databases, chord sheets & setlists' },
+    { id: 'drumex', label: '2. Rhythm', desc: 'Lock tempo with 16-step patterns & visual click' },
+    { id: 'groovex', label: '3. Stems', desc: 'Mix multitrack audio channels & loop practice passages' },
+    { id: 'vocalex', label: '4. Vocals', desc: 'Real-time pitch tracking & local audio takes recording' },
+    { id: 'stage', label: '5. Stage', desc: 'Build visual stage plots & generate FOH technical riders' },
   ];
 
   return (
@@ -68,7 +70,7 @@ export default function LandingContainerScroll({
 
         {/* Step Switcher */}
         <div
-          className="mb-4 flex flex-wrap justify-center gap-1.5 p-1.5 rounded-2xl max-w-md w-full border transition-colors"
+          className="mb-4 flex flex-wrap justify-center gap-1.5 p-1.5 rounded-2xl max-w-2xl w-full border transition-colors"
           style={{
             backgroundColor: 'var(--landing-surface-subtle)',
             borderColor: 'var(--landing-border)',
@@ -79,8 +81,8 @@ export default function LandingContainerScroll({
             return (
               <button
                 key={step.id}
-                onClick={() => setActiveStep(step.id as any)}
-                className="flex-1 min-w-[90px] px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border-none outline-none shadow-sm"
+                onClick={() => setActiveStep(step.id)}
+                className="flex-1 min-w-[100px] px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border-none outline-none shadow-sm landing-font-heading"
                 style={{
                   backgroundColor: isActive ? 'var(--landing-cta-bg)' : 'transparent',
                   color: isActive ? 'var(--landing-cta-text)' : 'var(--landing-text-secondary)',
@@ -114,7 +116,8 @@ export default function LandingContainerScroll({
           }}
           className="w-full border p-2 sm:p-4 rounded-2xl md:rounded-3xl shadow-2xl relative"
         >
-          <div className="w-full overflow-hidden rounded-xl bg-black aspect-video border flex items-center justify-center relative min-h-[300px] md:min-h-[480px] mockup-viewport"
+          <div
+            className="w-full overflow-hidden rounded-xl bg-black aspect-video border flex items-center justify-center relative min-h-[300px] md:min-h-[480px] mockup-viewport"
             style={{ borderColor: 'var(--landing-border)' }}
           >
             {renderMockupByName(activeStep)}

@@ -1,4 +1,4 @@
-import { ShieldCheck, Layout, Smartphone, Sliders } from 'lucide-react';
+import { Layers, Volume2, Mic, Cloud, Music, SlidersHorizontal, Share2, ShieldCheck } from 'lucide-react';
 import React from 'react';
 
 export interface AppInfo {
@@ -16,11 +16,24 @@ export const APPS_DATA: AppInfo[] = [
     key: 'chords',
     name: 'Chordex',
     badge: 'Songs & Chords',
-    desc: 'Manage song databases, organize chord sheets, transpose keys instantly, and reference chord fingering diagrams.',
+    desc: 'Manage song databases, organize chord sheets, transpose keys instantly, and reference interactive chord fingering diagrams.',
     bullets: [
-      'Interactive chord library & diagrams',
-      'Key transpositions & setlist manager',
-      'Custom song chord sheet configurations',
+      'Interactive guitar, piano & mandolin diagrams',
+      'Instant key transpositions & setlist manager',
+      'Custom chord sheets & formatting options',
+    ],
+    colorClass: 'border-white/10 group-hover:border-zinc-200/40',
+    hoverColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  {
+    key: 'drums',
+    name: 'Drumex',
+    badge: 'Rhythm & Click',
+    desc: 'Interactive 16-step sequencer matrix, snare rudiment library, and dynamic visual metronome/click indicator for rock-solid timing.',
+    bullets: [
+      '16-step polyphonic pattern sequencer',
+      'Dynamic visual beat-pulse metronome',
+      'Snare drum rudiment exercises & tempo trainer',
     ],
     colorClass: 'border-white/10 group-hover:border-zinc-200/40',
     hoverColor: 'rgba(255, 255, 255, 0.04)',
@@ -33,7 +46,7 @@ export const APPS_DATA: AppInfo[] = [
     bullets: [
       'Drag-and-drop gear, monitor, and amp nodes',
       'Technical rider exports & input charts',
-      'Band setup template configurations',
+      'Band setup templates for any venue size',
     ],
     colorClass: 'border-white/10 group-hover:border-zinc-200/40',
     hoverColor: 'rgba(255, 255, 255, 0.04)',
@@ -42,24 +55,11 @@ export const APPS_DATA: AppInfo[] = [
     key: 'groovex',
     name: 'Groovex',
     badge: 'Practice Mixer',
-    desc: 'Rehearse with multitrack stem files. Control volume levels, mute channels, loop segments, and speed-train tempo.',
+    desc: 'Rehearse with multitrack stem files. Control volume levels, mute or solo channels, loop segments, and speed-train tempo.',
     bullets: [
       'Low-latency multitrack fader mixing',
-      'Flexible A-B segment loops & scale trainer',
-      'Custom backing stem integrations',
-    ],
-    colorClass: 'border-white/10 group-hover:border-zinc-200/40',
-    hoverColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  {
-    key: 'drums',
-    name: 'Drumex',
-    badge: 'Rhythm & Click',
-    desc: 'Write snare sheets, practice complex rhythms, and synchronize tempo using visual click and metronome indicators.',
-    bullets: [
-      'Snare drum chart rudiment editor',
-      'Dynamic speed tempo click system',
-      'Interactive visual beat-pulse grid',
+      'Flexible A-B segment loops & speed trainer',
+      'Isolated backing stems & rehearsal tracks',
     ],
     colorClass: 'border-white/10 group-hover:border-zinc-200/40',
     hoverColor: 'rgba(255, 255, 255, 0.04)',
@@ -68,11 +68,11 @@ export const APPS_DATA: AppInfo[] = [
     key: 'vocalex',
     name: 'Vocalex',
     badge: 'Vocal Tools',
-    desc: 'Evaluate vocal pitch in real-time, trace accuracy, and record multiple audio takes to local device storage.',
+    desc: 'Evaluate vocal pitch in real-time, trace melodic accuracy, and record multiple audio takes directly to local device storage.',
     bullets: [
-      'Real-time vocal pitch visual tracing',
+      'Real-time vocal pitch visual tracing curve',
       'Safe local audio take recorder & logger',
-      'Warmup scales & target interval training',
+      'Vocal warmup scales & target interval training',
     ],
     colorClass: 'border-white/10 group-hover:border-zinc-200/40',
     hoverColor: 'rgba(255, 255, 255, 0.04)',
@@ -87,23 +87,23 @@ export interface FeatureInfo {
 
 export const FEATURES_DATA: FeatureInfo[] = [
   {
-    icon: Layout,
-    title: 'Adaptive Layout',
-    desc: 'Web 4.0.0 responsive dashboard fits perfectly on high-res monitors, staging tablets, and mobile phones.',
+    icon: Layers,
+    title: 'Song to Stage Continuity',
+    desc: 'Organize song chord sheets and setlists in Chordex, then translate band line-ups directly into Stagex equipment plots and sound tech riders.',
   },
   {
-    icon: Smartphone,
-    title: 'Android APK',
-    desc: 'Download and install the native Android package for lightweight, dedicated performance on the move.',
+    icon: Volume2,
+    title: 'Synchronized Rehearsal Engine',
+    desc: 'Lock your groove with Drumex’s visual metronome and balance isolated instrument stems in Groovex with low-latency multitrack mixing.',
   },
   {
-    icon: Sliders,
-    title: 'Local Preferences',
-    desc: 'Retain custom settings, appearance options, and tool states directly within your browser cache.',
+    icon: Mic,
+    title: 'Precision Pitch & Takes',
+    desc: 'Monitor vocal accuracy with Vocalex’s real-time pitch detection curve, record multi-take rehearsal takes, and practice vocal warmup intervals.',
   },
   {
-    icon: ShieldCheck,
-    title: 'No Setup Required',
-    desc: 'Access your full music workspace instantly over secure HTTPS without running any installers.',
+    icon: Cloud,
+    title: 'Zero-Install Web & Cloud Sync',
+    desc: 'Instant workstation access on any browser without installations. Local offline persistence ensures stage continuity, with cloud sync across devices.',
   },
 ];

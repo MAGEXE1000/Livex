@@ -120,22 +120,19 @@ export default function LandingFooter({
                 <li>
                   <button
                     onClick={() => navigateTo('/app')}
-                    className="hover:text-white transition-colors"
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Web Version
+                    Web Workstation
                   </button>
                 </li>
                 <li>
                   {apkUrl ? (
-                    <a href={apkUrl} className="hover:text-white transition-colors">
+                    <a href={apkUrl} className="hover:text-white transition-colors cursor-pointer">
                       Android APK
                     </a>
                   ) : (
-                    <span className="text-zinc-700">APK</span>
+                    <span className="text-zinc-600">Android APK</span>
                   )}
-                </li>
-                <li>
-                  <span className="text-zinc-700 cursor-not-allowed">Windows EXE</span>
                 </li>
               </ul>
             </div>

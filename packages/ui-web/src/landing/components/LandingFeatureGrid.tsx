@@ -1,4 +1,4 @@
-import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
+import { useLivexPreferences } from '@workspace/livex-core';
 import React from 'react';
 import { FEATURES_DATA } from '../landingData';
 import { motion } from 'motion/react';
@@ -11,7 +11,7 @@ export default function LandingFeatureGrid() {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: isReduced ? 0 : 0.06,
+        staggerChildren: isReduced ? 0 : 0.08,
       },
     },
   };
@@ -19,13 +19,13 @@ export default function LandingFeatureGrid() {
   const itemVariants = {
     hidden: {
       opacity: 0,
-      y: isReduced ? 0 : 16,
+      y: isReduced ? 0 : 20,
     },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: isReduced ? 0 : 0.5,
+        duration: isReduced ? 0 : 0.55,
         ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
       },
     },
@@ -42,18 +42,29 @@ export default function LandingFeatureGrid() {
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] uppercase tracking-widest font-bold mb-5 select-none landing-font-heading"
+            style={{
+              backgroundColor: 'var(--landing-surface-subtle)',
+              borderColor: 'var(--landing-border)',
+              color: 'var(--landing-text-secondary)',
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Stage-Ready Architecture
+          </div>
           <h2
             className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase mb-4 landing-font-heading"
             style={{ color: 'var(--landing-text-primary)' }}
           >
-            Technical Design Core
+            The Connected Live Ecosystem
           </h2>
           <p
             className="text-xs md:text-sm leading-relaxed landing-font-body"
             style={{ color: 'var(--landing-text-secondary)' }}
           >
-            Livex is engineered to withstand the demanding conditions of live music performance and
-            band rehearsal settings.
+            Built specifically for gigging musicians, live bands, and sound engineers. Every tool
+            communicates seamlessly from rehearsal rooms to stage monitors.
           </p>
         </div>
 
@@ -62,7 +73,7 @@ export default function LandingFeatureGrid() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {FEATURES_DATA.map((feat, idx) => {
             const Icon = feat.icon;
@@ -70,34 +81,44 @@ export default function LandingFeatureGrid() {
               <motion.div
                 key={idx}
                 variants={itemVariants}
-                className="p-6 rounded-2xl border flex flex-col gap-4 transition-all duration-300 shadow-md"
+                className="group p-1.5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 shadow-lg"
                 style={{
                   backgroundColor: 'var(--landing-surface-card)',
                   borderColor: 'var(--landing-border)',
                 }}
               >
                 <div
-                  className="w-10 h-10 rounded-xl border flex items-center justify-center transition-colors"
+                  className="p-6 rounded-xl flex flex-col gap-4 h-full border"
                   style={{
                     backgroundColor: 'var(--landing-surface-subtle)',
-                    borderColor: 'var(--landing-border)',
-                    color: 'var(--landing-text-primary)',
+                    borderColor: 'var(--landing-border-subtle)',
                   }}
                 >
-                  <Icon className="w-5 h-5" />
+                  <div
+                    className="w-11 h-11 rounded-xl border flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: 'var(--landing-surface-card)',
+                      borderColor: 'var(--landing-border)',
+                      color: 'var(--landing-text-primary)',
+                    }}
+                  >
+                    <Icon className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3
+                      className="text-sm font-bold uppercase tracking-wider mb-2 landing-font-heading"
+                      style={{ color: 'var(--landing-text-primary)' }}
+                    >
+                      {feat.title}
+                    </h3>
+                    <p
+                      className="text-xs leading-relaxed landing-font-body"
+                      style={{ color: 'var(--landing-text-secondary)' }}
+                    >
+                      {feat.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3
-                  className="text-sm font-bold uppercase tracking-wider landing-font-heading"
-                  style={{ color: 'var(--landing-text-primary)' }}
-                >
-                  {feat.title}
-                </h3>
-                <p
-                  className="text-xs leading-relaxed landing-font-body"
-                  style={{ color: 'var(--landing-text-secondary)' }}
-                >
-                  {feat.desc}
-                </p>
               </motion.div>
             );
           })}

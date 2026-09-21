@@ -1,6 +1,6 @@
 import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Download, Monitor } from 'lucide-react';
+import { ArrowRight, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LandingLinkPreview from './LandingLinkPreview';
 
@@ -255,19 +255,6 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
               APK Unavailable
             </button>
           )}
-
-          <button
-            disabled
-            className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border cursor-not-allowed flex items-center justify-center gap-2 opacity-50"
-            style={{
-              backgroundColor: 'var(--landing-surface-subtle)',
-              color: 'var(--landing-text-muted)',
-              borderColor: 'var(--landing-border)',
-            }}
-          >
-            <Monitor className="w-3.5 h-3.5" style={{ color: 'var(--landing-text-muted)' }} />
-            Windows App
-          </button>
         </motion.div>
       </motion.div>
     </section>

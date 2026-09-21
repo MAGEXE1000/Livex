@@ -1,4 +1,10 @@
-import { ChordexLogo, StagexLogoIcon, GroovexLogo } from '@workspace/ui-shared';
+import {
+  ChordexLogo,
+  StagexLogoIcon,
+  GroovexLogo,
+  DrumexLogo,
+  VocalexLogo,
+} from '@workspace/ui-shared';
 import React from 'react';
 import { motion } from 'motion/react';
 
@@ -275,3 +281,245 @@ export function GroovexFeatureSkeleton() {
     </div>
   );
 }
+
+// ===== DRUMEX SKELETON =====
+export function DrumexFeatureSkeleton() {
+  const tabs = ['Sequencer', 'Patterns', 'Rudiments'];
+  const insts = [
+    { name: 'Crash', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    { name: 'Hi-Hat', pattern: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+    { name: 'Snare', pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] },
+    { name: 'Kick', pattern: [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0] },
+  ];
+
+  return (
+    <div className="w-full h-full bg-[#050505] p-3 flex flex-col font-sans select-none overflow-hidden relative">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="flex-shrink-0 text-zinc-500 mr-1.5">
+            <DrumexLogo size={14} />
+          </div>
+          {tabs.map((tab, i) => (
+            <div
+              key={tab}
+              className={`text-[8.5px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider relative ${
+                i === 0 ? 'text-white bg-zinc-900 border border-zinc-800' : 'text-zinc-500'
+              }`}
+            >
+              {tab}
+              {i === 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {/* Beat pulse indicator */}
+          <div className="flex gap-1 items-center bg-zinc-950 border border-zinc-900 px-1.5 py-0.5 rounded">
+            {[1, 2, 3, 4].map((b) => (
+              <motion.div
+                key={b}
+                animate={b === 1 ? { opacity: [1, 0.3, 1], scale: [1.2, 0.9, 1.2] } : { opacity: 0.4 }}
+                transition={{ duration: 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                className={`w-1 h-1 rounded-full ${b === 1 ? 'bg-blue-400' : 'bg-zinc-600'}`}
+              />
+            ))}
+          </div>
+          <div className="text-[7.5px] font-black text-white bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+            120 BPM
+          </div>
+        </div>
+      </div>
+
+      {/* Sequencer Grid */}
+      <div className="flex-1 flex flex-col border border-zinc-900/60 rounded-lg overflow-hidden bg-[#020203] relative min-h-0">
+        {/* Playhead sweep animation */}
+        <motion.div
+          animate={{ left: ['18%', '100%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="absolute top-0 bottom-0 w-[1.5px] bg-blue-500/60 shadow-[0_0_8px_rgba(59,130,246,0.6)] z-10 pointer-events-none"
+        />
+
+        {insts.map((inst, rowIdx) => (
+          <div
+            key={inst.name}
+            className="flex flex-1 border-b border-zinc-900/40 last:border-none items-center"
+          >
+            {/* Instrument label */}
+            <div className="w-14 pl-2 text-[7px] font-bold text-zinc-400 border-r border-zinc-900/60 flex items-center justify-between pr-1.5 flex-shrink-0">
+              <span className="truncate">{inst.name}</span>
+              <span className="text-[5.5px] text-zinc-600 uppercase font-mono">M/S</span>
+            </div>
+
+            {/* 16 Steps */}
+            <div className="flex-1 grid grid-cols-16 h-full">
+              {inst.pattern.map((active, stepIdx) => {
+                const isGroupQuarter = stepIdx % 4 === 0;
+                return (
+                  <div
+                    key={stepIdx}
+                    className={`border-r border-zinc-900/30 last:border-none flex items-center justify-center ${
+                      Math.floor(stepIdx / 4) % 2 === 1 ? 'bg-zinc-950/40' : ''
+                    }`}
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-sm transition-all ${
+                        active === 1
+                          ? rowIdx === 2
+                            ? 'bg-blue-400 shadow-[0_0_4px_rgba(96,165,250,0.5)]'
+                            : 'bg-zinc-200 shadow-[0_0_4px_rgba(255,255,255,0.4)]'
+                          : isGroupQuarter
+                            ? 'bg-zinc-850/60 border border-zinc-800/80'
+                            : 'bg-zinc-900/50'
+                      }`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom Rudiment strip */}
+      <div className="mt-1.5 flex items-center justify-between text-[6.5px] text-zinc-500 px-1">
+        <span className="font-semibold text-zinc-400">Preset: Rock Straight 4/4</span>
+        <span className="font-mono text-zinc-600">Sync: Internal Clock</span>
+      </div>
+    </div>
+  );
+}
+
+// ===== VOCALEX SKELETON =====
+export function VocalexFeatureSkeleton() {
+  const tabs = ['Pitch Tracker', 'Audio Takes', 'Warmup'];
+  const takes = [
+    { id: 'Take 03', dur: '0:42', active: true },
+    { id: 'Take 02', dur: '0:38', active: false },
+    { id: 'Take 01', dur: '0:45', active: false },
+  ];
+
+  return (
+    <div className="w-full h-full bg-[#050505] p-3 flex flex-col font-sans select-none overflow-hidden relative">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="flex-shrink-0 text-zinc-500 mr-1.5">
+            <VocalexLogo size={14} />
+          </div>
+          {tabs.map((tab, i) => (
+            <div
+              key={tab}
+              className={`text-[8.5px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider relative ${
+                i === 0 ? 'text-white bg-zinc-900 border border-zinc-800' : 'text-zinc-500'
+              }`}
+            >
+              {tab}
+              {i === 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="text-[7.5px] font-black text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-1.5 py-0.5 rounded flex items-center gap-1">
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+            +2¢ IN TUNE
+          </div>
+          <div className="text-[7.5px] font-black text-white bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+            C#4 · 277.2 Hz
+          </div>
+        </div>
+      </div>
+
+      {/* Workspace Split */}
+      <div className="flex flex-1 gap-2 min-h-0 overflow-hidden">
+        {/* Takes column */}
+        <div className="w-20 border-r border-zinc-900 pr-2 flex flex-col gap-1 flex-shrink-0">
+          <div className="text-[7px] text-zinc-600 font-extrabold uppercase tracking-widest mb-0.5">
+            Takes Log
+          </div>
+          {takes.map((take) => (
+            <div
+              key={take.id}
+              className={`text-[7px] p-1 rounded font-semibold flex items-center justify-between ${
+                take.active
+                  ? 'bg-zinc-900 border border-zinc-800 text-white'
+                  : 'text-zinc-500 hover:bg-zinc-950'
+              }`}
+            >
+              <div className="flex items-center gap-1 truncate">
+                <span
+                  className={`w-1 h-1 rounded-full ${
+                    take.active ? 'bg-red-500 animate-pulse' : 'bg-zinc-600'
+                  }`}
+                />
+                <span className="truncate">{take.id}</span>
+              </div>
+              <span className="text-[5.5px] text-zinc-500 font-mono">{take.dur}</span>
+            </div>
+          ))}
+          <div className="mt-auto pt-1 border-t border-zinc-900 text-[6px] text-zinc-500 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+            REC 48kHz WAV
+          </div>
+        </div>
+
+        {/* Real-time Pitch Visual Tracing Canvas */}
+        <div className="flex-1 rounded-lg border border-zinc-900 bg-[#020203] relative overflow-hidden flex flex-col justify-between p-2">
+          {/* Note guide grid */}
+          <div className="absolute inset-0 flex flex-col justify-between py-2 px-3 pointer-events-none">
+            {['D4', 'C#4', 'C4', 'B3'].map((n) => (
+              <div
+                key={n}
+                className={`w-full flex items-center justify-between border-b ${
+                  n === 'C#4'
+                    ? 'border-blue-500/30 text-blue-400 font-bold'
+                    : 'border-zinc-900/40 text-zinc-600'
+                } pb-0.5 text-[6px] font-mono`}
+              >
+                <span>{n}</span>
+                {n === 'C#4' && (
+                  <span className="text-[5.5px] bg-blue-500/20 text-blue-300 px-1 rounded uppercase">
+                    Target
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Animated Pitch Contour Curve */}
+          <svg className="w-full h-full absolute inset-0 overflow-visible" preserveAspectRatio="none">
+            <motion.path
+              d="M 20,80 Q 70,75 110,48 T 200,48 T 280,47"
+              fill="none"
+              stroke="#60a5fa"
+              strokeWidth="2"
+              strokeLinecap="round"
+              initial={{ pathLength: 0.2, opacity: 0.6 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Real-time tracker dot */}
+            <motion.circle
+              cx="280"
+              cy="47"
+              r="3"
+              fill="#ffffff"
+              animate={{ r: [2.5, 4, 2.5] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+          </svg>
+
+          {/* Bottom Live Meter */}
+          <div className="mt-auto pt-1 relative z-10 flex items-center justify-between text-[6px] text-zinc-500 font-mono">
+            <span>Latency: 4.2ms</span>
+            <span className="text-zinc-400">Confidence: 99.4%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
