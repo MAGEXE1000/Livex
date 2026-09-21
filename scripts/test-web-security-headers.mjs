@@ -36,60 +36,59 @@ async function asyncTest(name, fn) {
 
 console.log('=== Starting Web Security Headers & CSP Test Suite ===\n');
 
-// ── 1. Netlify.toml Configuration Tests ──────────────────────────────────────
-console.log('--- Suite 1: netlify.toml Configuration ---');
+// ── 1. Cloudflare Pages _headers Configuration Tests ─────────────────────────
+console.log('--- Suite 1: Cloudflare Pages _headers Configuration ---');
 
-const netlifyTomlPath = path.join(process.cwd(), 'netlify.toml');
-const netlifyToml = fs.readFileSync(netlifyTomlPath, 'utf-8');
+const publicHeadersPath = path.join(process.cwd(), 'apps/studio-web/public/_headers');
+const publicHeaders = fs.readFileSync(publicHeadersPath, 'utf-8');
 
-test('netlify.toml exists and has headers configuration', () => {
-  assert(netlifyToml.includes('[[headers]]'), 'netlify.toml must define [[headers]]');
-  assert(netlifyToml.includes('for = "/*"'), 'netlify.toml must define headers for /*');
+test('public/_headers exists and has headers configuration for /*', () => {
+  assert(publicHeaders.includes('/*'), '_headers must define headers for /*');
 });
 
-test('netlify.toml contains X-Content-Type-Options: nosniff', () => {
-  assert(netlifyToml.includes('X-Content-Type-Options = "nosniff"'));
+test('public/_headers contains X-Content-Type-Options: nosniff', () => {
+  assert(publicHeaders.includes('X-Content-Type-Options: nosniff'));
 });
 
-test('netlify.toml contains X-Frame-Options: SAMEORIGIN', () => {
-  assert(netlifyToml.includes('X-Frame-Options = "SAMEORIGIN"'));
+test('public/_headers contains X-Frame-Options: SAMEORIGIN', () => {
+  assert(publicHeaders.includes('X-Frame-Options: SAMEORIGIN'));
 });
 
-test('netlify.toml contains Referrer-Policy: strict-origin-when-cross-origin', () => {
-  assert(netlifyToml.includes('Referrer-Policy = "strict-origin-when-cross-origin"'));
+test('public/_headers contains Referrer-Policy: strict-origin-when-cross-origin', () => {
+  assert(publicHeaders.includes('Referrer-Policy: strict-origin-when-cross-origin'));
 });
 
-test('netlify.toml contains Permissions-Policy with microphone and audio allowed', () => {
-  assert(netlifyToml.includes('Permissions-Policy = "'));
-  assert(netlifyToml.includes('microphone=(self)'));
-  assert(netlifyToml.includes('camera=()'));
-  assert(netlifyToml.includes('geolocation=()'));
-  assert(netlifyToml.includes('payment=()'));
-  assert(netlifyToml.includes('usb=()'));
-  assert(netlifyToml.includes('midi=(self)'));
-  assert(netlifyToml.includes('autoplay=(self)'));
+test('public/_headers contains Permissions-Policy with microphone and audio allowed', () => {
+  assert(publicHeaders.includes('Permissions-Policy: '));
+  assert(publicHeaders.includes('microphone=(self)'));
+  assert(publicHeaders.includes('camera=()'));
+  assert(publicHeaders.includes('geolocation=()'));
+  assert(publicHeaders.includes('payment=()'));
+  assert(publicHeaders.includes('usb=()'));
+  assert(publicHeaders.includes('midi=(self)'));
+  assert(publicHeaders.includes('autoplay=(self)'));
 });
 
-test('netlify.toml contains Strict-Transport-Security with long max-age and includeSubDomains', () => {
-  assert(netlifyToml.includes('Strict-Transport-Security = "max-age=31536000; includeSubDomains"'));
+test('public/_headers contains Strict-Transport-Security with long max-age and includeSubDomains', () => {
+  assert(publicHeaders.includes('Strict-Transport-Security: max-age=31536000; includeSubDomains'));
 });
 
-test('netlify.toml contains Cross-Origin-Opener-Policy: same-origin-allow-popups', () => {
-  assert(netlifyToml.includes('Cross-Origin-Opener-Policy = "same-origin-allow-popups"'));
+test('public/_headers contains Cross-Origin-Opener-Policy: same-origin-allow-popups', () => {
+  assert(publicHeaders.includes('Cross-Origin-Opener-Policy: same-origin-allow-popups'));
 });
 
-test('netlify.toml contains Content-Security-Policy', () => {
-  assert(netlifyToml.includes('Content-Security-Policy = "'));
+test('public/_headers contains Content-Security-Policy', () => {
+  assert(publicHeaders.includes('Content-Security-Policy: default-src'));
 });
 
 
 // ── 2. Detailed CSP Directive Verification ──────────────────────────────────
 console.log('\n--- Suite 2: CSP Directives Deep Verification ---');
 
-// Extract CSP string from netlify.toml
-const cspMatch = netlifyToml.match(/Content-Security-Policy\s*=\s*"([^"]+)"/);
-assert(cspMatch, 'Could not extract CSP string from netlify.toml');
-const csp = cspMatch[1];
+// Extract CSP string from public/_headers
+const cspMatch = publicHeaders.match(/Content-Security-Policy:\s*([^\r\n]+)/);
+assert(cspMatch, 'Could not extract CSP string from _headers');
+const csp = cspMatch[1].trim();
 
 // Helper to parse directives into a map of directive -> set of tokens
 function parseCsp(cspString) {
@@ -210,11 +209,10 @@ test('object-src is none and base-uri is self', () => {
 // ── 3. Static _headers and firebase.json Verification ────────────────────────
 console.log('\n--- Suite 3: Static _headers & firebase.json Verification ---');
 
-const publicHeadersPath = path.join(process.cwd(), 'apps/studio-web/public/_headers');
 const distHeadersPath = path.join(process.cwd(), 'dist/web/_headers');
 const firebaseJsonPath = path.join(process.cwd(), 'firebase.json');
 
-test('apps/studio-web/public/_headers exists and matches netlify security headers', () => {
+test('apps/studio-web/public/_headers exists and matches canonical security headers', () => {
   assert(fs.existsSync(publicHeadersPath), 'public/_headers must exist');
   const content = fs.readFileSync(publicHeadersPath, 'utf-8');
   assert(content.includes('X-Content-Type-Options: nosniff'));
@@ -251,7 +249,6 @@ test('apps/studio-web/public/_redirects exists and defines Cloudflare Pages SPA 
   assert(fs.existsSync(publicRedirectsPath), 'public/_redirects must exist');
   const content = fs.readFileSync(publicRedirectsPath, 'utf-8');
   assert(content.includes('/* /index.html 200'), '_redirects must define SPA fallback /* /index.html 200');
-  assert(content.includes('/version.json'), '_redirects must define /version.json');
   assert(content.includes('/app-release.json'), '_redirects must define /app-release.json');
   assert(content.includes('/apk/*'), '_redirects must define /apk/*');
 });

@@ -10,10 +10,10 @@ To support independent release cycles, separate build pipelines, and prevent pla
 
 ### Core Goals
 
-- **Independent Build/Deploy**: Android work must never trigger Netlify web builds, and web changes must not affect native Android APKs.
+- **Independent Build/Deploy**: Android work must never trigger Cloudflare web builds, and web changes must not affect native Android APKs.
 - **Strict UI Boundaries**: Web-specific UI layouts and native Android-specific UI elements reside in separate, non-overlapping modules.
 - **Independent Versioning**: Studio Web is versioned at `4.x.y` and Studio Android at `3.x.y` (versionName) / `6x` (versionCode) without conflicts.
-- **Legacy Compatibility**: A Netlify proxy redirects requests for update metadata to the Firebase Hosting endpoint, ensuring backward compatibility for legacy Android clients.
+- **Legacy Compatibility**: A Cloudflare Pages redirect bridge forwards requests for update metadata to the Firebase Hosting endpoint, ensuring backward compatibility for legacy Android clients.
 
 ---
 
@@ -32,7 +32,6 @@ The codebase is organized as follows:
 │   └── ui-android/             # WebView page layouts, bottom navigation bar, native-only widgets
 └── scripts/
     ├── enforce-import-boundaries.mjs # Validates import graph constraints
-    ├── netlify-ignore.mjs      # Determines if a commit affects the web product
     └── version-manager.mjs     # Manages isolated versions for web and Android
 ```
 
@@ -98,34 +97,20 @@ Versions are managed via `scripts/version-manager.mjs` using separate CLI comman
 - **Android CI (`android-ci.yml`)**: Triggered by changes in Android app, shared packages, or native directory. Runs typechecking, WebView compilation, and Capacitor syncing.
 - **Android Release (`android-release.yml`)**: Compiles signed production APKs, uploads them to GitHub Releases, and publishes the metadata updates JSON (`app-release.json`, `version.json`) to Firebase Hosting.
 
-### Netlify Ignore Script
+### Cloudflare Pages Integration
 
-Netlify deployments are gated by `scripts/netlify-ignore.mjs`. The script analyzes changes between the current commit and the cached commit. If modifications are restricted only to Android-specific files (e.g. `apps/studio-android/**`, `packages/ui-android/**`, etc.), the Netlify build is skipped, saving build minutes and avoiding unnecessary deploys.
+Cloudflare Pages builds the web application from repository root via `wrangler.toml` using `pnpm build:web` with output directory `dist/web`.
 
 ---
 
 ## 6. Legacy Update Redirect Bridge
 
-To support older application wrappers (versions `3.6.28` to `3.6.35`) that hardcode the Netlify domain to fetch update manifests, `netlify.toml` specifies forced proxy redirects:
+To support older application wrappers (versions `3.6.28` to `3.6.35`) that request update manifests from the web domain, `apps/studio-web/public/_redirects` specifies redirect rules:
 
-```toml
-[[redirects]]
-  from = "/app-release.json"
-  to = "https://studio-30f44.web.app/app-release.json"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/version.json"
-  to = "https://studio-30f44.web.app/version.json"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/apk/*"
-  to = "https://studio-30f44.web.app/apk/:splat"
-  status = 200
-  force = true
+```
+/app-release.json https://studio-30f44.web.app/app-release.json 302
+/apk/* https://studio-30f44.web.app/apk/:splat 302
+/* /index.html 200
 ```
 
 Newer application wrappers fetch update manifests directly from the Firebase Hosting updates endpoint (`https://studio-30f44.web.app`), completing the separation.

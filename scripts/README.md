@@ -57,7 +57,6 @@ Build automation, testing, release pipeline, and repository health scripts. All 
 | `clean-packages.mjs` | Clean build artifacts |
 | `sync-dependencies.mjs` | Dependency synchronization |
 | `create-symlinks.mjs` | Workspace symlink creation |
-| `netlify-ignore.mjs` | Netlify build skip logic |
 
 ## Running Scripts
 

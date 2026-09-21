@@ -30,7 +30,7 @@
 | Capacitor config | `apps/studio-android/capacitor.config.ts` |
 | Gradle build | `apps/studio-android/android/app/build.gradle` |
 | Firebase config | `firebase.json` |
-| Netlify config | `netlify.toml` |
+| Cloudflare Pages config | `wrangler.toml` |
 | TypeScript base | `tsconfig.base.json` |
 | ESLint config | `eslint.config.mjs` |
 | pnpm workspace | `pnpm-workspace.yaml` |

@@ -1,5 +1,4 @@
 # Cloudflare Pages / Static Redirects & SPA Fallback
-/version.json https://studio-30f44.web.app/version.json 302
 /app-release.json https://studio-30f44.web.app/app-release.json 302
 /apk/* https://studio-30f44.web.app/apk/:splat 302
 /* /index.html 200

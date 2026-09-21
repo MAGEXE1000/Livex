@@ -1,6 +1,6 @@
 # Chordex Studio — Web Platform Guide
 
-This document describes web-specific styles, Vite compilation setups, Netlify hosting configurations, and browser compatibility fallbacks.
+This document describes web-specific styles, Vite compilation setups, Cloudflare Pages hosting configurations, and browser compatibility fallbacks.
 
 ---
 
@@ -10,7 +10,7 @@ The web application compiles React code into static SPA files deployed to Conten
 
 - **Vite Compilation**: The web workspace utilizes `apps/studio-web/vite.config.ts` to bundle components.
 - **Asset Optimization**: Bundles are minified via ESBuild and split into dynamic chunks to improve initial page load speeds.
-- **Platform Exclusivity**: Web views and Netlify redirects stay in web-focused packages. They are not allowed to load native Android assemblies or query Capacitor interfaces directly.
+- **Platform Exclusivity**: Web views and Cloudflare redirects stay in web-focused packages. They are not allowed to load native Android assemblies or query Capacitor interfaces directly.
 
 Source:
 
@@ -19,38 +19,22 @@ Source:
 
 ---
 
-## 2. Netlify Hosting & Routing (`netlify.toml`)
+## 2. Cloudflare Pages Hosting & Routing (`wrangler.toml` & `public/_redirects`)
 
-Netlify serves as the primary hosting provider for the desktop web build. It handles client-side routers by redirecting routes back to `index.html`, and proxies OTA requests directly to Firebase Hosting to act as an OTA distribution mirror:
+Cloudflare Pages serves as the primary hosting provider for the desktop web build. It handles client-side routers by redirecting routes back to `index.html` via `_redirects`, applies security headers via `_headers`, and proxies update requests to Firebase Hosting:
 
-```toml
-[[redirects]]
-  from = "/version.json"
-  to = "https://studio-30f44.web.app/version.json"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/app-release.json"
-  to = "https://studio-30f44.web.app/app-release.json"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/apk/*"
-  to = "https://studio-30f44.web.app/apk/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+```
+# Cloudflare Pages / Static Redirects & SPA Fallback
+/app-release.json https://studio-30f44.web.app/app-release.json 302
+/apk/* https://studio-30f44.web.app/apk/:splat 302
+/* /index.html 200
 ```
 
 Source:
 
-- `netlify.toml`
+- `wrangler.toml`
+- `apps/studio-web/public/_redirects`
+- `apps/studio-web/public/_headers`
 
 ---
 

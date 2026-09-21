@@ -30,7 +30,7 @@ studio/
 │   ├── studio-core/          # Core state stores, OTA engines, local storage interfaces, services
 │   ├── ui-shared/            # Platform-neutral Material 3 UI component library
 │   ├── ui-android/           # Touchsafe adapters, back gesture handlers, safe areas
-│   └── ui-web/               # Desktop workspace docks and netlify views
+│   └── ui-web/               # Desktop workspace docks and web views
 ├── lib/
 │   ├── api-client-react/     # API Client hooks for frontend integration
 │   ├── api-spec/             # JSON API Specifications and endpoints

@@ -14,7 +14,7 @@ Before making any changes to this repository, you must read the documentation in
 4.  **[architecture.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/architecture.md)**: Package structures, communication patterns, and sync engine design.
 5.  **Platform-Specific Guides**:
     - **[android.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/android.md)**: Android compilation and native capacitor plugins.
-    - **[web.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/web.md)**: Netlify rules and web layouts.
+    - **[web.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/web.md)**: Cloudflare Pages rules and web layouts.
     - **[firebase.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/firebase.md)**: Security rules and deployment configurations.
     - ****: State machine updates and recovery handlers.
 
@@ -31,7 +31,7 @@ All development sessions must conform to the following checkpoints:
 - **Checks First**: Always complete the Session Start Checklist in `docs/ai_workflow.md` before editing code files.
 - **Planning Phase**: Document the root cause, target files, and plan details in `docs/architecture_decisions.md` before coding.
 - **Minimal Scope**: Design minimal, highly focused refactoring overrides. Avoid duplicate code helper definitions.
-- **Boundary Enforcement**: Keep Android Gradle configurations and native java source files separate from Netlify routing parameters and Vite web settings.
+- **Boundary Enforcement**: Keep Android Gradle configurations and native java source files separate from Cloudflare Pages routing parameters and Vite web settings.
 
 Source:
 

@@ -74,7 +74,7 @@ The codebase divides responsibilities across shared modules, library workspaces,
 ### Packages
 
 - **`apps/studio-android`**: Android build workspace running under Capacitor. Wraps compiled assets into the native app package shell.
-- **`apps/studio-web`**: Web target build directory, deployed to Netlify.
+- **`apps/studio-web`**: Web target build directory, deployed to Cloudflare Pages.
 - **`packages/studio-core`**: Core business logic. Contains audio samplers (`drumAudio.ts`), synchronization logic (`syncEngine.ts`), state stores (`store/`), updates lifecycle hooks, and translation keys.
 - **`packages/ui-shared`**: Common component library containing layout wrappers, practice sheets, and panels.
 - **`packages/ui-android`**: Android components implementing Capacitor interfaces, back gestures, and system bar spacings.

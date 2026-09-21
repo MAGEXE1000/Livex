@@ -24,10 +24,10 @@ Multi-package monorepo context layout. See `docs/agents/domain.md`.
 
 Every task must be classified into one of the following platform scopes:
 
-- **WEB**: Refers to the responsive browser-based application (for desktop, mobile, and tablet browsers). Deployed via Netlify.
+- **WEB**: Refers to the responsive browser-based application (for desktop, mobile, and tablet browsers). Deployed via Cloudflare Pages.
 - **APK**: Refers to the native installed Android application built via Capacitor and Gradle.
 - **SHARED**: platform-neutral logic, sync backend engines, and common visual primitives.
-- **INFRASTRUCTURE**: GitHub Actions pipelines, Netlify configuration, Firebase Hosting config, workspace package configuration.
+- **INFRASTRUCTURE**: GitHub Actions pipelines, Cloudflare Pages configuration, Firebase Hosting config, workspace package configuration.
 - **DOCUMENTATION**: Manuals, changelogs, architecture diagrams, agent run instructions.
 - **RELEASE**: Version bumps, production APK signing, final artifact publishing.
 
@@ -45,7 +45,7 @@ Every task must be classified into one of the following platform scopes:
 ## 2. Permanent Rules
 
 - **Scope Isolation**: A WEB task must not alter Android/APK-owned files unless strictly necessary and documented. An APK task must not alter Web-owned files unless strictly necessary and documented.
-- **Build Boundaries**: Android-only changes must not intentionally trigger Netlify builds.
+- **Build Boundaries**: Android-only changes must not intentionally trigger web builds.
 - **UI Purity**: Never copy complete Web layouts directly into Android. Never copy Android navigation (like BottomNav) directly into Web.
 - **No Silent Expansions**: Never silently expand a task to both platforms.
 - **Version Control**: Never silently bump versions. Maintain Web at `4.0.0` and Android at the latest release version (e.g. `3.7.8`, `versionCode 135`).

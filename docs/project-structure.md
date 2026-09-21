@@ -48,7 +48,7 @@ This document defines the codebase layout, module entry points, component struct
 
 ## 2. Platform Boundaries & File Ownership Map
 
-- **WEB-owned (Netlify targets)**:
+- **WEB-owned (Cloudflare Pages targets)**:
   - `apps/studio-web/**`
   - `packages/ui-web/**`
 - **APK-owned (Gradle/Android builds)**:

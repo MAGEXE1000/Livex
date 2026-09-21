@@ -2,7 +2,7 @@
 
 ## Overview
 
-Studio uses a multi-target release pipeline: **Web** deploys to Netlify, **Android** distributes signed APKs via GitHub Releases + Firebase Hosting, and OTA metadata updates are pushed to Firebase Hosting.
+Studio uses a multi-target release pipeline: **Web** deploys to Cloudflare Pages, **Android** distributes signed APKs via GitHub Releases + Firebase Hosting, and OTA metadata updates are pushed to Firebase Hosting.
 
 ## Versioning
 
@@ -54,7 +54,7 @@ Pipeline:
 2. `vite build` — bundle with production config
 3. Output: `dist/web/`
 
-Deployment: **Netlify** (auto-deploy from branch)
+Deployment: **Cloudflare Pages** (auto-deploy from branch)
 
 ### Android Web Assets
 
@@ -138,7 +138,7 @@ Runs before every Firebase deploy to validate APK signatures.
 ```mermaid
 graph TD
     A["Developer pushes to branch"] --> B{Target}
-    B -->|Web| C["Netlify auto-deploy"]
+    B -->|Web| C["Cloudflare Pages auto-deploy"]
     B -->|Android| D["Build APK"]
     D --> E["Sign with production keystore"]
     E --> F["Upload to GitHub Releases"]

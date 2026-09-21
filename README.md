@@ -20,7 +20,7 @@ If you are an AI agent working on this repository, start here:
 ```
 Livex/
 ├── apps/
-│   ├── studio-web/           # Vite + React web app (Netlify)
+│   ├── studio-web/           # Vite + React web app (Cloudflare Pages)
 │   └── studio-android/       # Capacitor + Android native app (APK)
 ├── packages/
 │   ├── studio-core/          # Platform-neutral business logic & stores

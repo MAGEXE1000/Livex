@@ -56,19 +56,6 @@ runTest('Canonical Button: legacy ui/button.tsx is removed and ShareMenu uses ca
     !shareMenuContent.includes('./ui/button'),
     'ShareMenu must not reference legacy ./ui/button'
   );
-
-  const netlifyIgnoreContent = fs.readFileSync(
-    path.join(rootDir, 'scripts/test-netlify-ignore.mjs'),
-    'utf-8'
-  );
-  assert.ok(
-    !netlifyIgnoreContent.includes('packages/ui-shared/src/components/ui/button.tsx'),
-    'test-netlify-ignore.mjs must not reference deleted legacy button.tsx'
-  );
-  assert.ok(
-    netlifyIgnoreContent.includes('packages/ui-shared/src/shared/design-system/buttons.tsx'),
-    'test-netlify-ignore.mjs must reference canonical buttons.tsx'
-  );
 });
 
 // ── TEST 2: Stagex Modal Consolidation to Canonical Dialog ──────────────────

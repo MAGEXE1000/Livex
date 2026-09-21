@@ -45,7 +45,7 @@ The Studio workspace is a **pnpm monorepo** containing two deployed apps (web an
 ```
 Studio/
 ├── apps/
-│   ├── studio-web/        # Vite + React web app (Netlify)
+│   ├── studio-web/        # Vite + React web app (Cloudflare Pages)
 │   └── studio-android/    # Capacitor + Android native app (APK)
 ├── packages/
 │   ├── studio-core/       # Platform-neutral business logic & stores
@@ -100,14 +100,14 @@ lib/*            — standalone (no workspace deps)
 | ------------------- | -------------------------------------- |
 | **Package name**    | @workspace/studio-web                  |
 | **Version**         | 4.0.4                                  |
-| **Entry point**     | pps/studio-web/src/main.tsx            |
-| **Deployment**      | Netlify (web hosting)                  |
-| **Build tool**      | Vite 7 (pps/studio-web/vite.config.ts) |
+| **Entry point**     |  pps/studio-web/src/main.tsx            |
+| **Deployment**      | Cloudflare Pages (web hosting)         |
+| **Build tool**      | Vite 7 (apps/studio-web/vite.config.ts) |
 | **Ownership scope** | WEB                                    |
 
 #### Purpose
 
-The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via @workspace/livex-core and UI components via @workspace/ui-shared. Uses web-only layout components from @workspace/ui-web.
+The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Cloudflare Pages. Shares business logic with the Android app via @workspace/livex-core and UI components via @workspace/ui-shared. Uses web-only layout components from @workspace/ui-web.
 
 #### Main Files
 

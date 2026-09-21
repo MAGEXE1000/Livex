@@ -8,7 +8,7 @@ This document records the design decisions, alternatives, chosen solutions, and 
 
 - **Date**: 2026-03-15
 - **Problem**: Staging, versioning, and deploying separate repositories for the Android app, Web app, and core shared packages led to dependency mismatches and version-bumping overhead.
-- **Context**: The app shares 80% of its business logic (audio tuners, chords catalogs, state machines, updater rules) across platforms, but relies on platform-exclusive rendering envelopes (Netlify SPA vs Android Capacitor viewports).
+- **Context**: The app shares 80% of its business logic (audio tuners, chords catalogs, state machines, updater rules) across platforms, but relies on platform-exclusive rendering envelopes (Cloudflare Pages Web SPA vs Android Capacitor viewports).
 - **Alternatives Considered**:
   - _Option A_: Maintain multi-repository layouts and sync via npm packages. (High maintenance, delay in developer cycles).
   - _Option B_: Merge everything into a single folder without module separation. (Poor compilation boundaries, dependency leaks).

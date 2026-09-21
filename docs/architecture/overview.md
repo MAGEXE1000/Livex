@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-Studio is a **pnpm monorepo** that ships a single codebase as two distinct applications: a **Web SPA** (deployed to Netlify) and an **Android app** (Capacitor WebView distributed as a signed APK via GitHub Releases + Firebase Hosting).
+Studio is a **pnpm monorepo** that ships a single codebase as two distinct applications: a **Web SPA** (deployed to Cloudflare Pages) and an **Android app** (Capacitor WebView distributed as a signed APK via GitHub Releases + Firebase Hosting).
 
 ```
 Studio/

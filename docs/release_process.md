@@ -96,20 +96,21 @@ Source:
 
 ---
 
-## 5. Web Deployment (Netlify)
+## 5. Web Deployment (Cloudflare Pages)
 
-Web application compilation and deployment are managed via Netlify:
+Web application compilation and deployment are managed via Cloudflare Pages:
 
-- **Auto-Publishing**: Commits pushed or merged to the `main` branch automatically trigger Netlify to run the production build script (`pnpm run build:web`).
+- **Auto-Publishing**: Commits pushed or merged to the `main` branch automatically trigger Cloudflare Pages to run the production build script (`pnpm run build:web`).
 - **Pre-deployment Verification**:
   1. Build assets locally using `pnpm run build:web`.
   2. Confirm type safety: `pnpm run typecheck:web`.
-- **Cache Invalidation**: Netlify deployment hooks clear standard CDN caches. Hashed files in `/assets/**` are marked as immutable for browser caching, while `/index.html` and service worker files (`/sw.js`) are configured with `no-store` headers to guarantee instant updates.
+- **Cache Invalidation**: Cloudflare Pages clears standard CDN caches. Hashed files in `/assets/**` are marked as immutable for browser caching, while `/index.html` and service worker files (`/sw.js`) are configured with `no-store` headers via `_headers` to guarantee instant updates.
 
 Source:
 
-- [netlify.toml](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/netlify.toml)
-- [UPDATE_PIPELINE_NOTES.md](file:///c:/Users/ayuda/Documents/.gemini/antigravity/scratch/Studio/docs/UPDATE_PIPELINE_NOTES.md#L7-L20)
+- `wrangler.toml`
+- `apps/studio-web/public/_headers`
+- `apps/studio-web/public/_redirects`
 
 ---
 
@@ -134,13 +135,13 @@ Source: *
 
 Follow these steps to revert a deployment in case of critical production failures:
 
-### A. Web Rollback (Netlify)
+### A. Web Rollback (Cloudflare Pages)
 
 If a web deployment introduces breaking regressions:
 
-1.  Navigate to the Netlify Dashboard > **Deploys**.
+1.  Navigate to the Cloudflare Dashboard > **Workers & Pages** > **livex** > **Deployments**.
 2.  Select the last stable deploy from the history list.
-3.  Click **Preview** to verify, then click **Publish Deploy** to lock the production build to that previous stable revision.
+3.  Click **Rollback to this deployment** to instantly revert production traffic to that previous stable revision.
 
 ### B. Android Rollback
 

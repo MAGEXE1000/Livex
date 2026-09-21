@@ -2,12 +2,12 @@
 
 > **Platform scope**: WEB  
 > **Entry point**: `src/main.tsx`  
-> **Deployment**: Netlify  
+> **Deployment**: Cloudflare Pages  
 > **Build tool**: Vite 7
 
 ## Purpose
 
-The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Netlify. Shares business logic with the Android app via `@workspace/livex-core` and UI components via `@workspace/ui-shared`. Uses web-only layout components from `@workspace/ui-web`.
+The browser-based responsive web application. Provides all studio modes (Chordex, Drumex, StageX, Groovex, Vocalex) inside a Vite SPA deployed to Cloudflare Pages. Shares business logic with the Android app via `@workspace/livex-core` and UI components via `@workspace/ui-shared`. Uses web-only layout components from `@workspace/ui-web`.
 
 ## Internal Structure
 
@@ -40,5 +40,5 @@ index.html             # HTML shell: Google Fonts, Material Symbols, meta tags
 
 - This is a **WEB scope** app
 - Never import from `@workspace/ui-android` or `@workspace/studio-android`
-- Deployed to Netlify via `netlify.toml` at repository root
+- Deployed to Cloudflare Pages via `wrangler.toml` at repository root
 - Web version maintained separately in `appVersion.ts`

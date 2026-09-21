@@ -53,7 +53,7 @@ Source:
 To prevent compiler leaks or runtime exceptions across different platforms:
 
 - **Conditional API Checks**: Never import or invoke Capacitor native interfaces without running environment checks (`isNative()`).
-- **Web Boundaries**: Netlify config modifications, web landing docks, and Vite web scripts must remain in web-specific packages (`apps/studio-web` and `packages/ui-web`). They must not leak into Android packages.
+- **Web Boundaries**: Cloudflare Pages config modifications, web landing docks, and Vite web scripts must remain in web-specific packages (`apps/studio-web` and `packages/ui-web`). They must not leak into Android packages.
 - **Android Boundaries**: Native Android Gradle keys, native views, and Capacitor plugin dependencies must remain in Android packages (`apps/studio-android` and `packages/ui-android`).
 - **Shared Logic**: General helpers and platform-neutral components belong in `packages/studio-core` and `packages/ui-shared`.
 
@@ -91,7 +91,7 @@ Source:
 To maintain project architecture and code separation, future implementations must follow these strict operational rules:
 
 - **Scope Isolation**: A WEB-classified task must not alter Android/APK-owned files. An APK-classified task must not alter Web-owned files.
-- **Build Boundaries**: Android-only changes must not trigger Netlify builds.
+- **Build Boundaries**: Android-only changes must not trigger Web (Cloudflare Pages) builds.
 - **UI Purity**: Never copy complete Web layouts directly into Android. Never copy Android navigation elements directly into Web.
 - **No Silent Expansions**: Never silently expand a task to both platforms.
 - **Version Control Constraints**: Never silently bump versions. Maintain Web at `4.0.0` and Android at the latest release version.
