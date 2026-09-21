@@ -447,13 +447,17 @@ function AudioWaveformIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 // Normalizer: strips quotes, curly braces, trims whitespace and converts to lower snake/kebab
+// Implemented via linear slicing to prevent polynomial backtracking / ReDoS (CWE-1333)
 export function normalizeIconName(name: string | undefined | null): string {
   if (!name || typeof name !== 'string') return '';
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/^[{'"`]+|['"`}]+$/g, '')
-    .trim();
+  let str = name.trim().toLowerCase();
+  while (str.length > 0 && (str.startsWith('{') || str.startsWith("'") || str.startsWith('"') || str.startsWith('`'))) {
+    str = str.slice(1);
+  }
+  while (str.length > 0 && (str.endsWith('}') || str.endsWith("'") || str.endsWith('"') || str.endsWith('`'))) {
+    str = str.slice(0, -1);
+  }
+  return str.trim();
 }
 
 /**

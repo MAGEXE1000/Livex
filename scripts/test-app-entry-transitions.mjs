@@ -26,9 +26,13 @@ function createStaticServer(port) {
   const server = http.createServer((req, res) => {
     let reqUrl = req.url.split('?')[0];
     if (reqUrl === '/') reqUrl = '/index.html';
-    let filePath = path.join(distDir, reqUrl);
 
-    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    // Prevent directory traversal attacks (CWE-22)
+    const safePath = path.normalize(reqUrl).replace(/^(\.\.[/\\])+/, '');
+    const resolvedPath = path.resolve(distDir, '.' + path.sep + safePath);
+
+    let filePath = resolvedPath;
+    if (!resolvedPath.startsWith(distDir) || !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).isDirectory()) {
       filePath = path.join(distDir, 'index.html');
     }
 

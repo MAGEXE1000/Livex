@@ -90,14 +90,14 @@ const cspMatch = publicHeaders.match(/Content-Security-Policy:\s*([^\r\n]+)/);
 assert(cspMatch, 'Could not extract CSP string from _headers');
 const csp = cspMatch[1].trim();
 
-// Helper to parse directives into a map of directive -> set of tokens
+// Helper to parse directives into a map of directive -> Set of tokens
 function parseCsp(cspString) {
   const directives = {};
   const parts = cspString.split(';').map((s) => s.trim()).filter(Boolean);
   for (const part of parts) {
     const tokens = part.split(/\s+/);
     const name = tokens[0];
-    directives[name] = tokens.slice(1);
+    directives[name] = new Set(tokens.slice(1));
   }
   return directives;
 }
@@ -105,104 +105,104 @@ function parseCsp(cspString) {
 const parsedCsp = parseCsp(csp);
 
 test('default-src is strictly set to self', () => {
-  assert.deepEqual(parsedCsp['default-src'], ["'self'"]);
+  assert.deepEqual(Array.from(parsedCsp['default-src']), ["'self'"]);
 });
 
 test('script-src allows self, inline, eval, wasm, and Google/Firebase auth', () => {
   const scripts = parsedCsp['script-src'];
-  assert(scripts.includes("'self'"), "script-src must include 'self'");
-  assert(scripts.includes("'unsafe-inline'"), "script-src must include 'unsafe-inline'");
-  assert(scripts.includes("'unsafe-eval'"), "script-src must include 'unsafe-eval' for lottie-web");
-  assert(scripts.includes("'wasm-unsafe-eval'"), "script-src must include 'wasm-unsafe-eval' for DSP WebAssembly");
-  assert(scripts.includes('https://apis.google.com'), 'script-src must include Google APIs');
-  assert(scripts.includes('https://www.gstatic.com'), 'script-src must include gstatic');
-  assert(scripts.includes('https://*.firebaseapp.com'), 'script-src must include firebaseapp');
+  assert(scripts.has("'self'"), "script-src must include 'self'");
+  assert(scripts.has("'unsafe-inline'"), "script-src must include 'unsafe-inline'");
+  assert(scripts.has("'unsafe-eval'"), "script-src must include 'unsafe-eval' for lottie-web");
+  assert(scripts.has("'wasm-unsafe-eval'"), "script-src must include 'wasm-unsafe-eval' for DSP WebAssembly");
+  assert(scripts.has('https://apis.google.com'), 'script-src must include Google APIs');
+  assert(scripts.has('https://www.gstatic.com'), 'script-src must include gstatic');
+  assert(scripts.has('https://*.firebaseapp.com'), 'script-src must include firebaseapp');
 });
 
 test('style-src allows self, inline styles, and Google Fonts', () => {
   const styles = parsedCsp['style-src'];
-  assert(styles.includes("'self'"));
-  assert(styles.includes("'unsafe-inline'"));
-  assert(styles.includes('https://fonts.googleapis.com'));
+  assert(styles.has("'self'"));
+  assert(styles.has("'unsafe-inline'"));
+  assert(styles.has('https://fonts.googleapis.com'));
 });
 
 test('font-src allows self, data, and fonts.gstatic.com', () => {
   const fonts = parsedCsp['font-src'];
-  assert(fonts.includes("'self'"));
-  assert(fonts.includes('data:'));
-  assert(fonts.includes('https://fonts.gstatic.com'));
+  assert(fonts.has("'self'"));
+  assert(fonts.has('data:'));
+  assert(fonts.has('https://fonts.gstatic.com'));
 });
 
 test('img-src allows self, data, blob, Firebase Storage, and Google profile avatars', () => {
   const imgs = parsedCsp['img-src'];
-  assert(imgs.includes("'self'"));
-  assert(imgs.includes('data:'));
-  assert(imgs.includes('blob:'));
-  assert(imgs.includes('https://studio-30f44.web.app'));
-  assert(imgs.includes('https://*.firebasestorage.app'));
-  assert(imgs.includes('https://firebasestorage.googleapis.com'));
-  assert(imgs.includes('https://storage.googleapis.com'));
-  assert(imgs.includes('https://lh3.googleusercontent.com'));
+  assert(imgs.has("'self'"));
+  assert(imgs.has('data:'));
+  assert(imgs.has('blob:'));
+  assert(imgs.has('https://studio-30f44.web.app'));
+  assert(imgs.has('https://*.firebasestorage.app'));
+  assert(imgs.has('https://firebasestorage.googleapis.com'));
+  assert(imgs.has('https://storage.googleapis.com'));
+  assert(imgs.has('https://lh3.googleusercontent.com'));
 });
 
 test('connect-src allows all verified API, Firebase, R2, and audio endpoints', () => {
   const connects = parsedCsp['connect-src'];
-  assert(connects.includes("'self'"));
-  assert(connects.includes('https://identitytoolkit.googleapis.com'));
-  assert(connects.includes('https://securetoken.googleapis.com'));
-  assert(connects.includes('https://studio-30f44.firebaseapp.com'));
-  assert(connects.includes('https://firestore.googleapis.com'));
-  assert(connects.includes('https://*.firestore.googleapis.com'));
-  assert(connects.includes('https://firebasestorage.googleapis.com'));
-  assert(connects.includes('https://*.firebasestorage.app'));
-  assert(connects.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
-  assert(connects.includes('https://oramics.github.io'));
-  assert(connects.includes('https://raw.githubusercontent.com'));
-  assert(connects.includes('https://tonejs.github.io'));
-  assert(connects.includes('https://lrclib.net'));
-  assert(connects.includes('https://app.tolgee.io'));
-  assert(connects.includes('https://api.github.com'));
-  assert(connects.includes('https://github.com'));
-  assert(connects.includes('https://studio-30f44.web.app'));
-  assert(connects.includes('wss://*.firebaseio.com'));
-  assert(connects.includes('wss://*.firestore.googleapis.com'));
+  assert(connects.has("'self'"));
+  assert(connects.has('https://identitytoolkit.googleapis.com'));
+  assert(connects.has('https://securetoken.googleapis.com'));
+  assert(connects.has('https://studio-30f44.firebaseapp.com'));
+  assert(connects.has('https://firestore.googleapis.com'));
+  assert(connects.has('https://*.firestore.googleapis.com'));
+  assert(connects.has('https://firebasestorage.googleapis.com'));
+  assert(connects.has('https://*.firebasestorage.app'));
+  assert(connects.has('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+  assert(connects.has('https://oramics.github.io'));
+  assert(connects.has('https://raw.githubusercontent.com'));
+  assert(connects.has('https://tonejs.github.io'));
+  assert(connects.has('https://lrclib.net'));
+  assert(connects.has('https://app.tolgee.io'));
+  assert(connects.has('https://api.github.com'));
+  assert(connects.has('https://github.com'));
+  assert(connects.has('https://studio-30f44.web.app'));
+  assert(connects.has('wss://*.firebaseio.com'));
+  assert(connects.has('wss://*.firestore.googleapis.com'));
 });
 
 test('media-src allows self, blob, data, R2 stems, and audio samples', () => {
   const media = parsedCsp['media-src'];
-  assert(media.includes("'self'"));
-  assert(media.includes('blob:'));
-  assert(media.includes('data:'));
-  assert(media.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
-  assert(media.includes('https://oramics.github.io'));
-  assert(media.includes('https://raw.githubusercontent.com'));
-  assert(media.includes('https://tonejs.github.io'));
-  assert(media.includes('https://*.firebasestorage.app'));
-  assert(media.includes('https://firebasestorage.googleapis.com'));
+  assert(media.has("'self'"));
+  assert(media.has('blob:'));
+  assert(media.has('data:'));
+  assert(media.has('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+  assert(media.has('https://oramics.github.io'));
+  assert(media.has('https://raw.githubusercontent.com'));
+  assert(media.has('https://tonejs.github.io'));
+  assert(media.has('https://*.firebasestorage.app'));
+  assert(media.has('https://firebasestorage.googleapis.com'));
 });
 
 test('frame-src allows self, Firebase auth, and Google Sign-In', () => {
   const frames = parsedCsp['frame-src'];
-  assert(frames.includes("'self'"), "frame-src must allow 'self' for Stagex /stage-core/index.html");
-  assert(frames.includes('https://studio-30f44.firebaseapp.com'));
-  assert(frames.includes('https://*.firebaseapp.com'));
-  assert(frames.includes('https://apis.google.com'));
-  assert(frames.includes('https://accounts.google.com'));
+  assert(frames.has("'self'"), "frame-src must allow 'self' for Stagex /stage-core/index.html");
+  assert(frames.has('https://studio-30f44.firebaseapp.com'));
+  assert(frames.has('https://*.firebaseapp.com'));
+  assert(frames.has('https://apis.google.com'));
+  assert(frames.has('https://accounts.google.com'));
 });
 
 test('worker-src allows self and blob', () => {
   const workers = parsedCsp['worker-src'];
-  assert(workers.includes("'self'"));
-  assert(workers.includes('blob:'));
+  assert(workers.has("'self'"));
+  assert(workers.has('blob:'));
 });
 
 test('frame-ancestors is strictly self', () => {
-  assert.deepEqual(parsedCsp['frame-ancestors'], ["'self'"]);
+  assert.deepEqual(Array.from(parsedCsp['frame-ancestors']), ["'self'"]);
 });
 
 test('object-src is none and base-uri is self', () => {
-  assert.deepEqual(parsedCsp['object-src'], ["'none'"]);
-  assert.deepEqual(parsedCsp['base-uri'], ["'self'"]);
+  assert.deepEqual(Array.from(parsedCsp['object-src']), ["'none'"]);
+  assert.deepEqual(Array.from(parsedCsp['base-uri']), ["'self'"]);
 });
 
 
@@ -333,9 +333,10 @@ await asyncTest('Live HTTP Server delivers expected headers for web routes', asy
 
     const receivedCsp = res.headers['content-security-policy'];
     assert(receivedCsp, 'Must receive content-security-policy header');
-    assert(receivedCsp.includes("default-src 'self'"));
-    assert(receivedCsp.includes('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
-    assert(receivedCsp.includes("frame-ancestors 'self'"));
+    const parsedReceived = parseCsp(receivedCsp);
+    assert(parsedReceived['default-src'].has("'self'"));
+    assert(parsedReceived['media-src'].has('https://pub-b6a593f7d45247389f1accd1a54fec5c.r2.dev'));
+    assert(parsedReceived['frame-ancestors'].has("'self'"));
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
