@@ -67,7 +67,7 @@ jobs:
         run: |
           cd apps/studio-android/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --rerun-tasks --no-daemon --no-build-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
