@@ -434,9 +434,7 @@ export function LibraryChordDetail({
           style={{
             paddingTop: inModal
               ? '8px'
-              : isWebDesktop
-                ? '32px'
-                : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+              : 'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px))',
           }}
           data-purpose={isWebDesktop ? 'desktop-viewport' : 'mobile-viewport'}
         >
@@ -1378,7 +1376,7 @@ export function LibraryMainView({ state }: { state: any }) {
         <main
           className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+            paddingTop: 'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px))',
           }}
           data-purpose="mobile-viewport"
         >

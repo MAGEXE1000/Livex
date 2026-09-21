@@ -1779,6 +1779,9 @@ html[data-perf-mode='on'] *::after {
   --page-header-subtitle-weight: 500;
   --page-header-subtitle-line-height: 1.4;
   --page-header-title-subtitle-gap: 4px;
+  --page-floating-header-height: 58px;
+  --page-floating-header-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px);
+  --page-floating-header-clearance: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px);
 
   /* ── Content max-widths ─────────────────────────────────── */
   --content-max-w: 640px; /* settings / hub right-pane default   */

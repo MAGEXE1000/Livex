@@ -304,7 +304,7 @@ export default function TakesPanel() {
           flexDirection: 'column',
           alignItems: 'center',
           padding:
-            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px) 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+            'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)) 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
           flex: 1,
           width: '100%',
           overflowY: 'auto',

@@ -415,10 +415,12 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         position: 'relative',
       }}
     >
-      <SharedFloatingHeader
-        title={dp.title}
-        scrollContainerRef={scrollRef}
-      />
+      {!isWebDesktop && (
+        <SharedFloatingHeader
+          title={dp.title}
+          scrollContainerRef={scrollRef}
+        />
+      )}
 
       <div
         ref={scrollRef}
@@ -431,7 +433,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
           touchAction: 'pan-y',
           padding: '0 24px',
           paddingTop: isWebDesktop
-            ? '20px'
+            ? '24px'
             : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
           paddingBottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 120px)',
         }}

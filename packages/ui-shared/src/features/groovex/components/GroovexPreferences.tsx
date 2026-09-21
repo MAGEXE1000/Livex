@@ -174,9 +174,8 @@ export default function GroovexPreferences() {
           height: '100%',
           WebkitOverflowScrolling: 'touch',
           background: 'var(--app-bg)',
-          paddingTop: isWebDesktop
-            ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+          paddingTop:
+            'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px))',
         }}
       >
         <style>{`

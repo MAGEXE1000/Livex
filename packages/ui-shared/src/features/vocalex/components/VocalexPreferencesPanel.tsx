@@ -144,9 +144,7 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
           boxSizing: 'border-box',
-          paddingTop: isWebDesktop
-            ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+          paddingTop: 'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px))',
         }}
       >
         <div

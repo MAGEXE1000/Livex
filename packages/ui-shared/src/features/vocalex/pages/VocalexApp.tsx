@@ -187,7 +187,7 @@ export default function VocalexApp() {
             flex: 1,
             overflow: 'hidden',
             position: 'relative',
-            paddingTop: isWebDesktop ? '20px' : '0px',
+            paddingTop: '0px',
             paddingBottom: '0px',
             display: 'flex',
             flexDirection: 'column',

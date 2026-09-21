@@ -426,9 +426,7 @@ export default function ChordexPreferencesPanel() {
         style={{
           padding: '0 24px',
           paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 90px)',
-          paddingTop: isWebDesktop
-            ? '20px'
-            : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+          paddingTop: 'var(--page-floating-header-clearance, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px))',
         }}
       >
 

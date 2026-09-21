@@ -11,6 +11,7 @@ import {
   type MetronomeSubdivision,
   type MetronomeSoundId,
   type MetronomePreset,
+  useIsWebDesktop,
 } from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
@@ -33,6 +34,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     (s) => Boolean(s.settings?.amoledMode || s.settings?.perApp?.drumex?.amoledMode)
   );
   const isAmoled = propIsAmoled ?? storeAmoled;
+  const isWebDesktop = useIsWebDesktop();
 
   const {
     bpm,
@@ -554,11 +556,13 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       `}</style>
 
       {/* ── Top Navigation Header (Canonical SharedFloatingHeader) ────────── */}
-      <SharedFloatingHeader
-        title="METRONOME"
-        onBack={onBack}
-        scrollContainerRef={mainScrollRef}
-      />
+      {!isWebDesktop && (
+        <SharedFloatingHeader
+          title="METRONOME"
+          onBack={onBack}
+          scrollContainerRef={mainScrollRef}
+        />
+      )}
 
       {/* ── Main Live Performance Scroll Area ────────────────────────────── */}
       <main
@@ -570,7 +574,9 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
           isEditingBpm ? 'overflow-y-hidden overscroll-none' : 'overflow-y-auto'
         }`}
         style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
+          paddingTop: isWebDesktop
+            ? '20px'
+            : 'calc(env(safe-area-inset-top, 0px) + 92px)',
           paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 84px)',
         }}
       >

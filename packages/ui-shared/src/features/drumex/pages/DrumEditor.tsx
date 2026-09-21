@@ -4059,6 +4059,22 @@ export default function DrumEditor() {
               }`}
             >
               <div className="flex items-center gap-2">
+                {activeTab === 'metronome' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (NavigationDispatcher.canGoBack()) {
+                        NavigationDispatcher.pop();
+                      } else {
+                        NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
+                      }
+                    }}
+                    className="p-1 rounded-md hover:bg-zinc-500/10 transition-colors mr-1 cursor-pointer flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    title="Back"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  </button>
+                )}
                 <span
                   className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-zinc-900' : 'text-white'}`}
                 >
@@ -4154,6 +4170,40 @@ export default function DrumEditor() {
                     >
                       {renderCreateBeatForm}
                     </MorphingActionSurface>
+                  </>
+                )}
+                {activeTab === 'patterns' && (
+                  <>
+                    <motion.button
+                      type="button"
+                      onClick={() => NavigationDispatcher.push({ app: 'drumex', page: 'metronome' })}
+                      whileTap={{ scale: 0.95 }}
+                      className="h-7.5 px-3 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
+                      style={{
+                        background: 'var(--c-surface-low)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text-secondary)',
+                      }}
+                      title="Metrónomo"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">timer</span>
+                      <span>METRONOME</span>
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowDrumTuner(true)}
+                      whileTap={{ scale: 0.95 }}
+                      className="h-7.5 px-3 rounded-lg text-[9.5px] font-extrabold tracking-widest uppercase transition-all cursor-pointer flex items-center gap-1.5"
+                      style={{
+                        background: 'var(--c-surface-low)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text-secondary)',
+                      }}
+                      title="Afinador de Batería"
+                    >
+                      <span className="material-symbols-outlined text-[13px] text-emerald-400">tune</span>
+                      <span>TUNER</span>
+                    </motion.button>
                   </>
                 )}
               </div>
