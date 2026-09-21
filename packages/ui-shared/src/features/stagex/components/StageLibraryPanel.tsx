@@ -24,6 +24,11 @@ interface StageLibraryPanelProps {
   callIframe: (fn: string, arg?: any) => void;
   iframeRef: React.RefObject<HTMLIFrameElement | null>;
   handleAddElement: (item: StageLibraryItem) => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
+  onClose?: () => void;
+  onSearchFocus?: () => void;
+  onSearchBlur?: () => void;
 }
 
 export const StageLibraryPanel = React.memo(
@@ -38,6 +43,11 @@ export const StageLibraryPanel = React.memo(
     callIframe,
     iframeRef,
     handleAddElement,
+    isPinned = false,
+    onTogglePin,
+    onClose,
+    onSearchFocus,
+    onSearchBlur,
   }: StageLibraryPanelProps) => {
     const t = useT();
     const tr = t as any;
@@ -251,18 +261,99 @@ export const StageLibraryPanel = React.memo(
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
         {/* Title & Search */}
         <div>
-          <h4
+          <div
             style={{
-              fontSize: '9px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               marginBottom: '8px',
             }}
           >
-            {isSpanish ? 'Elementos de Escenario' : 'Stage Elements'}
-          </h4>
+            <h4
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: isLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.45)',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>
+                widgets
+              </span>
+              {isSpanish ? 'Elementos de Escenario' : 'Stage Elements'}
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {onTogglePin && (
+                <button
+                  onClick={onTogglePin}
+                  title={
+                    isPinned
+                      ? isSpanish
+                        ? 'Desfijar panel'
+                        : 'Unpin sidebar'
+                      : isSpanish
+                        ? 'Fijar panel abierto'
+                        : 'Pin sidebar open'
+                  }
+                  style={{
+                    background: isPinned
+                      ? isLight
+                        ? 'rgba(0,0,0,0.08)'
+                        : 'rgba(255,255,255,0.12)'
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: isPinned ? accent.from : isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.45)',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: '15px',
+                      fontVariationSettings: isPinned ? "'FILL' 1" : "'FILL' 0",
+                    }}
+                  >
+                    push_pin
+                  </span>
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  title={isSpanish ? 'Colapsar' : 'Collapse'}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.45)',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                    chevron_right
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
 
           <div style={{ position: 'relative', width: '100%', marginBottom: '4px' }}>
             <span
@@ -274,6 +365,7 @@ export const StageLibraryPanel = React.memo(
                 transform: 'translateY(-50%)',
                 fontSize: '16px',
                 color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.35)',
+                pointerEvents: 'none',
               }}
             >
               search
@@ -283,18 +375,21 @@ export const StageLibraryPanel = React.memo(
               placeholder={tr.stagex?.library?.searchPlaceholder || 'Search elements...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={onSearchFocus}
+              onBlur={onSearchBlur}
               style={{
                 width: '100%',
-                height: '32px',
-                background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
-                border: isLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '6px',
+                height: '34px',
+                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)',
+                border: isLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px',
                 paddingLeft: '32px',
                 paddingRight: searchQuery ? '28px' : '10px',
                 fontSize: '11px',
                 color: isLight ? '#000' : '#fff',
                 outline: 'none',
                 boxSizing: 'border-box',
+                transition: 'border-color 150ms ease, box-shadow 150ms ease',
               }}
             />
             {searchQuery && (

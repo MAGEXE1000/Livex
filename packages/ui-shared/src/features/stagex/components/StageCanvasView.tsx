@@ -74,8 +74,11 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
 
-  // Desktop side panel & search state
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
+  // Desktop Right Stage Elements Sidebar State
+  const [isRightSidebarHovered, setIsRightSidebarHovered] = useState(false);
+  const [isRightSidebarPinned, setIsRightSidebarPinned] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const rightSidebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [customElements, setCustomElements] = useState<any[]>([]);
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({
@@ -83,6 +86,41 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     custom: true,
     mics: true,
   });
+
+  // The sidebar expands when hovered, pinned, actively searching, or search input focused
+  const isRightSidebarExpanded =
+    isRightSidebarPinned ||
+    isRightSidebarHovered ||
+    isSearchFocused ||
+    searchQuery.trim().length > 0;
+
+  const handleRightSidebarMouseEnter = useCallback(() => {
+    if (rightSidebarTimeoutRef.current) {
+      clearTimeout(rightSidebarTimeoutRef.current);
+      rightSidebarTimeoutRef.current = null;
+    }
+    setIsRightSidebarHovered(true);
+  }, []);
+
+  const handleRightSidebarMouseLeave = useCallback(() => {
+    if (isRightSidebarPinned || isSearchFocused || searchQuery.trim().length > 0) return;
+    if (rightSidebarTimeoutRef.current) {
+      clearTimeout(rightSidebarTimeoutRef.current);
+    }
+    rightSidebarTimeoutRef.current = setTimeout(() => {
+      setIsRightSidebarHovered(false);
+    }, 200);
+  }, [isRightSidebarPinned, isSearchFocused, searchQuery]);
+
+  const handleTogglePinSidebar = useCallback(() => {
+    setIsRightSidebarPinned((prev) => !prev);
+  }, []);
+
+  const handleCollapseSidebar = useCallback(() => {
+    setIsRightSidebarPinned(false);
+    setIsRightSidebarHovered(false);
+    setIsSearchFocused(false);
+  }, []);
 
   // Floating controls & Bottom Drawer State
   const [panelOpen, setPanelOpen] = useState(false);
@@ -118,9 +156,23 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   const userExitedLandscapeRef = useRef(false);
 
-  // Sync orientation changes with isLandscape and inform stage-core
+  // Sync orientation changes with isLandscape and inform stage-core (Mobile only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Desktop Web uses normal canonical workspace and must never enter mobile landscape mode
+    if (isWebDesktop) {
+      document.body.classList.remove('is-landscape');
+      setIsLandscape(false);
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(
+          { type: 'sc-landscape', isLandscape: false },
+          getStagexTargetOrigin()
+        );
+      }
+      return;
+    }
+
     const mql = window.matchMedia('(orientation: landscape)');
     const handleOrientation = () => {
       const isWindowLandscape =
@@ -163,7 +215,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
       window.removeEventListener('resize', handleOrientation);
     };
-  }, []);
+  }, [isWebDesktop]);
 
   // Listen for selection and specs events from the canvas engine
   useEffect(() => {
@@ -244,12 +296,14 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   // Clean up orientation lock and navigation state on unmount
   useEffect(() => {
     return () => {
-      lockOrientation('portrait').catch(() => {});
+      if (!isWebDesktop) {
+        lockOrientation('portrait').catch(() => {});
+      }
       setNavLocked(false);
       setNavHidden(false);
       useBottomNavigationStore.getState().setLocked(false);
     };
-  }, []);
+  }, [isWebDesktop]);
 
   // Collaboration state
   const [collabModalOpen, setCollabModalOpen] = useState(false);
@@ -473,6 +527,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   );
 
   const handleExitLandscape = useCallback(async () => {
+    if (isWebDesktop) return;
     userExitedLandscapeRef.current = true;
     setIsLandscape(false);
     document.body.classList.remove('is-landscape');
@@ -482,9 +537,11 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     setNavLocked(shouldHide);
     setNavHidden(shouldHide);
     useBottomNavigationStore.getState().setLocked(shouldHide);
-    try {
-      await lockOrientation('portrait');
-    } catch {}
+    if (!isWebDesktop) {
+      try {
+        await lockOrientation('portrait');
+      } catch {}
+    }
     callIframe('sc-landscape', { isLandscape: false });
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
@@ -492,9 +549,10 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         getStagexTargetOrigin()
       );
     }
-  }, [liveMode, panelOpen, specsOpen, callIframe]);
+  }, [liveMode, panelOpen, specsOpen, callIframe, isWebDesktop]);
 
   const handleToggleRotate = useCallback(async () => {
+    if (isWebDesktop) return;
     if (isLandscape) {
       await handleExitLandscape();
     } else {
@@ -506,9 +564,11 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       setNavLocked(true);
       setNavHidden(true);
       useBottomNavigationStore.getState().setLocked(true);
-      try {
-        await lockOrientation('landscape');
-      } catch {}
+      if (!isWebDesktop) {
+        try {
+          await lockOrientation('landscape');
+        } catch {}
+      }
       callIframe('sc-landscape', { isLandscape: true });
       if (iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
@@ -517,7 +577,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         );
       }
     }
-  }, [isLandscape, handleExitLandscape, panelOpen, specsOpen, callIframe]);
+  }, [isLandscape, handleExitLandscape, panelOpen, specsOpen, callIframe, isWebDesktop]);
 
   const handleToggleEye = useCallback(() => {
     const next = !liveMode;
@@ -714,8 +774,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       className="w-full h-full flex flex-col relative overflow-hidden"
       style={{ background: stageBg }}
     >
-      {/* Desktop Top Toolbar (hidden in landscape mode for immersive stage canvas) */}
-      {isWebDesktop && !isLandscape && (
+      {/* Desktop Top Toolbar */}
+      {isWebDesktop && (
         <StageToolbar
           curView="Editor"
           isLight={isLight}
@@ -731,8 +791,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         />
       )}
 
-      {/* Seamless Floating Actions (Overlaid on canvas in mobile or landscape mode) */}
-      {(!isWebDesktop || isLandscape) && !liveMode && (
+      {/* Seamless Floating Actions (Overlaid on canvas in mobile mode) */}
+      {!isWebDesktop && !liveMode && (
         <div
           className="absolute top-0 left-0 right-0 z-20 pointer-events-none flex items-center justify-end px-4 gap-2"
           style={{
@@ -1013,8 +1073,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       <div className="flex flex-1 overflow-hidden relative w-full h-full">
         {/* Canvas Host Container */}
         <div
-          className={`flex-1 relative overflow-hidden ${
-            isWebDesktop && !isLandscape ? 'm-3 rounded-xl border' : ''
+          className={`flex-1 min-w-0 relative overflow-hidden ${
+            isWebDesktop ? 'm-3 rounded-xl border' : ''
           }`}
           style={{
             borderColor: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)',
@@ -1040,38 +1100,118 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           )}
         </div>
 
-        {/* Desktop Collapsible Elements Library Drawer */}
-        {isWebDesktop && !isLandscape && (
+        {/* Desktop Collapsible Elements Library Sidebar */}
+        {isWebDesktop && (
           <motion.div
             initial={false}
-            animate={{ width: isRightPanelCollapsed ? 0 : 280 }}
-            transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
-            className="flex flex-col h-full flex-shrink-0 box-border overflow-hidden border-l"
+            animate={{ width: isRightSidebarExpanded ? 290 : 48 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            onMouseEnter={handleRightSidebarMouseEnter}
+            onMouseLeave={handleRightSidebarMouseLeave}
+            onAnimationComplete={() => {
+              callIframe('_triggerRescale');
+            }}
+            className="flex flex-col h-full flex-shrink-0 box-border overflow-hidden select-none relative z-10"
             style={{
-              borderColor: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)',
-              background: isLight ? 'var(--app-surface-low)' : 'var(--app-bg)',
+              borderLeft: isLight
+                ? '1px solid rgba(0, 0, 0, 0.08)'
+                : '1px solid rgba(255, 255, 255, 0.08)',
+              background: isLight
+                ? 'rgba(255, 255, 255, 0.75)'
+                : isAmoled
+                  ? 'rgba(10, 10, 12, 0.85)'
+                  : 'rgba(18, 18, 22, 0.75)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: isLight
+                ? '-4px 0 20px rgba(0, 0, 0, 0.03)'
+                : '-4px 0 24px rgba(0, 0, 0, 0.35)',
             }}
           >
-            <div className="flex-1 overflow-y-auto">
-              <StageLibraryPanel
-                isLight={isLight}
-                accent={accent}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                customElements={customElements}
-                expandedCats={expandedCats}
-                setExpandedCats={setExpandedCats}
-                callIframe={callIframe}
-                iframeRef={iframeRef}
-                handleAddElement={handleAddElement}
-              />
+            <div
+              style={{
+                width: 290,
+                minWidth: 290,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {!isRightSidebarExpanded ? (
+                  <motion.div
+                    key="collapsed-rail"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="w-12 h-full flex flex-col items-center pt-3 pb-3 gap-3 cursor-pointer"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                      style={{
+                        background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.07)',
+                        color: accent.from,
+                      }}
+                      title={
+                        currentLang === 'es'
+                          ? 'Elementos (Pasa el cursor)'
+                          : 'Stage Elements (Hover to expand)'
+                      }
+                    >
+                      <span className="material-symbols-outlined text-[20px]">widgets</span>
+                    </div>
+                    <div
+                      className="text-[9px] font-extrabold uppercase tracking-widest opacity-40 select-none mt-2"
+                      style={{
+                        writingMode: 'vertical-rl',
+                        textOrientation: 'mixed',
+                        letterSpacing: '0.14em',
+                        color: isLight ? '#000' : '#fff',
+                      }}
+                    >
+                      {currentLang === 'es' ? 'ELEMENTOS' : 'ELEMENTS'}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="expanded-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="w-full h-full flex flex-col overflow-hidden p-3"
+                  >
+                    <div className="flex-1 overflow-y-auto pr-1">
+                      <StageLibraryPanel
+                        isLight={isLight}
+                        accent={accent}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        customElements={customElements}
+                        expandedCats={expandedCats}
+                        setExpandedCats={setExpandedCats}
+                        callIframe={callIframe}
+                        iframeRef={iframeRef}
+                        handleAddElement={handleAddElement}
+                        isPinned={isRightSidebarPinned}
+                        onTogglePin={handleTogglePinSidebar}
+                        onClose={handleCollapseSidebar}
+                        onSearchFocus={() => setIsSearchFocused(true)}
+                        onSearchBlur={() => setIsSearchFocused(false)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
       </div>
 
       {/* Mobile Floating Action Controls */}
-      {(!isWebDesktop || isLandscape) && (
+      {!isWebDesktop && (
         <>
           {/* Normal Mode Controls: Rotate & Add FAB (hidden in liveMode, when specs is open) */}
           {!liveMode && !specsOpen && (
@@ -1200,7 +1340,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
       {/* Canonical Bottom Panel Slot hosting Element Library or History Surface */}
       <StageBottomPanelSlot
-        isOpen={panelOpen && !liveMode}
+        isOpen={panelOpen && !liveMode && (!isWebDesktop || isHistoryActive)}
         onClose={handleClosePanel}
         isLight={isLight}
         isAmoled={isAmoled}
