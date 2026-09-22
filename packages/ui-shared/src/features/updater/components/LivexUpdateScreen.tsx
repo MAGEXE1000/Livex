@@ -123,33 +123,27 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
     ) {
       return 'downloading';
     }
+    // Streamlined updater: stay on installing screen throughout verification,
+    // staging, and native PackageInstaller prompt without intermediate screens.
     if (
       s === 'verifying' ||
       s === 'verifying_sha' ||
       s === 'verifying_eligibility' ||
       s === 'verify_sha256' ||
-      s === 'preparing_install'
-    ) {
-      return 'verifying';
-    }
-    if (
+      s === 'preparing_install' ||
       s === 'installing' ||
       s === 'packageinstaller_visible' ||
       s === 'waiting_user_confirmation' ||
       s === 'waitingforuserinstallconfirmation' ||
       s === 'ready_to_install' ||
-      s === 'readyforinstallprompt'
-    ) {
-      return 'installing';
-    }
-    if (
+      s === 'readyforinstallprompt' ||
       s === 'completed' ||
       s === 'installed' ||
       s === 'install_success' ||
       s === 'installedorready' ||
       s === 'update_success'
     ) {
-      return 'completed';
+      return 'installing';
     }
     if (
       s === 'failed' ||
@@ -171,7 +165,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
   }, [state]);
 
   // Disable modal dismissal during non-cancellable system installation steps
-  const canClose = ['available', 'idle', 'completed', 'error'].includes(normalizedState);
+  const canClose = ['available', 'idle', 'error'].includes(normalizedState);
 
   // Close handlers with 200ms morph animation
   const handleDismiss = () => {
@@ -821,91 +815,6 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
           </div>
 
           {/* ==================================================================== */}
-          {/* PANE 3: VERIFYING                                                    */}
-          {/* ==================================================================== */}
-          <div
-            className={`state-pane flex-col ${
-              normalizedState === 'verifying' ? 'active-pane' : 'hidden-pane'
-            }`}
-            id="pane-verifying"
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3.5 mb-5">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                style={{
-                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
-                  color: activeAccent,
-                }}
-              >
-                <span className="material-symbols-outlined text-[21px]">verified</span>
-              </div>
-              <div className="min-w-0 text-left">
-                <h3
-                  className={`font-manrope font-bold text-[19px] ${textPrimary} tracking-tight leading-tight`}
-                >
-                  {updaterTr?.verifyingUpdate || 'Verifying Package'}
-                </h3>
-                <p className={`text-[13px] ${textSecondary} font-normal leading-normal mt-0.5`}>
-                  Checking APK signature & integrity
-                </p>
-              </div>
-            </div>
-
-            {/* Verification Card */}
-            <div className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-3.5`}>
-              <div className="flex items-center justify-between text-[12px] font-mono">
-                <span className={`${textPrimary} font-medium`}>SHA-256 Checksum</span>
-                <span
-                  className="font-semibold text-[11px] px-2 py-0.5 rounded-full"
-                  style={{
-                    color: isLight ? activeAccent : '#adc6ff',
-                    background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
-                    border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
-                  }}
-                >
-                  V2/V3 SIGN
-                </span>
-              </div>
-              {/* Scanning beam */}
-              <div
-                className={`w-full h-1.5 ${progressTrack} rounded-full overflow-hidden relative`}
-                style={{ transform: 'translateZ(0)' }}
-              >
-                <div
-                  className="w-1/3 h-full rounded-full livex-animate-scan"
-                  style={{ background: activeAccent }}
-                ></div>
-              </div>
-              <div
-                className={`flex items-center justify-between text-[11px] ${textSecondary} font-mono pt-0.5`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span>Bytecode hash verified</span>
-                </span>
-                <span className="text-emerald-400 font-semibold">PASS</span>
-              </div>
-            </div>
-
-            {/* Staging Button (Disabled) */}
-            <div className="pt-1">
-              <button
-                type="button"
-                className={`w-full h-11 ${disabledBtn} font-manrope font-medium text-[13px] rounded-full cursor-wait flex items-center justify-center gap-2`}
-                disabled
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: activeAccent }}
-                ></span>
-                <span>Finalizing APK staging…</span>
-              </button>
-            </div>
-          </div>
-
-          {/* ==================================================================== */}
           {/* PANE 4: INSTALLING                                                   */}
           {/* ==================================================================== */}
           <div
@@ -933,7 +842,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                   {updaterTr?.installing || 'Installing update…'}
                 </h3>
                 <p className={`text-[13px] ${textSecondary} font-normal leading-normal mt-0.5`}>
-                  Handing off to PackageInstaller
+                  {customDescription || 'Preparing package & launching installer…'}
                 </p>
               </div>
             </div>
@@ -941,7 +850,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
             {/* Installing Card */}
             <div className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-3.5`}>
               <div className="flex items-center justify-between text-[12px] font-mono">
-                <span className={`${textPrimary} font-medium`}>PackageInstaller Session</span>
+                <span className={`${textPrimary} font-medium`}>PackageInstaller</span>
                 <span
                   className="font-semibold text-[11px] px-2 py-0.5 rounded-full"
                   style={{
@@ -968,7 +877,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
               >
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                  <span>Confirm system prompt if displayed</span>
+                  <span>Confirm system prompt to update or cancel</span>
                 </span>
               </div>
             </div>
@@ -985,60 +894,6 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                   style={{ background: activeAccent }}
                 ></span>
                 <span>Applying system update…</span>
-              </button>
-            </div>
-          </div>
-
-          {/* ==================================================================== */}
-          {/* PANE 5: COMPLETED                                                    */}
-          {/* ==================================================================== */}
-          <div
-            className={`state-pane flex-col ${
-              normalizedState === 'completed' ? 'active-pane' : 'hidden-pane'
-            }`}
-            id="pane-completed"
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 livex-success-badge">
-                <span className="material-symbols-outlined text-[21px] livex-success-icon">check_circle</span>
-              </div>
-              <div className="min-w-0 text-left">
-                <h3
-                  className={`font-manrope font-bold text-[19px] ${textPrimary} tracking-tight leading-tight`}
-                >
-                  {updaterTr?.appUpdated || 'Update Complete'}
-                </h3>
-                <p className={`text-[13px] ${textSecondary} font-normal leading-normal mt-0.5`}>
-                  Studio is up to date
-                </p>
-              </div>
-            </div>
-
-            {/* Completed Card */}
-            <div
-              className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-2 text-left`}
-            >
-              <p className={`text-[12.5px] ${textPrimary} font-medium`}>
-                Version v{toVersion || fromVersion} staged successfully
-              </p>
-              <p className={`text-[12px] ${textSecondary} leading-relaxed`}>
-                All binaries, WebAssembly modules, and assets have been verified and applied.
-              </p>
-            </div>
-
-            {/* Action Done */}
-            <div className="pt-1">
-              <button
-                type="button"
-                className="w-full h-11 active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm"
-                style={{
-                  background: `linear-gradient(135deg, ${activeAccentFrom}, ${activeAccent})`,
-                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out',
-                }}
-                onClick={handleDone}
-              >
-                <span>{updaterTr?.done || 'Done'}</span>
               </button>
             </div>
           </div>

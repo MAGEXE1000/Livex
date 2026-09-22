@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.36';
-export const NATIVE_VERSION_CODE = 40636;
-export const WEB_VERSION = '4.6.36';
+export const NATIVE_VERSION = '4.6.37';
+export const NATIVE_VERSION_CODE = 40637;
+export const WEB_VERSION = '4.6.37';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e86b518d';
+export const APP_COMMIT_SHA = '9e08d87e';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/21/2026, 7:42:43 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/21/2026, 8:26:09 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,19 +98,13 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Coordinated Hub Reveal: Synchronized Hub entrance depth (scale 0.988 to 1.0, opacity 0.88 to 1.0) directly with the intro exit dissolve, eliminating static pauses.',
-      'Mobile Web Preview Parity: Aligned cold-boot intro presentation between dev preview and native Android APK, honoring single source of truth mobile UI behavior.',
+      'Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Intro Animation Fluidity: Eliminated frame drops and main-thread raster stalls during mark assembly by eagerly pre-warming and decoding brand textures (livex-form1.png, livex-form2.png, livex-symbol.png) at module evaluation time.',
-      'Zero-Blur GPU Radial Glow: Replaced costly CSS blur filter (filter: blur(28px)) with a hardware-accelerated pure radial gradient, preventing multi-pass Gaussian shader overhead on mobile WebViews.',
-      'HTML Splash Dissolve: Replaced abrupt 0ms hard DOM cutoff of #intro with a coordinated 220ms cubic-bezier dissolve synchronized with the React intro reveal.',
-      'Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.',
-      'Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.',
-      'Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.',
+      'Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.',
     ],
   },
 ];
@@ -122,6 +116,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.37',
+    date: '2026-09-21',
+    highlights: [
+      'Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.',
+      'Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.',
+    ],
+  },
   {
     version: '4.6.36',
     date: '2026-09-21',
@@ -213,17 +215,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.',
       'Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.',
       'App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.',
-    ],
-  },
-  {
-    version: '4.6.27',
-    date: '2026-09-19',
-    highlights: [
-      'Immersive Five-App Entry Transition: Redesigned application entry interaction with immediate visual continuity, Apple-grade fluid deceleration curves (`[0.16, 1, 0.3, 1]`) across 440ms, blooming brand aura, and paint-verified destination preloading for Chordex, Drumex, Stagex, Groovex, and Vocalex.',
-      'Zero-Layout-Reflow Scroll Morph: Eliminated forced layout reflows and font reshaping during scrolling in `useScrollMorph` by fixing layout geometry dimensions and transitioning only GPU-composited transform and opacity properties.',
-      'Non-Blocking Scroll Element Discovery: Removed synchronous `scrollHeight` and `clientHeight` layout reads during scroll container attachment, eliminating main-thread layout flushes on navigation.',
-      'GPU Compositor Pipeline Optimization: Removed redundant overlapping `ProgressiveBlur` backdrop-filter passes and eliminated procedural SVG `feTurbulence` noise displacement map in `SharedFloatingHeader`, reducing GPU compositor time by ~88% and restoring rock-solid 60/120Hz scrolling.',
-      'App-Entry Shadow Offload: Replaced dynamic blur shadow interpolation with a dedicated hardware-accelerated child layer dissolving via GPU opacity, eliminating continuous Gaussian blur re-rasterization during sub-app mounting.',
     ],
   },
 ];

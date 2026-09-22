@@ -1366,14 +1366,15 @@ function UpdateModal({
     if (s === 'NO_UPDATE_AVAILABLE' || s === 'IDLE') return 'idle';
     if (s === 'UPDATE_AVAILABLE') return 'update_available';
     if (s === 'FETCH_APK_INFORMATION' || s === 'DOWNLOAD_APK') return 'downloading';
-    if (s === 'VERIFY_SHA256') return 'verifying_sha';
-    if (s === 'PREPARING_INSTALL') return 'verifying_eligibility';
-    if (s === 'WAITING_USER_CONFIRMATION') return 'ready_to_install';
-    if (s === 'PACKAGEINSTALLER_VISIBLE') return 'packageinstaller_visible';
-    if (s === 'INSTALLING') return 'installing';
-    if (s === 'INSTALL_SUCCESS') {
-      const isSim = false;
-      return isSim ? 'completed' : 'installing';
+    if (
+      s === 'VERIFY_SHA256' ||
+      s === 'PREPARING_INSTALL' ||
+      s === 'WAITING_USER_CONFIRMATION' ||
+      s === 'PACKAGEINSTALLER_VISIBLE' ||
+      s === 'INSTALLING' ||
+      s === 'INSTALL_SUCCESS'
+    ) {
+      return 'installing';
     }
     if (s === 'INSTALL_CANCELLED') return 'cancelled';
     if (s === 'INSTALL_FAILED') return 'failed';
@@ -1403,11 +1404,7 @@ function UpdateModal({
       state = 'available';
     }
   } else if (state === 'waiting_for_confirmation') {
-    state = 'waitingForUserInstallConfirmation';
-  } else if (displayState === 'ready_to_install') {
-    state = 'readyForInstallPrompt';
-  } else if (displayState === 'completed') {
-    state = 'installedOrReady';
+    state = 'installing';
   } else if (displayState === 'idle') {
     if (updater.error) {
       if (
@@ -2305,11 +2302,7 @@ function UpdateModal({
   // Render buttons
   const actionButtons = renderButtons();
 
-  const isProgressActiveState =
-    state === 'downloading' ||
-    state === 'verifying_sha' ||
-    state === 'verifying_eligibility' ||
-    state === 'verifying';
+  const isProgressActiveState = state === 'downloading';
 
   let progressComponent: React.ReactNode = undefined;
   if (isProgressActiveState) {
@@ -2617,13 +2610,7 @@ function UpdateModal({
 
   const showChangelog =
     updater.updateAvailable &&
-    [
-      'available',
-      'downloading',
-      'readyForInstallPrompt',
-      'installing',
-      'installedOrReady',
-    ].includes(state);
+    ['available', 'downloading', 'installing'].includes(state);
 
   return (
     <StudioUpdateScreen

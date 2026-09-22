@@ -410,7 +410,7 @@ export function SharedNavigationBar({
   const horizontalGap = isSwitcherOpen ? 6 : totalSlots >= 4 ? 4 : 6;
   const NAV_HIGHLIGHT_WIDTH = Math.round(itemWidth - horizontalGap);
   const NAV_HIGHLIGHT_HEIGHT = 48;
-  const NAV_HIGHLIGHT_RADIUS = isSwitcherOpen ? 19 : 23;
+  const NAV_HIGHLIGHT_RADIUS = 9999;
 
   const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
   const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
@@ -905,7 +905,7 @@ export function SharedNavigationBar({
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: '58px',
-                borderRadius: '26px',
+                borderRadius: '9999px',
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
                 boxShadow: 'var(--surface-topbar-shadow)',
@@ -935,7 +935,7 @@ export function SharedNavigationBar({
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  borderRadius: '26px',
+                  borderRadius: '9999px',
                   background: isLight
                     ? 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                     : 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 100%)',
@@ -961,7 +961,7 @@ export function SharedNavigationBar({
                   // keeps nav items clipped to pill shape without breaking
                   // Android WebView's compositing of the parent's backdrop-filter.
                   overflow: 'hidden',
-                  borderRadius: '26px',
+                  borderRadius: '9999px',
                 }}
               >
                 {/* Active lens pill — enlarged integrated Liquid Glass capsule */}
@@ -1208,7 +1208,7 @@ export function SharedNavigationBar({
                   style={{
                     width: '58px',
                     height: '58px',
-                    borderRadius: '26px',
+                    borderRadius: '9999px',
                     background: 'var(--surface-topbar-bg)',
                     border: 'var(--surface-topbar-border)',
                     backdropFilter: 'var(--surface-topbar-backdrop)',
@@ -1240,7 +1240,7 @@ export function SharedNavigationBar({
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      borderRadius: '26px',
+                      borderRadius: '9999px',
                       background: isLight
                         ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
                         : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
