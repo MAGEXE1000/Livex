@@ -221,6 +221,23 @@ export default function App() {
     [isWebDesktop, activePanel, handleSetActivePanel]
   );
 
+  const handleLaunchOverlayComplete = useCallback(() => {
+    setShowLaunchOverlay(false);
+  }, []);
+
+  const renderLaunchOverlay = useCallback(() => {
+    if (!showLaunchOverlay) return null;
+    return (
+      <LaunchAnimationEngine
+        preset={initialPresetRef.current}
+        skipIntro={false}
+        onComplete={handleLaunchOverlayComplete}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+    );
+  }, [showLaunchOverlay, handleLaunchOverlayComplete, isLight, isAmoled]);
+
   if (route === '/') {
     return <LivexLandingPage navigateTo={navigateTo} />;
   }
@@ -238,19 +255,7 @@ export default function App() {
           <>{children}</>
         )
       }
-      renderLaunchOverlay={
-        showLaunchOverlay
-          ? () => (
-              <LaunchAnimationEngine
-                preset={initialPresetRef.current}
-                skipIntro={false}
-                onComplete={() => setShowLaunchOverlay(false)}
-                isLight={isLight}
-                isAmoled={isAmoled}
-              />
-            )
-          : undefined
-      }
+      renderLaunchOverlay={showLaunchOverlay ? renderLaunchOverlay : undefined}
       renderBottomNav={
         !isWebDesktop && !showLaunchOverlay ? () => <BottomNavigationController /> : undefined
       }

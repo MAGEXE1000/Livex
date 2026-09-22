@@ -1093,11 +1093,15 @@ export default function LivexHub() {
         display: 'flex',
         flexDirection: 'column',
         fontFamily: 'var(--studio-font-body)',
-        transform: zooming ? 'scale(0.985)' : 'scale(1)',
-        opacity: zooming ? 0.35 : 1,
+        transform: zooming
+          ? 'scale(0.985)'
+          : !introFinished
+            ? 'scale(0.988)'
+            : 'scale(1)',
+        opacity: zooming ? 0.35 : !introFinished ? 0.88 : 1,
         transition: zooming
           ? 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)'
-          : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease-out, background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
+          : 'transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), background-color 700ms cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents: introFinished ? 'auto' : 'none',
       }}
     >

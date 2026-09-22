@@ -404,7 +404,7 @@ export function SharedAppShell({
       const ok = requestTransition(appMode as any);
       if (ok) {
         transitionPreviousAppModeRef.current = appMode as any;
-        if (appMode === 'hub' || (appMode !== 'hub' && preloadedAppsRef.current.has(appMode as AppKey))) {
+        if (appMode === 'hub' || preloadedAppsRef.current.has(appMode as AppKey)) {
           setAppPreloaded(true);
         }
       }

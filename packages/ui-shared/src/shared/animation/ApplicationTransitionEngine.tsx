@@ -686,6 +686,7 @@ export function ApplicationTransitionEngine({
       data-livex-app-transition="app-identity-transition"
       initial={{ opacity: 1 }}
       animate={{ opacity: isDismissing ? 0 : 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration, ease: fluidEase }}
       onAnimationComplete={() => {
         if (isDismissing) {
@@ -714,6 +715,7 @@ export function ApplicationTransitionEngine({
             ? { opacity: 0, scale: prefersReduced ? 1 : 1.05 }
             : { opacity: 1, scale: 1 }
         }
+        exit={{ opacity: 0, scale: prefersReduced ? 1 : 1.04 }}
         transition={
           isDismissing
             ? { duration, ease: fluidEase }

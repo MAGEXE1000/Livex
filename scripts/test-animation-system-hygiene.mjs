@@ -85,10 +85,12 @@ runTest('renderScheduler.ts: Obsolete ota_update enum removed, native_updater pr
 
 // 4. Reduced-Motion Unified Enforcement
 runTest('Reduced-Motion: Canonical hook useAppReducedMotion used consistently', () => {
-  const pageTrans = fs.readFileSync(
-    path.join(rootDir, 'packages/ui-shared/src/components/StudioPageTransition.tsx'),
-    'utf-8'
-  );
+  const pageTransPath = fs.existsSync(
+    path.join(rootDir, 'packages/ui-shared/src/components/LivexPageTransition.tsx')
+  )
+    ? path.join(rootDir, 'packages/ui-shared/src/components/LivexPageTransition.tsx')
+    : path.join(rootDir, 'packages/ui-shared/src/components/StudioPageTransition.tsx');
+  const pageTrans = fs.readFileSync(pageTransPath, 'utf-8');
   assert.ok(
     pageTrans.includes('useAppReducedMotion()'),
     'StudioPageTransition must use useAppReducedMotion()'
@@ -98,10 +100,12 @@ runTest('Reduced-Motion: Canonical hook useAppReducedMotion used consistently', 
     'StudioPageTransition must not duplicate manual matchMedia checks'
   );
 
-  const countUp = fs.readFileSync(
-    path.join(rootDir, 'packages/ui-shared/src/shared/progress/StudioCountUpPercentage.tsx'),
-    'utf-8'
-  );
+  const countUpPath = fs.existsSync(
+    path.join(rootDir, 'packages/ui-shared/src/shared/progress/LivexCountUpPercentage.tsx')
+  )
+    ? path.join(rootDir, 'packages/ui-shared/src/shared/progress/LivexCountUpPercentage.tsx')
+    : path.join(rootDir, 'packages/ui-shared/src/shared/progress/StudioCountUpPercentage.tsx');
+  const countUp = fs.readFileSync(countUpPath, 'utf-8');
   assert.ok(
     countUp.includes('useAppReducedMotion()'),
     'StudioCountUpPercentage must use useAppReducedMotion()'

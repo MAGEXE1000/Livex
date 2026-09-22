@@ -1,5 +1,5 @@
 import { SharedAppShell } from '@workspace/ui-shared/src/shared/layout/SharedAppShell';
-import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { tolgee, useSettingsStore, useNavigationStore } from '@workspace/livex-core';
 
 import { TolgeeProvider } from '@tolgee/react';
@@ -51,8 +51,15 @@ export default function App() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
   const isAmoled = !isLight && Boolean(hubAmoled !== undefined ? hubAmoled : globalAmoled);
-  const isDev = import.meta.env.DEV || !Capacitor.isNativePlatform();
-  const [showLaunchOverlay, setShowLaunchOverlay] = useState(!isDev);
+  const [showLaunchOverlay, setShowLaunchOverlay] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (Capacitor.isNativePlatform()) return true;
+    try {
+      return !sessionStorage.getItem('livex-intro-shown');
+    } catch (_) {
+      return false;
+    }
+  });
   const initialPresetRef = useRef<any>('default');
 
   const routeApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
@@ -88,7 +95,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (isDev) {
+    if (!showLaunchOverlay) {
       const intro = document.getElementById('intro');
       if (intro) {
         intro.style.display = 'none';
@@ -99,7 +106,7 @@ export default function App() {
         triggerIntroReveal();
       }
     }
-  }, [isDev]);
+  }, [showLaunchOverlay]);
 
   useEffect(() => {
     if (!showLaunchOverlay) {
@@ -117,6 +124,26 @@ export default function App() {
       });
     }
   }, [showLaunchOverlay]);
+
+  const handleLaunchOverlayComplete = useCallback(() => {
+    try {
+      sessionStorage.setItem('livex-intro-shown', 'true');
+    } catch (_) {}
+    setShowLaunchOverlay(false);
+  }, []);
+
+  const renderLaunchOverlay = useCallback(() => {
+    if (!showLaunchOverlay) return null;
+    return (
+      <LaunchAnimationEngine
+        preset={initialPresetRef.current}
+        skipIntro={false}
+        onComplete={handleLaunchOverlayComplete}
+        isLight={isLight}
+        isAmoled={isAmoled}
+      />
+    );
+  }, [showLaunchOverlay, handleLaunchOverlayComplete, isLight, isAmoled]);
 
   /* Note: safe-area-inset-top is handled by ScreenScaffold */
   /* Note: SharedNavigationBar is rendered via BottomNavigationController */
@@ -147,19 +174,7 @@ export default function App() {
           {children}
         </TolgeeProvider>
       )}
-      renderLaunchOverlay={
-        showLaunchOverlay
-          ? () => (
-              <LaunchAnimationEngine
-                preset={initialPresetRef.current}
-                skipIntro={false}
-                onComplete={() => setShowLaunchOverlay(false)}
-                isLight={isLight}
-                isAmoled={isAmoled}
-              />
-            )
-          : undefined
-      }
+      renderLaunchOverlay={showLaunchOverlay ? renderLaunchOverlay : undefined}
       renderBottomNav={!showLaunchOverlay ? () => <BottomNavigationController /> : undefined}
       hubElement={<LivexHub />}
       subApps={subApps}

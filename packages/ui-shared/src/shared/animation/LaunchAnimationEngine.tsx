@@ -1,13 +1,34 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { StartupCoordinator, getStartupAnimationThemeSpec } from '@workspace/livex-core';
 import { triggerIntroReveal } from './introSignal';
+import { useAppReducedMotion } from '../../hooks/useAppReducedMotion';
 import livexForm1Url from '../../assets/livex-form1.png';
 import livexForm2Url from '../../assets/livex-form2.png';
 import livexForm1LightUrl from '../../assets/livex-form1-light.png';
 import livexForm2LightUrl from '../../assets/livex-form2-light.png';
 import livexSymbolUrl from '../../assets/livex-symbol.png';
 import livexSymbolLightUrl from '../../assets/livex-symbol-light.png';
+
+// Pre-warm and decode Livex brand textures at module load so they are ready in GPU memory before frame 0
+if (typeof window !== 'undefined') {
+  [
+    livexForm1Url,
+    livexForm2Url,
+    livexForm1LightUrl,
+    livexForm2LightUrl,
+    livexSymbolUrl,
+    livexSymbolLightUrl,
+  ].forEach((src) => {
+    try {
+      const img = new Image();
+      img.src = src;
+      if (typeof img.decode === 'function') {
+        img.decode().catch(() => {});
+      }
+    } catch (_) {}
+  });
+}
 
 // Studio Sine Wave Logo SVG path (retained for backward-compatibility)
 export const StudioSinePath = 'M 72 256 C 128 60 192 60 256 256 S 384 452 440 256';
@@ -77,21 +98,24 @@ export function LaunchAnimationEngine({
   scaleFactor = 1,
   skipIntro = false,
 }: LaunchAnimationEngineProps) {
+  const prefersReduced = useAppReducedMotion();
+  const effectiveSkip = skipIntro || prefersReduced;
   const [stage, setStage] = useState<'brand_reveal' | 'exit_dissolve' | 'complete'>(
-    skipIntro ? 'complete' : 'brand_reveal'
+    effectiveSkip ? 'complete' : 'brand_reveal'
   );
   const [key, setKey] = useState(0);
 
   useEffect(() => {
-    // Dismiss index.html splash overlay immediately once React mounts to prevent duplicate presentation
+    // Smoothly dissolve index.html splash overlay once React mounts to eliminate jarring 0ms cuts
     const intro = document.getElementById('intro');
-    console.log(`[STARTUP-TRACE] LaunchAnimationEngine: mount effect, #intro exists=${!!intro}`);
     if (intro) {
-      intro.style.display = 'none';
-      if (intro.parentNode) intro.parentNode.removeChild(intro);
-      console.log(
-        `[STARTUP-TRACE] LaunchAnimationEngine: removed #intro at ${performance.now().toFixed(0)}ms`
-      );
+      intro.style.transition = 'opacity 220ms cubic-bezier(0.16, 1, 0.3, 1)';
+      intro.style.opacity = '0';
+      intro.style.pointerEvents = 'none';
+      setTimeout(() => {
+        intro.style.display = 'none';
+        if (intro.parentNode) intro.parentNode.removeChild(intro);
+      }, 240);
     }
 
     // Release native Android splash screen on the first painted frame of the brand reveal
@@ -104,18 +128,15 @@ export function LaunchAnimationEngine({
           (window as any).Capacitor.Plugins.AppInstaller
         ) {
           (window as any).Capacitor.Plugins.AppInstaller.notifyAppReady();
-          console.log(
-            `[STARTUP-TRACE] LaunchAnimationEngine: notifyAppReady() called on first paint at ${performance.now().toFixed(0)}ms`
-          );
         }
       } catch (_) {}
     });
 
-    if (skipIntro) {
+    if (effectiveSkip) {
       triggerIntroReveal();
       onComplete?.();
     }
-  }, [skipIntro, onComplete]);
+  }, [effectiveSkip, onComplete]);
 
   // 1. brand_reveal: 1.05s 6-phase mark assembly, sheen sweep, and breathing hold
   // 2. exit_dissolve: 0.30s graceful fade-out into pre-mounted Hub DOM (Total motion: ~1.35s)
@@ -127,10 +148,6 @@ export function LaunchAnimationEngine({
     if (stage === 'brand_reveal') {
       // Phase 1 through 5 run over 1050ms before initiating Hub exit dissolve
       t = setTimeout(() => {
-        console.log(
-          `[STARTUP-TRACE] LaunchAnimationEngine: brand_reveal complete -> checking Hub readiness at ${performance.now().toFixed(0)}ms`
-        );
-
         const isHubReady =
           loopMode ||
           StartupCoordinator.isStartupComplete() ||
@@ -141,26 +158,17 @@ export function LaunchAnimationEngine({
               !!document.getElementById('hub-root')));
 
         if (isHubReady) {
-          console.log(
-            `[STARTUP-TRACE] LaunchAnimationEngine: Hub already ready, starting exit_dissolve`
-          );
+          triggerIntroReveal();
           setStage('exit_dissolve');
         } else {
-          console.log(
-            `[STARTUP-TRACE] LaunchAnimationEngine: Hub not yet ready, subscribing to startup complete`
-          );
           unsub = StartupCoordinator.subscribeStartupComplete(() => {
-            console.log(
-              `[STARTUP-TRACE] LaunchAnimationEngine: received startup complete event, starting exit_dissolve`
-            );
+            triggerIntroReveal();
             setStage('exit_dissolve');
           });
 
           // Fail-safe watchdog fallback to guarantee transition out even if event is delayed
           watchdogTimer = setTimeout(() => {
-            console.log(
-              `[STARTUP-TRACE] LaunchAnimationEngine: watchdog triggered, starting exit_dissolve`
-            );
+            triggerIntroReveal();
             setStage('exit_dissolve');
           }, 1000);
         }
@@ -199,7 +207,7 @@ export function LaunchAnimationEngine({
       key={key}
       initial={{ opacity: 1 }}
       animate={{ opacity: isExit ? 0 : 1 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       onAnimationComplete={() => {
         if (isExit) {
           if (loopMode) {
@@ -210,9 +218,6 @@ export function LaunchAnimationEngine({
           } else {
             setStage('complete');
             triggerIntroReveal();
-            console.log(
-              `[STARTUP-TRACE] LaunchAnimationEngine: onComplete at ${performance.now().toFixed(0)}ms`
-            );
             if (onComplete) onComplete();
           }
         }
@@ -224,10 +229,9 @@ export function LaunchAnimationEngine({
         overflow: 'hidden',
         backgroundColor: bgColor,
         pointerEvents: isExit || isComplete ? 'none' : 'auto',
-        willChange: 'transform, opacity',
+        willChange: 'opacity',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
-        transformStyle: 'preserve-3d',
         transform: 'translateZ(0)',
       }}
     >
@@ -240,20 +244,20 @@ export function LaunchAnimationEngine({
           justifyContent: 'center',
         }}
       >
-        {/* Phase 1 (0.00-0.22s): Ambient Inception Glow expanding along 65° diagonal trajectory */}
+        {/* Phase 1 (0.00-0.22s): Ambient Inception Glow (pure composited radial-gradient, zero blur filter cost) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.65 }}
+          initial={{ opacity: 0, scale: 0.7 }}
           animate={
             isExit
-              ? { opacity: 0, scale: 1.1 }
+              ? { opacity: 0, scale: 1.08 }
               : isBrandReveal
-                ? { opacity: 0.85, scale: 1.0 }
-                : { opacity: 0, scale: 0.65 }
+                ? { opacity: 0.9, scale: 1.0 }
+                : { opacity: 0, scale: 0.7 }
           }
           transition={
             isExit
-              ? { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
-              : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }
+              ? { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
+              : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }
           }
           style={{
             position: 'absolute',
@@ -261,7 +265,6 @@ export function LaunchAnimationEngine({
             height: glowSize,
             borderRadius: '50%',
             background: glowGradient,
-            filter: 'blur(28px)',
             pointerEvents: 'none',
             willChange: 'transform, opacity',
             transform: 'translateZ(0)',
@@ -330,6 +333,8 @@ export function LaunchAnimationEngine({
               width={symbolSize}
               height={symbolSize}
               draggable={false}
+              loading="eager"
+              decoding="async"
               style={{
                 display: 'block',
                 width: symbolSize,
@@ -377,6 +382,8 @@ export function LaunchAnimationEngine({
               width={symbolSize}
               height={symbolSize}
               draggable={false}
+              loading="eager"
+              decoding="async"
               style={{
                 display: 'block',
                 width: symbolSize,
