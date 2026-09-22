@@ -1,13 +1,15 @@
-# Version 4.6.35
+# Version 4.6.36
 
 Release Date: 2026-09-21
 
-### Security
-- Comprehensive Security Hardening: Remediated all GitHub Dependabot security alerts, upgrading Vitest to 4.1.11, overriding uuid to ^11.1.1 (CVE-2026-41907), and overriding esbuild to 0.28.1 (GHSA-g7r4-m6w7-qqqr).
-- Remediated CodeQL Code Scanning Alerts: Resolved command injection vectors in release orchestration scripts, sanitized Android SafeContentResolver URI operations, hardened URL validation in updater security checks, and eliminated prototype pollution vectors in StageCanvasView.
-- Closed Secret Scanning False Positives: Audited and verified all repository tokens and credentials, confirming zero open secret scanning alerts.
+### Fixed
+- Intro Animation Fluidity: Eliminated frame drops and main-thread raster stalls during mark assembly by eagerly pre-warming and decoding brand textures (livex-form1.png, livex-form2.png, livex-symbol.png) at module evaluation time.
+- Zero-Blur GPU Radial Glow: Replaced costly CSS blur filter (filter: blur(28px)) with a hardware-accelerated pure radial gradient, preventing multi-pass Gaussian shader overhead on mobile WebViews.
+- HTML Splash Dissolve: Replaced abrupt 0ms hard DOM cutoff of #intro with a coordinated 220ms cubic-bezier dissolve synchronized with the React intro reveal.
+- Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.
+- Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.
+- Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.
 
 ### Improved
-- CI/CD & Release Pipeline Modernization: Updated all GitHub Actions workflows to align dynamic package manager resolution (pnpm 11.24.0), modernized runner action versions, corrected CI paths to packages/livex-core/**, and ensured release workflows dynamically target github.repository.
-- CodeQL Java/Kotlin Analysis Resilience: Configured Android Gradle analysis in CodeQL to rerun compilation tasks without stale build cache interference.
-- Workspace Quality Gates: Resolved all TypeScript and ESLint linting discrepancies across workspace tests and documentation validation.
+- Coordinated Hub Reveal: Synchronized Hub entrance depth (scale 0.988 to 1.0, opacity 0.88 to 1.0) directly with the intro exit dissolve, eliminating static pauses.
+- Mobile Web Preview Parity: Aligned cold-boot intro presentation between dev preview and native Android APK, honoring single source of truth mobile UI behavior.

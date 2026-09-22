@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.35';
-export const NATIVE_VERSION_CODE = 40635;
-export const WEB_VERSION = '4.6.35';
+export const NATIVE_VERSION = '4.6.36';
+export const NATIVE_VERSION_CODE = 40636;
+export const WEB_VERSION = '4.6.36';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f89d68b2';
+export const APP_COMMIT_SHA = 'e86b518d';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/21/2026, 4:23:01 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/21/2026, 7:42:43 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,9 +98,19 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'CI/CD & Release Pipeline Modernization: Updated all GitHub Actions workflows to align dynamic package manager resolution (pnpm 11.24.0), modernized runner action versions, corrected CI paths to packages/livex-core/**, and ensured release workflows dynamically target github.repository.',
-      'CodeQL Java/Kotlin Analysis Resilience: Configured Android Gradle analysis in CodeQL to rerun compilation tasks without stale build cache interference.',
-      'Workspace Quality Gates: Resolved all TypeScript and ESLint linting discrepancies across workspace tests and documentation validation.',
+      'Coordinated Hub Reveal: Synchronized Hub entrance depth (scale 0.988 to 1.0, opacity 0.88 to 1.0) directly with the intro exit dissolve, eliminating static pauses.',
+      'Mobile Web Preview Parity: Aligned cold-boot intro presentation between dev preview and native Android APK, honoring single source of truth mobile UI behavior.',
+    ],
+  },
+  {
+    heading: 'Fixed',
+    items: [
+      'Intro Animation Fluidity: Eliminated frame drops and main-thread raster stalls during mark assembly by eagerly pre-warming and decoding brand textures (livex-form1.png, livex-form2.png, livex-symbol.png) at module evaluation time.',
+      'Zero-Blur GPU Radial Glow: Replaced costly CSS blur filter (filter: blur(28px)) with a hardware-accelerated pure radial gradient, preventing multi-pass Gaussian shader overhead on mobile WebViews.',
+      'HTML Splash Dissolve: Replaced abrupt 0ms hard DOM cutoff of #intro with a coordinated 220ms cubic-bezier dissolve synchronized with the React intro reveal.',
+      'Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.',
+      'Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.',
+      'Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.',
     ],
   },
 ];
@@ -112,6 +122,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.36',
+    date: '2026-09-21',
+    highlights: [
+      'Intro Animation Fluidity: Eliminated frame drops and main-thread raster stalls during mark assembly by eagerly pre-warming and decoding brand textures (livex-form1.png, livex-form2.png, livex-symbol.png) at module evaluation time.',
+      'Zero-Blur GPU Radial Glow: Replaced costly CSS blur filter (filter: blur(28px)) with a hardware-accelerated pure radial gradient, preventing multi-pass Gaussian shader overhead on mobile WebViews.',
+      'HTML Splash Dissolve: Replaced abrupt 0ms hard DOM cutoff of #intro with a coordinated 220ms cubic-bezier dissolve synchronized with the React intro reveal.',
+      'Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.',
+      'Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.',
+      'Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.',
+    ],
+  },
   {
     version: '4.6.35',
     date: '2026-09-21',
@@ -202,17 +224,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Non-Blocking Scroll Element Discovery: Removed synchronous `scrollHeight` and `clientHeight` layout reads during scroll container attachment, eliminating main-thread layout flushes on navigation.',
       'GPU Compositor Pipeline Optimization: Removed redundant overlapping `ProgressiveBlur` backdrop-filter passes and eliminated procedural SVG `feTurbulence` noise displacement map in `SharedFloatingHeader`, reducing GPU compositor time by ~88% and restoring rock-solid 60/120Hz scrolling.',
       'App-Entry Shadow Offload: Replaced dynamic blur shadow interpolation with a dedicated hardware-accelerated child layer dissolving via GPU opacity, eliminating continuous Gaussian blur re-rasterization during sub-app mounting.',
-    ],
-  },
-  {
-    version: '4.6.26',
-    date: '2026-09-19',
-    highlights: [
-      'App-Entry Shared-Element Morph Transition: Redesigned the launch interaction for all five internal apps (Chordex, Drumex, Stagex, Groovex, Vocalex) into a continuous physical shared-element card morph. Tapping an application card expands that exact card from its viewport coordinates into the full-screen canvas.',
-      'Continuous Surface Expansion: Progressive border-radius morph from 20px card styling to edge-to-edge 0px display, driven by Apple-grade fluid deceleration easing (`[0.16, 1, 0.3, 1]`) across 320ms.',
-      'Canonical Brand Identity: Integrated authentic logos and brand colors with glowing radial aura and smooth header badge cross-fade during card expansion.',
-      'Zero-Seam Destination App Reveal: Destination sub-apps preload seamlessly underneath the morph surface, eliminating loading spinners, blank screens, and jump cuts.',
-      'Hub Depth Recess: Replaced aggressive scale-out with a subtle background recess (`scale: 0.985`, `opacity: 0.35`) while the selected card expands forward.',
     ],
   },
 ];
