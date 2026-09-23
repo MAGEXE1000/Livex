@@ -7,6 +7,7 @@ import {
   sanitizeUTF8String,
   extractStructuredReleaseNotes,
 } from '@workspace/livex-core';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 
 export interface LivexUpdateScreenProps {
   state: string;
@@ -731,17 +732,8 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                style={{
-                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
-                  color: activeAccent,
-                }}
-              >
-                <span className="material-symbols-outlined text-[21px] animate-pulse">
-                  download
-                </span>
+              <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                <AppSpinner size={28} color={activeAccent} strokeWidth={2.5} />
               </div>
               <div className="min-w-0 text-left">
                 <h3
@@ -825,15 +817,8 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                style={{
-                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
-                  color: activeAccent,
-                }}
-              >
-                <span className="material-symbols-outlined text-[21px] animate-spin">sync</span>
+              <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                <AppSpinner size={28} color={activeAccent} strokeWidth={2.5} />
               </div>
               <div className="min-w-0 text-left">
                 <h3
@@ -976,16 +961,17 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
               <div
-                className={`w-11 h-11 rounded-2xl ${defaultIconBox} flex items-center justify-center shrink-0`}
+                className={`w-11 h-11 flex items-center justify-center shrink-0 ${
+                  normalizedState === 'checking' ? '' : `rounded-2xl ${defaultIconBox}`
+                }`}
               >
-                <span
-                  className={`material-symbols-outlined text-[21px] ${
-                    normalizedState === 'checking' ? 'animate-spin' : ''
-                  }`}
-                  style={{ color: normalizedState === 'checking' ? activeAccent : undefined }}
-                >
-                  {normalizedState === 'checking' ? 'sync' : 'check_circle'}
-                </span>
+                {normalizedState === 'checking' ? (
+                  <AppSpinner size={28} color={activeAccent} strokeWidth={2.5} />
+                ) : (
+                  <span className="material-symbols-outlined text-[21px]">
+                    check_circle
+                  </span>
+                )}
               </div>
               <div className="min-w-0 text-left">
                 <h3

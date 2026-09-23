@@ -56,8 +56,8 @@ runTest('loader.tsx: Spinner offloaded to CSS compositor, no JS motion.svg loop'
     'Spinner in loader.tsx should not use motion.svg'
   );
   assert.ok(
-    content.includes('spin ${speed}s linear infinite'),
-    'Spinner in loader.tsx should use CSS spin animation'
+    content.includes('ld-snake-spin') && content.includes('ld-snake-dash'),
+    'Snake/Spinner in loader.tsx should use CSS compositor classes (ld-snake-spin, ld-snake-dash)'
   );
   assert.ok(
     content.includes('pulse 1.4s ease-in-out infinite'),

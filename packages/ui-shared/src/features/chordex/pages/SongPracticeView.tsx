@@ -1,5 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -945,17 +946,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
           }}
         >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              border: '2px solid rgba(255,255,255,0.1)',
-              borderTopColor: 'var(--c-accent)',
-              animation: 'spin 0.8s linear infinite',
-            }}
-          ></div>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <AppSpinner size={32} color="var(--c-accent)" />
           <p style={{ fontSize: '12px', color: 'var(--c-text-secondary)' }}>
             {isSpanish ? 'Buscando acordes y letras...' : 'Searching for chords and lyrics...'}
           </p>
@@ -1464,9 +1455,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
                       fontFamily: 'var(--font-headline)',
                     }}
                   >
-                    <span className="material-symbols-outlined spin" style={{ fontSize: 16 }}>
-                      sync
-                    </span>
+                    <AppSpinner size={16} color="var(--c-accent-from)" />
                     <span>
                       {importLoadingState === 'fetching'
                         ? isSpanish

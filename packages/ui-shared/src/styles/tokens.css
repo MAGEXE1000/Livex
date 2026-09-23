@@ -2218,6 +2218,51 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
   }
 }
 
+/* ── Canonical loading.dev Snake Loader ───────────────────────── */
+.ld-snake-spin {
+  transform-origin: center;
+  animation: ld-snake-rotate var(--ld-duration, 1400ms) linear infinite;
+  animation-play-state: var(--ld-play-state, running);
+}
+
+@keyframes ld-snake-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ld-snake-dash {
+  transform-origin: center;
+  animation: ld-snake-stretch var(--ld-duration, 1400ms) ease-in-out infinite;
+  animation-play-state: var(--ld-play-state, running);
+}
+
+@keyframes ld-snake-stretch {
+  0% {
+    stroke-dasharray: 1 100;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 45 100;
+    stroke-dashoffset: -17;
+  }
+  100% {
+    stroke-dasharray: 45 100;
+    stroke-dashoffset: -62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ld-snake-spin {
+    animation: none;
+  }
+  .ld-snake-dash {
+    stroke-dasharray: 18 100;
+    animation: none;
+  }
+}
+
+
 @keyframes gx-fade-up {
   from {
     opacity: 0;

@@ -1831,16 +1831,44 @@ html[data-theme='light'] .sc-scene-add-btn:hover {
   }
 }
 
-/* ── Autosave indicator spin ─────────────────────────────── */
-@keyframes as-spin {
+/* ── Autosave indicator Snake Loader ───────────────────────── */
+.ld-snake-spin {
+  transform-origin: center;
+  animation: ld-snake-rotate 1.4s linear infinite;
+}
+@keyframes ld-snake-rotate {
   to {
     transform: rotate(360deg);
   }
 }
-.as-spinning {
-  animation: as-spin 0.7s linear infinite;
-  display: inline-flex;
+.ld-snake-dash {
+  transform-origin: center;
+  animation: ld-snake-stretch 1.4s ease-in-out infinite;
 }
+@keyframes ld-snake-stretch {
+  0% {
+    stroke-dasharray: 1 100;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 45 100;
+    stroke-dashoffset: -17;
+  }
+  100% {
+    stroke-dasharray: 45 100;
+    stroke-dashoffset: -62;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-snake-spin {
+    animation: none;
+  }
+  .ld-snake-dash {
+    stroke-dasharray: 18 100;
+    animation: none;
+  }
+}
+
 
 /* ── Compact properties panel field styles ─────────────────── */
 .prop-row {

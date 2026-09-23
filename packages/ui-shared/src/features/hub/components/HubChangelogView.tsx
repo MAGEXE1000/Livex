@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BouncyAccordion } from '../../../components/motion/bouncy-accordion';
 import { APP_VERSION, getChangelogSections, RELEASE_HISTORY } from '@workspace/livex-core';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 
 function getCategoryIcon(category: string): string {
   switch (category) {
@@ -312,24 +313,10 @@ export function ChangelogView({
           gap: 12,
         }}
       >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            border: `3px solid rgba(128,128,128,0.1)`,
-            borderTopColor: accent.from,
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }}
-        />
+        <AppSpinner size={32} color={accent.from} />
         <span style={{ fontSize: 13, color: 'var(--c-text-secondary)', fontFamily: 'Inter' }}>
           {lang === 'es' ? 'Cargando historial de cambios...' : 'Loading changelog history...'}
         </span>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }

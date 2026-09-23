@@ -4,6 +4,7 @@ import { type HarmonizerState } from './useHarmonizerState';
 import { useT } from '@workspace/livex-core';
 import { HARMONIES, layerSemitones, type HarmonyLayerState } from '../services/harmonyEngine';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 
 export function fmt(sec: number): string {
   const m = Math.floor(Math.max(0, sec) / 60);
@@ -149,17 +150,20 @@ export function HarmonizerPlayer({ state }: { state: HarmonizerState }) {
               transition: 'background 150ms',
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{
-                fontSize: 20,
-                color: '#fff',
-                fontVariationSettings: "'FILL' 1",
-                animation: isGenerating ? 'hz-spin 1s linear infinite' : 'none',
-              }}
-            >
-              {isGenerating ? 'progress_activity' : isPlaying ? 'stop' : 'play_arrow'}
-            </span>
+            {isGenerating ? (
+              <AppSpinner size={20} color="#fff" />
+            ) : (
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: 20,
+                  color: '#fff',
+                  fontVariationSettings: "'FILL' 1",
+                }}
+              >
+                {isPlaying ? 'stop' : 'play_arrow'}
+              </span>
+            )}
           </button>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>

@@ -80,8 +80,68 @@ import { SparklesIcon } from '../../components/ui/sparkles';
 import { UserIcon } from '../../components/ui/user';
 import { XIcon } from '../../components/ui/x';
 import { TuningForkIcon } from '../../features/chordex/components/tuner/TuningForkIcon';
+const SnakeIcon = forwardRef<
+  any,
+  {
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+    className?: string;
+    style?: React.CSSProperties;
+  }
+>(
+  (
+    {
+      size = 24,
+      color = 'currentColor',
+      strokeWidth = 2.5,
+      className = '',
+      style,
+    },
+    ref
+  ) => {
+    return (
+      <svg
+        ref={ref}
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        role="presentation"
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          display: 'block',
+          color,
+          flexShrink: 0,
+          ...style,
+        }}
+      >
+        <g className="ld-snake-spin" style={{ transformOrigin: 'center' }}>
+          <circle
+            className="ld-snake-dash"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth={strokeWidth}
+          />
+        </g>
+      </svg>
+    );
+  }
+);
+SnakeIcon.displayName = 'SnakeIcon';
 
 const localAnimatedIcons: Record<string, any> = {
+  snake: SnakeIcon,
+  'loader-circle': SnakeIcon,
+  loadercircle: SnakeIcon,
+  loader: SnakeIcon,
+  progress_activity: SnakeIcon,
+  progressactivity: SnakeIcon,
   activity: ActivityIcon,
   'arrow-left': ArrowLeftIcon,
   arrowleft: ArrowLeftIcon,
@@ -455,13 +515,14 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
   ) => {
     const canHover = useHoverCapable();
     const prefersReduced = useAppReducedMotion();
-    const isSpinning = state === 'loading' || name === 'loader-circle' || name === 'loader';
+    const normName = name.toLowerCase() === 'account_circle' ? 'user' : name.toLowerCase();
+    const isSnake = (state as string) === 'loading' || normName === 'loader-circle' || normName === 'snake' || normName === 'loader' || normName === 'progress_activity';
+    const isSpinning = !isSnake && ((state as string) === 'loading' || name === 'loader-circle' || name === 'loader');
 
     const innerIconRef = useRef<any>(null);
     const isAnimatingRef = useRef(false);
     const prevEpochRef = useRef(animationEpoch);
 
-    const normName = name.toLowerCase() === 'account_circle' ? 'user' : name.toLowerCase();
     const isMatched = !!localAnimatedIcons[normName];
 
     // Map imperative commands for backwards compatibility and parent controls
@@ -640,7 +701,7 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
           selected: getActiveStateVariants(),
         };
 
-    const IconComponent = getAnimatedIconComponent(name);
+    const IconComponent = state === 'loading' || isSnake ? SnakeIcon : getAnimatedIconComponent(name);
     const effectiveAriaHidden = ariaHidden !== undefined ? ariaHidden : (ariaLabel ? undefined : true);
 
     return (

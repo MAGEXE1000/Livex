@@ -225,7 +225,7 @@ export function Loading({ statusText = 'Loading...', overlay = false }: LoadingP
         gap: '14px',
       }}
     >
-      <Loader variant="comet" size={36} />
+      <Loader variant="snake" size={36} />
       {statusText && (
         <span
           style={{

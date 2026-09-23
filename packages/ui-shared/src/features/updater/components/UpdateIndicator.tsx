@@ -121,7 +121,7 @@ function SpinnerSvg({
   cFrom,
   cTo,
   size = 14,
-  strokeWidth = 3.2,
+  strokeWidth = 2.5,
 }: {
   cFrom: string;
   cTo: string;
@@ -134,26 +134,31 @@ function SpinnerSvg({
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
+      role="presentation"
       style={{
-        animation: 'lg-spin-spinner 1s linear infinite',
+        width: size,
+        height: size,
+        display: 'block',
         flexShrink: 0,
       }}
     >
-      <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.15)" strokeWidth={strokeWidth} />
-      <path
-        d="M12 2a10 10 0 0 1 10 10"
-        stroke="url(#lg-spinner-grad-indicator)"
-        strokeWidth={strokeWidth}
-      />
       <defs>
-        <linearGradient id="lg-spinner-grad-indicator" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="lg-snake-grad-indicator" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={cFrom} />
           <stop offset="100%" stopColor={cTo} />
         </linearGradient>
       </defs>
+      <g className="ld-snake-spin" style={{ transformOrigin: 'center' }}>
+        <circle
+          className="ld-snake-dash"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="url(#lg-snake-grad-indicator)"
+          strokeLinecap="round"
+          strokeWidth={strokeWidth}
+        />
+      </g>
     </svg>
   );
 }
@@ -855,16 +860,6 @@ export default function UpdateIndicator({
         @keyframes pill-pulse {
           0%, 100% { box-shadow: 0 4px 14px ${tint(19)}; }
           50%      { box-shadow: 0 4px 14px ${tint(19)}, 0 0 0 6px ${tint(12)}; }
-        }
-        @keyframes pill-download-bounce {
-          0%   { transform: translateY(-3px); opacity: 0.55; }
-          45%  { transform: translateY(2px);  opacity: 1; }
-          60%  { transform: translateY(2px);  opacity: 1; }
-          100% { transform: translateY(-3px); opacity: 0.55; }
-        }
-        @keyframes lg-spin-spinner {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
         }
         @keyframes lg-indeterminate-progress {
           0% { left: -40%; }
@@ -2265,16 +2260,13 @@ function UpdateModal({
           style={{
             width: 58,
             height: 58,
-            borderRadius: '50%',
-            background: 'rgba(128,128,128,0.06)',
-            border: '1.5px solid rgba(128,128,128,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 10,
           }}
         >
-          <SpinnerSvg cFrom={purpleFrom} cTo={purpleTo} size={28} strokeWidth={3.6} />
+          <SpinnerSvg cFrom={purpleFrom} cTo={purpleTo} size={28} strokeWidth={2.5} />
         </div>
       );
     }

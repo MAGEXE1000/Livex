@@ -1510,10 +1510,6 @@ function dangerSolidBtn(): React.CSSProperties {
 function SyncAnimations() {
   return (
     <style>{`
-      @keyframes sync-spin-kf {
-        from { transform: rotate(360deg); }
-        to   { transform: rotate(0deg); }
-      }
       @keyframes sync-pop-kf {
         0%   { transform: scale(0.6); opacity: 0.4; }
         50%  { transform: scale(1.25); opacity: 1; }
@@ -1524,7 +1520,6 @@ function SyncAnimations() {
         to   { opacity: 1; transform: translateY(0); }
       }
       .sync-icon { display: inline-block; transform-origin: center; }
-      .sync-spin { animation: sync-spin-kf 1.1s linear infinite; }
       .sync-pop  { animation: sync-pop-kf 600ms cubic-bezier(0.34, 1.56, 0.64, 1); }
     `}</style>
   );
@@ -4110,9 +4105,7 @@ export function AccountSettingsPage({
             style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
           >
             {busy ? (
-              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                progress_activity
-              </span>
+              <AppSpinner size={16} />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 check
@@ -4163,9 +4156,7 @@ export function AccountSettingsPage({
             style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
           >
             {busy ? (
-              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                progress_activity
-              </span>
+              <AppSpinner size={16} />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 send
@@ -4216,9 +4207,7 @@ export function AccountSettingsPage({
             style={{ ...primaryBtn(accent), flex: 1, padding: '13px 0' }}
           >
             {busy ? (
-              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                progress_activity
-              </span>
+              <AppSpinner size={16} />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 mark_email_read
@@ -4317,9 +4306,7 @@ export function AccountSettingsPage({
             }}
           >
             {busy ? (
-              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                progress_activity
-              </span>
+              <AppSpinner size={16} />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 block
@@ -4406,9 +4393,7 @@ export function AccountSettingsPage({
             }}
           >
             {busy ? (
-              <span className="material-symbols-outlined sync-spin" style={{ fontSize: 16 }}>
-                progress_activity
-              </span>
+              <AppSpinner size={16} />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 delete_forever

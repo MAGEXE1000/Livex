@@ -8461,7 +8461,7 @@ function setAutosaveUI(mode) {
     dot.style.cssText =
       'width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;';
     dot.innerHTML = DOMPurify.sanitize(
-      '<span class="material-symbols-outlined as-spinning" style="font-size:15px;color:#ff9930;">sync</span>'
+      '<svg viewBox="0 0 24 24" fill="none" role="presentation" style="width:15px;height:15px;display:block;"><g class="ld-snake-spin"><circle class="ld-snake-dash" cx="12" cy="12" r="10" stroke="#ff9930" stroke-linecap="round" stroke-width="2.5" fill="none"/></g></svg>'
     );
     lbl.textContent = 'AUTOSAVING...';
     lbl.style.color = '#ff9930';

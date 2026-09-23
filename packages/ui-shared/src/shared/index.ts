@@ -16,6 +16,7 @@ export { default as WebAppSectionDock } from './layout/WebAppSectionDock';
 
 // Loading
 export { default as AppSpinner } from './loading/AppSpinner';
+export { default as SnakeLoader, SnakeLoader as LivexSnakeLoader } from './loading/SnakeLoader';
 export { default as SmartLoading, AppLoadingScreen } from './loading/SmartLoading';
 export * from './loading/StudioSkeleton';
 

@@ -12,6 +12,7 @@ import {
   type TakeRecord,
   vocalexRepository,
 } from '@workspace/livex-core';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 
 const SMOOTHING_FACTOR = 0.8;
 const VIZ_BARS = 64;
@@ -278,7 +279,6 @@ export default function RecordingView({
       }}
     >
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes countPop {
           0% { transform: scale(0.3); opacity: 0; }
           50% { transform: scale(1.15); opacity: 1; }
@@ -292,17 +292,7 @@ export default function RecordingView({
 
       {state === 'processing' && (
         <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              border: '3px solid var(--studio-accent)',
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-              margin: '0 auto 16px',
-            }}
-          />
+          <AppSpinner size={48} color="var(--studio-accent)" style={{ margin: '0 auto 16px' }} />
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--vx-text-2)' }}>
             {t.vocalex.processing}
           </p>

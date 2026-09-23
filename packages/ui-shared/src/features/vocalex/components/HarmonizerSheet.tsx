@@ -5,6 +5,7 @@ import { type TakeRecord, useT, BackDispatcher } from '@workspace/livex-core';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
+import AppSpinner from '../../../shared/loading/AppSpinner';
 import { useHarmonizerState } from './useHarmonizerState';
 import {
   HarmonizerHeader,
@@ -343,15 +344,13 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
             opacity: activeCount === 0 ? 0.5 : 1,
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{
-              fontSize: 15,
-              animation: isBouncing ? 'hz-spin 1s linear infinite' : 'none',
-            }}
-          >
-            {isBouncing ? 'progress_activity' : 'save'}
-          </span>
+          {isBouncing ? (
+            <AppSpinner size={15} />
+          ) : (
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+              save
+            </span>
+          )}
           {isBouncing ? t.vocalex.saving || 'Saving…' : t.vocalex.saveAsTake || 'Save as Take'}
         </button>
 
@@ -411,10 +410,6 @@ export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onB
           ]}
         />
       </div>
-
-      <style>{`
-        @keyframes hz-spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 

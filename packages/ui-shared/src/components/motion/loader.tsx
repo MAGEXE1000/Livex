@@ -9,6 +9,7 @@ import { cn } from "../../lib/utils";
 
 
 export type LoaderVariant =
+  | "snake"
   | "spinner"
   | "dots"
   | "bars"
@@ -46,6 +47,7 @@ export interface LoaderProps {
   /** Accessible label announced to screen readers. */
   label?: string;
   className?: string;
+  strokeWidth?: number;
 }
 
 // Reduced motion keeps a calm opacity pulse and drops every transform.
@@ -55,11 +57,12 @@ const REDUCED = {
 };
 
 export function Loader({
-  variant = "spinner",
+  variant = "snake",
   size = 32,
   speed = 1,
   label = "Loading",
   className,
+  strokeWidth,
 }: LoaderProps) {
   const reduce = useAppReducedMotion();
 
@@ -72,7 +75,9 @@ export function Loader({
         className,
       )}
     >
-      {variant === "spinner" && <Spinner size={size} speed={speed} reduce={reduce} />}
+      {(variant === "snake" || variant === "spinner") && (
+        <Snake size={size} speed={speed} reduce={reduce} strokeWidth={strokeWidth} />
+      )}
       {variant === "dots" && <Dots size={size} speed={speed} reduce={reduce} />}
       {variant === "bars" && <Bars size={size} speed={speed} reduce={reduce} />}
       {variant === "dot-matrix" && (
@@ -106,41 +111,55 @@ interface PartProps {
   reduce: boolean;
 }
 
-function Spinner({ size, speed, reduce }: PartProps) {
-  const stroke = Math.max(2, size * 0.09);
-  const r = (size - stroke) / 2;
+export function Snake({
+  size,
+  speed = 1,
+  reduce,
+  strokeWidth,
+}: PartProps & { strokeWidth?: number }) {
+  const duration = `${speed * 1.4}s`;
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      style={{
-        animation: reduce
-          ? 'pulse 1.4s ease-in-out infinite'
-          : `spin ${speed}s linear infinite`,
-        transformOrigin: 'center',
-        willChange: 'transform',
-      }}
+      viewBox="0 0 24 24"
+      fill="none"
+      role="presentation"
+      style={
+        {
+          '--ld-duration': duration,
+          width: size,
+          height: size,
+          display: 'block',
+          flexShrink: 0,
+        } as React.CSSProperties
+      }
     >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity={0.2}
-        strokeWidth={stroke}
-      />
-      <path
-        d={`M ${size / 2} ${size / 2 - r} A ${r} ${r} 0 0 1 ${size / 2 + r} ${size / 2}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-      />
+      <g className={reduce ? undefined : 'ld-snake-spin'} style={{ transformOrigin: 'center' }}>
+        <circle
+          className={reduce ? undefined : 'ld-snake-dash'}
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth={strokeWidth ?? 2.5}
+          style={
+            reduce
+              ? {
+                  strokeDasharray: '18 100',
+                  animation: 'pulse 1.4s ease-in-out infinite',
+                }
+              : undefined
+          }
+        />
+      </g>
     </svg>
   );
 }
+
+export const Spinner = Snake;
+
 
 function Dots({ size, speed, reduce }: PartProps) {
   const dot = size * 0.24;
