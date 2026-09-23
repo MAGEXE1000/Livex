@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useAssistantStore, NavigationDispatcher } from '@workspace/livex-core';
+import { useAssistantStore, useSettingsStore } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
 import { LivexThinkingOrb } from '../components/LivexThinkingOrb';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
@@ -11,6 +11,13 @@ export const AssistantChatView: React.FC = () => {
   const mascotState = useAssistantStore((s) => s.mascotState);
   const status = useAssistantStore((s) => s.status);
   const clearConversation = useAssistantStore((s) => s.clearConversation);
+
+  const theme = useSettingsStore((s) => s.settings?.theme);
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-color-scheme: light)').matches);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,8 +56,8 @@ export const AssistantChatView: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 18px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          background: 'rgba(15, 23, 42, 0.65)',
+          borderBottom: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
+          background: isLight ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.65)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           zIndex: 10,
@@ -80,7 +87,13 @@ export const AssistantChatView: React.FC = () => {
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: isLight ? '#0f172a' : '#f8fafc',
+                }}
+              >
                 Livex Music AI
               </span>
               <span
@@ -92,17 +105,21 @@ export const AssistantChatView: React.FC = () => {
                   borderRadius: 6,
                   background: status === 'streaming'
                     ? 'rgba(168, 85, 247, 0.2)'
-                    : 'rgba(56, 189, 248, 0.15)',
-                  color: status === 'streaming' ? '#c084fc' : '#38bdf8',
+                    : isLight
+                      ? 'rgba(2, 132, 199, 0.12)'
+                      : 'rgba(56, 189, 248, 0.15)',
+                  color: status === 'streaming' ? '#c084fc' : isLight ? '#0284c7' : '#38bdf8',
                   border: status === 'streaming'
                     ? '1px solid rgba(168, 85, 247, 0.35)'
-                    : '1px solid rgba(56, 189, 248, 0.25)',
+                    : isLight
+                      ? '1px solid rgba(2, 132, 199, 0.25)'
+                      : '1px solid rgba(56, 189, 248, 0.25)',
                 }}
               >
                 {status === 'streaming' ? 'Thinking' : 'Ready'}
               </span>
             </div>
-            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+            <div style={{ fontSize: 11, color: isLight ? '#64748b' : '#94a3b8' }}>
               Theory, Tones, Chords & Grooves
             </div>
           </div>
@@ -114,11 +131,11 @@ export const AssistantChatView: React.FC = () => {
             onClick={clearConversation}
             title="Clear chat history"
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: 8,
               padding: '6px 10px',
-              color: '#94a3b8',
+              color: isLight ? '#64748b' : '#94a3b8',
               fontSize: 11,
               fontWeight: 500,
               cursor: 'pointer',
@@ -173,7 +190,7 @@ export const AssistantChatView: React.FC = () => {
               style={{
                 fontSize: 20,
                 fontWeight: 800,
-                color: '#f8fafc',
+                color: isLight ? '#0f172a' : '#f8fafc',
                 margin: '0 0 6px',
                 letterSpacing: '-0.02em',
               }}
@@ -183,7 +200,7 @@ export const AssistantChatView: React.FC = () => {
             <p
               style={{
                 fontSize: 13.5,
-                color: '#94a3b8',
+                color: isLight ? '#64748b' : '#94a3b8',
                 maxWidth: 420,
                 lineHeight: 1.5,
                 margin: '0 0 20px',
@@ -205,7 +222,9 @@ export const AssistantChatView: React.FC = () => {
         style={{
           padding: '10px 16px',
           paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 72px)',
-          background: 'linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 75%, transparent 100%)',
+          background: isLight
+            ? 'linear-gradient(to top, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.4) 75%, transparent 100%)'
+            : 'linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 75%, transparent 100%)',
           zIndex: 10,
         }}
       >

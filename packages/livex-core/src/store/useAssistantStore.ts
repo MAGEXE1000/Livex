@@ -318,3 +318,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
     }
   )
 );
+
+if (typeof window !== 'undefined') {
+  (window as any).__studioAssistantStore = useAssistantStore;
+}

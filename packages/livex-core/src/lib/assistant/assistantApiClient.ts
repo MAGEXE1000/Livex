@@ -78,7 +78,8 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
       }
     });
 
-    if (response.ok && response.body) {
+    const contentType = response.headers.get('content-type') || '';
+    if (response.ok && response.body && contentType.includes('text/event-stream')) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';

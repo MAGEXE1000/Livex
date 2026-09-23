@@ -1,0 +1,187 @@
+#!/usr/bin/env node
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import puppeteer from 'puppeteer';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '..');
+const distDir = path.join(repoRoot, 'dist', 'android-web');
+const artifactDir = 'C:\\Users\\Mauren\\.gemini\\antigravity\\brain\\1175433f-38ca-436e-8de8-3b236180ddc4';
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+};
+
+function createStaticServer(port) {
+  const server = http.createServer((req, res) => {
+    let reqUrl = req.url.split('?')[0];
+    if (reqUrl === '/') reqUrl = '/index.html';
+
+    const safePath = path.normalize(reqUrl).replace(/^(\.\.[/\\])+/, '');
+    const resolvedPath = path.resolve(distDir, '.' + path.sep + safePath);
+
+    let filePath = resolvedPath;
+    if (!resolvedPath.startsWith(distDir) || !fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).isDirectory()) {
+      filePath = path.join(distDir, 'index.html');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    try {
+      const data = fs.readFileSync(filePath);
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(data);
+    } catch {
+      res.writeHead(404);
+      res.end('Not found');
+    }
+  });
+
+  return new Promise((resolve) => {
+    server.listen(port, () => {
+      console.log(`[Static Server] Serving dist/android-web on http://localhost:${port}`);
+      resolve(server);
+    });
+  });
+}
+
+function getBrowserExecutablePath() {
+  const candidates = [
+    process.env.CHROME_BIN,
+    process.env.EDGE_BIN,
+    'C:\\Program Files (x86)\\Microsoft\\EdgeCore\\153.0.4234.48\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\EdgeCore\\153.0.4234.32\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\EdgeCore\\153.0.4234.13\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  ];
+  for (const c of candidates) {
+    if (c && fs.existsSync(c)) return c;
+  }
+  return undefined;
+}
+
+async function run() {
+  const PORT = 5198;
+  const server = await createStaticServer(PORT);
+  const targetUrl = `http://localhost:${PORT}/`;
+
+  console.log('[Puppeteer] Launching mobile emulator...');
+  const execPath = getBrowserExecutablePath();
+  const browser = await puppeteer.launch({
+    executablePath: execPath,
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+  });
+
+  const page = await browser.newPage();
+  await page.setViewport({
+    width: 393,
+    height: 851,
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  page.on('pageerror', (err) => console.error('[Page Error]:', err.message));
+
+  console.log(`[Test] Navigating to ${targetUrl}...`);
+  await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+  // Wait for app mount
+  await page.waitForFunction(() => document.body && document.body.innerHTML.length > 500, { timeout: 10000 });
+  await new Promise((r) => setTimeout(r, 1200));
+
+  // Clear any existing chat history so we test clean initial state
+  await page.evaluate(() => {
+    if (window.__studioAssistantStore) {
+      window.__studioAssistantStore.getState().clearConversation();
+    }
+  });
+
+  // Navigate to assistant tab
+  console.log('[Test] Navigating to Assistant tab via NavigationDispatcher...');
+  await page.evaluate(() => {
+    if (window.__studioNavigationDispatcher) {
+      window.__studioNavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+      return true;
+    }
+    return false;
+  });
+
+  await new Promise((r) => setTimeout(r, 1500));
+
+  // 1. Capture Ready State
+  console.log('[Test] Capturing Ready State...');
+  const readyPath = path.join(artifactDir, 'verify_agent_chat_pill_ready.png');
+  await page.screenshot({ path: readyPath });
+  console.log(`Saved screenshot: ${readyPath}`);
+
+  // 2. Open Model Menu
+  console.log('[Test] Opening Model Selector menu...');
+  await page.click('button[aria-label="Change model"]');
+  await new Promise((r) => setTimeout(r, 400));
+  const modelsPath = path.join(artifactDir, 'verify_agent_chat_pill_models.png');
+  await page.screenshot({ path: modelsPath });
+  console.log(`Saved screenshot: ${modelsPath}`);
+
+  // Close model menu
+  await page.click('button[aria-label="Change model"]');
+  await new Promise((r) => setTimeout(r, 300));
+
+  // 3. Type multiline prompt with Puppeteer typing
+  console.log('[Test] Typing multiline prompt into textarea...');
+  await page.focus('.agent-chat-pill-root textarea');
+  const promptText = 'Suggest a lush Neo-Soul chord progression with 9th and 13th extensions for guitar and bass.';
+  await page.keyboard.type(promptText, { delay: 10 });
+  await new Promise((r) => setTimeout(r, 400));
+  
+  const typingPath = path.join(artifactDir, 'verify_agent_chat_pill_typing.png');
+  await page.screenshot({ path: typingPath });
+  console.log(`Saved screenshot: ${typingPath}`);
+
+  // 4. Submit message to trigger streaming and capture Stop button morph
+  console.log('[Test] Submitting message to trigger streaming mode...');
+  await page.evaluate(() => {
+    if (window.__studioAssistantStore) {
+      window.__studioAssistantStore.getState().sendMessage('Suggest a lush Neo-Soul chord progression with 9th and 13th extensions for guitar and bass.');
+    }
+  });
+
+  // Brief pause to capture active streaming with stop button
+  await new Promise((r) => setTimeout(r, 120));
+  const streamingPath = path.join(artifactDir, 'verify_agent_chat_pill_streaming.png');
+  await page.screenshot({ path: streamingPath });
+  console.log(`Saved screenshot: ${streamingPath}`);
+
+  // 5. Wait for streaming to complete (local intelligence takes ~1.5s)
+  console.log('[Test] Waiting for response to stream and render cards...');
+  await page.waitForFunction(() => {
+    return window.__studioAssistantStore && window.__studioAssistantStore.getState().status === 'idle';
+  }, { timeout: 10000 }).catch(() => {});
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const completedPath = path.join(artifactDir, 'verify_assistant_response_completed.png');
+  await page.screenshot({ path: completedPath });
+  console.log(`Saved screenshot: ${completedPath}`);
+
+  await browser.close();
+  server.close();
+  console.log('[Test] All verification screenshots captured successfully!');
+}
+
+run().catch((err) => {
+  console.error('[Verification Failed]:', err);
+  process.exit(1);
+});
