@@ -78,10 +78,10 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           <h3
             key={idx}
             style={{
-              fontSize: 14.5,
+              fontSize: 15,
               fontWeight: 650,
               color: isLight ? '#0f172a' : '#f8fafc',
-              margin: '10px 0 4px',
+              margin: '12px 0 6px',
               letterSpacing: '-0.01em',
             }}
           >
@@ -106,9 +106,9 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
             <span style={{ color: isLight ? '#64748b' : '#94a3b8', fontSize: 13 }}>•</span>
             <span
               style={{
-                fontSize: 13.5,
+                fontSize: 14,
                 color: isLight ? '#334155' : '#cbd5e1',
-                lineHeight: 1.55,
+                lineHeight: 1.6,
               }}
             >
               {formatInlineText(text)}
@@ -118,17 +118,17 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
       }
       // Blank lines
       if (!line.trim()) {
-        return <div key={idx} style={{ height: 6 }} />;
+        return <div key={idx} style={{ height: 8 }} />;
       }
       // Standard paragraph
       return (
         <p
           key={idx}
           style={{
-            fontSize: 13.5,
+            fontSize: 14,
             color: isLight ? '#1e293b' : '#e2e8f0',
-            lineHeight: 1.6,
-            margin: '3px 0',
+            lineHeight: 1.65,
+            margin: '4px 0',
           }}
         >
           {formatInlineText(line)}
@@ -143,8 +143,8 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
         style={{
           display: 'flex',
           justifyContent: 'flex-end',
-          margin: '8px 0',
-          paddingLeft: '15%',
+          margin: '10px 0',
+          paddingLeft: '18%',
         }}
       >
         <div
@@ -153,10 +153,10 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
             color: '#ffffff',
             border: isLight ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
             padding: '10px 16px',
-            borderRadius: '16px 16px 4px 16px',
-            fontSize: 14,
+            borderRadius: '18px 18px 4px 18px',
+            fontSize: 14.5,
             lineHeight: 1.45,
-            boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none',
+            boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.10)' : 'none',
             maxWidth: '100%',
             wordBreak: 'break-word',
           }}
@@ -167,86 +167,96 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
     );
   }
 
+  // Thinking state placeholder while awaiting first token
+  if (!isUser && message.status === 'streaming' && !message.content) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          gap: 12,
+          margin: '12px 0',
+          alignItems: 'center',
+          padding: '6px 2px',
+        }}
+      >
+        <LivexAssistantMascot
+          size={20}
+          mode="chat"
+          state="thinking"
+          interactive={false}
+        />
+        <span
+          style={{
+            fontSize: 13.5,
+            color: isLight ? '#64748b' : '#94a3b8',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Thinking…
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         display: 'flex',
-        gap: 10,
-        margin: '12px 0',
-        paddingRight: '4%',
+        gap: 12,
+        margin: '14px 0 18px',
         position: 'relative',
         alignItems: 'flex-start',
       }}
     >
-      {/* Bot Mini Emblem Avatar */}
-      <div style={{ marginTop: 2, flexShrink: 0 }}>
+      {/* Bot Mini Orb */}
+      <div style={{ marginTop: 3, flexShrink: 0 }}>
         <LivexAssistantMascot
-          size={22}
+          size={20}
           mode="chat"
-          state="idle"
+          state={message.status === 'streaming' ? 'composing' : 'idle'}
           interactive={false}
         />
       </div>
 
-      {/* Bot Bubble */}
+      {/* Message Content Container - Content-First, Borderless */}
       <div
         style={{
           flex: 1,
-          background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.55)',
-          border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 14,
-          padding: '14px 18px',
-          boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
+          minWidth: 0,
           position: 'relative',
         }}
       >
-        {/* Copy action */}
-        {message.status !== 'streaming' && message.content && (
-          <button
-            onClick={handleCopy}
-            title="Copy response"
-            aria-label="Copy message text"
-            style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              background: 'transparent',
-              border: 'none',
-              color: copied ? '#22c55e' : isLight ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.4)',
-              cursor: 'pointer',
-              padding: 4,
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'color 120ms ease',
-            }}
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-          </button>
-        )}
+        {/* Formatted Content */}
+        <div
+          style={{
+            color: isLight ? '#0f172a' : '#f1f5f9',
+            fontSize: 14,
+            lineHeight: 1.65,
+            wordBreak: 'break-word',
+          }}
+        >
+          {renderFormattedContent(message.content)}
 
-        {/* Content */}
-        {renderFormattedContent(message.content)}
-
-        {/* Streaming Cursor */}
-        {message.status === 'streaming' && (
-          <span
-            style={{
-              display: 'inline-block',
-              width: 6,
-              height: 14,
-              marginLeft: 4,
-              verticalAlign: 'middle',
-              background: isLight ? '#0284c7' : '#38bdf8',
-              borderRadius: 1.5,
-              animation: 'pulse 1s infinite',
-            }}
-          />
-        )}
+          {/* Streaming Cursor */}
+          {message.status === 'streaming' && (
+            <span
+              style={{
+                display: 'inline-block',
+                width: 6,
+                height: 14,
+                marginLeft: 4,
+                verticalAlign: 'middle',
+                background: isLight ? '#0284c7' : '#38bdf8',
+                borderRadius: 1.5,
+                animation: 'pulse 1s infinite',
+              }}
+            />
+          )}
+        </div>
 
         {/* Structured Recommendations Cards */}
         {message.recommendations && message.recommendations.length > 0 && (
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {message.recommendations.map((rec) => {
               if (rec.type === 'chord_progression') {
                 return (
@@ -271,6 +281,50 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
               }
               return null;
             })}
+          </div>
+        )}
+
+        {/* Subtle Action Row with Copy button */}
+        {message.status !== 'streaming' && message.content && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 10,
+            }}
+          >
+            <button
+              onClick={handleCopy}
+              title="Copy response"
+              aria-label="Copy message text"
+              style={{
+                background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 8,
+                padding: '4px 8px',
+                color: copied ? '#22c55e' : isLight ? '#64748b' : '#94a3b8',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11.5,
+                fontWeight: 500,
+                transition: 'all 120ms ease',
+              }}
+            >
+              {copied ? (
+                <>
+                  <Check size={12} />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
           </div>
         )}
       </div>

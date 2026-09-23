@@ -162,10 +162,10 @@ export const AssistantChatView: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            {/* Animated Mascot Hero (Kimi / Grok inspired) */}
+            {/* Animated Minimal Orb Hero (ThinkingOrb engine) */}
             <div style={{ marginBottom: 20 }}>
               <LivexAssistantMascot
-                size={76}
+                size={64}
                 mode="chat"
                 state={mascotState}
                 interactive={true}

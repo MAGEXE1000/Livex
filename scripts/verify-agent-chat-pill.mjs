@@ -102,11 +102,18 @@ async function run() {
 
   // Wait for app mount
   await page.waitForFunction(() => document.body && document.body.innerHTML.length > 500, { timeout: 10000 });
-  await new Promise((r) => setTimeout(r, 1200));
+  // Wait for bottom navbar to finish entry animation
+  await page.waitForFunction(() => {
+    const wrapper = document.querySelector('.shared-bottom-navbar-wrapper');
+    if (!wrapper) return false;
+    const style = window.getComputedStyle(wrapper);
+    return style.opacity === '1' || parseFloat(style.opacity) > 0.8;
+  }, { timeout: 10000 }).catch(() => {});
+  await new Promise((r) => setTimeout(r, 500));
 
-  // First, capture the Hub Home showing the separate AI satellite button next to the dock!
-  console.log('[Test] Capturing Hub Home with separate AI satellite button...');
-  const hubHomePath = path.join(artifactDir, 'verify_hub_ai_satellite.png');
+  // Capture Hub Home showing the unified dock pill with the AI ThinkingOrb!
+  console.log('[Test] Capturing Hub Home with unified AI dock item...');
+  const hubHomePath = path.join(artifactDir, 'verify_hub_ai_dock.png');
   await page.screenshot({ path: hubHomePath });
   console.log(`Saved screenshot: ${hubHomePath}`);
 
@@ -117,11 +124,11 @@ async function run() {
     }
   });
 
-  // Navigate to assistant tab by clicking the dedicated satellite button!
-  console.log('[Test] Clicking AI Assistant satellite button...');
-  const satelliteBtn = await page.$('button[aria-label="AI Assistant"]');
-  if (satelliteBtn) {
-    await satelliteBtn.click();
+  // Navigate to assistant tab by clicking the AI tab in the unified dock!
+  console.log('[Test] Clicking AI button in bottom navbar dock...');
+  const aiDockBtn = await page.$('button[aria-label="AI"]');
+  if (aiDockBtn) {
+    await aiDockBtn.click();
   } else {
     console.log('[Test] Fallback to NavigationDispatcher...');
     await page.evaluate(() => {
@@ -141,9 +148,9 @@ async function run() {
   await page.screenshot({ path: proEmptyPath });
   console.log(`Saved screenshot: ${proEmptyPath}`);
 
-  // 2. Click the mascot to test interactive tap reaction (sparkles, hop, wink)
-  console.log('[Test] Tapping animated mascot hero...');
-  const mascotEl = await page.$('.livex-assistant-mascot[role="button"]');
+  // 2. Click the mascot to test interactive tap reaction (shaping/solving morph)
+  console.log('[Test] Tapping animated minimal orb hero...');
+  const mascotEl = await page.$('.livex-assistant-mascot');
   if (mascotEl) {
     await mascotEl.click();
     await new Promise((r) => setTimeout(r, 200));

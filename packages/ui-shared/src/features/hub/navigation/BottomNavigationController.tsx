@@ -325,6 +325,22 @@ export function BottomNavigationController() {
           },
         },
         {
+          key: 'assistant',
+          icon: (
+            <LivexAssistantMascot
+              size={20}
+              mode="dock"
+              state={mascotState}
+              interactive={false}
+            />
+          ),
+          label: 'AI',
+          isActive: activeTab === 'assistant',
+          onClick: () => {
+            NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+          },
+        },
+        {
           key: 'settings',
           icon: 'cog',
           label: getTranslation('settings'),
