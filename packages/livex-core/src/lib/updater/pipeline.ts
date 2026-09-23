@@ -586,6 +586,7 @@ async function executeCheckForUpdateInternal(
   if (globalUpdateState.updateState !== 'IDLE') {
     transitionToState('IDLE', 'Resetting to IDLE before starting check');
   }
+  updateGlobalState({ statusText: 'Connecting to release server...', error: null });
   transitionToState('INITIALIZING', 'checkForUpdate start');
   try {
     if (updaterSimulation.forceMetadataFailure) {
@@ -607,6 +608,7 @@ async function executeCheckForUpdateInternal(
       const duration = Date.now() - startTime;
       return globalUpdateState;
     }
+    updateGlobalState({ statusText: 'Connecting to release server...' });
 
     UpdatePipelineCoordinator.setStage('AWAIT_FETCH_METADATA');
     const realRemote = await fetchRemoteVersion();
@@ -776,12 +778,14 @@ async function executeCheckForUpdateInternal(
       const duration = Date.now() - startTime;
       return globalUpdateState;
     }
+    updateGlobalState({ statusText: 'Validating release manifest...' });
     if (!remote) {
       updateDebugLogs.updateDecision = 'metadata_unavailable';
       updateDebugLogs.updateDecisionReason = 'Remote metadata is missing or unreachable.';
       updateGlobalState({
         decisionExplanation: 'Remote metadata is missing or unreachable.',
         updateAvailable: false,
+        statusText: null,
       });
       if (isManual) {
         updateGlobalState({ error: 'Unable to contact the update server.' });
@@ -819,6 +823,7 @@ async function executeCheckForUpdateInternal(
       const duration = Date.now() - startTime;
       return globalUpdateState;
     }
+    updateGlobalState({ statusText: 'Checking version...' });
     const comp = compareVersions(remote, APP_VERSION, natVerCode ?? undefined);
     logPipelineTrace(
       'executeCheckForUpdateInternal',
@@ -910,6 +915,7 @@ async function executeCheckForUpdateInternal(
         manualApkUrl: remote.manualApkUrl ?? null,
         fallbackApkUrl: remote.fallbackApkUrl ?? null,
         apkSizeBytes: remote.apkSizeBytes ?? null,
+        statusText: null,
       });
 
       checkCancellation(pipelineId, 'AWAIT_CACHE_CLEANUP');
@@ -920,7 +926,7 @@ async function executeCheckForUpdateInternal(
       }
       void logProgressStage('Update detected', `Version: ${remote.version}`);
     } else {
-      updateGlobalState({ remoteVersion: remote.version, updateAvailable: false });
+      updateGlobalState({ remoteVersion: remote.version, updateAvailable: false, statusText: null });
       updateDebugLogs.updateDecision = 'NO_UPDATE_AVAILABLE';
       updateDebugLogs.updateDecisionReason = `Local ${APP_VERSION} >= Remote ${remote.version} (isUpToDate=${comp.isUpToDate}, isDowngrade=${comp.isDowngrade})`;
       if (
@@ -973,6 +979,7 @@ async function executeCheckForUpdateInternal(
     updateGlobalState({
       error: isManual ? 'Unable to contact the update server.' : `Update check failed: ${errMsg}`,
       updateAvailable: false,
+      statusText: null,
     });
     if (globalUpdateState.updateState !== 'IDLE') {
       transitionToState(

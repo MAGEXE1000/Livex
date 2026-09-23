@@ -439,6 +439,18 @@ export default function UpdateIndicator({
     }
   }, [updater.isModalOpen]);
 
+  const isCheckingState =
+    updater.updateState === 'INITIALIZING' ||
+    updater.updateState === 'FETCH_REMOTE_METADATA' ||
+    updater.updateState === 'VALIDATE_METADATA' ||
+    updater.updateState === 'COMPARE_VERSION';
+
+  useEffect(() => {
+    if (isCheckingState) {
+      setOpen(true);
+    }
+  }, [isCheckingState]);
+
 
   // Auto-open update modal immediately when update is available, unless dismissed/later'ed.
   useEffect(() => {
@@ -546,9 +558,13 @@ export default function UpdateIndicator({
         downloadUrl={updater.downloadUrl}
         accentFrom={`var(--accent-from, ${accentFrom})`}
         accentTo={`var(--accent-to, ${accentTo})`}
-        onLater={() => setOpen(false)}
+        onLater={() => {
+          setOpen(false);
+          updater.closeModal();
+        }}
         onClose={() => {
           setOpen(false);
+          updater.closeModal();
         }}
         installFailedReason={installFailedReason}
         setInstallFailedReason={setInstallFailedReason}
@@ -654,6 +670,7 @@ export default function UpdateIndicator({
     // pill visible in the corner so the user always has a one-tap
     // path back to update.
     setOpen(false);
+    updater.closeModal();
     if (updater.remoteVersion) {
       writeLaterVersion(updater.remoteVersion);
       setLaterVersion(updater.remoteVersion);
@@ -850,6 +867,7 @@ export default function UpdateIndicator({
         onLater={handleLater}
         onClose={() => {
           setOpen(false);
+          updater.closeModal();
           if (phase === 'banner') {
             setPhase('pill');
             markBannerShown();
@@ -1450,15 +1468,20 @@ function UpdateModal({
       iconColor = purpleFrom;
       showSpinner = true;
       title = updaterTr?.checkingForUpdates || 'Checking for updates';
-      description = updaterTr?.connectingToServer || 'Connecting to release server...';
+      description =
+        updater.statusText || updaterTr?.connectingToServer || 'Connecting to release server...';
       showButtons = false;
       break;
 
     case 'idle':
       iconName = 'check_circle';
       iconColor = '#22c55e';
-      title = updaterTr?.upToDate || 'Studio is up to date';
-      description = updaterTr?.latestVersion || 'You’re running the latest version of Studio.';
+      title = updaterTr?.upToDate || 'Livex is up to date';
+      description =
+        updaterTr?.latestVersion ||
+        (fromLabel
+          ? `You’re running the latest version of Livex (${fromLabel.startsWith('v') ? fromLabel : `v${fromLabel}`}).`
+          : 'You’re running the latest version of Livex.');
       break;
 
     case 'available':

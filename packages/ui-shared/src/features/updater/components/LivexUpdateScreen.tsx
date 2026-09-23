@@ -48,6 +48,24 @@ export interface LivexUpdateScreenProps {
 
 export type StudioUpdateScreenProps = LivexUpdateScreenProps;
 
+function CheckIconSvg() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="#22c55e"
+      strokeWidth="3.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 export const LivexUpdateScreen = memo(function LivexUpdateScreen({
   state,
   progress = 0,
@@ -225,6 +243,17 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
   const isProgressState = normalizedState === 'downloading' || isInstalling;
   const canClose = ['available', 'idle', 'error'].includes(normalizedState);
 
+  // Auto-dismiss compact popup when up to date
+  useEffect(() => {
+    if (normalizedState === 'idle') {
+      const timer = setTimeout(() => {
+        handleDismiss();
+      }, 2200);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [normalizedState]);
+
   // Close handlers
   const handleDismiss = () => {
     if (isDismissing) return;
@@ -279,6 +308,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
     }
     return null;
   }, [downloadedBytes, realTotalBytes, progress, isInstalling]);
+
+  const isCheckError =
+    normalizedState === 'error' &&
+    !isProgressState &&
+    !downloadedBytes &&
+    !realDownloadedBytes;
+  const isFullUpdaterState = (normalizedState === 'available' || isProgressState) && !isCheckError;
 
   // Format Package Size (Measured)
   const formattedSize = useMemo(() => {
@@ -557,102 +593,200 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
         data-purpose="dialog-card"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* BEGIN: HeaderSection (Persistent) */}
-        <motion.div layout={!prefersReduced} className="mb-6" data-purpose="modal-header">
-          <h1
-            className={`text-[26px] sm:text-[27px] font-bold tracking-tight ${textPrimary} leading-tight`}
-            id="modal-title"
-          >
-            {isInstalling
-              ? updaterTr?.installing || 'Installing...'
-              : isProgressState
-                ? updaterTr?.downloadingUpdate || 'Downloading update'
-                : customTitle || updaterTr?.studioUpdateAvailable || 'Update Available'}
-          </h1>
-          <p className={`text-[14.5px] sm:text-[15px] ${textMuted} mt-1.5 font-normal leading-snug`}>
+        {/* BEGIN: HeaderSection */}
+        <motion.div layout={!prefersReduced} className={isFullUpdaterState ? "mb-6" : ""} data-purpose="modal-header">
+          <div className="flex items-center justify-between gap-3">
+            <h1
+              className={`text-[25px] sm:text-[27px] font-bold tracking-tight ${textPrimary} leading-tight`}
+              id="modal-title"
+            >
+              {isInstalling
+                ? updaterTr?.installing || 'Installing...'
+                : isProgressState
+                  ? updaterTr?.downloadingUpdate || 'Downloading update'
+                  : normalizedState === 'checking'
+                    ? updaterTr?.checkingForUpdates || 'Checking for updates'
+                    : normalizedState === 'idle'
+                      ? updaterTr?.upToDate || 'Livex is up to date'
+                      : isCheckError
+                        ? 'Couldn\'t check for updates'
+                        : customTitle || updaterTr?.studioUpdateAvailable || 'Update Available'}
+            </h1>
+            {normalizedState === 'idle' && (
+              <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                <CheckIconSvg />
+              </div>
+            )}
+          </div>
+          <p className={`text-[14px] sm:text-[14.5px] ${textMuted} mt-1.5 font-normal leading-snug`}>
             {isInstalling
               ? 'Waiting for installer... Please wait... Do not close the application.'
               : isProgressState
                 ? updaterTr?.downloadingPackage || 'Livex is downloading the latest app package.'
-                : customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.'}
+                : normalizedState === 'checking'
+                  ? customDescription || updaterTr?.connectingToServer || 'Connecting to release server...'
+                  : normalizedState === 'idle'
+                    ? fromVersion
+                      ? `You're running the latest version of Livex (${fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`}).`
+                      : 'You’re running the latest version of Livex.'
+                    : isCheckError
+                      ? error || 'Unable to contact the update server. Please check your network connection.'
+                      : customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.'}
           </p>
         </motion.div>
         {/* END: HeaderSection */}
 
-        {/* BEGIN: VersionComparison (Persistent) */}
-        <motion.div
-          layout={!prefersReduced}
-          className={`${panelBg} border ${panelBorder} rounded-2xl p-4 sm:px-5 sm:py-4 mb-6 flex items-center justify-between`}
-          data-purpose="version-status-panel"
-        >
-          {/* Current Version */}
-          <div className="flex-1 flex flex-col items-center gap-1.5">
-            <span className={`text-[11.5px] font-medium ${textDim} tracking-wide`}>
-              Current Version
-            </span>
-            <div className={`w-full max-w-[124px] py-2 px-3 ${currentPillBg} text-[15px] font-semibold rounded-full text-center`}>
-              {fromVersion ? (fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`) : 'Current'}
-            </div>
-          </div>
-
-          {/* Arrow Indicator */}
-          <div className="pt-5 px-2 text-[#636366] flex items-center justify-center shrink-0">
-            <svg
-              className="w-5 h-5 stroke-[1.8]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              viewBox="0 0 24 24"
+        {/* Indeterminate loading bar when checking for updates */}
+        <AnimatePresence>
+          {normalizedState === 'checking' && (
+            <motion.div
+              key="checking-indeterminate-bar"
+              initial={prefersReduced ? { opacity: 1 } : { opacity: 0, scaleY: 0 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              exit={prefersReduced ? { opacity: 0 } : { opacity: 0, scaleY: 0 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className={`w-full h-1.5 ${progressTrackBg} rounded-full overflow-hidden relative mt-4`}
             >
-              <path
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <motion.div
+                className="h-full bg-gradient-to-r from-[#4d94ff] to-[#5ea2ff] rounded-full progress-bar-glow"
+                animate={
+                  prefersReduced
+                    ? { opacity: [0.4, 1, 0.4] }
+                    : { x: ['-100%', '250%'] }
+                }
+                transition={
+                  prefersReduced
+                    ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+                    : { duration: 1.4, repeat: Infinity, ease: [0.4, 0, 0.2, 1] }
+                }
+                style={{ width: '45%' }}
               />
-            </svg>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* New Version */}
-          <div className="flex-1 flex flex-col items-center gap-1.5">
-            <span className={`text-[11.5px] font-medium ${textDim} tracking-wide`}>
-              New Version
-            </span>
-            <div className="w-full max-w-[124px] py-2 px-3 bg-[#387ff5] hover:bg-[#347ff8] text-white text-[15px] font-bold rounded-full text-center shadow-sm transition-colors">
-              {toVersion ? (toVersion.startsWith('v') ? toVersion : `v${toVersion}`) : 'Latest'}
-            </div>
-          </div>
-        </motion.div>
+        {/* BEGIN: VersionComparison (Only shown in full updater states) */}
+        <AnimatePresence>
+          {isFullUpdaterState && (
+            <motion.div
+              key="version-comparison-panel"
+              layout={!prefersReduced}
+              initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className={`${panelBg} border ${panelBorder} rounded-2xl p-4 sm:px-5 sm:py-4 mb-6 flex items-center justify-between`}
+              data-purpose="version-status-panel"
+            >
+              {/* Current Version */}
+              <div className="flex-1 flex flex-col items-center gap-1.5">
+                <span className={`text-[11.5px] font-medium ${textDim} tracking-wide`}>
+                  Current Version
+                </span>
+                <div className={`w-full max-w-[124px] py-2 px-3 ${currentPillBg} text-[15px] font-semibold rounded-full text-center`}>
+                  {fromVersion ? (fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`) : 'Current'}
+                </div>
+              </div>
+
+              {/* Arrow Indicator */}
+              <div className="pt-5 px-2 text-[#636366] flex items-center justify-center shrink-0">
+                <svg
+                  className="w-5 h-5 stroke-[1.8]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+
+              {/* New Version */}
+              <div className="flex-1 flex flex-col items-center gap-1.5">
+                <span className={`text-[11.5px] font-medium ${textDim} tracking-wide`}>
+                  New Version
+                </span>
+                <div className="w-full max-w-[124px] py-2 px-3 bg-[#387ff5] hover:bg-[#347ff8] text-white text-[15px] font-bold rounded-full text-center shadow-sm transition-colors">
+                  {toVersion ? (toVersion.startsWith('v') ? toVersion : `v${toVersion}`) : 'Latest'}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* END: VersionComparison */}
 
-        {/* BEGIN: ChangelogSection (Persistent) */}
-        <motion.div layout={!prefersReduced} className="mb-6 sm:mb-7" data-purpose="whats-new-section">
-          <h2 className={`text-[17px] sm:text-[18px] font-bold ${textPrimary} mb-3 tracking-tight`}>
-            {updaterTr?.whatsNew || "What's New"}
-          </h2>
-          <div className={`${panelBg} border ${panelBorder} rounded-2xl p-4 sm:p-5 max-h-[160px] sm:max-h-[175px] overflow-y-auto custom-scroll`}>
-            {customChangelog ? (
-              customChangelog
-            ) : (
-              <ul className={`space-y-2.5 text-[13.5px] ${textChangelog} leading-relaxed font-normal`}>
-                {changelogItems.map((item, idx) => (
-                  <li key={idx} className="flex items-start">
-                    <span
-                      className="inline-block w-1.5 h-1.5 rounded-full mt-[7px] mr-2.5 shrink-0"
-                      style={{ backgroundColor: resolvedIsLight ? '#94a3b8' : '#8e8e93' }}
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </motion.div>
+        {/* BEGIN: ChangelogSection (Only shown in full updater states) */}
+        <AnimatePresence>
+          {isFullUpdaterState && (
+            <motion.div
+              key="changelog-whats-new"
+              layout={!prefersReduced}
+              initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, delay: 0.03, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-6 sm:mb-7"
+              data-purpose="whats-new-section"
+            >
+              <h2 className={`text-[17px] sm:text-[18px] font-bold ${textPrimary} mb-3 tracking-tight`}>
+                {updaterTr?.whatsNew || "What's New"}
+              </h2>
+              <div className={`${panelBg} border ${panelBorder} rounded-2xl p-4 sm:p-5 max-h-[160px] sm:max-h-[175px] overflow-y-auto custom-scroll`}>
+                {customChangelog ? (
+                  customChangelog
+                ) : (
+                  <ul className={`space-y-2.5 text-[13.5px] ${textChangelog} leading-relaxed font-normal`}>
+                    {changelogItems.map((item, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span
+                          className="inline-block w-1.5 h-1.5 rounded-full mt-[7px] mr-2.5 shrink-0"
+                          style={{ backgroundColor: resolvedIsLight ? '#94a3b8' : '#8e8e93' }}
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* END: ChangelogSection */}
 
         {/* BEGIN: Morphing Bottom Action / Progress Section */}
         <motion.div layout={!prefersReduced} className="relative w-full" data-purpose="morphing-bottom-section">
           <AnimatePresence mode="wait" initial={false}>
-            {normalizedState === 'error' ? (
+            {isCheckError ? (
+              /* State Check Error: Small Compact Failure Popup */
+              <motion.div
+                key="state-check-error"
+                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="flex gap-2.5 mt-5 w-full"
+                data-purpose="check-error-buttons"
+              >
+                <button
+                  type="button"
+                  onClick={onRetry || handleUpdate}
+                  className="flex-1 h-[44px] bg-[#6ca0ff] hover:bg-[#5b94fd] active:scale-[0.985] text-[#001736] font-semibold text-[14.5px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md"
+                >
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismiss}
+                  className={`flex-1 h-[44px] ${laterBtnClass} font-medium text-[14.5px] rounded-full flex items-center justify-center transition-all duration-150`}
+                >
+                  Close
+                </button>
+              </motion.div>
+            ) : normalizedState === 'error' ? (
               /* State Error: Interrupted State with Retry / Cancel */
               <motion.div
                 key="state-error"
@@ -688,32 +822,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                   </button>
                 </div>
               </motion.div>
-            ) : normalizedState === 'checking' || normalizedState === 'idle' ? (
-              /* State Idle/Checking */
-              <motion.div
-                key="state-idle"
-                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-3"
-              >
-                <div className={`${progressCardBg} border ${progressCardBorder} rounded-2xl p-4 flex items-center justify-between text-left`}>
-                  <span className={`text-[15px] font-semibold ${textPrimary} tracking-tight`}>
-                    {normalizedState === 'checking'
-                      ? updaterTr?.checkingForUpdates || 'Checking for updates…'
-                      : updaterTr?.upToDate || 'Livex is up to date'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDismiss}
-                  className={`w-full h-[52px] ${cancelBtnClass} font-medium text-[15px] rounded-full transition-colors`}
-                >
-                  {updaterTr?.done || 'Close'}
-                </button>
-              </motion.div>
-            ) : (
+            ) : normalizedState === 'checking' || normalizedState === 'idle' ? null : (
               /* State 1 (Available) & State 2 (Downloading) & State 4 (Installing) */
               /* Unified Coordinated Morphing Surface */
               <div key="state-unified-surface" className="flex flex-col gap-3 w-full" data-purpose="action-buttons-group">
