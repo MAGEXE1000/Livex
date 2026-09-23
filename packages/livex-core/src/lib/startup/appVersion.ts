@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.37';
-export const NATIVE_VERSION_CODE = 40637;
-export const WEB_VERSION = '4.6.37';
+export const NATIVE_VERSION = '4.6.38';
+export const NATIVE_VERSION_CODE = 40638;
+export const WEB_VERSION = '4.6.38';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/19/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '9e08d87e';
+export const APP_COMMIT_SHA = '3a7117be';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/21/2026, 8:26:09 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/22/2026, 10:59:29 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,15 +96,19 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Improved',
+    heading: 'Added',
     items: [
-      'Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.',
+      'Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.',
+      'Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.',
+      'Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.',
     ],
   },
   {
-    heading: 'Fixed',
+    heading: 'Improved',
     items: [
-      'Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.',
+      'Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.',
+      'Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.',
+      'Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.',
     ],
   },
 ];
@@ -116,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.38',
+    date: '2026-09-22',
+    highlights: [
+      'Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.',
+      'Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.',
+      'Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.',
+      'Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.',
+      'Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.',
+      'Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.',
+    ],
+  },
   {
     version: '4.6.37',
     date: '2026-09-21',
@@ -204,17 +220,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.',
       'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.',
       'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.',
-    ],
-  },
-  {
-    version: '4.6.28',
-    date: '2026-09-19',
-    highlights: [
-      'Android Updater Lifecycle & SHA-256 Verification: Resolved a state machine stall where the native Android updater remained trapped at 100% progress during download verification, enforcing monotonic progress tracking and robust transition into the verified ready-to-install state.',
-      'Direct TopBar Header Morph: Eliminated the intermediate rectangular layout state during header morphing on scroll, providing a direct, continuous morph between collapsed and expanded pill states in `SharedFloatingHeader`.',
-      'Lightweight App-Entry Identity Transition: Replaced heavy multi-layer card morphing with an optimized app identity transition that provides immediate visual response, smooth logo fade/morph, and seamless sub-app revealing without layout stalls.',
-      'Zero-Layout-Thrashing Touch & Scroll Engine: Eliminated synchronous DOM measurements and forced layout reflows during `touchmove` events in `navScroll`, caching top-bar height measurements and ensuring rock-solid 60/120Hz scrolling across all screens.',
-      'App-Entry Pipeline Offload: Removed synchronous layout reads and expensive blur recalculations during sub-app mounting, ensuring instant transitions between Hub and internal apps.',
     ],
   },
 ];

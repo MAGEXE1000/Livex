@@ -1,9 +1,13 @@
-# Version 4.6.37
+# Version 4.6.38
 
-Release Date: 2026-09-21
+Release Date: 2026-09-22
+
+### Added
+- Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.
+- Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.
+- Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.
 
 ### Improved
-- Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.
-
-### Fixed
-- Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.
+- Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.
+- Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.
+- Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.

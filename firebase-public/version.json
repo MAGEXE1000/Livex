@@ -1,21 +1,25 @@
 {
   "platform": "web",
-  "version": "4.6.37",
-  "versionName": "4.6.37",
-  "versionCode": 40637,
-  "version_code": 40637,
-  "commit": "9e08d87e",
-  "releasedAt": "9/21/2026, 8:26:09 PM CST",
-  "buildTimestamp": "9/21/2026, 8:26:09 PM CST",
+  "version": "4.6.38",
+  "versionName": "4.6.38",
+  "versionCode": 40638,
+  "version_code": 40638,
+  "commit": "3a7117be",
+  "releasedAt": "9/22/2026, 10:59:29 PM CST",
+  "buildTimestamp": "9/22/2026, 10:59:29 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.\n• Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.",
-  "whatsNew": "• Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.\n• Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.",
+  "changelog": "• Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.\n• Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.\n• Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.\n• Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.\n• Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.\n• Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.",
+  "whatsNew": "• Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.\n• Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.\n• Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.\n• Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.\n• Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.\n• Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.",
   "releaseNotes": {
-    "improved": [
-      "Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher."
+    "added": [
+      "Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.",
+      "Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.",
+      "Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning."
     ],
-    "fixed": [
-      "Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel."
+    "improved": [
+      "Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.",
+      "Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.",
+      "Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design."
     ]
   },
   "mandatory": false
