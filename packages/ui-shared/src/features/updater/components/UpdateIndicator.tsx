@@ -528,10 +528,17 @@ export default function UpdateIndicator({
     };
   }, [phase, updater.updateAvailable]);
 
+  const isDebugOrDev =
+    Boolean(import.meta.env?.DEV) ||
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('studio_debug_mode') === 'true' ||
+        (window as any).__studio_debug_mode === true));
+  const isNativeOrPreview = Capacitor.isNativePlatform() || isDebugOrDev;
+
   if (!updater.updateAvailable) {
     if (!open) return null;
-    // Only show the full update modal on native
-    if (!Capacitor.isNativePlatform()) return null;
+    // Only show the full update modal on native or debug preview
+    if (!isNativeOrPreview) return null;
     return (
       <UpdateModal
         fromLabel={APP_VERSION_LABEL}
@@ -551,7 +558,7 @@ export default function UpdateIndicator({
   }
 
   /* ── WEB-ONLY: slim non-blocking refresh banner ─────────────────────── */
-  if (!Capacitor.isNativePlatform()) {
+  if (!isNativeOrPreview) {
     if (webBannerDismissed) return null;
     return (
       <>
@@ -829,8 +836,8 @@ export default function UpdateIndicator({
     );
   }
 
-  // Only show the full update modal on native
-  if (!Capacitor.isNativePlatform()) return null;
+  // Only show the full update modal on native or preview
+  if (!isNativeOrPreview) return null;
 
   return (
     <>
