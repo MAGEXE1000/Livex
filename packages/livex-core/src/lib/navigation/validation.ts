@@ -97,7 +97,7 @@ export function normalizeAndValidateRoute(route: Partial<NavigationRoute>): Navi
     };
 
     if (route.tab) {
-      const validTabs = ['home', 'settings', 'profile', 'help'];
+      const validTabs = ['home', 'settings', 'profile', 'help', 'assistant'];
       if (validTabs.includes(route.tab)) {
         normalized.tab = route.tab;
       }
@@ -122,7 +122,7 @@ export function normalizeAndValidateRoute(route: Partial<NavigationRoute>): Navi
 
     // Normalize Hub routes to prevent duplicate/unnecessary segments
     if (normalized.app === 'hub') {
-      if (!normalized.tab && normalized.page && ['home', 'settings', 'profile', 'help'].includes(normalized.page)) {
+      if (!normalized.tab && normalized.page && ['home', 'settings', 'profile', 'help', 'assistant'].includes(normalized.page)) {
         normalized.tab = normalized.page as any;
       }
       if (normalized.page === 'main') {

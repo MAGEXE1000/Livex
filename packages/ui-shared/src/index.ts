@@ -106,3 +106,4 @@ export { SharedAppShell, type SharedAppShellProps } from './shared/layout/Shared
 export * from './components/motion';
 export { MorphingModal, type MorphingModalProps } from './components/motion/morphing-modal';
 export { useAppReducedMotion } from './hooks/useAppReducedMotion';
+export * from './features/assistant';

@@ -1,6 +1,6 @@
 export type Theme = 'dark' | 'light' | 'system';
 
-export type HubTab = 'home' | 'settings' | 'profile' | 'help';
+export type HubTab = 'home' | 'settings' | 'profile' | 'help' | 'assistant';
 export type HelpPageId =
   | 'help-center'
   | 'faq'

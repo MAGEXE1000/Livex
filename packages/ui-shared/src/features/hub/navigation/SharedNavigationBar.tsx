@@ -50,6 +50,7 @@ export interface SharedNavigationItem {
   label: string;
   isActive: boolean;
   onClick: () => void;
+  isSatellite?: boolean;
 }
 
 export interface SharedNavigationBarProps {
@@ -361,7 +362,9 @@ export function SharedNavigationBar({
   const idealSlotWidth = isSwitcherOpen
     ? 46
     : isHub
-      ? 82
+      ? totalSlots >= 4
+        ? 68
+        : 82
       : totalSlots >= 4
         ? 60
         : totalSlots === 2
@@ -1120,52 +1123,72 @@ export function SharedNavigationBar({
                         pointerEvents: 'auto',
                       }}
                     >
-                      {(items || []).map((item, index) => (
-                        <motion.div
-                          key={item.key}
-                          initial={{ opacity: 0, scale: 0.8, y: -2 }}
-                          animate={{
-                            opacity: 1,
-                            scale: 1,
-                            y: 0,
-                            transition: {
-                              type: 'spring',
-                              stiffness: 360,
-                              damping: 24,
-                              mass: 0.6,
-                            },
-                          }}
-                          exit={{
-                            opacity: 0,
-                            scale: 0.8,
-                            transition: { duration: 0.1, ease: 'easeIn' },
-                          }}
-                          style={{
-                            flex: 1,
-                            height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <NavigationItem
-                            item={item}
-                            index={index}
-                            onClick={() => {
-                              if (isEffectiveHidden) return;
-                              if (performance.now() - pointerUpHandledAtRef.current < 100) return;
-                              navigationEpochRef.current += 1;
-                              setNavigationEpoch(navigationEpochRef.current);
-                              item.onClick();
-                            }}
-                            isActive={item.isActive}
-                            isLight={isLight}
-                            isSwitcherOpen={false}
-                            totalSlots={totalSlots}
-                            animationEpoch={navigationEpoch}
-                          />
-                        </motion.div>
-                      ))}
+                      {(items || []).map((item, index) => {
+                        const showDivider = item.isSatellite || item.key === 'assistant';
+                        return (
+                          <React.Fragment key={item.key}>
+                            {showDivider && (
+                              <div
+                                style={{
+                                  width: '1px',
+                                  height: '24px',
+                                  background: isLight
+                                    ? 'rgba(0, 0, 0, 0.08)'
+                                    : 'rgba(255, 255, 255, 0.12)',
+                                  flexShrink: 0,
+                                  margin: '0 -1px',
+                                  zIndex: 1,
+                                  pointerEvents: 'none',
+                                }}
+                              />
+                            )}
+                            <motion.div
+                              key={item.key}
+                              initial={{ opacity: 0, scale: 0.8, y: -2 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                                y: 0,
+                                transition: {
+                                  type: 'spring',
+                                  stiffness: 360,
+                                  damping: 24,
+                                  mass: 0.6,
+                                },
+                              }}
+                              exit={{
+                                opacity: 0,
+                                scale: 0.8,
+                                transition: { duration: 0.1, ease: 'easeIn' },
+                              }}
+                              style={{
+                                flex: 1,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <NavigationItem
+                                item={item}
+                                index={index}
+                                onClick={() => {
+                                  if (isEffectiveHidden) return;
+                                  if (performance.now() - pointerUpHandledAtRef.current < 100) return;
+                                  navigationEpochRef.current += 1;
+                                  setNavigationEpoch(navigationEpochRef.current);
+                                  item.onClick();
+                                }}
+                                isActive={item.isActive}
+                                isLight={isLight}
+                                isSwitcherOpen={false}
+                                totalSlots={totalSlots}
+                                animationEpoch={navigationEpoch}
+                              />
+                            </motion.div>
+                          </React.Fragment>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>

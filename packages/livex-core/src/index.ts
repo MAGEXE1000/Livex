@@ -119,3 +119,10 @@ export * from './lib/stageCollaboration/CollabDiagnostics';
 export * from './lib/search/searchService';
 export * from './lib/audio/mediaSessionCoordinator';
 export * from './lib/tuner/index';
+
+// Native Music AI Assistant
+export * from './types/assistant';
+export * from './store/useAssistantStore';
+export * from './lib/assistant/contextAggregator';
+export * from './lib/assistant/localMusicIntelligence';
+export * from './lib/assistant/assistantApiClient';

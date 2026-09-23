@@ -1,6 +1,6 @@
 export interface NavigationRoute {
   app: 'hub' | 'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex' | 'devtools';
-  tab?: 'home' | 'settings' | 'profile' | 'help';
+  tab?: 'home' | 'settings' | 'profile' | 'help' | 'assistant';
   page?: string; // Settings pages, help pages, sub-app panels (e.g. 'library', 'songs')
   subView?: string; // Nested views (e.g. 'dashboard', 'logs', 'practice')
   id?: string; // ID of active preset, chord, or take

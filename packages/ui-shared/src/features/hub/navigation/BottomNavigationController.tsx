@@ -19,7 +19,9 @@ import {
   useBackHandler,
   useShallow,
   useChordStore,
+  useAssistantStore,
 } from '@workspace/livex-core';
+import { LivexAssistantMascot } from '../../assistant/components/LivexAssistantMascot';
 import { SharedNavigationBar } from './SharedNavigationBar';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
 import { IconSongs, IconLibrary, IconSettings } from '../icons/NavIcons';
@@ -68,6 +70,7 @@ export function BottomNavigationController() {
   const toggleProfileMenu = useBottomNavigationStore((s) => s.toggleProfileMenu);
   const storeVisible = useBottomNavigationStore((s) => s.visible);
   const isLocked = useBottomNavigationStore((s) => s.isLocked);
+  const mascotState = useAssistantStore((s) => s.mascotState);
 
   useBackHandler(
     'overlay',
@@ -330,6 +333,23 @@ export function BottomNavigationController() {
             NavigationDispatcher.push({ app: 'hub', tab: 'settings' });
           },
         },
+        {
+          key: 'assistant',
+          icon: (
+            <LivexAssistantMascot
+              size={24}
+              mode="dock"
+              state={mascotState}
+              interactive={false}
+            />
+          ),
+          label: 'AI',
+          isActive: activeTab === 'assistant',
+          isSatellite: true,
+          onClick: () => {
+            NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+          },
+        },
       ];
     }
 
@@ -400,6 +420,7 @@ export function BottomNavigationController() {
     profileIcon,
     setProfileMenuOpen,
     toggleProfileMenu,
+    mascotState,
   ]);
 
   const isDrumexEditor = currentApp === 'drumex' && (currentRoute as any)?.subView === 'editor';

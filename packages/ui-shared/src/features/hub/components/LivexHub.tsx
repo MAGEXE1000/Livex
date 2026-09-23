@@ -130,6 +130,7 @@ import AccountCard, {
   AccountDangerZone,
   AccountSettingsPage,
 } from '../../auth/components/AccountCard';
+import { AssistantChatView } from '../../assistant/pages/AssistantChatView';
 
 import {
   HubTab,
@@ -734,6 +735,7 @@ export default function LivexHub() {
   const profileScrollRef = useRef<HTMLDivElement>(null);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
   const helpScrollRef = useRef<HTMLDivElement>(null);
+  const assistantScrollRef = useRef<HTMLDivElement>(null);
   const launchTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const lastUserRef = useRef<AuthUser | null>(null);
@@ -745,7 +747,9 @@ export default function LivexHub() {
         ? profileScrollRef
         : tab === 'settings'
           ? settingsScrollRef
-          : helpScrollRef;
+          : tab === 'assistant'
+            ? assistantScrollRef
+            : helpScrollRef;
 
   useScrollHide(activeScrollRef, tab);
 
@@ -1110,7 +1114,7 @@ export default function LivexHub() {
       >
         <SharedNavigationContainer
           activeView={tab}
-          viewOrder={['home', 'settings', 'profile', 'help']}
+          viewOrder={['home', 'settings', 'profile', 'help', 'assistant']}
           variant="tab"
         >
           {(tabId) => {
@@ -1121,7 +1125,9 @@ export default function LivexHub() {
                   ? profileScrollRef
                   : tabId === 'settings'
                     ? settingsScrollRef
-                    : helpScrollRef;
+                    : tabId === 'assistant'
+                      ? assistantScrollRef
+                      : helpScrollRef;
             return (
               <div
                 ref={currentScrollRef}
@@ -2395,6 +2401,10 @@ export default function LivexHub() {
                   <Suspense fallback={null}>
                     <HubHelp accent={accent} authUser={authUser} tab={tab} setTab={setTab} />
                   </Suspense>
+                )}
+                {/* 🤖 ASSISTANT TAB */}
+                {tabId === 'assistant' && (
+                  <AssistantChatView />
                 )}
               </div>
             );
