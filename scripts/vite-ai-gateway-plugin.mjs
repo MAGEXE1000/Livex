@@ -32,14 +32,15 @@ function findEnvKey(keyName) {
   return undefined;
 }
 
-const SYSTEM_PROMPT = `You are the Livex Music AI, an expert music theorist, multi-instrumentalist producer, audio engineer, and global musicologist.
+const SYSTEM_PROMPT = `You are the Livex Music AI, an expert music theorist, multi-instrumentalist producer, audio engineer, and global musicologist. While you specialize in music, audio engineering, acoustics, and musicology, you also assist musicians with general reasoning, mathematics, logic, and general user queries with the same directness and accuracy.
 
 Core Directives:
 1. Conciseness & Directness:
-   - Provide direct, dense, and technically rigorous musical answers.
+   - Provide direct, dense, and technically rigorous answers. For music queries, deliver deep theoretical, production, or gear expertise. For mathematical, logical, or general queries, answer accurately, immediately, and concisely without refusing.
    - Strictly do NOT use emojis or decorative icons anywhere in your response.
    - Strictly do NOT use conversational pleasantries, introductory filler (e.g. "Sure!", "Certainly!", "I would be happy to help", "Great question"), or conversational sign-offs (e.g. "Keep creating!", "Let me know if you need more help!").
    - Respond in the language used by the user (multilingual fluency in English, Spanish, Japanese, Portuguese, German, French, etc.).
+   - If using reasoning tags like <think>...</think>, always output your final answer and explanation outside of the think tags.
 
 2. Music Theory Rigor:
    - Always format chords with clean markdown backticks: e.g. \`Dbmaj9\`, \`F#m7(b5)\`, \`G7(#9)\`, \`C13\`.
@@ -303,6 +304,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                 const decoder = new TextDecoder('utf-8');
                 let inThinkTag = false;
                 let thinkBuffer = '';
+                let collectedThoughts = '';
                 let hasEmittedSolving = false;
                 let hasEmittedComposing = false;
                 let fullResponseText = '';
@@ -348,13 +350,16 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                     } else {
                       const closeIdx = thinkBuffer.indexOf('</think>');
                       if (closeIdx !== -1) {
+                        collectedThoughts += thinkBuffer.slice(0, closeIdx);
                         inThinkTag = false;
                         thinkBuffer = thinkBuffer.slice(closeIdx + 8);
                       } else {
                         const partial = thinkBuffer.match(/<\/?t?h?i?n?k?$/);
                         if (partial && partial.index !== undefined) {
+                          collectedThoughts += thinkBuffer.slice(0, partial.index);
                           thinkBuffer = partial[0];
                         } else {
+                          collectedThoughts += thinkBuffer;
                           thinkBuffer = '';
                         }
                         break;
@@ -390,6 +395,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                       // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM)
                       if (delta.reasoning_content) {
+                        collectedThoughts += delta.reasoning_content;
                         if (!hasEmittedSolving) {
                           hasEmittedSolving = true;
                           res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
@@ -405,9 +411,22 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                   }
                 }
 
-                if (thinkBuffer && !inThinkTag) {
-                  emitText(thinkBuffer);
+                if (thinkBuffer) {
+                  if (inThinkTag) {
+                    collectedThoughts += thinkBuffer;
+                  } else {
+                    emitText(thinkBuffer);
+                  }
                   thinkBuffer = '';
+                }
+
+                if (!fullResponseText.trim() && collectedThoughts.trim()) {
+                  const cleanedThoughts = collectedThoughts
+                    .replace(/<\/?think>/gi, '')
+                    .trim();
+                  if (cleanedThoughts) {
+                    emitText(cleanedThoughts);
+                  }
                 }
 
                 if (!fullResponseText.trim()) {

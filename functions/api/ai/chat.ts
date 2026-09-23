@@ -52,14 +52,15 @@ function checkRateLimit(ipOrUid: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are the Livex Music AI, an expert music theorist, multi-instrumentalist producer, audio engineer, and global musicologist.
+const SYSTEM_PROMPT = `You are the Livex Music AI, an expert music theorist, multi-instrumentalist producer, audio engineer, and global musicologist. While you specialize in music, audio engineering, acoustics, and musicology, you also assist musicians with general reasoning, mathematics, logic, and general user queries with the same directness and accuracy.
 
 Core Directives:
 1. Conciseness & Directness:
-   - Provide direct, dense, and technically rigorous musical answers.
+   - Provide direct, dense, and technically rigorous answers. For music queries, deliver deep theoretical, production, or gear expertise. For mathematical, logical, or general queries, answer accurately, immediately, and concisely without refusing.
    - Strictly do NOT use emojis or decorative icons anywhere in your response.
    - Strictly do NOT use conversational pleasantries, introductory filler (e.g. "Sure!", "Certainly!", "I would be happy to help", "Great question"), or conversational sign-offs (e.g. "Keep creating!", "Let me know if you need more help!").
    - Respond in the language used by the user (multilingual fluency in English, Spanish, Japanese, Portuguese, German, French, etc.).
+   - If using reasoning tags like <think>...</think>, always output your final answer and explanation outside of the think tags.
 
 2. Music Theory Rigor:
    - Always format chords with clean markdown backticks: e.g. \`Dbmaj9\`, \`F#m7(b5)\`, \`G7(#9)\`, \`C13\`.
@@ -148,6 +149,7 @@ function extractStructuredRecommendation(text: string, prompt: string) {
 class ReasoningStreamParser {
   private inThinkTag = false;
   private thinkBuffer = '';
+  private collectedThoughts = '';
   private hasEmittedSolving = false;
   private hasEmittedComposing = false;
   public fullResponseText = '';
@@ -181,7 +183,10 @@ class ReasoningStreamParser {
     } catch {}
   }
 
-  public async onReasoningDelta(_reasoningText: string) {
+  public async onReasoningDelta(reasoningText: string) {
+    if (reasoningText) {
+      this.collectedThoughts += reasoningText;
+    }
     if (!this.hasEmittedSolving) {
       this.hasEmittedSolving = true;
       await this.onState('solving');
@@ -225,14 +230,17 @@ class ReasoningStreamParser {
         // Inside think tag
         const closeIdx = this.thinkBuffer.indexOf('</think>');
         if (closeIdx !== -1) {
+          this.collectedThoughts += this.thinkBuffer.slice(0, closeIdx);
           this.inThinkTag = false;
           this.thinkBuffer = this.thinkBuffer.slice(closeIdx + 8);
         } else {
           // Check for trailing partial closing tag
           const partial = this.thinkBuffer.match(/<\/?t?h?i?n?k?$/);
           if (partial && partial.index !== undefined) {
+            this.collectedThoughts += this.thinkBuffer.slice(0, partial.index);
             this.thinkBuffer = partial[0];
           } else {
+            this.collectedThoughts += this.thinkBuffer;
             this.thinkBuffer = '';
           }
           break;
@@ -256,9 +264,23 @@ class ReasoningStreamParser {
   }
 
   public async finish(prompt: string) {
-    if (this.thinkBuffer && !this.inThinkTag) {
-      await this.emitContent(this.thinkBuffer);
+    if (this.thinkBuffer) {
+      if (this.inThinkTag) {
+        this.collectedThoughts += this.thinkBuffer;
+      } else {
+        await this.emitContent(this.thinkBuffer);
+      }
       this.thinkBuffer = '';
+    }
+
+    if (!this.fullResponseText.trim() && this.collectedThoughts.trim()) {
+      // Model generated content exclusively within reasoning tags. Recover cleaned thought text.
+      const cleanedThoughts = this.collectedThoughts
+        .replace(/<\/?think>/gi, '')
+        .trim();
+      if (cleanedThoughts) {
+        await this.emitContent(cleanedThoughts);
+      }
     }
 
     if (!this.fullResponseText.trim()) {
@@ -689,6 +711,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
       ];
 
       const candidateModels = [
+        body?.model,
         env.OPENAI_COMPATIBLE_MODEL,
         '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
         '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
@@ -697,60 +720,87 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
       ].filter(Boolean) as string[];
 
       let aiStream: any = null;
+      let activeReader: any = null;
+      let firstChunk: any = null;
+
       for (const modelCandidate of candidateModels) {
         try {
-          aiStream = await env.AI.run(modelCandidate, {
+          const stream = await env.AI.run(modelCandidate, {
             messages,
             stream: true,
             max_tokens: 2048,
           });
-          if (aiStream) break;
+          if (stream) {
+            const reader = stream.getReader();
+            const chunk = await reader.read();
+            if (!chunk.done || (chunk.value && chunk.value.length > 0)) {
+              aiStream = stream;
+              activeReader = reader;
+              firstChunk = chunk;
+              break;
+            }
+          }
         } catch (candidateErr) {
           console.warn(`[Edge Gateway] Workers AI candidate ${modelCandidate} failed:`, candidateErr);
         }
       }
 
-      if (aiStream) {
+      if (aiStream && activeReader && firstChunk) {
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
-        const reader = aiStream.getReader();
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
         const parser = new ReasoningStreamParser(writer, encoder);
 
         (async () => {
           let buffer = '';
+          const processChunkValue = async (value: Uint8Array) => {
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith(':')) continue;
+              if (!trimmed.startsWith('data: ')) continue;
+
+              const dataStr = trimmed.slice(6).trim();
+              if (dataStr === '[DONE]') return false;
+
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.error) {
+                  await parser.onError(parsed.error.message || String(parsed.error));
+                  return false;
+                }
+                const chunkText = parsed.response || parsed.delta || parsed.choices?.[0]?.delta?.content;
+                if (typeof chunkText === 'string' && chunkText) {
+                  await parser.onContentDelta(chunkText);
+                }
+              } catch {}
+            }
+            return true;
+          };
+
           try {
             await parser.onConnecting();
 
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith(':')) continue;
-                if (!trimmed.startsWith('data: ')) continue;
-
-                const dataStr = trimmed.slice(6).trim();
-                if (dataStr === '[DONE]') break;
-
-                try {
-                  const parsed = JSON.parse(dataStr);
-                  if (parsed.error) {
-                    await parser.onError(parsed.error.message || String(parsed.error));
-                    break;
-                  }
-                  const chunkText = parsed.response || parsed.delta || parsed.choices?.[0]?.delta?.content;
-                  if (typeof chunkText === 'string' && chunkText) {
-                    await parser.onContentDelta(chunkText);
-                  }
-                } catch {}
+            if (firstChunk.value) {
+              const keepGoing = await processChunkValue(firstChunk.value);
+              if (!keepGoing) {
+                await parser.finish(prompt);
+                return;
               }
+            }
+
+            while (true) {
+              const { done, value } = await activeReader.read();
+              if (done) {
+                if (value) await processChunkValue(value);
+                break;
+              }
+              const keepGoing = await processChunkValue(value);
+              if (!keepGoing) break;
             }
 
             await parser.finish(prompt);
