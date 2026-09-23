@@ -175,26 +175,68 @@ async function run() {
 
   // 4. Submit message to trigger streaming and capture Stop button morph
   console.log('[Test] Submitting message to trigger streaming mode...');
+  const sendStartTime = Date.now();
   await page.evaluate(() => {
+    window.__ttftStartTime = performance.now();
+    window.__firstTokenTime = null;
     if (window.__studioAssistantStore) {
-      window.__studioAssistantStore.getState().sendMessage('Suggest a lush Neo-Soul chord progression with 9th and 13th extensions for guitar and bass.');
+      const unsub = window.__studioAssistantStore.subscribe((state) => {
+        const lastMsg = state.messages[state.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content && !window.__firstTokenTime) {
+          window.__firstTokenTime = performance.now();
+        }
+      });
+      window.__studioAssistantStore.getState().sendMessage('Suggest a lush Neo-Soul chord progression with 9th and 13th extensions for guitar and bass.').finally(() => {
+        unsub();
+      });
     }
   });
 
   // Brief pause to capture active streaming with stop button
-  await new Promise((r) => setTimeout(r, 120));
+  await new Promise((r) => setTimeout(r, 60));
   const streamingPath = path.join(artifactDir, 'verify_agent_chat_pill_streaming.png');
   const proStreamingPath = path.join(artifactDir, 'verify_pro_streaming.png');
   await page.screenshot({ path: streamingPath });
   await page.screenshot({ path: proStreamingPath });
   console.log(`Saved screenshot: ${proStreamingPath}`);
 
-  // 5. Wait for streaming to complete (local intelligence takes ~1.5s)
+  // 5. Wait for streaming to complete
   console.log('[Test] Waiting for response to stream and render cards...');
   await page.waitForFunction(() => {
     return window.__studioAssistantStore && window.__studioAssistantStore.getState().status === 'idle';
   }, { timeout: 10000 }).catch(() => {});
-  await new Promise((r) => setTimeout(r, 1200));
+  
+  const metrics = await page.evaluate(() => {
+    const state = window.__studioAssistantStore?.getState();
+    const lastMsg = state?.messages[state.messages.length - 1];
+    const ttft = window.__firstTokenTime
+      ? Math.round(window.__firstTokenTime - window.__ttftStartTime)
+      : 0;
+    return {
+      ttft,
+      content: lastMsg?.content || '',
+      recsCount: lastMsg?.recommendations?.length || 0,
+      totalMessages: state?.messages?.length || 0,
+    };
+  });
+
+  const totalDuration = Date.now() - sendStartTime;
+  console.log(`[Metrics] Time to First Token (TTFT): ${metrics.ttft}ms`);
+  console.log(`[Metrics] Total response completion time: ${totalDuration}ms`);
+  console.log(`[Metrics] Received recommendations: ${metrics.recsCount}`);
+
+  // Assert no emojis in response
+  const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+  const hasEmoji = emojiRegex.test(metrics.content);
+  console.log(`[Quality Check] Response contains emojis: ${hasEmoji ? 'FAIL (emojis detected)' : 'PASS (0 emojis)'}`);
+
+  // Assert no conversational filler
+  const hasFiller = metrics.content.includes("I'm your musical pair-programmer") ||
+    metrics.content.includes("What are we creating today?") ||
+    metrics.content.includes("Keep creating!");
+  console.log(`[Quality Check] Response contains conversational filler: ${hasFiller ? 'FAIL (filler detected)' : 'PASS (clean professional)'}`);
+
+  await new Promise((r) => setTimeout(r, 600));
 
   const completedPath = path.join(artifactDir, 'verify_assistant_response_completed.png');
   const proCompletedPath = path.join(artifactDir, 'verify_pro_completed_chat.png');

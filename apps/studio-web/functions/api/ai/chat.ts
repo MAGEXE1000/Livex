@@ -23,8 +23,8 @@ function checkRateLimit(ipOrUid: string): boolean {
     return true;
   }
 
-  if (entry.count >= 30) {
-    return false; // Rate limit exceeded (30 req / hr)
+  if (entry.count >= 60) {
+    return false; // Rate limit exceeded (60 req / hr)
   }
 
   entry.count += 1;
@@ -75,20 +75,28 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     });
   }
 
-  const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
+  const history = Array.isArray(body?.history) ? body.history.slice(-6) : [];
   const musicalContext = body?.context || {};
+
+  const systemPrompt = `You are the Livex Music AI Assistant, a professional music theorist, audio engineer, and studio advisor.
+Active musical context: ${JSON.stringify(musicalContext)}.
+
+Directives:
+- Provide direct, concise, and technically accurate musical answers.
+- Respond in the language used by the user.
+- Strictly do NOT use emojis or decorative icons anywhere in your response.
+- Do NOT use conversational pleasantries, introductory filler (e.g. "Sure!", "Certainly!", "I would be happy to help"), or conversational sign-offs (e.g. "Keep creating!", "Let me know if you need more help!").
+- Format chords with clean markdown backticks (e.g. \`Dbmaj9\`, \`G7(b9)\`).
+- Format harmonic analysis with Roman numerals (e.g. \`ii9 -> V13 -> Imaj9\`).
+- When asked for amplifier settings or pedal chains, specify exact parameter values and signal path order.
+- Maintain high information density and professional studio tone at all times.`;
 
   // 4. Upstream Provider Selection
   const provider = env.AI_ACTIVE_PROVIDER || (env.ANTHROPIC_API_KEY ? 'anthropic' : env.OPENAI_API_KEY ? 'openai' : 'local');
 
-  // If Anthropic API key is available
+  // Anthropic Provider Branch (claude-3-5-haiku-20241022)
   if (provider === 'anthropic' && env.ANTHROPIC_API_KEY) {
     try {
-      const systemPrompt = `You are the Livex Music AI Assistant, an expert music theorist, producer, audio engineer, and gear guru.
-You guide musicians with chord progressions, guitar/bass tones, drum grooves, vocal coaching, and Livex tools.
-Current user app context: ${JSON.stringify(musicalContext)}.
-Be concise, practical, inspiring, and format chords and values cleanly.`;
-
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -146,7 +154,7 @@ Be concise, practical, inspiring, and format chords and values cleanly.`;
             }
             await writer.write(encoder.encode('data: [DONE]\n\n'));
           } catch (err) {
-            console.error('[Edge Gateway] Stream error:', err);
+            console.error('[Edge Gateway] Anthropic stream error:', err);
           } finally {
             await writer.close();
           }
@@ -159,18 +167,90 @@ Be concise, practical, inspiring, and format chords and values cleanly.`;
     }
   }
 
-  // 5. Built-in Edge Stream Fallback
-  // If no external provider key is active or upstream failed, stream structured response cleanly
+  // OpenAI Provider Branch (gpt-4o-mini)
+  if (provider === 'openai' && env.OPENAI_API_KEY) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...history.map((m: any) => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: m.content,
+            })),
+            { role: 'user', content: prompt },
+          ],
+          stream: true,
+          max_tokens: 1024,
+        }),
+      });
+
+      if (response.ok && response.body) {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const reader = response.body.getReader();
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        (async () => {
+          let buffer = '';
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const dataStr = line.slice(6).trim();
+                  if (dataStr === '[DONE]') continue;
+                  try {
+                    const parsed = JSON.parse(dataStr);
+                    const delta = parsed.choices?.[0]?.delta?.content;
+                    if (delta) {
+                      await writer.write(
+                        encoder.encode(`data: ${JSON.stringify({ delta })}\n\n`)
+                      );
+                    }
+                  } catch {}
+                }
+              }
+            }
+            await writer.write(encoder.encode('data: [DONE]\n\n'));
+          } catch (err) {
+            console.error('[Edge Gateway] OpenAI stream error:', err);
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, { headers: corsHeaders });
+      }
+    } catch (err) {
+      console.warn('[Edge Gateway] OpenAI error:', err);
+    }
+  }
+
+  // 5. Built-in Edge Stream Fallback (Concise, technical, emoji-free)
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
 
   (async () => {
     try {
-      const greeting = `### 🎶 Livex Music Assistant\n\nI received your query: *"${prompt}"*.\n\n`;
-      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: greeting })}\n\n`));
+      const header = `### Livex Music Assistant\n\n`;
+      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: header })}\n\n`));
 
-      const advice = `For best results in your music workflow:\n- Explore **Chordex** to practice chord voicings and harmonize melodies.\n- Use **Drumex** to dial in metronome tempos and sync groove swing.\n- Use **Vocalex** for real-time pitch tracking and multi-voice vocal harmonies.\n\nKeep creating!`;
+      const advice = `Analysis for: "${prompt}"\n\nRelevant tools in Livex:\n- **Chordex:** Voicing analysis and chord transposition.\n- **Drumex:** Metronome tempo calibration and groove sync.\n- **Vocalex:** Real-time pitch tracking and interval harmonization.`;
       const words = advice.split(/(\s+)/);
 
       for (const w of words) {

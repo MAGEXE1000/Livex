@@ -78,6 +78,50 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(res.content).toContain('Vocal Warmup');
       expect(res.recommendations.some((r) => r.type === 'practice_routine')).toBe(true);
     });
+
+    it('enforces professional tone: zero emojis across all response categories', () => {
+      const queries = [
+        'Gilmour tone settings',
+        'Suggest a jazz progression',
+        'Funk drum beat',
+        'Dorian vs Aeolian modes',
+        'Vocal warmup exercises',
+        'What is Livex?',
+        'Unknown random musical query',
+      ];
+
+      // Unicode regex matching standard emoji ranges
+      const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+
+      for (const q of queries) {
+        const res = queryLocalMusicIntelligence(q);
+        expect(emojiRegex.test(res.content)).toBe(false);
+      }
+    });
+
+    it('enforces concise technical focus: free of conversational filler phrases', () => {
+      const queries = [
+        'Gilmour tone settings',
+        'Suggest a jazz progression',
+        'Funk drum beat',
+        'What is Livex?',
+      ];
+
+      const fillerPhrases = [
+        "I'm your musical pair-programmer",
+        'What are we creating today?',
+        'Keep creating!',
+        "I've attached an interactive",
+        'You can tap the Chord Progression Card below to explore',
+      ];
+
+      for (const q of queries) {
+        const res = queryLocalMusicIntelligence(q);
+        for (const filler of fillerPhrases) {
+          expect(res.content).not.toContain(filler);
+        }
+      }
+    });
   });
 
   describe('Assistant Store & Mascot State Transitions', () => {
@@ -102,8 +146,9 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(useAssistantStore.getState().mascotState).toBe('idle');
     });
 
-    it('handles sendMessage streaming and completion in local mode', async () => {
+    it('handles sendMessage streaming and completion in local mode without artificial delay', async () => {
       const store = useAssistantStore.getState();
+      const startTime = performance.now();
       const sendPromise = store.sendMessage('Suggest a jazz progression');
 
       // Immediate state check
@@ -111,8 +156,11 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(['thinking', 'responding']).toContain(useAssistantStore.getState().mascotState);
 
       await sendPromise;
+      const elapsed = performance.now() - startTime;
 
-      // Completion check
+      // Completion check - should complete in well under 500ms (previously 2600ms+)
+      expect(elapsed).toBeLessThan(500);
+
       const finalState = useAssistantStore.getState();
       expect(finalState.status).toBe('idle');
       expect(finalState.messages.length).toBe(2);

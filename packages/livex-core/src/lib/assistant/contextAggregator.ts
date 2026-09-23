@@ -5,8 +5,8 @@ import { useDrumStore } from '../../store/useDrumStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 /**
- * Aggregates a non-intrusive snapshot of Livex's current musical state.
- * Safely handles null/undefined sub-stores so it never throws.
+ * Aggregates a compact, non-intrusive snapshot of Livex's current musical state.
+ * Omits default/empty values to keep transmission payload minimal.
  */
 export function getMusicalContextSnapshot(): MusicalContextSnapshot {
   try {
@@ -20,7 +20,7 @@ export function getMusicalContextSnapshot(): MusicalContextSnapshot {
 
     const currentSongTitle = chordState?.activeSong?.title || chordState?.currentSong?.title;
     const activeKey = chordState?.selectedKey || chordState?.activeKey || chordState?.key;
-    const activeBpm = drumState?.bpm || chordState?.bpm || 120;
+    const activeBpm = drumState?.bpm || chordState?.bpm;
     const activeProgression = Array.isArray(chordState?.activeProgression)
       ? chordState.activeProgression
       : Array.isArray(chordState?.chords)
@@ -28,19 +28,21 @@ export function getMusicalContextSnapshot(): MusicalContextSnapshot {
         : undefined;
 
     const instrument = settingsState?.instrument || chordState?.instrument || 'guitar';
-    const tuning = chordState?.tuning || 'E Standard (E A D G B E)';
+    const tuning = chordState?.tuning;
 
-    return {
+    const snapshot: MusicalContextSnapshot = {
       activeApp,
-      currentSongTitle,
-      activeKey,
-      activeBpm,
-      activeProgression,
       instrument,
-      tuning,
     };
+
+    if (currentSongTitle) snapshot.currentSongTitle = currentSongTitle;
+    if (activeKey) snapshot.activeKey = activeKey;
+    if (activeBpm && activeBpm !== 120) snapshot.activeBpm = activeBpm;
+    if (activeProgression && activeProgression.length > 0) snapshot.activeProgression = activeProgression;
+    if (tuning && tuning !== 'E Standard (E A D G B E)') snapshot.tuning = tuning;
+
+    return snapshot;
   } catch (err) {
-    console.warn('[LivexAssistant] Context aggregation fallback:', err);
     return {
       activeApp: 'hub',
       instrument: 'guitar',

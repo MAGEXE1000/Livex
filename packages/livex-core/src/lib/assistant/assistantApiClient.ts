@@ -4,7 +4,7 @@ import {
   type StructuredRecommendation,
 } from '../../types/assistant';
 import { getFirebaseAuth } from '../firebase';
-import { queryLocalMusicIntelligence } from './localMusicIntelligence';
+import { queryLocalMusicIntelligence, type LocalIntelligenceResponse } from './localMusicIntelligence';
 
 export interface StreamChatCallbacks {
   onToken: (token: string) => void;
@@ -21,9 +21,53 @@ export interface StreamChatOptions {
   callbacks: StreamChatCallbacks;
 }
 
+interface CachedResponse {
+  content: string;
+  recommendations: StructuredRecommendation[];
+  timestamp: number;
+}
+
+// In-memory query cache for instant, zero-latency repeated queries
+const responseCache = new Map<string, CachedResponse>();
+const MAX_CACHE_ENTRIES = 16;
+
+function getCacheKey(prompt: string, context?: MusicalContextSnapshot): string {
+  const normPrompt = prompt.trim().toLowerCase();
+  const app = context?.activeApp || 'hub';
+  const key = context?.activeKey || '';
+  return `${normPrompt}::${app}::${key}`;
+}
+
 /**
- * Streams chat completion from the Cloudflare Pages edge gateway,
- * falling back gracefully to Livex's built-in local music intelligence engine.
+ * Resolves the remote gateway endpoint.
+ * In native Capacitor/Android environments without an explicit VITE_AI_GATEWAY_URL,
+ * /api/ai/chat does not exist on localhost. Skipping immediately avoids a 3.5s timeout.
+ */
+function getRemoteGatewayUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  const envUrl = (import.meta as any).env?.VITE_AI_GATEWAY_URL as string | undefined;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim().replace(/\/$/, '') + '/api/ai/chat';
+  }
+
+  // Detect native Android / Capacitor environment
+  const isNative =
+    (window as any).Capacitor?.isNativePlatform?.() ||
+    (import.meta as any).env?.VITE_APP_TARGET === 'android' ||
+    window.location?.protocol === 'capacitor:';
+
+  if (isNative) {
+    return null;
+  }
+
+  // On browser web (Cloudflare Pages), relative /api/ai/chat is supported
+  return '/api/ai/chat';
+}
+
+/**
+ * Streams chat completion from the remote edge gateway when available,
+ * falling back instantly to Livex's built-in local music intelligence engine.
  */
 export async function streamChatCompletion(options: StreamChatOptions): Promise<void> {
   const { prompt, history, contextSnapshot, signal, callbacks } = options;
@@ -34,149 +78,197 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
     return;
   }
 
-  // 1. Try Remote Edge Gateway if running in a supported web/production environment
+  // Check cache for instant delivery
+  const cacheKey = getCacheKey(prompt, contextSnapshot);
+  const cached = responseCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 300000) {
+    // 5-minute fresh cache
+    await streamResponseData(cached, signal, callbacks);
+    return;
+  }
+
+  const gatewayUrl = getRemoteGatewayUrl();
   let remoteAttemptSucceeded = false;
 
-  try {
-    const rawUser = getFirebaseAuth()?.currentUser;
-    const token = rawUser ? await rawUser.getIdToken().catch(() => null) : null;
+  // 1. Try Remote Edge Gateway if endpoint is available
+  if (gatewayUrl) {
+    try {
+      const rawUser = getFirebaseAuth()?.currentUser;
+      const token = rawUser ? await rawUser.getIdToken().catch(() => null) : null;
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const payload = {
-      prompt,
-      history: history.slice(-8).map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      context: contextSnapshot,
-    };
-
-    // Use a short connection timeout so offline musicians aren't left waiting
-    const controller = new AbortController();
-    const connectTimeout = setTimeout(() => controller.abort(), 3500);
-
-    const abortHandler = () => controller.abort();
-    if (signal) {
-      signal.addEventListener('abort', abortHandler, { once: true });
-    }
-
-    const response = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    }).finally(() => {
-      clearTimeout(connectTimeout);
-      if (signal) {
-        signal.removeEventListener('abort', abortHandler);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
-    });
 
-    const contentType = response.headers.get('content-type') || '';
-    if (response.ok && response.body && contentType.includes('text/event-stream')) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+      const payload = {
+        prompt,
+        history: history.slice(-6).map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        context: contextSnapshot,
+      };
 
-      while (true) {
-        if (signal?.aborted) {
-          await reader.cancel().catch(() => {});
-          callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
-          return;
+      // Tight connection timeout (800ms) to prevent perceived latency on slow networks
+      const controller = new AbortController();
+      const connectTimeout = setTimeout(() => controller.abort(), 800);
+
+      const abortHandler = () => controller.abort();
+      if (signal) {
+        signal.addEventListener('abort', abortHandler, { once: true });
+      }
+
+      const response = await fetch(gatewayUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(connectTimeout);
+        if (signal) {
+          signal.removeEventListener('abort', abortHandler);
         }
+      });
 
-        const { done, value } = await reader.read();
-        if (done) break;
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && response.body && contentType.includes('text/event-stream')) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let fullContent = '';
+        const collectedRecs: StructuredRecommendation[] = [];
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        while (true) {
+          if (signal?.aborted) {
+            await reader.cancel().catch(() => {});
+            callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
+            return;
+          }
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith(':')) continue;
+          const { done, value } = await reader.read();
+          if (done) break;
 
-          if (trimmed.startsWith('data: ')) {
-            const jsonStr = trimmed.slice(6);
-            if (jsonStr === '[DONE]') {
-              callbacks.onComplete();
-              return;
-            }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-            try {
-              const parsed = JSON.parse(jsonStr);
-              if (parsed.delta) {
-                callbacks.onToken(parsed.delta);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) continue;
+
+            if (trimmed.startsWith('data: ')) {
+              const jsonStr = trimmed.slice(6);
+              if (jsonStr === '[DONE]') {
+                if (fullContent) {
+                  cacheResponse(cacheKey, {
+                    content: fullContent,
+                    recommendations: collectedRecs,
+                    timestamp: Date.now(),
+                  });
+                }
+                callbacks.onComplete();
+                return;
               }
-              if (parsed.recommendation && callbacks.onRecommendation) {
-                callbacks.onRecommendation(parsed.recommendation);
+
+              try {
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.delta) {
+                  fullContent += parsed.delta;
+                  callbacks.onToken(parsed.delta);
+                }
+                if (parsed.recommendation) {
+                  collectedRecs.push(parsed.recommendation);
+                  callbacks.onRecommendation?.(parsed.recommendation);
+                }
+              } catch {
+                fullContent += jsonStr;
+                callbacks.onToken(jsonStr);
               }
-            } catch {
-              // Non-JSON SSE line, yield raw text delta
-              callbacks.onToken(jsonStr);
             }
           }
         }
-      }
 
-      callbacks.onComplete();
-      remoteAttemptSucceeded = true;
-      return;
+        if (fullContent) {
+          cacheResponse(cacheKey, {
+            content: fullContent,
+            recommendations: collectedRecs,
+            timestamp: Date.now(),
+          });
+        }
+
+        callbacks.onComplete();
+        remoteAttemptSucceeded = true;
+        return;
+      }
+    } catch (err: any) {
+      if (signal?.aborted) {
+        callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
+        return;
+      }
+      remoteAttemptSucceeded = false;
     }
-  } catch (err: any) {
-    if (signal?.aborted) {
-      callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
-      return;
-    }
-    // Remote gateway unreachable or timed out -> gracefully route to local intelligence
-    remoteAttemptSucceeded = false;
   }
 
-  // 2. Local Intelligence Engine Fallback (Instant & 100% offline capable)
+  // 2. Local Intelligence Engine Fallback (Instant, 100% offline & zero artificial delay)
   if (!remoteAttemptSucceeded) {
-    await streamLocalIntelligence(prompt, contextSnapshot, signal, callbacks);
+    const result = queryLocalMusicIntelligence(prompt, contextSnapshot);
+    cacheResponse(cacheKey, {
+      content: result.content,
+      recommendations: result.recommendations,
+      timestamp: Date.now(),
+    });
+    await streamResponseData(result, signal, callbacks);
   }
 }
 
+function cacheResponse(key: string, data: CachedResponse): void {
+  if (responseCache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey) responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, data);
+}
+
 /**
- * Simulates a natural chunked streaming cadence (15-25ms per word) for local intelligence
- * so the animated mascot, thinking orbs, and chat UI behave identically and smoothly.
+ * Progressively streams structured content to the UI with micro-batch chunking.
+ * Completely free of artificial setTimeout sleeps.
  */
-async function streamLocalIntelligence(
-  prompt: string,
-  contextSnapshot: MusicalContextSnapshot | undefined,
+async function streamResponseData(
+  result: LocalIntelligenceResponse,
   signal: AbortSignal | undefined,
   callbacks: StreamChatCallbacks
 ): Promise<void> {
-  const result = queryLocalMusicIntelligence(prompt, contextSnapshot);
-
-  // Deliver structured recommendation cards
+  // Deliver recommendations immediately
   if (result.recommendations && result.recommendations.length > 0) {
     for (const rec of result.recommendations) {
       callbacks.onRecommendation?.(rec);
     }
   }
 
-  // Split into natural word chunks for progressive rendering
+  // Natural chunk stream: batch small word groups per frame for smooth 60-120fps UI rendering
   const words = result.content.split(/(\s+)/);
+  const CHUNK_SIZE = 4;
 
-  for (let i = 0; i < words.length; i++) {
+  const nextFrame =
+    typeof requestAnimationFrame === 'function'
+      ? () => new Promise<void>((r) => requestAnimationFrame(() => r()))
+      : () => new Promise<void>((r) => setTimeout(r, 0));
+
+  for (let i = 0; i < words.length; i += CHUNK_SIZE) {
     if (signal?.aborted) {
       callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
       return;
     }
 
-    callbacks.onToken(words[i]);
+    const chunk = words.slice(i, i + CHUNK_SIZE).join('');
+    callbacks.onToken(chunk);
 
-    // Fast, organic cadence
-    if (i % 2 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 18));
+    // Yield control to render frame without blocking
+    if (i + CHUNK_SIZE < words.length) {
+      await nextFrame();
     }
   }
 

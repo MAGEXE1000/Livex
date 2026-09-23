@@ -54,9 +54,9 @@ const TONE_RECIPES: Record<string, ToneRecipeRecommendation> = {
       },
     ],
     tips: [
-      'Use the Strat bridge pickup with the tone rolled down slightly to ~8.',
-      'Sustain comes from stacking the compressor into the Muff into the warm overdrive.',
-      'Practice slow, deliberate bends with wide finger vibrato.',
+      'Bridge pickup with tone rolled down to approximately 8.',
+      'Stack compressor into fuzz into transparent overdrive for harmonic sustain.',
+      'Deliberate bends with wide, controlled vibrato.',
     ],
   },
   funk_clean: {
@@ -87,9 +87,9 @@ const TONE_RECIPES: Record<string, ToneRecipeRecommendation> = {
       },
     ],
     tips: [
-      'Select pickup position 4 (neck + middle) on a Stratocaster.',
-      'Keep the right wrist relaxed for effortless 16th-note ghost strumming.',
-      'A compressor tightens peak dynamics so muted chucks stay punchy in the mix.',
+      'Position 4 (neck + middle) on Stratocaster-style instruments.',
+      'Relaxed right-wrist motion for 16th-note ghost strums.',
+      'Fast optical compression stabilizes peak transient dynamics.',
     ],
   },
   srv_blues: {
@@ -115,9 +115,9 @@ const TONE_RECIPES: Record<string, ToneRecipeRecommendation> = {
       },
     ],
     tips: [
-      'Tune down a half-step to Eb Standard (Eb Ab Db Gb Bb Eb) for thicker tone and easier bends.',
-      'Use heavy gauge strings (.011 or .012) if your fingers can handle the tension.',
-      'Pick hard near the bridge for percussive bite, and roll to neck pickup for singing leads.',
+      'Tuning down one half-step to Eb Standard (Eb Ab Db Gb Bb Eb) reduces string tension and enhances low-mid resonance.',
+      'Heavy gauge strings (.011 or .012) produce higher acoustic output and fuller fundamental response.',
+      'Pick near the bridge for percussive bite; switch to neck pickup for sustained melodic lines.',
     ],
   },
   ambient_wash: {
@@ -149,57 +149,68 @@ const TONE_RECIPES: Record<string, ToneRecipeRecommendation> = {
       {
         name: 'Warm Overdrive (Morning Glory / Bluesbreaker)',
         type: 'overdrive',
-        settings: { Gain: '4.5', Tone: '5.0', Volume: '6.0' },
+        settings: { Drive: '3.5', Tone: '5.0', Level: '6.0' },
       },
     ],
     tips: [
-      'Place the reverb before the overdrive for authentic textured shoegaze distortion bloom.',
-      'Use a volume pedal or guitar volume knob for expressive swells without pick attack.',
+      'Place modulation after reverb to smear repeats into an evolving pad texture.',
+      'Use volume swells with guitar volume pot or dedicated volume pedal before the delay/reverb section.',
     ],
   },
   motown_bass: {
-    title: 'James Jamerson Motown P-Bass Thump',
+    title: 'James Jamerson Classic Motown P-Bass',
     targetInstrument: 'bass',
-    ampModel: 'Ampeg B-15 Portaflex Flip-Top Tube Amp',
+    ampModel: 'Ampeg B-15 Portaflex / Direct Tube DI',
     gain: 4.5,
-    bass: 7.5,
-    mid: 6.8,
+    bass: 8.0,
+    mid: 5.0,
     treble: 2.5,
     presence: 2.0,
+    reverb: 0.0,
     pedalChain: [
       {
-        name: 'Passive DI Box / Transformer Saturation',
-        type: 'compressor',
-        settings: { Warmth: 'High', Ratio: '3:1' },
-      },
-      {
-        name: 'Vintage Opto Compressor (LA-2A style)',
+        name: 'Vintage Opto Compressor (LA-2A Style)',
         type: 'compressor',
         settings: { PeakReduction: '6.0', Gain: '5.5' },
       },
+      {
+        name: 'Warm Analog Preamp / Saturator',
+        type: 'overdrive',
+        settings: { Drive: '2.0', Warmth: 'High' },
+      },
     ],
     tips: [
-      'Use flatwound strings that have broken in for months (never clean them!).',
-      'Pluck with only your index finger ("The Hook") directly over the neck joint.',
-      'Slide a piece of foam rubber underneath the strings against the bridge saddle to damp overtones.',
+      'Precision Bass with flatwound strings.',
+      'Roll tone knob completely down (0-2) to isolate low fundamental frequencies.',
+      'Pluck with index finger ("the hook") over the pickup.',
     ],
   },
 };
 
 /**
- * Standard chord progression library for quick intelligent suggestions.
+ * Standard chord progression library with Roman numeral harmonic analysis.
  */
-const PROGRESSION_PRESETS: Array<ChordProgressionRecommendation & { id: string; name: string; genre: string }> = [
+const PROGRESSION_PRESETS: Array<{
+  id: string;
+  name: string;
+  genre: string;
+  key: string;
+  mode?: string;
+  feel: string;
+  chords: string[];
+  romanNumerals: string[];
+  description: string;
+}> = [
   {
-    id: 'neo_soul_maj9',
-    name: 'Neo-Soul Lush Movement',
-    genre: 'R&B / Neo-Soul',
+    id: 'neosoul_extended',
+    name: 'Neo-Soul Extended 9th & 13th Cycle',
+    genre: 'Neo-Soul / R&B',
     key: 'Db',
     mode: 'Major',
-    feel: 'Smooth, late-night groove',
+    feel: 'Lush, velvety harmonic movement with secondary dominant resolution',
     chords: ['Dbmaj9', 'Fm7', 'Bbm7', 'Ebm9', 'Ab13'],
     romanNumerals: ['Imaj9', 'iii7', 'vi7', 'ii9', 'V13'],
-    description: 'Classic velvety voice leading with gentle extensions and warm secondary dominants.',
+    description: 'Stepwise voice leading with 9th and 13th extensions over a circular circle-of-fifths turnaround.',
   },
   {
     id: 'jazz_turnaround_251',
@@ -207,54 +218,54 @@ const PROGRESSION_PRESETS: Array<ChordProgressionRecommendation & { id: string; 
     genre: 'Jazz',
     key: 'C',
     mode: 'Ionian',
-    feel: 'Swinging, sophisticated harmonic resolution',
+    feel: 'Diatonic tension and resolution with altered dominant substitution',
     chords: ['Dm9', 'G13(b9)', 'Cmaj9', 'A7(alt)'],
     romanNumerals: ['ii9', 'V13(b9)', 'Imaj9', 'VI7(alt)'],
-    description: 'The foundation of jazz harmony. Altered 5th degree pulls magnetically into the tonic.',
+    description: 'Foundational jazz cadence. The altered dominant creates smooth half-step voice leading into the tonic.',
   },
   {
     id: 'spanish_rock_enjambre',
-    name: 'Vintage Spanish Rock Romance (Enjambre Style)',
-    genre: 'Spanish Rock / Vintage Pop',
+    name: 'Vintage Rock Romance',
+    genre: 'Latin Rock / Ballad',
     key: 'Am',
     mode: 'Aeolian / Harmonic Minor',
-    feel: 'Melancholic, driving ballad with 60s romantic nostalgia',
+    feel: 'Melancholic, driving cadence with minor dominant resolution',
     chords: ['Am', 'C', 'Dm', 'E7'],
     romanNumerals: ['i', 'bIII', 'iv', 'V7'],
-    description: 'Dynamic nostalgic progression with sharp dominant 7th resolution into the minor tonic.',
+    description: 'Minor tonic to relative major, passing subdominant, resolving strongly through the major V7.',
   },
   {
     id: 'andalusian_cadence',
-    name: 'Andalusian Flamenco Descent',
-    genre: 'Flamenco / Latin Rock',
+    name: 'Andalusian Tetrachord Descent',
+    genre: 'Flamenco / Latin',
     key: 'Am',
     mode: 'Phrygian Dominant',
-    feel: 'Passionate, dramatic descending tension',
+    feel: 'Stepwise descending tension resolving to dominant tonic',
     chords: ['Am', 'G', 'F', 'E'],
     romanNumerals: ['i', 'bVII', 'bVI', 'V'],
-    description: 'Timeless descending tetrachord used in flamenco, rock solos, and dramatic interludes.',
+    description: 'Descending minor tetrachord through natural minor scale degrees resolving to Phrygian dominant.',
   },
   {
     id: 'modal_dorian_funk',
-    name: 'Dorian Funk Vamp',
+    name: 'Dorian Modal Vamp',
     genre: 'Funk / Fusion',
     key: 'Dm',
     mode: 'Dorian',
-    feel: 'Cool, confident groove that never grows stale',
+    feel: 'Stable modal vamp centered on major 6th degree',
     chords: ['Dm7', 'G7', 'Dm7', 'G7', 'Bbmaj7', 'C'],
     romanNumerals: ['i7', 'IV7', 'i7', 'IV7', 'bVImaj7', 'bVII'],
-    description: 'Santana and Miles Davis signature sound. The major 6th interval provides the bright Dorian flavor.',
+    description: 'The alternating i7-IV7 establishes the Dorian mode via the natural 6th (B in D Dorian).',
   },
   {
     id: 'epic_cinematic_pop',
-    name: 'Emotional Cinematic 4-Chord Journey',
-    genre: 'Pop / Epic Rock',
+    name: 'Cinematic Stepwise Progression',
+    genre: 'Soundtrack / Pop',
     key: 'G',
     mode: 'Major',
-    feel: 'Uplifting, anthemic, instantly memorable',
+    feel: 'Anthemic harmonic arc with pedal point voice leading',
     chords: ['G', 'D/F#', 'Em7', 'Cadd9'],
     romanNumerals: ['I', 'V6', 'vi7', 'IVadd9'],
-    description: 'Stepwise descending bassline with constant common-tone chime on the high strings.',
+    description: 'Descending bassline with sustained high common tones (D and G) throughout.',
   },
 ];
 
@@ -268,7 +279,7 @@ const DRUM_GROOVE_PRESETS: DrumGrooveRecommendation[] = [
     bpm: 96,
     timeSignature: '4/4',
     swing: 25,
-    kitRecommendation: 'Crisp Studio Maple Kit',
+    kitRecommendation: 'Studio Maple Kit',
     patternPreview: {
       kick: [true, false, false, false, false, false, true, false, false, true, false, false, false, false, false, false],
       snare: [false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false],
@@ -276,12 +287,12 @@ const DRUM_GROOVE_PRESETS: DrumGrooveRecommendation[] = [
     },
   },
   {
-    name: 'Half-Time Shuffle (Purdie Groove)',
+    name: 'Half-Time Shuffle (Purdie Cadence)',
     genre: 'Rock / R&B',
     bpm: 110,
     timeSignature: '4/4',
     swing: 65,
-    kitRecommendation: 'Deep Vintage Birch Kit with Sizzle Ride',
+    kitRecommendation: 'Vintage Birch Kit with Sizzle Ride',
     patternPreview: {
       kick: [true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false],
       snare: [false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false],
@@ -289,12 +300,12 @@ const DRUM_GROOVE_PRESETS: DrumGrooveRecommendation[] = [
     },
   },
   {
-    name: 'Driving 4-on-the-Floor Indie Rock',
+    name: 'Four-on-the-Floor Driving Cadence',
     genre: 'Indie Rock',
     bpm: 128,
     timeSignature: '4/4',
     swing: 0,
-    kitRecommendation: 'Aggressive Power Kit with Open Hats',
+    kitRecommendation: 'Power Rock Kit with Open Hi-Hats',
     patternPreview: {
       kick: [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
       snare: [false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false],
@@ -305,6 +316,7 @@ const DRUM_GROOVE_PRESETS: DrumGrooveRecommendation[] = [
 
 /**
  * Solves a music query locally and deterministically using Livex's core datasets.
+ * Strictly formatted for professional density: no emojis, no conversational filler.
  */
 export function queryLocalMusicIntelligence(
   userQuery: string,
@@ -351,22 +363,21 @@ export function queryLocalMusicIntelligence(
     const tipsSummary = (recipe.tips || []).map((t) => `- ${t}`).join('\n');
 
     return {
-      content: `### 🎸 ${recipe.title}
+      content: `### ${recipe.title}
 
-To dial in this iconic tone, here is the complete signal chain and amplifier configuration:
+Signal chain and amplifier staging:
 
-**Amplifier Architecture:**
-- **Amp Type:** ${recipe.ampModel}
-- **Gain:** \`${recipe.gain}/10\` | **Bass:** \`${recipe.bass}/10\` | **Mid:** \`${recipe.mid}/10\` | **Treble:** \`${recipe.treble}/10\`
-- **Reverb:** \`${recipe.reverb ?? 3}/10\`
+**Amplifier Specifications:**
+- **Model:** ${recipe.ampModel}
+- **Gain:** \`${recipe.gain}/10\`
+- **EQ:** Bass \`${recipe.bass}/10\` | Mid \`${recipe.mid}/10\` | Treble \`${recipe.treble}/10\`
+- **Presence:** \`${recipe.presence}/10\` | **Reverb:** \`${recipe.reverb ?? 3}/10\`
 
-**Pedalboard Signal Order:**
+**Pedalboard Order:**
 ${pedalSummary}
 
-**Pro-Performance Tips:**
-${tipsSummary}
-
-I've attached an interactive **Tone Recipe Card** below with exact knob values!`,
+**Technical Considerations:**
+${tipsSummary}`,
       recommendations,
     };
   }
@@ -408,26 +419,24 @@ I've attached an interactive **Tone Recipe Card** below with exact knob values!`
       },
     });
 
-    const chordList = preset.chords.map((c) => `\`${c}\``).join('  ⟶  ');
-    const numeralList = preset.romanNumerals.map((r) => `\`${r}\``).join('  ⟶  ');
+    const chordList = preset.chords.map((c) => `\`${c}\``).join('  ->  ');
+    const numeralList = preset.romanNumerals.map((r) => `\`${r}\``).join('  ->  ');
 
     return {
-      content: `### 🎼 ${preset.name}
+      content: `### ${preset.name}
 
-Here is a sophisticated harmonic progression in **${preset.key} ${preset.mode || 'Major'}**:
+Harmonic progression in **${preset.key} ${preset.mode || 'Major'}**:
 
 **Chords:**
 ${chordList}
 
-**Harmonic Function (Roman Numerals):**
+**Roman Numeral Analysis:**
 ${numeralList}
 
-**Musical Feel & Characteristics:**
+**Harmonic Structure:**
 - **Genre:** ${preset.genre}
-- **Vibe:** ${preset.feel}
-- **Analysis:** ${preset.description}
-
-You can tap the **Chord Progression Card** below to explore the voicings or load them directly into **Chordex**!`,
+- **Feel:** ${preset.feel}
+- **Voice Leading:** ${preset.description}`,
       recommendations,
     };
   }
@@ -464,19 +473,17 @@ You can tap the **Chord Progression Card** below to explore the voicings or load
     });
 
     return {
-      content: `### 🥁 ${groove.name}
+      content: `### ${groove.name}
 
-Here is a high-energy groove template ready for your rhythm section:
+Rhythm template parameters:
 
 - **Tempo:** \`${groove.bpm} BPM\`
-- **Time Signature:** \`${groove.timeSignature}\`
-- **Swing / Humanize:** \`${groove.swing ?? 0}%\`
-- **Recommended Kit:** ${groove.kitRecommendation}
+- **Meter:** \`${groove.timeSignature}\`
+- **Swing Factor:** \`${groove.swing ?? 0}%\`
+- **Recommended Sound Profile:** ${groove.kitRecommendation}
 
 **Rhythmic Dynamics:**
-Ghost notes on the snare during the upbeat offsets give this groove its signature breath and pocket. Lock your bassline onto the kick placements for a tight mix!
-
-I've generated a visual **Drum Groove Card** below. Tap to audition and sync with **Drumex**!`,
+Ghost notes on off-beat subdivisions establish pocket and forward momentum. Align the bass fundamental with primary kick hits to maintain low-frequency clarity.`,
       recommendations,
     };
   }
@@ -495,39 +502,37 @@ I've generated a visual **Drum Groove Card** below. Tap to audition and sync wit
   ) {
     if (q.includes('dorian') || q.includes('aeolian')) {
       return {
-        content: `### 🎵 Dorian vs. Aeolian (Natural Minor)
+        content: `### Dorian vs. Aeolian (Natural Minor)
 
-Both **Dorian** and **Aeolian** are minor modes, but their emotional character is defined by a single crucial scale degree:
+Both Dorian and Aeolian are minor modes sharing identical root, minor third, fourth, fifth, and minor seventh intervals. The sole differentiating factor is the sixth scale degree:
 
-| Characteristic | **Dorian** (2nd Mode) | **Aeolian** (Natural Minor / 6th Mode) |
+| Feature | Dorian (Mode II) | Aeolian (Mode VI / Natural Minor) |
 | :--- | :--- | :--- |
-| **Formula** | \`1 - 2 - b3 - 4 - 5 - 6 - b7\` | \`1 - 2 - b3 - 4 - 5 - b6 - b7\` |
-| **Signature Note** | **Natural 6th** (\`♮6\`) | **Flat 6th** (\`b6\`) |
-| **Color / Mood** | Bright, hopeful minor, sophisticated funk | Dark, melancholic, serious, classical |
-| **Famous Example** | *"Oye Como Va"*, *"So What"* (Miles Davis) | *"Stairway to Heaven"*, *"Losing My Religion"* |
-| **Characteristic Chord** | \`i7\` to \`IV7\` (e.g. \`Dm7 - G7\`) | \`i\` to \`bVI\` (e.g. \`Am - F\`) |
+| **Interval Formula** | \`1 - 2 - b3 - 4 - 5 - 6 - b7\` | \`1 - 2 - b3 - 4 - 5 - b6 - b7\` |
+| **Defining Degree** | **Natural 6th** (\`6\`) | **Minor 6th** (\`b6\`) |
+| **Tonal Character** | Bright minor, fusion / modal jazz | Dark, melancholic, classical minor |
+| **Cadential Marker** | \`i7 - IV7\` (e.g., \`Dm7 - G7\`) | \`i - bVI\` (e.g., \`Am - F\`) |
+| **Reference Context** | *"So What"* (Miles Davis) | *"Stairway to Heaven"* |
 
-**Quick Musician Tip:**
-When soloing over a minor chord, raising the 6th by a half-step immediately gives you that silky Carlos Santana / Pink Floyd fusion flavor without altering the root chord!`,
+**Application:**
+When improvising over a minor tonic chord, raising the sixth degree by a half-step eliminates the tritone interval with the third degree, generating Dorian's characteristic open harmonic resonance without altering the tonic triad.`,
         recommendations,
       };
     }
 
     return {
-      content: `### 🎼 Music Theory Analysis
+      content: `### Western Harmonic Tension and Resolution
 
-In Western tonal harmony, tension and release are driven by harmonic gravity:
+Functional harmony organizes musical momentum via harmonic gravity:
 
-1. **Tension Builders:**
-   - **Tritone interval:** The 3 whole-step dissonance between the 3rd and 7th degrees of a Dominant 7th chord (e.g., \`B\` and \`F\` in \`G7\`).
-   - **Secondary Dominants:** Borrowing a dominant chord from another key (e.g., \`V7/V\`) to create anticipation before landing on the target chord.
-   - **Tritone Substitution:** Replacing a dominant chord with one a tritone away (e.g., \`Db7\` substituting for \`G7\` resolving to \`Cmaj7\`), producing smooth chromatic bass descent (\`Db ⟶ C\`).
+1. **Dissonance and Tension:**
+   - **Tritone Interval:** The 3-whole-tone interval between the 3rd and 7th degrees of a dominant 7th chord (e.g., \`B\` and \`F\` in \`G7\`). Its inherent instability seeks inward or outward half-step resolution to tonic chord tones.
+   - **Secondary Dominants (\`V7/x\`):** Chromatic alterations targeting diatonic chords outside the tonic to intensify harmonic anticipation.
+   - **Tritone Substitution:** Substituting a dominant chord with one a tritone away (e.g., \`Db7\` for \`G7\`), retaining the identical active tritone while creating chromatic bass resolution (\`Db -> C\`).
 
-2. **Resolution Anchors:**
-   - **Tonic (\`I\` / \`i\`):** Complete stability and rest.
-   - **Voice Leading:** Notes moving by step (half-steps or whole-steps) into chord tones produce the most natural-sounding transitions.
-
-Would you like me to map out a specific key or chord substitution for your song?`,
+2. **Stability and Voice Leading:**
+   - **Tonic Resolution:** Point of lowest harmonic tension.
+   - **Stepwise Voice Leading:** Movement by half-step or whole-step between voices yields optimal acoustic cohesion and natural transition.`,
       recommendations,
     };
   }
@@ -547,10 +552,10 @@ Would you like me to map out a specific key or chord substitution for your song?
       focusArea: 'vocals',
       durationMinutes: 5,
       steps: [
-        { title: 'Lip Trills (Brimming)', description: 'Gentle 5-tone ascending and descending scales to balance breath pressure.', durationMinutes: 1 },
-        { title: 'Sirens on "Ng"', description: 'Glide smoothly between chest and head voice without sudden breaks.', durationMinutes: 1.5 },
-        { title: 'Resonance on "Nay"', description: 'Bright nasal placement to engage the pharyngeal resonating chambers.', durationMinutes: 1.5 },
-        { title: 'Vowel Unification', description: 'Transition "Ah - Eh - Ee - Oh - Oo" on a sustained pitch with relaxed jaw.', durationMinutes: 1 },
+        { title: 'Lip Trills', description: 'Ascending and descending 5-tone scales to regulate subglottic air pressure.', durationMinutes: 1 },
+        { title: 'Sirens on "Ng"', description: 'Continuous pitch glides between chest and head registers to smooth passagio transitions.', durationMinutes: 1.5 },
+        { title: 'Pharyngeal Resonance on "Nay"', description: 'Focused placement targeting pharyngeal resonating chambers.', durationMinutes: 1.5 },
+        { title: 'Vowel Unification', description: 'Sustained pitches transitioning [a] - [e] - [i] - [o] - [u] with neutral jaw position.', durationMinutes: 1 },
       ],
     };
 
@@ -564,15 +569,19 @@ Would you like me to map out a specific key or chord substitution for your song?
     });
 
     return {
-      content: `### 🎤 Vocal Warmup & Performance Technique
+      content: `### Vocal Warmup and Technical Execution
 
-To project with clarity and protect your vocal folds during rehearsals and gigs:
+Key mechanics for vocal performance:
 
-1. **Diaphragmatic Support:** Inhale by allowing your lower belly and ribs to expand naturally, keeping your shoulders relaxed.
-2. **Vocal Placement:** Feel the vibration in the "mask" (cheekbones and sinus cavities) rather than squeezing from the throat.
-3. **Harmonizer Tip:** When using **Vocalex Harmonizer**, singing in equal temperament pitch helps the intelligent interval engine track your fundamental note and lock 3rd/5th harmonies tightly.
+1. **Subglottic Breath Management:** Engage lower abdominal and intercostal expansion. Maintain consistent air pressure without pushing from the larynx.
+2. **Acoustic Placement:** Focus sensation toward the hard palate and zygomatic regions to maximize resonance efficiency without muscular strain.
+3. **Pitch Tracking:** Equal-temperament intonation stabilizes fundamental frequency detection when tracking with harmonizer algorithms.
 
-Here is a structured **5-Minute Vocal Warmup Routine** to try right now before tracking takes:`,
+**5-Minute Vocal Warmup Protocol:**
+- 1.0 min: Lip trills across 5-note scales
+- 1.5 min: Continuous sirens on nasal consonants
+- 1.5 min: Narrow vowel resonance exercises
+- 1.0 min: Sustained vowel equalization`,
       recommendations,
     };
   }
@@ -589,41 +598,32 @@ Here is a structured **5-Minute Vocal Warmup Routine** to try right now before t
     q.includes('vocalex')
   ) {
     return {
-      content: `### ⚡ Welcome to Livex Studio Suite
+      content: `### Livex Architecture Overview
 
-Livex is an integrated, low-latency ecosystem built for musicians, producers, and live performers:
-
-- **🎸 Chordex:** Visual chord library, guitar & piano voicings, transpositions, and real-time interactive song practice charts.
-- **🥁 Drumex:** High-precision drum machine with multi-kit step sequencing, groove swing control, and metronome practice tools.
-- **🎛️ Groovex:** Multi-track stem player and backing track engine with real-time waveform navigation and mixer sliders.
-- **🎙️ Vocalex:** Low-latency pitch monitor, tuner, take recorder, and intelligent multi-voice vocal harmonizer.
-- **🎪 Stagex:** Interactive 2D stage layout planner, audio channel routing, monitor placement, and live gig setup coordinator.
-
-You can switch between any app instantly using the **App Switcher** button on the bottom bar!`,
+- **Chordex:** Harmonic library, voicing diagrams, transpositions, and real-time chord charts.
+- **Drumex:** Step-sequencer drum machine, tempo calibration, metronome, and rhythm practice engine.
+- **Groovex:** Multi-track stem player and backing track rehearsal mixer.
+- **Vocalex:** Pitch tracking, tuner, vocal practice tools, and interval harmonizer.
+- **Stagex:** Stage plot designer, audio routing planner, monitor placement, and live gear coordinator.`,
       recommendations,
     };
   }
 
-  // 7. DEFAULT MUSICAL INTELLIGENCE RESPONSE
+  // 7. DEFAULT CONTEXT-AWARE RESPONSE
   const activeApp = context?.activeApp || 'hub';
-  const songTitle = context?.currentSongTitle ? `*"${context.currentSongTitle}"*` : null;
+  const songTitle = context?.currentSongTitle ? `("${context.currentSongTitle}")` : '';
 
   return {
-    content: `### 🎶 Livex Music Assistant
+    content: `### Livex Music Assistant
 
-I'm your musical pair-programmer, theory coach, and tone designer. 
+Active context: ${activeApp.toUpperCase()} ${songTitle}
 
-${songTitle ? `I see you're currently working on ${songTitle} in **${context?.activeApp}**!` : `You're currently in **${activeApp.toUpperCase()}**.`}
-
-Here are some things you can ask me:
-- *"Suggest a neo-soul chord progression with extensions"*
-- *"How can I get an ambient Pink Floyd guitar tone?"*
-- *"Explain the difference between Dorian and Aeolian modes"*
-- *"Give me a 16th-note pocket funk drum groove"*
-- *"Warmup routine for vocals before a gig"*
-- *"How do I transpose chords in Chordex?"*
-
-What are we creating today?`,
+Supported technical queries:
+- Harmonic analysis and chord progressions
+- Instrument signal chains, amplifier staging, and pedal parameters
+- Modal theory, voice leading, and scale relationships
+- Rhythm structures, tempos, and swing timing
+- Vocal performance and warmup protocols`,
     recommendations,
   };
 }
