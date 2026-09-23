@@ -25,6 +25,7 @@ export interface StreamChatOptions {
   attachments?: AssistantAttachment[];
   apiKey?: string;
   gatewayUrl?: string;
+  model?: string;
   signal?: AbortSignal;
   callbacks: StreamChatCallbacks;
 }
@@ -114,6 +115,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
       context: contextSnapshot,
       language: options.language || 'en',
       apiKey: apiKey || undefined,
+      model: options.model || undefined,
       attachments: options.attachments?.map((a) => ({
         id: a.id,
         name: a.name,

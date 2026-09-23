@@ -124,5 +124,4 @@ export * from './lib/tuner/index';
 export * from './types/assistant';
 export * from './store/useAssistantStore';
 export * from './lib/assistant/contextAggregator';
-export * from './lib/assistant/localMusicIntelligence';
 export * from './lib/assistant/assistantApiClient';

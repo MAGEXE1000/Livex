@@ -66,6 +66,7 @@ interface AssistantStoreState {
   attachments: AssistantAttachment[];
   userApiKey?: string;
   customGatewayUrl?: string;
+  customModel?: string;
 
   // Actions
   sendMessage: (promptText?: string) => Promise<void>;
@@ -75,6 +76,7 @@ interface AssistantStoreState {
   setInputText: (text: string) => void;
   setUserApiKey: (key: string) => void;
   setCustomGatewayUrl: (url: string) => void;
+  setCustomModel: (model: string) => void;
   addAttachment: (att: AssistantAttachment) => void;
   removeAttachment: (id: string) => void;
   clearAttachments: () => void;
@@ -112,6 +114,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
         attachments: [],
         userApiKey: undefined,
         customGatewayUrl: undefined,
+        customModel: undefined,
 
         setUserApiKey: (userApiKey: string) => {
           set({ userApiKey: userApiKey.trim() || undefined });
@@ -119,6 +122,10 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
         setCustomGatewayUrl: (customGatewayUrl: string) => {
           set({ customGatewayUrl: customGatewayUrl.trim() || undefined });
+        },
+
+        setCustomModel: (customModel: string) => {
+          set({ customModel: customModel.trim() || undefined });
         },
 
         retryLastMessage: async () => {
@@ -291,6 +298,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
               attachments: pendingAttachments,
               apiKey: get().userApiKey,
               gatewayUrl: get().customGatewayUrl,
+              model: get().customModel,
               signal,
               callbacks: {
                 onStateChange: (backendState) => {
@@ -409,6 +417,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
         activeThreadId: state.activeThreadId,
         userApiKey: state.userApiKey,
         customGatewayUrl: state.customGatewayUrl,
+        customModel: state.customModel,
       }),
     }
   )

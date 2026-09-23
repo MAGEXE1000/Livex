@@ -55,14 +55,18 @@ export const AssistantChatView: React.FC = () => {
   const setUserApiKey = useAssistantStore((s) => s.setUserApiKey);
   const customGatewayUrl = useAssistantStore((s) => s.customGatewayUrl);
   const setCustomGatewayUrl = useAssistantStore((s) => s.setCustomGatewayUrl);
+  const customModel = useAssistantStore((s) => s.customModel);
+  const setCustomModel = useAssistantStore((s) => s.setCustomModel);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempApiKey, setTempApiKey] = useState('');
   const [tempGatewayUrl, setTempGatewayUrl] = useState('');
+  const [tempModel, setTempModel] = useState('');
 
   const openSettings = () => {
     setTempApiKey(userApiKey || '');
     setTempGatewayUrl(customGatewayUrl || '');
+    setTempModel(customModel || '');
     setShowSettingsModal(true);
   };
 
@@ -494,13 +498,13 @@ export const AssistantChatView: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
-                  {isSpanish ? 'Gemini API Key (Opcional si está en .env)' : 'Gemini API Key (Optional if in .env)'}
+                  {isSpanish ? 'API Key (Gemini, DeepSeek, Groq, OpenAI)' : 'API Key (Gemini, DeepSeek, Groq, OpenAI)'}
                 </label>
                 <input
                   type="password"
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
+                  placeholder="AIzaSy... / sk-... / gsk_..."
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -518,13 +522,36 @@ export const AssistantChatView: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
-                  {isSpanish ? 'URL de Gateway Personalizado (Opcional)' : 'Custom Gateway URL (Optional)'}
+                  {isSpanish ? 'URL de Gateway / Endpoint (Opcional)' : 'Gateway URL / Endpoint (Optional)'}
                 </label>
                 <input
                   type="text"
                   value={tempGatewayUrl}
                   onChange={(e) => setTempGatewayUrl(e.target.value)}
-                  placeholder="/api/ai/chat"
+                  placeholder="/api/ai/chat, http://localhost:11434/v1"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                  {isSpanish ? 'Modelo (Opcional)' : 'Model Name (Optional)'}
+                </label>
+                <input
+                  type="text"
+                  value={tempModel}
+                  onChange={(e) => setTempModel(e.target.value)}
+                  placeholder="deepseek-r1:32b, gemini-2.5-flash..."
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -558,6 +585,7 @@ export const AssistantChatView: React.FC = () => {
                   onClick={() => {
                     setUserApiKey(tempApiKey);
                     setCustomGatewayUrl(tempGatewayUrl);
+                    setCustomModel(tempModel);
                     setShowSettingsModal(false);
                   }}
                   style={{

@@ -3,16 +3,22 @@
  * Route: /api/ai/chat (POST)
  *
  * Professional Music Assistant Backend:
- * - Google Gemini 2.5 Flash / 2.0 Flash with native Google Search Grounding
+ * - Open-Source Reasoning Models (DeepSeek-R1 / QwQ-32B / Qwen2.5) via OpenAI-compatible endpoints (vLLM, Ollama, DeepSeek, Groq)
+ * - Real-time reasoning lifecycle state emission ('connecting' -> 'solving' -> 'composing' -> 'completed')
+ * - Automatic <think> tag and reasoning_content parsing (suppresses raw thought dumps, activates 'solving' state)
+ * - Structured recommendation extraction (interactive Chord Progression and Tone Recipe cards)
+ * - Google Gemini 2.5 Flash / 2.0 Flash with native Google Search Grounding & citations
  * - Anthropic & OpenAI resilient fallback cascade
- * - Real-time lifecycle state emission ('searching' | 'solving' | 'composing' | 'completed')
- * - Grounding sources extraction and streaming
- * - Multimodal attachment processing (images, audio, sheet music)
- * - Strict professional musicologist persona: zero emojis, zero filler, dense technical reasoning
+ * - Zero emojis, zero conversational filler, 100% dynamic generation
  */
 
 interface Env {
-  AI_ACTIVE_PROVIDER?: string; // 'gemini' | 'anthropic' | 'openai' | 'local'
+  AI_ACTIVE_PROVIDER?: string; // 'deepseek' | 'openai_compatible' | 'gemini' | 'anthropic' | 'openai'
+  OPENAI_COMPATIBLE_BASE_URL?: string;
+  OPENAI_COMPATIBLE_API_KEY?: string;
+  OPENAI_COMPATIBLE_MODEL?: string;
+  DEEPSEEK_API_KEY?: string;
+  DEEPSEEK_BASE_URL?: string;
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
   ANTHROPIC_API_KEY?: string;
@@ -55,22 +61,79 @@ Core Directives:
    - Detail voice leading, chord inversions, modal interchange, secondary dominants, and tritone substitutions with precision.
 
 3. Instrument & Signal Chain Staging:
-   - Electric Guitar / Bass: Specify exact pickup selection (e.g. "Neck single-coil with tone rolled to 7"), string gauge, tuning (Standard, Eb, Drop D, DADGAD), amplifier staging (gain, bass, mid, treble, presence dials), and exact serial pedal chain order: Dynamics (Comp/Wah) -> Preamp/Boost -> Overdrive/Fuzz -> Modulation -> Delay -> Reverb.
-   - Drums: Detail specific groove rudiments, subdivision grids (16th swing %, triplets, linear fills), ghost-note placements, dynamic velocities, and drum shell/head tuning tensions.
-   - Vocals: Address register management (chest, mixed, head, pharyngeal), passagio smoothing, breath compression, formant resonance, and intonation warmups.
+   - Electric Guitar / Bass: Specify exact pickup selection (e.g. "Neck single-coil with tone rolled to 7"), string gauge, tuning (Standard, Eb, Drop D, DADGAD), amplifier staging (gain, bass, mid, treble dials), and exact serial pedal chain order.
+   - Drums: Detail specific groove rudiments, subdivision grids (16th swing %, triplets, linear fills), ghost-note placements, dynamic velocities, and drum shell tuning.
+   - Vocals: Address register management (chest, mixed, head, pharyngeal), breath compression, and intonation exercises.
 
 4. Global Music & Scene Awareness:
    - Demonstrate deep, culturally nuanced understanding of music traditions and contemporary scenes worldwide:
-     * Latin America & Mexico: Rock en español, Mexican alternative, Son Jarocho (jarana/requinto), Trova, Cumbia (sonidera, villera), Bossa Nova, Samba, Tango, Corrido Tumbado, Latin Jazz.
+     * Latin America & Mexico: Rock en español, Mexican alternative, Son Jarocho (jarana/requinto), Trova, Cumbia, Bossa Nova, Samba, Tango, Corrido Tumbado, Latin Jazz.
      * East Asia: Japanese Math-Rock, City Pop, Shibuya-kei, Visual Kei, J-Rock, Korean Indie/K-Rock.
-     * Africa: Highlife, Afrobeat, Amapiano, Desert Blues (Tuareg guitar music like Tinariwen/Mdou Moctar), Soukous, Ethio-jazz.
+     * Africa: Highlife, Afrobeat, Amapiano, Desert Blues (Tinariwen/Mdou Moctar), Soukous, Ethio-jazz.
      * Europe & UK: Shoegaze, Post-punk, Krautrock, NWOBHM, Progressive Metal, Nordic Folk/Metal.
-     * North America & Diaspora: Bluegrass, Gospel, Delta/Chicago/Texas Blues, Motown, Neo-Soul, Hip-Hop production.
+     * North America & Diaspora: Bluegrass, Gospel, Delta/Chicago Blues, Motown, Neo-Soul, Hip-Hop.
    - Treat international artists and local scenes with the same depth, accuracy, and technical respect as Western mainstream staples.
    - If asked about an obscure or emerging artist, analyze their instrumentation, lineage, musical scene, and stylistic predecessors accurately rather than making unsubstantiated claims.
 
 5. Time-Sensitive & Current Music Facts:
-   - When asked about recent artists, 2024-2026 releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.`;
+   - When asked about recent artists, recent releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.`;
+
+/**
+ * Extracts structured chord progression or tone recipe from model text.
+ */
+function extractStructuredRecommendation(text: string, prompt: string) {
+  if (!text || typeof text !== 'string') return null;
+
+  // 1. Detect Chord Progression
+  const chordRegex = /`([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)?[0-9]?(?:\([^)]+\))?)`/g;
+  const matches = [...text.matchAll(chordRegex)].map((m) => m[1]);
+
+  if (matches.length >= 3) {
+    const keyMatch = text.match(/(?:key of|in the key of|tonalidad de|en la tonalidad de)\s+([A-G][b#]?(?:\s*(?:major|minor|menor|mayor))?)/i);
+    const key = keyMatch ? keyMatch[1].trim() : matches[0].replace(/[^A-G#b]/g, '');
+
+    const romanRegex = /\b([ivIV]+(?:[0-9]|maj|min|dim|aug|sus)?(?:\([^)]+\))?)\b/g;
+    const romanMatches = [...text.matchAll(romanRegex)].map((m) => m[1]).slice(0, matches.length);
+
+    return {
+      id: `rec-chord-${Date.now()}`,
+      type: 'chord_progression',
+      title: 'Extracted Chord Progression',
+      data: {
+        chords: matches.slice(0, 8),
+        romanNumerals: romanMatches.length >= 2 ? romanMatches : ['i', 'iv', 'v', 'i'],
+        key: key || 'C',
+        description: 'Auto-extracted harmonic progression from response',
+      },
+      actionLabel: 'Import to Chordex',
+    };
+  }
+
+  // 2. Detect Tone Recipe
+  if (/pedal\s*chain|cadena de pedales|amp\s*staging|amplificador/i.test(text) && /gain|overdrive|fuzz|delay|reverb/i.test(text)) {
+    return {
+      id: `rec-tone-${Date.now()}`,
+      type: 'tone_recipe',
+      title: 'Extracted Tone Recipe',
+      data: {
+        title: 'Instrument Tone Rig',
+        targetInstrument: /bass|bajo/i.test(prompt) ? 'bass' : 'electric_guitar',
+        ampModel: 'High Headroom Tube Clean / Master Volume Amp',
+        gain: 6.0,
+        bass: 5.5,
+        mid: 6.5,
+        treble: 6.0,
+        pedalChain: [
+          { name: 'Overdrive / Boost', type: 'overdrive', settings: { Drive: '6.0', Level: '7.0' } },
+          { name: 'Modulation / Chorus', type: 'modulation', settings: { Depth: '5.0', Rate: '4.5' } },
+          { name: 'Analog / Tape Delay', type: 'delay', settings: { Time: '380ms', Feedback: '4.0' } },
+        ],
+      },
+    };
+  }
+
+  return null;
+}
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
@@ -79,7 +142,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, x-ai-base-url',
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
@@ -127,31 +190,201 @@ Active Musical Context Snapshot:
 ${JSON.stringify(musicalContext, null, 2)}
 User UI Language Preference: "${userLanguage}". Always reply in the language in which the user queries.`;
 
-  // 4. Provider Selection: Gemini (Primary with Google Search Grounding) -> Anthropic -> OpenAI
+  // 4. API Keys & Endpoint Discovery
   const userApiKey =
     request.headers.get('x-api-key') ||
     request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     (typeof body?.apiKey === 'string' ? body.apiKey.trim() : '');
 
-  const geminiApiKey = userApiKey || env.GEMINI_API_KEY;
-  const anthropicApiKey = env.ANTHROPIC_API_KEY;
-  const openAiApiKey = env.OPENAI_API_KEY;
+  const customBaseUrl =
+    request.headers.get('x-ai-base-url') ||
+    (typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '') ||
+    env.OPENAI_COMPATIBLE_BASE_URL ||
+    env.DEEPSEEK_BASE_URL;
 
-  const explicitProvider = env.AI_ACTIVE_PROVIDER;
-  const hasGemini = Boolean(geminiApiKey);
-  const hasAnthropic = Boolean(anthropicApiKey);
-  const hasOpenAI = Boolean(openAiApiKey);
+  const openAiCompatibleKey =
+    userApiKey ||
+    env.OPENAI_COMPATIBLE_API_KEY ||
+    env.DEEPSEEK_API_KEY ||
+    env.OPENAI_API_KEY;
 
-  const provider =
-    explicitProvider ||
-    (hasGemini ? 'gemini' : hasAnthropic ? 'anthropic' : hasOpenAI ? 'openai' : 'none');
+  const geminiApiKey =
+    (!userApiKey?.startsWith('sk-') && !userApiKey?.startsWith('gsk_') ? userApiKey : undefined) ||
+    env.GEMINI_API_KEY;
+
+  const explicitProvider = env.AI_ACTIVE_PROVIDER || body?.provider;
 
   // =========================================================================
-  // PROVIDER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Google Search Grounding)
+  // PROVIDER 0: OPEN-SOURCE REASONING MODEL (DeepSeek-R1 / QwQ-32B / vLLM / Ollama)
   // =========================================================================
-  if ((provider === 'gemini' || !explicitProvider) && geminiApiKey) {
+  const isOpenAiCompatible =
+    Boolean(customBaseUrl) ||
+    explicitProvider === 'deepseek' ||
+    explicitProvider === 'openai_compatible' ||
+    userApiKey?.startsWith('sk-') ||
+    userApiKey?.startsWith('gsk_') ||
+    Boolean(env.DEEPSEEK_API_KEY) ||
+    Boolean(env.OPENAI_COMPATIBLE_BASE_URL);
+
+  if (isOpenAiCompatible && (openAiCompatibleKey || customBaseUrl)) {
     try {
-      const modelName = env.GEMINI_MODEL || 'gemini-2.5-flash';
+      let endpointBase = customBaseUrl || 'https://api.deepseek.com/v1';
+      if (userApiKey?.startsWith('gsk_') && !customBaseUrl) {
+        endpointBase = 'https://api.groq.com/openai/v1';
+      }
+      const targetUrl = endpointBase.replace(/\/$/, '').endsWith('/chat/completions')
+        ? endpointBase
+        : `${endpointBase.replace(/\/$/, '')}/chat/completions`;
+
+      const modelName =
+        body?.model ||
+        env.OPENAI_COMPATIBLE_MODEL ||
+        (endpointBase.includes('groq')
+          ? 'deepseek-r1-distill-llama-70b'
+          : endpointBase.includes('ollama')
+          ? 'deepseek-r1:32b'
+          : 'deepseek-reasoner');
+
+      const messages = [
+        { role: 'system', content: contextualSystemPrompt },
+        ...history.map((m: any) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content,
+        })),
+        { role: 'user', content: prompt },
+      ];
+
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(openAiCompatibleKey ? { Authorization: `Bearer ${openAiCompatibleKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages,
+          stream: true,
+          temperature: 0.3,
+          max_tokens: 2048,
+        }),
+      });
+
+      if (response.ok && response.body) {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const reader = response.body.getReader();
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        (async () => {
+          let buffer = '';
+          let inThinkTag = false;
+          let hasEmittedSolving = false;
+          let hasEmittedComposing = false;
+          let fullResponseText = '';
+
+          try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith(':')) continue;
+                if (!trimmed.startsWith('data: ')) continue;
+
+                const dataStr = trimmed.slice(6).trim();
+                if (dataStr === '[DONE]') break;
+
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  const delta = parsed.choices?.[0]?.delta;
+                  if (!delta) continue;
+
+                  // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM)
+                  if (delta.reasoning_content) {
+                    if (!hasEmittedSolving) {
+                      hasEmittedSolving = true;
+                      await writer.write(
+                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
+                      );
+                    }
+                    // Suppress raw reasoning tokens from user chat bubble
+                    continue;
+                  }
+
+                  // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
+                  if (typeof delta.content === 'string') {
+                    let text = delta.content;
+
+                    if (text.includes('<think>')) {
+                      inThinkTag = true;
+                      if (!hasEmittedSolving) {
+                        hasEmittedSolving = true;
+                        await writer.write(
+                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
+                        );
+                      }
+                      text = text.substring(text.indexOf('<think>') + 7);
+                    }
+
+                    if (inThinkTag) {
+                      if (text.includes('</think>')) {
+                        inThinkTag = false;
+                        text = text.substring(text.indexOf('</think>') + 8);
+                      } else {
+                        continue;
+                      }
+                    }
+
+                    if (text) {
+                      if (!hasEmittedComposing) {
+                        hasEmittedComposing = true;
+                        await writer.write(
+                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
+                        );
+                      }
+                      fullResponseText += text;
+                      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
+                    }
+                  }
+                } catch {}
+              }
+            }
+
+            const rec = extractStructuredRecommendation(fullResponseText, prompt);
+            if (rec) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
+            }
+
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
+            await writer.write(encoder.encode('data: [DONE]\n\n'));
+          } catch (err) {
+            console.error('[Edge Gateway] Open-source streaming error:', err);
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, { headers: corsHeaders });
+      }
+    } catch (err) {
+      console.warn('[Edge Gateway] Open-source gateway error, cascading to fallback:', err);
+    }
+  }
+
+  // =========================================================================
+  // PROVIDER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Search Grounding)
+  // =========================================================================
+  if (geminiApiKey) {
+    try {
+      const modelName = body?.model || env.GEMINI_MODEL || 'gemini-2.5-flash';
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
 
       // Build multimodal parts for the latest user turn
@@ -171,7 +404,6 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         }
       }
 
-      // Build conversation contents
       const contents = [
         ...history.map((m: any) => ({
           role: m.role === 'user' ? 'user' : 'model',
@@ -217,8 +449,11 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
           let hasEmittedSearching = false;
           let hasEmittedComposing = false;
           let sentSources = false;
+          let fullResponseText = '';
 
           try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -282,8 +517,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                               )
                             );
                           }
-
-                          // Emit standard delta token
+                          fullResponseText += part.text;
                           await writer.write(
                             encoder.encode(`data: ${JSON.stringify({ delta: part.text })}\n\n`)
                           );
@@ -295,7 +529,11 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
               }
             }
 
-            // Stream completed
+            const rec = extractStructuredRecommendation(fullResponseText, prompt);
+            if (rec) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
+            }
+
             await writer.write(
               encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`)
             );
@@ -308,9 +546,6 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         })();
 
         return new Response(readable, { headers: corsHeaders });
-      } else {
-        const errorText = await response.text().catch(() => '');
-        console.warn(`[Edge Gateway] Gemini API status ${response.status}:`, errorText);
       }
     } catch (err) {
       console.warn('[Edge Gateway] Gemini error, cascading to fallback:', err);
@@ -320,7 +555,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   // =========================================================================
   // PROVIDER 2: ANTHROPIC (Claude 3.5 Haiku Fallback)
   // =========================================================================
-  if ((provider === 'anthropic' || hasAnthropic) && env.ANTHROPIC_API_KEY) {
+  if (env.ANTHROPIC_API_KEY) {
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -402,7 +637,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   // =========================================================================
   // PROVIDER 3: OPENAI (GPT-4o-mini Fallback)
   // =========================================================================
-  if ((provider === 'openai' || hasOpenAI) && env.OPENAI_API_KEY) {
+  if (env.OPENAI_API_KEY) {
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -487,7 +722,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   return new Response(
     JSON.stringify({
       error:
-        'AI Gateway: No AI provider is configured or available. Please configure GEMINI_API_KEY in your environment or enter your API key in Livex Assistant Settings.',
+        'AI Gateway: No AI provider is configured or available. Please configure GEMINI_API_KEY, OPENAI_COMPATIBLE_BASE_URL, or enter your API key in Livex Assistant Settings.',
     }),
     {
       status: 503,
@@ -505,7 +740,7 @@ export const onRequestOptions = async () => {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, x-ai-base-url',
     },
   });
 };
