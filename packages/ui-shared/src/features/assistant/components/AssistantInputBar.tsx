@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   useAssistantStore,
+  useSettingsStore,
   ASSISTANT_QUICK_PROMPTS,
   type AssistantQuickPrompt,
 } from '@workspace/livex-core';
@@ -31,6 +32,15 @@ export const AssistantInputBar: React.FC<AssistantInputBarProps> = ({
   onQuickPromptSelected,
   showQuickPrompts = true,
 }) => {
+  const theme = useSettingsStore((s) => s.settings?.theme);
+  const amoledMode = useSettingsStore((s) => s.settings?.amoledMode);
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(amoledMode);
+
   const inputText = useAssistantStore((s) => s.inputText);
   const attachments = useAssistantStore((s) => s.attachments);
   const status = useAssistantStore((s) => s.status);
@@ -92,9 +102,17 @@ export const AssistantInputBar: React.FC<AssistantInputBarProps> = ({
                 gap: 6,
                 padding: '6px 12px',
                 borderRadius: 20,
-                background: 'rgba(30, 41, 59, 0.65)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: '#e2e8f0',
+                background: isLight
+                  ? 'rgba(0, 0, 0, 0.04)'
+                  : isAmoled
+                    ? '#000000'
+                    : 'rgba(30, 41, 59, 0.65)',
+                border: isLight
+                  ? '1px solid rgba(0, 0, 0, 0.08)'
+                  : isAmoled
+                    ? '1px solid rgba(255, 255, 255, 0.16)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                color: isLight ? '#1e293b' : isAmoled ? '#ffffff' : '#e2e8f0',
                 fontSize: 12,
                 fontWeight: 500,
                 whiteSpace: 'nowrap',
@@ -104,7 +122,7 @@ export const AssistantInputBar: React.FC<AssistantInputBarProps> = ({
                 transition: 'all 120ms ease',
               }}
             >
-              <StudioIcon name={item.icon} size={14} style={{ color: '#38bdf8' }} />
+              <StudioIcon name={item.icon} size={14} style={{ color: isLight ? '#0284c7' : '#38bdf8' }} />
               <span>{item.label}</span>
             </button>
           ))}

@@ -149,3 +149,8 @@ export const useBottomNavigationStore = create<BottomNavigationStore>((set, get)
     }
   },
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).useBottomNavigationStore = useBottomNavigationStore;
+}
+

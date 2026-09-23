@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAssistantStore, useSettingsStore, NavigationDispatcher } from '@workspace/livex-core';
+import { useAssistantStore, useSettingsStore, useBackHandler, NavigationDispatcher } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
 import { AssistantInputBar } from '../components/AssistantInputBar';
@@ -73,8 +73,16 @@ export const AssistantChatView: React.FC = () => {
   const language = useSettingsStore((s) => s.settings?.language);
   const isSpanish = language === 'es';
 
-  // Dedicated AI workspace is an immersive, focused dark workspace per visual direction
-  const isLight = false;
+  // Canonical Livex theme awareness (WHITE, BLACK, AMOLED)
+  const theme = useSettingsStore((s) => s.settings?.theme);
+  const amoledMode = useSettingsStore((s) => s.settings?.amoledMode);
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(amoledMode);
+  const isDark = !isLight && !isAmoled;
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -96,11 +104,22 @@ export const AssistantChatView: React.FC = () => {
     } else {
       NavigationDispatcher.push({ app: 'hub', tab: 'home' });
     }
+    return true;
   };
 
+  // Android hardware and gesture back button integration
+  useBackHandler('panel', handleBack);
+
   return (
-    <div
+    <motion.div
       data-assistant-chat-view="true"
+      initial={{ opacity: 0, scale: 0.94, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 12 }}
+      transition={{
+        duration: 0.24,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -111,9 +130,11 @@ export const AssistantChatView: React.FC = () => {
         position: 'relative',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        background: '#090d16',
-        color: '#f8fafc',
+        background: isAmoled ? '#000000' : isLight ? 'var(--app-bg, #f4f4f5)' : 'var(--app-bg, #141414)',
+        color: isLight ? '#0f172a' : '#f8fafc',
         fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
+        transformOrigin: 'calc(50% + 120px) calc(100% - 40px)',
+        willChange: 'transform, opacity',
       }}
     >
       {/* Floating Back Action (Headerless open canvas design) */}
@@ -130,17 +151,21 @@ export const AssistantChatView: React.FC = () => {
           width: 36,
           height: 36,
           borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(255, 255, 255, 0.08)',
+          border: isLight
+            ? '1px solid rgba(0, 0, 0, 0.1)'
+            : isAmoled
+              ? '1px solid rgba(255, 255, 255, 0.18)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          color: '#f8fafc',
+          color: isLight ? '#0f172a' : '#f8fafc',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-          transition: 'background 120ms ease, color 120ms ease',
+          boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.08)' : '0 4px 16px rgba(0, 0, 0, 0.4)',
+          transition: 'background 120ms ease, color 120ms ease, border-color 120ms ease',
         }}
       >
         <ArrowLeft size={16} />
@@ -160,16 +185,24 @@ export const AssistantChatView: React.FC = () => {
           width: 36,
           height: 36,
           borderRadius: '50%',
-          background: userApiKey ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-          border: userApiKey ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)',
+          background: userApiKey
+            ? isLight ? 'rgba(2, 132, 199, 0.12)' : 'rgba(56, 189, 248, 0.15)'
+            : isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(255, 255, 255, 0.08)',
+          border: userApiKey
+            ? isLight ? '1px solid rgba(2, 132, 199, 0.35)' : '1px solid rgba(56, 189, 248, 0.35)'
+            : isLight
+              ? '1px solid rgba(0, 0, 0, 0.1)'
+              : isAmoled
+                ? '1px solid rgba(255, 255, 255, 0.18)'
+                : '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          color: userApiKey ? '#38bdf8' : '#94a3b8',
+          color: userApiKey ? (isLight ? '#0284c7' : '#38bdf8') : (isLight ? '#64748b' : '#94a3b8'),
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.08)' : '0 4px 16px rgba(0, 0, 0, 0.4)',
           transition: 'all 120ms ease',
         }}
       >
@@ -192,21 +225,25 @@ export const AssistantChatView: React.FC = () => {
               top: 'calc(var(--safe-area-inset-top, 12px) + 12px)',
               right: 18,
               zIndex: 30,
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(255, 255, 255, 0.08)',
+              border: isLight
+                ? '1px solid rgba(0, 0, 0, 0.1)'
+                : isAmoled
+                  ? '1px solid rgba(255, 255, 255, 0.18)'
+                  : '1px solid rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               borderRadius: 20,
               padding: '6px 12px',
-              color: '#94a3b8',
+              color: isLight ? '#64748b' : '#94a3b8',
               fontSize: 12,
               fontWeight: 550,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-              transition: 'background 120ms ease, color 120ms ease',
+              boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.08)' : '0 4px 16px rgba(0, 0, 0, 0.4)',
+              transition: 'background 120ms ease, color 120ms ease, border-color 120ms ease',
             }}
           >
             <RotateCcw size={12} />
@@ -223,7 +260,11 @@ export const AssistantChatView: React.FC = () => {
           left: 0,
           right: 0,
           height: 'calc(var(--safe-area-inset-top, 12px) + 58px)',
-          background: 'linear-gradient(to bottom, #090d16 65%, rgba(9, 13, 22, 0.85) 85%, transparent 100%)',
+          background: isLight
+            ? 'linear-gradient(to bottom, var(--app-bg, #f4f4f5) 65%, rgba(244, 244, 245, 0.85) 85%, transparent 100%)'
+            : isAmoled
+              ? 'linear-gradient(to bottom, #000000 65%, rgba(0, 0, 0, 0.85) 85%, transparent 100%)'
+              : 'linear-gradient(to bottom, var(--app-bg, #141414) 65%, rgba(20, 20, 20, 0.85) 85%, transparent 100%)',
           zIndex: 20,
           pointerEvents: 'none',
         }}
@@ -271,7 +312,7 @@ export const AssistantChatView: React.FC = () => {
               style={{
                 fontSize: 21,
                 fontWeight: 650,
-                color: '#f8fafc',
+                color: isLight ? '#0f172a' : '#f8fafc',
                 margin: '0 0 8px',
                 letterSpacing: '-0.02em',
               }}
@@ -281,7 +322,7 @@ export const AssistantChatView: React.FC = () => {
             <p
               style={{
                 fontSize: 13.5,
-                color: '#94a3b8',
+                color: isLight ? '#64748b' : '#94a3b8',
                 maxWidth: 420,
                 lineHeight: 1.5,
                 margin: '0 0 28px',
@@ -339,26 +380,54 @@ export const AssistantChatView: React.FC = () => {
                     key={card.id}
                     onClick={() => sendMessage(cardPrompt)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.07)',
+                      background: isLight
+                        ? '#ffffff'
+                        : isAmoled
+                          ? '#000000'
+                          : 'rgba(255, 255, 255, 0.03)',
+                      border: isLight
+                        ? '1px solid rgba(0, 0, 0, 0.08)'
+                        : isAmoled
+                          ? '1px solid rgba(255, 255, 255, 0.14)'
+                          : '1px solid rgba(255, 255, 255, 0.07)',
                       borderRadius: 14,
                       padding: '14px 16px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 6,
                       cursor: 'pointer',
-                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                      boxShadow: isLight
+                        ? '0 2px 8px rgba(0, 0, 0, 0.04)'
+                        : isAmoled
+                          ? '0 2px 10px rgba(0, 0, 0, 0.5)'
+                          : '0 2px 10px rgba(0, 0, 0, 0.2)',
                       transition: 'border-color 140ms ease, background 140ms ease, transform 140ms ease',
                       textAlign: 'left',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                      e.currentTarget.style.borderColor = isLight
+                        ? 'rgba(0, 0, 0, 0.2)'
+                        : isAmoled
+                          ? 'rgba(255, 255, 255, 0.28)'
+                          : 'rgba(255, 255, 255, 0.18)';
+                      e.currentTarget.style.background = isLight
+                        ? 'rgba(0, 0, 0, 0.02)'
+                        : isAmoled
+                          ? 'rgba(255, 255, 255, 0.04)'
+                          : 'rgba(255, 255, 255, 0.06)';
                       e.currentTarget.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = isLight
+                        ? 'rgba(0, 0, 0, 0.08)'
+                        : isAmoled
+                          ? '1px solid rgba(255, 255, 255, 0.14)'
+                          : 'rgba(255, 255, 255, 0.07)';
+                      e.currentTarget.style.background = isLight
+                        ? '#ffffff'
+                        : isAmoled
+                          ? '#000000'
+                          : 'rgba(255, 255, 255, 0.03)';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
@@ -367,7 +436,7 @@ export const AssistantChatView: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
-                        color: '#38bdf8',
+                        color: isLight ? '#0284c7' : '#38bdf8',
                       }}
                     >
                       {card.icon}
@@ -375,7 +444,7 @@ export const AssistantChatView: React.FC = () => {
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: '#f1f5f9',
+                          color: isLight ? '#0f172a' : '#f1f5f9',
                         }}
                       >
                         {cardTitle}
@@ -384,7 +453,7 @@ export const AssistantChatView: React.FC = () => {
                     <div
                       style={{
                         fontSize: 11.5,
-                        color: '#94a3b8',
+                        color: isLight ? '#64748b' : '#94a3b8',
                         lineHeight: 1.45,
                       }}
                     >
@@ -399,7 +468,7 @@ export const AssistantChatView: React.FC = () => {
 
         {/* Message bubbles list */}
         {messages.map((msg) => (
-          <AssistantMessageItem key={msg.id} message={msg} />
+          <AssistantMessageItem key={msg.id} message={msg} isLight={isLight} isAmoled={isAmoled} />
         ))}
       </div>
 
@@ -408,8 +477,11 @@ export const AssistantChatView: React.FC = () => {
         style={{
           padding: '10px 18px',
           paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 14px)',
-          background:
-            'linear-gradient(to top, rgba(9, 13, 22, 0.98) 0%, rgba(9, 13, 22, 0.7) 70%, transparent 100%)',
+          background: isLight
+            ? 'linear-gradient(to top, var(--app-bg, #f4f4f5) 0%, rgba(244, 244, 245, 0.8) 70%, transparent 100%)'
+            : isAmoled
+              ? 'linear-gradient(to top, #000000 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%)'
+              : 'linear-gradient(to top, var(--app-bg, #141414) 0%, rgba(20, 20, 20, 0.8) 70%, transparent 100%)',
           zIndex: 10,
         }}
       >
@@ -445,12 +517,18 @@ export const AssistantChatView: React.FC = () => {
               style={{
                 width: '100%',
                 maxWidth: 420,
-                background: '#111726',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: isLight ? '#ffffff' : isAmoled ? '#000000' : '#111726',
+                border: isLight
+                  ? '1px solid rgba(0, 0, 0, 0.1)'
+                  : isAmoled
+                    ? '1px solid rgba(255, 255, 255, 0.18)'
+                    : '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: 20,
                 padding: '22px 20px',
-                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
-                color: '#f8fafc',
+                boxShadow: isLight
+                  ? '0 12px 36px rgba(0, 0, 0, 0.12)'
+                  : '0 20px 50px rgba(0, 0, 0, 0.7)',
+                color: isLight ? '#0f172a' : '#f8fafc',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 16,
@@ -497,7 +575,7 @@ export const AssistantChatView: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: isLight ? '#334155' : '#cbd5e1', marginBottom: 6 }}>
                   {isSpanish ? 'API Key (Gemini, DeepSeek, Groq, OpenAI)' : 'API Key (Gemini, DeepSeek, Groq, OpenAI)'}
                 </label>
                 <input
@@ -509,9 +587,13 @@ export const AssistantChatView: React.FC = () => {
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#ffffff',
+                    background: isLight ? 'rgba(0, 0, 0, 0.04)' : isAmoled ? '#09090b' : 'rgba(255, 255, 255, 0.05)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.12)'
+                      : isAmoled
+                        ? '1px solid rgba(255, 255, 255, 0.16)'
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: isLight ? '#0f172a' : '#ffffff',
                     fontSize: 13,
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -521,7 +603,7 @@ export const AssistantChatView: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: isLight ? '#334155' : '#cbd5e1', marginBottom: 6 }}>
                   {isSpanish ? 'URL de Gateway / Endpoint (Opcional)' : 'Gateway URL / Endpoint (Optional)'}
                 </label>
                 <input
@@ -533,9 +615,13 @@ export const AssistantChatView: React.FC = () => {
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#ffffff',
+                    background: isLight ? 'rgba(0, 0, 0, 0.04)' : isAmoled ? '#09090b' : 'rgba(255, 255, 255, 0.05)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.12)'
+                      : isAmoled
+                        ? '1px solid rgba(255, 255, 255, 0.16)'
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: isLight ? '#0f172a' : '#ffffff',
                     fontSize: 13,
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -544,7 +630,7 @@ export const AssistantChatView: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: isLight ? '#334155' : '#cbd5e1', marginBottom: 6 }}>
                   {isSpanish ? 'Modelo (Opcional)' : 'Model Name (Optional)'}
                 </label>
                 <input
@@ -556,9 +642,13 @@ export const AssistantChatView: React.FC = () => {
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#ffffff',
+                    background: isLight ? 'rgba(0, 0, 0, 0.04)' : isAmoled ? '#09090b' : 'rgba(255, 255, 255, 0.05)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.12)'
+                      : isAmoled
+                        ? '1px solid rgba(255, 255, 255, 0.16)'
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: isLight ? '#0f172a' : '#ffffff',
                     fontSize: 13,
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -572,9 +662,9 @@ export const AssistantChatView: React.FC = () => {
                   style={{
                     padding: '8px 14px',
                     borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: '#94a3b8',
+                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                    border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    color: isLight ? '#64748b' : '#94a3b8',
                     fontSize: 13,
                     cursor: 'pointer',
                   }}
@@ -606,7 +696,7 @@ export const AssistantChatView: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

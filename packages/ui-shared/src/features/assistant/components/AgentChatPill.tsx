@@ -123,11 +123,14 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
   const inputId = useId();
 
   const theme = useSettingsStore((s) => s.settings?.theme);
+  const amoledMode = useSettingsStore((s) => s.settings?.amoledMode);
   const isLight =
     theme === 'light' ||
     (theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(amoledMode);
+  const isDark = !isLight && !isAmoled;
 
   const [isFocused, setIsFocused] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
@@ -335,9 +338,17 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
   const getBorderColor = () => {
     if (errorMessage) return 'rgba(239, 68, 68, 0.45)';
     if (isFocused) {
-      return isLight ? 'rgba(15, 23, 42, 0.28)' : 'rgba(255, 255, 255, 0.28)';
+      return isLight
+        ? 'rgba(15, 23, 42, 0.28)'
+        : isAmoled
+          ? 'rgba(255, 255, 255, 0.35)'
+          : 'rgba(255, 255, 255, 0.28)';
     }
-    return isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
+    return isLight
+      ? 'rgba(0, 0, 0, 0.08)'
+      : isAmoled
+        ? 'rgba(255, 255, 255, 0.16)'
+        : 'rgba(255, 255, 255, 0.1)';
   };
 
   // Subtle elevation without AI neon glows
@@ -348,11 +359,15 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     if (isFocused) {
       return isLight
         ? '0 6px 24px -4px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-        : '0 8px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
+        : isAmoled
+          ? '0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 30px -4px rgba(0, 0, 0, 0.9)'
+          : '0 8px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
     }
     return isLight
       ? '0 4px 20px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-      : '0 6px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)';
+      : isAmoled
+        ? '0 4px 20px -2px rgba(0, 0, 0, 0.9)'
+        : '0 6px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)';
   };
 
   return (
@@ -368,7 +383,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     >
       <style>{`
         .agent-chat-pill-textarea::placeholder {
-          color: ${isLight ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.6)'};
+          color: ${isLight ? 'rgba(100, 116, 139, 0.7)' : isAmoled ? 'rgba(161, 161, 170, 0.65)' : 'rgba(148, 163, 184, 0.6)'};
         }
         .agent-chat-pill-textarea:focus {
           outline: none;
@@ -412,8 +427,12 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               bottom: 'calc(100% + 8px)',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
-              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.12)',
+              background: isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(15, 23, 42, 0.95)',
+              border: isLight
+                ? '1px solid rgba(0, 0, 0, 0.1)'
+                : isAmoled
+                  ? '1px solid rgba(255, 255, 255, 0.18)'
+                  : '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 20,
               padding: '6px 14px',
               fontSize: 11.5,
@@ -447,8 +466,12 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               position: 'absolute',
               bottom: 'calc(100% + 8px)',
               left: 12,
-              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.96)',
-              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.12)',
+              background: isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(15, 23, 42, 0.96)',
+              border: isLight
+                ? '1px solid rgba(0, 0, 0, 0.1)'
+                : isAmoled
+                  ? '1px solid rgba(255, 255, 255, 0.18)'
+                  : '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 16,
               padding: '6px',
               boxShadow: isLight
@@ -565,7 +588,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 24,
-          background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.88)',
+          background: isLight ? '#ffffff' : isAmoled ? '#000000' : 'rgba(15, 23, 42, 0.88)',
           border: `1px solid ${getBorderColor()}`,
           boxShadow: getBoxShadow(),
           backdropFilter: 'blur(24px) saturate(180%)',

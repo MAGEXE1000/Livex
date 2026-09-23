@@ -428,3 +428,8 @@ if (typeof window !== 'undefined') {
     // Passive safety guard
   }
 }
+
+if (typeof window !== 'undefined') {
+  (window as any).setNavScrollOffset = setNavScrollOffset;
+  (window as any).getNavScrollOffset = getNavScrollOffset;
+}

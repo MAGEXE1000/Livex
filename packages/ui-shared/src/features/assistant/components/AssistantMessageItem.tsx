@@ -9,11 +9,30 @@ import { Copy, Check, Paperclip, Globe, ExternalLink, AlertCircle, RotateCw } fr
 export interface AssistantMessageItemProps {
   message: AssistantMessage;
   isLight?: boolean;
+  isAmoled?: boolean;
 }
 
-export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ message, isLight = false }) => {
+export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
+  message,
+  isLight: propIsLight,
+  isAmoled: propIsAmoled,
+}) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+
+  const theme = useSettingsStore((s) => s.settings?.theme);
+  const amoledMode = useSettingsStore((s) => s.settings?.amoledMode);
+  const isLight =
+    propIsLight !== undefined
+      ? propIsLight
+      : theme === 'light' ||
+        (theme === 'system' &&
+          typeof window !== 'undefined' &&
+          window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const isAmoled =
+    propIsAmoled !== undefined
+      ? propIsAmoled
+      : !isLight && Boolean(amoledMode);
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(message.content);
@@ -186,14 +205,22 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
         )}
         <div
           style={{
-            background: isLight ? '#0f172a' : '#1e293b',
+            background: isLight ? '#0f172a' : isAmoled ? '#000000' : '#1e293b',
             color: '#ffffff',
-            border: isLight ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+            border: isLight
+              ? 'none'
+              : isAmoled
+                ? '1px solid rgba(255, 255, 255, 0.18)'
+                : '1px solid rgba(255, 255, 255, 0.08)',
             padding: '10px 16px',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14.5,
             lineHeight: 1.45,
-            boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.10)' : 'none',
+            boxShadow: isLight
+              ? '0 1px 3px rgba(0, 0, 0, 0.10)'
+              : isAmoled
+                ? '0 2px 8px rgba(0, 0, 0, 0.6)'
+                : 'none',
             maxWidth: '100%',
             wordBreak: 'break-word',
           }}

@@ -480,6 +480,12 @@ export function SharedNavigationBar({
     scrollOffsetSpring.jump(0);
   }, [currentApp, items, scrollOffsetRaw, scrollOffsetSpring]);
 
+  useEffect(() => {
+    if (collapsed !== undefined) {
+      scrollOffsetRaw.set(collapsed ? 1 : 0);
+    }
+  }, [collapsed, scrollOffsetRaw]);
+
   // Safari-style physical compression: dock scales down (1.00 → 0.88) on scroll
   const containerScale = useTransform(scrollOffsetSpring, (offset) => {
     return 1.0 - offset * 0.12;
@@ -489,18 +495,22 @@ export function SharedNavigationBar({
   // scale handles the tuck effect without additional vertical movement.
   const containerY = useTransform(scrollOffsetSpring, () => 0);
 
-  // App Changer satellite: smooth progressive fade-out and subtle scale-down on scroll
-  const switcherOpacity = useTransform(scrollOffsetSpring, (offset) => {
+  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and subtle scale-down on scroll/collapse
+  const satelliteOpacity = useTransform(scrollOffsetSpring, (offset) => {
     if (offset <= 0) return 1.0;
     if (offset >= 0.7) return 0;
     return 1.0 - offset / 0.7;
   });
 
-  const switcherScale = useTransform(scrollOffsetSpring, (offset) => 1.0 - offset * 0.18);
+  const satelliteScale = useTransform(scrollOffsetSpring, (offset) => 1.0 - offset * 0.18);
 
-  const switcherPointerEvents = useTransform(scrollOffsetSpring, (offset) =>
+  const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
     offset > 0.4 ? 'none' : 'auto'
   );
+
+  const switcherOpacity = satelliteOpacity;
+  const switcherScale = satelliteScale;
+  const switcherPointerEvents = satellitePointerEvents;
 
   // Derived continuous pill movement with zero layout jumps
   const pillX = useTransform(
@@ -1350,6 +1360,9 @@ export function SharedNavigationBar({
                     transformOrigin: 'center bottom',
                     position: 'relative',
                     overflow: 'hidden',
+                    opacity: satelliteOpacity,
+                    scale: satelliteScale,
+                    pointerEvents: satellitePointerEvents,
                   }}
                 >
                   {/* Radial Center Glow */}
