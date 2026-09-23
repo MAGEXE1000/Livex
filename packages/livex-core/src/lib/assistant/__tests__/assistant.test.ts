@@ -56,6 +56,16 @@ describe('Livex Music AI Assistant Suite', () => {
       const resolved = resolveAiGatewayUrl(custom);
       expect(resolved).toBe('https://ai.example.com/api/ai/chat');
     });
+
+    it('resolves production Cloudflare edge endpoint when running in native Android platform', () => {
+      (globalThis as any).window = {
+        Capacitor: { isNativePlatform: () => true },
+        location: { protocol: 'capacitor:', origin: 'capacitor://localhost' },
+      };
+      const resolved = resolveAiGatewayUrl();
+      expect(resolved).toBe('https://livex-5rk.pages.dev/api/ai/chat');
+      delete (globalThis as any).window;
+    });
   });
 
   describe('Assistant Store & Mascot State Transitions', () => {

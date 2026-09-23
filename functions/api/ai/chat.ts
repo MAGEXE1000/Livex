@@ -365,7 +365,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                           }
                           fullResponseText += part.text;
                           await writer.write(
-                            encoder.encode(`data: ${JSON.stringify({ delta: part.text })}\n\n` Squarespace: none)
+                            encoder.encode(`data: ${JSON.stringify({ delta: part.text })}\n\n`)
                           );
                         }
                       }
@@ -568,10 +568,6 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   // =========================================================================
   if (env.AI) {
     try {
-      const workerModel =
-        env.OPENAI_COMPATIBLE_MODEL ||
-        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b';
-
       const messages = [
         { role: 'system', content: contextualSystemPrompt },
         ...history.map((m: any) => ({
@@ -581,11 +577,27 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         { role: 'user', content: prompt },
       ];
 
-      const aiStream = await env.AI.run(workerModel, {
-        messages,
-        stream: true,
-        max_tokens: 2048,
-      });
+      const candidateModels = [
+        env.OPENAI_COMPATIBLE_MODEL,
+        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+        '@cf/meta/llama-3.1-8b-instruct',
+        '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+        '@cf/mistral/mistral-7b-instruct-v0.1',
+      ].filter(Boolean) as string[];
+
+      let aiStream: any = null;
+      for (const modelCandidate of candidateModels) {
+        try {
+          aiStream = await env.AI.run(modelCandidate, {
+            messages,
+            stream: true,
+            max_tokens: 2048,
+          });
+          if (aiStream) break;
+        } catch (candidateErr) {
+          console.warn(`[Edge Gateway] Workers AI candidate ${modelCandidate} failed:`, candidateErr);
+        }
+      }
 
       if (aiStream) {
         const { readable, writable } = new TransformStream();

@@ -320,7 +320,12 @@ export default function UpdateIndicator({
 
   const [phase, setPhase] = useState<Phase>(readInitialPhase);
   const [open, setOpen] = useState(() => isUpdateInProgress(updater.updateState));
-  const [installFailedReason, setInstallFailedReason] = useState<string | null>(null);
+  const [localFailedReason, setInstallFailedReason] = useState<string | null>(null);
+  const installFailedReason =
+    localFailedReason ??
+    ((updater.updateState === 'INSTALL_FAILED' || updater.updateState === 'RECOVERY')
+      ? updater.error
+      : null);
   const [entered, setEntered] = useState(false);
   const [laterVersion, setLaterVersion] = useState<string | null>(readLaterVersion);
 
@@ -434,12 +439,6 @@ export default function UpdateIndicator({
     }
   }, [updater.isModalOpen]);
 
-  useEffect(() => {
-    const isFailed = updater.updateState === 'INSTALL_FAILED' || updater.updateState === 'RECOVERY';
-    if (isFailed && updater.error) {
-      setInstallFailedReason(updater.error);
-    }
-  }, [updater.updateState, updater.error]);
 
   // Auto-open update modal immediately when update is available, unless dismissed/later'ed.
   useEffect(() => {

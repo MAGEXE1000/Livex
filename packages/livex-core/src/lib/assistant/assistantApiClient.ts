@@ -59,8 +59,8 @@ export function resolveAiGatewayUrl(customGatewayUrl?: string): string {
       window.location?.protocol === 'capacitor:');
 
   if (isNative) {
-    // When running inside native Android APK, default to the production host
-    return 'https://studio-30f44.web.app/api/ai/chat';
+    // When running inside native Android APK, route to the production Cloudflare Edge AI Gateway
+    return 'https://livex-5rk.pages.dev/api/ai/chat';
   }
 
   // In Node test environment or server-side without window origin
