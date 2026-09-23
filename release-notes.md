@@ -1,13 +1,11 @@
-# Version 4.6.39
+# Version 4.6.40
 
 Release Date: 2026-09-23
 
 ### Added
-- Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.
-- Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.
-- Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.
-- Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.
+- Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.
+- PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.
 
 ### Improved
-- Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.
-- Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.
+- Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.
+- Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.

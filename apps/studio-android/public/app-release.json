@@ -1,25 +1,23 @@
 {
   "platform": "android",
-  "version": "4.6.39",
-  "versionName": "4.6.39",
-  "versionCode": 40639,
-  "version_code": 40639,
-  "commit": "ec93d903",
-  "releasedAt": "9/23/2026, 3:16:03 AM CST",
-  "buildTimestamp": "9/23/2026, 3:16:03 AM CST",
+  "version": "4.6.40",
+  "versionName": "4.6.40",
+  "versionCode": 40640,
+  "version_code": 40640,
+  "commit": "206d5c7c",
+  "releasedAt": "9/23/2026, 3:34:29 PM CST",
+  "buildTimestamp": "9/23/2026, 3:34:29 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.\n• Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.\n• Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.\n• Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.\n• Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.\n• Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.",
-  "whatsNew": "• Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.\n• Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.\n• Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.\n• Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.\n• Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.\n• Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.",
+  "changelog": "• Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.\n• PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.\n• Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.\n• Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.",
+  "whatsNew": "• Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.\n• PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.\n• Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.\n• Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.",
   "releaseNotes": {
     "added": [
-      "Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.",
-      "Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.",
-      "Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.",
-      "Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns."
+      "Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.",
+      "PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states."
     ],
     "improved": [
-      "Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.",
-      "Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning."
+      "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
+      "Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests."
     ]
   },
   "mandatory": false

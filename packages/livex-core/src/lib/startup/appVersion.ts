@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.39';
-export const NATIVE_VERSION_CODE = 40639;
-export const WEB_VERSION = '4.6.39';
+export const NATIVE_VERSION = '4.6.40';
+export const NATIVE_VERSION_CODE = 40640;
+export const WEB_VERSION = '4.6.40';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/23/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'ec93d903';
+export const APP_COMMIT_SHA = '206d5c7c';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/23/2026, 3:16:03 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/23/2026, 3:34:29 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,17 +98,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.',
-      'Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.',
-      'Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.',
-      'Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.',
+      'Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.',
+      'PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.',
-      'Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.',
+      "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
+      'Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.',
     ],
   },
 ];
@@ -120,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.40',
+    date: '2026-09-23',
+    highlights: [
+      'Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.',
+      'PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.',
+      "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
+      'Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.',
+    ],
+  },
   {
     version: '4.6.39',
     date: '2026-09-23',
@@ -213,16 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
     highlights: [
       'Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.',
       'Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.',
-    ],
-  },
-  {
-    version: '4.6.30',
-    date: '2026-09-20',
-    highlights: [
-      'Native Liquid Glass Material Architecture: Upgraded Topbar and Bottom Navigation surfaces with optical curvature gradients, calibrated 20px blur, and vibrant saturation (190% dark / 180% light), delivering Apple-grade frosted depth and real background separation across all screens.',
-      'Physical Specular Edge Rims: Added micro-refined translucent borders (`1px solid rgba(255, 255, 255, 0.12)`) and inset specular top highlights (`inset 0 1px 0 0 rgba(255, 255, 255, 0.16)`) to Topbar and Bottom Navigation surfaces.',
-      'Enlarged Bottom Navigation Selected Highlight: Upgraded active tab highlight capsule from `56×46px` (radius `21px`) to `64×48px` (radius `24px`) with exact 2px vertical centering in `SharedNavigationBar`, comfortably containing tab icons and labels across all apps.',
-      'Liquid Glass Lens Material Tokens: Refined `--surface-glass-lens-*` tokens across Dark, Light, and AMOLED themes with physical specular center glow and subtle depth shadows.',
     ],
   },
 ];
