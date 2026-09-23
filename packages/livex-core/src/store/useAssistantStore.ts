@@ -287,12 +287,16 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
           const currentLanguage = useSettingsStore.getState().settings?.language || 'en';
 
+          const priorMessages = get().messages.filter(
+            (m) => m.id !== userMsgId && m.id !== assistantMsgId && m.status !== 'streaming'
+          );
+
           let hasReceivedFirstToken = false;
 
           try {
             await streamChatCompletion({
               prompt: currentText,
-              history: get().messages,
+              history: priorMessages,
               contextSnapshot,
               language: currentLanguage,
               attachments: pendingAttachments,
@@ -374,7 +378,10 @@ export const useAssistantStore = create<AssistantStoreState>()(
                         ? {
                             ...m,
                             status: 'error',
-                            content: m.content || err.message || 'Unable to connect to AI service. Please check your connection or API configuration.',
+                            content:
+                              m.content ||
+                              err.message ||
+                              'Unable to connect to Livex AI cloud service. Please check your connection and retry.',
                           }
                         : m
                     ),

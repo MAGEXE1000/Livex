@@ -237,5 +237,122 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(useAssistantStore.getState().status).toBe('idle');
       expect(useAssistantStore.getState().mascotState).toBe('interrupted');
     });
+
+    it('operates in Zero-BYOK mode: user needs no API key and payload sends undefined apiKey', async () => {
+      let interceptedPayload: any = null;
+      let interceptedHeaders: any = null;
+
+      const ssePayload = [
+        'data: {"type": "state", "state": "connecting"}\n\n',
+        'data: {"delta": "Livex cloud AI streaming response with zero configuration required."}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+        interceptedHeaders = opts.headers;
+        interceptedPayload = JSON.parse(opts.body);
+        return {
+          ok: true,
+          headers: new Headers({ 'content-type': 'text/event-stream' }),
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode(ssePayload));
+              controller.close();
+            },
+          }),
+        };
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        // Assert userApiKey is undefined by default (No BYOK)
+        expect(store.userApiKey).toBeUndefined();
+
+        await store.sendMessage('How do I tune Drop D?');
+
+        expect(interceptedPayload).toBeDefined();
+        expect(interceptedPayload.apiKey).toBeUndefined();
+        expect(interceptedHeaders['x-api-key']).toBeUndefined();
+        expect(useAssistantStore.getState().messages[1].content).toContain(
+          'Livex cloud AI streaming response'
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('collects web grounding sources from SSE stream into assistant message', async () => {
+      const ssePayload = [
+        'data: {"type": "state", "state": "searching", "query": "current guitar gear 2026"}\n\n',
+        'data: {"type": "sources", "sources": [{"title": "Guitar World", "url": "https://guitarworld.com/gear-2026"}]}\n\n',
+        'data: {"delta": "The latest DSP modeling amplifiers feature sub-millisecond latency."}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(ssePayload));
+            controller.close();
+          },
+        }),
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('What are the latest DSP amps?');
+
+        const assistantMsg = useAssistantStore.getState().messages[1];
+        expect(assistantMsg.sources).toBeDefined();
+        expect(assistantMsg.sources?.length).toBe(1);
+        expect(assistantMsg.sources?.[0].title).toBe('Guitar World');
+        expect(assistantMsg.sources?.[0].url).toBe('https://guitarworld.com/gear-2026');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('preserves multi-turn conversation history across consecutive messages', async () => {
+      let lastSentHistory: any[] = [];
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+        const parsed = JSON.parse(opts.body);
+        lastSentHistory = parsed.history;
+        const reply = parsed.prompt === 'Turn 1' ? 'Answer 1' : 'Answer 2';
+        return {
+          ok: true,
+          headers: new Headers({ 'content-type': 'text/event-stream' }),
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode(`data: {"delta": "${reply}"}\n\ndata: [DONE]\n\n`)
+              );
+              controller.close();
+            },
+          }),
+        };
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('Turn 1');
+
+        expect(lastSentHistory.length).toBe(0);
+
+        await store.sendMessage('Turn 2');
+
+        expect(lastSentHistory.length).toBe(2);
+        expect(lastSentHistory[0].content).toBe('Turn 1');
+        expect(lastSentHistory[1].content).toBe('Answer 1');
+        expect(useAssistantStore.getState().messages.length).toBe(4);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });

@@ -259,49 +259,55 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canClose, isDismissing]);
 
-  // Format Package Size
-  const formattedSize = useMemo(() => {
-    const total =
-      (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
-      (typeof apkSizeBytes === 'number' && apkSizeBytes > 0 ? apkSizeBytes : null);
-    if (total) {
-      return `${(total / (1024 * 1024)).toFixed(1)} MB`;
+  // Real measured sizes and progress
+  const realTotalBytes = useMemo(() => {
+    if (typeof totalBytes === 'number' && totalBytes > 0) return totalBytes;
+    if (typeof apkSizeBytes === 'number' && apkSizeBytes > 0) return apkSizeBytes;
+    return null;
+  }, [totalBytes, apkSizeBytes]);
+
+  const realDownloadedBytes = useMemo(() => {
+    if (isInstalling && realTotalBytes !== null && realTotalBytes > 0) {
+      return realTotalBytes;
     }
-    return '77.4 MB';
-  }, [apkSizeBytes, totalBytes]);
+    if (typeof downloadedBytes === 'number' && downloadedBytes >= 0) {
+      return downloadedBytes;
+    }
+    if (realTotalBytes !== null && typeof progress === 'number' && progress > 0) {
+      const normalized = progress > 1 ? progress / 100 : progress;
+      return Math.round(normalized * realTotalBytes);
+    }
+    return null;
+  }, [downloadedBytes, realTotalBytes, progress, isInstalling]);
+
+  // Format Package Size (Measured)
+  const formattedSize = useMemo(() => {
+    if (realTotalBytes !== null && realTotalBytes > 0) {
+      return `${(realTotalBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    return null;
+  }, [realTotalBytes]);
 
   // Format Download Progress Numbers (0 to 100)
   const effectiveProgress = useMemo(() => {
-    if (typeof progress === 'number' && progress > 0) return progress;
-    const total =
-      (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
-      (typeof apkSizeBytes === 'number' && apkSizeBytes > 0 ? apkSizeBytes : null);
-    if (typeof downloadedBytes === 'number' && downloadedBytes > 0 && total && total > 0) {
-      return downloadedBytes / total;
+    if (isInstalling) return 1.0;
+    if (realDownloadedBytes !== null && realTotalBytes !== null && realTotalBytes > 0) {
+      return Math.min(1.0, realDownloadedBytes / realTotalBytes);
+    }
+    if (typeof progress === 'number' && progress > 0) {
+      return Math.min(1.0, progress > 1 ? progress / 100 : progress);
     }
     return 0;
-  }, [progress, downloadedBytes, totalBytes, apkSizeBytes]);
+  }, [isInstalling, realDownloadedBytes, realTotalBytes, progress]);
 
   const progressPercent = Math.min(100, Math.max(0, Math.round(effectiveProgress * 100)));
 
   const downloadedMB = useMemo(() => {
-    if (isInstalling) {
-      return formattedSize.replace(' MB', '');
+    if (realDownloadedBytes !== null && realDownloadedBytes >= 0) {
+      return (realDownloadedBytes / (1024 * 1024)).toFixed(1);
     }
-    const total =
-      (typeof totalBytes === 'number' && totalBytes > 0 ? totalBytes : null) ??
-      (typeof apkSizeBytes === 'number' && apkSizeBytes > 0 ? apkSizeBytes : null);
-    const bytes =
-      typeof downloadedBytes === 'number' && downloadedBytes > 0
-        ? downloadedBytes
-        : total && progress > 0
-          ? progress * total
-          : null;
-    if (bytes !== null && bytes >= 0) {
-      return (bytes / (1024 * 1024)).toFixed(1);
-    }
-    return '0.0';
-  }, [downloadedBytes, totalBytes, apkSizeBytes, progress, isInstalling, formattedSize]);
+    return null;
+  }, [realDownloadedBytes]);
 
   // Changelog parser extracting clean items
   const changelogItems = useMemo<string[]>(() => {
@@ -475,11 +481,6 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       ? 'bg-[#161618] text-[#dcdce0]'
       : 'bg-[#212124] text-[#dcdce0]';
 
-  const closeBtnBg = resolvedIsLight
-    ? 'bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] hover:text-[#0f172a]'
-    : resolvedIsAmoled
-      ? 'bg-[#141416] hover:bg-[#202023] text-[#8e8e93] hover:text-white border border-white/[0.08]'
-      : 'bg-[#1e1e21] hover:bg-[#28282c] text-[#8e8e93] hover:text-white';
 
   const laterBtnClass = resolvedIsLight
     ? 'bg-[#f1f5f9] hover:bg-[#e2e8f0] active:scale-[0.985] text-[#475569] hover:text-[#0f172a] border border-black/[0.05]'
@@ -556,38 +557,24 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
         data-purpose="dialog-card"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button (Persistent top-right) */}
-        <button
-          aria-label="Close dialog"
-          className={`absolute top-6 right-6 w-9 h-9 rounded-full ${closeBtnBg} transition-colors flex items-center justify-center focus:outline-none z-10`}
-          data-purpose="close-dialog-btn"
-          type="button"
-          onClick={isProgressState ? handleCancel : handleDismiss}
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.2"
-            viewBox="0 0 24 24"
-          >
-            <line x1="18" x2="6" y1="6" y2="18" />
-            <line x1="6" x2="18" y1="6" y2="18" />
-          </svg>
-        </button>
-
         {/* BEGIN: HeaderSection (Persistent) */}
-        <motion.div layout={!prefersReduced} className="pr-8 mb-6" data-purpose="modal-header">
+        <motion.div layout={!prefersReduced} className="mb-6" data-purpose="modal-header">
           <h1
             className={`text-[26px] sm:text-[27px] font-bold tracking-tight ${textPrimary} leading-tight`}
             id="modal-title"
           >
-            {customTitle || updaterTr?.studioUpdateAvailable || 'Update Available'}
+            {isInstalling
+              ? updaterTr?.installing || 'Installing...'
+              : isProgressState
+                ? updaterTr?.downloadingUpdate || 'Downloading update'
+                : customTitle || updaterTr?.studioUpdateAvailable || 'Update Available'}
           </h1>
           <p className={`text-[14.5px] sm:text-[15px] ${textMuted} mt-1.5 font-normal leading-snug`}>
-            {customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.'}
+            {isInstalling
+              ? 'Waiting for installer... Please wait... Do not close the application.'
+              : isProgressState
+                ? updaterTr?.downloadingPackage || 'Livex is downloading the latest app package.'
+                : customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.'}
           </p>
         </motion.div>
         {/* END: HeaderSection */}
@@ -604,7 +591,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
               Current Version
             </span>
             <div className={`w-full max-w-[124px] py-2 px-3 ${currentPillBg} text-[15px] font-semibold rounded-full text-center`}>
-              v{fromVersion}
+              {fromVersion ? (fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`) : 'Current'}
             </div>
           </div>
 
@@ -631,7 +618,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
               New Version
             </span>
             <div className="w-full max-w-[124px] py-2 px-3 bg-[#387ff5] hover:bg-[#347ff8] text-white text-[15px] font-bold rounded-full text-center shadow-sm transition-colors">
-              v{toVersion || '4.9.5'}
+              {toVersion ? (toVersion.startsWith('v') ? toVersion : `v${toVersion}`) : 'Latest'}
             </div>
           </div>
         </motion.div>
@@ -665,66 +652,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
         {/* BEGIN: Morphing Bottom Action / Progress Section */}
         <motion.div layout={!prefersReduced} className="relative w-full" data-purpose="morphing-bottom-section">
           <AnimatePresence mode="wait" initial={false}>
-            {isProgressState ? (
-              /* State 2: DOWNLOADING & INSTALLING (Stitch Screen 2) */
-              <motion.div
-                key="state-progress"
-                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-3"
-                data-purpose="install-progress-container"
-              >
-                {/* DownloadProgressSection (Exact Stitch Screen 2 Card) */}
-                <section
-                  className={`${progressCardBg} border ${progressCardBorder} rounded-2xl p-4 flex flex-col gap-2.5 text-left`}
-                  data-purpose="install-progress-card"
-                >
-                  {/* Status & Percentage */}
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[15px] font-semibold ${textPrimary} tracking-tight`}>
-                      {isInstalling ? 'Installing...' : 'Downloading...'}
-                    </span>
-                    <span className="text-[15px] font-semibold text-[#5ea2ff] tracking-tight">
-                      {progressPercent}%
-                    </span>
-                  </div>
-
-                  {/* Horizontal Progress Bar Track */}
-                  <div
-                    aria-valuemax={100}
-                    aria-valuemin={0}
-                    aria-valuenow={progressPercent}
-                    className={`w-full h-2 ${progressTrackBg} rounded-full overflow-hidden relative`}
-                    role="progressbar"
-                  >
-                    {/* Blue Active Progress Bar */}
-                    <div
-                      className="h-full bg-gradient-to-r from-[#4d94ff] to-[#5ea2ff] rounded-full progress-bar-glow transition-all duration-200 ease-out"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-
-                  {/* Transferred / Total Download Size */}
-                  <div className={`text-[12.5px] font-medium ${textDim}`}>
-                    {downloadedMB} / {formattedSize}
-                  </div>
-                </section>
-
-                {/* Cancel Action Button (Exact Stitch Screen 2 Footer Button) */}
-                <footer className="pt-1">
-                  <button
-                    className={`w-full h-[52px] py-3.5 px-6 rounded-full ${cancelBtnClass} font-medium text-[15px] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
-                    data-purpose="cancel-action-button"
-                    type="button"
-                    onClick={handleCancel}
-                  >
-                    Cancel
-                  </button>
-                </footer>
-              </motion.div>
-            ) : normalizedState === 'error' ? (
+            {normalizedState === 'error' ? (
               /* State Error: Interrupted State with Retry / Cancel */
               <motion.div
                 key="state-error"
@@ -786,38 +714,193 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                 </button>
               </motion.div>
             ) : (
-              /* State 1: UPDATE AVAILABLE / DOWNLOAD (Stitch Screen 1) */
-              <motion.div
-                key="state-available"
-                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-3"
-                data-purpose="action-buttons-group"
-              >
-                {/* Download & Install Button (Stitch Screen 1) */}
-                <button
-                  className="w-full h-[52px] bg-[#6ca0ff] hover:bg-[#5b94fd] active:scale-[0.985] text-[#001736] font-semibold text-[16px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md"
-                  data-purpose="install-button"
-                  type="button"
-                  onClick={handleUpdate}
-                >
-                  Download &amp; Install
-                </button>
-
-                {/* Later Button (Stitch Screen 1) */}
-                {!isRequired && (
-                  <button
-                    className={`w-full h-[52px] ${laterBtnClass} font-medium text-[16px] rounded-full flex items-center justify-center transition-all duration-150`}
+              /* State 1 (Available) & State 2 (Downloading) & State 4 (Installing) */
+              /* Unified Coordinated Morphing Surface */
+              <div key="state-unified-surface" className="flex flex-col gap-3 w-full" data-purpose="action-buttons-group">
+                <div className="relative w-full flex items-center">
+                  {/* Coordinated Cancel Button positioned on the LEFT in State 1 */}
+                  <motion.button
                     data-purpose="later-button"
                     type="button"
                     onClick={handleDismiss}
+                    initial={false}
+                    animate={
+                      isProgressState
+                        ? { width: 0, opacity: 0, scale: 0.85, marginRight: 0, paddingLeft: 0, paddingRight: 0 }
+                        : { width: 'auto', opacity: 1, scale: 1, marginRight: 12, paddingLeft: 22, paddingRight: 22 }
+                    }
+                    transition={
+                      prefersReduced
+                        ? { duration: 0 }
+                        : { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }
+                    }
+                    style={{
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      pointerEvents: isProgressState ? 'none' : 'auto',
+                    }}
+                    className={`h-[52px] ${laterBtnClass} font-medium text-[15px] rounded-full flex items-center justify-center transition-colors shrink-0`}
                   >
-                    Later
-                  </button>
-                )}
-              </motion.div>
+                    {updaterTr?.cancel || 'Cancel'}
+                  </motion.button>
+
+                  {/* Morphing Primary Surface — transforms from Download & Install button to Centered Progress Card */}
+                  <motion.div
+                    layout={!prefersReduced}
+                    data-purpose={isProgressState ? 'install-progress-card' : 'install-button'}
+                    role={isProgressState ? 'region' : 'button'}
+                    tabIndex={isProgressState ? undefined : 0}
+                    onClick={isProgressState ? undefined : handleUpdate}
+                    onKeyDown={
+                      isProgressState
+                        ? undefined
+                        : (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleUpdate();
+                            }
+                          }
+                    }
+                    initial={false}
+                    animate={{
+                      height: isProgressState ? 88 : 52,
+                      borderRadius: isProgressState ? 16 : 26,
+                      backgroundColor: isProgressState
+                        ? resolvedIsLight
+                          ? '#f8fafc'
+                          : resolvedIsAmoled
+                            ? '#0c0c0e'
+                            : '#171719'
+                        : '#6ca0ff',
+                      borderColor: isProgressState
+                        ? resolvedIsLight
+                          ? 'rgba(0, 0, 0, 0.06)'
+                          : resolvedIsAmoled
+                            ? '#1f1f23'
+                            : '#232326'
+                        : 'transparent',
+                    }}
+                    transition={
+                      prefersReduced
+                        ? { duration: 0 }
+                        : { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }
+                    }
+                    className={`relative flex-1 flex flex-col justify-center overflow-hidden border transition-colors select-none ${
+                      isProgressState
+                        ? 'p-4 cursor-default'
+                        : 'hover:bg-[#5b94fd] active:scale-[0.985] cursor-pointer items-center shadow-md'
+                    }`}
+                  >
+                    <AnimatePresence mode="wait" initial={false}>
+                      {!isProgressState ? (
+                        /* State 1: Download & Install Label */
+                        <motion.span
+                          key="label-download-install"
+                          initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                          className="text-[16px] font-semibold text-[#001736] tracking-tight leading-none"
+                        >
+                          Download &amp; Install
+                        </motion.span>
+                      ) : (
+                        /* State 2 & 4: Download / Installing Progress */
+                        <motion.div
+                          key="content-progress"
+                          initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                          transition={{ duration: 0.22, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
+                          className="w-full flex flex-col gap-2.5 text-left"
+                        >
+                          {/* Status & Percentage */}
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[15px] font-semibold ${textPrimary} tracking-tight`}>
+                              {isInstalling
+                                ? updaterTr?.installing || 'Installing...'
+                                : updaterTr?.downloading || 'Downloading...'}
+                            </span>
+                            <span
+                              className="text-[15px] font-semibold text-[#5ea2ff] tracking-tight tabular-nums"
+                              role="status"
+                              aria-live="polite"
+                            >
+                              {progressPercent}%
+                            </span>
+                          </div>
+
+                          {/* Horizontal Progress Bar Track */}
+                          <div
+                            aria-valuemax={100}
+                            aria-valuemin={0}
+                            aria-valuenow={progressPercent}
+                            className={`w-full h-2 ${progressTrackBg} rounded-full overflow-hidden relative`}
+                            role="progressbar"
+                          >
+                            {/* Blue Active Progress Bar with GPU ScaleX */}
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-[#4d94ff] to-[#5ea2ff] rounded-full progress-bar-glow"
+                              initial={false}
+                              animate={{ scaleX: Math.max(0.01, progressPercent / 100) }}
+                              style={{ width: '100%', transformOrigin: 'left' }}
+                              transition={
+                                prefersReduced
+                                  ? { duration: 0 }
+                                  : { duration: 0.2, ease: 'easeOut' }
+                              }
+                            />
+                          </div>
+
+                          {/* Transferred / Total Download Size */}
+                          <div className={`flex items-center justify-between text-[12.5px] font-medium ${textDim} tabular-nums`}>
+                            <span>
+                              {downloadedMB && formattedSize
+                                ? `${downloadedMB} / ${formattedSize}`
+                                : downloadedMB
+                                  ? `${downloadedMB} MB`
+                                  : formattedSize
+                                    ? formattedSize
+                                    : ''}
+                            </span>
+                            {downloadSpeed && !isInstalling && (
+                              <span className="text-[11.5px] opacity-80">{downloadSpeed}</span>
+                            )}
+                            {isInstalling && (
+                              <span className="text-[11.5px] text-[#5ea2ff] font-medium">
+                                Verifying package
+                              </span>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                </div>
+
+                {/* Cancel Action Button (Appears below progress card in State 2 & 4) */}
+                <AnimatePresence>
+                  {isProgressState && (
+                    <motion.footer
+                      key="footer-cancel"
+                      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, height: 0, y: 6 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={prefersReduced ? { opacity: 0 } : { opacity: 0, height: 0, y: 6 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full pt-1"
+                    >
+                      <button
+                        className={`w-full h-[52px] py-3.5 px-6 rounded-full ${cancelBtnClass} font-medium text-[15px] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+                        data-purpose="cancel-action-button"
+                        type="button"
+                        onClick={handleCancel}
+                      >
+                        {updaterTr?.cancel || 'Cancel'}
+                      </button>
+                    </motion.footer>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
           </AnimatePresence>
         </motion.div>

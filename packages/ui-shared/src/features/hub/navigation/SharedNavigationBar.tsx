@@ -138,8 +138,8 @@ const NavigationItem = React.memo(
         aria-label={item.label}
         title={item.label}
         data-nav-item-index={index}
-        whileTap={{ scale: 0.94 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 25 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 450, damping: 35 }}
         style={{
           flex: 1,
           height: '100%',
@@ -449,13 +449,32 @@ export function SharedNavigationBar({
   const dragSkewRaw = useMotionValue(0);
   const pressPressureRaw = useMotionValue(0);
 
-  // Synchronized Apple-grade spring physics
+  // Synchronized Apple-grade critically damped spring physics (zero overshoot, zero bounce)
   const activeIdxSpring = useSpring(
     activeIdxRaw,
     prefersReduced
-      ? { stiffness: 1000, damping: 50, mass: 0.01 }
-      : { stiffness: 360, damping: 30, mass: 0.8 }
+      ? { stiffness: 4000, damping: 200, mass: 0.001 }
+      : { stiffness: 340, damping: 36, mass: 0.8 }
   );
+
+  // Dynamic specular light reflection that glides fluidly across the curved glass lens during travel
+  const specularShiftPercent = useTransform(
+    [activeIdxRaw, activeIdxSpring],
+    ([raw, spring]) => {
+      if (prefersReduced) return 0;
+      const diff = (raw as number) - (spring as number);
+      // Fluid specular refraction bias along direction of motion, clamped to [-12%, +12%]
+      return Math.max(-12, Math.min(12, diff * 16));
+    }
+  );
+
+  const dynamicSpecularBg = useTransform(specularShiftPercent, (shift) => {
+    const posX = 50 + shift;
+    return isLight
+      ? `radial-gradient(ellipse 65% 50% at ${posX}% 10%, rgba(255, 255, 255, 0.45) 0%, transparent 100%)`
+      : `radial-gradient(ellipse 65% 50% at ${posX}% 10%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)`;
+  });
+
   const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 30, mass: 0.7 });
   const profileOpenSpring = useSpring(profileOpenRaw, { stiffness: 420, damping: 28, mass: 0.8 });
 
@@ -984,7 +1003,7 @@ export function SharedNavigationBar({
                   borderRadius: '9999px',
                 }}
               >
-                {/* Active lens pill — enlarged integrated Liquid Glass capsule */}
+                {/* Active lens pill — single persistent Liquid Glass morphing surface */}
                 <motion.div
                   animate={{
                     width: pillWidthVal,
@@ -994,7 +1013,7 @@ export function SharedNavigationBar({
                   transition={{
                     type: 'spring',
                     stiffness: 340,
-                    damping: 26,
+                    damping: 36,
                     mass: 0.75,
                   }}
                   style={{
@@ -1002,31 +1021,24 @@ export function SharedNavigationBar({
                     top: isSwitcherOpen ? 7 : 2,
                     left: 0,
                     x: animatedPillX,
-                    background: isLight
-                      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.90) 100%)'
-                      : 'var(--surface-glass-lens-bg)',
-                    border: isLight
-                      ? '1px solid rgba(0, 0, 0, 0.06)'
-                      : 'var(--surface-glass-lens-border)',
-                    boxShadow: isLight
-                      ? '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 #ffffff'
-                      : 'var(--surface-glass-lens-shadow)',
+                    background: 'var(--surface-glass-lens-bg)',
+                    border: 'var(--surface-glass-lens-border)',
+                    boxShadow: 'var(--surface-glass-lens-shadow)',
+                    backdropFilter: 'blur(12px) saturate(140%)',
+                    WebkitBackdropFilter: 'blur(12px) saturate(140%)',
                     pointerEvents: 'none',
                     zIndex: 0,
-                    skewX: dragSkewRaw,
                     scale: pillPressScale,
                     willChange: 'transform',
                   }}
                 >
-                  {/* Inner Lens — Radial Center Glow (specular center highlight) */}
-                  <div
+                  {/* Dynamic Specular Lens Refraction — moves fluidly across the curved glass during travel */}
+                  <motion.div
                     style={{
                       position: 'absolute',
                       inset: 0,
                       borderRadius: pillRadiusVal,
-                      background: isLight
-                        ? 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.40) 0%, transparent 100%)'
-                        : 'radial-gradient(ellipse 65% 50% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)',
+                      background: dynamicSpecularBg,
                       pointerEvents: 'none',
                     }}
                   />

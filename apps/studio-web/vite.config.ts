@@ -21,6 +21,7 @@ const injectEnvKeys = [
   'VITE_SUPABASE_URL',
   'VITE_SUPABASE_ANON_KEY',
   'VITE_SYNC_BACKEND_PROVIDER',
+  'VITE_AI_GATEWAY_URL',
 ] as const;
 
 export default defineConfig(async ({ command, mode }) => {

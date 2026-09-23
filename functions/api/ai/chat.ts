@@ -3,24 +3,30 @@
  * Route: /api/ai/chat (POST)
  *
  * Professional Music Assistant Backend:
- * - Open-Source Reasoning Models (DeepSeek-R1 / QwQ-32B / Qwen2.5) via OpenAI-compatible endpoints (vLLM, Ollama, DeepSeek, Groq)
- * - Real-time reasoning lifecycle state emission ('connecting' -> 'solving' -> 'composing' -> 'completed')
+ * - Google Gemini 2.5 Flash / 2.0 Flash with native Google Search Grounding & citations
+ * - Groq LPU (DeepSeek-R1-Distill-Llama-70B / Llama 3.3 70B) for ultra-fast, sub-250ms reasoning
+ * - Cloudflare Workers AI native edge binding (env.AI: @cf/deepseek-ai/deepseek-r1-distill-qwen-32b)
+ * - Open-Source Reasoning Models via OpenAI-compatible endpoints (vLLM, Ollama, DeepSeek)
+ * - Real-time reasoning lifecycle state emission ('connecting' -> 'searching' -> 'solving' -> 'composing' -> 'completed')
  * - Automatic <think> tag and reasoning_content parsing (suppresses raw thought dumps, activates 'solving' state)
  * - Structured recommendation extraction (interactive Chord Progression and Tone Recipe cards)
- * - Google Gemini 2.5 Flash / 2.0 Flash with native Google Search Grounding & citations
- * - Anthropic & OpenAI resilient fallback cascade
+ * - Resilient multi-tier fallback cascade
+ * - Zero BYOK required for end users: server-side secrets and edge inference
  * - Zero emojis, zero conversational filler, 100% dynamic generation
  */
 
 interface Env {
-  AI_ACTIVE_PROVIDER?: string; // 'deepseek' | 'openai_compatible' | 'gemini' | 'anthropic' | 'openai'
+  AI?: any; // Cloudflare Workers AI binding
+  AI_ACTIVE_PROVIDER?: string; // 'gemini' | 'groq' | 'workers_ai' | 'deepseek' | 'openai_compatible'
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
+  GROQ_API_KEY?: string;
+  GROQ_MODEL?: string;
   OPENAI_COMPATIBLE_BASE_URL?: string;
   OPENAI_COMPATIBLE_API_KEY?: string;
   OPENAI_COMPATIBLE_MODEL?: string;
   DEEPSEEK_API_KEY?: string;
   DEEPSEEK_BASE_URL?: string;
-  GEMINI_API_KEY?: string;
-  GEMINI_MODEL?: string;
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
   RATE_LIMIT_KV?: any;
@@ -190,11 +196,19 @@ Active Musical Context Snapshot:
 ${JSON.stringify(musicalContext, null, 2)}
 User UI Language Preference: "${userLanguage}". Always reply in the language in which the user queries.`;
 
-  // 4. API Keys & Endpoint Discovery
+  // 4. API Keys & Endpoint Discovery (Zero-BYOK priority: server env secrets first)
   const userApiKey =
     request.headers.get('x-api-key') ||
     request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     (typeof body?.apiKey === 'string' ? body.apiKey.trim() : '');
+
+  const geminiApiKey =
+    env.GEMINI_API_KEY ||
+    (userApiKey?.startsWith('AIza') ? userApiKey : undefined);
+
+  const groqApiKey =
+    env.GROQ_API_KEY ||
+    (userApiKey?.startsWith('gsk_') ? userApiKey : undefined);
 
   const customBaseUrl =
     request.headers.get('x-ai-base-url') ||
@@ -203,186 +217,18 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
     env.DEEPSEEK_BASE_URL;
 
   const openAiCompatibleKey =
-    userApiKey ||
     env.OPENAI_COMPATIBLE_API_KEY ||
     env.DEEPSEEK_API_KEY ||
-    env.OPENAI_API_KEY;
-
-  const geminiApiKey =
-    (!userApiKey?.startsWith('sk-') && !userApiKey?.startsWith('gsk_') ? userApiKey : undefined) ||
-    env.GEMINI_API_KEY;
+    groqApiKey ||
+    env.OPENAI_API_KEY ||
+    userApiKey;
 
   const explicitProvider = env.AI_ACTIVE_PROVIDER || body?.provider;
 
   // =========================================================================
-  // PROVIDER 0: OPEN-SOURCE REASONING MODEL (DeepSeek-R1 / QwQ-32B / vLLM / Ollama)
+  // TIER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Native Google Search Grounding)
   // =========================================================================
-  const isOpenAiCompatible =
-    Boolean(customBaseUrl) ||
-    explicitProvider === 'deepseek' ||
-    explicitProvider === 'openai_compatible' ||
-    userApiKey?.startsWith('sk-') ||
-    userApiKey?.startsWith('gsk_') ||
-    Boolean(env.DEEPSEEK_API_KEY) ||
-    Boolean(env.OPENAI_COMPATIBLE_BASE_URL);
-
-  if (isOpenAiCompatible && (openAiCompatibleKey || customBaseUrl)) {
-    try {
-      let endpointBase = customBaseUrl || 'https://api.deepseek.com/v1';
-      if (userApiKey?.startsWith('gsk_') && !customBaseUrl) {
-        endpointBase = 'https://api.groq.com/openai/v1';
-      }
-      const targetUrl = endpointBase.replace(/\/$/, '').endsWith('/chat/completions')
-        ? endpointBase
-        : `${endpointBase.replace(/\/$/, '')}/chat/completions`;
-
-      const modelName =
-        body?.model ||
-        env.OPENAI_COMPATIBLE_MODEL ||
-        (endpointBase.includes('groq')
-          ? 'deepseek-r1-distill-llama-70b'
-          : endpointBase.includes('ollama')
-          ? 'deepseek-r1:32b'
-          : 'deepseek-reasoner');
-
-      const messages = [
-        { role: 'system', content: contextualSystemPrompt },
-        ...history.map((m: any) => ({
-          role: m.role === 'user' ? 'user' : 'assistant',
-          content: m.content,
-        })),
-        { role: 'user', content: prompt },
-      ];
-
-      const response = await fetch(targetUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(openAiCompatibleKey ? { Authorization: `Bearer ${openAiCompatibleKey}` } : {}),
-        },
-        body: JSON.stringify({
-          model: modelName,
-          messages,
-          stream: true,
-          temperature: 0.3,
-          max_tokens: 2048,
-        }),
-      });
-
-      if (response.ok && response.body) {
-        const { readable, writable } = new TransformStream();
-        const writer = writable.getWriter();
-        const reader = response.body.getReader();
-        const encoder = new TextEncoder();
-        const decoder = new TextDecoder();
-
-        (async () => {
-          let buffer = '';
-          let inThinkTag = false;
-          let hasEmittedSolving = false;
-          let hasEmittedComposing = false;
-          let fullResponseText = '';
-
-          try {
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith(':')) continue;
-                if (!trimmed.startsWith('data: ')) continue;
-
-                const dataStr = trimmed.slice(6).trim();
-                if (dataStr === '[DONE]') break;
-
-                try {
-                  const parsed = JSON.parse(dataStr);
-                  const delta = parsed.choices?.[0]?.delta;
-                  if (!delta) continue;
-
-                  // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM)
-                  if (delta.reasoning_content) {
-                    if (!hasEmittedSolving) {
-                      hasEmittedSolving = true;
-                      await writer.write(
-                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
-                      );
-                    }
-                    // Suppress raw reasoning tokens from user chat bubble
-                    continue;
-                  }
-
-                  // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
-                  if (typeof delta.content === 'string') {
-                    let text = delta.content;
-
-                    if (text.includes('<think>')) {
-                      inThinkTag = true;
-                      if (!hasEmittedSolving) {
-                        hasEmittedSolving = true;
-                        await writer.write(
-                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
-                        );
-                      }
-                      text = text.substring(text.indexOf('<think>') + 7);
-                    }
-
-                    if (inThinkTag) {
-                      if (text.includes('</think>')) {
-                        inThinkTag = false;
-                        text = text.substring(text.indexOf('</think>') + 8);
-                      } else {
-                        continue;
-                      }
-                    }
-
-                    if (text) {
-                      if (!hasEmittedComposing) {
-                        hasEmittedComposing = true;
-                        await writer.write(
-                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
-                        );
-                      }
-                      fullResponseText += text;
-                      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
-                    }
-                  }
-                } catch {}
-              }
-            }
-
-            const rec = extractStructuredRecommendation(fullResponseText, prompt);
-            if (rec) {
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
-            }
-
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
-            await writer.write(encoder.encode('data: [DONE]\n\n'));
-          } catch (err) {
-            console.error('[Edge Gateway] Open-source streaming error:', err);
-          } finally {
-            await writer.close();
-          }
-        })();
-
-        return new Response(readable, { headers: corsHeaders });
-      }
-    } catch (err) {
-      console.warn('[Edge Gateway] Open-source gateway error, cascading to fallback:', err);
-    }
-  }
-
-  // =========================================================================
-  // PROVIDER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Search Grounding)
-  // =========================================================================
-  if (geminiApiKey) {
+  if (geminiApiKey && explicitProvider !== 'groq' && explicitProvider !== 'workers_ai') {
     try {
       const modelName = body?.model || env.GEMINI_MODEL || 'gemini-2.5-flash';
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
@@ -519,7 +365,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                           }
                           fullResponseText += part.text;
                           await writer.write(
-                            encoder.encode(`data: ${JSON.stringify({ delta: part.text })}\n\n`)
+                            encoder.encode(`data: ${JSON.stringify({ delta: part.text })}\n\n` Squarespace: none)
                           );
                         }
                       }
@@ -553,7 +399,290 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   }
 
   // =========================================================================
-  // PROVIDER 2: ANTHROPIC (Claude 3.5 Haiku Fallback)
+  // TIER 2: GROQ LPU / OPEN-SOURCE REASONING (DeepSeek-R1 / Llama 3.3 70B)
+  // =========================================================================
+  const isGroqOrOpenAiCompatible =
+    Boolean(groqApiKey) ||
+    Boolean(customBaseUrl) ||
+    explicitProvider === 'groq' ||
+    explicitProvider === 'deepseek' ||
+    explicitProvider === 'openai_compatible' ||
+    Boolean(openAiCompatibleKey);
+
+  if (isGroqOrOpenAiCompatible && (openAiCompatibleKey || customBaseUrl || groqApiKey)) {
+    try {
+      let endpointBase = customBaseUrl || 'https://api.groq.com/openai/v1';
+      if (groqApiKey && !customBaseUrl) {
+        endpointBase = 'https://api.groq.com/openai/v1';
+      }
+      const targetUrl = endpointBase.replace(/\/$/, '').endsWith('/chat/completions')
+        ? endpointBase
+        : `${endpointBase.replace(/\/$/, '')}/chat/completions`;
+
+      const modelName =
+        body?.model ||
+        env.GROQ_MODEL ||
+        env.OPENAI_COMPATIBLE_MODEL ||
+        (endpointBase.includes('groq')
+          ? 'deepseek-r1-distill-llama-70b'
+          : endpointBase.includes('ollama')
+          ? 'deepseek-r1:32b'
+          : 'deepseek-reasoner');
+
+      const messages = [
+        { role: 'system', content: contextualSystemPrompt },
+        ...history.map((m: any) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content,
+        })),
+        { role: 'user', content: prompt },
+      ];
+
+      const authKey = groqApiKey || openAiCompatibleKey;
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authKey ? { Authorization: `Bearer ${authKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages,
+          stream: true,
+          temperature: 0.3,
+          max_tokens: 2048,
+        }),
+      });
+
+      if (response.ok && response.body) {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const reader = response.body.getReader();
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        (async () => {
+          let buffer = '';
+          let inThinkTag = false;
+          let hasEmittedSolving = false;
+          let hasEmittedComposing = false;
+          let fullResponseText = '';
+
+          try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith(':')) continue;
+                if (!trimmed.startsWith('data: ')) continue;
+
+                const dataStr = trimmed.slice(6).trim();
+                if (dataStr === '[DONE]') break;
+
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  const delta = parsed.choices?.[0]?.delta;
+                  if (!delta) continue;
+
+                  // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM / Groq)
+                  if (delta.reasoning_content) {
+                    if (!hasEmittedSolving) {
+                      hasEmittedSolving = true;
+                      await writer.write(
+                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
+                      );
+                    }
+                    continue;
+                  }
+
+                  // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
+                  if (typeof delta.content === 'string') {
+                    let text = delta.content;
+
+                    if (text.includes('<think>')) {
+                      inThinkTag = true;
+                      if (!hasEmittedSolving) {
+                        hasEmittedSolving = true;
+                        await writer.write(
+                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
+                        );
+                      }
+                      text = text.substring(text.indexOf('<think>') + 7);
+                    }
+
+                    if (inThinkTag) {
+                      if (text.includes('</think>')) {
+                        inThinkTag = false;
+                        text = text.substring(text.indexOf('</think>') + 8);
+                      } else {
+                        continue;
+                      }
+                    }
+
+                    if (text) {
+                      if (!hasEmittedComposing) {
+                        hasEmittedComposing = true;
+                        await writer.write(
+                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
+                        );
+                      }
+                      fullResponseText += text;
+                      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
+                    }
+                  }
+                } catch {}
+              }
+            }
+
+            const rec = extractStructuredRecommendation(fullResponseText, prompt);
+            if (rec) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
+            }
+
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
+            await writer.write(encoder.encode('data: [DONE]\n\n'));
+          } catch (err) {
+            console.error('[Edge Gateway] Open-source streaming error:', err);
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, { headers: corsHeaders });
+      }
+    } catch (err) {
+      console.warn('[Edge Gateway] Open-source gateway error, cascading to fallback:', err);
+    }
+  }
+
+  // =========================================================================
+  // TIER 3: CLOUDFLARE WORKERS AI (Native Edge Binding env.AI)
+  // =========================================================================
+  if (env.AI) {
+    try {
+      const workerModel =
+        env.OPENAI_COMPATIBLE_MODEL ||
+        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b';
+
+      const messages = [
+        { role: 'system', content: contextualSystemPrompt },
+        ...history.map((m: any) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content,
+        })),
+        { role: 'user', content: prompt },
+      ];
+
+      const aiStream = await env.AI.run(workerModel, {
+        messages,
+        stream: true,
+        max_tokens: 2048,
+      });
+
+      if (aiStream) {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const reader = aiStream.getReader();
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        (async () => {
+          let buffer = '';
+          let inThinkTag = false;
+          let hasEmittedSolving = false;
+          let hasEmittedComposing = false;
+          let fullResponseText = '';
+
+          try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith(':')) continue;
+                if (!trimmed.startsWith('data: ')) continue;
+
+                const dataStr = trimmed.slice(6).trim();
+                if (dataStr === '[DONE]') break;
+
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  const chunkText = parsed.response || parsed.delta || parsed.choices?.[0]?.delta?.content;
+                  if (typeof chunkText !== 'string' || !chunkText) continue;
+
+                  let text = chunkText;
+                  if (text.includes('<think>')) {
+                    inThinkTag = true;
+                    if (!hasEmittedSolving) {
+                      hasEmittedSolving = true;
+                      await writer.write(
+                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
+                      );
+                    }
+                    text = text.substring(text.indexOf('<think>') + 7);
+                  }
+
+                  if (inThinkTag) {
+                    if (text.includes('</think>')) {
+                      inThinkTag = false;
+                      text = text.substring(text.indexOf('</think>') + 8);
+                    } else {
+                      continue;
+                    }
+                  }
+
+                  if (text) {
+                    if (!hasEmittedComposing) {
+                      hasEmittedComposing = true;
+                      await writer.write(
+                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
+                      );
+                    }
+                    fullResponseText += text;
+                    await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
+                  }
+                } catch {}
+              }
+            }
+
+            const rec = extractStructuredRecommendation(fullResponseText, prompt);
+            if (rec) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
+            }
+
+            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
+            await writer.write(encoder.encode('data: [DONE]\n\n'));
+          } catch (err) {
+            console.error('[Edge Gateway] Workers AI streaming error:', err);
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, { headers: corsHeaders });
+      }
+    } catch (err) {
+      console.warn('[Edge Gateway] Workers AI error, cascading to fallback:', err);
+    }
+  }
+
+  // =========================================================================
+  // TIER 4: ANTHROPIC (Claude 3.5 Haiku Fallback)
   // =========================================================================
   if (env.ANTHROPIC_API_KEY) {
     try {
@@ -635,7 +764,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   }
 
   // =========================================================================
-  // PROVIDER 3: OPENAI (GPT-4o-mini Fallback)
+  // TIER 5: OPENAI (GPT-4o-mini Fallback)
   // =========================================================================
   if (env.OPENAI_API_KEY) {
     try {
@@ -717,12 +846,12 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   }
 
   // =========================================================================
-  // NO PROVIDER AVAILABLE / HONEST ERROR RESPONSE
+  // HONEST ERROR RESPONSE (Never a fake canned menu!)
   // =========================================================================
   return new Response(
     JSON.stringify({
       error:
-        'AI Gateway: No AI provider is configured or available. Please configure GEMINI_API_KEY, OPENAI_COMPATIBLE_BASE_URL, or enter your API key in Livex Assistant Settings.',
+        'Livex AI cloud service is temporarily reaching capacity or connecting to edge inference. Please retry in a moment.',
     }),
     {
       status: 503,

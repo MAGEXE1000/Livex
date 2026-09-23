@@ -569,7 +569,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
             res.write(
               `data: ${JSON.stringify({
                 error:
-                  'AI Gateway: No AI provider is configured. Please configure GEMINI_API_KEY / OPENAI_COMPATIBLE_BASE_URL in your environment or configure an API key in Livex Assistant Settings.',
+                  'Livex AI dev gateway: No AI cloud credentials found in local environment (.env.local / GEMINI_API_KEY / GROQ_API_KEY). Real model inference requires server-side configuration.',
               })}\n\n`
             );
             res.write('data: [DONE]\n\n');
