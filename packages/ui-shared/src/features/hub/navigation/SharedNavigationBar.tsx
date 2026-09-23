@@ -378,8 +378,9 @@ export function SharedNavigationBar({
           : 76;
   const paddingX = isSwitcherOpen ? 6 : 8;
 
-  // hasRightBubble: true when App Changer satellite button is shown (non-hub apps only)
-  const hasRightBubble = showSwitcherButton;
+  const showAiButton = isHub;
+  // hasRightBubble: true when App Changer or AI satellite button is shown
+  const hasRightBubble = showSwitcherButton || showAiButton;
   const satelliteWidth = 58;
   const dockGap = 8;
   const edgeMargin = 6;
@@ -1292,6 +1293,83 @@ export function SharedNavigationBar({
                       />
                     </motion.div>
                   </AnimatePresence>
+                </motion.button>
+              </motion.div>
+            )}
+
+            {showAiButton && (
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  pointerEvents: 'auto',
+                }}
+                animate={{
+                  x: barWidth / 2 + dockGap,
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 340,
+                  damping: 26,
+                  mass: 0.75,
+                }}
+              >
+                <motion.button
+                  onClick={() => {
+                    if (isEffectiveHidden) return;
+                    NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+                  }}
+                  whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                  whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+                  transition={
+                    prefersReduced
+                      ? { duration: 0 }
+                      : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                  }
+                  title="Music AI Assistant"
+                  aria-label="Open Music AI Assistant"
+                  style={{
+                    width: '58px',
+                    height: '58px',
+                    borderRadius: '9999px',
+                    background: 'var(--surface-topbar-bg)',
+                    border: 'var(--surface-topbar-border)',
+                    backdropFilter: 'var(--surface-topbar-backdrop)',
+                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                    boxShadow: 'var(--surface-topbar-shadow)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                    transformOrigin: 'center bottom',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Radial Center Glow */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '9999px',
+                      background: isLight
+                        ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
+                        : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <LivexAssistantMascot
+                    size={26}
+                    mode="dock"
+                    state={mascotState}
+                    interactive={false}
+                  />
                 </motion.button>
               </motion.div>
             )}

@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   type AssistantMessage,
+  type AssistantAttachment,
   type AssistantState,
   type StructuredRecommendation,
   type AssistantQuickPrompt,
 } from '../types/assistant';
 import { getMusicalContextSnapshot } from '../lib/assistant/contextAggregator';
 import { streamChatCompletion } from '../lib/assistant/assistantApiClient';
+import { useSettingsStore } from './useSettingsStore';
 
 export const ASSISTANT_QUICK_PROMPTS: AssistantQuickPrompt[] = [
   {
@@ -60,6 +62,7 @@ interface AssistantStoreState {
   status: 'idle' | 'streaming' | 'error';
   activeThreadId: string;
   inputText: string;
+  attachments: AssistantAttachment[];
   errorMessage: string | null;
 
   // Actions
@@ -67,6 +70,9 @@ interface AssistantStoreState {
   stopStreaming: () => void;
   setMascotState: (state: AssistantState) => void;
   setInputText: (text: string) => void;
+  addAttachment: (att: AssistantAttachment) => void;
+  removeAttachment: (id: string) => void;
+  clearAttachments: () => void;
   clearConversation: () => void;
   addRecommendation: (messageId: string, rec: StructuredRecommendation) => void;
   wakeMascot: () => void;
@@ -97,6 +103,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
         status: 'idle',
         activeThreadId: 'default-thread',
         inputText: '',
+        attachments: [],
         errorMessage: null,
 
         wakeMascot: () => {
@@ -116,6 +123,23 @@ export const useAssistantStore = create<AssistantStoreState>()(
           get().wakeMascot();
         },
 
+        addAttachment: (att: AssistantAttachment) => {
+          set((state) => ({
+            attachments: [...state.attachments, att],
+          }));
+          get().wakeMascot();
+        },
+
+        removeAttachment: (id: string) => {
+          set((state) => ({
+            attachments: state.attachments.filter((a) => a.id !== id),
+          }));
+        },
+
+        clearAttachments: () => {
+          set({ attachments: [] });
+        },
+
         clearConversation: () => {
           if (activeAbortController) {
             activeAbortController.abort();
@@ -123,6 +147,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
           }
           set({
             messages: [],
+            attachments: [],
             status: 'idle',
             mascotState: 'idle',
             errorMessage: null,
@@ -167,8 +192,10 @@ export const useAssistantStore = create<AssistantStoreState>()(
           const currentText = (promptOverride !== undefined ? promptOverride : get().inputText).trim();
           if (!currentText || get().status === 'streaming') return;
 
-          // Clear text input
-          set({ inputText: '', errorMessage: null });
+          const pendingAttachments = [...get().attachments];
+
+          // Clear text input and pending attachments
+          set({ inputText: '', attachments: [], errorMessage: null });
 
           // Cancel any prior in-flight stream
           if (activeAbortController) {
@@ -190,6 +217,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             status: 'complete',
             timestamp: Date.now(),
             contextSnapshot,
+            attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
           };
 
           const assistantMessage: AssistantMessage = {
@@ -203,12 +231,19 @@ export const useAssistantStore = create<AssistantStoreState>()(
             contextSnapshot,
           };
 
-          // Optimistically append messages and transition mascot to thinking
+          // Optimistically append messages and transition mascot to composing immediately
           set((state) => ({
             messages: [...state.messages, userMessage, assistantMessage],
             status: 'streaming',
-            mascotState: 'thinking',
+            mascotState: 'composing',
           }));
+
+          // Yield one render frame so the browser commits and paints the ThinkingOrb before tokens arrive
+          if (typeof requestAnimationFrame === 'function') {
+            await new Promise<void>((r) => requestAnimationFrame(() => r()));
+          }
+
+          const currentLanguage = useSettingsStore.getState().settings?.language || 'en';
 
           let hasReceivedFirstToken = false;
 
@@ -217,14 +252,40 @@ export const useAssistantStore = create<AssistantStoreState>()(
               prompt: currentText,
               history: get().messages,
               contextSnapshot,
+              language: currentLanguage,
+              attachments: pendingAttachments,
               signal,
               callbacks: {
+                onStateChange: (backendState) => {
+                  if (signal.aborted) return;
+                  set({ mascotState: backendState });
+                },
+
+                onSources: (sources) => {
+                  if (signal.aborted) return;
+                  set((state) => ({
+                    messages: state.messages.map((m) =>
+                      m.id === assistantMsgId
+                        ? {
+                            ...m,
+                            sources: [
+                              ...(m.sources || []),
+                              ...sources.filter(
+                                (s) => !(m.sources || []).some((existing) => existing.url === s.url)
+                              ),
+                            ],
+                          }
+                        : m
+                    ),
+                  }));
+                },
+
                 onToken: (tokenDelta) => {
                   if (signal.aborted) return;
 
                   if (!hasReceivedFirstToken) {
                     hasReceivedFirstToken = true;
-                    set({ mascotState: 'responding' });
+                    set({ mascotState: 'composing' });
                   }
 
                   set((state) => ({

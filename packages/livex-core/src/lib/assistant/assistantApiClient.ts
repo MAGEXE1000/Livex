@@ -1,7 +1,10 @@
 import {
   type AssistantMessage,
+  type AssistantAttachment,
+  type AssistantState,
   type MusicalContextSnapshot,
   type StructuredRecommendation,
+  type GroundingSource,
 } from '../../types/assistant';
 import { getFirebaseAuth } from '../firebase';
 import { queryLocalMusicIntelligence, type LocalIntelligenceResponse } from './localMusicIntelligence';
@@ -9,6 +12,8 @@ import { queryLocalMusicIntelligence, type LocalIntelligenceResponse } from './l
 export interface StreamChatCallbacks {
   onToken: (token: string) => void;
   onRecommendation?: (recommendation: StructuredRecommendation) => void;
+  onStateChange?: (state: AssistantState) => void;
+  onSources?: (sources: GroundingSource[]) => void;
   onComplete: () => void;
   onError: (error: Error) => void;
 }
@@ -17,6 +22,8 @@ export interface StreamChatOptions {
   prompt: string;
   history: AssistantMessage[];
   contextSnapshot?: MusicalContextSnapshot;
+  language?: string;
+  attachments?: AssistantAttachment[];
   signal?: AbortSignal;
   callbacks: StreamChatCallbacks;
 }
@@ -31,11 +38,12 @@ interface CachedResponse {
 const responseCache = new Map<string, CachedResponse>();
 const MAX_CACHE_ENTRIES = 16;
 
-function getCacheKey(prompt: string, context?: MusicalContextSnapshot): string {
+function getCacheKey(prompt: string, context?: MusicalContextSnapshot, language?: string): string {
   const normPrompt = prompt.trim().toLowerCase();
   const app = context?.activeApp || 'hub';
   const key = context?.activeKey || '';
-  return `${normPrompt}::${app}::${key}`;
+  const lang = language || 'en';
+  return `${normPrompt}::${app}::${key}::${lang}`;
 }
 
 /**
@@ -58,7 +66,8 @@ function getRemoteGatewayUrl(): string | null {
     window.location?.protocol === 'capacitor:';
 
   if (isNative) {
-    return null;
+    // Production Cloudflare edge gateway for native Android
+    return 'https://livex.pages.dev/api/ai/chat';
   }
 
   // On browser web (Cloudflare Pages), relative /api/ai/chat is supported
@@ -79,7 +88,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
   }
 
   // Check cache for instant delivery
-  const cacheKey = getCacheKey(prompt, contextSnapshot);
+  const cacheKey = getCacheKey(prompt, contextSnapshot, options.language);
   const cached = responseCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < 300000) {
     // 5-minute fresh cache
@@ -110,11 +119,19 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
           content: m.content,
         })),
         context: contextSnapshot,
+        language: options.language || 'en',
+        attachments: options.attachments?.map((a) => ({
+          id: a.id,
+          name: a.name,
+          size: a.size,
+          type: a.type,
+          dataUrl: a.dataUrl,
+        })),
       };
 
-      // Tight connection timeout (800ms) to prevent perceived latency on slow networks
+      // 4-second connection timeout to accommodate cellular handshakes and model first-token generation
       const controller = new AbortController();
-      const connectTimeout = setTimeout(() => controller.abort(), 800);
+      const connectTimeout = setTimeout(() => controller.abort(), 4000);
 
       const abortHandler = () => controller.abort();
       if (signal) {
@@ -175,6 +192,15 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
 
               try {
                 const parsed = JSON.parse(jsonStr);
+
+                if (parsed.type === 'state' && parsed.state) {
+                  callbacks.onStateChange?.(parsed.state);
+                }
+
+                if (parsed.type === 'sources' && Array.isArray(parsed.sources)) {
+                  callbacks.onSources?.(parsed.sources);
+                }
+
                 if (parsed.delta) {
                   fullContent += parsed.delta;
                   callbacks.onToken(parsed.delta);
@@ -214,7 +240,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
 
   // 2. Local Intelligence Engine Fallback (Instant, 100% offline & zero artificial delay)
   if (!remoteAttemptSucceeded) {
-    const result = queryLocalMusicIntelligence(prompt, contextSnapshot);
+    const result = queryLocalMusicIntelligence(prompt, contextSnapshot, options.language);
     cacheResponse(cacheKey, {
       content: result.content,
       recommendations: result.recommendations,

@@ -16,14 +16,16 @@ export interface LivexAssistantMascotProps {
 
 function mapAssistantStateToOrbState(state: AssistantState): OrbState {
   switch (state) {
-    case 'thinking':
-      return 'working';
-    case 'searching':
-      return 'searching';
     case 'composing':
-      return 'composing';
     case 'responding':
       return 'composing';
+    case 'searching':
+      return 'searching';
+    case 'solving':
+      return 'solving';
+    case 'working':
+    case 'thinking':
+      return 'working';
     case 'listening':
       return 'listening';
     case 'success':
@@ -118,22 +120,6 @@ export const LivexAssistantMascot: React.FC<LivexAssistantMascotProps> = ({
       role="img"
       aria-label="Livex AI Assistant"
     >
-      {/* Subtle ambient aura in chat mode hero */}
-      {mode === 'chat' && size >= 48 && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: -14,
-            borderRadius: '50%',
-            background: isLight
-              ? 'radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 70%)'
-              : 'radial-gradient(circle, rgba(56, 189, 248, 0.14) 0%, rgba(56, 189, 248, 0) 70%)',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-      )}
 
       {/* Sized ThinkingOrb Container */}
       <div

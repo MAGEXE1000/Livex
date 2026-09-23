@@ -1,11 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAssistantStore, useSettingsStore } from '@workspace/livex-core';
+import { useAssistantStore, useSettingsStore, NavigationDispatcher } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
 import { AssistantInputBar } from '../components/AssistantInputBar';
-import { StudioIcon } from '../../../shared/icons/StudioIcon';
-import { Music, Sliders, Disc, Mic2, Sparkles, RotateCcw } from 'lucide-react';
+import { Music, Sliders, Disc, Mic2, RotateCcw, ArrowLeft } from 'lucide-react';
 
 interface StudioQuickCard {
   id: string;
@@ -53,12 +52,11 @@ export const AssistantChatView: React.FC = () => {
   const clearConversation = useAssistantStore((s) => s.clearConversation);
   const sendMessage = useAssistantStore((s) => s.sendMessage);
 
-  const theme = useSettingsStore((s) => s.settings?.theme);
-  const isLight =
-    theme === 'light' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const language = useSettingsStore((s) => s.settings?.language);
+  const isSpanish = language === 'es';
+
+  // Dedicated AI workspace is an immersive, focused dark workspace per visual direction
+  const isLight = false;
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,7 +71,14 @@ export const AssistantChatView: React.FC = () => {
   }, [messages, status]);
 
   const hasMessages = messages.length > 0;
-  const isStreaming = status === 'streaming';
+
+  const handleBack = () => {
+    if (NavigationDispatcher.canGoBack()) {
+      NavigationDispatcher.pop();
+    } else {
+      NavigationDispatcher.push({ app: 'hub', tab: 'home' });
+    }
+  };
 
   return (
     <div
@@ -88,10 +93,42 @@ export const AssistantChatView: React.FC = () => {
         position: 'relative',
         boxSizing: 'border-box',
         overflow: 'hidden',
+        background: '#090d16',
+        color: '#f8fafc',
         fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
       }}
     >
-      {/* Floating Reset Action (Headerless open canvas design) */}
+      {/* Floating Back Action (Headerless open canvas design) */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        onClick={handleBack}
+        title={isSpanish ? 'Volver a Livex' : 'Back to Livex'}
+        aria-label={isSpanish ? 'Volver a Livex' : 'Back to Livex'}
+        style={{
+          position: 'absolute',
+          top: 'calc(var(--safe-area-inset-top, 12px) + 12px)',
+          left: 18,
+          zIndex: 30,
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          color: '#f8fafc',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          transition: 'background 120ms ease, color 120ms ease',
+        }}
+      >
+        <ArrowLeft size={16} />
+      </motion.button>
+
+      {/* Floating Reset Action */}
       <AnimatePresence>
         {hasMessages && (
           <motion.button
@@ -100,36 +137,32 @@ export const AssistantChatView: React.FC = () => {
             exit={{ opacity: 0, scale: 0.9, y: -6 }}
             transition={{ duration: 0.15 }}
             onClick={clearConversation}
-            title="Clear conversation"
-            aria-label="Clear chat history"
+            title={isSpanish ? 'Reiniciar conversación' : 'Clear conversation'}
+            aria-label={isSpanish ? 'Reiniciar historial de chat' : 'Clear chat history'}
             style={{
               position: 'absolute',
               top: 'calc(var(--safe-area-inset-top, 12px) + 12px)',
               right: 18,
               zIndex: 30,
-              background: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(15, 23, 42, 0.85)',
-              border: isLight
-                ? '1px solid rgba(0, 0, 0, 0.08)'
-                : '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               borderRadius: 20,
               padding: '6px 12px',
-              color: isLight ? '#64748b' : '#94a3b8',
+              color: '#94a3b8',
               fontSize: 12,
               fontWeight: 550,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: isLight
-                ? '0 4px 12px rgba(0, 0, 0, 0.06)'
-                : '0 4px 16px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
               transition: 'background 120ms ease, color 120ms ease',
             }}
           >
             <RotateCcw size={12} />
-            <span>Reset</span>
+            <span>{isSpanish ? 'Reiniciar' : 'Reset'}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -176,26 +209,28 @@ export const AssistantChatView: React.FC = () => {
               style={{
                 fontSize: 21,
                 fontWeight: 650,
-                color: isLight ? '#0f172a' : '#f8fafc',
+                color: '#f8fafc',
                 margin: '0 0 8px',
                 letterSpacing: '-0.02em',
               }}
             >
-              How can I assist your sound?
+              {isSpanish ? '¿En qué puedo ayudarte hoy?' : 'How can I assist your sound?'}
             </h2>
             <p
               style={{
                 fontSize: 13.5,
-                color: isLight ? '#64748b' : '#94a3b8',
+                color: '#94a3b8',
                 maxWidth: 420,
                 lineHeight: 1.5,
                 margin: '0 0 28px',
               }}
             >
-              Ask music theory questions, dial in signal chain tones, explore harmonic voicings, or build rhythm section grooves.
+              {isSpanish
+                ? 'Haz consultas de teoría musical, tonos de guitarra, progresiones de acordes o crea ritmos.'
+                : 'Ask music theory questions, dial in signal chain tones, explore harmonic voicings, or build rhythm section grooves.'}
             </p>
 
-            {/* Actionable Capability Cards Grid (better-layout: Group with Space) */}
+            {/* Actionable Capability Cards Grid */}
             <div
               style={{
                 display: 'grid',
@@ -206,65 +241,96 @@ export const AssistantChatView: React.FC = () => {
                 textAlign: 'left',
               }}
             >
-              {STUDIO_CAPABILITY_CARDS.map((card) => (
-                <button
-                  key={card.id}
-                  onClick={() => sendMessage(card.prompt)}
-                  style={{
-                    background: isLight ? '#ffffff' : 'rgba(255, 255, 255, 0.03)',
-                    border: isLight
-                      ? '1px solid rgba(0, 0, 0, 0.08)'
-                      : '1px solid rgba(255, 255, 255, 0.07)',
-                    borderRadius: 14,
-                    padding: '14px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                    cursor: 'pointer',
-                    boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
-                    transition: 'border-color 140ms ease, background 140ms ease, transform 140ms ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = isLight
-                      ? 'rgba(0, 0, 0, 0.18)'
-                      : 'rgba(255, 255, 255, 0.18)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = isLight
-                      ? 'rgba(0, 0, 0, 0.08)'
-                      : 'rgba(255, 255, 255, 0.07)';
-                  }}
-                >
-                  <div
+              {STUDIO_CAPABILITY_CARDS.map((card) => {
+                const cardTitle =
+                  isSpanish && card.id === 'chords'
+                    ? 'Analizar progresión de acordes'
+                    : isSpanish && card.id === 'tones'
+                      ? 'Receta de sonido de guitarra'
+                      : isSpanish && card.id === 'drums'
+                        ? 'Crear ritmo de batería'
+                        : isSpanish && card.id === 'vocals'
+                          ? 'Rutina vocal de calentamiento'
+                          : card.title;
+                const cardDesc =
+                  isSpanish && card.id === 'chords'
+                    ? 'Intercambio modal, dominantes secundarias y sustituciones'
+                    : isSpanish && card.id === 'tones'
+                      ? 'Orden de pedales, EQ de amplificador y reverb'
+                      : isSpanish && card.id === 'drums'
+                        ? 'Patrón rítmico de 16 pasos con swing y síncopa'
+                        : isSpanish && card.id === 'vocals'
+                          ? '5 minutos de agilidad y calentamiento previo al show'
+                          : card.description;
+                const cardPrompt =
+                  isSpanish && card.id === 'chords'
+                    ? 'Sugiere una progresión de acordes sofisticada de Neo-soul en Eb mayor con dominantes secundarias.'
+                    : isSpanish && card.id === 'tones'
+                      ? 'Dame la cadena de pedales y ajustes de amplificador para el sonido solista de Comfortably Numb de David Gilmour.'
+                      : isSpanish && card.id === 'drums'
+                        ? 'Crea un ritmo de batería funk con shuffle a 96 BPM y notas fantasma en semicorcheas.'
+                        : isSpanish && card.id === 'vocals'
+                          ? 'Guíame en una rutina de 5 minutos de calentamiento vocal para rango y soporte de respiración.'
+                          : card.prompt;
+                return (
+                  <button
+                    key={card.id}
+                    onClick={() => sendMessage(cardPrompt)}
                     style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.07)',
+                      borderRadius: 14,
+                      padding: '14px 16px',
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      color: isLight ? '#0284c7' : '#38bdf8',
+                      flexDirection: 'column',
+                      gap: 6,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                      transition: 'border-color 140ms ease, background 140ms ease, transform 140ms ease',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    {card.icon}
-                    <span
+                    <div
                       style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: isLight ? '#0f172a' : '#f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        color: '#38bdf8',
                       }}
                     >
-                      {card.title}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11.5,
-                      color: isLight ? '#64748b' : '#94a3b8',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {card.description}
-                  </div>
-                </button>
-              ))}
+                      {card.icon}
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#f1f5f9',
+                        }}
+                      >
+                        {cardTitle}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: '#94a3b8',
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {cardDesc}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -275,14 +341,13 @@ export const AssistantChatView: React.FC = () => {
         ))}
       </div>
 
-      {/* Floating Input Dock (Positioned above bottom navbar) */}
+      {/* Floating Input Dock */}
       <div
         style={{
           padding: '10px 18px',
-          paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 76px)',
-          background: isLight
-            ? 'linear-gradient(to top, rgba(248, 250, 252, 0.98) 0%, rgba(248, 250, 252, 0.6) 75%, transparent 100%)'
-            : 'linear-gradient(to top, rgba(10, 15, 29, 0.98) 0%, rgba(10, 15, 29, 0.6) 75%, transparent 100%)',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 14px)',
+          background:
+            'linear-gradient(to top, rgba(9, 13, 22, 0.98) 0%, rgba(9, 13, 22, 0.7) 70%, transparent 100%)',
           zIndex: 10,
         }}
       >

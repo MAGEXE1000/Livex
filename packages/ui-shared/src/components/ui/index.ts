@@ -41,3 +41,5 @@ export * from './radio';
 export * from './disc-3';
 export * from './layout-grid';
 export * from './folder-open';
+export * from './around';
+export * from './eclipse';

@@ -325,22 +325,6 @@ export function BottomNavigationController() {
           },
         },
         {
-          key: 'assistant',
-          icon: (
-            <LivexAssistantMascot
-              size={20}
-              mode="dock"
-              state={mascotState}
-              interactive={false}
-            />
-          ),
-          label: 'AI',
-          isActive: activeTab === 'assistant',
-          onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
-          },
-        },
-        {
           key: 'settings',
           icon: 'cog',
           label: getTranslation('settings'),
@@ -444,6 +428,12 @@ export function BottomNavigationController() {
       activePage === 'player' ||
       currentRoute?.page === 'player' ||
       (currentRoute as any)?.tab === 'player');
+  const isAssistantScreen =
+    currentApp === 'hub' &&
+    (activeTab === 'assistant' ||
+      activePage === 'assistant' ||
+      currentRoute?.page === 'assistant' ||
+      (currentRoute as any)?.tab === 'assistant');
   const visible =
     !hidden &&
     !isKeyboardFocused &&
@@ -452,7 +442,8 @@ export function BottomNavigationController() {
     !isDrumexEditor &&
     !isDrumexMetronome &&
     !isChordexSong &&
-    !isGroovexSong;
+    !isGroovexSong &&
+    !isAssistantScreen;
 
   return (
     <NavigationAnimationProvider activeTab={activeTab} items={computedItems}>

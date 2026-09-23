@@ -3,21 +3,22 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Paperclip,
   Mic,
-  Headphones,
+  Camera,
+  Image as ImageIcon,
+  FileText,
   ArrowUp,
   Square,
   X,
   AlertCircle,
 } from 'lucide-react';
-import { useSettingsStore } from '@workspace/livex-core';
+import {
+  useSettingsStore,
+  useAssistantStore,
+  type AssistantAttachment,
+} from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
-export interface AgentChatPillAttachment {
-  id: string;
-  name: string;
-  size?: number;
-  type?: string;
-}
+export type AgentChatPillAttachment = AssistantAttachment;
 
 export interface AgentChatPillModelOption {
   id: string;
@@ -45,8 +46,8 @@ export interface AgentChatPillProps {
   onSelectModel?: (modelId: string) => void;
 
   // Attachment affordance
-  attachments?: AgentChatPillAttachment[];
-  onAddAttachment?: () => void;
+  attachments?: AssistantAttachment[];
+  onAddAttachment?: (attachment: AssistantAttachment) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
   attachmentsEnabled?: boolean;
 
@@ -54,10 +55,6 @@ export interface AgentChatPillProps {
   dictationEnabled?: boolean;
   isListening?: boolean;
   onToggleDictation?: () => void;
-
-  // Conversational Voice affordance
-  voiceChatEnabled?: boolean;
-  onStartVoiceChat?: () => void;
 
   // Callbacks
   onFocus?: () => void;
@@ -101,14 +98,11 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
   attachments = [],
   onAddAttachment,
   onRemoveAttachment,
-  attachmentsEnabled = false,
+  attachmentsEnabled = true,
 
-  dictationEnabled = false,
-  isListening = false,
+  dictationEnabled = true,
+  isListening,
   onToggleDictation,
-
-  voiceChatEnabled = false,
-  onStartVoiceChat,
 
   onFocus,
   onBlur,
@@ -118,6 +112,13 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const attachBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const photosInputRef = useRef<HTMLInputElement | null>(null);
+  const filesInputRef = useRef<HTMLInputElement | null>(null);
+
   const shouldReduceMotion = useAppReducedMotion();
   const inputId = useId();
 
@@ -130,7 +131,13 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
 
   const [isFocused, setIsFocused] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
+  const [isInternalListening, setIsInternalListening] = useState(false);
 
+  const speechRecognitionRef = useRef<any>(null);
+  const currentTranscriptRef = useRef<string>('');
+
+  const activeListening = isListening !== undefined ? isListening : isInternalListening;
   const hasText = value.trim().length > 0;
 
   // Auto-resize textarea smoothly up to 128px
@@ -151,7 +158,35 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     return () => clearTimeout(timer);
   }, [statusFeedback]);
 
+  // Click-outside listener for attachment popover
+  useEffect(() => {
+    if (!isAttachmentMenuOpen) return;
 
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(target) &&
+        attachBtnRef.current &&
+        !attachBtnRef.current.contains(target)
+      ) {
+        setIsAttachmentMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsAttachmentMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAttachmentMenuOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing) return;
@@ -174,27 +209,125 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     }
   };
 
-  const handleAttachClick = () => {
-    if (attachmentsEnabled && onAddAttachment) {
-      onAddAttachment();
-    } else {
-      setStatusFeedback('Audio & preset attachments coming in v1.1');
+  const handleToggleAttachmentMenu = () => {
+    if (!attachmentsEnabled) {
+      setStatusFeedback('Attachments not supported here');
+      return;
     }
+    setIsAttachmentMenuOpen((prev) => !prev);
   };
 
-  const handleDictationClick = () => {
-    if (dictationEnabled && onToggleDictation) {
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const id = `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newAttachment: AssistantAttachment = {
+      id,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    };
+
+    if (file.size <= 10 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        newAttachment.dataUrl = ev.target?.result as string;
+        onAddAttachment?.(newAttachment);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      onAddAttachment?.(newAttachment);
+    }
+
+    // Reset input value so re-selecting identical filename works
+    e.target.value = '';
+    setIsAttachmentMenuOpen(false);
+  };
+
+  const handleMicClick = () => {
+    if (onToggleDictation) {
       onToggleDictation();
-    } else {
-      setStatusFeedback('Voice dictation requires microphone permission');
+      return;
     }
-  };
 
-  const handleVoiceChatClick = () => {
-    if (voiceChatEnabled && onStartVoiceChat) {
-      onStartVoiceChat();
-    } else {
-      setStatusFeedback('Conversational voice mode active in Livex Pro');
+    const SpeechRecognitionClass =
+      typeof window !== 'undefined'
+        ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        : null;
+
+    if (!SpeechRecognitionClass) {
+      setStatusFeedback('Voice input not supported in this browser');
+      return;
+    }
+
+    if (activeListening) {
+      try {
+        speechRecognitionRef.current?.stop();
+      } catch {
+        // Ignore stop error
+      }
+      setIsInternalListening(false);
+      useAssistantStore.getState().setMascotState('idle');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognitionClass();
+      speechRecognitionRef.current = recognition;
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      const lang = useSettingsStore.getState().settings?.language;
+      recognition.lang = lang === 'es' ? 'es-ES' : 'en-US';
+
+      currentTranscriptRef.current = '';
+
+      recognition.onstart = () => {
+        setIsInternalListening(true);
+        useAssistantStore.getState().setMascotState('listening');
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            currentTranscriptRef.current += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        const combined = (currentTranscriptRef.current + ' ' + interim).trim();
+        if (combined) {
+          onChange(combined);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('[AgentChatPill] Speech recognition error:', event.error);
+        setIsInternalListening(false);
+        useAssistantStore.getState().setMascotState('idle');
+        if (event.error !== 'no-speech') {
+          setStatusFeedback(`Voice error: ${event.error}`);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsInternalListening(false);
+        const finalTranscribed = currentTranscriptRef.current.trim();
+        if (finalTranscribed) {
+          onSubmit(finalTranscribed);
+        } else {
+          useAssistantStore.getState().setMascotState('idle');
+        }
+      };
+
+      recognition.start();
+    } catch (err: any) {
+      console.warn('[AgentChatPill] Could not start speech recognition:', err);
+      setIsInternalListening(false);
+      useAssistantStore.getState().setMascotState('idle');
+      setStatusFeedback('Microphone permission denied');
     }
   };
 
@@ -242,6 +375,29 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
         }
       `}</style>
 
+      {/* Hidden File Inputs for Camera, Photos, and Files */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+      <input
+        ref={photosInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+      <input
+        ref={filesInputRef}
+        type="file"
+        accept="*/*"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
 
       {/* Floating Status / Gated Feedback Toast */}
       <AnimatePresence>
@@ -269,11 +425,136 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               whiteSpace: 'nowrap',
-              zIndex: 40,
+              zIndex: 50,
               pointerEvents: 'none',
             }}
           >
             {statusFeedback}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Attachment Popover Menu */}
+      <AnimatePresence>
+        {isAttachmentMenuOpen && (
+          <motion.div
+            ref={popoverRef}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.96 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 8px)',
+              left: 12,
+              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.96)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: 16,
+              padding: '6px',
+              boxShadow: isLight
+                ? '0 12px 28px rgba(0, 0, 0, 0.12)'
+                : '0 16px 36px rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              zIndex: 50,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              minWidth: 140,
+            }}
+          >
+            {/* Camera */}
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: 'transparent',
+                border: 'none',
+                color: isLight ? '#1e293b' : '#f1f5f9',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'background 120ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <Camera size={15} style={{ opacity: 0.8 }} />
+              <span>Camera</span>
+            </button>
+
+            {/* Photos */}
+            <button
+              type="button"
+              onClick={() => photosInputRef.current?.click()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: 'transparent',
+                border: 'none',
+                color: isLight ? '#1e293b' : '#f1f5f9',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'background 120ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <ImageIcon size={15} style={{ opacity: 0.8 }} />
+              <span>Photos</span>
+            </button>
+
+            {/* Files */}
+            <button
+              type="button"
+              onClick={() => filesInputRef.current?.click()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 12px',
+                borderRadius: 10,
+                background: 'transparent',
+                border: 'none',
+                color: isLight ? '#1e293b' : '#f1f5f9',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'background 120ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <FileText size={15} style={{ opacity: 0.8 }} />
+              <span>Files</span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -319,6 +600,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
             </div>
             {onClearError && (
               <button
+                type="button"
                 onClick={onClearError}
                 style={{
                   background: 'transparent',
@@ -364,7 +646,20 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                   color: isLight ? '#334155' : '#e2e8f0',
                 }}
               >
-                <Paperclip size={11} style={{ opacity: 0.7 }} />
+                {att.dataUrl ? (
+                  <img
+                    src={att.dataUrl}
+                    alt=""
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 3,
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <Paperclip size={11} style={{ opacity: 0.7 }} />
+                )}
                 <span
                   style={{
                     maxWidth: 120,
@@ -377,6 +672,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 </span>
                 {onRemoveAttachment && (
                   <button
+                    type="button"
                     onClick={() => onRemoveAttachment(att.id)}
                     style={{
                       background: 'transparent',
@@ -445,90 +741,71 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
             borderTop: isLight ? '1px solid rgba(0, 0, 0, 0.04)' : '1px solid rgba(255, 255, 255, 0.05)',
           }}
         >
-          {/* Left Actions Group: Attach & Model Selector */}
+          {/* Left Actions Group: Attach Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Attachment Button */}
             <motion.button
+              ref={attachBtnRef}
               type="button"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-              onClick={handleAttachClick}
-              title={attachmentsEnabled ? 'Add audio or preset' : 'Attachments coming soon'}
+              onClick={handleToggleAttachmentMenu}
+              title={attachmentsEnabled ? 'Add attachment (Camera, Photos, Files)' : 'Attachments coming soon'}
               aria-label="Add attachment"
               style={{
-                width: 30,
-                height: 30,
+                width: 32,
+                height: 32,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
+                background: isAttachmentMenuOpen
+                  ? isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)'
+                  : isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
                 border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isLight ? '#64748b' : '#94a3b8',
+                color: isAttachmentMenuOpen
+                  ? isLight ? '#0f172a' : '#ffffff'
+                  : isLight ? '#64748b' : '#94a3b8',
                 cursor: 'pointer',
                 transition: 'all 120ms ease',
               }}
             >
-              <Paperclip size={13} />
+              <Paperclip size={14} />
             </motion.button>
-
-
           </div>
 
-          {/* Right Actions Group: Dictation, Voice Chat & Primary Action Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Dictation (Speech-to-Text) Button */}
-            <motion.button
-              type="button"
-              whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-              onClick={handleDictationClick}
-              title={dictationEnabled ? 'Voice dictation' : 'Speech input requires permission'}
-              aria-label="Voice input"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isListening
-                  ? 'rgba(239, 68, 68, 0.2)'
-                  : isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                border: isListening
-                  ? '1px solid rgba(239, 68, 68, 0.45)'
-                  : isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isListening ? '#f87171' : isLight ? '#64748b' : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 120ms ease',
-              }}
-            >
-              <Mic size={13} />
-            </motion.button>
+          {/* Right Actions Group: Unified Mic & Primary Submit/Stop Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Unified Speech-to-Text Button */}
+            {dictationEnabled && (
+              <motion.button
+                type="button"
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
+                onClick={handleMicClick}
+                title={activeListening ? 'Stop listening' : 'Voice input'}
+                aria-label={activeListening ? 'Stop voice input' : 'Start voice input'}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: activeListening
+                    ? 'rgba(239, 68, 68, 0.22)'
+                    : isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
+                  border: activeListening
+                    ? '1px solid rgba(239, 68, 68, 0.5)'
+                    : isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  color: activeListening ? '#f87171' : isLight ? '#64748b' : '#94a3b8',
+                  cursor: 'pointer',
+                  boxShadow: activeListening ? '0 0 12px rgba(239, 68, 68, 0.35)' : 'none',
+                  transition: 'all 140ms ease',
+                }}
+              >
+                <Mic size={14} />
+              </motion.button>
+            )}
 
-            {/* Conversational Voice Chat Button */}
-            <motion.button
-              type="button"
-              whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-              onClick={handleVoiceChatClick}
-              title="Conversational Voice Mode"
-              aria-label="Conversational voice chat"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isLight ? '#64748b' : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 120ms ease',
-              }}
-            >
-              <Headphones size={13} />
-            </motion.button>
-
-            {/* Primary Submit ⟷ Stop Morphing Button (Kimi / Grok style high-contrast circle) */}
+            {/* Primary Submit ⟷ Stop Morphing Button */}
             <motion.button
               type="button"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}

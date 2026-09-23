@@ -4,7 +4,7 @@ import { LivexAssistantMascot } from './LivexAssistantMascot';
 import { ChordProgressionCard } from './cards/ChordProgressionCard';
 import { ToneRecipeCard } from './cards/ToneRecipeCard';
 import { DrumGrooveCard } from './cards/DrumGrooveCard';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Paperclip, Globe, ExternalLink } from 'lucide-react';
 
 export interface AssistantMessageItemProps {
   message: AssistantMessage;
@@ -142,11 +142,54 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
       <div
         style={{
           display: 'flex',
-          justifyContent: 'flex-end',
-          margin: '10px 0',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          margin: '12px 0',
           paddingLeft: '18%',
         }}
       >
+        {message.attachments && message.attachments.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+              marginBottom: 6,
+              justifyContent: 'flex-end',
+            }}
+          >
+            {message.attachments.map((att) => (
+              <div
+                key={att.id}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                  border: isLight
+                    ? '1px solid rgba(0, 0, 0, 0.08)'
+                    : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: isLight ? '#334155' : '#cbd5e1',
+                }}
+              >
+                <Paperclip size={12} />
+                <span
+                  style={{
+                    maxWidth: 140,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {att.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         <div
           style={{
             background: isLight ? '#0f172a' : '#1e293b',
@@ -167,33 +210,25 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
     );
   }
 
-  // Thinking state placeholder while awaiting first token
+  // Thinking / Composing state placeholder while awaiting first token
+  // Pure ThinkingOrb presentation without fake progress bars or labels
   if (!isUser && message.status === 'streaming' && !message.content) {
     return (
       <div
         style={{
           display: 'flex',
           gap: 12,
-          margin: '12px 0',
+          margin: '12px 0 16px',
           alignItems: 'center',
           padding: '6px 2px',
         }}
       >
         <LivexAssistantMascot
-          size={20}
+          size={24}
           mode="chat"
-          state="thinking"
+          state="composing"
           interactive={false}
         />
-        <span
-          style={{
-            fontSize: 13.5,
-            color: isLight ? '#64748b' : '#94a3b8',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          Thinking…
-        </span>
       </div>
     );
   }
@@ -281,6 +316,66 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
               }
               return null;
             })}
+          </div>
+        )}
+
+        {/* Grounding Sources (Google Search Grounding) */}
+        {message.sources && message.sources.length > 0 && (
+          <div
+            style={{
+              marginTop: 12,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: isLight ? '#64748b' : '#94a3b8',
+                marginRight: 2,
+              }}
+            >
+              <Globe size={12} />
+              <span>Sources</span>
+            </div>
+            {message.sources.map((s, idx) => (
+              <a
+                key={idx}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11.5,
+                  color: isLight ? '#0284c7' : '#38bdf8',
+                  background: isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(56, 189, 248, 0.1)',
+                  border: isLight ? '1px solid rgba(2, 132, 199, 0.16)' : '1px solid rgba(56, 189, 248, 0.2)',
+                  borderRadius: 6,
+                  padding: '2px 7px',
+                  textDecoration: 'none',
+                  maxWidth: 200,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={s.title || s.url}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {s.title || s.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                </span>
+                <ExternalLink size={10} style={{ flexShrink: 0, opacity: 0.7 }} />
+              </a>
+            ))}
           </div>
         )}
 

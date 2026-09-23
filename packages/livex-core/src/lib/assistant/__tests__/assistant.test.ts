@@ -79,6 +79,55 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(res.recommendations.some((r) => r.type === 'practice_routine')).toBe(true);
     });
 
+    it('answers global bands and scene queries with deep technical context', () => {
+      const caifanes = queryLocalMusicIntelligence('How does Alejandro Marcovich achieve the Caifanes guitar tone?');
+      expect(caifanes.content).toContain('Caifanes');
+      expect(caifanes.content).toContain('Roland JC-120');
+      expect(caifanes.content).toContain('Alfonso André');
+      expect(caifanes.recommendations.length).toBeGreaterThan(0);
+
+      const cityPop = queryLocalMusicIntelligence('Explain the Japanese City Pop royal road progression');
+      expect(cityPop.content).toContain('City Pop');
+      expect(cityPop.content).toContain('IVmaj7');
+      expect(cityPop.recommendations.some((r) => r.type === 'chord_progression')).toBe(true);
+
+      const afrobeat = queryLocalMusicIntelligence('What is the structure of Afrobeat rhythm and Tony Allen drumming?');
+      expect(afrobeat.content).toContain('Afrobeat');
+      expect(afrobeat.content).toContain('Tony Allen');
+      expect(afrobeat.content).toContain('Dorian');
+
+      const tuareg = queryLocalMusicIntelligence('How is Tuareg desert blues played?');
+      expect(tuareg.content).toContain('Desert Blues');
+      expect(tuareg.content).toContain('Tinariwen');
+      expect(tuareg.content).toContain('Open G');
+    });
+
+    it('answers advanced music theory queries (negative harmony, secondary dominants, modal interchange)', () => {
+      const negativeHarm = queryLocalMusicIntelligence('Explain negative harmony in C major');
+      expect(negativeHarm.content).toContain('Negative Harmony');
+      expect(negativeHarm.content).toContain('G7');
+      expect(negativeHarm.content).toContain('Fm6');
+
+      const secDom = queryLocalMusicIntelligence('How do secondary dominants resolve?');
+      expect(secDom.content).toContain('Secondary Dominants');
+      expect(secDom.content).toContain('V7/V');
+
+      const modalInterchange = queryLocalMusicIntelligence('What is modal interchange and borrowed chords?');
+      expect(modalInterchange.content).toContain('Modal Interchange');
+      expect(modalInterchange.content).toContain('bVImaj7');
+    });
+
+    it('supports Spanish localization for music intelligence queries', () => {
+      const esCaifanes = queryLocalMusicIntelligence('como lograr el tono de caifanes', undefined, 'es');
+      expect(esCaifanes.content).toContain('Caifanes');
+      expect(esCaifanes.content).toContain('Cadena de Señal');
+      expect(esCaifanes.recommendations.length).toBeGreaterThan(0);
+
+      const esVocal = queryLocalMusicIntelligence('ejercicios de calentamiento vocal', undefined, 'es');
+      expect(esVocal.content).toContain('Calentamiento');
+      expect(esVocal.content).toContain('Presión Subglótica');
+    });
+
     it('enforces professional tone: zero emojis across all response categories', () => {
       const queries = [
         'Gilmour tone settings',
@@ -87,6 +136,15 @@ describe('Livex Music AI Assistant Suite', () => {
         'Dorian vs Aeolian modes',
         'Vocal warmup exercises',
         'What is Livex?',
+        'Caifanes guitar tone and chords',
+        'Japanese city pop royal road',
+        'Afrobeat Tony Allen rhythm',
+        'Tuareg desert blues guitar',
+        'Negative harmony in C major',
+        'Secondary dominants voice leading',
+        'Modal interchange borrowed chords',
+        'como lograr el tono de caifanes',
+        'ejercicios de calentamiento vocal',
         'Unknown random musical query',
       ];
 
@@ -105,6 +163,9 @@ describe('Livex Music AI Assistant Suite', () => {
         'Suggest a jazz progression',
         'Funk drum beat',
         'What is Livex?',
+        'Caifanes guitar tone',
+        'Explain negative harmony',
+        'como lograr el tono de caifanes',
       ];
 
       const fillerPhrases = [
@@ -113,6 +174,9 @@ describe('Livex Music AI Assistant Suite', () => {
         'Keep creating!',
         "I've attached an interactive",
         'You can tap the Chord Progression Card below to explore',
+        'Great question!',
+        'Certainly!',
+        'Hope this helps!',
       ];
 
       for (const q of queries) {
@@ -153,7 +217,7 @@ describe('Livex Music AI Assistant Suite', () => {
 
       // Immediate state check
       expect(useAssistantStore.getState().status).toBe('streaming');
-      expect(['thinking', 'responding']).toContain(useAssistantStore.getState().mascotState);
+      expect(['thinking', 'responding', 'composing']).toContain(useAssistantStore.getState().mascotState);
 
       await sendPromise;
       const elapsed = performance.now() - startTime;

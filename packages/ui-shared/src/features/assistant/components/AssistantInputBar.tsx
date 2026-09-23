@@ -32,10 +32,13 @@ export const AssistantInputBar: React.FC<AssistantInputBarProps> = ({
   showQuickPrompts = true,
 }) => {
   const inputText = useAssistantStore((s) => s.inputText);
+  const attachments = useAssistantStore((s) => s.attachments);
   const status = useAssistantStore((s) => s.status);
   const mascotState = useAssistantStore((s) => s.mascotState);
   const errorMessage = useAssistantStore((s) => s.errorMessage);
   const setInputText = useAssistantStore((s) => s.setInputText);
+  const addAttachment = useAssistantStore((s) => s.addAttachment);
+  const removeAttachment = useAssistantStore((s) => s.removeAttachment);
   const sendMessage = useAssistantStore((s) => s.sendMessage);
   const stopStreaming = useAssistantStore((s) => s.stopStreaming);
   const wakeMascot = useAssistantStore((s) => s.wakeMascot);
@@ -120,6 +123,10 @@ export const AssistantInputBar: React.FC<AssistantInputBarProps> = ({
         models={ASSISTANT_MODELS}
         selectedModelId={selectedModelId}
         onSelectModel={setSelectedModelId}
+        attachments={attachments}
+        onAddAttachment={addAttachment}
+        onRemoveAttachment={removeAttachment}
+        attachmentsEnabled={true}
         onFocus={wakeMascot}
         placeholder="Ask music theory, guitar tones, chord progressions, grooves..."
       />

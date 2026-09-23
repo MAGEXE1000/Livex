@@ -1,11 +1,15 @@
 'use client';
-// beui.dev/components/motion/theme-toggle
+// Unified three-state theme toggle using shadcn @toggles/around and @toggles/eclipse
+// Cycle: WHITE -> BLACK -> AMOLED -> WHITE -> BLACK -> AMOLED -> ...
 
-import { Moon, Sun, Eclipse } from 'lucide-react';
 import { useSettingsStore, settingsController } from '@workspace/livex-core';
 import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
-import { ActionSwapIcon } from './action-swap';
+import { AnimatePresence, motion } from 'motion/react';
+import { Around } from '../ui/around';
+import { Eclipse } from '../ui/eclipse';
 import { cn } from '../../lib/utils';
+
+export type UnifiedThemeMode = 'white' | 'black' | 'amoled';
 
 export type ThemeVariant = 'rectangle' | 'circle' | 'circle-blur' | 'blinds';
 
@@ -16,11 +20,12 @@ export interface ThemeToggleProps extends Omit<
   ComponentPropsWithoutRef<'button'>,
   'children' | 'onClick'
 > {
-  /** Animation variant. Default: "rectangle". */
+  /** Animation variant (retained for backward compatibility). Default: "rectangle". */
   variant?: ThemeVariant;
-  /** Origin direction for the reveal. Default: "bottom-up". */
+  /** Origin direction for reveal (retained for backward compatibility). Default: "bottom-up". */
   start?: RectStart;
   iconClassName?: string;
+  duration?: number;
 }
 
 export function useThemeToggle({
@@ -29,6 +34,7 @@ export function useThemeToggle({
 }: { variant?: ThemeVariant; start?: RectStart } = {}) {
   const theme = useSettingsStore((s) => s.settings.theme);
   const amoledMode = useSettingsStore((s) => s.settings.amoledMode);
+  const language = useSettingsStore((s) => s.settings.language);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -36,62 +42,133 @@ export function useThemeToggle({
     theme === 'light' ||
     (theme === 'system' &&
       typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: light)').matches);
+      window.matchMedia?.('(prefers-color-scheme: light)')?.matches);
 
-  // Canonical three-state mode — source of truth for icon + aria label.
-  const themeMode: 'light' | 'dark' | 'amoled' = !mounted
-    ? 'dark'
+  // Canonical three-state mode — single source of truth for visual icon + aria label.
+  const themeMode: UnifiedThemeMode = !mounted
+    ? 'black'
     : isLight
-      ? 'light'
+      ? 'white'
       : amoledMode
         ? 'amoled'
-        : 'dark';
+        : 'black';
 
   const toggle = () => {
     settingsController.cycleNextTheme();
   };
 
-  return { themeMode, mounted, toggle };
+  const isSpanish = (language ?? 'en') === 'es';
+
+  const label = isSpanish
+    ? themeMode === 'white'
+      ? 'Tema: Blanco'
+      : themeMode === 'black'
+        ? 'Tema: Negro'
+        : 'Tema: AMOLED'
+    : themeMode === 'white'
+      ? 'Theme: White'
+      : themeMode === 'black'
+        ? 'Theme: Black'
+        : 'Theme: AMOLED';
+
+  const nextMode: UnifiedThemeMode =
+    themeMode === 'white'
+      ? 'black'
+      : themeMode === 'black'
+        ? 'amoled'
+        : 'white';
+
+  const actionHint = isSpanish
+    ? nextMode === 'black'
+      ? 'Cambiar a modo Negro'
+      : nextMode === 'amoled'
+        ? 'Cambiar a modo AMOLED'
+        : 'Cambiar a modo Blanco'
+    : nextMode === 'black'
+      ? 'Switch to Black theme'
+      : nextMode === 'amoled'
+        ? 'Switch to AMOLED theme'
+        : 'Switch to White theme';
+
+  return {
+    themeMode,
+    mounted,
+    toggle,
+    label,
+    actionHint,
+    fullAriaLabel: `${label}. ${actionHint}`,
+  };
 }
 
 export function ThemeToggle({
   variant = 'rectangle',
   start = 'bottom-up',
   className,
-  iconClassName,
+  iconClassName = 'w-5 h-5',
+  duration = 350,
   ...rest
 }: ThemeToggleProps) {
-  const { themeMode, mounted, toggle } = useThemeToggle({ variant, start });
+  const { themeMode, mounted, toggle, label, actionHint } = useThemeToggle({ variant, start });
 
-  const ariaLabel = mounted
-    ? themeMode === 'light'
-      ? 'Switch to dark mode'
-      : themeMode === 'dark'
-        ? 'Switch to AMOLED mode'
-        : 'Switch to light mode'
-    : 'Switch theme';
+  const ariaLabel = rest['aria-label'] ?? label;
+  const buttonTitle = rest.title ?? `${label}. ${actionHint}`;
 
   return (
     <button
       type="button"
       aria-label={ariaLabel}
+      title={buttonTitle}
       onClick={toggle}
-      className={cn('flex items-center justify-center', className)}
+      data-theme-mode={themeMode}
+      data-testid="theme-toggle"
+      className={cn(
+        'relative inline-flex items-center justify-center overflow-hidden shrink-0 select-none cursor-pointer',
+        className
+      )}
       {...rest}
     >
       {mounted ? (
-        <ActionSwapIcon value={themeMode} animation="blur" className={iconClassName}>
-          {themeMode === 'light' ? (
-            <Sun className={iconClassName} />
-          ) : themeMode === 'dark' ? (
-            <Moon className={iconClassName} />
+        <AnimatePresence mode="popLayout" initial={false}>
+          {themeMode === 'amoled' ? (
+            <motion.span
+              key="eclipse"
+              aria-hidden="true"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="inline-flex items-center justify-center shrink-0"
+            >
+              <Eclipse
+                as="span"
+                toggled={true}
+                duration={duration}
+                svgClassName={iconClassName}
+              />
+            </motion.span>
           ) : (
-            <Eclipse className={iconClassName} />
+            <motion.span
+              key="around"
+              aria-hidden="true"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="inline-flex items-center justify-center shrink-0"
+            >
+              <Around
+                as="span"
+                toggled={themeMode === 'black'}
+                duration={duration}
+                svgClassName={iconClassName}
+              />
+            </motion.span>
           )}
-        </ActionSwapIcon>
+        </AnimatePresence>
       ) : (
         <span className={iconClassName} aria-hidden="true" />
       )}
     </button>
   );
 }
+

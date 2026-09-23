@@ -9,12 +9,22 @@ export type AssistantState =
   | 'listening'
   | 'thinking'
   | 'searching'
+  | 'solving'
+  | 'working'
   | 'composing'
   | 'responding'
   | 'success'
   | 'error'
   | 'interrupted'
   | 'sleeping';
+
+export interface AssistantAttachment {
+  id: string;
+  name: string;
+  size?: number;
+  type?: string;
+  dataUrl?: string;
+}
 
 export interface MusicalContextSnapshot {
   activeApp: 'hub' | 'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex' | 'devtools';
@@ -97,6 +107,11 @@ export interface StructuredRecommendation {
   };
 }
 
+export interface GroundingSource {
+  title: string;
+  url: string;
+}
+
 export interface AssistantMessage {
   id: string;
   threadId: string;
@@ -106,6 +121,8 @@ export interface AssistantMessage {
   timestamp: number;
   recommendations?: StructuredRecommendation[];
   contextSnapshot?: MusicalContextSnapshot;
+  attachments?: AssistantAttachment[];
+  sources?: GroundingSource[];
 }
 
 export interface AssistantThread {

@@ -128,29 +128,44 @@ describe('Livex Three-State Theme Architecture', () => {
   });
 
   describe('settingsController.cycleNextTheme', () => {
-    it('cycles from Light -> Dark -> AMOLED -> Light', () => {
-      // Start at Light
-      settingsController.setThemeMode('light');
-      expect(useSettingsStore.getState().settings.theme).toBe('light');
-      expect(useSettingsStore.getState().settings.amoledMode).toBe(false);
+    it('cycles strictly: WHITE -> BLACK -> AMOLED -> WHITE -> BLACK -> AMOLED', () => {
+      // Helper function to resolve the canonical 3-state mode
+      const getUnifiedMode = () => {
+        const s = useSettingsStore.getState().settings;
+        return s.theme === 'light' ? 'white' : s.amoledMode ? 'amoled' : 'black';
+      };
 
-      // 1. Light -> Dark
+      // Start at White (Light)
+      settingsController.setThemeMode('light');
+      expect(getUnifiedMode()).toBe('white');
+
+      // Cycle 1: WHITE -> BLACK
       const step1 = settingsController.cycleNextTheme();
       expect(step1).toEqual({ theme: 'dark', amoledMode: false });
-      expect(useSettingsStore.getState().settings.theme).toBe('dark');
-      expect(useSettingsStore.getState().settings.amoledMode).toBe(false);
+      expect(getUnifiedMode()).toBe('black');
 
-      // 2. Dark -> AMOLED
+      // Cycle 2: BLACK -> AMOLED
       const step2 = settingsController.cycleNextTheme();
       expect(step2).toEqual({ theme: 'dark', amoledMode: true });
-      expect(useSettingsStore.getState().settings.theme).toBe('dark');
-      expect(useSettingsStore.getState().settings.amoledMode).toBe(true);
+      expect(getUnifiedMode()).toBe('amoled');
 
-      // 3. AMOLED -> Light
+      // Cycle 3: AMOLED -> WHITE
       const step3 = settingsController.cycleNextTheme();
       expect(step3).toEqual({ theme: 'light', amoledMode: false });
-      expect(useSettingsStore.getState().settings.theme).toBe('light');
-      expect(useSettingsStore.getState().settings.amoledMode).toBe(false);
+      expect(getUnifiedMode()).toBe('white');
+
+      // Repeat second full loop to verify infinite cycle invariant
+      const step4 = settingsController.cycleNextTheme();
+      expect(step4).toEqual({ theme: 'dark', amoledMode: false });
+      expect(getUnifiedMode()).toBe('black');
+
+      const step5 = settingsController.cycleNextTheme();
+      expect(step5).toEqual({ theme: 'dark', amoledMode: true });
+      expect(getUnifiedMode()).toBe('amoled');
+
+      const step6 = settingsController.cycleNextTheme();
+      expect(step6).toEqual({ theme: 'light', amoledMode: false });
+      expect(getUnifiedMode()).toBe('white');
     });
   });
 
