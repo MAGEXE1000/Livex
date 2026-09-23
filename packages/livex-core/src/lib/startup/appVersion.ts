@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.38';
-export const NATIVE_VERSION_CODE = 40638;
-export const WEB_VERSION = '4.6.38';
+export const NATIVE_VERSION = '4.6.39';
+export const NATIVE_VERSION_CODE = 40639;
+export const WEB_VERSION = '4.6.39';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -67,19 +67,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/19/2026';
+export const APP_VERSION_DATE = '9/23/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '3a7117be';
+export const APP_COMMIT_SHA = 'ec93d903';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/22/2026, 10:59:29 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/23/2026, 3:16:03 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,17 +98,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.',
-      'Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.',
-      'Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.',
+      'Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.',
+      'Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.',
+      'Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.',
+      'Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.',
-      'Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.',
-      'Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.',
+      'Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.',
+      'Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.',
     ],
   },
 ];
@@ -120,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.39',
+    date: '2026-09-23',
+    highlights: [
+      'Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.',
+      'Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.',
+      'Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.',
+      'Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.',
+      'Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.',
+      'Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.',
+    ],
+  },
   {
     version: '4.6.38',
     date: '2026-09-22',
@@ -211,15 +223,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Physical Specular Edge Rims: Added micro-refined translucent borders (`1px solid rgba(255, 255, 255, 0.12)`) and inset specular top highlights (`inset 0 1px 0 0 rgba(255, 255, 255, 0.16)`) to Topbar and Bottom Navigation surfaces.',
       'Enlarged Bottom Navigation Selected Highlight: Upgraded active tab highlight capsule from `56×46px` (radius `21px`) to `64×48px` (radius `24px`) with exact 2px vertical centering in `SharedNavigationBar`, comfortably containing tab icons and labels across all apps.',
       'Liquid Glass Lens Material Tokens: Refined `--surface-glass-lens-*` tokens across Dark, Light, and AMOLED themes with physical specular center glow and subtle depth shadows.',
-    ],
-  },
-  {
-    version: '4.6.29',
-    date: '2026-09-20',
-    highlights: [
-      'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right hamburger menu in Drumex beat-editor into a seamless contextual toolbar morph. Activating the menu smoothly expands the top bar surface into an action toolbar containing beat settings, swing, and pattern tools.',
-      'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for contextual tool sections and expandable action surfaces.',
-      'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications. The highlight maintains identical width, height, border radius, vertical alignment, and visual weight regardless of label length, icon dimensions, or active tab.',
     ],
   },
 ];

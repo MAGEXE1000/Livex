@@ -1,6 +1,6 @@
 {
   "name": "@workspace/livex-core",
-  "version": "4.6.38",
+  "version": "4.6.39",
   "private": true,
   "scripts": {
     "test": "vitest run",
