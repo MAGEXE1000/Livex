@@ -141,6 +141,158 @@ function extractStructuredRecommendation(text: string, prompt: string) {
   return null;
 }
 
+/**
+ * Streaming parser that handles cross-chunk fragmented <think> tags,
+ * reasoning_content deltas, and lifecycle state transitions without token loss.
+ */
+class ReasoningStreamParser {
+  private inThinkTag = false;
+  private thinkBuffer = '';
+  private hasEmittedSolving = false;
+  private hasEmittedComposing = false;
+  public fullResponseText = '';
+
+  constructor(
+    private writer: WritableStreamDefaultWriter<Uint8Array>,
+    private encoder: TextEncoder
+  ) {}
+
+  public async onConnecting() {
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`)
+      );
+    } catch {}
+  }
+
+  public async onState(state: string, extra?: Record<string, any>) {
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ type: 'state', state, ...extra })}\n\n`)
+      );
+    } catch {}
+  }
+
+  public async onSources(sources: Array<{ title: string; url: string }>) {
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
+      );
+    } catch {}
+  }
+
+  public async onReasoningDelta(_reasoningText: string) {
+    if (!this.hasEmittedSolving) {
+      this.hasEmittedSolving = true;
+      await this.onState('solving');
+    }
+  }
+
+  public async onContentDelta(content: string) {
+    if (!content) return;
+    this.thinkBuffer += content;
+
+    while (this.thinkBuffer.length > 0) {
+      if (!this.inThinkTag) {
+        const openIdx = this.thinkBuffer.indexOf('<think>');
+        if (openIdx !== -1) {
+          const before = this.thinkBuffer.slice(0, openIdx);
+          if (before) {
+            await this.emitContent(before);
+          }
+          this.inThinkTag = true;
+          if (!this.hasEmittedSolving) {
+            this.hasEmittedSolving = true;
+            await this.onState('solving');
+          }
+          this.thinkBuffer = this.thinkBuffer.slice(openIdx + 7);
+        } else {
+          // Check for trailing partial opening tag
+          const partial = this.thinkBuffer.match(/<t?h?i?n?k?$/);
+          if (partial && partial.index !== undefined) {
+            const safe = this.thinkBuffer.slice(0, partial.index);
+            if (safe) {
+              await this.emitContent(safe);
+            }
+            this.thinkBuffer = partial[0];
+            break;
+          } else {
+            await this.emitContent(this.thinkBuffer);
+            this.thinkBuffer = '';
+          }
+        }
+      } else {
+        // Inside think tag
+        const closeIdx = this.thinkBuffer.indexOf('</think>');
+        if (closeIdx !== -1) {
+          this.inThinkTag = false;
+          this.thinkBuffer = this.thinkBuffer.slice(closeIdx + 8);
+        } else {
+          // Check for trailing partial closing tag
+          const partial = this.thinkBuffer.match(/<\/?t?h?i?n?k?$/);
+          if (partial && partial.index !== undefined) {
+            this.thinkBuffer = partial[0];
+          } else {
+            this.thinkBuffer = '';
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  private async emitContent(text: string) {
+    if (!text) return;
+    if (!this.hasEmittedComposing) {
+      this.hasEmittedComposing = true;
+      await this.onState('composing');
+    }
+    this.fullResponseText += text;
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`)
+      );
+    } catch {}
+  }
+
+  public async finish(prompt: string) {
+    if (this.thinkBuffer && !this.inThinkTag) {
+      await this.emitContent(this.thinkBuffer);
+      this.thinkBuffer = '';
+    }
+
+    if (!this.fullResponseText.trim()) {
+      await this.onError('AI service produced an empty response. Please retry.');
+      return;
+    }
+
+    const rec = extractStructuredRecommendation(this.fullResponseText, prompt);
+    if (rec) {
+      try {
+        await this.writer.write(
+          this.encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`)
+        );
+      } catch {}
+    }
+
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`)
+      );
+      await this.writer.write(this.encoder.encode('data: [DONE]\n\n'));
+    } catch {}
+  }
+
+  public async onError(errorMessage: string) {
+    try {
+      await this.writer.write(
+        this.encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
+      );
+      await this.writer.write(this.encoder.encode('data: [DONE]\n\n'));
+    } catch {}
+  }
+}
+
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
 
@@ -460,16 +612,12 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         const reader = response.body.getReader();
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
+        const parser = new ReasoningStreamParser(writer, encoder);
 
         (async () => {
           let buffer = '';
-          let inThinkTag = false;
-          let hasEmittedSolving = false;
-          let hasEmittedComposing = false;
-          let fullResponseText = '';
-
           try {
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+            await parser.onConnecting();
 
             while (true) {
               const { done, value } = await reader.read();
@@ -489,68 +637,31 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                 try {
                   const parsed = JSON.parse(dataStr);
+                  if (parsed.error) {
+                    await parser.onError(parsed.error.message || String(parsed.error));
+                    break;
+                  }
                   const delta = parsed.choices?.[0]?.delta;
                   if (!delta) continue;
 
                   // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM / Groq)
                   if (delta.reasoning_content) {
-                    if (!hasEmittedSolving) {
-                      hasEmittedSolving = true;
-                      await writer.write(
-                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
-                      );
-                    }
+                    await parser.onReasoningDelta(delta.reasoning_content);
                     continue;
                   }
 
                   // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
-                  if (typeof delta.content === 'string') {
-                    let text = delta.content;
-
-                    if (text.includes('<think>')) {
-                      inThinkTag = true;
-                      if (!hasEmittedSolving) {
-                        hasEmittedSolving = true;
-                        await writer.write(
-                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
-                        );
-                      }
-                      text = text.substring(text.indexOf('<think>') + 7);
-                    }
-
-                    if (inThinkTag) {
-                      if (text.includes('</think>')) {
-                        inThinkTag = false;
-                        text = text.substring(text.indexOf('</think>') + 8);
-                      } else {
-                        continue;
-                      }
-                    }
-
-                    if (text) {
-                      if (!hasEmittedComposing) {
-                        hasEmittedComposing = true;
-                        await writer.write(
-                          encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
-                        );
-                      }
-                      fullResponseText += text;
-                      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
-                    }
+                  if (typeof delta.content === 'string' && delta.content) {
+                    await parser.onContentDelta(delta.content);
                   }
                 } catch {}
               }
             }
 
-            const rec = extractStructuredRecommendation(fullResponseText, prompt);
-            if (rec) {
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
-            }
-
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
-            await writer.write(encoder.encode('data: [DONE]\n\n'));
-          } catch (err) {
+            await parser.finish(prompt);
+          } catch (err: any) {
             console.error('[Edge Gateway] Open-source streaming error:', err);
+            await parser.onError(err?.message || 'Streaming failed');
           } finally {
             await writer.close();
           }
@@ -579,9 +690,9 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
       const candidateModels = [
         env.OPENAI_COMPATIBLE_MODEL,
+        '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
         '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
         '@cf/meta/llama-3.1-8b-instruct',
-        '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
         '@cf/mistral/mistral-7b-instruct-v0.1',
       ].filter(Boolean) as string[];
 
@@ -605,16 +716,12 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         const reader = aiStream.getReader();
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
+        const parser = new ReasoningStreamParser(writer, encoder);
 
         (async () => {
           let buffer = '';
-          let inThinkTag = false;
-          let hasEmittedSolving = false;
-          let hasEmittedComposing = false;
-          let fullResponseText = '';
-
           try {
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+            await parser.onConnecting();
 
             while (true) {
               const { done, value } = await reader.read();
@@ -634,53 +741,22 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                 try {
                   const parsed = JSON.parse(dataStr);
+                  if (parsed.error) {
+                    await parser.onError(parsed.error.message || String(parsed.error));
+                    break;
+                  }
                   const chunkText = parsed.response || parsed.delta || parsed.choices?.[0]?.delta?.content;
-                  if (typeof chunkText !== 'string' || !chunkText) continue;
-
-                  let text = chunkText;
-                  if (text.includes('<think>')) {
-                    inThinkTag = true;
-                    if (!hasEmittedSolving) {
-                      hasEmittedSolving = true;
-                      await writer.write(
-                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`)
-                      );
-                    }
-                    text = text.substring(text.indexOf('<think>') + 7);
-                  }
-
-                  if (inThinkTag) {
-                    if (text.includes('</think>')) {
-                      inThinkTag = false;
-                      text = text.substring(text.indexOf('</think>') + 8);
-                    } else {
-                      continue;
-                    }
-                  }
-
-                  if (text) {
-                    if (!hasEmittedComposing) {
-                      hasEmittedComposing = true;
-                      await writer.write(
-                        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
-                      );
-                    }
-                    fullResponseText += text;
-                    await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: text })}\n\n`));
+                  if (typeof chunkText === 'string' && chunkText) {
+                    await parser.onContentDelta(chunkText);
                   }
                 } catch {}
               }
             }
 
-            const rec = extractStructuredRecommendation(fullResponseText, prompt);
-            if (rec) {
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
-            }
-
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`));
-            await writer.write(encoder.encode('data: [DONE]\n\n'));
-          } catch (err) {
+            await parser.finish(prompt);
+          } catch (err: any) {
             console.error('[Edge Gateway] Workers AI streaming error:', err);
+            await parser.onError(err?.message || 'Workers AI streaming failed');
           } finally {
             await writer.close();
           }

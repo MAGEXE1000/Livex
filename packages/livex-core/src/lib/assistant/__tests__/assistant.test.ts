@@ -364,5 +364,70 @@ describe('Livex Music AI Assistant Suite', () => {
         globalThis.fetch = originalFetch;
       }
     });
+
+    it('rejects with error when stream terminates without emitting any content tokens', async () => {
+      const ssePayload = [
+        'data: {"type": "state", "state": "connecting"}\n\n',
+        'data: {"type": "state", "state": "solving"}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(ssePayload));
+            controller.close();
+          },
+        }),
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('What is 37 * 48?');
+
+        const state = useAssistantStore.getState();
+        expect(state.status).toBe('error');
+        expect(state.errorMessage).toContain('AI assistant did not return any content');
+        expect(state.mascotState).toBe('error');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('surfaces server-side SSE error events directly to error state and mascot', async () => {
+      const ssePayload = [
+        'data: {"type": "state", "state": "connecting"}\n\n',
+        'data: {"error": "Cloudflare edge inference capacity reached. Please retry."}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(ssePayload));
+            controller.close();
+          },
+        }),
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('Generate full orchestral score');
+
+        const state = useAssistantStore.getState();
+        expect(state.status).toBe('error');
+        expect(state.errorMessage).toBe('Cloudflare edge inference capacity reached. Please retry.');
+        expect(state.mascotState).toBe('error');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });
+

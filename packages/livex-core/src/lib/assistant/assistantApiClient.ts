@@ -213,6 +213,10 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
         if (trimmed.startsWith('data: ')) {
           const jsonStr = trimmed.slice(6);
           if (jsonStr === '[DONE]') {
+            if (!hasReceivedToken) {
+              callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
+              return;
+            }
             callbacks.onComplete();
             return;
           }
@@ -246,11 +250,20 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
             }
           } catch {
             if (jsonStr) {
+              if (!hasReceivedToken) {
+                hasReceivedToken = true;
+                callbacks.onStateChange?.('composing');
+              }
               callbacks.onToken(jsonStr);
             }
           }
         }
       }
+    }
+
+    if (!hasReceivedToken) {
+      callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
+      return;
     }
 
     callbacks.onComplete();

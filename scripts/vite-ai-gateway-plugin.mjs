@@ -301,11 +301,67 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
-                let buffer = '';
                 let inThinkTag = false;
+                let thinkBuffer = '';
                 let hasEmittedSolving = false;
                 let hasEmittedComposing = false;
                 let fullResponseText = '';
+
+                const emitText = (text) => {
+                  if (!text) return;
+                  if (!hasEmittedComposing) {
+                    hasEmittedComposing = true;
+                    res.write(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`);
+                  }
+                  fullResponseText += text;
+                  res.write(`data: ${JSON.stringify({ delta: text })}\n\n`);
+                };
+
+                const handleContent = (content) => {
+                  if (!content) return;
+                  thinkBuffer += content;
+
+                  while (thinkBuffer.length > 0) {
+                    if (!inThinkTag) {
+                      const openIdx = thinkBuffer.indexOf('<think>');
+                      if (openIdx !== -1) {
+                        const before = thinkBuffer.slice(0, openIdx);
+                        if (before) emitText(before);
+                        inThinkTag = true;
+                        if (!hasEmittedSolving) {
+                          hasEmittedSolving = true;
+                          res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
+                        }
+                        thinkBuffer = thinkBuffer.slice(openIdx + 7);
+                      } else {
+                        const partial = thinkBuffer.match(/<t?h?i?n?k?$/);
+                        if (partial && partial.index !== undefined) {
+                          const safe = thinkBuffer.slice(0, partial.index);
+                          if (safe) emitText(safe);
+                          thinkBuffer = partial[0];
+                          break;
+                        } else {
+                          emitText(thinkBuffer);
+                          thinkBuffer = '';
+                        }
+                      }
+                    } else {
+                      const closeIdx = thinkBuffer.indexOf('</think>');
+                      if (closeIdx !== -1) {
+                        inThinkTag = false;
+                        thinkBuffer = thinkBuffer.slice(closeIdx + 8);
+                      } else {
+                        const partial = thinkBuffer.match(/<\/?t?h?i?n?k?$/);
+                        if (partial && partial.index !== undefined) {
+                          thinkBuffer = partial[0];
+                        } else {
+                          thinkBuffer = '';
+                        }
+                        break;
+                      }
+                    }
+                  }
+                };
 
                 while (true) {
                   const { done, value } = await reader.read();
@@ -325,6 +381,10 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                     try {
                       const parsed = JSON.parse(dataStr);
+                      if (parsed.error) {
+                        res.write(`data: ${JSON.stringify({ error: parsed.error.message || String(parsed.error) })}\n\n`);
+                        break;
+                      }
                       const delta = parsed.choices?.[0]?.delta;
                       if (!delta) continue;
 
@@ -334,52 +394,32 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                           hasEmittedSolving = true;
                           res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
                         }
-                        // Suppress raw reasoning tokens from user message bubble
                         continue;
                       }
 
                       // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
-                      if (typeof delta.content === 'string') {
-                        let text = delta.content;
-
-                        if (text.includes('<think>')) {
-                          inThinkTag = true;
-                          if (!hasEmittedSolving) {
-                            hasEmittedSolving = true;
-                            res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
-                          }
-                          text = text.substring(text.indexOf('<think>') + 7);
-                        }
-
-                        if (inThinkTag) {
-                          if (text.includes('</think>')) {
-                            inThinkTag = false;
-                            text = text.substring(text.indexOf('</think>') + 8);
-                          } else {
-                            continue;
-                          }
-                        }
-
-                        if (text) {
-                          if (!hasEmittedComposing) {
-                            hasEmittedComposing = true;
-                            res.write(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`);
-                          }
-                          fullResponseText += text;
-                          res.write(`data: ${JSON.stringify({ delta: text })}\n\n`);
-                        }
+                      if (typeof delta.content === 'string' && delta.content) {
+                        handleContent(delta.content);
                       }
                     } catch {}
                   }
                 }
 
-                // Check for structured chord / tone recommendations
-                const recommendation = extractStructuredRecommendation(fullResponseText, prompt);
-                if (recommendation) {
-                  res.write(`data: ${JSON.stringify({ recommendation })}\n\n`);
+                if (thinkBuffer && !inThinkTag) {
+                  emitText(thinkBuffer);
+                  thinkBuffer = '';
                 }
 
-                res.write(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`);
+                if (!fullResponseText.trim()) {
+                  res.write(`data: ${JSON.stringify({ error: 'AI service produced an empty response. Please retry.' })}\n\n`);
+                } else {
+                  const recommendation = extractStructuredRecommendation(fullResponseText, prompt);
+                  if (recommendation) {
+                    res.write(`data: ${JSON.stringify({ recommendation })}\n\n`);
+                  }
+                  res.write(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`);
+                }
+
                 res.write('data: [DONE]\n\n');
                 res.end();
                 return;
