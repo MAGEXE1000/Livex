@@ -2,15 +2,12 @@ import React, { useRef, useEffect, useState, useId } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Paperclip,
-  SlidersHorizontal,
-  ChevronDown,
   Mic,
   Headphones,
   ArrowUp,
   Square,
   X,
   AlertCircle,
-  Check,
 } from 'lucide-react';
 import { useSettingsStore } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
@@ -132,11 +129,9 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
       window.matchMedia?.('(prefers-color-scheme: light)').matches);
 
   const [isFocused, setIsFocused] = useState(false);
-  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
 
   const hasText = value.trim().length > 0;
-  const activeModel = models.find((m) => m.id === selectedModelId) || models[0];
 
   // Auto-resize textarea smoothly up to 128px
   useEffect(() => {
@@ -156,21 +151,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     return () => clearTimeout(timer);
   }, [statusFeedback]);
 
-  // Close model menu on outside click
-  useEffect(() => {
-    if (!isModelMenuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsModelMenuOpen(false);
-      }
-    };
-    window.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      window.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isModelMenuOpen]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing) return;
@@ -261,149 +242,6 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
         }
       `}</style>
 
-      {/* Model Selection Floating Popover */}
-      <AnimatePresence>
-        {isModelMenuOpen && (
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
-            transition={{ type: 'spring', bounce: 0.1, duration: 0.2 }}
-            style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 10px)',
-              left: 0,
-              width: 310,
-              maxWidth: '92vw',
-              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
-              border: isLight ? '1px solid rgba(0, 0, 0, 0.09)' : '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 16,
-              boxShadow: isLight
-                ? '0 10px 30px -4px rgba(0, 0, 0, 0.12)'
-                : '0 14px 40px -4px rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              padding: '6px',
-              zIndex: 50,
-              boxSizing: 'border-box',
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10.5,
-                fontWeight: 650,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                color: isLight ? '#64748b' : '#94a3b8',
-                padding: '6px 10px 4px',
-              }}
-            >
-              Intelligence Engine
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {models.map((m) => {
-                const isSelected = m.id === (activeModel?.id ?? '');
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => {
-                      onSelectModel?.(m.id);
-                      setIsModelMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '8px 10px',
-                      borderRadius: 12,
-                      background: isSelected
-                        ? isLight
-                          ? 'rgba(0, 0, 0, 0.05)'
-                          : 'rgba(255, 255, 255, 0.08)'
-                        : 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'background 120ms ease',
-                      width: '100%',
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: isSelected ? (isLight ? '#0f172a' : '#ffffff') : isLight ? '#64748b' : '#94a3b8',
-                        marginTop: 2,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {m.icon || <SlidersHorizontal size={14} />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 6,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: isSelected
-                              ? isLight ? '#0f172a' : '#f8fafc'
-                              : isLight ? '#334155' : '#cbd5e1',
-                          }}
-                        >
-                          {m.name}
-                        </span>
-                        {m.badge && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 650,
-                              padding: '2px 6px',
-                              borderRadius: 6,
-                              background: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
-                              color: isSelected
-                                ? isLight ? '#0f172a' : '#ffffff'
-                                : isLight ? '#64748b' : '#94a3b8',
-                            }}
-                          >
-                            {m.badge}
-                          </span>
-                        )}
-                      </div>
-                      {m.description && (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: isLight ? '#64748b' : '#94a3b8',
-                            lineHeight: 1.35,
-                            marginTop: 2,
-                          }}
-                        >
-                          {m.description}
-                        </div>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <Check
-                        size={14}
-                        style={{
-                          color: isLight ? '#0f172a' : '#ffffff',
-                          marginTop: 4,
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Floating Status / Gated Feedback Toast */}
       <AnimatePresence>
@@ -633,57 +471,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               <Paperclip size={13} />
             </motion.button>
 
-            {/* Model / Engine Selector Badge */}
-            <motion.button
-              type="button"
-              whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
-              onClick={() => setIsModelMenuOpen((prev) => !prev)}
-              aria-label="Change model"
-              aria-expanded={isModelMenuOpen}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                height: 28,
-                padding: '0 10px',
-                borderRadius: 14,
-                background: isModelMenuOpen
-                  ? isLight
-                    ? 'rgba(0, 0, 0, 0.07)'
-                    : 'rgba(255, 255, 255, 0.1)'
-                  : isLight
-                    ? 'rgba(0, 0, 0, 0.03)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                border: isLight
-                  ? '1px solid rgba(0, 0, 0, 0.06)'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
-                color: isLight ? '#0f172a' : '#f1f5f9',
-                fontSize: 11.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 120ms ease',
-              }}
-            >
-              <SlidersHorizontal size={12} style={{ color: isLight ? '#475569' : '#94a3b8' }} />
-              <span
-                style={{
-                  maxWidth: 130,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {activeModel.name}
-              </span>
-              <ChevronDown
-                size={12}
-                style={{
-                  color: isLight ? '#64748b' : '#94a3b8',
-                  transform: isModelMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 180ms ease',
-                }}
-              />
-            </motion.button>
+
           </div>
 
           {/* Right Actions Group: Dictation, Voice Chat & Primary Action Button */}

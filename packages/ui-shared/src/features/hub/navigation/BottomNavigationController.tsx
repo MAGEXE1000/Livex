@@ -333,23 +333,6 @@ export function BottomNavigationController() {
             NavigationDispatcher.push({ app: 'hub', tab: 'settings' });
           },
         },
-        {
-          key: 'assistant',
-          icon: (
-            <LivexAssistantMascot
-              size={24}
-              mode="dock"
-              state={mascotState}
-              interactive={false}
-            />
-          ),
-          label: 'AI',
-          isActive: activeTab === 'assistant',
-          isSatellite: true,
-          onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
-          },
-        },
       ];
     }
 
@@ -466,6 +449,8 @@ export function BottomNavigationController() {
         isSwitcherOpen={isSwitcherOpen}
         setIsSwitcherOpen={setIsSwitcherOpen}
         currentApp={currentApp}
+        activeTab={activeTab}
+        mascotState={mascotState}
         onOpenProfile={() => toggleProfileMenu()}
         user={user}
         customPhoto={customPhoto}

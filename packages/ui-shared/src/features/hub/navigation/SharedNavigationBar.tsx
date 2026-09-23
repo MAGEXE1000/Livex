@@ -17,6 +17,7 @@ import {
   useBackHandler,
   StartupCoordinator,
   useT,
+  type AssistantState,
 } from '@workspace/livex-core';
 import {
   StudioLogo,
@@ -26,6 +27,7 @@ import {
   GroovexLogo,
   VocalexLogo,
 } from '../../chordex/icons/ChordexLogo';
+import { LivexAssistantMascot } from '../../assistant/components/LivexAssistantMascot';
 import { AnimatedNavigationIcon } from './AnimatedNavigationIcon';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
@@ -62,6 +64,8 @@ export interface SharedNavigationBarProps {
   isSwitcherOpen: boolean;
   setIsSwitcherOpen: (open: boolean) => void;
   currentApp: string;
+  activeTab?: string;
+  mascotState?: AssistantState;
   onOpenProfile?: () => void;
   user?: any;
   customPhoto?: string | null;
@@ -232,6 +236,8 @@ export function SharedNavigationBar({
   isSwitcherOpen,
   setIsSwitcherOpen,
   currentApp,
+  activeTab,
+  mascotState,
   onOpenProfile,
   user,
   customPhoto,
@@ -354,6 +360,8 @@ export function SharedNavigationBar({
 
   const isHub = currentApp === 'hub';
   const showSwitcherButton = currentApp !== 'hub';
+  const showAssistantSatellite = isHub && !isSwitcherOpen;
+  const isAssistantActive = isHub && activeTab === 'assistant';
 
   const currentItems = isSwitcherOpen ? switcherApps : items || [];
   const N = currentItems.length || 1;
@@ -372,8 +380,8 @@ export function SharedNavigationBar({
           : 76;
   const paddingX = isSwitcherOpen ? 6 : 8;
 
-  // hasRightBubble: true when App Changer satellite button is shown (non-hub apps only)
-  const hasRightBubble = showSwitcherButton;
+  // hasRightBubble: true when App Changer satellite button (non-hub apps) or AI Assistant satellite button (hub) is shown
+  const hasRightBubble = showSwitcherButton || showAssistantSatellite;
   const satelliteWidth = 58;
   const dockGap = 8;
   const edgeMargin = 6;
@@ -1195,7 +1203,7 @@ export function SharedNavigationBar({
               </div>
             </motion.div>
 
-            {showSwitcherButton && (
+            {hasRightBubble && (
               <motion.div
                 style={{
                   position: 'absolute',
@@ -1216,77 +1224,157 @@ export function SharedNavigationBar({
                   mass: 0.75,
                 }}
               >
-                <motion.button
-                  onClick={() => {
-                    if (isEffectiveHidden) return;
-                    setIsSwitcherOpen(!isSwitcherOpen);
-                  }}
-                  whileTap={prefersReduced ? undefined : { scale: 0.92 }}
-                  whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
-                  transition={
-                    prefersReduced
-                      ? { duration: 0 }
-                      : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
-                  }
-                  style={{
-                    width: '58px',
-                    height: '58px',
-                    borderRadius: '9999px',
-                    background: 'var(--surface-topbar-bg)',
-                    border: 'var(--surface-topbar-border)',
-                    backdropFilter: 'var(--surface-topbar-backdrop)',
-                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                    boxShadow: 'var(--surface-topbar-shadow)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isLight
-                      ? isSwitcherOpen
-                        ? '#0f172a'
-                        : 'rgba(15, 23, 42, 0.75)'
-                      : isSwitcherOpen
-                        ? '#ffffff'
-                        : 'rgba(255, 255, 255, 0.65)',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    WebkitTapHighlightColor: 'transparent',
-                    transformOrigin: 'center bottom',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    opacity: switcherOpacity,
-                    scale: switcherScale,
-                    pointerEvents: switcherPointerEvents,
-                  }}
-                >
-                  {/* Radial Center Glow */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '9999px',
-                      background: isLight
-                        ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
-                        : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
-                      pointerEvents: 'none',
+                {showSwitcherButton ? (
+                  <motion.button
+                    onClick={() => {
+                      if (isEffectiveHidden) return;
+                      setIsSwitcherOpen(!isSwitcherOpen);
                     }}
-                  />
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.div
-                      key={isSwitcherOpen ? 'close' : 'apps'}
-                      initial={{ rotate: isSwitcherOpen ? -90 : 90, opacity: 0, scale: 0.7 }}
-                      animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                      exit={{ rotate: isSwitcherOpen ? 90 : -90, opacity: 0, scale: 0.7 }}
-                      transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.7 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <StudioIcon
-                        name={isSwitcherOpen ? 'close' : 'apps'}
-                        size={20}
-                        style={{ display: 'block' }}
-                      />
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.button>
+                    whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                    whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+                    transition={
+                      prefersReduced
+                        ? { duration: 0 }
+                        : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                    }
+                    style={{
+                      width: '58px',
+                      height: '58px',
+                      borderRadius: '9999px',
+                      background: 'var(--surface-topbar-bg)',
+                      border: 'var(--surface-topbar-border)',
+                      backdropFilter: 'var(--surface-topbar-backdrop)',
+                      WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                      boxShadow: 'var(--surface-topbar-shadow)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isLight
+                        ? isSwitcherOpen
+                          ? '#0f172a'
+                          : 'rgba(15, 23, 42, 0.75)'
+                        : isSwitcherOpen
+                          ? '#ffffff'
+                          : 'rgba(255, 255, 255, 0.65)',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      transformOrigin: 'center bottom',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      opacity: switcherOpacity,
+                      scale: switcherScale,
+                      pointerEvents: switcherPointerEvents,
+                    }}
+                  >
+                    {/* Radial Center Glow */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '9999px',
+                        background: isLight
+                          ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
+                          : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      <motion.div
+                        key={isSwitcherOpen ? 'close' : 'apps'}
+                        initial={{ rotate: isSwitcherOpen ? -90 : 90, opacity: 0, scale: 0.7 }}
+                        animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                        exit={{ rotate: isSwitcherOpen ? 90 : -90, opacity: 0, scale: 0.7 }}
+                        transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.7 }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <StudioIcon
+                          name={isSwitcherOpen ? 'close' : 'apps'}
+                          size={20}
+                          style={{ display: 'block' }}
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                  </motion.button>
+                ) : showAssistantSatellite ? (
+                  <motion.button
+                    onClick={() => {
+                      if (isEffectiveHidden) return;
+                      NavigationDispatcher.push({
+                        app: 'hub',
+                        tab: isAssistantActive ? 'home' : 'assistant',
+                      });
+                    }}
+                    whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                    whileHover={canHover && !prefersReduced ? { scale: 1.05 } : undefined}
+                    aria-label="AI Assistant"
+                    aria-selected={isAssistantActive}
+                    role="tab"
+                    title="Livex Studio AI"
+                    transition={
+                      prefersReduced
+                        ? { duration: 0 }
+                        : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                    }
+                    style={{
+                      width: '58px',
+                      height: '58px',
+                      borderRadius: '9999px',
+                      background: isAssistantActive
+                        ? isLight
+                          ? 'rgba(238, 246, 255, 0.94)'
+                          : 'rgba(15, 23, 42, 0.94)'
+                        : 'var(--surface-topbar-bg)',
+                      border: isAssistantActive
+                        ? isLight
+                          ? '1.5px solid rgba(37, 99, 235, 0.45)'
+                          : '1.5px solid rgba(56, 189, 248, 0.5)'
+                        : 'var(--surface-topbar-border)',
+                      backdropFilter: 'var(--surface-topbar-backdrop)',
+                      WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                      boxShadow: isAssistantActive
+                        ? isLight
+                          ? '0 0 16px rgba(37, 99, 235, 0.22), var(--surface-topbar-shadow)'
+                          : '0 0 20px rgba(56, 189, 248, 0.28), var(--surface-topbar-shadow)'
+                        : 'var(--surface-topbar-shadow)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      transformOrigin: 'center bottom',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      opacity: switcherOpacity,
+                      scale: switcherScale,
+                      pointerEvents: switcherPointerEvents,
+                    }}
+                  >
+                    {/* Radial Center Glow */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '9999px',
+                        background: isAssistantActive
+                          ? isLight
+                            ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(37,99,235,0.18) 0%, transparent 100%)'
+                            : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(56,189,248,0.18) 0%, transparent 100%)'
+                          : isLight
+                            ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
+                            : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <LivexAssistantMascot
+                      size={32}
+                      mode="dock"
+                      state={mascotState || 'idle'}
+                      interactive={false}
+                    />
+                  </motion.button>
+                ) : null}
               </motion.div>
             )}
           </div>

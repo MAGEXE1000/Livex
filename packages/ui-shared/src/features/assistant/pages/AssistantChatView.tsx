@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAssistantStore, useSettingsStore } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
@@ -90,123 +91,48 @@ export const AssistantChatView: React.FC = () => {
         fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
       }}
     >
-      {/* Clean Studio Topbar Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px',
-          borderBottom: isLight
-            ? '1px solid rgba(0, 0, 0, 0.06)'
-            : '1px solid rgba(255, 255, 255, 0.06)',
-          background: isLight
-            ? 'rgba(255, 255, 255, 0.85)'
-            : 'rgba(10, 15, 29, 0.82)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Minimalist Bot Emblem */}
-          <LivexAssistantMascot
-            size={28}
-            mode="chat"
-            state={mascotState}
-            interactive={false}
-          />
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  fontSize: 14.5,
-                  fontWeight: 650,
-                  letterSpacing: '-0.01em',
-                  color: isLight ? '#0f172a' : '#f8fafc',
-                }}
-              >
-                Livex Studio AI
-              </span>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '2px 8px',
-                  borderRadius: 12,
-                  background: isStreaming
-                    ? isLight
-                      ? 'rgba(2, 132, 199, 0.08)'
-                      : 'rgba(56, 189, 248, 0.1)'
-                    : isLight
-                      ? 'rgba(0, 0, 0, 0.04)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: isStreaming
-                    ? isLight ? '#0284c7' : '#38bdf8'
-                    : isLight ? '#64748b' : '#94a3b8',
-                }}
-              >
-                <span
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: '50%',
-                    background: isStreaming
-                      ? isLight ? '#0284c7' : '#38bdf8'
-                      : '#22c55e',
-                    boxShadow: isStreaming
-                      ? `0 0 6px ${isLight ? '#0284c7' : '#38bdf8'}`
-                      : 'none',
-                    display: 'inline-block',
-                  }}
-                />
-                <span>{isStreaming ? 'Thinking' : 'Ready'}</span>
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: 11,
-                color: isLight ? '#64748b' : '#64748b',
-                marginTop: 1,
-              }}
-            >
-              Theory, Chords, Tone & Rhythm
-            </div>
-          </div>
-        </div>
-
-        {/* Clear Conversation Action */}
+      {/* Floating Reset Action (Headerless open canvas design) */}
+      <AnimatePresence>
         {hasMessages && (
-          <button
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -6 }}
+            transition={{ duration: 0.15 }}
             onClick={clearConversation}
             title="Clear conversation"
             aria-label="Clear chat history"
             style={{
-              background: 'transparent',
+              position: 'absolute',
+              top: 'calc(var(--safe-area-inset-top, 12px) + 12px)',
+              right: 18,
+              zIndex: 30,
+              background: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(15, 23, 42, 0.85)',
               border: isLight
                 ? '1px solid rgba(0, 0, 0, 0.08)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 8,
-              padding: '6px 10px',
+                : '1px solid rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              borderRadius: 20,
+              padding: '6px 12px',
               color: isLight ? '#64748b' : '#94a3b8',
-              fontSize: 11.5,
-              fontWeight: 500,
+              fontSize: 12,
+              fontWeight: 550,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
+              gap: 6,
+              boxShadow: isLight
+                ? '0 4px 12px rgba(0, 0, 0, 0.06)'
+                : '0 4px 16px rgba(0, 0, 0, 0.4)',
               transition: 'background 120ms ease, color 120ms ease',
             }}
           >
             <RotateCcw size={12} />
             <span>Reset</span>
-          </button>
+          </motion.button>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* Messages Scroll Area */}
       <div
@@ -216,6 +142,7 @@ export const AssistantChatView: React.FC = () => {
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: '20px 20px',
+          paddingTop: 'calc(var(--safe-area-inset-top, 12px) + 20px)',
           display: 'flex',
           flexDirection: 'column',
           scrollbarWidth: 'thin',
@@ -235,13 +162,13 @@ export const AssistantChatView: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            {/* Minimalist Hero Emblem (Kimi / Grok style) */}
-            <div style={{ marginBottom: 18 }}>
+            {/* Animated Mascot Hero (Kimi / Grok inspired) */}
+            <div style={{ marginBottom: 20 }}>
               <LivexAssistantMascot
-                size={56}
+                size={76}
                 mode="chat"
                 state={mascotState}
-                interactive={false}
+                interactive={true}
               />
             </div>
 

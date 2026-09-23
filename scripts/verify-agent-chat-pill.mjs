@@ -104,6 +104,12 @@ async function run() {
   await page.waitForFunction(() => document.body && document.body.innerHTML.length > 500, { timeout: 10000 });
   await new Promise((r) => setTimeout(r, 1200));
 
+  // First, capture the Hub Home showing the separate AI satellite button next to the dock!
+  console.log('[Test] Capturing Hub Home with separate AI satellite button...');
+  const hubHomePath = path.join(artifactDir, 'verify_hub_ai_satellite.png');
+  await page.screenshot({ path: hubHomePath });
+  console.log(`Saved screenshot: ${hubHomePath}`);
+
   // Clear any existing chat history so we test clean initial state
   await page.evaluate(() => {
     if (window.__studioAssistantStore) {
@@ -111,19 +117,23 @@ async function run() {
     }
   });
 
-  // Navigate to assistant tab
-  console.log('[Test] Navigating to Assistant tab via NavigationDispatcher...');
-  await page.evaluate(() => {
-    if (window.__studioNavigationDispatcher) {
-      window.__studioNavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
-      return true;
-    }
-    return false;
-  });
+  // Navigate to assistant tab by clicking the dedicated satellite button!
+  console.log('[Test] Clicking AI Assistant satellite button...');
+  const satelliteBtn = await page.$('button[aria-label="AI Assistant"]');
+  if (satelliteBtn) {
+    await satelliteBtn.click();
+  } else {
+    console.log('[Test] Fallback to NavigationDispatcher...');
+    await page.evaluate(() => {
+      if (window.__studioNavigationDispatcher) {
+        window.__studioNavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+      }
+    });
+  }
 
   await new Promise((r) => setTimeout(r, 1500));
 
-  // 1. Capture Ready / Empty State
+  // 1. Capture Ready / Empty State (Headerless layout + large animated mascot)
   console.log('[Test] Capturing Ready State...');
   const readyPath = path.join(artifactDir, 'verify_agent_chat_pill_ready.png');
   const proEmptyPath = path.join(artifactDir, 'verify_pro_empty_state.png');
@@ -131,19 +141,17 @@ async function run() {
   await page.screenshot({ path: proEmptyPath });
   console.log(`Saved screenshot: ${proEmptyPath}`);
 
-  // 2. Open Model Menu
-  console.log('[Test] Opening Model Selector menu...');
-  await page.click('button[aria-label="Change model"]');
-  await new Promise((r) => setTimeout(r, 400));
-  const modelsPath = path.join(artifactDir, 'verify_agent_chat_pill_models.png');
-  const proModelPath = path.join(artifactDir, 'verify_pro_model_menu.png');
-  await page.screenshot({ path: modelsPath });
-  await page.screenshot({ path: proModelPath });
-  console.log(`Saved screenshot: ${proModelPath}`);
-
-  // Close model menu
-  await page.click('button[aria-label="Change model"]');
-  await new Promise((r) => setTimeout(r, 300));
+  // 2. Click the mascot to test interactive tap reaction (sparkles, hop, wink)
+  console.log('[Test] Tapping animated mascot hero...');
+  const mascotEl = await page.$('.livex-assistant-mascot[role="button"]');
+  if (mascotEl) {
+    await mascotEl.click();
+    await new Promise((r) => setTimeout(r, 200));
+    const mascotTapPath = path.join(artifactDir, 'verify_mascot_tap_reaction.png');
+    await page.screenshot({ path: mascotTapPath });
+    console.log(`Saved screenshot: ${mascotTapPath}`);
+  }
+  await new Promise((r) => setTimeout(r, 600));
 
   // 3. Type multiline prompt with Puppeteer typing
   console.log('[Test] Typing multiline prompt into textarea...');
