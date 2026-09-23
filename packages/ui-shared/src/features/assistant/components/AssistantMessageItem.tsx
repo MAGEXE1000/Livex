@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { type AssistantMessage, useSettingsStore } from '@workspace/livex-core';
-import { StudioIcon } from '../../../shared/icons/StudioIcon';
+import { LivexAssistantMascot } from './LivexAssistantMascot';
 import { ChordProgressionCard } from './cards/ChordProgressionCard';
 import { ToneRecipeCard } from './cards/ToneRecipeCard';
 import { DrumGrooveCard } from './cards/DrumGrooveCard';
+import { Copy, Check } from 'lucide-react';
 
 export interface AssistantMessageItemProps {
   message: AssistantMessage;
@@ -35,13 +36,13 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           <code
             key={i}
             style={{
-              background: isLight ? 'rgba(2, 132, 199, 0.08)' : 'rgba(56, 189, 248, 0.12)',
-              border: isLight ? '1px solid rgba(2, 132, 199, 0.2)' : '1px solid rgba(56, 189, 248, 0.25)',
-              color: isLight ? '#0284c7' : '#38bdf8',
-              padding: '1px 5px',
+              background: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: isLight ? '#0f172a' : '#f1f5f9',
+              padding: '1px 6px',
               borderRadius: 4,
-              fontSize: '0.9em',
-              fontFamily: 'ui-monospace, monospace',
+              fontSize: '0.88em',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
             }}
           >
             {part.slice(1, -1)}
@@ -54,7 +55,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
             key={i}
             style={{
               color: isLight ? '#0f172a' : '#ffffff',
-              fontWeight: 600,
+              fontWeight: 650,
             }}
           >
             {part.slice(2, -2)}
@@ -77,10 +78,10 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           <h3
             key={idx}
             style={{
-              fontSize: 15,
-              fontWeight: 700,
+              fontSize: 14.5,
+              fontWeight: 650,
               color: isLight ? '#0f172a' : '#f8fafc',
-              margin: '8px 0 4px',
+              margin: '10px 0 4px',
               letterSpacing: '-0.01em',
             }}
           >
@@ -97,17 +98,17 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
             style={{
               display: 'flex',
               alignItems: 'baseline',
-              gap: 6,
-              margin: '2px 0',
+              gap: 8,
+              margin: '3px 0',
               paddingLeft: 4,
             }}
           >
-            <span style={{ color: isLight ? '#0284c7' : '#38bdf8', fontSize: 13 }}>•</span>
+            <span style={{ color: isLight ? '#64748b' : '#94a3b8', fontSize: 13 }}>•</span>
             <span
               style={{
-                fontSize: 13,
-                color: isLight ? '#334155' : '#e2e8f0',
-                lineHeight: 1.5,
+                fontSize: 13.5,
+                color: isLight ? '#334155' : '#cbd5e1',
+                lineHeight: 1.55,
               }}
             >
               {formatInlineText(text)}
@@ -126,7 +127,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           style={{
             fontSize: 13.5,
             color: isLight ? '#1e293b' : '#e2e8f0',
-            lineHeight: 1.55,
+            lineHeight: 1.6,
             margin: '3px 0',
           }}
         >
@@ -148,13 +149,14 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
       >
         <div
           style={{
-            background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+            background: isLight ? '#0f172a' : '#1e293b',
             color: '#ffffff',
+            border: isLight ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
             padding: '10px 16px',
-            borderRadius: '18px 18px 4px 18px',
+            borderRadius: '16px 16px 4px 16px',
             fontSize: 14,
             lineHeight: 1.45,
-            boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
+            boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none',
             maxWidth: '100%',
             wordBreak: 'break-word',
           }}
@@ -169,30 +171,41 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        margin: '10px 0',
-        paddingRight: '6%',
+        gap: 10,
+        margin: '12px 0',
+        paddingRight: '4%',
         position: 'relative',
+        alignItems: 'flex-start',
       }}
     >
+      {/* Bot Mini Emblem Avatar */}
+      <div style={{ marginTop: 2, flexShrink: 0 }}>
+        <LivexAssistantMascot
+          size={22}
+          mode="chat"
+          state="idle"
+          interactive={false}
+        />
+      </div>
+
       {/* Bot Bubble */}
       <div
         style={{
-          background: isLight ? 'rgba(255, 255, 255, 0.92)' : 'rgba(30, 41, 59, 0.45)',
+          flex: 1,
+          background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.55)',
           border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '4px 18px 18px 18px',
-          padding: '14px 16px',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: isLight ? '0 8px 30px rgba(0, 0, 0, 0.08)' : '0 8px 30px rgba(0, 0, 0, 0.25)',
+          borderRadius: 14,
+          padding: '14px 18px',
+          boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
           position: 'relative',
         }}
       >
-        {/* Copy button */}
+        {/* Copy action */}
         {message.status !== 'streaming' && message.content && (
           <button
             onClick={handleCopy}
             title="Copy response"
+            aria-label="Copy message text"
             style={{
               position: 'absolute',
               top: 10,
@@ -208,7 +221,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
               transition: 'color 120ms ease',
             }}
           >
-            <StudioIcon name={copied ? 'check' : 'content_copy'} size={14} />
+            {copied ? <Check size={13} /> : <Copy size={13} />}
           </button>
         )}
 
@@ -220,12 +233,12 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           <span
             style={{
               display: 'inline-block',
-              width: 8,
+              width: 6,
               height: 14,
               marginLeft: 4,
               verticalAlign: 'middle',
               background: isLight ? '#0284c7' : '#38bdf8',
-              borderRadius: 2,
+              borderRadius: 1.5,
               animation: 'pulse 1s infinite',
             }}
           />
@@ -233,7 +246,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
 
         {/* Structured Recommendations Cards */}
         {message.recommendations && message.recommendations.length > 0 && (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 10 }}>
             {message.recommendations.map((rec) => {
               if (rec.type === 'chord_progression') {
                 return (

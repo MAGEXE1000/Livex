@@ -86,6 +86,7 @@ async function run() {
   });
 
   const page = await browser.newPage();
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
   await page.setViewport({
     width: 393,
     height: 851,
@@ -122,19 +123,23 @@ async function run() {
 
   await new Promise((r) => setTimeout(r, 1500));
 
-  // 1. Capture Ready State
+  // 1. Capture Ready / Empty State
   console.log('[Test] Capturing Ready State...');
   const readyPath = path.join(artifactDir, 'verify_agent_chat_pill_ready.png');
+  const proEmptyPath = path.join(artifactDir, 'verify_pro_empty_state.png');
   await page.screenshot({ path: readyPath });
-  console.log(`Saved screenshot: ${readyPath}`);
+  await page.screenshot({ path: proEmptyPath });
+  console.log(`Saved screenshot: ${proEmptyPath}`);
 
   // 2. Open Model Menu
   console.log('[Test] Opening Model Selector menu...');
   await page.click('button[aria-label="Change model"]');
   await new Promise((r) => setTimeout(r, 400));
   const modelsPath = path.join(artifactDir, 'verify_agent_chat_pill_models.png');
+  const proModelPath = path.join(artifactDir, 'verify_pro_model_menu.png');
   await page.screenshot({ path: modelsPath });
-  console.log(`Saved screenshot: ${modelsPath}`);
+  await page.screenshot({ path: proModelPath });
+  console.log(`Saved screenshot: ${proModelPath}`);
 
   // Close model menu
   await page.click('button[aria-label="Change model"]');
@@ -148,8 +153,10 @@ async function run() {
   await new Promise((r) => setTimeout(r, 400));
   
   const typingPath = path.join(artifactDir, 'verify_agent_chat_pill_typing.png');
+  const proTypingPath = path.join(artifactDir, 'verify_pro_typing.png');
   await page.screenshot({ path: typingPath });
-  console.log(`Saved screenshot: ${typingPath}`);
+  await page.screenshot({ path: proTypingPath });
+  console.log(`Saved screenshot: ${proTypingPath}`);
 
   // 4. Submit message to trigger streaming and capture Stop button morph
   console.log('[Test] Submitting message to trigger streaming mode...');
@@ -162,8 +169,10 @@ async function run() {
   // Brief pause to capture active streaming with stop button
   await new Promise((r) => setTimeout(r, 120));
   const streamingPath = path.join(artifactDir, 'verify_agent_chat_pill_streaming.png');
+  const proStreamingPath = path.join(artifactDir, 'verify_pro_streaming.png');
   await page.screenshot({ path: streamingPath });
-  console.log(`Saved screenshot: ${streamingPath}`);
+  await page.screenshot({ path: proStreamingPath });
+  console.log(`Saved screenshot: ${proStreamingPath}`);
 
   // 5. Wait for streaming to complete (local intelligence takes ~1.5s)
   console.log('[Test] Waiting for response to stream and render cards...');
@@ -173,8 +182,22 @@ async function run() {
   await new Promise((r) => setTimeout(r, 1200));
 
   const completedPath = path.join(artifactDir, 'verify_assistant_response_completed.png');
+  const proCompletedPath = path.join(artifactDir, 'verify_pro_completed_chat.png');
   await page.screenshot({ path: completedPath });
-  console.log(`Saved screenshot: ${completedPath}`);
+  await page.screenshot({ path: proCompletedPath });
+  console.log(`Saved screenshot: ${proCompletedPath}`);
+
+  // Scroll to top so user bubble and start of bot response are visible
+  await page.evaluate(() => {
+    const scroller = document.querySelector('[data-assistant-chat-view="true"] > div:nth-child(2)');
+    if (scroller) {
+      scroller.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  });
+  await new Promise((r) => setTimeout(r, 400));
+  const userVisiblePath = path.join(artifactDir, 'verify_pro_user_message.png');
+  await page.screenshot({ path: userVisiblePath });
+  console.log(`Saved screenshot: ${userVisiblePath}`);
 
   await browser.close();
   server.close();

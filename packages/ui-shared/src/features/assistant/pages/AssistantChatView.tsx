@@ -1,16 +1,56 @@
 import React, { useRef, useEffect } from 'react';
 import { useAssistantStore, useSettingsStore } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
-import { LivexThinkingOrb } from '../components/LivexThinkingOrb';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
 import { AssistantInputBar } from '../components/AssistantInputBar';
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
+import { Music, Sliders, Disc, Mic2, Sparkles, RotateCcw } from 'lucide-react';
+
+interface StudioQuickCard {
+  id: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  prompt: string;
+}
+
+const STUDIO_CAPABILITY_CARDS: StudioQuickCard[] = [
+  {
+    id: 'chords',
+    icon: <Music size={16} />,
+    title: 'Analyze Chord Progression',
+    description: 'Modal interchange, secondary dominants & substitutions',
+    prompt: 'Suggest a sophisticated Neo-soul chord progression in Eb major with secondary dominants.',
+  },
+  {
+    id: 'tones',
+    icon: <Sliders size={16} />,
+    title: 'Guitar Tone Recipe',
+    description: 'Pedal chain order, amp EQ & reverb decay',
+    prompt: "Give me the exact pedal chain and amp settings for David Gilmour's Comfortably Numb lead tone.",
+  },
+  {
+    id: 'drums',
+    icon: <Disc size={16} />,
+    title: 'Build Drum Groove',
+    description: '16-step pocket beat with swing and syncopation',
+    prompt: 'Create a funk drum groove with a half-time shuffle at 96 BPM with 16th note ghost notes.',
+  },
+  {
+    id: 'vocals',
+    icon: <Mic2 size={16} />,
+    title: 'Vocal Warmup Routine',
+    description: '5-minute pre-show agility and resonance workout',
+    prompt: 'Guide me through a 5-minute pre-show vocal warmup routine for breath support and range.',
+  },
+];
 
 export const AssistantChatView: React.FC = () => {
   const messages = useAssistantStore((s) => s.messages);
   const mascotState = useAssistantStore((s) => s.mascotState);
   const status = useAssistantStore((s) => s.status);
   const clearConversation = useAssistantStore((s) => s.clearConversation);
+  const sendMessage = useAssistantStore((s) => s.sendMessage);
 
   const theme = useSettingsStore((s) => s.settings?.theme);
   const isLight =
@@ -32,6 +72,7 @@ export const AssistantChatView: React.FC = () => {
   }, [messages, status]);
 
   const hasMessages = messages.length > 0;
+  const isStreaming = status === 'streaming';
 
   return (
     <div
@@ -49,103 +90,120 @@ export const AssistantChatView: React.FC = () => {
         fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
       }}
     >
-      {/* Liquid Glass Header */}
+      {/* Clean Studio Topbar Header */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 18px',
-          borderBottom: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)',
-          background: isLight ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.65)',
+          padding: '12px 20px',
+          borderBottom: isLight
+            ? '1px solid rgba(0, 0, 0, 0.06)'
+            : '1px solid rgba(255, 255, 255, 0.06)',
+          background: isLight
+            ? 'rgba(255, 255, 255, 0.85)'
+            : 'rgba(10, 15, 29, 0.82)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           zIndex: 10,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Header Living Mascot / Thinking Indicator */}
-          <div style={{ position: 'relative' }}>
-            <LivexAssistantMascot
-              size={36}
-              mode="chat"
-              state={mascotState}
-              interactive={true}
-            />
-            {status === 'streaming' && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: -4,
-                  pointerEvents: 'none',
-                }}
-              >
-                <LivexThinkingOrb size={44} state={mascotState} />
-              </div>
-            )}
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Minimalist Bot Emblem */}
+          <LivexAssistantMascot
+            size={28}
+            mode="chat"
+            state={mascotState}
+            interactive={false}
+          />
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 style={{
-                  fontSize: 15,
-                  fontWeight: 700,
+                  fontSize: 14.5,
+                  fontWeight: 650,
+                  letterSpacing: '-0.01em',
                   color: isLight ? '#0f172a' : '#f8fafc',
                 }}
               >
-                Livex Music AI
+                Livex Studio AI
               </span>
-              <span
+              <div
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  padding: '2px 6px',
-                  borderRadius: 6,
-                  background: status === 'streaming'
-                    ? 'rgba(168, 85, 247, 0.2)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '2px 8px',
+                  borderRadius: 12,
+                  background: isStreaming
+                    ? isLight
+                      ? 'rgba(2, 132, 199, 0.08)'
+                      : 'rgba(56, 189, 248, 0.1)'
                     : isLight
-                      ? 'rgba(2, 132, 199, 0.12)'
-                      : 'rgba(56, 189, 248, 0.15)',
-                  color: status === 'streaming' ? '#c084fc' : isLight ? '#0284c7' : '#38bdf8',
-                  border: status === 'streaming'
-                    ? '1px solid rgba(168, 85, 247, 0.35)'
-                    : isLight
-                      ? '1px solid rgba(2, 132, 199, 0.25)'
-                      : '1px solid rgba(56, 189, 248, 0.25)',
+                      ? 'rgba(0, 0, 0, 0.04)'
+                      : 'rgba(255, 255, 255, 0.05)',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: isStreaming
+                    ? isLight ? '#0284c7' : '#38bdf8'
+                    : isLight ? '#64748b' : '#94a3b8',
                 }}
               >
-                {status === 'streaming' ? 'Thinking' : 'Ready'}
-              </span>
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: isStreaming
+                      ? isLight ? '#0284c7' : '#38bdf8'
+                      : '#22c55e',
+                    boxShadow: isStreaming
+                      ? `0 0 6px ${isLight ? '#0284c7' : '#38bdf8'}`
+                      : 'none',
+                    display: 'inline-block',
+                  }}
+                />
+                <span>{isStreaming ? 'Thinking' : 'Ready'}</span>
+              </div>
             </div>
-            <div style={{ fontSize: 11, color: isLight ? '#64748b' : '#94a3b8' }}>
-              Theory, Tones, Chords & Grooves
+            <div
+              style={{
+                fontSize: 11,
+                color: isLight ? '#64748b' : '#64748b',
+                marginTop: 1,
+              }}
+            >
+              Theory, Chords, Tone & Rhythm
             </div>
           </div>
         </div>
 
-        {/* Header Action: Clear Conversation */}
+        {/* Clear Conversation Action */}
         {hasMessages && (
           <button
             onClick={clearConversation}
-            title="Clear chat history"
+            title="Clear conversation"
+            aria-label="Clear chat history"
             style={{
-              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
-              border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'transparent',
+              border: isLight
+                ? '1px solid rgba(0, 0, 0, 0.08)'
+                : '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: 8,
               padding: '6px 10px',
               color: isLight ? '#64748b' : '#94a3b8',
-              fontSize: 11,
+              fontSize: 11.5,
               fontWeight: 500,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
+              gap: 5,
+              transition: 'background 120ms ease, color 120ms ease',
             }}
           >
-            <StudioIcon name="delete" size={14} />
-            <span>Clear</span>
+            <RotateCcw size={12} />
+            <span>Reset</span>
           </button>
         )}
       </div>
@@ -157,14 +215,14 @@ export const AssistantChatView: React.FC = () => {
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: '16px 18px',
+          padding: '20px 20px',
           display: 'flex',
           flexDirection: 'column',
           scrollbarWidth: 'thin',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Welcome Empty State Hero */}
+        {/* Welcome Empty State Hero & Capability Cards */}
         {!hasMessages && (
           <div
             style={{
@@ -173,29 +231,30 @@ export const AssistantChatView: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               margin: 'auto 0',
-              padding: '24px 16px',
+              padding: '24px 8px 16px',
               textAlign: 'center',
             }}
           >
-            <div style={{ marginBottom: 14 }}>
+            {/* Minimalist Hero Emblem (Kimi / Grok style) */}
+            <div style={{ marginBottom: 18 }}>
               <LivexAssistantMascot
-                size={84}
+                size={56}
                 mode="chat"
                 state={mascotState}
-                interactive={true}
+                interactive={false}
               />
             </div>
 
             <h2
               style={{
-                fontSize: 20,
-                fontWeight: 800,
+                fontSize: 21,
+                fontWeight: 650,
                 color: isLight ? '#0f172a' : '#f8fafc',
-                margin: '0 0 6px',
+                margin: '0 0 8px',
                 letterSpacing: '-0.02em',
               }}
             >
-              How can I help your sound today?
+              How can I assist your sound?
             </h2>
             <p
               style={{
@@ -203,11 +262,83 @@ export const AssistantChatView: React.FC = () => {
                 color: isLight ? '#64748b' : '#94a3b8',
                 maxWidth: 420,
                 lineHeight: 1.5,
-                margin: '0 0 20px',
+                margin: '0 0 28px',
               }}
             >
-              Ask music theory questions, dial in legendary guitar tones, discover chord voicings, or build rhythm section grooves.
+              Ask music theory questions, dial in signal chain tones, explore harmonic voicings, or build rhythm section grooves.
             </p>
+
+            {/* Actionable Capability Cards Grid (better-layout: Group with Space) */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: 10,
+                width: '100%',
+                maxWidth: 580,
+                textAlign: 'left',
+              }}
+            >
+              {STUDIO_CAPABILITY_CARDS.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => sendMessage(card.prompt)}
+                  style={{
+                    background: isLight ? '#ffffff' : 'rgba(255, 255, 255, 0.03)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.08)'
+                      : '1px solid rgba(255, 255, 255, 0.07)',
+                    borderRadius: 14,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    cursor: 'pointer',
+                    boxShadow: isLight ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
+                    transition: 'border-color 140ms ease, background 140ms ease, transform 140ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = isLight
+                      ? 'rgba(0, 0, 0, 0.18)'
+                      : 'rgba(255, 255, 255, 0.18)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = isLight
+                      ? 'rgba(0, 0, 0, 0.08)'
+                      : 'rgba(255, 255, 255, 0.07)';
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      color: isLight ? '#0284c7' : '#38bdf8',
+                    }}
+                  >
+                    {card.icon}
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: isLight ? '#0f172a' : '#f1f5f9',
+                      }}
+                    >
+                      {card.title}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: isLight ? '#64748b' : '#94a3b8',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {card.description}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -217,18 +348,18 @@ export const AssistantChatView: React.FC = () => {
         ))}
       </div>
 
-      {/* Floating Input Area (Positioned above bottom navbar) */}
+      {/* Floating Input Dock (Positioned above bottom navbar) */}
       <div
         style={{
-          padding: '10px 16px',
-          paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 72px)',
+          padding: '10px 18px',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, 14px) + 76px)',
           background: isLight
-            ? 'linear-gradient(to top, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.4) 75%, transparent 100%)'
-            : 'linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 75%, transparent 100%)',
+            ? 'linear-gradient(to top, rgba(248, 250, 252, 0.98) 0%, rgba(248, 250, 252, 0.6) 75%, transparent 100%)'
+            : 'linear-gradient(to top, rgba(10, 15, 29, 0.98) 0%, rgba(10, 15, 29, 0.6) 75%, transparent 100%)',
           zIndex: 10,
         }}
       >
-        <AssistantInputBar showQuickPrompts={!hasMessages} />
+        <AssistantInputBar showQuickPrompts={false} />
       </div>
     </div>
   );

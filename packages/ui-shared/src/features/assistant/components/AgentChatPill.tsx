@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useId } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Paperclip,
-  Sparkles,
+  SlidersHorizontal,
   ChevronDown,
   Mic,
   Headphones,
@@ -74,7 +74,7 @@ const DEFAULT_MODELS: AgentChatPillModelOption[] = [
   {
     id: 'livex-music-ai',
     name: 'Livex Music AI v1',
-    description: 'Specialized in theory, chords, tone & grooves (Hybrid Edge/Cloud)',
+    description: 'Specialized in theory, chords, tone & grooves (Hybrid Edge/Offline)',
     badge: 'Default',
   },
   {
@@ -217,30 +217,28 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     }
   };
 
-  // Determine border color based on state and light/dark appearance
+  // Restrained, professional neutral borders
   const getBorderColor = () => {
     if (errorMessage) return 'rgba(239, 68, 68, 0.45)';
-    if (isStreaming) return 'rgba(168, 85, 247, 0.4)';
-    if (isFocused) return 'rgba(56, 189, 248, 0.45)';
-    return isLight ? 'rgba(0, 0, 0, 0.09)' : 'rgba(255, 255, 255, 0.12)';
+    if (isFocused) {
+      return isLight ? 'rgba(15, 23, 42, 0.28)' : 'rgba(255, 255, 255, 0.28)';
+    }
+    return isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
   };
 
-  // Determine shadow based on state and light/dark appearance
+  // Subtle elevation without AI neon glows
   const getBoxShadow = () => {
     if (errorMessage) {
-      return '0 8px 30px -4px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
-    }
-    if (isStreaming) {
-      return '0 8px 32px -4px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+      return '0 6px 24px -4px rgba(239, 68, 68, 0.15)';
     }
     if (isFocused) {
       return isLight
-        ? '0 8px 32px -4px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-        : '0 8px 32px -4px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+        ? '0 6px 24px -4px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+        : '0 8px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
     }
     return isLight
-      ? '0 10px 30px -4px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
-      : '0 10px 30px -4px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)';
+      ? '0 4px 20px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+      : '0 6px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)';
   };
 
   return (
@@ -258,45 +256,49 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
         .agent-chat-pill-textarea::placeholder {
           color: ${isLight ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.6)'};
         }
+        .agent-chat-pill-textarea:focus {
+          outline: none;
+        }
       `}</style>
 
-      {/* Model Selection Dropdown Popover */}
+      {/* Model Selection Floating Popover */}
       <AnimatePresence>
         {isModelMenuOpen && (
           <motion.div
-            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.96 }}
-            transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ type: 'spring', bounce: 0.1, duration: 0.2 }}
             style={{
               position: 'absolute',
-              bottom: 'calc(100% + 8px)',
-              left: 12,
-              width: 290,
-              maxWidth: 'calc(100vw - 32px)',
-              background: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(15, 23, 42, 0.92)',
-              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.14)',
-              borderRadius: 18,
+              bottom: 'calc(100% + 10px)',
+              left: 0,
+              width: 310,
+              maxWidth: '92vw',
+              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.09)' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 16,
               boxShadow: isLight
-                ? '0 16px 40px -8px rgba(0, 0, 0, 0.15)'
-                : '0 16px 40px -8px rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              padding: 6,
+                ? '0 10px 30px -4px rgba(0, 0, 0, 0.12)'
+                : '0 14px 40px -4px rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              padding: '6px',
               zIndex: 50,
+              boxSizing: 'border-box',
             }}
           >
             <div
               style={{
-                fontSize: 11,
-                fontWeight: 700,
+                fontSize: 10.5,
+                fontWeight: 650,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
                 color: isLight ? '#64748b' : '#94a3b8',
                 padding: '6px 10px 4px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
               }}
             >
-              Select Assistant Engine
+              Intelligence Engine
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {models.map((m) => {
@@ -311,13 +313,13 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: 8,
+                      gap: 10,
                       padding: '8px 10px',
                       borderRadius: 12,
                       background: isSelected
                         ? isLight
-                          ? 'rgba(2, 132, 199, 0.08)'
-                          : 'rgba(56, 189, 248, 0.12)'
+                          ? 'rgba(0, 0, 0, 0.05)'
+                          : 'rgba(255, 255, 255, 0.08)'
                         : 'transparent',
                       border: 'none',
                       textAlign: 'left',
@@ -328,12 +330,12 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                   >
                     <div
                       style={{
-                        color: isSelected ? (isLight ? '#0284c7' : '#38bdf8') : isLight ? '#64748b' : '#94a3b8',
+                        color: isSelected ? (isLight ? '#0f172a' : '#ffffff') : isLight ? '#64748b' : '#94a3b8',
                         marginTop: 2,
                         flexShrink: 0,
                       }}
                     >
-                      {m.icon || <Sparkles size={14} />}
+                      {m.icon || <SlidersHorizontal size={14} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
@@ -359,14 +361,12 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                           <span
                             style={{
                               fontSize: 10,
-                              fontWeight: 700,
+                              fontWeight: 650,
                               padding: '2px 6px',
                               borderRadius: 6,
-                              background: isSelected
-                                ? isLight ? 'rgba(2, 132, 199, 0.15)' : 'rgba(56, 189, 248, 0.25)'
-                                : isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                              background: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
                               color: isSelected
-                                ? isLight ? '#0284c7' : '#38bdf8'
+                                ? isLight ? '#0f172a' : '#ffffff'
                                 : isLight ? '#64748b' : '#94a3b8',
                             }}
                           >
@@ -378,7 +378,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                         <div
                           style={{
                             fontSize: 11,
-                            color: isLight ? '#64748b' : '#64748b',
+                            color: isLight ? '#64748b' : '#94a3b8',
                             lineHeight: 1.35,
                             marginTop: 2,
                           }}
@@ -391,7 +391,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                       <Check
                         size={14}
                         style={{
-                          color: isLight ? '#0284c7' : '#38bdf8',
+                          color: isLight ? '#0f172a' : '#ffffff',
                           marginTop: 4,
                           flexShrink: 0,
                         }}
@@ -418,15 +418,15 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               bottom: 'calc(100% + 8px)',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.92)',
-              border: isLight ? '1px solid rgba(2, 132, 199, 0.3)' : '1px solid rgba(56, 189, 248, 0.3)',
+              background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 20,
               padding: '6px 14px',
               fontSize: 11.5,
               fontWeight: 600,
-              color: isLight ? '#0284c7' : '#38bdf8',
+              color: isLight ? '#0f172a' : '#f8fafc',
               boxShadow: isLight
-                ? '0 8px 24px rgba(0, 0, 0, 0.12)'
+                ? '0 6px 20px rgba(0, 0, 0, 0.1)'
                 : '0 8px 24px rgba(0, 0, 0, 0.5)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
@@ -445,8 +445,8 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
         style={{
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 26,
-          background: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(15, 23, 42, 0.82)',
+          borderRadius: 24,
+          background: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.88)',
           border: `1px solid ${getBorderColor()}`,
           boxShadow: getBoxShadow(),
           backdropFilter: 'blur(24px) saturate(180%)',
@@ -455,7 +455,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
           boxSizing: 'border-box',
           transition: shouldReduceMotion
             ? 'none'
-            : 'border-color 200ms ease, box-shadow 200ms ease, background 200ms ease',
+            : 'border-color 180ms ease, box-shadow 180ms ease, background 180ms ease',
           opacity: isDisabled ? 0.6 : 1,
           pointerEvents: isDisabled ? 'none' : 'auto',
         }}
@@ -507,8 +507,8 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               paddingBottom: 8,
               marginBottom: 4,
               borderBottom: isLight
-                ? '1px solid rgba(0, 0, 0, 0.06)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
+                ? '1px solid rgba(0, 0, 0, 0.05)'
+                : '1px solid rgba(255, 255, 255, 0.06)',
             }}
           >
             {attachments.map((att) => (
@@ -518,15 +518,15 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '4px 8px',
+                  padding: '3px 8px',
                   borderRadius: 12,
-                  background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                  border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                  border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
                   fontSize: 11,
-                  color: isLight ? '#0f172a' : '#e2e8f0',
+                  color: isLight ? '#334155' : '#e2e8f0',
                 }}
               >
-                <Paperclip size={12} style={{ color: isLight ? '#0284c7' : '#38bdf8' }} />
+                <Paperclip size={11} style={{ opacity: 0.7 }} />
                 <span
                   style={{
                     maxWidth: 120,
@@ -549,7 +549,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                       display: 'flex',
                     }}
                   >
-                    <X size={12} />
+                    <X size={11} />
                   </button>
                 )}
               </div>
@@ -557,61 +557,64 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
           </div>
         )}
 
-        {/* Auto-expanding Multiline Textarea */}
-        <textarea
-          id={inputId}
-          ref={textareaRef}
-          rows={1}
-          value={value}
-          disabled={isDisabled}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => {
-            setIsFocused(true);
-            onFocus?.();
-          }}
-          onBlur={() => {
-            setIsFocused(false);
-            onBlur?.();
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="agent-chat-pill-textarea"
-          style={{
-            width: '100%',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: isLight ? '#0f172a' : '#f8fafc',
-            fontSize: 14,
-            lineHeight: '20px',
-            resize: 'none',
-            padding: '2px 0 6px',
-            boxSizing: 'border-box',
-            fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
-          }}
-        />
+        {/* Text Entry Area */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+          <textarea
+            ref={textareaRef}
+            id={inputId}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              setIsFocused(true);
+              onFocus?.();
+            }}
+            onBlur={() => {
+              setIsFocused(false);
+              onBlur?.();
+            }}
+            placeholder={placeholder}
+            disabled={isDisabled || isStreaming}
+            rows={1}
+            className="agent-chat-pill-textarea"
+            style={{
+              width: '100%',
+              minHeight: 36,
+              maxHeight: 128,
+              border: 'none',
+              background: 'transparent',
+              color: isLight ? '#0f172a' : '#f8fafc',
+              fontSize: 14,
+              lineHeight: '22px',
+              fontFamily: 'inherit',
+              resize: 'none',
+              overflowY: 'auto',
+              padding: '6px 4px 6px 0',
+              boxSizing: 'border-box',
+              scrollbarWidth: 'thin',
+            }}
+          />
+        </div>
 
-        {/* Integrated Bottom Action Bar */}
+        {/* Bottom Integrated Controls Row */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 8,
-            paddingTop: 4,
-            borderTop: isLight
-              ? '1px solid rgba(0, 0, 0, 0.05)'
-              : '1px solid rgba(255, 255, 255, 0.06)',
+            paddingTop: 6,
+            marginTop: 2,
+            borderTop: isLight ? '1px solid rgba(0, 0, 0, 0.04)' : '1px solid rgba(255, 255, 255, 0.05)',
           }}
         >
-          {/* Left Actions Group: Attachments & Model Selector */}
+          {/* Left Actions Group: Attach & Model Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Attachment Button */}
             <motion.button
               type="button"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               onClick={handleAttachClick}
-              title={attachmentsEnabled ? 'Attach audio or preset' : 'Attachments coming soon'}
+              title={attachmentsEnabled ? 'Add audio or preset' : 'Attachments coming soon'}
               aria-label="Add attachment"
               style={{
                 width: 30,
@@ -620,14 +623,14 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+                background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
                 border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: attachments.length > 0 ? (isLight ? '#0284c7' : '#38bdf8') : isLight ? '#64748b' : '#94a3b8',
+                color: isLight ? '#64748b' : '#94a3b8',
                 cursor: 'pointer',
                 transition: 'all 120ms ease',
               }}
             >
-              <Paperclip size={14} />
+              <Paperclip size={13} />
             </motion.button>
 
             {/* Model / Engine Selector Badge */}
@@ -642,32 +645,26 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 alignItems: 'center',
                 gap: 5,
                 height: 28,
-                padding: '0 9px',
+                padding: '0 10px',
                 borderRadius: 14,
                 background: isModelMenuOpen
                   ? isLight
-                    ? 'rgba(2, 132, 199, 0.12)'
-                    : 'rgba(56, 189, 248, 0.16)'
+                    ? 'rgba(0, 0, 0, 0.07)'
+                    : 'rgba(255, 255, 255, 0.1)'
                   : isLight
-                    ? 'rgba(0, 0, 0, 0.04)'
-                    : 'rgba(255, 255, 255, 0.06)',
-                border: isModelMenuOpen
-                  ? isLight
-                    ? '1px solid rgba(2, 132, 199, 0.3)'
-                    : '1px solid rgba(56, 189, 248, 0.35)'
-                  : isLight
-                    ? '1px solid rgba(0, 0, 0, 0.06)'
-                    : '1px solid rgba(255, 255, 255, 0.09)',
-                color: isModelMenuOpen
-                  ? isLight ? '#0284c7' : '#38bdf8'
-                  : isLight ? '#334155' : '#cbd5e1',
+                    ? 'rgba(0, 0, 0, 0.03)'
+                    : 'rgba(255, 255, 255, 0.05)',
+                border: isLight
+                  ? '1px solid rgba(0, 0, 0, 0.06)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+                color: isLight ? '#0f172a' : '#f1f5f9',
                 fontSize: 11.5,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 120ms ease',
               }}
             >
-              <Sparkles size={12} style={{ color: isLight ? '#0284c7' : '#38bdf8' }} />
+              <SlidersHorizontal size={12} style={{ color: isLight ? '#475569' : '#94a3b8' }} />
               <span
                 style={{
                   maxWidth: 130,
@@ -707,7 +704,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 justifyContent: 'center',
                 background: isListening
                   ? 'rgba(239, 68, 68, 0.2)'
-                  : isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+                  : isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
                 border: isListening
                   ? '1px solid rgba(239, 68, 68, 0.45)'
                   : isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -716,7 +713,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 transition: 'all 120ms ease',
               }}
             >
-              <Mic size={14} />
+              <Mic size={13} />
             </motion.button>
 
             {/* Conversational Voice Chat Button */}
@@ -733,17 +730,17 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+                background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
                 border: isLight ? '1px solid rgba(0, 0, 0, 0.06)' : '1px solid rgba(255, 255, 255, 0.08)',
                 color: isLight ? '#64748b' : '#94a3b8',
                 cursor: 'pointer',
                 transition: 'all 120ms ease',
               }}
             >
-              <Headphones size={14} />
+              <Headphones size={13} />
             </motion.button>
 
-            {/* Primary Submit ⟷ Stop Morphing Button */}
+            {/* Primary Submit ⟷ Stop Morphing Button (Kimi / Grok style high-contrast circle) */}
             <motion.button
               type="button"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
@@ -758,35 +755,29 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: isStreaming
-                  ? 'rgba(239, 68, 68, 0.25)'
+                  ? isLight ? '#0f172a' : '#ffffff'
                   : hasText
-                    ? 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)'
+                    ? isLight ? '#0f172a' : '#ffffff'
                     : isLight
-                      ? 'rgba(0, 0, 0, 0.06)'
-                      : 'rgba(255, 255, 255, 0.08)',
-                border: isStreaming
-                  ? '1px solid rgba(239, 68, 68, 0.45)'
-                  : hasText
-                    ? '1px solid rgba(255, 255, 255, 0.2)'
-                    : isLight
-                      ? '1px solid rgba(0, 0, 0, 0.06)'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
+                      ? 'rgba(0, 0, 0, 0.05)'
+                      : 'rgba(255, 255, 255, 0.06)',
+                border: 'none',
                 color: isStreaming
-                  ? '#f87171'
+                  ? isLight ? '#ffffff' : '#0a0f1d'
                   : hasText
-                    ? '#ffffff'
+                    ? isLight ? '#ffffff' : '#0a0f1d'
                     : isLight
-                      ? 'rgba(0, 0, 0, 0.3)'
-                      : 'rgba(255, 255, 255, 0.3)',
-                boxShadow: hasText && !isStreaming
-                  ? '0 4px 12px rgba(2, 132, 199, 0.35)'
-                  : isStreaming
-                    ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                    : 'none',
+                      ? 'rgba(0, 0, 0, 0.25)'
+                      : 'rgba(255, 255, 255, 0.25)',
+                boxShadow: hasText || isStreaming
+                  ? isLight
+                    ? '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    : '0 2px 8px rgba(255, 255, 255, 0.15)'
+                  : 'none',
                 cursor: hasText || isStreaming ? 'pointer' : 'default',
                 transition: shouldReduceMotion
                   ? 'none'
-                  : 'background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
+                  : 'background 160ms ease, color 160ms ease, box-shadow 160ms ease',
                 flexShrink: 0,
               }}
             >
@@ -797,14 +788,14 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                     initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
-                    transition={{ type: 'spring', bounce: 0.15, duration: 0.22 }}
+                    transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Square size={12} fill="currentColor" strokeWidth={0} />
+                    <Square size={10} fill="currentColor" strokeWidth={0} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -812,14 +803,14 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                     initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
-                    transition={{ type: 'spring', bounce: 0.15, duration: 0.22 }}
+                    transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <ArrowUp size={16} strokeWidth={2.4} />
+                    <ArrowUp size={15} strokeWidth={2.4} />
                   </motion.div>
                 )}
               </AnimatePresence>
