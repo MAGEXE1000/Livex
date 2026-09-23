@@ -127,23 +127,32 @@ Active Musical Context Snapshot:
 ${JSON.stringify(musicalContext, null, 2)}
 User UI Language Preference: "${userLanguage}". Always reply in the language in which the user queries.`;
 
-  // 4. Provider Selection: Gemini (Primary with Google Search Grounding) -> Anthropic -> OpenAI -> Edge Fallback
+  // 4. Provider Selection: Gemini (Primary with Google Search Grounding) -> Anthropic -> OpenAI
+  const userApiKey =
+    request.headers.get('x-api-key') ||
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+    (typeof body?.apiKey === 'string' ? body.apiKey.trim() : '');
+
+  const geminiApiKey = userApiKey || env.GEMINI_API_KEY;
+  const anthropicApiKey = env.ANTHROPIC_API_KEY;
+  const openAiApiKey = env.OPENAI_API_KEY;
+
   const explicitProvider = env.AI_ACTIVE_PROVIDER;
-  const hasGemini = Boolean(env.GEMINI_API_KEY);
-  const hasAnthropic = Boolean(env.ANTHROPIC_API_KEY);
-  const hasOpenAI = Boolean(env.OPENAI_API_KEY);
+  const hasGemini = Boolean(geminiApiKey);
+  const hasAnthropic = Boolean(anthropicApiKey);
+  const hasOpenAI = Boolean(openAiApiKey);
 
   const provider =
     explicitProvider ||
-    (hasGemini ? 'gemini' : hasAnthropic ? 'anthropic' : hasOpenAI ? 'openai' : 'local');
+    (hasGemini ? 'gemini' : hasAnthropic ? 'anthropic' : hasOpenAI ? 'openai' : 'none');
 
   // =========================================================================
   // PROVIDER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Google Search Grounding)
   // =========================================================================
-  if (provider === 'gemini' && env.GEMINI_API_KEY) {
+  if ((provider === 'gemini' || !explicitProvider) && geminiApiKey) {
     try {
       const modelName = env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${env.GEMINI_API_KEY}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
 
       // Build multimodal parts for the latest user turn
       const userParts: any[] = [{ text: prompt }];
@@ -473,50 +482,21 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   }
 
   // =========================================================================
-  // PROVIDER 4: BUILT-IN EDGE STREAM FALLBACK (Zero emojis, high density)
+  // NO PROVIDER AVAILABLE / HONEST ERROR RESPONSE
   // =========================================================================
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encoder = new TextEncoder();
-
-  (async () => {
-    try {
-      await writer.write(
-        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`)
-      );
-
-      const isSpanish =
-        userLanguage.startsWith('es') ||
-        prompt.toLowerCase().includes('acordes') ||
-        prompt.toLowerCase().includes('tono') ||
-        prompt.toLowerCase().includes('guitarra') ||
-        prompt.toLowerCase().includes('bateria');
-
-      const title = isSpanish
-        ? `### Análisis Técnico Livex\n\n`
-        : `### Livex Technical Studio Analysis\n\n`;
-
-      await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: title })}\n\n`));
-
-      const advice = isSpanish
-        ? `Consulta: "${prompt}"\n\n**Módulos de Producción en Livex:**\n- **Chordex:** Biblioteca de acordes, transposición tonal y análisis de enlaces vocales.\n- **Drumex:** Calibración de tempo, secuencias polirrítmicas y compás metronómico.\n- **Vocalex:** Afinación en tiempo real y detección interválica.\n- **Stagex:** Ruteo de señal de escenario y asignación de monitores.`
-        : `Analysis for: "${prompt}"\n\n**Livex Production Workflows:**\n- **Chordex:** Harmonic library, voice leading analysis, and real-time transposition.\n- **Drumex:** Metronome tempo calibration and polyrhythmic step-sequencing.\n- **Vocalex:** Fundamental frequency pitch tracking and interval harmonization.\n- **Stagex:** Stage audio routing and monitor placement coordinator.`;
-
-      const words = advice.split(/(\s+)/);
-      for (const w of words) {
-        await writer.write(encoder.encode(`data: ${JSON.stringify({ delta: w })}\n\n`));
-      }
-
-      await writer.write(
-        encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`)
-      );
-      await writer.write(encoder.encode('data: [DONE]\n\n'));
-    } finally {
-      await writer.close();
+  return new Response(
+    JSON.stringify({
+      error:
+        'AI Gateway: No AI provider is configured or available. Please configure GEMINI_API_KEY in your environment or enter your API key in Livex Assistant Settings.',
+    }),
+    {
+      status: 503,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
     }
-  })();
-
-  return new Response(readable, { headers: corsHeaders });
+  );
 };
 
 export const onRequestOptions = async () => {

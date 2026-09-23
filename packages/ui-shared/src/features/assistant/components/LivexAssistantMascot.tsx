@@ -16,6 +16,8 @@ export interface LivexAssistantMascotProps {
 
 function mapAssistantStateToOrbState(state: AssistantState): OrbState {
   switch (state) {
+    case 'connecting':
+      return 'connecting';
     case 'composing':
     case 'responding':
       return 'composing';

@@ -1,25 +1,19 @@
 import React, { useState } from 'react';
-import { type AssistantMessage, useSettingsStore } from '@workspace/livex-core';
+import { type AssistantMessage, useSettingsStore, useAssistantStore } from '@workspace/livex-core';
 import { LivexAssistantMascot } from './LivexAssistantMascot';
 import { ChordProgressionCard } from './cards/ChordProgressionCard';
 import { ToneRecipeCard } from './cards/ToneRecipeCard';
 import { DrumGrooveCard } from './cards/DrumGrooveCard';
-import { Copy, Check, Paperclip, Globe, ExternalLink } from 'lucide-react';
+import { Copy, Check, Paperclip, Globe, ExternalLink, AlertCircle, RotateCw } from 'lucide-react';
 
 export interface AssistantMessageItemProps {
   message: AssistantMessage;
+  isLight?: boolean;
 }
 
-export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ message }) => {
+export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ message, isLight = false }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
-
-  const theme = useSettingsStore((s) => s.settings?.theme);
-  const isLight =
-    theme === 'light' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-color-scheme: light)').matches);
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(message.content);
@@ -261,33 +255,79 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
           position: 'relative',
         }}
       >
-        {/* Formatted Content */}
-        <div
-          style={{
-            color: isLight ? '#0f172a' : '#f1f5f9',
-            fontSize: 14,
-            lineHeight: 1.65,
-            wordBreak: 'break-word',
-          }}
-        >
-          {renderFormattedContent(message.content)}
+        {/* Error State Card */}
+        {message.status === 'error' ? (
+          <div
+            style={{
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)',
+              border: isLight ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(239, 68, 68, 0.25)',
+              color: isLight ? '#b91c1c' : '#fca5a5',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 650, fontSize: 13.5 }}>
+              <AlertCircle size={16} style={{ flexShrink: 0, color: isLight ? '#dc2626' : '#f87171' }} />
+              <span>Generation Failed</span>
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: isLight ? '#7f1d1d' : '#fecaca' }}>
+              {message.content}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button
+                onClick={() => useAssistantStore.getState().retryLastMessage()}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: isLight ? '#dc2626' : '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                }}
+              >
+                <RotateCw size={13} />
+                <span>Retry</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Formatted Content */
+          <div
+            style={{
+              color: isLight ? '#0f172a' : '#f1f5f9',
+              fontSize: 14,
+              lineHeight: 1.65,
+              wordBreak: 'break-word',
+            }}
+          >
+            {renderFormattedContent(message.content)}
 
-          {/* Streaming Cursor */}
-          {message.status === 'streaming' && (
-            <span
-              style={{
-                display: 'inline-block',
-                width: 6,
-                height: 14,
-                marginLeft: 4,
-                verticalAlign: 'middle',
-                background: isLight ? '#0284c7' : '#38bdf8',
-                borderRadius: 1.5,
-                animation: 'pulse 1s infinite',
-              }}
-            />
-          )}
-        </div>
+            {/* Streaming Cursor */}
+            {message.status === 'streaming' && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 14,
+                  marginLeft: 4,
+                  verticalAlign: 'middle',
+                  background: isLight ? '#0284c7' : '#38bdf8',
+                  borderRadius: 1.5,
+                  animation: 'pulse 1s infinite',
+                }}
+              />
+            )}
+          </div>
+        )}
 
         {/* Structured Recommendations Cards */}
         {message.recommendations && message.recommendations.length > 0 && (
@@ -380,7 +420,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({ mess
         )}
 
         {/* Subtle Action Row with Copy button */}
-        {message.status !== 'streaming' && message.content && (
+        {message.status !== 'streaming' && message.status !== 'error' && message.content && (
           <div
             style={{
               display: 'flex',

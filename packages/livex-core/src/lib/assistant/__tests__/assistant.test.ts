@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { queryLocalMusicIntelligence } from '../localMusicIntelligence';
 import { getMusicalContextSnapshot } from '../contextAggregator';
 import { useAssistantStore } from '../../../store/useAssistantStore';
@@ -210,28 +210,74 @@ describe('Livex Music AI Assistant Suite', () => {
       expect(useAssistantStore.getState().mascotState).toBe('idle');
     });
 
-    it('handles sendMessage streaming and completion in local mode without artificial delay', async () => {
-      const store = useAssistantStore.getState();
-      const startTime = performance.now();
-      const sendPromise = store.sendMessage('Suggest a jazz progression');
+    it('handles sendMessage streaming and completion from AI gateway', async () => {
+      const ssePayload = [
+        'data: {"type": "state", "state": "connecting"}\n\n',
+        'data: {"delta": "Here is a "}\n\n',
+        'data: {"delta": "jazz progression: `Dm9` -> `G13` -> `Cmaj9`"}\n\n',
+        'data: {"recommendation": {"id": "rec-1", "type": "chord_progression", "title": "Jazz ii-V-I", "data": {"chords": ["Dm9", "G13", "Cmaj9"], "key": "C"}}}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
 
-      // Immediate state check
-      expect(useAssistantStore.getState().status).toBe('streaming');
-      expect(['thinking', 'responding', 'composing']).toContain(useAssistantStore.getState().mascotState);
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(ssePayload));
+            controller.close();
+          },
+        }),
+      });
 
-      await sendPromise;
-      const elapsed = performance.now() - startTime;
+      try {
+        const store = useAssistantStore.getState();
+        const sendPromise = store.sendMessage('Suggest a jazz progression');
 
-      // Completion check - should complete in well under 500ms (previously 2600ms+)
-      expect(elapsed).toBeLessThan(500);
+        // Immediate state check
+        expect(useAssistantStore.getState().status).toBe('streaming');
+        expect(['connecting', 'thinking', 'responding', 'composing']).toContain(
+          useAssistantStore.getState().mascotState
+        );
 
-      const finalState = useAssistantStore.getState();
-      expect(finalState.status).toBe('idle');
-      expect(finalState.messages.length).toBe(2);
-      expect(finalState.messages[0].role).toBe('user');
-      expect(finalState.messages[1].role).toBe('assistant');
-      expect(finalState.messages[1].content.length).toBeGreaterThan(0);
-      expect(finalState.messages[1].status).toBe('complete');
+        await sendPromise;
+
+        const finalState = useAssistantStore.getState();
+        expect(finalState.status).toBe('idle');
+        expect(finalState.messages.length).toBe(2);
+        expect(finalState.messages[0].role).toBe('user');
+        expect(finalState.messages[1].role).toBe('assistant');
+        expect(finalState.messages[1].content).toContain('`Dm9` -> `G13` -> `Cmaj9`');
+        expect(finalState.messages[1].status).toBe('complete');
+        expect(finalState.messages[1].recommendations?.[0].type).toBe('chord_progression');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('handles gateway failure honestly with error status and no static fallback', async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ error: 'AI Gateway: GEMINI_API_KEY is not configured.' }),
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('What is modal interchange?');
+
+        const finalState = useAssistantStore.getState();
+        expect(finalState.status).toBe('error');
+        expect(finalState.messages[finalState.messages.length - 1].status).toBe('error');
+        expect(finalState.messages[finalState.messages.length - 1].content).toContain(
+          'GEMINI_API_KEY is not configured'
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
     });
 
     it('aborts cleanly on stopStreaming()', () => {

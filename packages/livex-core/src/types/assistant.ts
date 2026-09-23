@@ -6,6 +6,7 @@ export type AssistantRole = 'user' | 'assistant' | 'system';
 
 export type AssistantState =
   | 'idle'
+  | 'connecting'
   | 'listening'
   | 'thinking'
   | 'searching'

@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { execSync } from 'child_process';
 import fs from 'fs';
+import { viteAiGatewayPlugin } from '../../scripts/vite-ai-gateway-plugin.mjs';
 
 const rawPort = process.env.PORT ?? '5173';
 const port = Number(rawPort);
@@ -85,7 +86,7 @@ export default defineConfig(async ({ command, mode }) => {
   return {
     base: basePath,
     define: envDefines,
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), viteAiGatewayPlugin()],
     resolve: {
       alias: {
         '@/lib': path.resolve(import.meta.dirname, '../../packages/livex-core/src/lib'),

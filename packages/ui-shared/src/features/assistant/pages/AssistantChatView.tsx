@@ -1,10 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAssistantStore, useSettingsStore, NavigationDispatcher } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../components/LivexAssistantMascot';
 import { AssistantMessageItem } from '../components/AssistantMessageItem';
 import { AssistantInputBar } from '../components/AssistantInputBar';
-import { Music, Sliders, Disc, Mic2, RotateCcw, ArrowLeft } from 'lucide-react';
+import { Music, Sliders, Disc, Mic2, RotateCcw, ArrowLeft, Key, X } from 'lucide-react';
 
 interface StudioQuickCard {
   id: string;
@@ -51,6 +51,20 @@ export const AssistantChatView: React.FC = () => {
   const status = useAssistantStore((s) => s.status);
   const clearConversation = useAssistantStore((s) => s.clearConversation);
   const sendMessage = useAssistantStore((s) => s.sendMessage);
+  const userApiKey = useAssistantStore((s) => s.userApiKey);
+  const setUserApiKey = useAssistantStore((s) => s.setUserApiKey);
+  const customGatewayUrl = useAssistantStore((s) => s.customGatewayUrl);
+  const setCustomGatewayUrl = useAssistantStore((s) => s.setCustomGatewayUrl);
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [tempGatewayUrl, setTempGatewayUrl] = useState('');
+
+  const openSettings = () => {
+    setTempApiKey(userApiKey || '');
+    setTempGatewayUrl(customGatewayUrl || '');
+    setShowSettingsModal(true);
+  };
 
   const language = useSettingsStore((s) => s.settings?.language);
   const isSpanish = language === 'es';
@@ -128,6 +142,36 @@ export const AssistantChatView: React.FC = () => {
         <ArrowLeft size={16} />
       </motion.button>
 
+      {/* Floating AI Settings / Key Action */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        onClick={openSettings}
+        title={isSpanish ? 'Configuración de API Key' : 'API Key Settings'}
+        aria-label={isSpanish ? 'Configurar clave API' : 'Configure API Key'}
+        style={{
+          position: 'absolute',
+          top: 'calc(var(--safe-area-inset-top, 12px) + 12px)',
+          right: hasMessages ? 116 : 18,
+          zIndex: 30,
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          background: userApiKey ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+          border: userApiKey ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          color: userApiKey ? '#38bdf8' : '#94a3b8',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          transition: 'all 120ms ease',
+        }}
+      >
+        <Key size={15} />
+      </motion.button>
+
       {/* Floating Reset Action */}
       <AnimatePresence>
         {hasMessages && (
@@ -167,6 +211,20 @@ export const AssistantChatView: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Top Gradient Header Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 'calc(var(--safe-area-inset-top, 12px) + 58px)',
+          background: 'linear-gradient(to bottom, #090d16 65%, rgba(9, 13, 22, 0.85) 85%, transparent 100%)',
+          zIndex: 20,
+          pointerEvents: 'none',
+        }}
+      />
+
       {/* Messages Scroll Area */}
       <div
         ref={scrollContainerRef}
@@ -175,7 +233,7 @@ export const AssistantChatView: React.FC = () => {
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: '20px 20px',
-          paddingTop: 'calc(var(--safe-area-inset-top, 12px) + 20px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, 12px) + 54px)',
           display: 'flex',
           flexDirection: 'column',
           scrollbarWidth: 'thin',
@@ -353,6 +411,173 @@ export const AssistantChatView: React.FC = () => {
       >
         <AssistantInputBar showQuickPrompts={false} />
       </div>
+
+      {/* Settings / API Key Modal */}
+      <AnimatePresence>
+        {showSettingsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 100,
+              background: 'rgba(0, 0, 0, 0.75)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+            onClick={() => setShowSettingsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                background: '#111726',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 20,
+                padding: '22px 20px',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
+                color: '#f8fafc',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#38bdf8',
+                    }}
+                  >
+                    <Key size={16} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 650, color: '#f8fafc' }}>
+                      {isSpanish ? 'Configuración de IA' : 'AI Assistant Settings'}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: 11.5, color: '#94a3b8' }}>
+                      {isSpanish ? 'Google Gemini 2.5 Flash + Búsqueda Web' : 'Google Gemini 2.5 Flash + Web Search'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: 4,
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                  {isSpanish ? 'Gemini API Key (Opcional si está en .env)' : 'Gemini API Key (Optional if in .env)'}
+                </label>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: 'monospace',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+                  {isSpanish ? 'URL de Gateway Personalizado (Opcional)' : 'Custom Gateway URL (Optional)'}
+                </label>
+                <input
+                  type="text"
+                  value={tempGatewayUrl}
+                  onChange={(e) => setTempGatewayUrl(e.target.value)}
+                  placeholder="/api/ai/chat"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#94a3b8',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isSpanish ? 'Cancelar' : 'Cancel'}
+                </button>
+                <button
+                  onClick={() => {
+                    setUserApiKey(tempApiKey);
+                    setCustomGatewayUrl(tempGatewayUrl);
+                    setShowSettingsModal(false);
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 10,
+                    background: '#0284c7',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isSpanish ? 'Guardar' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

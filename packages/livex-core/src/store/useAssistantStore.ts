@@ -60,16 +60,21 @@ interface AssistantStoreState {
   messages: AssistantMessage[];
   mascotState: AssistantState;
   status: 'idle' | 'streaming' | 'error';
+  errorMessage?: string | null;
   activeThreadId: string;
   inputText: string;
   attachments: AssistantAttachment[];
-  errorMessage: string | null;
+  userApiKey?: string;
+  customGatewayUrl?: string;
 
   // Actions
   sendMessage: (promptText?: string) => Promise<void>;
+  retryLastMessage: () => Promise<void>;
   stopStreaming: () => void;
   setMascotState: (state: AssistantState) => void;
   setInputText: (text: string) => void;
+  setUserApiKey: (key: string) => void;
+  setCustomGatewayUrl: (url: string) => void;
   addAttachment: (att: AssistantAttachment) => void;
   removeAttachment: (id: string) => void;
   clearAttachments: () => void;
@@ -101,10 +106,40 @@ export const useAssistantStore = create<AssistantStoreState>()(
         messages: [],
         mascotState: 'idle',
         status: 'idle',
+        errorMessage: null,
         activeThreadId: 'default-thread',
         inputText: '',
         attachments: [],
-        errorMessage: null,
+        userApiKey: undefined,
+        customGatewayUrl: undefined,
+
+        setUserApiKey: (userApiKey: string) => {
+          set({ userApiKey: userApiKey.trim() || undefined });
+        },
+
+        setCustomGatewayUrl: (customGatewayUrl: string) => {
+          set({ customGatewayUrl: customGatewayUrl.trim() || undefined });
+        },
+
+        retryLastMessage: async () => {
+          const messages = get().messages;
+          const lastUserIndex = [...messages].reverse().findIndex((m) => m.role === 'user');
+          if (lastUserIndex === -1) return;
+          const actualIndex = messages.length - 1 - lastUserIndex;
+          const lastUserMsg = messages[actualIndex];
+
+          const priorHistory = messages.slice(0, actualIndex);
+          set({
+            messages: priorHistory,
+            inputText: lastUserMsg.content,
+            attachments: lastUserMsg.attachments || [],
+            errorMessage: null,
+            status: 'idle',
+            mascotState: 'idle',
+          });
+
+          await get().sendMessage();
+        },
 
         wakeMascot: () => {
           if (get().mascotState === 'sleeping') {
@@ -231,11 +266,11 @@ export const useAssistantStore = create<AssistantStoreState>()(
             contextSnapshot,
           };
 
-          // Optimistically append messages and transition mascot to composing immediately
+          // Optimistically append messages and transition mascot to connecting immediately
           set((state) => ({
             messages: [...state.messages, userMessage, assistantMessage],
             status: 'streaming',
-            mascotState: 'composing',
+            mascotState: 'connecting',
           }));
 
           // Yield one render frame so the browser commits and paints the ThinkingOrb before tokens arrive
@@ -254,6 +289,8 @@ export const useAssistantStore = create<AssistantStoreState>()(
               contextSnapshot,
               language: currentLanguage,
               attachments: pendingAttachments,
+              apiKey: get().userApiKey,
+              gatewayUrl: get().customGatewayUrl,
               signal,
               callbacks: {
                 onStateChange: (backendState) => {
@@ -307,16 +344,11 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
                   set((state) => ({
                     status: 'idle',
-                    mascotState: 'success',
+                    mascotState: 'idle',
                     messages: state.messages.map((m) =>
                       m.id === assistantMsgId ? { ...m, status: 'complete' } : m
                     ),
                   }));
-
-                  if (stateResetTimer) clearTimeout(stateResetTimer);
-                  stateResetTimer = setTimeout(() => {
-                    set({ mascotState: 'idle' });
-                  }, 2400);
 
                   resetSleepTimer();
                 },
@@ -334,7 +366,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
                         ? {
                             ...m,
                             status: 'error',
-                            content: m.content || 'Unable to connect. Please try again.',
+                            content: m.content || err.message || 'Unable to connect to AI service. Please check your connection or API configuration.',
                           }
                         : m
                     ),
@@ -343,7 +375,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
                   if (stateResetTimer) clearTimeout(stateResetTimer);
                   stateResetTimer = setTimeout(() => {
                     set({ mascotState: 'idle', status: 'idle' });
-                  }, 3500);
+                  }, 4000);
 
                   resetSleepTimer();
                 },
@@ -359,7 +391,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             if (stateResetTimer) clearTimeout(stateResetTimer);
             stateResetTimer = setTimeout(() => {
               set({ mascotState: 'idle', status: 'idle' });
-            }, 3500);
+            }, 4000);
             resetSleepTimer();
           } finally {
             if (activeAbortController?.signal === signal) {
@@ -375,6 +407,8 @@ export const useAssistantStore = create<AssistantStoreState>()(
       partialize: (state) => ({
         messages: state.messages.slice(-30), // Retain last 30 messages in storage
         activeThreadId: state.activeThreadId,
+        userApiKey: state.userApiKey,
+        customGatewayUrl: state.customGatewayUrl,
       }),
     }
   )
