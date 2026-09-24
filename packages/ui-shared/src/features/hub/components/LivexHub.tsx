@@ -646,7 +646,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
         {lang === 'es' ? 'Módulos del Ecosistema' : 'Livex Modules'}
       </h3>
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1vh, 10px)' }}
         className="w-full"
       >
         {modules.map(({ app, Logo, name, desc, color, active }) => (
@@ -661,7 +661,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
               display: 'flex',
               alignItems: 'center',
               width: '100%',
-              padding: '14px 16px',
+              padding: 'clamp(8px, 1.25vh, 14px) 16px',
               background: isLight
                 ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
                 : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
@@ -692,9 +692,9 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '14px',
+                  width: 'clamp(36px, 4.6vh, 44px)',
+                  height: 'clamp(36px, 4.6vh, 44px)',
+                  borderRadius: 'clamp(10px, 1.4vh, 14px)',
                   background: isLight ? `${color}14` : `${color}18`,
                   border: `1px solid ${color}30`,
                   display: 'flex',
@@ -1058,7 +1058,6 @@ export default function LivexHub() {
     'entering' | 'exiting' | 'hidden'
   >('hidden');
   const [successName, setSuccessName] = useState('');
-  const homeScrollRef = useRef<HTMLDivElement>(null);
   const profileScrollRef = useRef<HTMLDivElement>(null);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
   const helpScrollRef = useRef<HTMLDivElement>(null);
@@ -1067,8 +1066,7 @@ export default function LivexHub() {
 
   const lastUserRef = useRef<AuthUser | null>(null);
 
-  // Bind useScrollHide for home and help tabs; HubSettings manages its own internal scroll container
-  useScrollHide(homeScrollRef, tab === 'home');
+  // Bind useScrollHide for help tab; Home tab is fixed to viewport and does not scroll
   useScrollHide(helpScrollRef, tab === 'help');
 
   const isFirstAuthRun = useRef(true);
@@ -1323,13 +1321,11 @@ export default function LivexHub() {
           variant="tab"
         >
           {(tabId) => {
-            const isScrollableDirectly = tabId === 'home' || tabId === 'help';
+            const isScrollableDirectly = tabId === 'help';
             const currentScrollRef =
-              tabId === 'home'
-                ? homeScrollRef
-                : tabId === 'help'
-                  ? helpScrollRef
-                  : null;
+              tabId === 'help'
+                ? helpScrollRef
+                : null;
             return (
               <div
                 ref={currentScrollRef}
@@ -1338,12 +1334,14 @@ export default function LivexHub() {
                   inset: 0,
                   overflowY: isScrollableDirectly ? 'auto' : 'hidden',
                   overflowX: 'hidden',
+                  overflow: isScrollableDirectly ? undefined : 'hidden',
                   willChange: 'transform',
                   transform: 'translate3d(0, 0, 0)',
-                  WebkitOverflowScrolling: 'touch',
+                  WebkitOverflowScrolling: isScrollableDirectly ? 'touch' : 'auto',
+                  overscrollBehavior: 'none',
+                  touchAction: tabId === 'home' ? 'pan-x' : undefined,
                 }}
               >
-                {' '}
                 {/* 🏠 HOME TAB */}
                 {tabId === 'home' && (
                   <div
@@ -1352,18 +1350,30 @@ export default function LivexHub() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      minHeight: 'calc(100% + 140px)',
+                      height: '100%',
+                      maxHeight: '100%',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      overscrollBehavior: 'none',
+                      touchAction: 'pan-x',
                       padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px))',
                       paddingTop:
-                        'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 40px))',
+                        'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(16px, 3.2vh, 36px)))',
                       paddingBottom:
-                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 140px)',
+                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + clamp(72px, 9vh, 88px))',
                     }}
                   >
-                    {/* Dashboard Contents Scroll Area */}
+                    {/* Fixed Dashboard Contents Container */}
                     <div
-                      style={{ width: '100%', maxWidth: 'var(--content-max-w, 420px)' }}
-                      className="flex flex-col gap-6 w-full"
+                      style={{
+                        width: '100%',
+                        maxWidth: 'var(--content-max-w, 420px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        gap: 'clamp(10px, 2vh, 18px)',
+                      }}
+                      className="w-full"
                     >
                       {/* Greetings Section & Logo Header Row */}
                       <HubGreetingsHeader
@@ -1971,8 +1981,8 @@ export default function LivexHub() {
                                         : { rotate: 0 }
                                     }
                                     style={{
-                                      width: '52px',
-                                      height: '52px',
+                                      width: 'clamp(44px, 5.5vh, 52px)',
+                                      height: 'clamp(44px, 5.5vh, 52px)',
                                       borderRadius: '9999px',
                                       background: isLight
                                         ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.90) 0%, rgba(240, 244, 255, 0.75) 100%)'
@@ -2077,8 +2087,8 @@ export default function LivexHub() {
                                   whileHover={canHover && !prefersReduced ? { scale: 1.06, y: -2 } : undefined}
                                   transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 24 }}
                                   style={{
-                                    width: '52px',
-                                    height: '52px',
+                                    width: 'clamp(44px, 5.5vh, 52px)',
+                                    height: 'clamp(44px, 5.5vh, 52px)',
                                     borderRadius: '9999px',
                                     background: 'rgba(255, 255, 255, 0.02)',
                                     border: '1.5px dashed rgba(255, 255, 255, 0.20)',
