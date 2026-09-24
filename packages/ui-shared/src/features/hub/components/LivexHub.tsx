@@ -479,6 +479,331 @@ function useStartupComplete() {
   return complete;
 }
 
+const HubGreetingsHeader = React.memo(function HubGreetingsHeader({
+  greeting,
+  subtitle,
+  canHover,
+  prefersReduced,
+}: {
+  greeting: string;
+  subtitle: string;
+  canHover: boolean;
+  prefersReduced: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        padding: '0',
+      }}
+    >
+      <section
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--page-header-title-subtitle-gap, 4px)',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: 'var(--studio-font-display)',
+            fontWeight: 850,
+            color: 'var(--c-text-primary)',
+            letterSpacing: 'var(--page-header-title-tracking, -0.03em)',
+            fontSize: 'var(--page-header-title-size, 28px)',
+            lineHeight: 'var(--page-header-title-line-height, 1.15)',
+            margin: 0,
+          }}
+        >
+          {greeting}
+        </h2>
+        <p
+          style={{
+            fontFamily: 'Inter, sans-serif',
+            color: 'var(--c-text-secondary)',
+            fontSize: 'var(--page-header-subtitle-size, 13px)',
+            fontWeight: 500,
+            lineHeight: 'var(--page-header-subtitle-line-height, 1.4)',
+            letterSpacing: '-0.01em',
+            margin: 0,
+            opacity: 0.82,
+          }}
+        >
+          {subtitle}
+        </p>
+      </section>
+      <motion.div
+        whileHover={canHover && !prefersReduced ? { scale: 1.05 } : undefined}
+        whileTap={prefersReduced ? undefined : { scale: 0.94 }}
+        transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 25 }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          marginLeft: 16,
+          cursor: 'pointer',
+        }}
+      >
+        <StudioLogo size={32} />
+      </motion.div>
+    </div>
+  );
+});
+
+interface HubModuleCardsProps {
+  lang: string;
+  isLight: boolean;
+  canHover: boolean;
+  prefersReduced: boolean;
+  activeRouteApp: string;
+  onLaunchApp: (app: TargetApp, el: HTMLElement) => void;
+  chordexDesc: string;
+  drumexDesc: string;
+  stagexDesc: string;
+  groovexDesc: string;
+  vocalexDesc: string;
+}
+
+const HubModuleCards = React.memo(function HubModuleCards({
+  lang,
+  isLight,
+  canHover,
+  prefersReduced,
+  activeRouteApp,
+  onLaunchApp,
+  chordexDesc,
+  drumexDesc,
+  stagexDesc,
+  groovexDesc,
+  vocalexDesc,
+}: HubModuleCardsProps) {
+  const modules = useMemo(
+    () => [
+      {
+        app: 'chordex' as TargetApp,
+        Logo: ChordexLogo,
+        name: 'Chordex',
+        desc: chordexDesc,
+        color: '#a855f7',
+        active: activeRouteApp === 'chordex',
+      },
+      {
+        app: 'drumex' as TargetApp,
+        Logo: DrumexLogo,
+        name: 'Drumex',
+        desc: drumexDesc,
+        color: '#ec4899',
+        active: activeRouteApp === 'drumex',
+      },
+      {
+        app: 'stagex' as TargetApp,
+        Logo: StagexLogoIcon,
+        name: 'Stagex',
+        desc: stagexDesc,
+        color: '#3b82f6',
+        active: activeRouteApp === 'stagex',
+      },
+      {
+        app: 'groovex' as TargetApp,
+        Logo: GroovexLogo,
+        name: 'Groovex',
+        desc: groovexDesc,
+        color: '#10b981',
+        active: activeRouteApp === 'groovex',
+      },
+      {
+        app: 'vocalex' as TargetApp,
+        Logo: VocalexLogo,
+        name: 'Vocalex',
+        desc: vocalexDesc,
+        color: '#f59e0b',
+        active: activeRouteApp === 'vocalex',
+      },
+    ],
+    [activeRouteApp, chordexDesc, drumexDesc, stagexDesc, groovexDesc, vocalexDesc]
+  );
+
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h3
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: '9.5px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.14em',
+          fontWeight: 800,
+          color: 'var(--c-text-tertiary, #808080)',
+          margin: 0,
+          padding: '0 2px',
+        }}
+      >
+        {lang === 'es' ? 'Módulos del Ecosistema' : 'Livex Modules'}
+      </h3>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+        className="w-full"
+      >
+        {modules.map(({ app, Logo, name, desc, color, active }) => (
+          <motion.button
+            key={app}
+            data-app={app}
+            onClick={(e) => onLaunchApp(app, e.currentTarget)}
+            whileTap={prefersReduced ? undefined : { scale: 0.975 }}
+            whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}
+            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              padding: '14px 16px',
+              background: isLight
+                ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
+                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+              border: active
+                ? `1.5px solid ${color}`
+                : isLight
+                  ? '1px solid rgba(0, 0, 0, 0.06)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              boxSizing: 'border-box',
+              outline: 'none',
+              position: 'relative',
+              justifyContent: 'space-between',
+              boxShadow: 'var(--shadow-surface-raised)',
+              overflow: 'hidden',
+            }}
+            className="sc-module-card group"
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '14px',
+                  background: isLight ? `${color}14` : `${color}18`,
+                  border: `1px solid ${color}30`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: color,
+                  flexShrink: 0,
+                }}
+              >
+                <Logo size={22} />
+              </div>
+              <div
+                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    style={{
+                      fontSize: '15.5px',
+                      fontWeight: 800,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'var(--studio-font-display)',
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {name}
+                  </span>
+                  {active && (
+                    <span
+                      style={{
+                        fontSize: '8.5px',
+                        padding: '2px 6px',
+                        borderRadius: '9999px',
+                        backgroundColor: `${color}22`,
+                        border: `1px solid ${color}40`,
+                        color: color,
+                        fontWeight: 800,
+                        fontFamily: 'Inter, sans-serif',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: '50%',
+                          background: color,
+                        }}
+                      />
+                      {lang === 'es' ? 'En Vivo' : 'Live'}
+                    </span>
+                  )}
+                </div>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 500,
+                    marginTop: '2px',
+                    lineHeight: 1.3,
+                    opacity: 0.82,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {desc}
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: isLight
+                  ? 'rgba(0,0,0,0.03)'
+                  : 'rgba(255,255,255,0.04)',
+                border: isLight
+                  ? '1px solid rgba(0,0,0,0.05)'
+                  : '1px solid rgba(255,255,255,0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                marginLeft: 8,
+              }}
+            >
+              <StudioIcon
+                name="chevron_right"
+                size={16}
+                style={{
+                  color: 'var(--c-text-secondary)',
+                  opacity: 0.6,
+                }}
+              />
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </section>
+  );
+});
+
 export default function LivexHub() {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -965,119 +1290,6 @@ export default function LivexHub() {
     [greetName, lang]
   );
 
-  const formatTimeAgo = useCallback(
-    (timeInput: any): string => {
-      try {
-        const date = new Date(timeInput);
-        if (isNaN(date.getTime())) return 'Recent';
-        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-        if (seconds < 60) return lang === 'es' ? 'ahora mismo' : 'just now';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return lang === 'es' ? `hace ${minutes} min` : `${minutes}m ago`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return lang === 'es' ? `hace ${hours} h` : `${hours}h ago`;
-        const days = Math.floor(hours / 24);
-        if (days === 1) return lang === 'es' ? 'ayer' : 'yesterday';
-        if (days < 7) return lang === 'es' ? `hace ${days} días` : `${days}d ago`;
-        return date.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
-          month: 'short',
-          day: 'numeric',
-        });
-      } catch {
-        return 'Recent';
-      }
-    },
-    [lang]
-  );
-
-  const loadRecentSessions = useCallback(() => {
-    const list: {
-      app: 'chordex' | 'drumex' | 'groovex';
-      title: string;
-      appName: string;
-      timestamp: string;
-      action: () => void;
-    }[] = [];
-    try {
-      const chordex = localStorage.getItem('chord-explorer-storage-v3');
-      if (chordex) {
-        const parsed = JSON.parse(chordex);
-        const state = parsed.state || {};
-        (state.presets || []).forEach((p: any) => {
-          list.push({
-            app: 'chordex',
-            title: p.name || p.title || 'Untitled Chordex Preset',
-            appName: 'Chordex',
-            timestamp: p.updatedAt ? formatTimeAgo(p.updatedAt) : 'Recent',
-            action: () => {
-              launchApp('chordex');
-              setTimeout(() => {
-                NavigationDispatcher.push({ app: 'chordex', page: 'library' });
-              }, 150);
-            },
-          });
-        });
-        (state.progressions || []).forEach((p: any) => {
-          list.push({
-            app: 'chordex',
-            title: p.name || p.title || 'Untitled Progression',
-            appName: 'Chordex',
-            timestamp: p.updatedAt ? formatTimeAgo(p.updatedAt) : 'Recent',
-            action: () => {
-              launchApp('chordex');
-              setTimeout(() => {
-                NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
-              }, 150);
-            },
-          });
-        });
-      }
-    } catch {}
-
-    try {
-      const drumex = localStorage.getItem('chordex-drums');
-      if (drumex) {
-        const parsed = JSON.parse(drumex);
-        const state = parsed.state || {};
-        (state.drumSongs || []).forEach((s: any) => {
-          list.push({
-            app: 'drumex',
-            title: s.name || s.title || 'Untitled Drum Song',
-            appName: 'Drumex',
-            timestamp: s.updatedAt ? formatTimeAgo(s.updatedAt) : 'Recent',
-            action: () => {
-              launchApp('drumex');
-              setTimeout(() => {
-                NavigationDispatcher.push({ app: 'drumex', page: 'songs' });
-              }, 150);
-            },
-          });
-        });
-      }
-    } catch {}
-
-    try {
-      const groovex = localStorage.getItem('groovex-storage-v1');
-      if (groovex) {
-        const parsed = JSON.parse(groovex);
-        const state = parsed.state || {};
-        (state.recentSongs || []).forEach((s: any) => {
-          list.push({
-            app: 'groovex',
-            title: s.name || s.title || s.artist || 'Untitled Groovex Song',
-            appName: 'Groovex',
-            timestamp: s.playedAt ? formatTimeAgo(s.playedAt) : 'Recent',
-            action: () => {
-              launchApp('groovex');
-            },
-          });
-        });
-      }
-    } catch {}
-
-    return list.slice(0, 3);
-  }, [formatTimeAgo, launchApp]);
-
   return (
     <div
       data-livex-hub-root="true"
@@ -1152,68 +1364,12 @@ export default function LivexHub() {
                       className="flex flex-col gap-6 w-full"
                     >
                       {/* Greetings Section & Logo Header Row */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          width: '100%',
-                          padding: '0',
-                        }}
-                      >
-                        <section
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 'var(--page-header-title-subtitle-gap, 4px)',
-                          }}
-                        >
-                          <h2
-                            style={{
-                              fontFamily: 'var(--studio-font-display)',
-                              fontWeight: 850,
-                              color: 'var(--c-text-primary)',
-                              letterSpacing: 'var(--page-header-title-tracking, -0.03em)',
-                              fontSize: 'var(--page-header-title-size, 28px)',
-                              lineHeight: 'var(--page-header-title-line-height, 1.15)',
-                              margin: 0,
-                            }}
-                          >
-                            {greeting}
-                          </h2>
-                          <p
-                            style={{
-                              fontFamily: 'Inter, sans-serif',
-                              color: 'var(--c-text-secondary)',
-                              fontSize: 'var(--page-header-subtitle-size, 13px)',
-                              fontWeight: 500,
-                              lineHeight: 'var(--page-header-subtitle-line-height, 1.4)',
-                              letterSpacing: '-0.01em',
-                              margin: 0,
-                              opacity: 0.82,
-                            }}
-                          >
-                            {subtitle}
-                          </p>
-                        </section>
-                        <motion.div
-                          whileHover={canHover && !prefersReduced ? { scale: 1.05 } : undefined}
-                          whileTap={prefersReduced ? undefined : { scale: 0.94 }}
-                          transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 25 }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            marginLeft: 16,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <StudioLogo size={32} />
-                        </motion.div>
-                      </div>
+                      <HubGreetingsHeader
+                        greeting={greeting}
+                        subtitle={subtitle}
+                        canHover={canHover}
+                        prefersReduced={prefersReduced}
+                      />
 
                       {/* Pinned Quick Actions Section */}
                       <section
@@ -1822,8 +1978,6 @@ export default function LivexHub() {
                                       border: isLight
                                         ? '1px solid rgba(255, 255, 255, 0.95)'
                                         : '1px solid rgba(255, 255, 255, 0.12)',
-                                      backdropFilter: 'var(--surface-topbar-blur)',
-                                      WebkitBackdropFilter: 'var(--surface-topbar-blur)',
                                       boxShadow: 'var(--shadow-control-raised)',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1961,229 +2115,19 @@ export default function LivexHub() {
                       </section>
 
                       {/* Studio Modules grid columns */}
-                      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <h3
-                          style={{
-                            fontFamily: 'Inter, sans-serif',
-                            fontSize: '9.5px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.14em',
-                            fontWeight: 800,
-                            color: 'var(--c-text-tertiary, #808080)',
-                            margin: 0,
-                            padding: '0 2px',
-                          }}
-                        >
-                          {lang === 'es' ? 'Módulos del Ecosistema' : 'Livex Modules'}
-                        </h3>
-                        <div
-                          style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-                          className="w-full"
-                        >
-                          {(
-                            [
-                              {
-                                app: 'chordex' as TargetApp,
-                                Logo: ChordexLogo,
-                                name: 'Chordex',
-                                desc: t.hub.chordexDesc,
-                                color: '#a855f7',
-                                active: activeRouteApp === 'chordex',
-                              },
-                              {
-                                app: 'drumex' as TargetApp,
-                                Logo: DrumexLogo,
-                                name: 'Drumex',
-                                desc: t.hub.drumexDesc,
-                                color: '#ec4899',
-                                active: activeRouteApp === 'drumex',
-                              },
-                              {
-                                app: 'stagex' as TargetApp,
-                                Logo: StagexLogoIcon,
-                                name: 'Stagex',
-                                desc: t.hub.stagexDesc,
-                                color: '#3b82f6',
-                                active: activeRouteApp === 'stagex',
-                              },
-                              {
-                                app: 'groovex' as TargetApp,
-                                Logo: GroovexLogo,
-                                name: 'Groovex',
-                                desc: t.hub.groovexDesc,
-                                color: '#10b981',
-                                active: activeRouteApp === 'groovex',
-                              },
-                              {
-                                app: 'vocalex' as TargetApp,
-                                Logo: VocalexLogo,
-                                name: 'Vocalex',
-                                desc: t.hub.vocalexDesc,
-                                color: '#f59e0b',
-                                active: activeRouteApp === 'vocalex',
-                              },
-                            ] as {
-                              app: TargetApp;
-                              Logo: any;
-                              name: string;
-                              desc: string;
-                              color: string;
-                              active?: boolean;
-                            }[]
-                          ).map(({ app, Logo, name, desc, color, active }) => (
-                            <motion.button
-                              key={app}
-                              data-app={app}
-                              onClick={(e) => launchApp(app, e.currentTarget)}
-                              whileTap={prefersReduced ? undefined : { scale: 0.975 }}
-                              whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}
-                              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                width: '100%',
-                                padding: '14px 16px',
-                                background: isLight
-                                  ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                                  : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
-                                border: active
-                                  ? `1.5px solid ${color}`
-                                  : isLight
-                                    ? '1px solid rgba(0, 0, 0, 0.06)'
-                                    : '1px solid rgba(255, 255, 255, 0.08)',
-                                borderRadius: '20px',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                boxSizing: 'border-box',
-                                outline: 'none',
-                                position: 'relative',
-                                justifyContent: 'space-between',
-                                backdropFilter: 'var(--surface-float-blur)',
-                                WebkitBackdropFilter: 'var(--surface-float-blur)',
-                                boxShadow: 'var(--shadow-surface-raised)',
-                                overflow: 'hidden',
-                              }}
-                              className="sc-module-card group"
-                            >
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 14,
-                                  minWidth: 0,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    borderRadius: '14px',
-                                    background: isLight ? `${color}14` : `${color}18`,
-                                    border: `1px solid ${color}30`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: color,
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  <Logo size={22} />
-                                </div>
-                                <div
-                                  style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span
-                                      style={{
-                                        fontSize: '15.5px',
-                                        fontWeight: 800,
-                                        color: 'var(--c-text-primary)',
-                                        fontFamily: 'var(--studio-font-display)',
-                                        letterSpacing: '-0.02em',
-                                      }}
-                                    >
-                                      {name}
-                                    </span>
-                                    {active && (
-                                      <span
-                                        style={{
-                                          fontSize: '8.5px',
-                                          padding: '2px 6px',
-                                          borderRadius: '9999px',
-                                          backgroundColor: `${color}22`,
-                                          border: `1px solid ${color}40`,
-                                          color: color,
-                                          fontWeight: 800,
-                                          fontFamily: 'Inter, sans-serif',
-                                          textTransform: 'uppercase',
-                                          letterSpacing: '0.04em',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 3,
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            width: 4,
-                                            height: 4,
-                                            borderRadius: '50%',
-                                            background: color,
-                                          }}
-                                        />
-                                        {lang === 'es' ? 'En Vivo' : 'Live'}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span
-                                    style={{
-                                      fontSize: '12px',
-                                      color: 'var(--c-text-secondary)',
-                                      fontFamily: 'Inter, sans-serif',
-                                      fontWeight: 500,
-                                      marginTop: '2px',
-                                      lineHeight: 1.3,
-                                      opacity: 0.82,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                    }}
-                                  >
-                                    {desc}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div
-                                style={{
-                                  width: 28,
-                                  height: 28,
-                                  borderRadius: '50%',
-                                  background: isLight
-                                    ? 'rgba(0,0,0,0.03)'
-                                    : 'rgba(255,255,255,0.04)',
-                                  border: isLight
-                                    ? '1px solid rgba(0,0,0,0.05)'
-                                    : '1px solid rgba(255,255,255,0.06)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  flexShrink: 0,
-                                  marginLeft: 8,
-                                }}
-                              >
-                                <StudioIcon
-                                  name="chevron_right"
-                                  size={16}
-                                  style={{
-                                    color: 'var(--c-text-secondary)',
-                                    opacity: 0.6,
-                                  }}
-                                />
-                              </div>
-                            </motion.button>
-                          ))}
-                        </div>
-                      </section>
+                      <HubModuleCards
+                        lang={lang}
+                        isLight={isLight}
+                        canHover={canHover}
+                        prefersReduced={prefersReduced}
+                        activeRouteApp={activeRouteApp}
+                        onLaunchApp={launchApp}
+                        chordexDesc={t.hub.chordexDesc}
+                        drumexDesc={t.hub.drumexDesc}
+                        stagexDesc={t.hub.stagexDesc}
+                        groovexDesc={t.hub.groovexDesc}
+                        vocalexDesc={t.hub.vocalexDesc}
+                      />
                     </div>
                   </div>
                 )}
@@ -2245,12 +2189,12 @@ export default function LivexHub() {
                       >
                         <style>{`
                           @keyframes success-fade-in-blur {
-                            from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-                            to { opacity: 1; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); } // token-guard-ignore
+                            from { opacity: 0; }
+                            to { opacity: 1; }
                           }
                           @keyframes success-fade-out-blur {
-                            from { opacity: 1; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transform: scale(1); } // token-guard-ignore
-                            to { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); transform: scale(0.95); filter: blur(8px); }
+                            from { opacity: 1; transform: scale(1); }
+                            to { opacity: 0; transform: scale(0.95); }
                           }
                           @keyframes success-pop {
                             0% { transform: scale(0.85) translateY(16px); opacity: 0; }

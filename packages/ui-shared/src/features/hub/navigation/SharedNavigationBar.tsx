@@ -497,7 +497,7 @@ export function SharedNavigationBar({
   useEffect(() => {
     scrollOffsetRaw.set(0);
     scrollOffsetSpring.jump(0);
-  }, [currentApp, items, scrollOffsetRaw, scrollOffsetSpring]);
+  }, [currentApp, scrollOffsetRaw, scrollOffsetSpring]);
 
   useEffect(() => {
     if (collapsed !== undefined) {
@@ -1024,8 +1024,6 @@ export function SharedNavigationBar({
                     background: 'var(--surface-glass-lens-bg)',
                     border: 'var(--surface-glass-lens-border)',
                     boxShadow: 'var(--surface-glass-lens-shadow)',
-                    backdropFilter: 'blur(12px) saturate(140%)',
-                    WebkitBackdropFilter: 'blur(12px) saturate(140%)',
                     pointerEvents: 'none',
                     zIndex: 0,
                     scale: pillPressScale,
