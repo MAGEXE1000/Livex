@@ -630,11 +630,11 @@ const HubModuleCards = React.memo(function HubModuleCards({
   );
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.1vh, 10px)' }}>
       <h3
         style={{
           fontFamily: 'Inter, sans-serif',
-          fontSize: '9.5px',
+          fontSize: '10px',
           textTransform: 'uppercase',
           letterSpacing: '0.14em',
           fontWeight: 800,
@@ -646,7 +646,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
         {lang === 'es' ? 'Módulos del Ecosistema' : 'Livex Modules'}
       </h3>
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1vh, 10px)' }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.0vh, 10px)' }}
         className="w-full"
       >
         {modules.map(({ app, Logo, name, desc, color, active }) => (
@@ -661,7 +661,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
               display: 'flex',
               alignItems: 'center',
               width: '100%',
-              padding: 'clamp(8px, 1.25vh, 14px) 16px',
+              minHeight: 'clamp(56px, 7.8vh, 74px)',
+              padding: 'clamp(8px, 1.35vh, 14px) clamp(14px, 3.6vw, 18px)',
               background: isLight
                 ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
                 : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
@@ -670,7 +671,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
                 : isLight
                   ? '1px solid rgba(0, 0, 0, 0.06)'
                   : '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '20px',
+              borderRadius: 'clamp(16px, 2.2vh, 22px)',
               cursor: 'pointer',
               textAlign: 'left',
               boxSizing: 'border-box',
@@ -686,17 +687,20 @@ const HubModuleCards = React.memo(function HubModuleCards({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
+                gap: 'clamp(12px, 3.2vw, 16px)',
                 minWidth: 0,
               }}
             >
               <div
                 style={{
-                  width: 'clamp(36px, 4.6vh, 44px)',
-                  height: 'clamp(36px, 4.6vh, 44px)',
-                  borderRadius: 'clamp(10px, 1.4vh, 14px)',
-                  background: isLight ? `${color}14` : `${color}18`,
-                  border: `1px solid ${color}30`,
+                  width: 'clamp(40px, 5.4vh, 50px)',
+                  height: 'clamp(40px, 5.4vh, 50px)',
+                  borderRadius: 'clamp(12px, 1.5vh, 16px)',
+                  background: isLight ? `${color}14` : `${color}1a`,
+                  border: `1px solid ${color}35`,
+                  boxShadow: isLight
+                    ? `0 2px 8px ${color}16`
+                    : `0 2px 10px ${color}20`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -704,7 +708,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
                   flexShrink: 0,
                 }}
               >
-                <Logo size={22} />
+                <Logo size={24} />
               </div>
               <div
                 style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
@@ -712,7 +716,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span
                     style={{
-                      fontSize: '15.5px',
+                      fontSize: 'clamp(15.5px, 1.95vh, 17px)',
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-display)',
@@ -753,13 +757,13 @@ const HubModuleCards = React.memo(function HubModuleCards({
                 </div>
                 <span
                   style={{
-                    fontSize: '12px',
+                    fontSize: 'clamp(12px, 1.45vh, 13px)',
                     color: 'var(--c-text-secondary)',
                     fontFamily: 'Inter, sans-serif',
                     fontWeight: 500,
-                    marginTop: '2px',
-                    lineHeight: 1.3,
-                    opacity: 0.82,
+                    marginTop: '3px',
+                    lineHeight: 1.35,
+                    opacity: 0.85,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -772,15 +776,15 @@ const HubModuleCards = React.memo(function HubModuleCards({
 
             <div
               style={{
-                width: 28,
-                height: 28,
+                width: 'clamp(28px, 3.4vh, 32px)',
+                height: 'clamp(28px, 3.4vh, 32px)',
                 borderRadius: '50%',
                 background: isLight
-                  ? 'rgba(0,0,0,0.03)'
-                  : 'rgba(255,255,255,0.04)',
+                  ? 'rgba(0,0,0,0.035)'
+                  : 'rgba(255,255,255,0.05)',
                 border: isLight
-                  ? '1px solid rgba(0,0,0,0.05)'
-                  : '1px solid rgba(255,255,255,0.06)',
+                  ? '1px solid rgba(0,0,0,0.06)'
+                  : '1px solid rgba(255,255,255,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -790,10 +794,10 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <StudioIcon
                 name="chevron_right"
-                size={16}
+                size={17}
                 style={{
                   color: 'var(--c-text-secondary)',
-                  opacity: 0.6,
+                  opacity: 0.75,
                 }}
               />
             </div>
@@ -1356,22 +1360,22 @@ export default function LivexHub() {
                       overflow: 'hidden',
                       overscrollBehavior: 'none',
                       touchAction: 'pan-x',
-                      padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px))',
+                      padding: '0 clamp(12px, 3.5vw, 16px)',
                       paddingTop:
-                        'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(16px, 3.2vh, 36px)))',
+                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(12px, 2.4vh, 28px))',
                       paddingBottom:
-                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + clamp(72px, 9vh, 88px))',
+                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + clamp(66px, 8.5vh, 84px))',
                     }}
                   >
                     {/* Fixed Dashboard Contents Container */}
                     <div
                       style={{
                         width: '100%',
-                        maxWidth: 'var(--content-max-w, 420px)',
+                        maxWidth: 'var(--content-max-w, 460px)',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-start',
-                        gap: 'clamp(10px, 2vh, 18px)',
+                        gap: 'clamp(8px, 1.4vh, 16px)',
                       }}
                       className="w-full"
                     >
@@ -1388,7 +1392,7 @@ export default function LivexHub() {
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 12,
+                          gap: 'clamp(6px, 1.1vh, 12px)',
                         }}
                       >
                         <div
