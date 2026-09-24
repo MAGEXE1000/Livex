@@ -167,6 +167,12 @@ class ReasoningStreamParser {
     } catch {}
   }
 
+  public async ping() {
+    try {
+      await this.writer.write(this.encoder.encode(': ping\n\n'));
+    } catch {}
+  }
+
   public async onState(state: string, extra?: Record<string, any>) {
     try {
       await this.writer.write(
@@ -713,10 +719,10 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
       const candidateModels = [
         body?.model,
         env.OPENAI_COMPATIBLE_MODEL,
-        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
         '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
         '@cf/meta/llama-3.1-8b-instruct',
         '@cf/mistral/mistral-7b-instruct-v0.1',
+        '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
       ].filter(Boolean) as string[];
 
       let aiStream: any = null;
@@ -782,8 +788,12 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
             return true;
           };
 
+          let keepAliveTimer: any = null;
           try {
             await parser.onConnecting();
+            keepAliveTimer = setInterval(() => {
+              parser.ping().catch(() => {});
+            }, 5000);
 
             if (firstChunk.value) {
               const keepGoing = await processChunkValue(firstChunk.value);
@@ -808,6 +818,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
             console.error('[Edge Gateway] Workers AI streaming error:', err);
             await parser.onError(err?.message || 'Workers AI streaming failed');
           } finally {
+            if (keepAliveTimer) clearInterval(keepAliveTimer);
             await writer.close();
           }
         })();

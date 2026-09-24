@@ -1360,7 +1360,8 @@ html[data-perf-mode='on'] *::after {
   }
 
   /* Direct-DOM scroll collapse for the bottom nav bar (zero-React) */
-  html[data-nav-collapsed='true']:not([data-nav-hidden='true']) .glass-nav {
+  html[data-nav-collapsed='true']:not([data-nav-hidden='true']) .glass-nav,
+  html[data-nav-collapsed='true']:not([data-nav-hidden='true']) .shared-nav-satellite {
     pointer-events: none !important;
   }
 

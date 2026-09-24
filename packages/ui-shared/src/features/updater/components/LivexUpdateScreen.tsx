@@ -178,6 +178,14 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
     return false;
   }, [docTheme, isLightProp, hubVisTheme, dynamicLightStart, dynamicLightEnd]);
 
+  const isLowPerf = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      localStorage.getItem('studio_performance_mode') === 'low' ||
+      (window as any).__studio_performance_mode === 'low'
+    );
+  }, []);
+
   // Local state for smooth dismiss morph
   const [isDismissing, setIsDismissing] = useState(false);
 
@@ -239,9 +247,41 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
     return 'available';
   }, [state]);
 
-  const isInstalling = normalizedState === 'installing' || progress >= 1.0;
+  const isInstalling = normalizedState === 'installing';
   const isProgressState = normalizedState === 'downloading' || isInstalling;
   const canClose = ['available', 'idle', 'error'].includes(normalizedState);
+
+  const headerTitleText = useMemo(() => {
+    if (isInstalling) return updaterTr?.installing || 'Installing...';
+    if (isProgressState) return updaterTr?.downloadingUpdate || 'Downloading update';
+    if (normalizedState === 'checking') return updaterTr?.checkingForUpdates || 'Checking for updates';
+    if (normalizedState === 'idle') return updaterTr?.upToDate || 'Livex is up to date';
+    return customTitle || updaterTr?.studioUpdateAvailable || 'Livex update available';
+  }, [isInstalling, isProgressState, normalizedState, customTitle, updaterTr]);
+
+  const headerDescText = useMemo(() => {
+    if (isInstalling) return 'Waiting for installer... Please wait... Do not close the application.';
+    if (isProgressState) return updaterTr?.downloadingPackage || 'Livex is downloading the latest app package.';
+    if (normalizedState === 'checking') return customDescription || updaterTr?.connectingToServer || 'Connecting to release server...';
+    if (normalizedState === 'idle') {
+      return fromVersion
+        ? `You're running the latest version of Livex (${fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`}).`
+        : 'You’re running the latest version of Livex.';
+    }
+    if (normalizedState === 'error' && !isProgressState && !downloadedBytes) {
+      return error || 'Unable to contact the update server. Please check your network connection.';
+    }
+    return customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.';
+  }, [isInstalling, isProgressState, normalizedState, fromVersion, downloadedBytes, error, customDescription, updaterTr]);
+
+  const headerDescKey = useMemo(() => {
+    if (isInstalling) return 'desc-installing';
+    if (isProgressState) return 'desc-downloading';
+    if (normalizedState === 'checking') return 'desc-checking';
+    if (normalizedState === 'idle') return 'desc-idle';
+    if (normalizedState === 'error' && !isProgressState && !downloadedBytes) return 'desc-check-error';
+    return 'desc-available';
+  }, [isInstalling, isProgressState, normalizedState, downloadedBytes]);
 
   // Auto-dismiss compact popup when up to date
   useEffect(() => {
@@ -589,7 +629,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
             : {
                 duration: 0.22,
                 ease: [0.16, 1, 0.3, 1],
-                layout: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
+                layout: { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 },
               }
         }
         className={`relative w-full max-w-[390px] ${modalBg} border ${modalBorder} rounded-[34px] ${modalShadow} p-6 sm:p-7 flex flex-col text-left overflow-hidden`}
@@ -597,45 +637,75 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
         onClick={(e) => e.stopPropagation()}
       >
         {/* BEGIN: HeaderSection */}
-        <motion.div layout={!prefersReduced} className={isFullUpdaterState ? "mb-6" : ""} data-purpose="modal-header">
+        <motion.div
+          layout={!prefersReduced}
+          transition={
+            prefersReduced
+              ? { duration: 0 }
+              : { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }
+          }
+          className={isFullUpdaterState ? "mb-6" : ""}
+          data-purpose="modal-header"
+        >
           <div className="flex items-center justify-between gap-3">
-            <h1
-              className={`text-[25px] sm:text-[27px] font-bold tracking-tight ${textPrimary} leading-tight`}
-              id="modal-title"
-            >
-              {isInstalling
-                ? updaterTr?.installing || 'Installing...'
-                : isProgressState
-                  ? updaterTr?.downloadingUpdate || 'Downloading update'
-                  : normalizedState === 'checking'
-                    ? updaterTr?.checkingForUpdates || 'Checking for updates'
-                    : normalizedState === 'idle'
-                      ? updaterTr?.upToDate || 'Livex is up to date'
-                      : isCheckError
-                        ? 'Couldn\'t check for updates'
-                        : customTitle || updaterTr?.studioUpdateAvailable || 'Update Available'}
-            </h1>
+            <div className="relative flex-1 min-h-[32px] flex items-center">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.h1
+                  key={headerTitleText}
+                  initial={
+                    prefersReduced || isLowPerf
+                      ? { opacity: 0 }
+                      : { opacity: 0, filter: 'blur(3px)', y: 3 }
+                  }
+                  animate={{
+                    opacity: 1,
+                    filter: prefersReduced || isLowPerf ? undefined : 'blur(0px)',
+                    y: 0,
+                  }}
+                  exit={
+                    prefersReduced || isLowPerf
+                      ? { opacity: 0 }
+                      : { opacity: 0, filter: 'blur(3px)', y: -3 }
+                  }
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className={`text-[25px] sm:text-[27px] font-bold tracking-tight ${textPrimary} leading-tight`}
+                  id="modal-title"
+                >
+                  {headerTitleText}
+                </motion.h1>
+              </AnimatePresence>
+            </div>
             {normalizedState === 'idle' && (
               <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
                 <CheckIconSvg />
               </div>
             )}
           </div>
-          <p className={`text-[14px] sm:text-[14.5px] ${textMuted} mt-1.5 font-normal leading-snug`}>
-            {isInstalling
-              ? 'Waiting for installer... Please wait... Do not close the application.'
-              : isProgressState
-                ? updaterTr?.downloadingPackage || 'Livex is downloading the latest app package.'
-                : normalizedState === 'checking'
-                  ? customDescription || updaterTr?.connectingToServer || 'Connecting to release server...'
-                  : normalizedState === 'idle'
-                    ? fromVersion
-                      ? `You're running the latest version of Livex (${fromVersion.startsWith('v') ? fromVersion : `v${fromVersion}`}).`
-                      : 'You’re running the latest version of Livex.'
-                    : isCheckError
-                      ? error || 'Unable to contact the update server. Please check your network connection.'
-                      : customDescription || updaterTr?.newVersionReady || 'A new version of Livex is ready to install.'}
-          </p>
+          <div className="relative mt-1.5 min-h-[20px]">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.p
+                key={headerDescKey}
+                initial={
+                  prefersReduced || isLowPerf
+                    ? { opacity: 0 }
+                    : { opacity: 0, filter: 'blur(2px)' }
+                }
+                animate={{
+                  opacity: 1,
+                  filter: prefersReduced || isLowPerf ? undefined : 'blur(0px)',
+                }}
+                exit={
+                  prefersReduced || isLowPerf
+                    ? { opacity: 0 }
+                    : { opacity: 0, filter: 'blur(2px)' }
+                }
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className={`text-[14px] sm:text-[14.5px] ${textMuted} font-normal leading-snug`}
+              >
+                {headerDescText}
+              </motion.p>
+            </AnimatePresence>
+          </div>
         </motion.div>
         {/* END: HeaderSection */}
 
@@ -928,11 +998,33 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                         >
                           {/* Status & Percentage */}
                           <div className="flex items-center justify-between">
-                            <span className={`text-[15px] font-semibold ${textPrimary} tracking-tight`}>
-                              {isInstalling
-                                ? updaterTr?.installing || 'Installing...'
-                                : updaterTr?.downloading || 'Downloading...'}
-                            </span>
+                            <div className="relative min-h-[22px] flex items-center">
+                              <AnimatePresence mode="popLayout" initial={false}>
+                                <motion.span
+                                  key={isInstalling ? 'status-installing' : 'status-downloading'}
+                                  initial={
+                                    prefersReduced || isLowPerf
+                                      ? { opacity: 0 }
+                                      : { opacity: 0, filter: 'blur(2px)' }
+                                  }
+                                  animate={{
+                                    opacity: 1,
+                                    filter: prefersReduced || isLowPerf ? undefined : 'blur(0px)',
+                                  }}
+                                  exit={
+                                    prefersReduced || isLowPerf
+                                      ? { opacity: 0 }
+                                      : { opacity: 0, filter: 'blur(2px)' }
+                                  }
+                                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                                  className={`text-[15px] font-semibold ${textPrimary} tracking-tight`}
+                                >
+                                  {isInstalling
+                                    ? updaterTr?.installing || 'Installing...'
+                                    : updaterTr?.downloading || 'Downloading...'}
+                                </motion.span>
+                              </AnimatePresence>
+                            </div>
                             <span
                               className="text-[15px] font-semibold text-[#5ea2ff] tracking-tight tabular-nums"
                               role="status"
@@ -959,13 +1051,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                               transition={
                                 prefersReduced
                                   ? { duration: 0 }
-                                  : { duration: 0.2, ease: 'easeOut' }
+                                  : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
                               }
                             />
                           </div>
 
-                          {/* Transferred / Total Download Size */}
-                          <div className={`flex items-center justify-between text-[12.5px] font-medium ${textDim} tabular-nums`}>
+                          {/* Transferred / Total Download Size & Speed / Verifying Status */}
+                          <div className={`flex items-center justify-between text-[12.5px] font-medium ${textDim} tabular-nums min-h-[18px]`}>
                             <span>
                               {downloadedMB && formattedSize
                                 ? `${downloadedMB} / ${formattedSize}`
@@ -975,14 +1067,55 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                                     ? formattedSize
                                     : ''}
                             </span>
-                            {downloadSpeed && !isInstalling && (
-                              <span className="text-[11.5px] opacity-80">{downloadSpeed}</span>
-                            )}
-                            {isInstalling && (
-                              <span className="text-[11.5px] text-[#5ea2ff] font-medium">
-                                Verifying package
-                              </span>
-                            )}
+                            <div className="relative flex items-center justify-end">
+                              <AnimatePresence mode="popLayout" initial={false}>
+                                {isInstalling ? (
+                                  <motion.span
+                                    key="verifying-package"
+                                    initial={
+                                      prefersReduced || isLowPerf
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, filter: 'blur(2px)' }
+                                    }
+                                    animate={{
+                                      opacity: 1,
+                                      filter: prefersReduced || isLowPerf ? undefined : 'blur(0px)',
+                                    }}
+                                    exit={
+                                      prefersReduced || isLowPerf
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, filter: 'blur(2px)' }
+                                    }
+                                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                                    className="text-[11.5px] text-[#5ea2ff] font-medium"
+                                  >
+                                    Verifying package
+                                  </motion.span>
+                                ) : downloadSpeed ? (
+                                  <motion.span
+                                    key="download-speed"
+                                    initial={
+                                      prefersReduced || isLowPerf
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, filter: 'blur(2px)' }
+                                    }
+                                    animate={{
+                                      opacity: 1,
+                                      filter: prefersReduced || isLowPerf ? undefined : 'blur(0px)',
+                                    }}
+                                    exit={
+                                      prefersReduced || isLowPerf
+                                        ? { opacity: 0 }
+                                        : { opacity: 0, filter: 'blur(2px)' }
+                                    }
+                                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                                    className="text-[11.5px] opacity-80"
+                                  >
+                                    {downloadSpeed}
+                                  </motion.span>
+                                ) : null}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </motion.div>
                       )}

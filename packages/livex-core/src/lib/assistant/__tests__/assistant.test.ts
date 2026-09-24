@@ -239,13 +239,17 @@ describe('Livex Music AI Assistant Suite', () => {
       }
     });
 
-    it('aborts cleanly on stopStreaming()', () => {
+    it('aborts cleanly on stopStreaming() and finalizes message status', () => {
       const store = useAssistantStore.getState();
       void store.sendMessage('Tell me about delay pedals');
       store.stopStreaming();
 
       expect(useAssistantStore.getState().status).toBe('idle');
       expect(useAssistantStore.getState().mascotState).toBe('interrupted');
+      const messages = useAssistantStore.getState().messages;
+      const lastMsg = messages[messages.length - 1];
+      expect(lastMsg.role).toBe('assistant');
+      expect(lastMsg.status).toBe('complete');
     });
 
     it('operates in Zero-BYOK mode: user needs no API key and payload sends undefined apiKey', async () => {

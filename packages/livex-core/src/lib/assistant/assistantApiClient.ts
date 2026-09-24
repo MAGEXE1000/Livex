@@ -125,26 +125,33 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
       })),
     };
 
-    // 25-second connection watchdog to accommodate cold starts and deep reasoning
-    const controller = new AbortController();
-    const connectTimeout = setTimeout(() => controller.abort(), 25000);
+    // 35-second connection watchdog to accommodate network setup and model warm-up
+    const connectController = new AbortController();
+    const connectTimeout = setTimeout(() => connectController.abort(), 35000);
 
-    const abortHandler = () => controller.abort();
+    const connectAbortHandler = () => connectController.abort();
     if (signal) {
-      signal.addEventListener('abort', abortHandler, { once: true });
+      if (signal.aborted) {
+        callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
+        return;
+      }
+      signal.addEventListener('abort', connectAbortHandler, { once: true });
     }
 
-    const response = await fetch(targetUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    }).finally(() => {
+    let response: Response;
+    try {
+      response = await fetch(targetUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: connectController.signal,
+      });
+    } finally {
       clearTimeout(connectTimeout);
       if (signal) {
-        signal.removeEventListener('abort', abortHandler);
+        signal.removeEventListener('abort', connectAbortHandler);
       }
-    });
+    }
 
     if (!response.ok) {
       let errorDetail = `Gateway returned HTTP ${response.status}`;
@@ -188,87 +195,118 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
       return;
     }
 
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    let hasReceivedToken = false;
+    const streamAbortHandler = () => {
+      reader.cancel().catch(() => {});
+    };
 
-    while (true) {
-      if (signal?.aborted) {
+    if (signal) {
+      if (signal.aborted) {
         await reader.cancel().catch(() => {});
         callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
         return;
       }
+      signal.addEventListener('abort', streamAbortHandler, { once: true });
+    }
 
-      const { done, value } = await reader.read();
-      if (done) break;
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let hasReceivedToken = false;
+    let streamActivityTimer: ReturnType<typeof setTimeout> | null = null;
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+    const resetStreamTimer = () => {
+      if (streamActivityTimer) clearTimeout(streamActivityTimer);
+      streamActivityTimer = setTimeout(() => {
+        reader.cancel().catch(() => {});
+      }, 45000);
+    };
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith(':')) continue;
+    resetStreamTimer();
 
-        if (trimmed.startsWith('data: ')) {
-          const jsonStr = trimmed.slice(6);
-          if (jsonStr === '[DONE]') {
-            if (!hasReceivedToken) {
-              callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
+    try {
+      while (true) {
+        if (signal?.aborted) {
+          await reader.cancel().catch(() => {});
+          callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
+          return;
+        }
+
+        const { done, value } = await reader.read();
+        resetStreamTimer();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(':')) continue;
+
+          if (trimmed.startsWith('data: ')) {
+            const jsonStr = trimmed.slice(6);
+            if (jsonStr === '[DONE]') {
+              if (!hasReceivedToken) {
+                callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
+                return;
+              }
+              callbacks.onComplete();
               return;
             }
-            callbacks.onComplete();
-            return;
-          }
 
-          try {
-            const parsed = JSON.parse(jsonStr);
+            try {
+              const parsed = JSON.parse(jsonStr);
 
-            if (parsed.error) {
-              callbacks.onError(new Error(parsed.error));
-              return;
-            }
-
-            if (parsed.type === 'state' && parsed.state) {
-              callbacks.onStateChange?.(parsed.state);
-            }
-
-            if (parsed.type === 'sources' && Array.isArray(parsed.sources)) {
-              callbacks.onSources?.(parsed.sources);
-            }
-
-            if (parsed.delta) {
-              if (!hasReceivedToken) {
-                hasReceivedToken = true;
-                callbacks.onStateChange?.('composing');
+              if (parsed.error) {
+                callbacks.onError(new Error(parsed.error));
+                return;
               }
-              callbacks.onToken(parsed.delta);
-            }
 
-            if (parsed.recommendation) {
-              callbacks.onRecommendation?.(parsed.recommendation);
-            }
-          } catch {
-            if (jsonStr) {
-              if (!hasReceivedToken) {
-                hasReceivedToken = true;
-                callbacks.onStateChange?.('composing');
+              if (parsed.type === 'state' && parsed.state) {
+                callbacks.onStateChange?.(parsed.state);
               }
-              callbacks.onToken(jsonStr);
+
+              if (parsed.type === 'sources' && Array.isArray(parsed.sources)) {
+                callbacks.onSources?.(parsed.sources);
+              }
+
+              if (parsed.delta) {
+                if (!hasReceivedToken) {
+                  hasReceivedToken = true;
+                  callbacks.onStateChange?.('composing');
+                }
+                callbacks.onToken(parsed.delta);
+              }
+
+              if (parsed.recommendation) {
+                callbacks.onRecommendation?.(parsed.recommendation);
+              }
+            } catch {
+              if (jsonStr) {
+                if (!hasReceivedToken) {
+                  hasReceivedToken = true;
+                  callbacks.onStateChange?.('composing');
+                }
+                callbacks.onToken(jsonStr);
+              }
             }
           }
         }
       }
-    }
 
-    if (!hasReceivedToken) {
-      callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
-      return;
-    }
+      if (!hasReceivedToken) {
+        callbacks.onError(new Error('AI assistant did not return any content. Please retry.'));
+        return;
+      }
 
-    callbacks.onComplete();
+      callbacks.onComplete();
+    } finally {
+      if (streamActivityTimer) clearTimeout(streamActivityTimer);
+      if (signal) {
+        signal.removeEventListener('abort', streamAbortHandler);
+      }
+    }
   } catch (err: any) {
-    if (signal?.aborted) {
+    if (signal?.aborted || err?.name === 'AbortError') {
       callbacks.onError(new DOMException('Aborted by user', 'AbortError'));
       return;
     }

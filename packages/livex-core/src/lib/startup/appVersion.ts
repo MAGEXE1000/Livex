@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.41';
-export const NATIVE_VERSION_CODE = 40641;
-export const WEB_VERSION = '4.6.41';
+export const NATIVE_VERSION = '4.6.42';
+export const NATIVE_VERSION_CODE = 40642;
+export const WEB_VERSION = '4.6.42';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/23/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'c5082885';
+export const APP_COMMIT_SHA = '21ce63f0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/23/2026, 7:31:50 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/23/2026, 10:35:37 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,18 +96,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.',
-    ],
-  },
-  {
     heading: 'Improved',
     items: [
-      'Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.',
-      'GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.',
-      'Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.',
-      'PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.',
+      'Continuous Updater Surface Morphing: Eliminated dialog component unmounting between Checking and Update Available states, maintaining DOM persistence across the entire update lifecycle.',
+      'In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.',
+      'Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.',
+      'Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.',
     ],
   },
 ];
@@ -119,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.42',
+    date: '2026-09-24',
+    highlights: [
+      'Continuous Updater Surface Morphing: Eliminated dialog component unmounting between Checking and Update Available states, maintaining DOM persistence across the entire update lifecycle.',
+      'In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.',
+      'Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.',
+      'Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.',
+    ],
+  },
   {
     version: '4.6.41',
     date: '2026-09-23',
@@ -215,16 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.',
       'Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.',
       'Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.',
-    ],
-  },
-  {
-    version: '4.6.32',
-    date: '2026-09-20',
-    highlights: [
-      'Groovex Song Detail Navigation Scoping: Isolated bottom navigation and floating topbar behavior in Groovex so that entering an individual song mounts the standard Livex Topbar (`SharedFloatingHeader`) with scroll-morphing and hides the Bottom Navbar, while preserving the Bottom Navbar across all library, browsing, and preference views.',
-      'Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.',
-      'Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).',
-      'Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.',
     ],
   },
 ];

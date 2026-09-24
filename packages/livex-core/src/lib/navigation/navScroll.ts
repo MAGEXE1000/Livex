@@ -197,6 +197,10 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
   const lastElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    let rafId: number | null = null;
+    let pollTimer: any = null;
+    let pollCount = 0;
+
     const checkAndBind = () => {
       const el = ref.current;
       if (el === lastElementRef.current) return;
@@ -215,6 +219,10 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
       lastElementRef.current = el;
 
       if (el) {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
         _registeredScrollElements.add(el);
 
         let cachedMaxScroll = el.scrollHeight - el.clientHeight;
@@ -230,7 +238,10 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
             lastDimensionsCheck = now;
           }
 
-          if (cachedMaxScroll <= 2) return;
+          if (cachedMaxScroll <= 2) {
+            cachedMaxScroll = el.scrollHeight - el.clientHeight;
+            if (cachedMaxScroll <= 2) return;
+          }
           if (y < 0) return;
 
           if (y < 24) {
@@ -260,13 +271,23 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
 
     checkAndBind();
 
-    let rafId: number | null = null;
     if (!ref.current) {
       rafId = requestAnimationFrame(checkAndBind);
+      pollTimer = setInterval(() => {
+        pollCount++;
+        checkAndBind();
+        if (ref.current || pollCount > 30) {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        }
+      }, 50);
     }
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
+      if (pollTimer !== null) clearInterval(pollTimer);
       const el = lastElementRef.current;
       if (el) {
         _registeredScrollElements.delete(el);

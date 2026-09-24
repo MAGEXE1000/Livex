@@ -514,14 +514,18 @@ export function SharedNavigationBar({
   // scale handles the tuck effect without additional vertical movement.
   const containerY = useTransform(scrollOffsetSpring, () => 0);
 
-  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and subtle scale-down on scroll/collapse
+  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll/collapse
   const satelliteOpacity = useTransform(scrollOffsetSpring, (offset) => {
     if (offset <= 0) return 1.0;
     if (offset >= 0.7) return 0;
     return 1.0 - offset / 0.7;
   });
 
-  const satelliteScale = useTransform(scrollOffsetSpring, (offset) => 1.0 - offset * 0.18);
+  const satelliteScale = useTransform(scrollOffsetSpring, (offset) => {
+    if (offset <= 0) return 1.0;
+    if (offset >= 0.7) return 0;
+    return 1.0 - offset / 0.7;
+  });
 
   const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
     offset > 0.4 ? 'none' : 'auto'
@@ -1224,6 +1228,7 @@ export function SharedNavigationBar({
 
             {showSwitcherButton && (
               <motion.div
+                className="shared-nav-satellite"
                 style={{
                   position: 'absolute',
                   left: '50%',
@@ -1231,7 +1236,7 @@ export function SharedNavigationBar({
                   bottom: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  pointerEvents: 'auto',
+                  pointerEvents: switcherPointerEvents,
                 }}
                 animate={{
                   x: barWidth / 2 + dockGap,
@@ -1319,6 +1324,7 @@ export function SharedNavigationBar({
 
             {showAiButton && (
               <motion.div
+                className="shared-nav-satellite"
                 style={{
                   position: 'absolute',
                   left: '50%',
@@ -1326,7 +1332,7 @@ export function SharedNavigationBar({
                   bottom: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  pointerEvents: 'auto',
+                  pointerEvents: satellitePointerEvents,
                 }}
                 animate={{
                   x: barWidth / 2 + dockGap,

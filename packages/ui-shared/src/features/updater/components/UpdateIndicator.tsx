@@ -548,31 +548,6 @@ export default function UpdateIndicator({
         (window as any).__studio_debug_mode === true));
   const isNativeOrPreview = Capacitor.isNativePlatform() || isDebugOrDev;
 
-  if (!updater.updateAvailable) {
-    if (!open) return null;
-    // Only show the full update modal on native or debug preview
-    if (!isNativeOrPreview) return null;
-    return (
-      <UpdateModal
-        fromLabel={APP_VERSION_LABEL}
-        toVersion={updater.remoteVersion ?? '—'}
-        mandatory={updater.mandatory}
-        downloadUrl={updater.downloadUrl}
-        accentFrom={`var(--accent-from, ${accentFrom})`}
-        accentTo={`var(--accent-to, ${accentTo})`}
-        onLater={() => {
-          setOpen(false);
-          updater.closeModal();
-        }}
-        onClose={() => {
-          setOpen(false);
-          updater.closeModal();
-        }}
-        installFailedReason={installFailedReason}
-        setInstallFailedReason={setInstallFailedReason}
-      />
-    );
-  }
 
   /* ── WEB-ONLY: slim non-blocking refresh banner ─────────────────────── */
   if (!isNativeOrPreview) {

@@ -218,10 +218,19 @@ export const useAssistantStore = create<AssistantStoreState>()(
           }
           if (stateResetTimer) clearTimeout(stateResetTimer);
 
-          set({
+          set((state) => ({
             status: 'idle',
             mascotState: 'interrupted',
-          });
+            messages: state.messages.map((m) =>
+              m.status === 'streaming'
+                ? {
+                    ...m,
+                    status: 'complete',
+                    content: m.content || '(Generation stopped)',
+                  }
+                : m
+            ),
+          }));
 
           stateResetTimer = setTimeout(() => {
             set({ mascotState: 'idle' });
@@ -366,7 +375,17 @@ export const useAssistantStore = create<AssistantStoreState>()(
                 },
 
                 onError: (err) => {
-                  if (signal.aborted) return;
+                  if (signal.aborted) {
+                    set((state) => ({
+                      status: 'idle',
+                      messages: state.messages.map((m) =>
+                        m.id === assistantMsgId && m.status === 'streaming'
+                          ? { ...m, status: 'complete', content: m.content || '(Generation stopped)' }
+                          : m
+                      ),
+                    }));
+                    return;
+                  }
 
                   console.warn('[LivexAssistant] Stream error:', err);
                   set((state) => ({
@@ -397,12 +416,34 @@ export const useAssistantStore = create<AssistantStoreState>()(
               },
             });
           } catch (err: any) {
-            if (signal.aborted) return;
-            set({
+            if (signal.aborted) {
+              set((state) => ({
+                status: 'idle',
+                messages: state.messages.map((m) =>
+                  m.id === assistantMsgId && m.status === 'streaming'
+                    ? { ...m, status: 'complete', content: m.content || '(Generation stopped)' }
+                    : m
+                ),
+              }));
+              return;
+            }
+            set((state) => ({
               status: 'error',
               mascotState: 'error',
-              errorMessage: err.message || 'Error formulating response',
-            });
+              errorMessage: err?.message || 'Error formulating response',
+              messages: state.messages.map((m) =>
+                m.id === assistantMsgId
+                  ? {
+                      ...m,
+                      status: 'error',
+                      content:
+                        m.content ||
+                        err?.message ||
+                        'Unable to connect to Livex AI cloud service. Please check your connection and retry.',
+                    }
+                  : m
+              ),
+            }));
             if (stateResetTimer) clearTimeout(stateResetTimer);
             stateResetTimer = setTimeout(() => {
               set({ mascotState: 'idle', status: 'idle' });

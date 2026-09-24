@@ -1,6 +1,6 @@
 {
   "name": "@workspace/ui-web",
-  "version": "4.6.41",
+  "version": "4.6.42",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

@@ -1,12 +1,9 @@
-# Version 4.6.41
+# Version 4.6.42
 
-Release Date: 2026-09-23
-
-### Added
-- Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.
+Release Date: 2026-09-24
 
 ### Improved
-- Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.
-- GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.
-- Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.
-- PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.
+- Continuous Updater Surface Morphing: Eliminated dialog component unmounting between Checking and Update Available states, maintaining DOM persistence across the entire update lifecycle.
+- In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.
+- Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.
+- Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.

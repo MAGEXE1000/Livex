@@ -1067,8 +1067,9 @@ export default function LivexHub() {
 
   const lastUserRef = useRef<AuthUser | null>(null);
 
-  // Only bind outer useScrollHide for home tab; HubSettings and other sub-views manage their own internal scroll containers
+  // Bind useScrollHide for home and help tabs; HubSettings manages its own internal scroll container
   useScrollHide(homeScrollRef, tab === 'home');
+  useScrollHide(helpScrollRef, tab === 'help');
 
   const isFirstAuthRun = useRef(true);
 
@@ -1351,11 +1352,12 @@ export default function LivexHub() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      minHeight: 'calc(100% + 140px)',
                       padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px))',
                       paddingTop:
                         'var(--page-header-top-inset, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 40px))',
                       paddingBottom:
-                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 110px)',
+                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 140px)',
                     }}
                   >
                     {/* Dashboard Contents Scroll Area */}
