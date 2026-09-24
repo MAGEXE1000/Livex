@@ -1,13 +1,11 @@
-# Version 4.6.44
+# Version 4.6.45
 
 Release Date: 2026-09-24
 
 ### Added
-- Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.
-- Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.
+- Chordex New-Song Creation Integration: Connected the AI "Import to Chordex" workflow directly to the canonical song creation dialog (`PresetForm`), prefilling title, key, tempo, and notes while allowing user review before saving.
+- Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.
 
-### Improved
-- Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.
-- Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.
-- Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.
-- Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.
+### Fixed
+- Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.
+- Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.

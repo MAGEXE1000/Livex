@@ -98,17 +98,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.',
-      'Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.',
+      'Chordex New-Song Creation Integration: Connected the AI "Import to Chordex" workflow directly to the canonical song creation dialog (`PresetForm`), prefilling title, key, tempo, and notes while allowing user review before saving.',
+      'Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.',
     ],
   },
   {
-    heading: 'Improved',
+    heading: 'Fixed',
     items: [
-      'Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.',
-      'Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.',
-      'Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.',
-      'Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.',
+      'Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.',
+      'Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.',
     ],
   },
 ];
@@ -120,6 +118,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.45',
+    date: '2026-09-24',
+    highlights: [
+      'Chordex New-Song Creation Integration: Connected the AI "Import to Chordex" workflow directly to the canonical song creation dialog (`PresetForm`), prefilling title, key, tempo, and notes while allowing user review before saving.',
+      'Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.',
+      'Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.',
+      'Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.',
+    ],
+  },
   {
     version: '4.6.44',
     date: '2026-09-24',
@@ -217,18 +225,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.',
       'Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.',
       'Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.',
-    ],
-  },
-  {
-    version: '4.6.35',
-    date: '2026-09-21',
-    highlights: [
-      'Comprehensive Security Hardening: Remediated all GitHub Dependabot security alerts, upgrading Vitest to 4.1.11, overriding uuid to ^11.1.1 (CVE-2026-41907), and overriding esbuild to 0.28.1 (GHSA-g7r4-m6w7-qqqr).',
-      'Remediated CodeQL Code Scanning Alerts: Resolved command injection vectors in release orchestration scripts, sanitized Android SafeContentResolver URI operations, hardened URL validation in updater security checks, and eliminated prototype pollution vectors in StageCanvasView.',
-      'Closed Secret Scanning False Positives: Audited and verified all repository tokens and credentials, confirming zero open secret scanning alerts.',
-      'CI/CD & Release Pipeline Modernization: Updated all GitHub Actions workflows to align dynamic package manager resolution (pnpm 11.24.0), modernized runner action versions, corrected CI paths to packages/livex-core/**, and ensured release workflows dynamically target github.repository.',
-      'CodeQL Java/Kotlin Analysis Resilience: Configured Android Gradle analysis in CodeQL to rerun compilation tasks without stale build cache interference.',
-      'Workspace Quality Gates: Resolved all TypeScript and ESLint linting discrepancies across workspace tests and documentation validation.',
     ],
   },
 ];
