@@ -127,38 +127,37 @@ function extractStructuredRecommendation(text, prompt) {
     /(?:progression|progresi[oó]n|chord|acorde|harmoni[ac]|cadence|tonalidad|key of|tonalidad de|tempo|bpm|ii-V|I-IV|i-iv|modal|voicing|triad|arpeggio)/i.test(
       combinedContext
     );
-  if (!isMusicContext) return null;
+  if (isMusicContext) {
+    // Extract chords sequence
+    let chords = [];
+    const cleanText = text.replace(/[*_]/g, '');
+    const cleanContext = combinedContext.replace(/[*_]/g, '');
 
-  // Extract chords sequence
-  let chords = [];
-  const cleanText = text.replace(/[*_]/g, '');
-  const cleanContext = combinedContext.replace(/[*_]/g, '');
+    const progressionLineMatch = cleanText.match(
+      /(?:^|\n)[ \t]*(?:Progression|Chords|Acordes|Secuencia):?[ \t]*(?:\r?\n[ \t]*)?(`[A-G][b#]?[^\n]+)/i
+    );
 
-  const progressionLineMatch = cleanText.match(
-    /(?:^|\n)[ \t]*(?:Progression|Chords|Acordes|Secuencia):?[ \t]*(?:\r?\n[ \t]*)?(`[A-G][b#]?[^\n]+)/i
-  );
+    const chordTokenRegex =
+      /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)[0-9]*(?:[#b][0-9]+)*(?:\([^)]+\))?(?:\/[A-G][b#]?)?)\b)/g;
 
-  const chordTokenRegex =
-    /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)[0-9]*(?:[#b][0-9]+)*(?:\([^)]+\))?(?:\/[A-G][b#]?)?)\b)/g;
-
-  if (progressionLineMatch) {
-    const lineChords = [...progressionLineMatch[1].matchAll(chordTokenRegex)]
-      .map((m) => m[1] || m[2])
-      .filter(Boolean);
-    if (lineChords.length >= 2) {
-      chords = lineChords;
+    if (progressionLineMatch) {
+      const lineChords = [...progressionLineMatch[1].matchAll(chordTokenRegex)]
+        .map((m) => m[1] || m[2])
+        .filter(Boolean);
+      if (lineChords.length >= 2) {
+        chords = lineChords;
+      }
     }
-  }
 
-  if (chords.length < 2) {
-    const backtickedRegex = /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`/g;
-    const allMatches = [...text.matchAll(backtickedRegex)].map((m) => m[1]);
-    if (allMatches.length >= 2) {
-      chords = allMatches.slice(0, 8);
+    if (chords.length < 2) {
+      const backtickedRegex = /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`/g;
+      const allMatches = [...text.matchAll(backtickedRegex)].map((m) => m[1]);
+      if (allMatches.length >= 2) {
+        chords = allMatches.slice(0, 8);
+      }
     }
-  }
 
-  if (chords.length < 2) return null;
+    if (chords.length >= 2) {
 
   // Extract Key and Mode
   let key = 'C';
@@ -351,6 +350,7 @@ function extractStructuredRecommendation(text, prompt) {
     },
     actionLabel: 'Import to Chordex',
   };
+  }
 }
 
   // 2. Detect Tone Recipe
