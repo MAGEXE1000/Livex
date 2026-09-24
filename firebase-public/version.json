@@ -1,23 +1,24 @@
 {
   "platform": "web",
-  "version": "4.6.40",
-  "versionName": "4.6.40",
-  "versionCode": 40640,
-  "version_code": 40640,
-  "commit": "206d5c7c",
-  "releasedAt": "9/23/2026, 3:34:29 PM CST",
-  "buildTimestamp": "9/23/2026, 3:34:29 PM CST",
+  "version": "4.6.41",
+  "versionName": "4.6.41",
+  "versionCode": 40641,
+  "version_code": 40641,
+  "commit": "c5082885",
+  "releasedAt": "9/23/2026, 7:31:50 PM CST",
+  "buildTimestamp": "9/23/2026, 7:31:50 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.\n• PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.\n• Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.\n• Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.",
-  "whatsNew": "• Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.\n• PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.\n• Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.\n• Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.",
+  "changelog": "• Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.\n• Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.\n• GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.\n• Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.\n• PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.",
+  "whatsNew": "• Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.\n• Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.\n• GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.\n• Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.\n• PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.",
   "releaseNotes": {
     "added": [
-      "Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.",
-      "PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states."
+      "Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions."
     ],
     "improved": [
-      "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
-      "Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests."
+      "Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.",
+      "GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.",
+      "Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.",
+      "PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention."
     ]
   },
   "mandatory": false

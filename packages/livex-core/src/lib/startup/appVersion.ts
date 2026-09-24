@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.40';
-export const NATIVE_VERSION_CODE = 40640;
-export const WEB_VERSION = '4.6.40';
+export const NATIVE_VERSION = '4.6.41';
+export const NATIVE_VERSION_CODE = 40641;
+export const WEB_VERSION = '4.6.41';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/23/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '206d5c7c';
+export const APP_COMMIT_SHA = 'c5082885';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/23/2026, 3:34:29 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/23/2026, 7:31:50 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,15 +98,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.',
-      'PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.',
+      'Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
-      'Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.',
+      'Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.',
+      'GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.',
+      'Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.',
+      'PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.',
     ],
   },
 ];
@@ -118,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.41',
+    date: '2026-09-23',
+    highlights: [
+      'Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.',
+      'Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.',
+      'GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.',
+      'Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.',
+      'PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.',
+    ],
+  },
   {
     version: '4.6.40',
     date: '2026-09-23',
@@ -213,14 +225,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Bottom Navbar Geometric Refinement: Balanced the outer Bottom Navbar pill container curvature and enlarged the active tab highlight into an integrated slot-filling capsule matching reference geometry.',
       'Groovex Instant Local Song Loading: Implemented an in-memory decoded `AudioBuffer` LRU cache and single-pass parallel IndexedDB stem retrieval (`getCachedSongStems`), eliminating repeated CPU decompression and reducing subsequent local song load times to 0ms (instant).',
       'Parallel Stem Decompression: Replaced sequential serial stem loading with concurrent `Promise.all` Web Audio decompression across background threads, cutting cold local load times by ~85%.',
-    ],
-  },
-  {
-    version: '4.6.31',
-    date: '2026-09-20',
-    highlights: [
-      'Drumex Topbar Spacing: Eliminated redundant 48px vertical gap between the floating pill Topbar and the ALL ROWS (7) grid toolbar by converting the topbar to an in-flow margin layout and removing duplicate padding compensation.',
-      'Stagex Specifications Panel: Resolved rightward horizontal shift and canvas upward reflow by removing relative positioning and ensuring the specifications panel behaves as an independent floating overlay.',
     ],
   },
 ];

@@ -1,11 +1,12 @@
-# Version 4.6.40
+# Version 4.6.41
 
 Release Date: 2026-09-23
 
 ### Added
-- Liquid Glass Hub Bottom Navigation: Integrated continuous morphing glass indicator across Hub bottom navigation tabs with spring physics and responsive boundary awareness.
-- PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.
+- Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.
 
 ### Improved
-- Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.
-- Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.
+- Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.
+- GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.
+- Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.
+- PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.
