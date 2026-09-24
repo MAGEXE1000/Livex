@@ -228,7 +228,8 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
         let cachedMaxScroll = el.scrollHeight - el.clientHeight;
         let lastDimensionsCheck = Date.now();
 
-        const onScroll = () => {
+        const onScroll = (e?: Event) => {
+          if (e && (e as any).__navScrollHandled) return;
           _lastInteractionTime = Date.now();
           const y = el.scrollTop;
 
@@ -421,30 +422,84 @@ if (typeof window !== 'undefined') {
       resetNav();
     });
 
-    // Window-level scroll listener for universal viewport scrolling (passive, zero layout thrashing)
-    let lastWindowY = typeof window !== 'undefined' ? window.scrollY : 0;
+    // Universal capture-phase scroll listener for global auto-hide across all screens and containers
+    const _scrollTargetLastY = new WeakMap<EventTarget, number>();
 
-    window.addEventListener(
-      'scroll',
-      () => {
-        _lastInteractionTime = Date.now();
-        const y = window.scrollY || document.documentElement.scrollTop;
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        if (maxScroll <= 2) return;
+    const handleUniversalScroll = (e: Event) => {
+      if ((e as any).__navScrollHandled) return;
+      (e as any).__navScrollHandled = true;
+      _lastInteractionTime = Date.now();
+      const target = e.target;
+      if (!target) return;
 
-        if (y < 30) {
-          setNavScrollOffset(0);
-          lastWindowY = y;
+      let currentY = 0;
+      let maxScroll = 0;
+
+      if (
+        target === window ||
+        target === document ||
+        target === document.documentElement ||
+        target === document.body
+      ) {
+        currentY =
+          window.scrollY ||
+          document.documentElement.scrollTop ||
+          document.body.scrollTop ||
+          0;
+        maxScroll =
+          (document.documentElement.scrollHeight || document.body.scrollHeight) -
+          window.innerHeight;
+      } else if (target instanceof HTMLElement) {
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+        // Exclude modal dialogs, sheets, and popovers from driving global navbar collapse
+        if (
+          target.closest?.(
+            '[role="dialog"], .studio-dialog, .studio-sheet, [data-surface="modal"], .profile-menu-container'
+          )
+        ) {
           return;
         }
-        const dy = y - lastWindowY;
-        if (Math.abs(dy) < 2) return;
-        const deltaRatio = dy / 60;
-        setNavScrollOffset(_scrollOffset + deltaRatio);
-        lastWindowY = y;
-      },
-      { passive: true }
-    );
+
+        currentY = target.scrollTop;
+        maxScroll = target.scrollHeight - target.clientHeight;
+      } else {
+        return;
+      }
+
+      // Ignore unscrollable or trivial containers (e.g. slight layout roundoff or horizontal-only scrollers)
+      if (maxScroll <= 24) return;
+
+      const lastY = _scrollTargetLastY.get(target);
+      _scrollTargetLastY.set(target, currentY);
+
+      if (lastY === undefined) {
+        return;
+      }
+
+      // Instant reset when scrolled near top of the container
+      if (currentY < 24) {
+        setNavScrollOffset(0);
+        return;
+      }
+
+      const rawDy = currentY - lastY;
+      if (Math.abs(rawDy) < 1.5) return;
+
+      // Clamp max delta per event to prevent sudden teleporting jumps on fast programmatic jumps
+      const dy = Math.max(-60, Math.min(60, rawDy));
+
+      // Asymmetric gesture responsiveness:
+      // Downward scrolling progressively compresses and collapses downward (dy / 65)
+      // Upward scrolling expands with instantaneous supple response (dy / 35)
+      const deltaRatio = dy > 0 ? dy / 65 : dy / 35;
+      setNavScrollOffset(_scrollOffset + deltaRatio);
+    };
+
+    window.addEventListener('scroll', handleUniversalScroll, {
+      capture: true,
+      passive: true,
+    });
   } catch (e) {
     // Passive safety guard
   }

@@ -44,7 +44,7 @@ export interface ProcessedInstallResult {
 export function processLastInstallResult(
   result: LastInstallResult | null
 ): ProcessedInstallResult | null {
-  if (!result || result.statusCode === -999 || result.statusCode === 0) {
+  if (!result || result.statusCode === -999 || result.statusCode === 0 || result.statusCode === -1) {
     return null;
   }
 

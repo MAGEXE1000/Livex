@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getMusicalContextSnapshot } from '../contextAggregator';
-import { useAssistantStore } from '../../../store/useAssistantStore';
+import { useAssistantStore, getDefaultStatusLabel } from '../../../store/useAssistantStore';
 import { normalizeAndValidateRoute } from '../../navigation/validation';
 import { resolveAiGatewayUrl } from '../assistantApiClient';
 
@@ -433,5 +433,115 @@ describe('Livex Music AI Assistant Suite', () => {
       }
     });
   });
+
+  describe('Multimodal Ingestion & Truthful State Machine', () => {
+    it('returns truthful default status labels for all official orb states', () => {
+      expect(getDefaultStatusLabel('connecting')).toBe('Connecting…');
+      expect(getDefaultStatusLabel('searching')).toBe('Searching web…');
+      expect(getDefaultStatusLabel('solving')).toBe('Analyzing music theory…');
+      expect(getDefaultStatusLabel('working')).toBe('Thinking…');
+      expect(getDefaultStatusLabel('thinking')).toBe('Thinking…');
+      expect(getDefaultStatusLabel('composing')).toBe('Composing…');
+      expect(getDefaultStatusLabel('responding')).toBe('Composing…');
+      expect(getDefaultStatusLabel('shaping')).toBe('Shaping recommendations…');
+      expect(getDefaultStatusLabel('weaving')).toBe('Synthesizing harmony…');
+      expect(getDefaultStatusLabel('listening')).toBe('Listening…');
+      expect(getDefaultStatusLabel('idle')).toBe('Ready');
+      expect(getDefaultStatusLabel('sleeping')).toBe('Ready');
+      expect(getDefaultStatusLabel('error')).toBe('Error');
+      expect(getDefaultStatusLabel('interrupted')).toBe('Stopped');
+    });
+
+    it('generates contextual prompt and sets reading state when sending image without text', async () => {
+      let interceptedPayload: any = null;
+      const ssePayload = [
+        'data: {"type": "state", "state": "working", "label": "Reading image…"}\n\n',
+        'data: {"type": "state", "state": "solving", "label": "Analyzing music theory…"}\n\n',
+        'data: {"delta": "This is a C major 7th barre chord at the 3rd fret."}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+        interceptedPayload = JSON.parse(opts.body);
+        return {
+          ok: true,
+          headers: new Headers({ 'content-type': 'text/event-stream' }),
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode(ssePayload));
+              controller.close();
+            },
+          }),
+        };
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        store.addAttachment({
+          id: 'att-img-1',
+          name: 'cmaj7_fretboard.jpg',
+          type: 'image/jpeg',
+          size: 1024,
+          dataUrl: 'data:image/jpeg;base64,mockdata',
+        });
+
+        const sendPromise = store.sendMessage('');
+        // Right after sendMessage starts, initial label and working state are set
+        const streamingMsg = useAssistantStore.getState().messages.find((m) => m.role === 'assistant');
+        expect(streamingMsg?.statusLabel).toContain('Reading image');
+        expect(streamingMsg?.activeState).toBe('working');
+
+        await sendPromise;
+
+        expect(interceptedPayload.prompt).toContain('Analyze this musical image');
+        expect(interceptedPayload.attachments.length).toBe(1);
+        expect(useAssistantStore.getState().messages[0].content).toBe('');
+        expect(useAssistantStore.getState().messages[1].content).toContain('C major 7th barre chord');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+
+    it('tracks backend-emitted state and status label in real time', async () => {
+      const stateHistory: Array<{ state: string; label?: string | null }> = [];
+      const ssePayload = [
+        'data: {"type": "state", "state": "searching", "label": "Searching web…"}\n\n',
+        'data: {"type": "state", "state": "solving", "label": "Analyzing music theory…"}\n\n',
+        'data: {"type": "state", "state": "shaping", "label": "Shaping recommendations…"}\n\n',
+        'data: {"delta": "Here are recommendations."}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(ssePayload));
+            controller.close();
+          },
+        }),
+      });
+
+      const unsub = useAssistantStore.subscribe((state) => {
+        stateHistory.push({ state: state.mascotState, label: state.statusLabel });
+      });
+
+      try {
+        const store = useAssistantStore.getState();
+        await store.sendMessage('Suggest scales over D Dorian');
+
+        expect(stateHistory.some((s) => s.state === 'searching' && s.label === 'Searching web…')).toBe(true);
+        expect(stateHistory.some((s) => s.state === 'solving' && s.label === 'Analyzing music theory…')).toBe(true);
+        expect(stateHistory.some((s) => s.state === 'shaping' && s.label === 'Shaping recommendations…')).toBe(true);
+      } finally {
+        unsub();
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
 });
+
 

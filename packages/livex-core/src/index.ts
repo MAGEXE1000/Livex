@@ -60,6 +60,7 @@ export * from './lib/devtools/developerInspectorStore';
 export * from './lib/lyricsService';
 export * from './data/authorizedChords';
 export * from './lib/chordService';
+export * from './lib/chord/chordResolution';
 export * from './lib/updater/diagnostics';
 export { deleteLocalApk } from './lib/updater/cacheManager';
 export * from './lib/updater/versionLogger';

@@ -30,6 +30,10 @@ function mapAssistantStateToOrbState(state: AssistantState): OrbState {
       return 'working';
     case 'listening':
       return 'listening';
+    case 'weaving':
+      return 'weaving';
+    case 'shaping':
+      return 'shaping';
     case 'success':
       return 'solving';
     case 'error':

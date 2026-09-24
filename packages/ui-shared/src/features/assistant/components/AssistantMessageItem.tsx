@@ -1,10 +1,26 @@
 import React, { useState } from 'react';
-import { type AssistantMessage, useSettingsStore, useAssistantStore } from '@workspace/livex-core';
+import {
+  type AssistantMessage,
+  type AssistantAttachment,
+  useSettingsStore,
+  useAssistantStore,
+  getDefaultStatusLabel,
+} from '@workspace/livex-core';
 import { LivexAssistantMascot } from './LivexAssistantMascot';
 import { ChordProgressionCard } from './cards/ChordProgressionCard';
 import { ToneRecipeCard } from './cards/ToneRecipeCard';
 import { DrumGrooveCard } from './cards/DrumGrooveCard';
-import { Copy, Check, Paperclip, Globe, ExternalLink, AlertCircle, RotateCw } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  Paperclip,
+  Globe,
+  ExternalLink,
+  AlertCircle,
+  RotateCw,
+  FileText,
+  Music,
+} from 'lucide-react';
 
 export interface AssistantMessageItemProps {
   message: AssistantMessage;
@@ -151,6 +167,20 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
   };
 
   if (isUser) {
+    const isImageAttachment = (att: AssistantAttachment) =>
+      Boolean(
+        att.type?.startsWith('image/') ||
+          att.dataUrl?.startsWith('data:image/') ||
+          /\.(png|jpe?g|webp|gif|svg)$/i.test(att.name)
+      );
+
+    const isAudioAttachment = (att: AssistantAttachment) =>
+      Boolean(
+        att.type?.startsWith('audio/') ||
+          att.dataUrl?.startsWith('data:audio/') ||
+          /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(att.name)
+      );
+
     return (
       <div
         style={{
@@ -165,80 +195,126 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              gap: 6,
-              marginBottom: 6,
-              justifyContent: 'flex-end',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: 8,
+              marginBottom: message.content ? 8 : 0,
             }}
           >
-            {message.attachments.map((att) => (
-              <div
-                key={att.id}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 10px',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                  border: isLight
-                    ? '1px solid rgba(0, 0, 0, 0.08)'
-                    : '1px solid rgba(255, 255, 255, 0.12)',
-                  color: isLight ? '#334155' : '#cbd5e1',
-                }}
-              >
-                <Paperclip size={12} />
-                <span
+            {message.attachments.map((att) => {
+              if (isImageAttachment(att) && att.dataUrl) {
+                return (
+                  <div
+                    key={att.id}
+                    style={{
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      border: isLight
+                        ? '1px solid rgba(0, 0, 0, 0.08)'
+                        : isAmoled
+                          ? '1px solid rgba(255, 255, 255, 0.2)'
+                          : '1px solid rgba(255, 255, 255, 0.12)',
+                      background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                      boxShadow: isLight
+                        ? '0 2px 8px rgba(0, 0, 0, 0.06)'
+                        : '0 4px 14px rgba(0, 0, 0, 0.4)',
+                      maxWidth: 240,
+                    }}
+                  >
+                    <img
+                      src={att.dataUrl}
+                      alt={att.name}
+                      style={{
+                        display: 'block',
+                        maxWidth: '100%',
+                        maxHeight: 180,
+                        objectFit: 'cover',
+                      }}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={att.id}
                   style={{
-                    maxWidth: 140,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '5px 11px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                    border: isLight
+                      ? '1px solid rgba(0, 0, 0, 0.08)'
+                      : '1px solid rgba(255, 255, 255, 0.12)',
+                    color: isLight ? '#334155' : '#cbd5e1',
                   }}
                 >
-                  {att.name}
-                </span>
-              </div>
-            ))}
+                  {isAudioAttachment(att) ? (
+                    <Music size={13} style={{ flexShrink: 0 }} />
+                  ) : (
+                    <FileText size={13} style={{ flexShrink: 0 }} />
+                  )}
+                  <span
+                    style={{
+                      maxWidth: 160,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {att.name}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
-        <div
-          style={{
-            background: isLight ? '#0f172a' : isAmoled ? '#000000' : '#1e293b',
-            color: '#ffffff',
-            border: isLight
-              ? 'none'
-              : isAmoled
-                ? '1px solid rgba(255, 255, 255, 0.18)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '10px 16px',
-            borderRadius: '18px 18px 4px 18px',
-            fontSize: 14.5,
-            lineHeight: 1.45,
-            boxShadow: isLight
-              ? '0 1px 3px rgba(0, 0, 0, 0.10)'
-              : isAmoled
-                ? '0 2px 8px rgba(0, 0, 0, 0.6)'
-                : 'none',
-            maxWidth: '100%',
-            wordBreak: 'break-word',
-          }}
-        >
-          {message.content}
-        </div>
+
+        {message.content ? (
+          <div
+            style={{
+              background: isLight ? '#0f172a' : isAmoled ? '#000000' : '#1e293b',
+              color: '#ffffff',
+              border: isLight
+                ? 'none'
+                : isAmoled
+                  ? '1px solid rgba(255, 255, 255, 0.18)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '10px 16px',
+              borderRadius: '18px 18px 4px 18px',
+              fontSize: 14.5,
+              lineHeight: 1.45,
+              boxShadow: isLight
+                ? '0 1px 3px rgba(0, 0, 0, 0.10)'
+                : isAmoled
+                  ? '0 2px 8px rgba(0, 0, 0, 0.6)'
+                  : 'none',
+              maxWidth: '100%',
+              wordBreak: 'break-word',
+            }}
+          >
+            {message.content}
+          </div>
+        ) : null}
       </div>
     );
   }
 
   // Thinking / Composing state placeholder while awaiting first token
-  // Pure ThinkingOrb presentation without fake progress bars or labels
+  // Pure ThinkingOrb presentation with real backend-driven state and truthful status label
   if (!isUser && message.status === 'streaming' && !message.content) {
+    const activeState = message.activeState || 'composing';
+    const label = message.statusLabel || getDefaultStatusLabel(activeState);
+
     return (
       <div
         style={{
           display: 'flex',
-          gap: 12,
+          gap: 10,
           margin: '12px 0 16px',
           alignItems: 'center',
           padding: '6px 2px',
@@ -247,9 +323,21 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
         <LivexAssistantMascot
           size={24}
           mode="chat"
-          state="composing"
+          state={activeState}
           interactive={false}
         />
+        {label && (
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: isLight ? '#64748b' : '#94a3b8',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {label}
+          </span>
+        )}
       </div>
     );
   }
@@ -269,7 +357,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
         <LivexAssistantMascot
           size={20}
           mode="chat"
-          state={message.status === 'streaming' ? 'composing' : 'idle'}
+          state={message.status === 'streaming' ? (message.activeState || 'composing') : 'idle'}
           interactive={false}
         />
       </div>
@@ -353,6 +441,27 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                 }}
               />
             )}
+
+            {/* Real-time Sub-state Indicator (e.g. searching web or shaping recommendations) */}
+            {message.status === 'streaming' &&
+              message.statusLabel &&
+              message.activeState &&
+              message.activeState !== 'composing' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 8,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: isLight ? '#64748b' : '#94a3b8',
+                  }}
+                >
+                  <LivexAssistantMascot size={14} state={message.activeState} interactive={false} />
+                  <span>{message.statusLabel}</span>
+                </div>
+              )}
           </div>
         )}
 

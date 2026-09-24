@@ -63,7 +63,15 @@ Core Directives:
    - If asked about an obscure or emerging artist, analyze their instrumentation, lineage, musical scene, and stylistic predecessors accurately.
 
 5. Time-Sensitive & Current Music Facts:
-   - When asked about recent artists, recent releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.`;
+   - When asked about recent artists, recent releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.
+
+6. Multimodal Musical Vision & Audio Analysis:
+   - When provided with images of musical content (sheet music, guitar fretboards, chord charts, handwritten tabs, pedalboards, synthesizer/DAW interfaces):
+     * Fretboard / Hand Photos: Identify exact fret positions, fingerings, string numbers, chord name, voicing, and inversion.
+     * Sheet Music / Lead Sheets: Transcribe the key signature, time signature, melody line, harmonic symbols, and rhythm.
+     * Chord Charts / Tabs: Parse chord symbols accurately and provide harmonic analysis (Roman numerals, functional harmony).
+     * Pedalboards / Amps / Audio Gear: Identify pedal brands/models, control dial settings, serial signal order, and recommend tone adjustments.
+     * DAW / Drum Pattern Screenshots: Read grid step positions, velocity levels, BPM, time signature, and groove subdivision.`;
 
 /**
  * Extracts structured chord progression or tone recipe from model text if present.
@@ -183,6 +191,41 @@ export function viteAiGatewayPlugin() {
             const userLanguage = payload.language || 'en';
             const attachments = Array.isArray(payload.attachments) ? payload.attachments : [];
 
+            // Extract text from document attachments (TXT, MD, CSV, JSON, Tab, ChordPro)
+            let enrichedPrompt = prompt;
+            for (const att of attachments) {
+              const isText =
+                att.type?.startsWith('text/') ||
+                /\.(txt|md|csv|json|xml|tab|chordpro|cho|crd|pro)$/i.test(att.name || '');
+
+              if (isText && att.dataUrl && typeof att.dataUrl === 'string') {
+                const match = att.dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+                if (match) {
+                  try {
+                    const textContent = Buffer.from(match[1], 'base64').toString('utf-8');
+                    enrichedPrompt += `\n\n--- Attached Document: ${att.name || 'document'} (${att.type || 'text/plain'}) ---\n${textContent.slice(0, 16000)}\n--- End of Document ---`;
+                  } catch {}
+                }
+              }
+            }
+
+            const hasImages = attachments.some(
+              (a) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+            );
+            const hasAudio = attachments.some(
+              (a) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
+            );
+            const hasMediaAttachments = attachments.some(
+              (a) =>
+                a.type?.startsWith('image/') ||
+                a.type?.startsWith('audio/') ||
+                a.type === 'application/pdf' ||
+                a.dataUrl?.startsWith('data:image/') ||
+                a.dataUrl?.startsWith('data:audio/') ||
+                a.dataUrl?.startsWith('data:application/pdf')
+            );
+            const hasFiles = attachments.length > 0;
+
             // Resolve API Keys & Base URLs
             const userApiKey =
               req.headers['x-api-key'] ||
@@ -224,21 +267,55 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
               'Access-Control-Allow-Origin': '*',
             });
 
-            // Emit initial connecting state
-            res.write(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`);
+            // Emit truthful initial state
+            if (hasImages) {
+              res.write(
+                `data: ${JSON.stringify({
+                  type: 'state',
+                  state: 'working',
+                  label: userLanguage === 'es' ? 'Leyendo imagen…' : 'Reading image…',
+                })}\n\n`
+              );
+            } else if (hasAudio) {
+              res.write(
+                `data: ${JSON.stringify({
+                  type: 'state',
+                  state: 'working',
+                  label: userLanguage === 'es' ? 'Analizando audio…' : 'Analyzing audio…',
+                })}\n\n`
+              );
+            } else if (hasFiles) {
+              res.write(
+                `data: ${JSON.stringify({
+                  type: 'state',
+                  state: 'working',
+                  label: userLanguage === 'es' ? 'Analizando archivo…' : 'Analyzing file…',
+                })}\n\n`
+              );
+            } else {
+              res.write(
+                `data: ${JSON.stringify({
+                  type: 'state',
+                  state: 'connecting',
+                  label: userLanguage === 'es' ? 'Conectando…' : 'Connecting…',
+                })}\n\n`
+              );
+            }
 
             // =========================================================================
             // PATH 1: OPEN-SOURCE REASONING MODEL (DeepSeek-R1 / QwQ-32B / vLLM / Ollama)
+            // If media attachments (images/audio/pdf) are present, skip to Gemini vision
             // =========================================================================
             const isOpenAiCompatible =
-              Boolean(customBaseUrl) ||
-              payload.provider === 'openai_compatible' ||
-              userApiKey?.startsWith('sk-') ||
-              userApiKey?.startsWith('gsk_') ||
-              Boolean(findEnvKey('DEEPSEEK_API_KEY')) ||
-              Boolean(findEnvKey('OPENAI_COMPATIBLE_BASE_URL')) ||
-              Boolean(findEnvKey('OLLAMA_BASE_URL')) ||
-              Boolean(findEnvKey('VLLM_BASE_URL'));
+              !hasMediaAttachments &&
+              (Boolean(customBaseUrl) ||
+                payload.provider === 'openai_compatible' ||
+                userApiKey?.startsWith('sk-') ||
+                userApiKey?.startsWith('gsk_') ||
+                Boolean(findEnvKey('DEEPSEEK_API_KEY')) ||
+                Boolean(findEnvKey('OPENAI_COMPATIBLE_BASE_URL')) ||
+                Boolean(findEnvKey('OLLAMA_BASE_URL')) ||
+                Boolean(findEnvKey('VLLM_BASE_URL')));
 
             if (isOpenAiCompatible) {
               try {
@@ -266,7 +343,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                     role: m.role === 'user' ? 'user' : 'assistant',
                     content: m.content,
                   })),
-                  { role: 'user', content: prompt },
+                  { role: 'user', content: enrichedPrompt },
                 ];
 
                 const openAiPayload = {
@@ -313,7 +390,13 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                   if (!text) return;
                   if (!hasEmittedComposing) {
                     hasEmittedComposing = true;
-                    res.write(`data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`);
+                    res.write(
+                      `data: ${JSON.stringify({
+                        type: 'state',
+                        state: 'composing',
+                        label: userLanguage === 'es' ? 'Componiendo…' : 'Composing…',
+                      })}\n\n`
+                    );
                   }
                   fullResponseText += text;
                   res.write(`data: ${JSON.stringify({ delta: text })}\n\n`);
@@ -332,7 +415,13 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                         inThinkTag = true;
                         if (!hasEmittedSolving) {
                           hasEmittedSolving = true;
-                          res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
+                          res.write(
+                            `data: ${JSON.stringify({
+                              type: 'state',
+                              state: 'solving',
+                              label: userLanguage === 'es' ? 'Analizando teoría musical…' : 'Analyzing music theory…',
+                            })}\n\n`
+                          );
                         }
                         thinkBuffer = thinkBuffer.slice(openIdx + 7);
                       } else {
@@ -398,7 +487,13 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                         collectedThoughts += delta.reasoning_content;
                         if (!hasEmittedSolving) {
                           hasEmittedSolving = true;
-                          res.write(`data: ${JSON.stringify({ type: 'state', state: 'solving' })}\n\n`);
+                          res.write(
+                            `data: ${JSON.stringify({
+                              type: 'state',
+                              state: 'solving',
+                              label: userLanguage === 'es' ? 'Analizando teoría musical…' : 'Analyzing music theory…',
+                            })}\n\n`
+                          );
                         }
                         continue;
                       }
@@ -432,8 +527,15 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                 if (!fullResponseText.trim()) {
                   res.write(`data: ${JSON.stringify({ error: 'AI service produced an empty response. Please retry.' })}\n\n`);
                 } else {
-                  const recommendation = extractStructuredRecommendation(fullResponseText, prompt);
+                  const recommendation = extractStructuredRecommendation(fullResponseText, enrichedPrompt);
                   if (recommendation) {
+                    res.write(
+                      `data: ${JSON.stringify({
+                        type: 'state',
+                        state: 'shaping',
+                        label: userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…',
+                      })}\n\n`
+                    );
                     res.write(`data: ${JSON.stringify({ recommendation })}\n\n`);
                   }
                   res.write(`data: ${JSON.stringify({ type: 'state', state: 'completed' })}\n\n`);
@@ -460,17 +562,24 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
             if (geminiApiKey) {
               try {
                 // Build user turn parts
-                const userParts = [{ text: prompt }];
+                const userParts = [{ text: enrichedPrompt }];
                 for (const att of attachments) {
                   if (att.dataUrl && typeof att.dataUrl === 'string') {
                     const match = att.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
                     if (match) {
-                      userParts.push({
-                        inlineData: {
-                          mimeType: match[1] || att.type || 'image/jpeg',
-                          data: match[2],
-                        },
-                      });
+                      const mime = match[1] || att.type || 'image/jpeg';
+                      const isMedia =
+                        mime.startsWith('image/') ||
+                        mime.startsWith('audio/') ||
+                        mime === 'application/pdf';
+                      if (isMedia) {
+                        userParts.push({
+                          inlineData: {
+                            mimeType: mime,
+                            data: match[2],
+                          },
+                        });
+                      }
                     }
                   }
                 }
@@ -558,6 +667,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                             `data: ${JSON.stringify({
                               type: 'state',
                               state: 'searching',
+                              label: userLanguage === 'es' ? 'Buscando en la web…' : 'Searching web…',
                               query: searchQueries.join(', '),
                             })}\n\n`
                           );
@@ -587,7 +697,11 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                               if (!hasEmittedComposing) {
                                 hasEmittedComposing = true;
                                 res.write(
-                                  `data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`
+                                  `data: ${JSON.stringify({
+                                    type: 'state',
+                                    state: 'composing',
+                                    label: userLanguage === 'es' ? 'Componiendo…' : 'Composing…',
+                                  })}\n\n`
                                 );
                               }
                               fullResponseText += part.text;
@@ -601,8 +715,15 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                 }
 
                 // Check for structured chord / tone recommendations
-                const recommendation = extractStructuredRecommendation(fullResponseText, prompt);
+                const recommendation = extractStructuredRecommendation(fullResponseText, enrichedPrompt);
                 if (recommendation) {
+                  res.write(
+                    `data: ${JSON.stringify({
+                      type: 'state',
+                      state: 'shaping',
+                      label: userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…',
+                    })}\n\n`
+                  );
                   res.write(`data: ${JSON.stringify({ recommendation })}\n\n`);
                 }
 

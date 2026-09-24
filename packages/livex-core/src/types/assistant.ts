@@ -14,6 +14,8 @@ export type AssistantState =
   | 'working'
   | 'composing'
   | 'responding'
+  | 'weaving'
+  | 'shaping'
   | 'success'
   | 'error'
   | 'interrupted'
@@ -37,13 +39,19 @@ export interface MusicalContextSnapshot {
   tuning?: string;
 }
 
+import type { GuitarChordData } from '../data/chords';
+
 export interface ChordProgressionRecommendation {
   chords: string[];
-  romanNumerals: string[];
+  romanNumerals?: string[];
   key: string;
   mode?: string;
   feel?: string;
   description?: string;
+  tempo?: number;
+  timeSignature?: string;
+  voicings?: Array<GuitarChordData | null>;
+  repetitions?: number;
 }
 
 export interface ToneRecipeRecommendation {
@@ -120,6 +128,8 @@ export interface AssistantMessage {
   content: string;
   status: 'streaming' | 'complete' | 'error';
   timestamp: number;
+  statusLabel?: string;
+  activeState?: AssistantState;
   recommendations?: StructuredRecommendation[];
   contextSnapshot?: MusicalContextSnapshot;
   attachments?: AssistantAttachment[];

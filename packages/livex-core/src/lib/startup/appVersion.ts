@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.42';
-export const NATIVE_VERSION_CODE = 40642;
-export const WEB_VERSION = '4.6.42';
+export const NATIVE_VERSION = '4.6.43';
+export const NATIVE_VERSION_CODE = 40643;
+export const WEB_VERSION = '4.6.43';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/23/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '21ce63f0';
+export const APP_COMMIT_SHA = '3f01c6e5';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/23/2026, 10:35:37 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/24/2026, 2:34:40 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,12 +96,20 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.',
+      'Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.',
+      'Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.',
+      'Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.',
+    ],
+  },
+  {
     heading: 'Improved',
     items: [
-      'Continuous Updater Surface Morphing: Eliminated dialog component unmounting between Checking and Update Available states, maintaining DOM persistence across the entire update lifecycle.',
-      'In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.',
-      'Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.',
-      'Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.',
+      'Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.',
+      'State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.',
+      'Dynamic Sub-State Badging: Added live indicator badges during streaming to surface ongoing grounding or recommendation synthesis without blocking chat flow.',
     ],
   },
 ];
@@ -113,6 +121,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.43',
+    date: '2026-09-24',
+    highlights: [
+      'Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.',
+      'Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.',
+      'Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.',
+      'Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.',
+      'Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.',
+      'State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.',
+    ],
+  },
   {
     version: '4.6.42',
     date: '2026-09-24',
@@ -210,15 +230,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Safe Destructive Action Placement: Separated the delete take action into the dedicated track action area with subtle red tone and modal confirmation to prevent accidental taps while keeping it easily accessible.',
       'Stagex History Theme Awareness: Replaced hardcoded pink/magenta visual values across `StageHistorySurface` and `StageCanvasView` with semantic theme accent tokens (`--studio-accent`), ensuring cohesive appearance across Dark, Light, and AMOLED themes.',
       'Stagex Toolbar Cleanup: Removed duplicate History navigation from the elements toolbar to maintain focused, single-purpose toolbars.',
-    ],
-  },
-  {
-    version: '4.6.33',
-    date: '2026-09-20',
-    highlights: [
-      'Liquid Glass Bottom Navigation Surface: Redesigned the Bottom Navbar into a continuous Liquid Glass pill with fully rounded 9999px ends, subtle frosted transparency, and restrained optical depth across Dark, Light, and AMOLED themes.',
-      'Integrated Selected Capsule: Enlarged the active tab highlight into a slot-filling capsule with embedded optical depth, upper specular reflection, and subtle top specular rim line, eliminating floating-bubble appearance.',
-      'Motion Stability & Zero Distortion: Critically damped the navigation spring dynamics to eliminate overshoot and oscillation during rapid tab switching, and removed deforming scale and skew transforms for rock-solid geometric stability.',
     ],
   },
 ];

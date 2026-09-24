@@ -2020,19 +2020,31 @@ export async function checkAndRecoverInstallState() {
         activeInstallPromiseResolver = null;
         activeInstallPromiseRejecter = null;
       }
-    } else if (result.statusCode === -999) {
+    } else if (result.statusCode === -999 || result.statusCode === -1) {
       logTimelineEvent(
         'RecoveryManager',
         'RECOVERY_IN_PROGRESS_DETECTED',
-        'Session committed natively but not completed yet'
+        result.statusCode === -1
+          ? 'Waiting for user confirmation'
+          : 'Session committed natively but not completed yet'
       );
       if (
         currentState === 'WAITING_USER_CONFIRMATION' ||
         currentState === 'PACKAGEINSTALLER_VISIBLE'
       ) {
-        transitionToState('INSTALLING', 'Installation started by user confirmation');
+        transitionToState(
+          result.statusCode === -1 ? 'PACKAGEINSTALLER_VISIBLE' : 'INSTALLING',
+          result.statusCode === -1
+            ? 'Waiting for user confirmation'
+            : 'Installation started by user confirmation'
+        );
       }
-      updateGlobalState({ statusText: 'Installing update...' });
+      updateGlobalState({
+        statusText:
+          result.statusCode === -1
+            ? 'Waiting for user confirmation...'
+            : 'Installing update...',
+      });
       return;
     } else {
       logTimelineEvent(
@@ -2086,13 +2098,37 @@ export function initializeGlobalUpdateListeners() {
     (window as any).__studioInstallerStatus = String(status);
     logDiagnosticEvent('PACKAGEINSTALLER_CALLBACK', { status, message, progress });
 
-    if (status === -1) {
+    const rawStatus = status;
+    const numericStatus = typeof rawStatus === 'number' ? rawStatus : Number(rawStatus);
+
+    const isPendingUserAction =
+      rawStatus === -1 ||
+      numericStatus === -1 ||
+      rawStatus === 'STATUS_PENDING_USER_ACTION' ||
+      (typeof rawStatus === 'string' &&
+        (rawStatus.toLowerCase().includes('waiting for user confirmation') ||
+          rawStatus.toLowerCase().includes('pending_user_action')));
+
+    const isSessionActive = rawStatus === -2 || numericStatus === -2;
+    const isProgress = rawStatus === -3 || numericStatus === -3;
+    const isSuccess =
+      rawStatus === 0 ||
+      numericStatus === 0 ||
+      rawStatus === 'STATUS_SUCCESS' ||
+      (typeof rawStatus === 'string' && rawStatus.toLowerCase().includes('installation completed'));
+    const isCancelled =
+      rawStatus === 3 ||
+      numericStatus === 3 ||
+      rawStatus === 'STATUS_FAILURE_ABORTED' ||
+      (typeof rawStatus === 'string' && rawStatus.toLowerCase().includes('cancelled by user'));
+
+    if (isPendingUserAction) {
       logDiagnosticEvent('PACKAGEINSTALLER_OPENED');
-    } else if (status === 0) {
+    } else if (isSuccess) {
       logDiagnosticEvent('INSTALL_SUCCESS');
-    } else if (status === 3) {
+    } else if (isCancelled) {
       logDiagnosticEvent('INSTALL_CANCELLED');
-    } else if (status > 0) {
+    } else if (numericStatus > 0) {
       logDiagnosticEvent('INSTALL_FAILED', { status, message });
     }
 
@@ -2107,7 +2143,7 @@ export function initializeGlobalUpdateListeners() {
       return;
     }
 
-    if (status === -2) {
+    if (isSessionActive) {
       logTimelineEvent(
         'NativeInstaller',
         'INSTALL_SESSION_ACTIVE',
@@ -2115,7 +2151,7 @@ export function initializeGlobalUpdateListeners() {
       );
       transitionToState('INSTALLING', 'PackageInstaller session active');
       updateGlobalState({ statusText: 'Installing package...' });
-    } else if (status === -3) {
+    } else if (isProgress) {
       const progressFraction = typeof progress === 'number' ? progress : 0;
       const now = Date.now();
       let label = 'Installing package...';
@@ -2144,15 +2180,15 @@ export function initializeGlobalUpdateListeners() {
       if (globalUpdateState.updateState !== 'INSTALLING') {
         transitionToState('INSTALLING', 'PackageInstaller progress received');
       }
-    } else if (status === -1) {
+    } else if (isPendingUserAction) {
       logTimelineEvent(
         'NativeInstaller',
         'INSTALL_USER_ACTION_REQUIRED',
         'PackageInstaller requires user interaction'
       );
       transitionToState('PACKAGEINSTALLER_VISIBLE', 'PackageInstaller requires user interaction');
-      updateGlobalState({ statusText: 'Tap Install to confirm...' });
-    } else if (status === 0) {
+      updateGlobalState({ statusText: 'Waiting for user confirmation...' });
+    } else if (isSuccess) {
       logTimelineEvent('NativeInstaller', 'INSTALL_SUCCESS', 'PackageInstaller status SUCCESS');
       transitionToState('INSTALL_SUCCESS', 'PackageInstaller status SUCCESS');
       updateGlobalState({ statusText: 'Install succeeded!' });
@@ -2161,7 +2197,7 @@ export function initializeGlobalUpdateListeners() {
         activeInstallPromiseResolver = null;
         activeInstallPromiseRejecter = null;
       }
-    } else if (status === 3) {
+    } else if (isCancelled) {
       logTimelineEvent('NativeInstaller', 'INSTALL_CANCELLED', 'User cancelled installation');
       transitionToState('INSTALL_CANCELLED', 'User cancelled installation');
       if (activeInstallPromiseRejecter) {
@@ -2170,6 +2206,10 @@ export function initializeGlobalUpdateListeners() {
         activeInstallPromiseRejecter = null;
       }
     } else {
+      if (typeof rawStatus === 'string' && isNaN(numericStatus) && !message) {
+        logTimelineEvent('NativeInstaller', 'INSTALL_INFO_IGNORED', String(rawStatus));
+        return;
+      }
       const errMsg = message || `PackageInstaller error code ${status}`;
       logTimelineEvent('NativeInstaller', 'INSTALL_FAILED', errMsg);
       transitionToState('INSTALL_FAILED', `Install failed: ${errMsg}`);

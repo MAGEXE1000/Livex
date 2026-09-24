@@ -487,8 +487,12 @@ export function SharedNavigationBar({
   useEffect(() => {
     return subscribeNavScrollOffset((offset) => {
       scrollOffsetRaw.set(offset);
+      if (offset > 0.15) {
+        if (isSwitcherOpen) setIsSwitcherOpen(false);
+        if (isProfileMenuOpen) setProfileMenuOpen(false);
+      }
     });
-  }, [scrollOffsetRaw]);
+  }, [scrollOffsetRaw, isSwitcherOpen, setIsSwitcherOpen, isProfileMenuOpen, setProfileMenuOpen]);
 
   useEffect(() => {
     profileOpenRaw.set(isProfileMenuOpen ? 1 : 0);
@@ -510,9 +514,20 @@ export function SharedNavigationBar({
     return 1.0 - offset * 0.12;
   });
 
-  // With transformOrigin 'center bottom', no Y translation needed — bottom-anchored
-  // scale handles the tuck effect without additional vertical movement.
-  const containerY = useTransform(scrollOffsetSpring, () => 0);
+  // Downward translation: dock and satellites collapse downward by up to 96px on scroll down
+  const containerY = useTransform(scrollOffsetSpring, (offset) => {
+    return offset * 96;
+  });
+
+  const containerOpacity = useTransform(scrollOffsetSpring, (offset) => {
+    if (offset <= 0.6) return 1.0;
+    if (offset >= 1.0) return 0;
+    return 1.0 - (offset - 0.6) / 0.4;
+  });
+
+  const dockPointerEvents = useTransform(scrollOffsetSpring, (offset) =>
+    offset > 0.4 ? 'none' : isEffectiveHidden ? 'none' : 'auto'
+  );
 
   // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll/collapse
   const satelliteOpacity = useTransform(scrollOffsetSpring, (offset) => {
@@ -945,7 +960,7 @@ export function SharedNavigationBar({
               }}
               style={{
                 contain: 'layout style',
-                pointerEvents: isEffectiveHidden ? 'none' : 'auto',
+                pointerEvents: dockPointerEvents,
                 maxWidth: '100%',
                 height: '58px',
                 borderRadius: '9999px',
@@ -971,6 +986,7 @@ export function SharedNavigationBar({
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
+                opacity: containerOpacity,
               }}
             >
               {/* Inner Radial Vignette — realistic optical depth / gentle fresnel reflection */}
@@ -1237,6 +1253,7 @@ export function SharedNavigationBar({
                   display: 'flex',
                   alignItems: 'center',
                   pointerEvents: switcherPointerEvents,
+                  y: containerY,
                 }}
                 animate={{
                   x: barWidth / 2 + dockGap,
@@ -1333,6 +1350,7 @@ export function SharedNavigationBar({
                   display: 'flex',
                   alignItems: 'center',
                   pointerEvents: satellitePointerEvents,
+                  y: containerY,
                 }}
                 animate={{
                   x: barWidth / 2 + dockGap,

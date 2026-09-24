@@ -1491,7 +1491,7 @@ export function normalizeChordName(name: string): string {
   if (!name || name === '—') return '';
   let clean = name.trim();
 
-  // 1. Remove brackets/parentheses and comments, e.g. (no5) or (omit5) or [Verse]
+  // 1. Remove brackets/comments (e.g. [Verse], (no5), (omit5)), while preserving musical alterations (e.g. (#9), (b9), (add9), (#11))
   let prev;
   do {
     prev = clean;
@@ -1499,7 +1499,13 @@ export function normalizeChordName(name: string): string {
     if (startParen !== -1) {
       const endParen = clean.indexOf(')', startParen);
       if (endParen !== -1) {
-        clean = clean.substring(0, startParen) + clean.substring(endParen + 1);
+        const inside = clean.substring(startParen + 1, endParen).trim();
+        const isComment = /^(no\s*\d|omit|verse|chorus|bridge|intro|outro|fill|riff|bass|break)/i.test(inside);
+        if (isComment) {
+          clean = clean.substring(0, startParen) + clean.substring(endParen + 1);
+        } else {
+          clean = clean.substring(0, startParen) + inside + clean.substring(endParen + 1);
+        }
       }
     }
     const startBracket = clean.indexOf('[');

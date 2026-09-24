@@ -83,7 +83,15 @@ Core Directives:
    - If asked about an obscure or emerging artist, analyze their instrumentation, lineage, musical scene, and stylistic predecessors accurately rather than making unsubstantiated claims.
 
 5. Time-Sensitive & Current Music Facts:
-   - When asked about recent artists, recent releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.`;
+   - When asked about recent artists, recent releases, current lineups, tours, or newly released instruments and pedal gear, prioritize current and verified facts grounded in web search.
+
+6. Multimodal Musical Vision & Audio Analysis:
+   - When provided with images of musical content (sheet music, guitar fretboards, chord charts, handwritten tabs, pedalboards, synthesizer/DAW interfaces):
+     * Fretboard / Hand Photos: Identify exact fret positions, fingerings, string numbers, chord name, voicing, and inversion.
+     * Sheet Music / Lead Sheets: Transcribe the key signature, time signature, melody line, harmonic symbols, and rhythm.
+     * Chord Charts / Tabs: Parse chord symbols accurately and provide harmonic analysis (Roman numerals, functional harmony).
+     * Pedalboards / Amps / Audio Gear: Identify pedal brands/models, control dial settings, serial signal order, and recommend tone adjustments.
+     * DAW / Drum Pattern Screenshots: Read grid step positions, velocity levels, BPM, time signature, and groove subdivision.`;
 
 /**
  * Extracts structured chord progression or tone recipe from model text.
@@ -159,10 +167,10 @@ class ReasoningStreamParser {
     private encoder: TextEncoder
   ) {}
 
-  public async onConnecting() {
+  public async onConnecting(label?: string) {
     try {
       await this.writer.write(
-        this.encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`)
+        this.encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting', label: label || 'Connecting…' })}\n\n`)
       );
     } catch {}
   }
@@ -189,17 +197,17 @@ class ReasoningStreamParser {
     } catch {}
   }
 
-  public async onReasoningDelta(reasoningText: string) {
+  public async onReasoningDelta(reasoningText: string, label?: string) {
     if (reasoningText) {
       this.collectedThoughts += reasoningText;
     }
     if (!this.hasEmittedSolving) {
       this.hasEmittedSolving = true;
-      await this.onState('solving');
+      await this.onState('solving', { label: label || 'Analyzing music theory…' });
     }
   }
 
-  public async onContentDelta(content: string) {
+  public async onContentDelta(content: string, solvingLabel?: string) {
     if (!content) return;
     this.thinkBuffer += content;
 
@@ -214,7 +222,7 @@ class ReasoningStreamParser {
           this.inThinkTag = true;
           if (!this.hasEmittedSolving) {
             this.hasEmittedSolving = true;
-            await this.onState('solving');
+            await this.onState('solving', { label: solvingLabel || 'Analyzing music theory…' });
           }
           this.thinkBuffer = this.thinkBuffer.slice(openIdx + 7);
         } else {
@@ -255,11 +263,11 @@ class ReasoningStreamParser {
     }
   }
 
-  private async emitContent(text: string) {
+  private async emitContent(text: string, composingLabel?: string) {
     if (!text) return;
     if (!this.hasEmittedComposing) {
       this.hasEmittedComposing = true;
-      await this.onState('composing');
+      await this.onState('composing', { label: composingLabel || 'Composing…' });
     }
     this.fullResponseText += text;
     try {
@@ -269,7 +277,7 @@ class ReasoningStreamParser {
     } catch {}
   }
 
-  public async finish(prompt: string) {
+  public async finish(prompt: string, shapingLabel?: string) {
     if (this.thinkBuffer) {
       if (this.inThinkTag) {
         this.collectedThoughts += this.thinkBuffer;
@@ -297,6 +305,15 @@ class ReasoningStreamParser {
     const rec = extractStructuredRecommendation(this.fullResponseText, prompt);
     if (rec) {
       try {
+        await this.writer.write(
+          this.encoder.encode(
+            `data: ${JSON.stringify({
+              type: 'state',
+              state: 'shaping',
+              label: shapingLabel || 'Shaping recommendations…',
+            })}\n\n`
+          )
+        );
         await this.writer.write(
           this.encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`)
         );
@@ -370,6 +387,43 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   const userLanguage = typeof body?.language === 'string' ? body.language : 'en';
   const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
 
+  // Extract text from document attachments (TXT, MD, CSV, JSON, Tab, ChordPro)
+  let enrichedPrompt = prompt;
+  for (const att of attachments) {
+    const isText =
+      att.type?.startsWith('text/') ||
+      /\.(txt|md|csv|json|xml|tab|chordpro|cho|crd|pro)$/i.test(att.name || '');
+
+    if (isText && att.dataUrl && typeof att.dataUrl === 'string') {
+      const match = att.dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+      if (match) {
+        try {
+          const binString = atob(match[1]);
+          const bytes = Uint8Array.from(binString, (c) => c.charCodeAt(0));
+          const textContent = new TextDecoder('utf-8').decode(bytes);
+          enrichedPrompt += `\n\n--- Attached Document: ${att.name || 'document'} (${att.type || 'text/plain'}) ---\n${textContent.slice(0, 16000)}\n--- End of Document ---`;
+        } catch {}
+      }
+    }
+  }
+
+  const hasImages = attachments.some(
+    (a: any) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+  );
+  const hasAudio = attachments.some(
+    (a: any) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
+  );
+  const hasMediaAttachments = attachments.some(
+    (a: any) =>
+      a.type?.startsWith('image/') ||
+      a.type?.startsWith('audio/') ||
+      a.type === 'application/pdf' ||
+      a.dataUrl?.startsWith('data:image/') ||
+      a.dataUrl?.startsWith('data:audio/') ||
+      a.dataUrl?.startsWith('data:application/pdf')
+  );
+  const hasFiles = attachments.length > 0;
+
   const contextualSystemPrompt = `${SYSTEM_PROMPT}
 
 Active Musical Context Snapshot:
@@ -407,25 +461,33 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
   // =========================================================================
   // TIER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Native Google Search Grounding)
+  // Prioritize Gemini whenever media attachments (images/audio/pdf) are present
   // =========================================================================
-  if (geminiApiKey && explicitProvider !== 'groq' && explicitProvider !== 'workers_ai') {
+  if (geminiApiKey && (hasMediaAttachments || (explicitProvider !== 'groq' && explicitProvider !== 'workers_ai'))) {
     try {
       const modelName = body?.model || env.GEMINI_MODEL || 'gemini-2.5-flash';
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${geminiApiKey}`;
 
       // Build multimodal parts for the latest user turn
-      const userParts: any[] = [{ text: prompt }];
+      const userParts: any[] = [{ text: enrichedPrompt }];
 
       for (const att of attachments) {
         if (att.dataUrl && typeof att.dataUrl === 'string') {
           const match = att.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
           if (match) {
-            userParts.push({
-              inlineData: {
-                mimeType: match[1] || att.type || 'image/jpeg',
-                data: match[2],
-              },
-            });
+            const mime = match[1] || att.type || 'image/jpeg';
+            const isMedia =
+              mime.startsWith('image/') ||
+              mime.startsWith('audio/') ||
+              mime === 'application/pdf';
+            if (isMedia) {
+              userParts.push({
+                inlineData: {
+                  mimeType: mime,
+                  data: match[2],
+                },
+              });
+            }
           }
         }
       }
@@ -478,7 +540,47 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
           let fullResponseText = '';
 
           try {
-            await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'state', state: 'connecting' })}\n\n`));
+            if (hasImages) {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'state',
+                    state: 'working',
+                    label: userLanguage === 'es' ? 'Leyendo imagen…' : 'Reading image…',
+                  })}\n\n`
+                )
+              );
+            } else if (hasAudio) {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'state',
+                    state: 'working',
+                    label: userLanguage === 'es' ? 'Analizando audio…' : 'Analyzing audio…',
+                  })}\n\n`
+                )
+              );
+            } else if (hasFiles) {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'state',
+                    state: 'working',
+                    label: userLanguage === 'es' ? 'Analizando archivo…' : 'Analyzing file…',
+                  })}\n\n`
+                )
+              );
+            } else {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'state',
+                    state: 'connecting',
+                    label: userLanguage === 'es' ? 'Conectando…' : 'Connecting…',
+                  })}\n\n`
+                )
+              );
+            }
 
             while (true) {
               const { done, value } = await reader.read();
@@ -506,6 +608,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                           `data: ${JSON.stringify({
                             type: 'state',
                             state: 'searching',
+                            label: userLanguage === 'es' ? 'Buscando en la web…' : 'Searching web…',
                             query: searchQueries.join(', '),
                           })}\n\n`
                         )
@@ -539,7 +642,11 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                             hasEmittedComposing = true;
                             await writer.write(
                               encoder.encode(
-                                `data: ${JSON.stringify({ type: 'state', state: 'composing' })}\n\n`
+                                `data: ${JSON.stringify({
+                                  type: 'state',
+                                  state: 'composing',
+                                  label: userLanguage === 'es' ? 'Componiendo…' : 'Composing…',
+                                })}\n\n`
                               )
                             );
                           }
@@ -555,8 +662,17 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
               }
             }
 
-            const rec = extractStructuredRecommendation(fullResponseText, prompt);
+            const rec = extractStructuredRecommendation(fullResponseText, enrichedPrompt);
             if (rec) {
+              await writer.write(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'state',
+                    state: 'shaping',
+                    label: userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…',
+                  })}\n\n`
+                )
+              );
               await writer.write(encoder.encode(`data: ${JSON.stringify({ recommendation: rec })}\n\n`));
             }
 
@@ -580,14 +696,16 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
   // =========================================================================
   // TIER 2: GROQ LPU / OPEN-SOURCE REASONING (DeepSeek-R1 / Llama 3.3 70B)
+  // If media attachments are present, skip text-only fallback
   // =========================================================================
   const isGroqOrOpenAiCompatible =
-    Boolean(groqApiKey) ||
-    Boolean(customBaseUrl) ||
-    explicitProvider === 'groq' ||
-    explicitProvider === 'deepseek' ||
-    explicitProvider === 'openai_compatible' ||
-    Boolean(openAiCompatibleKey);
+    !hasMediaAttachments &&
+    (Boolean(groqApiKey) ||
+      Boolean(customBaseUrl) ||
+      explicitProvider === 'groq' ||
+      explicitProvider === 'deepseek' ||
+      explicitProvider === 'openai_compatible' ||
+      Boolean(openAiCompatibleKey));
 
   if (isGroqOrOpenAiCompatible && (openAiCompatibleKey || customBaseUrl || groqApiKey)) {
     try {
@@ -615,7 +733,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
           role: m.role === 'user' ? 'user' : 'assistant',
           content: m.content,
         })),
-        { role: 'user', content: prompt },
+        { role: 'user', content: enrichedPrompt },
       ];
 
       const authKey = groqApiKey || openAiCompatibleKey;
@@ -645,7 +763,15 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         (async () => {
           let buffer = '';
           try {
-            await parser.onConnecting();
+            await parser.onConnecting(
+              hasFiles
+                ? userLanguage === 'es'
+                  ? 'Analizando archivo…'
+                  : 'Analyzing file…'
+                : userLanguage === 'es'
+                  ? 'Conectando…'
+                  : 'Connecting…'
+            );
 
             while (true) {
               const { done, value } = await reader.read();
@@ -674,19 +800,28 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
                   // 1. Explicit reasoning_content (DeepSeek-R1 / vLLM / Groq)
                   if (delta.reasoning_content) {
-                    await parser.onReasoningDelta(delta.reasoning_content);
+                    await parser.onReasoningDelta(
+                      delta.reasoning_content,
+                      userLanguage === 'es' ? 'Analizando teoría musical…' : 'Analyzing music theory…'
+                    );
                     continue;
                   }
 
                   // 2. Models outputting <think>...</think> in content (Ollama / QwQ)
                   if (typeof delta.content === 'string' && delta.content) {
-                    await parser.onContentDelta(delta.content);
+                    await parser.onContentDelta(
+                      delta.content,
+                      userLanguage === 'es' ? 'Analizando teoría musical…' : 'Analyzing music theory…'
+                    );
                   }
                 } catch {}
               }
             }
 
-            await parser.finish(prompt);
+            await parser.finish(
+              enrichedPrompt,
+              userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…'
+            );
           } catch (err: any) {
             console.error('[Edge Gateway] Open-source streaming error:', err);
             await parser.onError(err?.message || 'Streaming failed');
@@ -713,7 +848,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
           role: m.role === 'user' ? 'user' : 'assistant',
           content: m.content,
         })),
-        { role: 'user', content: prompt },
+        { role: 'user', content: enrichedPrompt },
       ];
 
       const candidateModels = [
@@ -781,7 +916,10 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                 }
                 const chunkText = parsed.response || parsed.delta || parsed.choices?.[0]?.delta?.content;
                 if (typeof chunkText === 'string' && chunkText) {
-                  await parser.onContentDelta(chunkText);
+                  await parser.onContentDelta(
+                    chunkText,
+                    userLanguage === 'es' ? 'Analizando teoría musical…' : 'Analyzing music theory…'
+                  );
                 }
               } catch {}
             }
@@ -790,7 +928,15 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
           let keepAliveTimer: any = null;
           try {
-            await parser.onConnecting();
+            await parser.onConnecting(
+              hasFiles
+                ? userLanguage === 'es'
+                  ? 'Analizando archivo…'
+                  : 'Analyzing file…'
+                : userLanguage === 'es'
+                  ? 'Conectando…'
+                  : 'Connecting…'
+            );
             keepAliveTimer = setInterval(() => {
               parser.ping().catch(() => {});
             }, 5000);
@@ -798,7 +944,10 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
             if (firstChunk.value) {
               const keepGoing = await processChunkValue(firstChunk.value);
               if (!keepGoing) {
-                await parser.finish(prompt);
+                await parser.finish(
+                  enrichedPrompt,
+                  userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…'
+                );
                 return;
               }
             }
@@ -813,7 +962,10 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
               if (!keepGoing) break;
             }
 
-            await parser.finish(prompt);
+            await parser.finish(
+              enrichedPrompt,
+              userLanguage === 'es' ? 'Estructurando recomendaciones…' : 'Shaping recommendations…'
+            );
           } catch (err: any) {
             console.error('[Edge Gateway] Workers AI streaming error:', err);
             await parser.onError(err?.message || 'Workers AI streaming failed');

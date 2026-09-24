@@ -6,6 +6,7 @@ import {
   Camera,
   Image as ImageIcon,
   FileText,
+  Music,
   ArrowUp,
   Square,
   X,
@@ -142,6 +143,8 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
 
   const activeListening = isListening !== undefined ? isListening : isInternalListening;
   const hasText = value.trim().length > 0;
+  const hasAttachments = Boolean(attachments && attachments.length > 0);
+  const canSubmit = (hasText || hasAttachments) && !isDisabled;
 
   // Auto-resize textarea smoothly up to 128px
   useEffect(() => {
@@ -198,7 +201,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
       e.preventDefault();
       if (isStreaming) {
         onStop?.();
-      } else if (hasText && !isDisabled) {
+      } else if (canSubmit) {
         onSubmit(value);
       }
     }
@@ -207,7 +210,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
   const handlePrimaryClick = () => {
     if (isStreaming) {
       onStop?.();
-    } else if (hasText && !isDisabled) {
+    } else if (canSubmit) {
       onSubmit(value);
     }
   };
@@ -220,32 +223,64 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
     setIsAttachmentMenuOpen((prev) => !prev);
   };
 
+  const isSupportedFile = (file: File): boolean => {
+    if (file.type) {
+      if (
+        file.type.startsWith('image/') ||
+        file.type.startsWith('audio/') ||
+        file.type.startsWith('text/') ||
+        file.type === 'application/pdf' ||
+        file.type === 'application/json'
+      ) {
+        return true;
+      }
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const validExtensions = [
+      'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'bmp', 'svg',
+      'mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'aiff',
+      'pdf', 'txt', 'md', 'csv', 'json', 'xml', 'musicxml', 'tab', 'chordpro', 'cho', 'crd', 'pro',
+    ];
+    return Boolean(ext && validExtensions.includes(ext));
+  };
+
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Reset input value so re-selecting identical filename works
+    e.target.value = '';
+    setIsAttachmentMenuOpen(false);
+
+    // Guard 1: File size limit (15 MB)
+    if (file.size > 15 * 1024 * 1024) {
+      setStatusFeedback('File exceeds 15 MB limit. Please choose a smaller file.');
+      return;
+    }
+
+    // Guard 2: Format support verification
+    if (!isSupportedFile(file)) {
+      setStatusFeedback('Unsupported file format. Please upload an image, audio, PDF, or text file.');
+      return;
+    }
 
     const id = `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newAttachment: AssistantAttachment = {
       id,
       name: file.name,
       size: file.size,
-      type: file.type,
+      type: file.type || 'application/octet-stream',
     };
 
-    if (file.size <= 10 * 1024 * 1024) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        newAttachment.dataUrl = ev.target?.result as string;
-        onAddAttachment?.(newAttachment);
-      };
-      reader.readAsDataURL(file);
-    } else {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      newAttachment.dataUrl = ev.target?.result as string;
       onAddAttachment?.(newAttachment);
-    }
-
-    // Reset input value so re-selecting identical filename works
-    e.target.value = '';
-    setIsAttachmentMenuOpen(false);
+    };
+    reader.onerror = () => {
+      setStatusFeedback('Failed to read file. Please try again.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleMicClick = () => {
@@ -409,7 +444,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
       <input
         ref={filesInputRef}
         type="file"
-        accept="*/*"
+        accept="image/*,audio/*,.pdf,.txt,.md,.csv,.json,.xml,.musicxml,.tab,.chordpro,.cho,.crd,.pro"
         style={{ display: 'none' }}
         onChange={handleFileInputChange}
       />
@@ -669,7 +704,10 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                   color: isLight ? '#334155' : '#e2e8f0',
                 }}
               >
-                {att.dataUrl ? (
+                {(att.type?.startsWith('image/') ||
+                att.dataUrl?.startsWith('data:image/') ||
+                /\.(png|jpe?g|webp|gif|svg)$/i.test(att.name)) &&
+                att.dataUrl ? (
                   <img
                     src={att.dataUrl}
                     alt=""
@@ -680,8 +718,12 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                       objectFit: 'cover',
                     }}
                   />
+                ) : att.type?.startsWith('audio/') ||
+                  att.dataUrl?.startsWith('data:audio/') ||
+                  /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(att.name) ? (
+                  <Music size={11} style={{ opacity: 0.7 }} />
                 ) : (
-                  <Paperclip size={11} style={{ opacity: 0.7 }} />
+                  <FileText size={11} style={{ opacity: 0.7 }} />
                 )}
                 <span
                   style={{
@@ -833,7 +875,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
               type="button"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               onClick={handlePrimaryClick}
-              disabled={(!hasText && !isStreaming) || isDisabled || isStopping}
+              disabled={(!canSubmit && !isStreaming) || isDisabled || isStopping}
               aria-label={isStreaming ? 'Stop response' : 'Send message'}
               style={{
                 width: 32,
@@ -844,7 +886,7 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 justifyContent: 'center',
                 background: isStreaming
                   ? isLight ? '#0f172a' : '#ffffff'
-                  : hasText
+                  : canSubmit
                     ? isLight ? '#0f172a' : '#ffffff'
                     : isLight
                       ? 'rgba(0, 0, 0, 0.05)'
@@ -852,17 +894,17 @@ export const AgentChatPill: React.FC<AgentChatPillProps> = ({
                 border: 'none',
                 color: isStreaming
                   ? isLight ? '#ffffff' : '#0a0f1d'
-                  : hasText
+                  : canSubmit
                     ? isLight ? '#ffffff' : '#0a0f1d'
                     : isLight
                       ? 'rgba(0, 0, 0, 0.25)'
                       : 'rgba(255, 255, 255, 0.25)',
-                boxShadow: hasText || isStreaming
+                boxShadow: canSubmit || isStreaming
                   ? isLight
                     ? '0 2px 8px rgba(0, 0, 0, 0.2)'
                     : '0 2px 8px rgba(255, 255, 255, 0.15)'
                   : 'none',
-                cursor: hasText || isStreaming ? 'pointer' : 'default',
+                cursor: canSubmit || isStreaming ? 'pointer' : 'default',
                 transition: shouldReduceMotion
                   ? 'none'
                   : 'background 160ms ease, color 160ms ease, box-shadow 160ms ease',

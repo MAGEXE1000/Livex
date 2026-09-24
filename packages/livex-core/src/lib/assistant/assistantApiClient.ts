@@ -11,7 +11,7 @@ import { getFirebaseAuth } from '../firebase';
 export interface StreamChatCallbacks {
   onToken: (token: string) => void;
   onRecommendation?: (recommendation: StructuredRecommendation) => void;
-  onStateChange?: (state: AssistantState) => void;
+  onStateChange?: (state: AssistantState, label?: string) => void;
   onSources?: (sources: GroundingSource[]) => void;
   onComplete: () => void;
   onError: (error: Error) => void;
@@ -89,7 +89,36 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
   const targetUrl = resolveAiGatewayUrl(gatewayUrl);
 
   try {
-    callbacks.onStateChange?.('connecting');
+    const hasAttachments = Boolean(options.attachments && options.attachments.length > 0);
+    const hasImages = Boolean(
+      options.attachments?.some(
+        (a) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+      )
+    );
+    const hasAudio = Boolean(
+      options.attachments?.some(
+        (a) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
+      )
+    );
+
+    const initialConnectState: AssistantState = hasAttachments ? 'working' : 'connecting';
+    const initialConnectLabel = hasImages
+      ? options.language === 'es'
+        ? 'Leyendo imagen…'
+        : 'Reading image…'
+      : hasAudio
+        ? options.language === 'es'
+          ? 'Analizando audio…'
+          : 'Analyzing audio…'
+        : hasAttachments
+          ? options.language === 'es'
+            ? 'Analizando archivo…'
+            : 'Analyzing file…'
+          : options.language === 'es'
+            ? 'Conectando…'
+            : 'Connecting…';
+
+    callbacks.onStateChange?.(initialConnectState, initialConnectLabel);
 
     const rawUser = getFirebaseAuth()?.currentUser;
     const token = rawUser ? await rawUser.getIdToken().catch(() => null) : null;
@@ -262,7 +291,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
               }
 
               if (parsed.type === 'state' && parsed.state) {
-                callbacks.onStateChange?.(parsed.state);
+                callbacks.onStateChange?.(parsed.state, parsed.label);
               }
 
               if (parsed.type === 'sources' && Array.isArray(parsed.sources)) {
@@ -272,7 +301,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
               if (parsed.delta) {
                 if (!hasReceivedToken) {
                   hasReceivedToken = true;
-                  callbacks.onStateChange?.('composing');
+                  callbacks.onStateChange?.('composing', 'Composing…');
                 }
                 callbacks.onToken(parsed.delta);
               }
@@ -284,7 +313,7 @@ export async function streamChatCompletion(options: StreamChatOptions): Promise<
               if (jsonStr) {
                 if (!hasReceivedToken) {
                   hasReceivedToken = true;
-                  callbacks.onStateChange?.('composing');
+                  callbacks.onStateChange?.('composing', 'Composing…');
                 }
                 callbacks.onToken(jsonStr);
               }

@@ -267,15 +267,6 @@ public class UpdateDownloadService extends Service {
 
         // Also notify UI over capacitor listener if app is active
         if (AppInstallerPlugin.instance != null) {
-            JSObject state = new JSObject();
-            state.put("status", text);
-            state.put("progress", progress);
-            if (totalBytes > 0) {
-                state.put("totalBytes", totalBytes);
-                state.put("downloadedBytes", downloadedBytes);
-            }
-            AppInstallerPlugin.instance.emitInstallStatus(state);
-
             // Only emit download progress during active transfer with positive progress.
             // Never emit 0% on error or cleanup, which would regress UI progress.
             if (isDownloading && progress > 0) {

@@ -56,9 +56,42 @@ export const ASSISTANT_QUICK_PROMPTS: AssistantQuickPrompt[] = [
   },
 ];
 
+export function getDefaultStatusLabel(state: AssistantState): string {
+  switch (state) {
+    case 'connecting':
+      return 'Connecting…';
+    case 'searching':
+      return 'Searching web…';
+    case 'solving':
+      return 'Analyzing music theory…';
+    case 'working':
+    case 'thinking':
+      return 'Thinking…';
+    case 'composing':
+    case 'responding':
+      return 'Composing…';
+    case 'shaping':
+      return 'Shaping recommendations…';
+    case 'weaving':
+      return 'Synthesizing harmony…';
+    case 'listening':
+      return 'Listening…';
+    case 'idle':
+    case 'sleeping':
+      return 'Ready';
+    case 'error':
+      return 'Error';
+    case 'interrupted':
+      return 'Stopped';
+    default:
+      return 'Working…';
+  }
+}
+
 interface AssistantStoreState {
   messages: AssistantMessage[];
   mascotState: AssistantState;
+  statusLabel?: string | null;
   status: 'idle' | 'streaming' | 'error';
   errorMessage?: string | null;
   activeThreadId: string;
@@ -72,7 +105,8 @@ interface AssistantStoreState {
   sendMessage: (promptText?: string) => Promise<void>;
   retryLastMessage: () => Promise<void>;
   stopStreaming: () => void;
-  setMascotState: (state: AssistantState) => void;
+  setMascotState: (state: AssistantState, label?: string | null) => void;
+  setStatusLabel: (label: string | null) => void;
   setInputText: (text: string) => void;
   setUserApiKey: (key: string) => void;
   setCustomGatewayUrl: (url: string) => void;
@@ -107,6 +141,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
       return {
         messages: [],
         mascotState: 'idle',
+        statusLabel: null,
         status: 'idle',
         errorMessage: null,
         activeThreadId: 'default-thread',
@@ -143,6 +178,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             errorMessage: null,
             status: 'idle',
             mascotState: 'idle',
+            statusLabel: null,
           });
 
           await get().sendMessage();
@@ -150,14 +186,21 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
         wakeMascot: () => {
           if (get().mascotState === 'sleeping') {
-            set({ mascotState: 'idle' });
+            set({ mascotState: 'idle', statusLabel: null });
           }
           resetSleepTimer();
         },
 
-        setMascotState: (mascotState: AssistantState) => {
-          set({ mascotState });
+        setMascotState: (mascotState: AssistantState, label?: string | null) => {
+          set({
+            mascotState,
+            statusLabel: label !== undefined ? label : getDefaultStatusLabel(mascotState),
+          });
           resetSleepTimer();
+        },
+
+        setStatusLabel: (statusLabel: string | null) => {
+          set({ statusLabel });
         },
 
         setInputText: (inputText: string) => {
@@ -192,6 +235,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             attachments: [],
             status: 'idle',
             mascotState: 'idle',
+            statusLabel: null,
             errorMessage: null,
           });
           resetSleepTimer();
@@ -221,11 +265,14 @@ export const useAssistantStore = create<AssistantStoreState>()(
           set((state) => ({
             status: 'idle',
             mascotState: 'interrupted',
+            statusLabel: 'Stopped',
             messages: state.messages.map((m) =>
               m.status === 'streaming'
                 ? {
                     ...m,
                     status: 'complete',
+                    activeState: 'interrupted',
+                    statusLabel: undefined,
                     content: m.content || '(Generation stopped)',
                   }
                 : m
@@ -233,17 +280,17 @@ export const useAssistantStore = create<AssistantStoreState>()(
           }));
 
           stateResetTimer = setTimeout(() => {
-            set({ mascotState: 'idle' });
+            set({ mascotState: 'idle', statusLabel: null });
           }, 1200);
 
           resetSleepTimer();
         },
 
         sendMessage: async (promptOverride?: string) => {
-          const currentText = (promptOverride !== undefined ? promptOverride : get().inputText).trim();
-          if (!currentText || get().status === 'streaming') return;
-
+          const rawText = (promptOverride !== undefined ? promptOverride : get().inputText).trim();
           const pendingAttachments = [...get().attachments];
+
+          if ((!rawText && pendingAttachments.length === 0) || get().status === 'streaming') return;
 
           // Clear text input and pending attachments
           set({ inputText: '', attachments: [], errorMessage: null });
@@ -260,11 +307,48 @@ export const useAssistantStore = create<AssistantStoreState>()(
           const assistantMsgId = `ast-${Date.now() + 1}`;
           const threadId = get().activeThreadId;
 
+          const currentLanguage = useSettingsStore.getState().settings?.language || 'en';
+          const hasImages = pendingAttachments.some(
+            (a) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+          );
+          const hasAudio = pendingAttachments.some(
+            (a) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
+          );
+          const hasAttachments = pendingAttachments.length > 0;
+
+          let initialMascotState: AssistantState = 'connecting';
+          let initialLabel = currentLanguage === 'es' ? 'Conectando…' : 'Connecting…';
+
+          if (hasImages) {
+            initialMascotState = 'working';
+            initialLabel = currentLanguage === 'es' ? 'Leyendo imagen…' : 'Reading image…';
+          } else if (hasAudio) {
+            initialMascotState = 'working';
+            initialLabel = currentLanguage === 'es' ? 'Analizando audio…' : 'Analyzing audio…';
+          } else if (hasAttachments) {
+            initialMascotState = 'working';
+            initialLabel = currentLanguage === 'es' ? 'Analizando archivo…' : 'Analyzing file…';
+          }
+
+          const effectivePrompt =
+            rawText ||
+            (hasImages
+              ? currentLanguage === 'es'
+                ? 'Analiza esta imagen musical y proporciona notas, acordes, digitación o transcripción.'
+                : 'Analyze this musical image and provide chords, notes, fingering, or transcription.'
+              : hasAudio
+                ? currentLanguage === 'es'
+                  ? 'Analiza este audio musical y proporciona tonalidad, tempo, acordes y ritmo.'
+                  : 'Analyze this musical audio and provide key, tempo, chords, and groove details.'
+                : currentLanguage === 'es'
+                  ? 'Analiza este documento musical y proporciona ideas teóricas o estructura.'
+                  : 'Analyze this musical document and provide theoretical analysis or structure.');
+
           const userMessage: AssistantMessage = {
             id: userMsgId,
             threadId,
             role: 'user',
-            content: currentText,
+            content: rawText,
             status: 'complete',
             timestamp: Date.now(),
             contextSnapshot,
@@ -277,24 +361,25 @@ export const useAssistantStore = create<AssistantStoreState>()(
             role: 'assistant',
             content: '',
             status: 'streaming',
+            statusLabel: initialLabel,
+            activeState: initialMascotState,
             timestamp: Date.now(),
             recommendations: [],
             contextSnapshot,
           };
 
-          // Optimistically append messages and transition mascot to connecting immediately
+          // Optimistically append messages and transition mascot to initial state
           set((state) => ({
             messages: [...state.messages, userMessage, assistantMessage],
             status: 'streaming',
-            mascotState: 'connecting',
+            mascotState: initialMascotState,
+            statusLabel: initialLabel,
           }));
 
           // Yield one render frame so the browser commits and paints the ThinkingOrb before tokens arrive
           if (typeof requestAnimationFrame === 'function') {
             await new Promise<void>((r) => requestAnimationFrame(() => r()));
           }
-
-          const currentLanguage = useSettingsStore.getState().settings?.language || 'en';
 
           const priorMessages = get().messages.filter(
             (m) => m.id !== userMsgId && m.id !== assistantMsgId && m.status !== 'streaming'
@@ -304,7 +389,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
           try {
             await streamChatCompletion({
-              prompt: currentText,
+              prompt: effectivePrompt,
               history: priorMessages,
               contextSnapshot,
               language: currentLanguage,
@@ -314,9 +399,18 @@ export const useAssistantStore = create<AssistantStoreState>()(
               model: get().customModel,
               signal,
               callbacks: {
-                onStateChange: (backendState) => {
+                onStateChange: (backendState, backendLabel) => {
                   if (signal.aborted) return;
-                  set({ mascotState: backendState });
+                  const label = backendLabel || getDefaultStatusLabel(backendState);
+                  set((state) => ({
+                    mascotState: backendState,
+                    statusLabel: label,
+                    messages: state.messages.map((m) =>
+                      m.id === assistantMsgId
+                        ? { ...m, activeState: backendState, statusLabel: label }
+                        : m
+                    ),
+                  }));
                 },
 
                 onSources: (sources) => {
@@ -343,7 +437,19 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
                   if (!hasReceivedFirstToken) {
                     hasReceivedFirstToken = true;
-                    set({ mascotState: 'composing' });
+                    set((state) => ({
+                      mascotState: 'composing',
+                      statusLabel: currentLanguage === 'es' ? 'Componiendo…' : 'Composing…',
+                      messages: state.messages.map((m) =>
+                        m.id === assistantMsgId
+                          ? {
+                              ...m,
+                              activeState: 'composing',
+                              statusLabel: currentLanguage === 'es' ? 'Componiendo…' : 'Composing…',
+                            }
+                          : m
+                      ),
+                    }));
                   }
 
                   set((state) => ({
@@ -366,8 +472,11 @@ export const useAssistantStore = create<AssistantStoreState>()(
                   set((state) => ({
                     status: 'idle',
                     mascotState: 'idle',
+                    statusLabel: null,
                     messages: state.messages.map((m) =>
-                      m.id === assistantMsgId ? { ...m, status: 'complete' } : m
+                      m.id === assistantMsgId
+                        ? { ...m, status: 'complete', activeState: 'idle', statusLabel: undefined }
+                        : m
                     ),
                   }));
 
@@ -378,6 +487,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
                   if (signal.aborted) {
                     set((state) => ({
                       status: 'idle',
+                      statusLabel: null,
                       messages: state.messages.map((m) =>
                         m.id === assistantMsgId && m.status === 'streaming'
                           ? { ...m, status: 'complete', content: m.content || '(Generation stopped)' }
@@ -391,12 +501,15 @@ export const useAssistantStore = create<AssistantStoreState>()(
                   set((state) => ({
                     status: 'error',
                     mascotState: 'error',
+                    statusLabel: null,
                     errorMessage: err.message || 'Error formulating response',
                     messages: state.messages.map((m) =>
                       m.id === assistantMsgId
                         ? {
                             ...m,
                             status: 'error',
+                            activeState: 'error',
+                            statusLabel: undefined,
                             content:
                               m.content ||
                               err.message ||
@@ -408,7 +521,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
                   if (stateResetTimer) clearTimeout(stateResetTimer);
                   stateResetTimer = setTimeout(() => {
-                    set({ mascotState: 'idle', status: 'idle' });
+                    set({ mascotState: 'idle', status: 'idle', statusLabel: null });
                   }, 4000);
 
                   resetSleepTimer();
@@ -419,6 +532,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             if (signal.aborted) {
               set((state) => ({
                 status: 'idle',
+                statusLabel: null,
                 messages: state.messages.map((m) =>
                   m.id === assistantMsgId && m.status === 'streaming'
                     ? { ...m, status: 'complete', content: m.content || '(Generation stopped)' }
@@ -430,12 +544,15 @@ export const useAssistantStore = create<AssistantStoreState>()(
             set((state) => ({
               status: 'error',
               mascotState: 'error',
+              statusLabel: null,
               errorMessage: err?.message || 'Error formulating response',
               messages: state.messages.map((m) =>
                 m.id === assistantMsgId
                   ? {
                       ...m,
                       status: 'error',
+                      activeState: 'error',
+                      statusLabel: undefined,
                       content:
                         m.content ||
                         err?.message ||
@@ -446,7 +563,7 @@ export const useAssistantStore = create<AssistantStoreState>()(
             }));
             if (stateResetTimer) clearTimeout(stateResetTimer);
             stateResetTimer = setTimeout(() => {
-              set({ mascotState: 'idle', status: 'idle' });
+              set({ mascotState: 'idle', status: 'idle', statusLabel: null });
             }, 4000);
             resetSleepTimer();
           } finally {

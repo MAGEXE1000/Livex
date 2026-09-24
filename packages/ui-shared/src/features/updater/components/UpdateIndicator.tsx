@@ -381,7 +381,6 @@ export default function UpdateIndicator({
             if (expectedVerName && expectedVerName === currentAppVer) {
               const lastShownDone = localStorage.getItem('studio:lastShownDoneVersion');
               if (lastShownDone !== currentAppVer) {
-                setShowChangelogSheet(true);
                 localStorage.setItem('studio:lastShownDoneVersion', currentAppVer);
                 updater.dismissUpdate();
               }
@@ -441,17 +440,7 @@ export default function UpdateIndicator({
     }
   }, [updater.isModalOpen]);
 
-  const isCheckingState =
-    updater.updateState === 'INITIALIZING' ||
-    updater.updateState === 'FETCH_REMOTE_METADATA' ||
-    updater.updateState === 'VALIDATE_METADATA' ||
-    updater.updateState === 'COMPARE_VERSION';
 
-  useEffect(() => {
-    if (isCheckingState) {
-      setOpen(true);
-    }
-  }, [isCheckingState]);
 
 
   // Auto-open update modal immediately when update is available, unless dismissed/later'ed.
