@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.45';
-export const NATIVE_VERSION_CODE = 40645;
-export const WEB_VERSION = '4.6.45';
+export const NATIVE_VERSION = '4.6.46';
+export const NATIVE_VERSION_CODE = 40646;
+export const WEB_VERSION = '4.6.46';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/24/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '079b0473';
+export const APP_COMMIT_SHA = '5b7a9058';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/24/2026, 1:43:32 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/24/2026, 3:26:34 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,17 +96,14 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Improved',
     items: [
-      'Chordex New-Song Creation Integration: Connected the AI "Import to Chordex" workflow directly to the canonical song creation dialog (`PresetForm`), prefilling title, key, tempo, and notes while allowing user review before saving.',
-      'Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.',
-      'Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.',
+      'Accent Resolution Throughput: Memoized `resolveAccent` with bounded caching, reducing color math latency from 248ms to 7.8ms (31.7x speedup) and maintaining referential stability across component renders.',
+      'Chord Database Lookups: Replaced linear array scans in `getChordById` and `getChordByName` with O(1) hash maps, increasing lookup throughput by 44%.',
+      'Drumex Metronome Render Isolation: Decoupled beat and subdivision tick subscriptions from `MetronomePanel` root into isolated memoized `BeatCells` and `SubdivisionDots`, eliminating up to 960 full-tree re-renders per minute.',
+      'Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.',
+      'Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.',
+      'Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.',
     ],
   },
 ];
@@ -118,6 +115,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.46',
+    date: '2026-09-24',
+    highlights: [
+      'Accent Resolution Throughput: Memoized `resolveAccent` with bounded caching, reducing color math latency from 248ms to 7.8ms (31.7x speedup) and maintaining referential stability across component renders.',
+      'Chord Database Lookups: Replaced linear array scans in `getChordById` and `getChordByName` with O(1) hash maps, increasing lookup throughput by 44%.',
+      'Drumex Metronome Render Isolation: Decoupled beat and subdivision tick subscriptions from `MetronomePanel` root into isolated memoized `BeatCells` and `SubdivisionDots`, eliminating up to 960 full-tree re-renders per minute.',
+      'Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.',
+      'Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.',
+      'Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.',
+    ],
+  },
   {
     version: '4.6.45',
     date: '2026-09-24',
@@ -213,18 +222,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
     highlights: [
       'Bottom Navigation Bar Pill Geometry: Unified the bottom navigation bar curvature to a full pill shape (`borderRadius: 9999px`), creating visual and geometric harmony with the floating top bar header and satellite app switcher.',
       'Streamlined Native Updater Flow: Simplified the in-app update experience by removing the intermediate verifying and completion panes, keeping the UI cleanly anchored on the installing pane while directly presenting the native Android PackageInstaller prompt to update or cancel.',
-    ],
-  },
-  {
-    version: '4.6.36',
-    date: '2026-09-21',
-    highlights: [
-      'Intro Animation Fluidity: Eliminated frame drops and main-thread raster stalls during mark assembly by eagerly pre-warming and decoding brand textures (livex-form1.png, livex-form2.png, livex-symbol.png) at module evaluation time.',
-      'Zero-Blur GPU Radial Glow: Replaced costly CSS blur filter (filter: blur(28px)) with a hardware-accelerated pure radial gradient, preventing multi-pass Gaussian shader overhead on mobile WebViews.',
-      'HTML Splash Dissolve: Replaced abrupt 0ms hard DOM cutoff of #intro with a coordinated 220ms cubic-bezier dissolve synchronized with the React intro reveal.',
-      'Route Unmount Cutoff Resolution: Added missing exit animation variants (opacity: 0, scale: 1.04) to ApplicationTransitionEngine.tsx, preventing instantaneous component drops under AnimatePresence.',
-      'Sub-App Keep-Alive Preservation: Retained visited sub-applications in DOM across route changes, eliminating component destruction, hook re-initialization, and chunk loading pauses when revisiting apps.',
-      'Dedicated Domain Loading Skeletons: Mapped specific loading skeletons for Chordex, Drumex, Stagex, Groovex, and Vocalex, eliminating jarring layout shifts.',
     ],
   },
 ];

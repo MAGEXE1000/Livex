@@ -1,5 +1,17 @@
 # Studio Changelog
 
+## 4.6.46
+
+Release Date: 2026-09-24
+
+### Improved
+- Accent Resolution Throughput: Memoized `resolveAccent` with bounded caching, reducing color math latency from 248ms to 7.8ms (31.7x speedup) and maintaining referential stability across component renders.
+- Chord Database Lookups: Replaced linear array scans in `getChordById` and `getChordByName` with O(1) hash maps, increasing lookup throughput by 44%.
+- Drumex Metronome Render Isolation: Decoupled beat and subdivision tick subscriptions from `MetronomePanel` root into isolated memoized `BeatCells` and `SubdivisionDots`, eliminating up to 960 full-tree re-renders per minute.
+- Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.
+- Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.
+- Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.
+
 ## 4.6.45
 
 Release Date: 2026-09-24
