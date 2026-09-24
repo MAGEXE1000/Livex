@@ -6,7 +6,7 @@
  *   - usePostUpdateChangelog — detects just-updated state and shows changelog
  */
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, useMemo } from 'react';
 import { APP_VERSION, compareSemver } from '../lib/startup/appVersion';
 import { nativeSet, NATIVE_PREFS } from '../lib/platform/nativePrefs';
 import { useChordStore } from '../store/useChordStore';
@@ -83,48 +83,62 @@ function getSnapshot() {
   return globalUpdateState;
 }
 
+let hasInitializedListeners = false;
+function ensureListenersInitialized() {
+  if (hasInitializedListeners) return;
+  hasInitializedListeners = true;
+  initializeGlobalUpdateListeners();
+  void nativeSet(NATIVE_PREFS.OTA_INSTALLED, APP_VERSION);
+}
+
+const staticUpdaterActions = {
+  openModal: openUpdateModal,
+  closeModal: closeUpdateModal,
+  downloadUpdate: async (trigger?: string) => {
+    await downloadUpdate(trigger);
+  },
+  cancelDownload,
+  applyUpdate: async (trigger?: string) => {
+    await applyUpdate(trigger);
+  },
+  dismissUpdate,
+  markUpdateSeen,
+  downloadAndInstallGitHubApk,
+  runSignatureMismatchRecovery: async () => {
+    return await runSignatureMismatchRecovery(applyUpdate, downloadUpdate);
+  },
+  runUpdaterHealthCheck,
+  getDiagnosticsReport,
+  applyUpdateDirect,
+  shareDownloadedApk,
+  getUpdateHistory,
+  checkAndCleanCache,
+  deleteLocalApk,
+  recordDismissal,
+  shouldShowRecoveryReminder,
+};
+
+async function checkNowAction() {
+  openUpdateModal();
+  const res = await checkForUpdate(true, 'settings_manual', 'user manual checkNow');
+  return res;
+}
+
 export function useAppUpdate(): AppUpdateHookResult {
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   useEffect(() => {
-    initializeGlobalUpdateListeners();
-    void nativeSet(NATIVE_PREFS.OTA_INSTALLED, APP_VERSION);
+    ensureListenersInitialized();
   }, []);
 
-  const checkNow = async () => {
-    openUpdateModal();
-    const res = await checkForUpdate(true, 'settings_manual', 'user manual checkNow');
-    return res;
-  };
-
-  return {
-    ...state,
-    checkNow,
-    openModal: openUpdateModal,
-    closeModal: closeUpdateModal,
-    downloadUpdate: async (trigger?: string) => {
-      await downloadUpdate(trigger);
-    },
-    cancelDownload,
-    applyUpdate: async (trigger?: string) => {
-      await applyUpdate(trigger);
-    },
-    dismissUpdate,
-    markUpdateSeen,
-    downloadAndInstallGitHubApk,
-    runSignatureMismatchRecovery: async () => {
-      return await runSignatureMismatchRecovery(applyUpdate, downloadUpdate);
-    },
-    runUpdaterHealthCheck,
-    getDiagnosticsReport,
-    applyUpdateDirect,
-    shareDownloadedApk,
-    getUpdateHistory,
-    checkAndCleanCache,
-    deleteLocalApk,
-    recordDismissal,
-    shouldShowRecoveryReminder,
-  };
+  return useMemo(
+    () => ({
+      ...state,
+      checkNow: checkNowAction,
+      ...staticUpdaterActions,
+    }),
+    [state]
+  );
 }
 
 export function usePostUpdateChangelog(): {

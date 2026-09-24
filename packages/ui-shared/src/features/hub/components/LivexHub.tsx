@@ -29,7 +29,6 @@ import {
   APP_VERSION,
   getChangelogSections,
   RELEASE_HISTORY,
-  useAppUpdate,
   updateDebugLogs,
   updateDiagnostics,
   checkForUpdate,
@@ -493,7 +492,6 @@ export default function LivexHub() {
   const dynamicLightEnd = useSettingsStore((s) => s.settings.dynamicLightEnd ?? 20);
   const hubUserName = useSettingsStore((s) => s.settings.hubUserName);
 
-  const updater = useAppUpdate();
   const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
 
   const startupComplete = useStartupComplete();

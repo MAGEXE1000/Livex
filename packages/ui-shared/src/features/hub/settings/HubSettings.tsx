@@ -78,6 +78,7 @@ import {
   useScrollHide,
   setNavHidden,
   useT,
+  useAppUpdate,
   APP_VERSION_LABEL,
   APP_VERSION_TAG,
   APP_VERSION_DATE,
@@ -85,7 +86,6 @@ import {
   APP_VERSION,
   getChangelogSections,
   RELEASE_HISTORY,
-  useAppUpdate,
   updateDebugLogs,
   updateDiagnostics,
   checkForUpdate,
@@ -449,7 +449,6 @@ export function HubSettings({
       Boolean(settings.perApp?.hub?.amoledMode) ||
       (typeof document !== 'undefined' &&
         document.documentElement.classList.contains('amoled')));
-  const updater = useAppUpdate();
   const updateSettings = useSettingsStore((state) => state.updateSettings);
   const updatePerApp = useSettingsStore((state) => state.updatePerApp);
   const historyLength = useNavigationStore((s) => s.history.length);
@@ -460,6 +459,7 @@ export function HubSettings({
   const [copiedLogs, setCopiedLogs] = useState(false);
   const [copiedBugTemplate, setCopiedBugTemplate] = useState(false);
   const isWebDesktop = useIsWebDesktop();
+  const updater = useAppUpdate();
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     signedIn: false,

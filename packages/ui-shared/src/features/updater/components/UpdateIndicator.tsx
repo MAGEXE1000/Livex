@@ -64,7 +64,7 @@ import {
  *   download is also a single shot to the newest manifest.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import StudioSpinner from '../../../shared/animata/progress/spinner';
@@ -300,23 +300,25 @@ export default function UpdateIndicator({
 }) {
   const updater = useAppUpdate();
 
-  // Record render of UpdateIndicator during active install states
-  const installStates = [
-    'WAITING_USER_CONFIRMATION',
-    'PACKAGEINSTALLER_VISIBLE',
-    'INSTALLING',
-    'INSTALL_SUCCESS',
-  ];
-  if (installStates.includes(updater.updateState)) {
-    UpdaterFlightRecorder.record({
-      thread: 'ui',
-      sessionId: null,
-      workflowId: null,
-      eventType: 'UpdateIndicatorRender',
-      caller: 'UpdateIndicator',
-      reason: `Rendered UpdateIndicator in state: ${updater.updateState} with progress: ${Math.round(updater.progress * 100)}%`,
-    });
-  }
+  // Record state change of UpdateIndicator during active install states
+  useEffect(() => {
+    const installStates = [
+      'WAITING_USER_CONFIRMATION',
+      'PACKAGEINSTALLER_VISIBLE',
+      'INSTALLING',
+      'INSTALL_SUCCESS',
+    ];
+    if (installStates.includes(updater.updateState)) {
+      UpdaterFlightRecorder.record({
+        thread: 'ui',
+        sessionId: null,
+        workflowId: null,
+        eventType: 'UpdateIndicatorStateChange',
+        caller: 'UpdateIndicator',
+        reason: `UpdateIndicator state: ${updater.updateState}`,
+      });
+    }
+  }, [updater.updateState]);
 
   const [phase, setPhase] = useState<Phase>(readInitialPhase);
   const [open, setOpen] = useState(() => isUpdateInProgress(updater.updateState));
@@ -1040,12 +1042,10 @@ function UpdateModal({
 }) {
   const updater = useAppUpdate();
 
-  // ── Real-time download speed calculation (sliding window) ──
+  // ── Real-time download speed calculation (sliding window via useMemo) ──
   const speedSamplesRef = useRef<{ time: number; bytes: number }[]>([]);
-  const [computedSpeed, setComputedSpeed] = useState<string | null>(null);
-  const [computedEta, setComputedEta] = useState<number | null>(null);
 
-  useEffect(() => {
+  const { computedSpeed, computedEta } = useMemo(() => {
     const isDownloadingState =
       updater.updateState === 'DOWNLOAD_APK' || updater.updateState === 'FETCH_APK_INFORMATION';
 
@@ -1053,9 +1053,7 @@ function UpdateModal({
       if (speedSamplesRef.current.length > 0) {
         speedSamplesRef.current = [];
       }
-      if (computedSpeed !== null) setComputedSpeed(null);
-      if (computedEta !== null) setComputedEta(null);
-      return;
+      return { computedSpeed: null, computedEta: null };
     }
 
     const total =
@@ -1068,7 +1066,9 @@ function UpdateModal({
           ? Math.round(updater.progress * total)
           : null;
 
-    if (typeof bytes !== 'number' || bytes <= 0) return;
+    if (typeof bytes !== 'number' || bytes <= 0) {
+      return { computedSpeed: null, computedEta: null };
+    }
 
     const now = Date.now();
     const samples = speedSamplesRef.current;
@@ -1080,6 +1080,9 @@ function UpdateModal({
       samples.shift();
     }
 
+    let speedStr: string | null = null;
+    let etaNum: number | null = null;
+
     if (samples.length >= 2) {
       const oldest = samples[0];
       const newest = samples[samples.length - 1];
@@ -1088,30 +1091,29 @@ function UpdateModal({
         const bytesPerSec = (newest.bytes - oldest.bytes) / dtSec;
         if (bytesPerSec >= 1024 * 1024) {
           const mbps = bytesPerSec / (1024 * 1024);
-          setComputedSpeed(`${mbps.toFixed(1)} MB/s`);
+          speedStr = `${mbps.toFixed(1)} MB/s`;
         } else if (bytesPerSec >= 1024) {
           const kbps = Math.round(bytesPerSec / 1024);
-          setComputedSpeed(`${kbps} KB/s`);
+          speedStr = `${kbps} KB/s`;
         } else if (bytesPerSec > 0) {
-          setComputedSpeed(`${Math.round(bytesPerSec)} B/s`);
+          speedStr = `${Math.round(bytesPerSec)} B/s`;
         }
 
         if (typeof total === 'number' && total > 0 && bytesPerSec > 0) {
           const remaining = total - newest.bytes;
-          setComputedEta(Math.max(1, Math.round(remaining / bytesPerSec)));
+          etaNum = Math.max(1, Math.round(remaining / bytesPerSec));
         }
       }
     }
-  }, [updater.downloadedBytes, updater.totalBytes, updater.apkSizeBytes, updater.progress, updater.updateState, computedSpeed, computedEta]);
 
-  // Reset speed samples when download is not active
-  useEffect(() => {
-    if (updater.updateState !== 'DOWNLOAD_APK') {
-      speedSamplesRef.current = [];
-      setComputedSpeed(null);
-      setComputedEta(null);
-    }
-  }, [updater.updateState]);
+    return { computedSpeed: speedStr, computedEta: etaNum };
+  }, [
+    updater.downloadedBytes,
+    updater.totalBytes,
+    updater.apkSizeBytes,
+    updater.progress,
+    updater.updateState,
+  ]);
   const t = useT();
   const updaterTr = (t as any)?.updater;
   const [permissionBlocked, setPermissionBlocked] = useState(false);
@@ -1145,51 +1147,14 @@ function UpdateModal({
   })();
   const isAmoled = !isLight && isAmoledMode;
 
-  const [interpolatedProgress, setInterpolatedProgress] = useState(0);
-
-  useEffect(() => {
-    let target = 0;
-    const s = updater.updateState;
-    if (s === 'FETCH_APK_INFORMATION') {
-      target = 0.05;
-    } else if (s === 'DOWNLOAD_APK') {
-      target = 0.05 + updater.progress * 0.8;
-    } else if (s === 'VERIFY_SHA256') {
-      target = 0.88;
-    } else if (s === 'PREPARING_INSTALL') {
-      target = 0.92;
-    } else if (s === 'WAITING_USER_CONFIRMATION' || s === 'PACKAGEINSTALLER_VISIBLE') {
-      target = 0.96;
-    } else if (s === 'INSTALLING') {
-      target = 0.98;
-    } else if (s === 'INSTALL_SUCCESS') {
-      target = 1.0;
-    }
-
-    let animationFrameId: number;
-    let shouldContinue = true;
-    const step = () => {
-      setInterpolatedProgress((prev) => {
-        const diff = target - prev;
-        if (Math.abs(diff) < 0.002) {
-          shouldContinue = false;
-          return target;
-        }
-        return prev + diff * 0.12;
-      });
-      if (shouldContinue) {
-        animationFrameId = requestAnimationFrame(step);
-      }
-    };
-    animationFrameId = requestAnimationFrame(step);
-    return () => {
-      shouldContinue = false;
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [updater.progress, updater.updateState]);
-
-  const pct = Math.round(interpolatedProgress * 100);
-  const isNearCompletion = pct >= 95;
+  const isNearCompletion =
+    (updater.progress ?? 0) >= 0.95 ||
+    updater.updateState === 'VERIFY_SHA256' ||
+    updater.updateState === 'PREPARING_INSTALL' ||
+    updater.updateState === 'WAITING_USER_CONFIRMATION' ||
+    updater.updateState === 'PACKAGEINSTALLER_VISIBLE' ||
+    updater.updateState === 'INSTALLING' ||
+    updater.updateState === 'INSTALL_SUCCESS';
 
   useEffect(() => {
     const isCompleted = updater.updateState === 'INSTALL_SUCCESS';
@@ -1278,7 +1243,7 @@ function UpdateModal({
   const purpleFrom = '#b57bee';
   const purpleTo = '#db2777';
 
-  const handleStartUpdate = async () => {
+  const handleStartUpdate = useCallback(async () => {
     try {
       if (true && isAppInstallerAvailable()) {
         const { AppInstaller } = await import('@workspace/livex-core');
@@ -1289,16 +1254,32 @@ function UpdateModal({
     } catch (err) {
       console.error('[UpdateIndicator] Start update failed:', err);
     }
-  };
+  }, [updater.downloadUpdate, updater.applyUpdate]);
 
-  const handleCancelDownload = () => {
+  const handleCancelDownload = useCallback(() => {
     try {
       updater.cancelDownload('User cancelled download');
     } catch (err) {
       console.error('[UpdateIndicator] Cancel download failed:', err);
     }
     onClose();
-  };
+  }, [updater.cancelDownload, onClose]);
+
+  const handleDone = useCallback(async () => {
+    try {
+      endPostInstallSession('user_done_button');
+      clearInstallationJustCompleted();
+      onClose();
+      updater.dismissUpdate();
+      if (Capacitor.isNativePlatform()) {
+        await AppInstaller.clearInstallerLogHistory();
+        const { App: CapApp } = await import('@capacitor/app');
+        await CapApp.exitApp();
+      }
+    } catch (err) {
+      console.error('[UpdateIndicator] Done click failed:', err);
+    }
+  }, [onClose, updater.dismissUpdate]);
 
   const handleInstallApk = async () => {
     try {
@@ -1719,919 +1700,9 @@ function UpdateModal({
     );
   }
 
-  // Visual custom styles overrides using HSL purple/pink colors
-  const primaryButtonStyle: React.CSSProperties = {
-    width: '100%',
-    height: 52,
-    borderRadius: 9999,
-    background: 'linear-gradient(135deg, #679cff 0%, #007aff 100%)',
-    border: 'none',
-    color: '#ffffff',
-    fontFamily: 'var(--studio-font-body)',
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: 'pointer',
-    boxShadow: '0 8px 24px rgba(0, 122, 255, 0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'transform 150ms ease, opacity 150ms ease',
-  };
 
-  const secondaryButtonStyle: React.CSSProperties = {
-    width: '100%',
-    height: 40,
-    borderRadius: 9999,
-    background: 'transparent',
-    border: 'none',
-    color: '#acabaa',
-    fontFamily: 'Inter, sans-serif',
-    fontWeight: 500,
-    fontSize: 14,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'color 150ms ease',
-  };
 
-  const halfSecondaryButtonStyle: React.CSSProperties = {
-    flex: 1,
-    height: 42,
-    borderRadius: 12,
-    background: isLight ? 'var(--c-surface-low)' : '#131313',
-    border: isLight ? '1px solid var(--c-border)' : '1px solid rgba(72, 72, 72, 0.2)',
-    color: isLight ? 'var(--c-text-primary)' : '#e7e5e4',
-    fontFamily: 'var(--studio-font-body)',
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  const tertiaryButtonStyle: React.CSSProperties = {
-    width: '100%',
-    height: 40,
-    borderRadius: 9999,
-    background: 'transparent',
-    border: 'none',
-    color: '#acabaa',
-    fontFamily: 'Inter, sans-serif',
-    fontWeight: 500,
-    fontSize: 14,
-    cursor: 'pointer',
-    marginTop: 2,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  const animatedPrimaryButtonStyle: React.CSSProperties = {
-    height: '100%',
-    width: '100%',
-    borderRadius: 9999,
-    background: 'linear-gradient(135deg, #679cff 0%, #007aff 100%)',
-    fontFamily: 'var(--studio-font-body)',
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: 'pointer',
-    color: '#ffffff',
-    boxShadow: '0 8px 24px rgba(0, 122, 255, 0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  };
-
-  const renderButtons = () => {
-    if (!showButtons) return null;
-
-    if (state === 'permission_blocked') {
-      return (
-        <div style={{ display: 'flex', gap: 8, marginTop: 18, width: '100%' }}>
-          <ActionButton
-            type="button"
-            onClick={() => setPermissionBlocked(false)}
-            style={secondaryButtonStyle}
-          >
-            {updaterTr?.cancel || 'Cancel'}
-          </ActionButton>
-          <ActionButton type="button" onClick={handleOpenSettings} style={primaryButtonStyle}>
-            Open Settings
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'idle') {
-      return (
-        <div style={{ marginTop: 18, width: '100%' }}>
-          <ActionButton
-            type="button"
-            onClick={onClose}
-            style={{ ...primaryButtonStyle, width: '100%' }}
-          >
-            {updaterTr?.done || 'Close'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'reinstall_warning') {
-      return (
-        <div
-          style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18, width: '100%' }}
-        >
-          <ActionButton type="button" onClick={onClose} style={primaryButtonStyle}>
-            I understand
-          </ActionButton>
-
-          <ActionButton type="button" onClick={onLater} style={tertiaryButtonStyle}>
-            {updaterTr?.cancel || 'Cancel'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'available') {
-      return (
-        <div style={{ width: '100%' }}>
-          {updater.validApkExists ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                marginTop: 18,
-                width: '100%',
-              }}
-            >
-              <ActionButton
-                type="button"
-                onClick={async () => {
-                  try {
-                    await updater.downloadUpdate('Modal: Continue Installation');
-                    await updater.applyUpdate('Modal: Continue Installation');
-                  } catch (err) {
-                    console.error('[UpdateIndicator] Continue installation failed:', err);
-                  }
-                }}
-                style={primaryButtonStyle}
-              >
-                <AnimatedIcon
-                  name="play-circle"
-                  size={18}
-                  color="currentColor"
-                  style={{ marginRight: 6 }}
-                />
-                Continue Installation
-              </ActionButton>
-              <ActionButton type="button" onClick={onLater} style={secondaryButtonStyle}>
-                {updaterTr?.later || 'Later'}
-              </ActionButton>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
-              <button type="button" onClick={handleStartUpdate} style={primaryButtonStyle}>
-                {updaterTr?.installNow || 'Update Now'}
-              </button>
-              <button type="button" onClick={onLater} style={secondaryButtonStyle}>
-                {updaterTr?.later || 'Later'}
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (state === 'manual_apk_required') {
-      const manualApkUrl =
-        updater.manualApkUrl ||
-        `https://studio-30f44.web.app/apk/studio-${updater.remoteVersion}.bin`;
-
-      return (
-        <div
-          style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, width: '100%' }}
-        >
-          <ActionButton
-            type="button"
-            onClick={() => window.open(manualApkUrl, '_system')}
-            style={{ ...primaryButtonStyle, width: '100%' }}
-          >
-            Download APK
-          </ActionButton>
-          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-            <ActionButton
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(manualApkUrl);
-                  setLinkCopied(true);
-                  setTimeout(() => setLinkCopied(false), 2000);
-                } catch (err) {
-                  console.error('Failed to copy manual APK URL:', err);
-                }
-              }}
-              style={halfSecondaryButtonStyle}
-            >
-              {linkCopied ? 'Copied!' : 'Copy Link'}
-            </ActionButton>
-            <ActionButton type="button" onClick={handleOpenGitHub} style={halfSecondaryButtonStyle}>
-              GitHub Fallback
-            </ActionButton>
-          </div>
-          <ActionButton type="button" onClick={onLater} style={tertiaryButtonStyle}>
-            {updaterTr?.later || 'Later'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'ready_to_install' || state === 'readyForInstallPrompt') {
-      return (
-        <div style={{ display: 'flex', gap: 8, marginTop: 18, width: '100%' }}>
-          <ActionButton type="button" onClick={onLater} style={secondaryButtonStyle}>
-            {updaterTr?.later || 'Later'}
-          </ActionButton>
-          <ActionButton type="button" onClick={handleInstallApk} style={primaryButtonStyle}>
-            {updaterTr?.installNow || 'Install'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'signature_mismatch') {
-      const copyDiagnostics = async () => {
-        try {
-          const report = await getDiagnosticsReport();
-          await navigator.clipboard.writeText(report);
-          alert('Diagnostics health report copied to clipboard!');
-        } catch (err) {
-          console.error('Failed to copy diagnostics:', err);
-        }
-      };
-
-      const handleRetryRecovery = async () => {
-        try {
-          await updater.runSignatureMismatchRecovery();
-        } catch (err: any) {
-          alert(`Recovery failed: ${err.message || String(err)}`);
-        }
-      };
-
-      return (
-        <div
-          style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18, width: '100%' }}
-        >
-          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-            <ActionButton
-              type="button"
-              onClick={handleRetryRecovery}
-              style={halfSecondaryButtonStyle}
-            >
-              Retry
-            </ActionButton>
-            <ActionButton type="button" onClick={onLater} style={halfSecondaryButtonStyle}>
-              {updaterTr?.cancel || 'Cancel'}
-            </ActionButton>
-          </div>
-
-          <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 4 }}>
-            <ActionButton
-              type="button"
-              onClick={handleOpenGitHub}
-              style={{ ...halfSecondaryButtonStyle, fontSize: 11, height: 36 }}
-            >
-              GitHub Release Page
-            </ActionButton>
-            <ActionButton
-              type="button"
-              onClick={copyDiagnostics}
-              style={{ ...halfSecondaryButtonStyle, fontSize: 11, height: 36 }}
-            >
-              Copy Diagnostics
-            </ActionButton>
-            <ActionButton
-              type="button"
-              onClick={() => setDiagnosticsOpen(true)}
-              style={{ ...halfSecondaryButtonStyle, fontSize: 11, height: 36 }}
-            >
-              Diagnostics UI
-            </ActionButton>
-          </div>
-        </div>
-      );
-    }
-
-    if (state === 'versionCode_low') {
-      return (
-        <div
-          style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18, width: '100%' }}
-        >
-          <ActionButton type="button" onClick={onLater} style={primaryButtonStyle}>
-            {updaterTr?.later || 'Later'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'failed') {
-      if (updater.validApkExists) {
-        return (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-              marginTop: 14,
-              width: '100%',
-            }}
-          >
-            <h4
-              style={{
-                margin: '4px 0 2px',
-                fontSize: 13,
-                fontWeight: 800,
-                color: 'var(--c-text-primary)',
-                fontFamily: 'var(--studio-font-body)',
-                alignSelf: 'flex-start',
-              }}
-            >
-              Installation could not be started
-            </h4>
-            <p
-              style={{
-                margin: '0 0 6px',
-                fontSize: 11.5,
-                color: 'var(--c-text-secondary)',
-                fontFamily: 'Inter',
-                lineHeight: 1.45,
-                textAlign: 'left',
-              }}
-            >
-              {updater.error ||
-                'Studio could not start the installation automatically. Please choose an option below.'}
-            </p>
-
-            <ActionButton
-              type="button"
-              onClick={async () => {
-                try {
-                  await updater.downloadUpdate('Recovery Center: Retry Installation');
-                  await updater.applyUpdate('Recovery Center: Retry Installation');
-                } catch (err) {
-                  console.error('[UpdateIndicator] Recovery retry failed:', err);
-                }
-              }}
-              style={primaryButtonStyle}
-            >
-              <AnimatedIcon
-                name="refresh"
-                size={18}
-                color="currentColor"
-                style={{ marginRight: 6 }}
-              />
-              {updaterTr?.retry || 'Retry Installation'}
-            </ActionButton>
-
-            <ActionButton type="button" onClick={onLater} style={tertiaryButtonStyle}>
-              {updaterTr?.cancel || 'Cancel'}
-            </ActionButton>
-          </div>
-        );
-      }
-
-      return (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            marginTop: 14,
-            width: '100%',
-          }}
-        >
-          <h4
-            style={{
-              margin: '4px 0 2px',
-              fontSize: 13,
-              fontWeight: 800,
-              color: 'var(--c-text-primary)',
-              fontFamily: 'var(--studio-font-body)',
-              alignSelf: 'flex-start',
-            }}
-          >
-            Update Failed
-          </h4>
-          <p
-            style={{
-              margin: '0 0 6px',
-              fontSize: 11.5,
-              color: 'var(--c-text-secondary)',
-              fontFamily: 'Inter',
-              lineHeight: 1.45,
-              textAlign: 'left',
-            }}
-          >
-            {updater.error || 'Studio could not complete the update automatically.'}
-          </p>
-
-          <ActionButton
-            type="button"
-            onClick={async () => {
-              if (updater.updateAvailable) {
-                await handleStartUpdate();
-              } else {
-                await updater.checkNow();
-              }
-            }}
-            style={primaryButtonStyle}
-          >
-            <AnimatedIcon
-              name="refresh"
-              size={18}
-              color="currentColor"
-              style={{ marginRight: 6 }}
-            />
-            {updaterTr?.retry || 'Retry Update'}
-          </ActionButton>
-
-          <ActionButton type="button" onClick={onLater} style={tertiaryButtonStyle}>
-            {updaterTr?.cancel || 'Cancel'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (state === 'update_success' || state === 'installed' || state === 'installedOrReady') {
-      return (
-        <div style={{ marginTop: 18, width: '100%' }}>
-          <ActionButton
-            type="button"
-            onClick={async () => {
-              try {
-                // End the post-install session and clear all locks so future
-                // automatic checks are not blocked on the next cold start.
-                endPostInstallSession('user_done_button');
-                clearInstallationJustCompleted();
-                onClose();
-                updater.dismissUpdate();
-                if (Capacitor.isNativePlatform()) {
-                  await AppInstaller.clearInstallerLogHistory();
-                  const { App: CapApp } = await import('@capacitor/app');
-                  await CapApp.exitApp();
-                }
-              } catch (err) {
-                console.error('[UpdateIndicator] Done click failed:', err);
-              }
-            }}
-            style={{ ...primaryButtonStyle, width: '100%' }}
-          >
-            {updaterTr?.done || 'Done'}
-          </ActionButton>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const renderIndeterminateProgress = () => {
-    return (
-      <div
-        style={{ width: '100%', marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: 12,
-            fontWeight: 700,
-            fontFamily: 'var(--studio-font-body)',
-            color: 'var(--c-text-primary)',
-          }}
-        >
-          <span>Installing update...</span>
-          <span>In progress</span>
-        </div>
-        <div
-          style={{
-            width: '100%',
-            height: 6,
-            borderRadius: 3,
-            background: 'rgba(128,128,128,0.12)',
-            overflow: 'hidden',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              width: '40%',
-              height: '100%',
-              background: `linear-gradient(90deg, ${purpleFrom}, ${purpleTo})`,
-              animation: 'lg-indeterminate-progress 1.5s infinite linear',
-              borderRadius: 3,
-            }}
-          />
-        </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--c-text-secondary)',
-            fontFamily: 'Inter',
-            opacity: 0.8,
-            textAlign: 'left',
-          }}
-        >
-          {updater.statusText || 'Waiting for system confirmation...'}
-        </div>
-      </div>
-    );
-  };
-
-  const renderProgress = () => {
-    return null;
-  };
-
-  const renderSpinner = () => {
-    if (!showSpinner) return null;
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          margin: '12px 0 6px',
-        }}
-      >
-        <SpinnerSvg cFrom={purpleFrom} cTo={purpleTo} />
-      </div>
-    );
-  };
-
-  const renderIcon = () => {
-    if (
-      isNearCompletion ||
-      showProgress ||
-      state === 'downloading' ||
-      state === 'installing' ||
-      state === 'packageinstaller_visible' ||
-      state === 'readyForInstallPrompt'
-    ) {
-      return null;
-    }
-    if (showSpinner) {
-      return (
-        <div
-          style={{
-            width: 58,
-            height: 58,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <SpinnerSvg cFrom={purpleFrom} cTo={purpleTo} size={28} strokeWidth={2.5} />
-        </div>
-      );
-    }
-
-    return (
-      <div
-        style={{
-          width: 58,
-          height: 58,
-          borderRadius: '50%',
-          background: `color-mix(in srgb, ${iconColor} 12%, var(--app-surface))`,
-          border: `1.5px solid color-mix(in srgb, ${iconColor} 28%, transparent)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: `0 0 20px color-mix(in srgb, ${iconColor} 18%, transparent)`,
-          marginBottom: 10,
-        }}
-      >
-        <AnimatedIcon name={iconName} size={28} color={iconColor} />
-      </div>
-    );
-  };
-
-  // Render buttons
-  const actionButtons = renderButtons();
-
-  const isProgressActiveState = state === 'downloading';
-
-  let progressComponent: React.ReactNode = undefined;
-  if (isProgressActiveState) {
-    progressComponent = (
-      <DownloadProgressIndicator
-        updater={updater}
-        toVersion={toVersion}
-        accentFrom={accentFrom}
-        accentTo={accentTo}
-        isLight={isLight}
-      />
-    );
-  }
-
-  // Construct What's New changelog content
-  const targetVer = toVersion || updater.remoteVersion;
-  const notesList: string[] = (() => {
-    // 1. Try structured releaseNotes or string array from updater
-    if (updater.releaseNotes) {
-      if (Array.isArray(updater.releaseNotes)) {
-        const filtered = updater.releaseNotes
-          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-          .map((item) => sanitizeUTF8String(item.trim()));
-        if (filtered.length > 0) return filtered;
-      } else if (typeof updater.releaseNotes === 'object') {
-        const extracted = extractStructuredReleaseNotes(updater.releaseNotes);
-        if (extracted.bullets.length > 0) {
-          return extracted.bullets;
-        }
-      }
-    }
-
-    // 2. Fallback to parsing updater.changelog / description if releaseNotes was empty
-    if (
-      updater.changelog &&
-      typeof updater.changelog === 'string' &&
-      updater.changelog.trim().length > 0
-    ) {
-      const extracted = extractStructuredReleaseNotes(updater.changelog);
-      if (extracted.bullets.length > 0) {
-        return extracted.bullets;
-      }
-    }
-
-    // 3. Dynamic per-version default (never display old hardcoded notes from prior versions)
-    if (targetVer) {
-      return [
-        `Studio update v${targetVer} includes performance optimizations, UI refinements, and stability improvements.`,
-      ];
-    }
-
-    return [];
-  })();
-
-  const parsedNotes = notesList.map((raw) => {
-    let text = sanitizeUTF8String(raw || '').trim();
-    // Strip leading bullet or dash e.g. "• ", "- ", "* "
-    text = text.replace(/^[-*•]\s*/, '').trim();
-
-    let tag: string | null = null;
-    let tagType: 'improved' | 'fixed' | 'added' | 'changed' | 'default' = 'default';
-
-    // 1. Check for [Category] tag e.g. [Improved], [Fixed], [Added], [Changed]
-    const tagMatch = text.match(
-      /^\[(Added|Improved|Fixed|Changed|Bug\s*Fixes|Fixes|Features|Security)\]\s*(.*)$/i
-    );
-    if (tagMatch) {
-      tag = tagMatch[1];
-      const rawTag = tag.toLowerCase();
-      if (rawTag.startsWith('improv')) tagType = 'improved';
-      else if (rawTag.startsWith('fix') || rawTag.startsWith('bug')) tagType = 'fixed';
-      else if (rawTag.startsWith('add') || rawTag.startsWith('feat')) tagType = 'added';
-      else tagType = 'changed';
-      text = tagMatch[2].trim();
-    }
-
-    // 2. Check for Title: Description pattern
-    let title: string | null = null;
-    let body = text;
-    const colonIdx = text.indexOf(':');
-    if (colonIdx > 0 && colonIdx < 65 && !text.slice(0, colonIdx).includes('\n')) {
-      title = text.slice(0, colonIdx + 1).trim();
-      body = text.slice(colonIdx + 1).trim();
-    }
-
-    return { tag, tagType, title, body };
-  });
-
-  const getTagStyle = (
-    tagType: 'improved' | 'fixed' | 'added' | 'changed' | 'default'
-  ): { bg: string; color: string; border: string } => {
-    switch (tagType) {
-      case 'improved':
-        return {
-          bg: isLight
-            ? 'rgba(2, 132, 199, 0.09)'
-            : isAmoled
-              ? 'rgba(56, 189, 248, 0.14)'
-              : 'rgba(56, 189, 248, 0.12)',
-          color: isLight ? '#0369a1' : isAmoled ? '#bae6fd' : '#7dd3fc',
-          border: isLight
-            ? '1px solid rgba(2, 132, 199, 0.24)'
-            : '1px solid rgba(56, 189, 248, 0.28)',
-        };
-      case 'fixed':
-        return {
-          bg: isLight
-            ? 'rgba(22, 163, 74, 0.09)'
-            : isAmoled
-              ? 'rgba(74, 222, 128, 0.14)'
-              : 'rgba(74, 222, 128, 0.12)',
-          color: isLight ? '#15803d' : isAmoled ? '#bbf7d0' : '#86efac',
-          border: isLight
-            ? '1px solid rgba(22, 163, 74, 0.24)'
-            : '1px solid rgba(74, 222, 128, 0.28)',
-        };
-      case 'added':
-        return {
-          bg: isLight
-            ? 'rgba(124, 58, 237, 0.09)'
-            : isAmoled
-              ? 'rgba(168, 85, 247, 0.14)'
-              : 'rgba(168, 85, 247, 0.12)',
-          color: isLight ? '#6d28d9' : isAmoled ? '#e9d5ff' : '#d8b4fe',
-          border: isLight
-            ? '1px solid rgba(124, 58, 237, 0.24)'
-            : '1px solid rgba(168, 85, 247, 0.28)',
-        };
-      case 'changed':
-      default:
-        return {
-          bg: isLight
-            ? 'rgba(100, 116, 139, 0.09)'
-            : isAmoled
-              ? 'rgba(148, 163, 184, 0.14)'
-              : 'rgba(148, 163, 184, 0.12)',
-          color: isLight ? '#475569' : isAmoled ? '#e2e8f0' : '#cbd5e1',
-          border: isLight
-            ? '1px solid rgba(100, 116, 139, 0.24)'
-            : '1px solid rgba(148, 163, 184, 0.28)',
-        };
-    }
-  };
-
-  const changelogContent = (
-    <div
-      className="studio-updater-changelog-scroll"
-      style={{
-        width: '100%',
-        background: isLight
-          ? 'rgba(0, 0, 0, 0.025)'
-          : isAmoled
-            ? '#050505'
-            : 'rgba(255, 255, 255, 0.03)',
-        border: isLight
-          ? '1px solid rgba(0, 0, 0, 0.08)'
-          : isAmoled
-            ? '1px solid rgba(255, 255, 255, 0.12)'
-            : '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: 14,
-        padding: '12px 14px',
-        textAlign: 'left',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-        maxHeight: 'min(250px, 34vh)',
-        overflowY: 'auto',
-        boxSizing: 'border-box',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'contain',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingBottom: 4,
-          borderBottom: isLight
-            ? '1px solid rgba(0, 0, 0, 0.05)'
-            : '1px solid rgba(255, 255, 255, 0.06)',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: `var(--c-accent-from, ${accentFrom || '#679cff'})`,
-            fontFamily: 'var(--studio-font-body)',
-          }}
-        >
-          {updaterTr?.whatsNew || "What's New"}
-        </span>
-        {targetVer && (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              fontFamily: 'Inter, sans-serif',
-              color: isLight ? '#64748b' : '#94a3b8',
-              background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
-              padding: '1px 6px',
-              borderRadius: 4,
-            }}
-          >
-            v{targetVer}
-          </span>
-        )}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          margin: 0,
-          padding: 0,
-        }}
-      >
-        {parsedNotes.map((note, idx) => {
-          const tagStyle = getTagStyle(note.tagType);
-          const isLast = idx === parsedNotes.length - 1;
-          return (
-            <div
-              key={idx}
-              style={{
-                display: 'block',
-                paddingBottom: isLast ? 0 : 8,
-                borderBottom: isLast
-                  ? 'none'
-                  : isLight
-                    ? '1px solid rgba(0, 0, 0, 0.04)'
-                    : '1px solid rgba(255, 255, 255, 0.04)',
-                textAlign: 'left',
-                lineHeight: 1.55,
-              }}
-            >
-              {note.tag ? (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    fontFamily: 'var(--studio-font-body)',
-                    letterSpacing: '0.03em',
-                    padding: '1.5px 6px',
-                    borderRadius: 5,
-                    background: tagStyle.bg,
-                    color: tagStyle.color,
-                    border: tagStyle.border,
-                    lineHeight: 1.25,
-                    marginRight: 6,
-                    verticalAlign: 'baseline',
-                    flexShrink: 0,
-                  }}
-                >
-                  [{note.tag}]
-                </span>
-              ) : (
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 5,
-                    height: 5,
-                    borderRadius: '50%',
-                    background: `var(--c-accent-from, ${accentFrom || '#679cff'})`,
-                    marginRight: 6,
-                    verticalAlign: 'middle',
-                  }}
-                />
-              )}
-              {note.title && (
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontFamily: 'Inter, sans-serif',
-                    color: isLight ? '#0f172a' : isAmoled ? '#ffffff' : '#f8fafc',
-                    marginRight: 4,
-                  }}
-                >
-                  {note.title}
-                </span>
-              )}
-              <span
-                style={{
-                  fontSize: 12,
-                  fontFamily: 'Inter, sans-serif',
-                  color: isLight ? '#334155' : isAmoled ? '#e5e5e5' : '#cbd5e1',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {note.body}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const showChangelog =
-    updater.updateAvailable &&
-    ['available', 'downloading', 'installing'].includes(state);
+  // StudioUpdateScreen manages its own actions and rendering
 
   return (
     <StudioUpdateScreen
@@ -2644,28 +1715,13 @@ function UpdateModal({
       iconName={iconName}
       iconColor={iconColor}
       showSpinner={showSpinner}
-      actionButtons={actionButtons}
       isRequired={mandatory && state === 'available'}
       onClose={onClose}
       onLater={onLater}
       onUpdateNow={handleStartUpdate}
       onCancelDownload={handleCancelDownload}
       onRetry={handleStartUpdate}
-      onDone={async () => {
-        try {
-          endPostInstallSession('user_done_button');
-          clearInstallationJustCompleted();
-          onClose();
-          updater.dismissUpdate();
-          if (Capacitor.isNativePlatform()) {
-            await AppInstaller.clearInstallerLogHistory();
-            const { App: CapApp } = await import('@capacitor/app');
-            await CapApp.exitApp();
-          }
-        } catch (err) {
-          console.error('[UpdateIndicator] Done click failed:', err);
-        }
-      }}
+      onDone={handleDone}
       apkSizeBytes={updater.apkSizeBytes}
       downloadSpeed={computedSpeed ?? undefined}
       etaSeconds={computedEta ?? undefined}
@@ -2673,7 +1729,6 @@ function UpdateModal({
       totalBytes={updater.totalBytes ?? undefined}
       error={updater.error || installFailedReason}
       releaseNotes={updater.releaseNotes || updater.changelog}
-      progressComponent={progressComponent}
       isLight={isLight}
       isAmoled={isAmoled}
       fromVersion={fromLabel}

@@ -68,6 +68,28 @@ export class UpdaterFlightRecorder {
     this.loaded = true;
   }
 
+  private static saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private static isDirty = false;
+
+  public static flushSync() {
+    if (this.saveTimeout !== null) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    if (!this.isDirty) return;
+    this.isDirty = false;
+    this.save();
+  }
+
+  private static scheduleSave() {
+    this.isDirty = true;
+    if (this.saveTimeout !== null) return;
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null;
+      this.flushSync();
+    }, 1000);
+  }
+
   private static save() {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -200,13 +222,21 @@ export class UpdaterFlightRecorder {
       // We don't bump sequenceId for deduplicated events, but we keep the latest timestamp.
       if (fullEvent.newState !== undefined) lastEvent.newState = fullEvent.newState;
       this.prune();
-      this.save();
+      if (eventSeverity === 'ERROR' || eventSeverity === 'FATAL') {
+        this.flushSync();
+      } else {
+        this.scheduleSave();
+      }
       return;
     }
 
     this.events.push(fullEvent);
     this.prune();
-    this.save();
+    if (eventSeverity === 'ERROR' || eventSeverity === 'FATAL') {
+      this.flushSync();
+    } else {
+      this.scheduleSave();
+    }
 
     // Log to JS console
     const warningText = fullEvent.warning ? ` [WARNING: ${fullEvent.warning}]` : '';
@@ -215,11 +245,13 @@ export class UpdaterFlightRecorder {
 
   public static getEvents(): FlightRecorderEvent[] {
     this.load();
+    this.flushSync();
     return this.events;
   }
 
   public static compileFullReport(): string {
     this.load();
+    this.flushSync();
     const sorted = [...this.events].sort((a, b) => a.sequenceId - b.sequenceId);
     let out = '=== FLIGHT RECORDER REAL RUNTIME TRACE ===\n';
     out += `Total Events: ${sorted.length}\n`;

@@ -104,7 +104,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       caller: 'LivexUpdateScreen',
       reason: `Rendered LivexUpdateScreen state: ${state} (${Math.round(progress * 100)}%)`,
     });
-  }, [state, progress]);
+  }, [state]);
 
   const t = useT();
   const updaterTr = (t as any)?.updater;
@@ -530,7 +530,8 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       ? 'bg-[#121214] hover:bg-[#1a1a1e] active:bg-[#0c0c0e] border border-[#26262b] text-[#dedee3]'
       : 'bg-[#1e1e21] hover:bg-[#26262a] active:bg-[#18181a] border border-[#2c2c30] text-[#dedee3]';
 
-  const customStyles = `
+  const customStyles = useMemo(
+    () => `
     .progress-bar-glow {
       box-shadow: 0 0 12px rgba(66, 142, 255, 0.35);
     }
@@ -544,7 +545,9 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       background: ${resolvedIsLight ? 'rgba(0, 0, 0, 0.16)' : 'rgba(255, 255, 255, 0.14)'};
       border-radius: 9999px;
     }
-  `;
+  `,
+    [resolvedIsLight]
+  );
 
   return (
     <div
