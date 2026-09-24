@@ -708,7 +708,7 @@ export function SharedNavigationBar({
   if (!visible) return null;
 
   return (
-    <NavigationAnimationProvider activeTab={activeTabKey}>
+    <NavigationAnimationProvider activeTab={activeTabKey} items={currentItems}>
       <>
         {/* Profile Click-Outside Backdrop */}
         <motion.div

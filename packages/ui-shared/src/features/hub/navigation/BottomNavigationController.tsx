@@ -312,25 +312,31 @@ export function BottomNavigationController() {
           label: getTranslation('profile'),
           isActive: activeTab === 'profile' || activePage === 'profile',
           onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+            NavigationDispatcher.push({ app: 'hub', page: 'profile', tab: 'profile' });
+            setProfileMenuOpen(false);
           },
         },
         {
           key: 'home',
           icon: 'home',
           label: getTranslation('home'),
-          isActive: activeTab === 'home' && activePage !== 'profile',
+          isActive:
+            (activeTab === 'home' || activePage === 'home') &&
+            activeTab !== 'profile' &&
+            activeTab !== 'settings',
           onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', tab: 'home' });
+            NavigationDispatcher.push({ app: 'hub', page: 'home', tab: 'home' });
+            setProfileMenuOpen(false);
           },
         },
         {
           key: 'settings',
           icon: 'cog',
           label: getTranslation('settings'),
-          isActive: activeTab === 'settings' && activePage !== 'profile',
+          isActive: activeTab === 'settings' || activePage === 'settings',
           onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', tab: 'settings' });
+            NavigationDispatcher.push({ app: 'hub', page: 'settings', tab: 'settings' });
+            setProfileMenuOpen(false);
           },
         },
       ];

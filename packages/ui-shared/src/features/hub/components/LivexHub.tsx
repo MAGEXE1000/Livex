@@ -523,8 +523,12 @@ export default function LivexHub() {
       useNavigationStore.getState().history[useNavigationStore.getState().history.length - 1]
         ?.tab ?? 'home';
     const nextTab = typeof action === 'function' ? action(currentTab as HubTab) : action;
-    NavigationDispatcher.push({ app: 'hub', tab: nextTab });
+    NavigationDispatcher.push({ app: 'hub', page: nextTab, tab: nextTab });
   }, []) as React.Dispatch<React.SetStateAction<HubTab>>;
+
+  useEffect(() => {
+    resetNav();
+  }, [tab]);
 
   useEffect(() => {
     console.log(
@@ -738,18 +742,8 @@ export default function LivexHub() {
 
   const lastUserRef = useRef<AuthUser | null>(null);
 
-  const activeScrollRef =
-    tab === 'home'
-      ? homeScrollRef
-      : tab === 'profile'
-        ? profileScrollRef
-        : tab === 'settings'
-          ? settingsScrollRef
-          : tab === 'assistant'
-            ? assistantScrollRef
-            : helpScrollRef;
-
-  useScrollHide(activeScrollRef, tab);
+  // Only bind outer useScrollHide for home tab; HubSettings and other sub-views manage their own internal scroll containers
+  useScrollHide(homeScrollRef, tab === 'home');
 
   const isFirstAuthRun = useRef(true);
 
@@ -1116,23 +1110,20 @@ export default function LivexHub() {
           variant="tab"
         >
           {(tabId) => {
+            const isScrollableDirectly = tabId === 'home' || tabId === 'help';
             const currentScrollRef =
               tabId === 'home'
                 ? homeScrollRef
-                : tabId === 'profile'
-                  ? profileScrollRef
-                  : tabId === 'settings'
-                    ? settingsScrollRef
-                    : tabId === 'assistant'
-                      ? assistantScrollRef
-                      : helpScrollRef;
+                : tabId === 'help'
+                  ? helpScrollRef
+                  : null;
             return (
               <div
                 ref={currentScrollRef}
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  overflowY: 'auto',
+                  overflowY: isScrollableDirectly ? 'auto' : 'hidden',
                   overflowX: 'hidden',
                   willChange: 'transform',
                   transform: 'translate3d(0, 0, 0)',
@@ -2221,7 +2212,7 @@ export default function LivexHub() {
                         scrollRef={profileScrollRef}
                         authUser={authUser}
                         onProfile={() => {
-                          NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+                          NavigationDispatcher.push({ app: 'hub', page: 'profile', tab: 'profile' });
                         }}
                         tab={tab}
                         setTab={setTab}
