@@ -600,11 +600,15 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
                   systemInstruction: {
                     parts: [{ text: contextualSystemPrompt }],
                   },
-                  tools: [
-                    {
-                      googleSearch: {}, // Native Google Search Grounding
-                    },
-                  ],
+                  ...(hasMediaAttachments
+                    ? {}
+                    : {
+                        tools: [
+                          {
+                            googleSearch: {}, // Native Google Search Grounding (only for text-only queries)
+                          },
+                        ],
+                      }),
                   generationConfig: {
                     temperature: 0.3,
                     maxOutputTokens: 2048,

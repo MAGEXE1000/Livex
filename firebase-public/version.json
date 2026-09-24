@@ -1,26 +1,25 @@
 {
   "platform": "web",
-  "version": "4.6.43",
-  "versionName": "4.6.43",
-  "versionCode": 40643,
-  "version_code": 40643,
-  "commit": "3f01c6e5",
-  "releasedAt": "9/24/2026, 2:34:40 AM CST",
-  "buildTimestamp": "9/24/2026, 2:34:40 AM CST",
+  "version": "4.6.44",
+  "versionName": "4.6.44",
+  "versionCode": 40644,
+  "version_code": 40644,
+  "commit": "35204f6e",
+  "releasedAt": "9/24/2026, 3:35:44 AM CST",
+  "buildTimestamp": "9/24/2026, 3:35:44 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.\n• Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.\n• Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.\n• Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.\n• Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.\n• State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.\n• Dynamic Sub-State Badging: Added live indicator badges during streaming to surface ongoing grounding or recommendation synthesis without blocking chat flow.",
-  "whatsNew": "• Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.\n• Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.\n• Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.\n• Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.\n• Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.\n• State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.\n• Dynamic Sub-State Badging: Added live indicator badges during streaming to surface ongoing grounding or recommendation synthesis without blocking chat flow.",
+  "changelog": "• Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.\n• Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.\n• Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.\n• Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.\n• Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.\n• Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.",
+  "whatsNew": "• Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.\n• Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.\n• Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.\n• Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.\n• Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.\n• Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.",
   "releaseNotes": {
     "added": [
-      "Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.",
-      "Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.",
-      "Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.",
-      "Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text."
+      "Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.",
+      "Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts."
     ],
     "improved": [
-      "Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.",
-      "State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.",
-      "Dynamic Sub-State Badging: Added live indicator badges during streaming to surface ongoing grounding or recommendation synthesis without blocking chat flow."
+      "Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.",
+      "Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.",
+      "Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.",
+      "Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics."
     ]
   },
   "mandatory": false

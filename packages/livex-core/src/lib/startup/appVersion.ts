@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.43';
-export const NATIVE_VERSION_CODE = 40643;
-export const WEB_VERSION = '4.6.43';
+export const NATIVE_VERSION = '4.6.44';
+export const NATIVE_VERSION_CODE = 40644;
+export const WEB_VERSION = '4.6.44';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -67,19 +67,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/23/2026';
+export const APP_VERSION_DATE = '9/24/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '3f01c6e5';
+export const APP_COMMIT_SHA = '35204f6e';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/24/2026, 2:34:40 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/24/2026, 3:35:44 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,18 +98,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Multimodal Livex AI Assistant: Added native musical vision analysis for fretboard photos, fingering charts, sheet music, tabs, pedalboard rigs, and DAW screenshots via Gemini multimodal models.',
-      'Structured Document Ingestion: Enabled seamless base64 decoding and prompt injection for musical text documents (.txt, .md, .csv, .tab, .chordpro, .json) with a 15MB file size limit guard.',
-      'Truthful AI Activity State Machine: Integrated official thinking-orbs states (working, searching, solving, composing, shaping, weaving, listening) with real-time visible status labels directly driven by edge gateway events.',
-      'Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.',
+      'Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.',
+      'Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.',
-      'State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.',
-      'Dynamic Sub-State Badging: Added live indicator badges during streaming to surface ongoing grounding or recommendation synthesis without blocking chat flow.',
+      'Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.',
+      'Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.',
+      'Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.',
+      'Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.',
     ],
   },
 ];
@@ -121,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.44',
+    date: '2026-09-24',
+    highlights: [
+      'Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.',
+      'Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.',
+      'Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.',
+      'Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.',
+      'Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.',
+      'Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.',
+    ],
+  },
   {
     version: '4.6.43',
     date: '2026-09-24',
@@ -218,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'CI/CD & Release Pipeline Modernization: Updated all GitHub Actions workflows to align dynamic package manager resolution (pnpm 11.24.0), modernized runner action versions, corrected CI paths to packages/livex-core/**, and ensured release workflows dynamically target github.repository.',
       'CodeQL Java/Kotlin Analysis Resilience: Configured Android Gradle analysis in CodeQL to rerun compilation tasks without stale build cache interference.',
       'Workspace Quality Gates: Resolved all TypeScript and ESLint linting discrepancies across workspace tests and documentation validation.',
-    ],
-  },
-  {
-    version: '4.6.34',
-    date: '2026-09-20',
-    highlights: [
-      'Dedicated Vocalex Track Effects Surface (`TakeEffectsSheet`): Introduced a professional mobile effects overlay featuring real-time Web Audio API DSP processors (Reverb, Delay/Echo, Chorus/Modulation, Drive/Distortion, High-Pass, and Low-Pass filters) with live auditioning and Android `BackDispatcher` integration.',
-      'Integrated Vocal Harmonizer Suite: Embedded the multi-part vocal harmonizer and pitch-shift layer generator as a dedicated capability inside the Track Effects surface while preserving all existing harmony logic.',
-      'Vocalex Takes Action Hierarchy: Redesigned the post-recording take experience in `TakeDetailView`, moving "Re-record" and "Harmonize" away from the top header into a dedicated, organized track processing area below playback.',
-      'Safe Destructive Action Placement: Separated the delete take action into the dedicated track action area with subtle red tone and modal confirmation to prevent accidental taps while keeping it easily accessible.',
-      'Stagex History Theme Awareness: Replaced hardcoded pink/magenta visual values across `StageHistorySurface` and `StageCanvasView` with semantic theme accent tokens (`--studio-accent`), ensuring cohesive appearance across Dark, Light, and AMOLED themes.',
-      'Stagex Toolbar Cleanup: Removed duplicate History navigation from the elements toolbar to maintain focused, single-purpose toolbars.',
     ],
   },
 ];

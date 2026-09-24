@@ -503,21 +503,24 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         },
       ];
 
-      const geminiPayload = {
+      const geminiPayload: any = {
         contents,
         systemInstruction: {
           parts: [{ text: contextualSystemPrompt }],
         },
-        tools: [
-          {
-            googleSearch: {}, // Native Google Search Grounding
-          },
-        ],
         generationConfig: {
           temperature: 0.3,
           maxOutputTokens: 2048,
         },
       };
+
+      if (!hasMediaAttachments) {
+        geminiPayload.tools = [
+          {
+            googleSearch: {}, // Native Google Search Grounding (only for text-only queries)
+          },
+        ];
+      }
 
       const response = await fetch(geminiUrl, {
         method: 'POST',
@@ -851,7 +854,23 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
         { role: 'user', content: enrichedPrompt },
       ];
 
+      // Extract raw image bytes for Workers AI Vision model if image attachments are present
+      const imageAtt = attachments.find(
+        (a: any) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+      );
+      let imageBytes: number[] | null = null;
+      if (imageAtt?.dataUrl && typeof imageAtt.dataUrl === 'string') {
+        try {
+          const match = imageAtt.dataUrl.match(/^data:image\/[^;]+;base64,(.+)$/);
+          if (match && match[1]) {
+            const binString = atob(match[1]);
+            imageBytes = [...Uint8Array.from(binString, (c) => c.charCodeAt(0))];
+          }
+        } catch {}
+      }
+
       const candidateModels = [
+        ...(hasImages && imageBytes ? ['@cf/meta/llama-3.2-11b-vision-instruct'] : []),
         body?.model,
         env.OPENAI_COMPATIBLE_MODEL,
         '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -866,11 +885,46 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
 
       for (const modelCandidate of candidateModels) {
         try {
-          const stream = await env.AI.run(modelCandidate, {
-            messages,
-            stream: true,
-            max_tokens: 2048,
-          });
+          let stream: any = null;
+
+          if (modelCandidate === '@cf/meta/llama-3.2-11b-vision-instruct' && imageBytes) {
+            // Workers AI Llama 3.2 Vision: try messages with image content part first
+            try {
+              stream = await env.AI.run(modelCandidate, {
+                messages: [
+                  { role: 'system', content: contextualSystemPrompt },
+                  ...history.map((m: any) => ({
+                    role: m.role === 'user' ? 'user' : 'assistant',
+                    content: m.content,
+                  })),
+                  {
+                    role: 'user',
+                    content: [
+                      { type: 'text', text: enrichedPrompt },
+                      { type: 'image', image: imageBytes },
+                    ],
+                  },
+                ],
+                stream: true,
+                max_tokens: 2048,
+              });
+            } catch (msgErr) {
+              // Fallback to prompt + image array schema
+              stream = await env.AI.run(modelCandidate, {
+                prompt: `${contextualSystemPrompt}\n\n${history.map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n')}\nUser: ${enrichedPrompt}`,
+                image: imageBytes,
+                stream: true,
+                max_tokens: 2048,
+              });
+            }
+          } else {
+            stream = await env.AI.run(modelCandidate, {
+              messages,
+              stream: true,
+              max_tokens: 2048,
+            });
+          }
+
           if (stream) {
             const reader = stream.getReader();
             const chunk = await reader.read();
@@ -929,13 +983,21 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
           let keepAliveTimer: any = null;
           try {
             await parser.onConnecting(
-              hasFiles
+              hasImages
+                ? userLanguage === 'es'
+                  ? 'Leyendo imagen…'
+                  : 'Reading image…'
+                : hasAudio
+                ? userLanguage === 'es'
+                  ? 'Analizando audio…'
+                  : 'Analyzing audio…'
+                : hasFiles
                 ? userLanguage === 'es'
                   ? 'Analizando archivo…'
                   : 'Analyzing file…'
                 : userLanguage === 'es'
-                  ? 'Conectando…'
-                  : 'Connecting…'
+                ? 'Conectando…'
+                : 'Connecting…'
             );
             keepAliveTimer = setInterval(() => {
               parser.ping().catch(() => {});

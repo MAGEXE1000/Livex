@@ -509,42 +509,37 @@ export function SharedNavigationBar({
     }
   }, [collapsed, scrollOffsetRaw]);
 
-  // Safari-style physical compression: dock scales down (1.00 → 0.88) on scroll
+  // Safari-style physical compression: dock scales down (1.00 → 0.88) toward center on scroll
   const containerScale = useTransform(scrollOffsetSpring, (offset) => {
     return 1.0 - offset * 0.12;
   });
 
-  // Downward translation: dock and satellites collapse downward by up to 96px on scroll down
-  const containerY = useTransform(scrollOffsetSpring, (offset) => {
-    return offset * 96;
-  });
+  // With transformOrigin 'center bottom', dock remains centered and fully visible within viewport
+  const containerY = useTransform(scrollOffsetSpring, () => 0);
 
-  const containerOpacity = useTransform(scrollOffsetSpring, (offset) => {
-    if (offset <= 0.6) return 1.0;
-    if (offset >= 1.0) return 0;
-    return 1.0 - (offset - 0.6) / 0.4;
-  });
-
-  const dockPointerEvents = useTransform(scrollOffsetSpring, (offset) =>
-    offset > 0.4 ? 'none' : isEffectiveHidden ? 'none' : 'auto'
-  );
-
-  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll/collapse
+  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll
   const satelliteOpacity = useTransform(scrollOffsetSpring, (offset) => {
     if (offset <= 0) return 1.0;
-    if (offset >= 0.7) return 0;
-    return 1.0 - offset / 0.7;
+    if (offset >= 0.45) return 0;
+    return 1.0 - offset / 0.45;
   });
 
   const satelliteScale = useTransform(scrollOffsetSpring, (offset) => {
     if (offset <= 0) return 1.0;
-    if (offset >= 0.7) return 0;
-    return 1.0 - offset / 0.7;
+    if (offset >= 0.45) return 0;
+    return 1.0 - offset / 0.45;
   });
 
   const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
-    offset > 0.4 ? 'none' : 'auto'
+    offset > 0.25 ? 'none' : 'auto'
   );
+
+  // Dynamic satellite X position: collapses occupied space toward the dock center on scroll
+  const satelliteX = useTransform(scrollOffsetSpring, (offset) => {
+    const basePos = barWidth / 2 + dockGap;
+    const collapsedPos = (barWidth / 2) * (1.0 - offset * 0.12);
+    return basePos + (collapsedPos - basePos) * Math.min(1, offset * 1.5);
+  });
 
   const switcherOpacity = satelliteOpacity;
   const switcherScale = satelliteScale;
@@ -960,7 +955,7 @@ export function SharedNavigationBar({
               }}
               style={{
                 contain: 'layout style',
-                pointerEvents: dockPointerEvents,
+                pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: '58px',
                 borderRadius: '9999px',
@@ -986,7 +981,6 @@ export function SharedNavigationBar({
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
-                opacity: containerOpacity,
               }}
             >
               {/* Inner Radial Vignette — realistic optical depth / gentle fresnel reflection */}
@@ -1253,16 +1247,7 @@ export function SharedNavigationBar({
                   display: 'flex',
                   alignItems: 'center',
                   pointerEvents: switcherPointerEvents,
-                  y: containerY,
-                }}
-                animate={{
-                  x: barWidth / 2 + dockGap,
-                }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 340,
-                  damping: 26,
-                  mass: 0.75,
+                  x: satelliteX,
                 }}
               >
                 <motion.button
@@ -1350,16 +1335,7 @@ export function SharedNavigationBar({
                   display: 'flex',
                   alignItems: 'center',
                   pointerEvents: satellitePointerEvents,
-                  y: containerY,
-                }}
-                animate={{
-                  x: barWidth / 2 + dockGap,
-                }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 340,
-                  damping: 26,
-                  mass: 0.75,
+                  x: satelliteX,
                 }}
               >
                 <motion.button
