@@ -2,6 +2,7 @@ import { Dialog } from '../../../shared/design-system/dialogs';
 import {
   getAllChords,
   getChordById,
+  getChordByName,
   type Chord,
   type ChordType,
   type GuitarChordData,
@@ -323,7 +324,7 @@ async function exportPresetToPDF(
         else console.warn('[PDF] custom chord not found:', id);
       } else {
         const displayId = transposeOffset !== 0 ? transposeChordId(id, transposeOffset) : id;
-        const chord = getChordById(displayId) ?? getChordById(id);
+        const chord = getChordById(displayId) ?? getChordById(id) ?? getChordByName(displayId) ?? getChordByName(id);
         if (chord) out.push({ isCustom: false, chord, idx });
         else console.warn('[PDF] chord ID not found in DB:', id, '(transposed:', displayId, ')');
       }
@@ -1467,7 +1468,7 @@ function PaperPreview({
         return cc ? [{ kind: 'custom' as const, cc }] : [];
       }
       const displayId = transposeOffset !== 0 ? transposeChordId(id, transposeOffset) : id;
-      const chord = getChordById(displayId) ?? getChordById(id);
+      const chord = getChordById(displayId) ?? getChordById(id) ?? getChordByName(displayId) ?? getChordByName(id);
       return chord ? [{ kind: 'standard' as const, chord }] : [];
     });
   };
@@ -3698,6 +3699,7 @@ const KEYS = [
 
 export interface PresetFormContentProps {
   initial?: FormData;
+  isEditing?: boolean;
   onSave: (d: FormData) => void;
   onCancel: () => void;
   accent: { from: string; to: string; mid?: string };
@@ -3706,6 +3708,7 @@ export interface PresetFormContentProps {
 
 export function PresetFormContent({
   initial,
+  isEditing = false,
   onSave,
   onCancel,
   accent,
@@ -3715,6 +3718,13 @@ export function PresetFormContent({
   const [form, setForm] = useState<FormData>(
     initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '' }
   );
+
+  useEffect(() => {
+    if (initial) {
+      setForm(initial);
+    }
+  }, [initial]);
+
   const selectStyle: React.CSSProperties = {
     width: '100%',
     background: 'var(--c-surface-high)',
@@ -3803,7 +3813,7 @@ export function PresetFormContent({
             }}
             style={{ flex: 1 }}
           >
-            {initial ? t.songs.save : t.songs.newSong}
+            {isEditing ? t.songs.save : t.songs.newSong}
           </Button>
         </div>
       )}
@@ -3813,11 +3823,13 @@ export function PresetFormContent({
 
 function PresetForm({
   initial,
+  isEditing,
   onSave,
   onCancel,
   accent,
 }: {
   initial?: FormData;
+  isEditing?: boolean;
   onSave: (d: FormData) => void;
   onCancel: () => void;
   accent: { from: string; to: string; mid: string };
@@ -3827,10 +3839,12 @@ function PresetForm({
     <Dialog
       open={true}
       onClose={onCancel}
-      title={initial ? t.songs.editSong : t.songs.newSong}
+      title={isEditing ? t.songs.editSong : t.songs.newSong}
     >
       <PresetFormContent
+        key={isEditing ? 'edit' : initial?.name ? `import-${initial.name}` : 'new'}
         initial={initial}
+        isEditing={isEditing}
         onSave={onSave}
         onCancel={onCancel}
         accent={accent}
@@ -4090,6 +4104,8 @@ export default function SongsPanel() {
   const duplicateChordInSection = useChordStore(useShallow((s) => s.duplicateChordInSection));
   const reorderSection = useChordStore(useShallow((s) => s.reorderSection));
   const convertToSections = useChordStore(useShallow((s) => s.convertToSections));
+  const pendingImport = useChordStore(useShallow((s) => s.pendingImport));
+  const clearPendingImport = useChordStore(useShallow((s) => s.clearPendingImport));
   const deduplicateAllPresets = useChordStore(useShallow((s) => s.deduplicateAllPresets));
   const accent = resolveAccent(settings.accentColor);
   const preferFlats = settings.preferFlats ?? false;
@@ -4097,6 +4113,14 @@ export default function SongsPanel() {
     typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
 
   const [showForm, setShowForm] = useState(false);
+
+  // Auto-open new song creation popup when an import is pending
+  useEffect(() => {
+    if (pendingImport) {
+      setEditingId(null);
+      setShowForm(true);
+    }
+  }, [pendingImport]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
@@ -4263,6 +4287,7 @@ export default function SongsPanel() {
       if (showForm) {
         setShowForm(false);
         setEditingId(null);
+        clearPendingImport();
         return true;
       }
       if (exportModalPreset) {
@@ -4295,6 +4320,7 @@ export default function SongsPanel() {
       showDeleteId,
       activePresetId,
       setActivePreset,
+      clearPendingImport,
     ]
   );
 
@@ -4474,9 +4500,28 @@ export default function SongsPanel() {
     window.addEventListener('pointercancel', handleEnd);
   };
 
+  const editingPreset = editingId ? presets.find((p) => p.id === editingId) : null;
+  const editingFormData = editingPreset
+    ? {
+        name: editingPreset.name,
+        artist: editingPreset.artist,
+        bpm: String(editingPreset.bpm),
+        key: editingPreset.key,
+        notes: editingPreset.notes,
+      }
+    : pendingImport
+      ? {
+          name: pendingImport.title,
+          artist: pendingImport.artist || '',
+          bpm: String(pendingImport.bpm || 120),
+          key: pendingImport.key || 'C',
+          notes: pendingImport.notes || '',
+        }
+      : undefined;
+
   const handleFormSave = (data: FormData) => {
     const bpm = parseInt(data.bpm) || 120;
-    if (editingId)
+    if (editingId) {
       updatePreset(editingId, {
         name: data.name,
         artist: data.artist,
@@ -4484,15 +4529,32 @@ export default function SongsPanel() {
         key: data.key,
         notes: data.notes,
       });
-    else
-      createPreset({
-        name: data.name,
-        artist: data.artist,
+    } else {
+      const chordsToImport = pendingImport?.chordIds || [];
+      const sectionsToImport =
+        chordsToImport.length > 0
+          ? [
+              {
+                id: `sec-${Date.now()}`,
+                name: 'Progression',
+                chords: chordsToImport,
+              },
+            ]
+          : [];
+
+      const newId = createPreset({
+        name: data.name.trim(),
+        artist: data.artist.trim(),
         bpm,
         key: data.key,
         notes: data.notes,
-        chords: [],
+        chords: chordsToImport,
+        sections: sectionsToImport,
       });
+
+      clearPendingImport();
+      setActivePreset(newId);
+    }
     setShowForm(false);
     setEditingId(null);
   };
@@ -4501,15 +4563,20 @@ export default function SongsPanel() {
     ({ close }: { close?: () => void } = {}) => (
       <PresetFormContent
         accent={accent}
+        initial={editingFormData}
+        isEditing={Boolean(editingId)}
         onSave={(formData) => {
           handleFormSave(formData);
           close?.();
         }}
-        onCancel={() => close?.()}
+        onCancel={() => {
+          clearPendingImport();
+          close?.();
+        }}
         showFooterButtons={true}
       />
     ),
-    [accent, handleFormSave]
+    [accent, editingFormData, editingId, handleFormSave, clearPendingImport]
   );
 
   const renderImportSongForm = useCallback(
@@ -4656,16 +4723,6 @@ export default function SongsPanel() {
     setSecDragIdx(null);
   };
 
-  const editingPreset = editingId ? presets.find((p) => p.id === editingId) : null;
-  const editingFormData = editingPreset
-    ? {
-        name: editingPreset.name,
-        artist: editingPreset.artist,
-        bpm: String(editingPreset.bpm),
-        key: editingPreset.key,
-        notes: editingPreset.notes,
-      }
-    : undefined;
 
   /* â•â•â•â•â•â•â• VIEW: PRESET EDITOR â•â•â•â•â•â•â• */
   const renderEditor = () => {
@@ -5675,7 +5732,10 @@ export default function SongsPanel() {
                                     : chordId;
                                 const chord = isCustom
                                   ? null
-                                  : (getChordById(displayId) ?? getChordById(chordId));
+                                  : (getChordById(displayId) ??
+                                    getChordById(chordId) ??
+                                    getChordByName(displayId) ??
+                                    getChordByName(chordId));
                                 if (!chord && !customChord) return null;
                                 const isActive = isDragSec && secChordDragIdx === idx;
                                 return (
@@ -5844,7 +5904,10 @@ export default function SongsPanel() {
                           : chordId;
                       const chord = isCustom
                         ? null
-                        : (getChordById(displayId) ?? getChordById(chordId));
+                        : (getChordById(displayId) ??
+                          getChordById(chordId) ??
+                          getChordByName(displayId) ??
+                          getChordByName(chordId));
                       if (!chord && !customChord) return null;
                       const isActive = dragIdx === i;
                       const stableKey = instanceKeys.current[i] ?? `${chordId}-${i}`;
@@ -6315,10 +6378,12 @@ export default function SongsPanel() {
           <PresetForm
             accent={accent}
             initial={editingFormData}
+            isEditing={Boolean(editingId)}
             onSave={handleFormSave}
             onCancel={() => {
               setShowForm(false);
               setEditingId(null);
+              clearPendingImport();
             }}
           />
         )}
@@ -6576,10 +6641,12 @@ export default function SongsPanel() {
           <PresetForm
             accent={accent}
             initial={editingFormData}
+            isEditing={Boolean(editingId)}
             onSave={handleFormSave}
             onCancel={() => {
               setShowForm(false);
               setEditingId(null);
+              clearPendingImport();
             }}
           />
         )}
@@ -6642,10 +6709,12 @@ export default function SongsPanel() {
         <PresetForm
           accent={accent}
           initial={editingFormData}
+          isEditing={Boolean(editingId)}
           onSave={handleFormSave}
           onCancel={() => {
             setShowForm(false);
             setEditingId(null);
+            clearPendingImport();
           }}
         />
       )}

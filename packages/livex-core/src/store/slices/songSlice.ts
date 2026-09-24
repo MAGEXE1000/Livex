@@ -19,10 +19,22 @@ export interface SongPreset {
   updatedAt: number;
 }
 
+export interface PendingSongImport {
+  title: string;
+  artist?: string;
+  bpm?: number;
+  key?: string;
+  notes?: string;
+  chordIds: string[];
+  chordNames: string[];
+  recommendation?: any;
+}
+
 export interface SongSliceState {
   presets: SongPreset[];
   activePresetId: string | null;
   transpositions: Record<string, number>;
+  pendingImport: PendingSongImport | null;
 }
 
 export interface SongSliceActions {
@@ -32,6 +44,8 @@ export interface SongSliceActions {
   updatePreset: (id: string, data: Partial<SongPreset>) => void;
   deletePreset: (id: string) => void;
   setActivePreset: (id: string | null) => void;
+  setPendingImport: (data: PendingSongImport | null) => void;
+  clearPendingImport: () => void;
   addChordToPreset: (presetId: string, chordId: string) => void;
   removeChordFromPreset: (presetId: string, index: number) => void;
   reorderPresetChords: (presetId: string, from: number, to: number) => void;
@@ -60,6 +74,10 @@ export const createSongSlice: StateCreator<
   presets: [],
   activePresetId: null,
   transpositions: {},
+  pendingImport: null,
+
+  setPendingImport: (data) => set({ pendingImport: data }),
+  clearPendingImport: () => set({ pendingImport: null }),
 
   setTranspose: (presetId, semitones) => {
     const clamped = Math.max(-11, Math.min(11, semitones));

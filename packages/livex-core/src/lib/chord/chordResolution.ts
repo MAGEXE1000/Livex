@@ -435,6 +435,71 @@ export function extractChordProgressionFromText(
 }
 
 /**
+ * Helper to extract canonical Chordex chord IDs from resolved progression.
+ */
+function extractCanonicalChordIds(resolved: ResolvedChordProgression): string[] {
+  const chordIds: string[] = [];
+  for (let i = 0; i < resolved.chords.length; i++) {
+    const item = resolved.chords[i];
+    if (item.chordId) {
+      chordIds.push(item.chordId);
+    } else {
+      const byName = getChordByName(item.name);
+      if (byName) {
+        chordIds.push(byName.id);
+      } else if (item.guitarData) {
+        const customId = `custom-ai-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
+        try {
+          useChordStore.getState().saveCustomChord({
+            id: customId,
+            name: item.name,
+            instrument: 'guitar',
+            frets: item.guitarData.frets,
+            barres: item.guitarData.barres || [],
+            notes: item.notes || [],
+            createdAt: Date.now(),
+          });
+          chordIds.push(customId);
+        } catch {
+          chordIds.push(item.name);
+        }
+      } else {
+        chordIds.push(item.name);
+      }
+    }
+  }
+  return chordIds;
+}
+
+/**
+ * Helper to format a concise, musically meaningful song title.
+ */
+function formatConciseSongTitle(
+  recommendation: ChordProgressionRecommendation,
+  options?: CreateSongFromProgressionOptions
+): string {
+  const keyLabel = recommendation.key
+    ? `${recommendation.key}${recommendation.mode ? ' ' + recommendation.mode : ''}`
+    : 'C Major';
+
+  const rawTitle = options?.title || recommendation.title;
+  if (rawTitle && !rawTitle.toLowerCase().includes('auto-extracted') && rawTitle.length <= 48) {
+    return rawTitle.trim();
+  }
+
+  if (recommendation.mood && recommendation.genre) {
+    return `${recommendation.mood} ${recommendation.genre} (${keyLabel})`;
+  }
+  if (recommendation.genre) {
+    return `${recommendation.genre} Progression (${keyLabel})`;
+  }
+  if (recommendation.mood) {
+    return `${recommendation.mood} Progression (${keyLabel})`;
+  }
+  return `Progression in ${keyLabel}`;
+}
+
+/**
  * Creates a new song preset in Chordex store prepopulated with the progression.
  */
 export function createSongPresetFromProgression(
@@ -442,22 +507,18 @@ export function createSongPresetFromProgression(
   options?: CreateSongFromProgressionOptions
 ): string {
   const resolved = resolveChordProgression(recommendation);
-  const keyLabel = resolved.key ? `${resolved.key}${resolved.mode ? ' ' + resolved.mode : ''}` : 'C Major';
-  const name =
-    options?.title ||
-    (recommendation.description
-      ? recommendation.description.slice(0, 32).trim()
-      : `AI Progression (${keyLabel})`);
+  const name = formatConciseSongTitle(recommendation, options);
 
   const notesArray = [
-    recommendation.description,
     recommendation.feel ? `Feel: ${recommendation.feel}` : '',
     recommendation.timeSignature ? `Time: ${recommendation.timeSignature}` : '',
     recommendation.tempo ? `Tempo: ${recommendation.tempo} BPM` : '',
-    recommendation.repetitions ? `Repetitions: ${recommendation.repetitions}` : '',
+    recommendation.harmonicContext ? `Harmonic: ${recommendation.harmonicContext}` : '',
+    recommendation.referenceContext ? recommendation.referenceContext : '',
+    recommendation.explanation ? recommendation.explanation : '',
   ].filter(Boolean);
 
-  const chordNames = resolved.chords.map((c) => c.name);
+  const chordIds = extractCanonicalChordIds(resolved);
 
   const presetId = useChordStore.getState().createPreset({
     name,
@@ -465,12 +526,12 @@ export function createSongPresetFromProgression(
     bpm: recommendation.tempo || 120,
     key: recommendation.key || 'C',
     notes: notesArray.join('\n'),
-    chords: chordNames,
+    chords: chordIds,
     sections: [
       {
         id: `sec-${Date.now()}`,
         name: 'Progression',
-        chords: chordNames,
+        chords: chordIds,
       },
     ],
   });
@@ -479,37 +540,46 @@ export function createSongPresetFromProgression(
 }
 
 /**
- * Imports progression into Chordex and navigates directly to the Chordex song editor.
+ * Stages progression import and navigates to Chordex, opening the real new-song creation popup.
  */
 export function importProgressionToChordex(
   recommendation: ChordProgressionRecommendation,
   options?: CreateSongFromProgressionOptions
-): string {
-  const presetId = createSongPresetFromProgression(recommendation, options);
+): void {
+  const resolved = resolveChordProgression(recommendation);
+  const title = formatConciseSongTitle(recommendation, options);
 
-  // Set active preset in Chordex store
-  useChordStore.getState().setActivePreset(presetId);
+  const notesArray = [
+    recommendation.feel ? `Feel: ${recommendation.feel}` : '',
+    recommendation.timeSignature ? `Time: ${recommendation.timeSignature}` : '',
+    recommendation.tempo ? `Tempo: ${recommendation.tempo} BPM` : '',
+    recommendation.harmonicContext ? `Harmonic: ${recommendation.harmonicContext}` : '',
+    recommendation.referenceContext ? recommendation.referenceContext : '',
+    recommendation.explanation ? recommendation.explanation : '',
+  ].filter(Boolean);
 
-  // Sync key and progression to practice store if supported
-  try {
-    const store = useChordStore.getState() as any;
-    if (store.setSelectedKey && recommendation.key) {
-      store.setSelectedKey(recommendation.key);
-    }
-    if (store.setActiveProgression && recommendation.chords) {
-      store.setActiveProgression(recommendation.chords);
-    }
-  } catch (err) {
-    console.warn('[importProgressionToChordex] store sync warning:', err);
-  }
+  const chordIds = extractCanonicalChordIds(resolved);
+  const chordNames = resolved.chords.map((c) => c.name);
 
-  // Navigate to Chordex songs page in editor view
+  // Set pending import in Chordex store
+  useChordStore.getState().setPendingImport({
+    title,
+    artist: options?.artist || 'Livex AI',
+    bpm: recommendation.tempo || 120,
+    key: recommendation.key || 'C',
+    notes: notesArray.join('\n'),
+    chordIds,
+    chordNames,
+    recommendation,
+  });
+
+  // Clear active preset so Chordex opens to the songs list rather than an old editor
+  useChordStore.getState().setActivePreset(null);
+
+  // Navigate to Chordex songs page with form subview
   NavigationDispatcher.push({
     app: 'chordex',
     page: 'songs',
-    subView: 'editor',
-    id: presetId,
+    subView: 'form',
   });
-
-  return presetId;
 }

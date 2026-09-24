@@ -4,9 +4,9 @@ import { secureReadLocal, secureWriteLocal } from '../lib/security';
 import { useSettingsStore, settingsController } from './useSettingsStore';
 import { NavigationDispatcher } from '../lib/navigation/NavigationDispatcher';
 import { createChordSlice, type ChordSliceState, type ChordSliceActions, type CustomChord, type Progression, type BarreDef } from './slices/chordSlice';
-import { createSongSlice, type SongSliceState, type SongSliceActions, type SongPreset, type SongSection } from './slices/songSlice';
+import { createSongSlice, type SongSliceState, type SongSliceActions, type SongPreset, type SongSection, type PendingSongImport } from './slices/songSlice';
 
-export type { CustomChord, Progression, BarreDef, SongPreset, SongSection };
+export type { CustomChord, Progression, BarreDef, SongPreset, SongSection, PendingSongImport };
 export type { ChordSliceState as ChordState, SongSliceState as SongState };
 
 interface ChordStore extends SongSliceState, SongSliceActions, ChordSliceState, ChordSliceActions {
@@ -138,6 +138,7 @@ export const useChordStore = create<ChordStore>()(
           libraryActiveType,
           settings,
           lastSession,
+          pendingImport,
           ...rest
         } = state as any;
         return rest;

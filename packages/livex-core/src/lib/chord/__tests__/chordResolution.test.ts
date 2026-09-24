@@ -220,7 +220,7 @@ describe('Chord Resolution & Progression Architecture', () => {
   });
 
   describe('Import to Chordex Integration', () => {
-    it('creates a valid song preset in Chordex store prepopulated with chords and section', () => {
+    it('creates a valid song preset in Chordex store prepopulated with canonical chord IDs and section', () => {
       const rec: ChordProgressionRecommendation = {
         key: 'C',
         mode: 'Major',
@@ -243,15 +243,15 @@ describe('Chord Resolution & Progression Architecture', () => {
       expect(createdPreset?.artist).toBe('Livex AI');
       expect(createdPreset?.key).toBe('C');
       expect(createdPreset?.bpm).toBe(110);
-      expect(createdPreset?.chords).toEqual(['C', 'G', 'Am', 'F']);
+      expect(createdPreset?.chords).toEqual(['C-major', 'G-major', 'A-minor', 'F-major']);
       expect(createdPreset?.sections).toHaveLength(1);
       expect(createdPreset?.sections?.[0].name).toBe('Progression');
-      expect(createdPreset?.sections?.[0].chords).toEqual(['C', 'G', 'Am', 'F']);
+      expect(createdPreset?.sections?.[0].chords).toEqual(['C-major', 'G-major', 'A-minor', 'F-major']);
       expect(createdPreset?.notes).toContain('Feel: Pop Ballad');
       expect(createdPreset?.notes).toContain('Time: 4/4');
     });
 
-    it('importProgressionToChordex sets active preset and navigates to Chordex song editor', () => {
+    it('importProgressionToChordex stages pending import, clears active preset, and navigates to Chordex songs form', () => {
       const rec: ChordProgressionRecommendation = {
         key: 'D',
         mode: 'Major',
@@ -259,20 +259,61 @@ describe('Chord Resolution & Progression Architecture', () => {
         tempo: 120,
       };
 
-      const presetId = importProgressionToChordex(rec);
-      expect(presetId).toBeDefined();
+      importProgressionToChordex(rec);
 
-      // Verifies active preset is set in store
-      expect(useChordStore.getState().activePresetId).toBe(presetId);
+      // Verifies active preset is null so songs panel opens to creation modal
+      expect(useChordStore.getState().activePresetId).toBeNull();
 
-      // Verifies navigation route was dispatched
+      // Verifies pendingImport is set in store with canonical chord IDs and clean metadata
+      const pendingImport = useChordStore.getState().pendingImport;
+      expect(pendingImport).not.toBeNull();
+      expect(pendingImport?.key).toBe('D');
+      expect(pendingImport?.bpm).toBe(120);
+      expect(pendingImport?.chordIds).toEqual(['D-major', 'A-major', 'B-minor', 'G-major']);
+      expect(pendingImport?.chordNames).toEqual(['D', 'A', 'Bm', 'G']);
+      expect(pendingImport?.title).toBe('Progression in D Major');
+
+      // Verifies navigation route was dispatched to chordex songs with subView 'form'
       const navHistory = useNavigationStore.getState().history;
       const currentRoute = navHistory[navHistory.length - 1];
 
       expect(currentRoute.app).toBe('chordex');
       expect(currentRoute.page).toBe('songs');
-      expect((currentRoute as any).subView).toBe('editor');
-      expect((currentRoute as any).id).toBe(presetId);
+      expect((currentRoute as any).subView).toBe('form');
+    });
+
+    it('clearing pending import on cancel leaves no residual state and creates no song', () => {
+      const rec: ChordProgressionRecommendation = {
+        key: 'E',
+        mode: 'Minor',
+        chords: ['Em', 'C', 'G', 'D'],
+      };
+
+      importProgressionToChordex(rec);
+      expect(useChordStore.getState().pendingImport).not.toBeNull();
+
+      // Simulate user canceling the dialog
+      useChordStore.getState().clearPendingImport();
+      expect(useChordStore.getState().pendingImport).toBeNull();
+      expect(useChordStore.getState().presets).toHaveLength(0);
+    });
+
+    it('subsequent import completely replaces previous pending import without reusing old chords', () => {
+      const rec1: ChordProgressionRecommendation = {
+        key: 'C',
+        chords: ['C', 'G'],
+      };
+      const rec2: ChordProgressionRecommendation = {
+        key: 'A',
+        mode: 'Minor',
+        chords: ['Am', 'Dm', 'E7'],
+      };
+
+      importProgressionToChordex(rec1);
+      expect(useChordStore.getState().pendingImport?.chordIds).toEqual(['C-major', 'G-major']);
+
+      importProgressionToChordex(rec2);
+      expect(useChordStore.getState().pendingImport?.chordIds).toEqual(['A-minor', 'D-minor', 'E-7th']);
     });
   });
 
