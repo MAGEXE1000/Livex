@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { type DrumSong, type DrumPattern, type KitType, useT } from '@workspace/livex-core';
 import { Dialog } from '../../../shared/design-system/dialogs';
@@ -54,7 +54,7 @@ function formatKitName(kitType: KitType | null | undefined): string {
 }
 
 /* ──────────────────── MINI RHYTHMIC TIMELINE ──────────────────── */
-function BeatMiniTimeline({
+const BeatMiniTimeline = React.memo(function BeatMiniTimeline({
   pattern,
   isPlaying,
   isLight,
@@ -199,10 +199,10 @@ function BeatMiniTimeline({
       </div>
     </div>
   );
-}
+});
 
 /* ──────────────────── BEAT CARD COMPONENT ──────────────────── */
-function BeatCard({
+const BeatCard = React.memo(function BeatCard({
   song,
   isPlaying,
   onPlayToggle,
@@ -213,10 +213,10 @@ function BeatCard({
 }: {
   song: DrumSong;
   isPlaying: boolean;
-  onPlayToggle: () => void;
-  onOpen: () => void;
-  onStartRename: () => void;
-  onStartDelete: () => void;
+  onPlayToggle: (song: DrumSong) => void;
+  onOpen: (song: DrumSong) => void;
+  onStartRename: (song: DrumSong) => void;
+  onStartDelete: (id: string) => void;
   isLight: boolean;
 }) {
   const activePat = useMemo(() => {
@@ -229,6 +229,26 @@ function BeatCard({
     : '4/4';
   const patternCount = song.patterns.length;
   const kitName = formatKitName(song.kitType);
+
+  const handlePlayToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onPlayToggle(song);
+    },
+    [onPlayToggle, song]
+  );
+
+  const handleOpen = useCallback(() => {
+    onOpen(song);
+  }, [onOpen, song]);
+
+  const handleStartRename = useCallback(() => {
+    onStartRename(song);
+  }, [onStartRename, song]);
+
+  const handleStartDelete = useCallback(() => {
+    onStartDelete(song.id);
+  }, [onStartDelete, song.id]);
 
   return (
     <article
@@ -247,10 +267,7 @@ function BeatCard({
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlayToggle();
-              }}
+              onClick={handlePlayToggle}
               data-testid={`beat-play-btn-${song.id}`}
               aria-label={isPlaying ? 'Stop beat preview' : 'Play beat preview'}
               title={isPlaying ? 'Stop preview' : 'Audition preview'}
@@ -273,11 +290,11 @@ function BeatCard({
             {/* Title & Artist */}
             <div
               className="flex-1 min-w-0 cursor-pointer"
-              onClick={onOpen}
+              onClick={handleOpen}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onOpen();
+                  handleOpen();
                 }
               }}
               role="button"
@@ -315,7 +332,7 @@ function BeatCard({
           {/* Open chevron */}
           <button
             type="button"
-            onClick={onOpen}
+            onClick={handleOpen}
             aria-label="Open beat editor"
             className="w-8 h-8 rounded-full flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
             style={{ color: 'var(--c-text-muted, #8A92A6)' }}
@@ -393,7 +410,7 @@ function BeatCard({
       >
         <button
           type="button"
-          onClick={onOpen}
+          onClick={handleOpen}
           data-testid={`edit-beat-${song.id}`}
           className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
           style={{
@@ -407,7 +424,7 @@ function BeatCard({
 
         <button
           type="button"
-          onClick={onStartRename}
+          onClick={handleStartRename}
           data-testid={`rename-beat-${song.id}`}
           className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
           style={{
@@ -421,7 +438,7 @@ function BeatCard({
 
         <button
           type="button"
-          onClick={onStartDelete}
+          onClick={handleStartDelete}
           data-testid={`delete-beat-${song.id}`}
           className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:opacity-75 text-red-500 hover:text-red-600"
         >
@@ -431,7 +448,7 @@ function BeatCard({
       </div>
     </article>
   );
-}
+});
 
 /* ──────────────────── MAIN DRUM BEATS PANEL ──────────────────── */
 export function DrumBeatsPanel({
@@ -547,11 +564,29 @@ export function DrumBeatsPanel({
     return list;
   }, [drumSongs, kitFilter, searchQuery, sortBy]);
 
-  const handleStartRename = (song: DrumSong) => {
+  const handleStartRename = useCallback((song: DrumSong) => {
     setRenamingSong(song);
     setRenameName(song.name);
     setRenameArtist(song.artist || '');
-  };
+  }, []);
+
+  const handleTogglePreviewStable = useCallback(
+    (song: DrumSong) => {
+      onTogglePreview(song);
+    },
+    [onTogglePreview]
+  );
+
+  const handleSelectSongStable = useCallback(
+    (song: DrumSong) => {
+      onSelectSong(song);
+    },
+    [onSelectSong]
+  );
+
+  const handleStartDeleteStable = useCallback((id: string) => {
+    setDeletingId(id);
+  }, []);
 
   const handleSaveRename = () => {
     if (!renamingSong) return;
@@ -893,10 +928,10 @@ export function DrumBeatsPanel({
                   key={song.id}
                   song={song}
                   isPlaying={previewingSongId === song.id}
-                  onPlayToggle={() => onTogglePreview(song)}
-                  onOpen={() => onSelectSong(song)}
-                  onStartRename={() => handleStartRename(song)}
-                  onStartDelete={() => setDeletingId(song.id)}
+                  onPlayToggle={handleTogglePreviewStable}
+                  onOpen={handleSelectSongStable}
+                  onStartRename={handleStartRename}
+                  onStartDelete={handleStartDeleteStable}
                   isLight={isLight}
                 />
               ))}

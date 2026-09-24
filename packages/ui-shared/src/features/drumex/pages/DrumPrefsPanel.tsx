@@ -147,6 +147,73 @@ export interface DrumPrefsPanelProps {
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
+function PrefsSection({
+  title,
+  isLight,
+  children,
+}: {
+  title: string;
+  isLight: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span
+        className={`text-[9.5px] font-extrabold tracking-widest uppercase px-1 ${isLight ? 'text-zinc-500' : 'text-zinc-455'}`}
+        style={{
+          fontFamily:
+            'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+        }}
+      >
+        {title}
+      </span>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>{children}</Card>
+    </div>
+  );
+}
+
+function PrefsRow({
+  label,
+  desc,
+  isLight,
+  children,
+}: {
+  label: string;
+  desc?: string;
+  isLight: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`flex justify-between items-center px-4 py-3 border-b last:border-none ${isLight ? 'border-zinc-100' : 'border-zinc-900/60'}`}
+    >
+      <div className="flex-1 pr-4">
+        <div
+          className={`text-xs font-bold ${isLight ? 'text-zinc-850' : 'text-zinc-200'}`}
+          style={{
+            fontFamily: 'var(--type-body-font, var(--studio-font-body, "Inter", sans-serif))',
+            fontWeight: 600,
+          }}
+        >
+          {label}
+        </div>
+        {desc && (
+          <div
+            className={`text-[10px] leading-snug mt-0.5 ${isLight ? 'text-zinc-455' : 'text-zinc-500'}`}
+            style={{
+              fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
+              fontWeight: 400,
+            }}
+          >
+            {desc}
+          </div>
+        )}
+      </div>
+      <div className="flex-shrink-0">{children}</div>
+    </div>
+  );
+}
+
 export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
   const settings = useSettingsStore(
     useShallow((s) => ({
@@ -203,67 +270,10 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         return h >= lightStart && h < lightEnd;
       })());
 
-  function PrefsSection({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-      <div className="flex flex-col gap-2">
-        <span
-          className={`text-[9.5px] font-extrabold tracking-widest uppercase px-1 ${isLight ? 'text-zinc-500' : 'text-zinc-450'}`}
-          style={{
-            fontFamily:
-              'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-          }}
-        >
-          {title}
-        </span>
-        <Card style={{ padding: 0, overflow: 'hidden' }}>{children}</Card>
-      </div>
-    );
-  }
-
-  function PrefsRow({
-    label,
-    desc,
-    children,
-  }: {
-    label: string;
-    desc?: string;
-    children: React.ReactNode;
-  }) {
-    return (
-      <div
-        className={`flex justify-between items-center px-4 py-3 border-b last:border-none ${isLight ? 'border-zinc-100' : 'border-zinc-900/60'}`}
-      >
-        <div className="flex-1 pr-4">
-          <div
-            className={`text-xs font-bold ${isLight ? 'text-zinc-850' : 'text-zinc-200'}`}
-            style={{
-              fontFamily: 'var(--type-body-font, var(--studio-font-body, "Inter", sans-serif))',
-              fontWeight: 600,
-            }}
-          >
-            {label}
-          </div>
-          {desc && (
-            <div
-              className={`text-[10px] leading-snug mt-0.5 ${isLight ? 'text-zinc-455' : 'text-zinc-500'}`}
-              style={{
-                fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
-                fontWeight: 400,
-              }}
-            >
-              {desc}
-            </div>
-          )}
-        </div>
-        <div className="flex-shrink-0">{children}</div>
-      </div>
-    );
-  }
-
   function row(key: keyof typeof drumPrefs, label: string, desc: string) {
     if (isWebDesktop) {
       return (
-        <PrefsRow label={label} desc={desc}>
+        <PrefsRow label={label} desc={desc} isLight={isLight}>
           <Toggle
             value={drumPrefs[key] as boolean}
             onChange={(v) => updateDrumPrefs({ [key]: v })}
@@ -271,7 +281,6 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
         </PrefsRow>
       );
     }
-    const acc = resolveAccent(settings.accentColor);
     return (
       <SettingRow label={label} desc={desc}>
         <Toggle
@@ -343,8 +352,8 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
             {(activeCat === 'all' || activeCat === 'startup' || activeCat === 'editor') && (
               <div className="space-y-6">
                 {(activeCat === 'all' || activeCat === 'startup') && (
-                  <PrefsSection title={dp.startOn}>
-                    <PrefsRow label={dp.startOn} desc={dp.startOnDesc}>
+                  <PrefsSection title={dp.startOn} isLight={isLight}>
+                    <PrefsRow label={dp.startOn} desc={dp.startOnDesc} isLight={isLight}>
                       <StartOnSelector<'beats' | 'patterns' | 'prefs'>
                         currentValue={((settings.defaultDrumTab === 'songs' ? 'beats' : settings.defaultDrumTab) ?? 'beats') as any}
                         options={[
@@ -362,7 +371,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
                 )}
 
                 {(activeCat === 'all' || activeCat === 'editor') && (
-                  <PrefsSection title={dp.editorBehavior}>
+                  <PrefsSection title={dp.editorBehavior} isLight={isLight}>
                     {row('noteVariationsCycle', dp.noteVariations, dp.noteVariationsDesc)}
                     {row('autoExpandPattern', dp.autoExpand, dp.autoExpandDesc)}
                     {row('snapToGrid', dp.snapToGrid, dp.snapToGridDesc)}
@@ -375,7 +384,7 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
             {/* Column 2: Playback & Dynamics */}
             {(activeCat === 'all' || activeCat === 'playback') && (
               <div className="space-y-6">
-                <PrefsSection title={dp.playback}>
+                <PrefsSection title={dp.playback} isLight={isLight}>
                   {row('autoPlayOnEdit', dp.autoPlay, dp.autoPlayDesc)}
                   {row('loopPlayback', dp.loopPlayback, dp.loopPlaybackDesc)}
                   {row('metronome', dp.metronome, dp.metronomeDesc)}
@@ -388,12 +397,12 @@ export default function DrumPrefsPanel({ onScroll }: DrumPrefsPanelProps = {}) {
             {/* Column 3: Display & Visuals */}
             {(activeCat === 'all' || activeCat === 'display') && (
               <div className="space-y-6">
-                <PrefsSection title={dp.interaction}>
+                <PrefsSection title={dp.interaction} isLight={isLight}>
                   {row('showNoteVariations', dp.showVariations, dp.showVariationsDesc)}
                   {row('highlightActiveInst', dp.highlightActive, dp.highlightActiveDesc)}
                 </PrefsSection>
 
-                <PrefsSection title={dp.visual}>
+                <PrefsSection title={dp.visual} isLight={isLight}>
                   {row('gridLinesEmphasis', dp.gridEmphasis, dp.gridEmphasisDesc)}
                 </PrefsSection>
               </div>

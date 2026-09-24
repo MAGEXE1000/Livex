@@ -29,12 +29,169 @@ interface MetronomePanelProps {
   isAmoled?: boolean;
 }
 
+interface BeatCellsProps {
+  beatsCount: number;
+  beatGridColsClass: string;
+  accentPattern: Record<number, 'normal' | 'accent' | 'strong'> | undefined;
+  isAmoled: boolean;
+  cycleBeatAccent: (index: number) => void;
+}
+
+const BeatCells = React.memo(function BeatCells({
+  beatsCount,
+  beatGridColsClass,
+  accentPattern,
+  isAmoled,
+  cycleBeatAccent,
+}: BeatCellsProps) {
+  const activeBeat = useMetronomeStore((s) => s.activeBeat);
+  const isPlaying = useMetronomeStore((s) => s.isPlaying);
+
+  return (
+    <div className={`grid gap-2 py-1 ${beatGridColsClass}`}>
+      {Array.from({ length: beatsCount }).map((_, idx) => {
+        const isCurrent = isPlaying && activeBeat === idx;
+        const accentType = (accentPattern && accentPattern[idx]) || 'normal';
+        const isStrong = accentType === 'strong';
+        const isAccent = accentType === 'accent';
+        const isCompact = beatsCount > 6;
+
+        if (isCurrent) {
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => cycleBeatAccent(idx)}
+              className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl flex flex-col items-center justify-center font-manrope font-extrabold relative overflow-hidden pulse-active cursor-pointer ${
+                isStrong
+                  ? 'bg-[#007aff] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)]'
+                  : isAccent
+                    ? 'bg-sky-500 text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]'
+                    : 'bg-blue-600 text-white shadow-[0_4px_14px_rgba(0,122,255,0.2)]'
+              }`}
+            >
+              <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
+                {idx + 1}
+              </span>
+              <span className="text-[8px] font-bold tracking-widest uppercase opacity-90">
+                {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
+              </span>
+              {(isStrong || isAccent) && (
+                <span
+                  className={`absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full ${
+                    isStrong ? 'bg-white' : 'bg-white/80'
+                  }`}
+                />
+              )}
+            </button>
+          );
+        }
+
+        return (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => cycleBeatAccent(idx)}
+            className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl border flex flex-col items-center justify-center font-manrope font-bold transition cursor-pointer relative ${
+              isStrong
+                ? isAmoled
+                  ? 'bg-[#007aff]/25 text-[#007aff] border-[#007aff] hover:bg-[#007aff]/35'
+                  : 'bg-blue-50/80 dark:bg-blue-950/40 text-[#007aff] border-[#007aff] hover:bg-blue-100 dark:hover:bg-blue-900/50 shadow-xs'
+                : isAccent
+                  ? isAmoled
+                    ? 'bg-sky-500/20 text-sky-400 border-sky-500/70 hover:bg-sky-500/30'
+                    : 'bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 border-sky-400/60 dark:border-sky-600/60 hover:bg-sky-100 dark:hover:bg-sky-900/40'
+                  : isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
+              {idx + 1}
+            </span>
+            <span
+              className={`text-[8px] ${
+                isStrong
+                  ? 'font-extrabold text-[#007aff]'
+                  : isAccent
+                    ? 'font-bold text-sky-500 dark:text-sky-400'
+                    : 'font-medium text-slate-400 dark:text-zinc-500'
+              }`}
+            >
+              {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
+            </span>
+            {isStrong && (
+              <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-[#007aff]" />
+            )}
+            {isAccent && (
+              <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-sky-400" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+
+interface SubdivisionDotsProps {
+  pulsesCount: number;
+  subdivisionLabel: string;
+  isAmoled: boolean;
+}
+
+const SubdivisionDots = React.memo(function SubdivisionDots({
+  pulsesCount,
+  subdivisionLabel,
+  isAmoled,
+}: SubdivisionDotsProps) {
+  const activeSubdivision = useMetronomeStore((s) => s.activeSubdivision);
+  const isPlaying = useMetronomeStore((s) => s.isPlaying);
+
+  return (
+    <div
+      className={`flex items-center justify-between px-2 pt-1 border-t ${
+        isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+      }`}
+    >
+      <span className="text-[9px] font-medium text-slate-400 dark:text-zinc-500">
+        Subdivisions
+      </span>
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: pulsesCount }).map((_, i) => (
+            <span
+              key={i}
+              className={`rounded-full transition-colors ${
+                pulsesCount > 4 ? 'w-1.5 h-1.5' : 'w-2 h-2'
+              } ${
+                isPlaying && activeSubdivision === i
+                  ? 'bg-[#007aff]'
+                  : i === 0
+                    ? isAmoled
+                      ? 'bg-zinc-500'
+                      : 'bg-slate-400 dark:bg-zinc-600'
+                    : isAmoled
+                      ? 'bg-zinc-800'
+                      : 'bg-slate-200 dark:bg-zinc-800'
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-[9px] font-mono font-semibold text-slate-500 dark:text-zinc-400 ml-1">
+          {subdivisionLabel}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: MetronomePanelProps) {
   const storeAmoled = useSettingsStore(
     (s) => Boolean(s.settings?.amoledMode || s.settings?.perApp?.drumex?.amoledMode)
   );
   const isAmoled = propIsAmoled ?? storeAmoled;
   const isWebDesktop = useIsWebDesktop();
+  const activeBeatForCountIn = useMetronomeStore((s) => (s.isCountIn ? s.activeBeat : -1));
 
   const {
     bpm,
@@ -53,8 +210,6 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     effectiveBpm,
     rampProgress,
     isPlaying,
-    activeBeat,
-    activeSubdivision,
     isCountIn,
     countInNumber,
     countInBar,
@@ -602,124 +757,20 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
           </div>
 
           {/* Visual Pulsing Cells with 3-Tier Multi-Accents */}
-          <div className={`grid gap-2 py-1 ${beatGridColsClass}`}>
-            {Array.from({ length: beatsCount }).map((_, idx) => {
-              const isCurrent = isPlaying && activeBeat === idx;
-              const accentType = (accentPattern && accentPattern[idx]) || 'normal';
-              const isStrong = accentType === 'strong';
-              const isAccent = accentType === 'accent';
-              const isCompact = beatsCount > 6;
-
-              if (isCurrent) {
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => cycleBeatAccent(idx)}
-                    className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl flex flex-col items-center justify-center font-manrope font-extrabold relative overflow-hidden pulse-active cursor-pointer ${
-                      isStrong
-                        ? 'bg-[#007aff] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)]'
-                        : isAccent
-                          ? 'bg-sky-500 text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]'
-                          : 'bg-blue-600 text-white shadow-[0_4px_14px_rgba(0,122,255,0.2)]'
-                    }`}
-                  >
-                    <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-[8px] font-bold tracking-widest uppercase opacity-90">
-                      {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
-                    </span>
-                    {(isStrong || isAccent) && (
-                      <span
-                        className={`absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full ${
-                          isStrong ? 'bg-white' : 'bg-white/80'
-                        }`}
-                      />
-                    )}
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => cycleBeatAccent(idx)}
-                  className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl border flex flex-col items-center justify-center font-manrope font-bold transition cursor-pointer relative ${
-                    isStrong
-                      ? isAmoled
-                        ? 'bg-[#007aff]/25 text-[#007aff] border-[#007aff] hover:bg-[#007aff]/35'
-                        : 'bg-blue-50/80 dark:bg-blue-950/40 text-[#007aff] border-[#007aff] hover:bg-blue-100 dark:hover:bg-blue-900/50 shadow-xs'
-                      : isAccent
-                        ? isAmoled
-                          ? 'bg-sky-500/20 text-sky-400 border-sky-500/70 hover:bg-sky-500/30'
-                          : 'bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 border-sky-400/60 dark:border-sky-600/60 hover:bg-sky-100 dark:hover:bg-sky-900/40'
-                        : isAmoled
-                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
-                    {idx + 1}
-                  </span>
-                  <span
-                    className={`text-[8px] ${
-                      isStrong
-                        ? 'font-extrabold text-[#007aff]'
-                        : isAccent
-                          ? 'font-bold text-sky-500 dark:text-sky-400'
-                          : 'font-medium text-slate-400 dark:text-zinc-500'
-                    }`}
-                  >
-                    {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
-                  </span>
-                  {isStrong && (
-                    <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-[#007aff]" />
-                  )}
-                  {isAccent && (
-                    <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-sky-400" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <BeatCells
+            beatsCount={beatsCount}
+            beatGridColsClass={beatGridColsClass}
+            accentPattern={accentPattern}
+            isAmoled={isAmoled}
+            cycleBeatAccent={cycleBeatAccent}
+          />
 
           {/* Subdivision Visual Dots */}
-          <div
-            className={`flex items-center justify-between px-2 pt-1 border-t ${
-              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
-            }`}
-          >
-            <span className="text-[9px] font-medium text-slate-400 dark:text-zinc-500">
-              Subdivisions
-            </span>
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: pulsesCount }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`rounded-full transition-colors ${
-                      pulsesCount > 4 ? 'w-1.5 h-1.5' : 'w-2 h-2'
-                    } ${
-                      isPlaying && activeSubdivision === i
-                        ? 'bg-[#007aff]'
-                        : i === 0
-                          ? isAmoled
-                            ? 'bg-zinc-500'
-                            : 'bg-slate-400 dark:bg-zinc-600'
-                          : isAmoled
-                            ? 'bg-zinc-800'
-                            : 'bg-slate-200 dark:bg-zinc-800'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-[9px] font-mono font-semibold text-slate-500 dark:text-zinc-400 ml-1">
-                {subdivisionLabel}
-              </span>
-            </div>
-          </div>
+          <SubdivisionDots
+            pulsesCount={pulsesCount}
+            subdivisionLabel={subdivisionLabel}
+            isAmoled={isAmoled}
+          />
         </section>
 
         {/* 2. GIANT BPM DISPLAY & CONTROLS */}
@@ -2503,7 +2554,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               key={`${countInBar}-${countInNumber}`}
               className="text-8xl sm:text-9xl font-black font-manrope text-slate-900 dark:text-white tabular-nums animate-in zoom-in-75 duration-75 leading-none"
             >
-              {countInNumber ?? (activeBeat >= 0 ? activeBeat + 1 : 1)}
+              {countInNumber ?? (activeBeatForCountIn >= 0 ? activeBeatForCountIn + 1 : 1)}
             </span>
             <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500 mt-2 font-manrope">
               {countInVoiceEnabled ? 'Voice Count-In' : 'Count-In'} • Beat {countInNumber ?? 1} of{' '}

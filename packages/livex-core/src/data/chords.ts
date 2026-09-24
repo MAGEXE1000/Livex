@@ -1424,12 +1424,24 @@ function generateMissingChords(): Chord[] {
 
 // Merge generated chords into the database lazily upon first access
 let _isChordDbInitialized = false;
+let _chordByIdMap: Map<string, Chord> | null = null;
+const _chordByNameCache = new Map<string, Chord | null>();
 
 function ensureChordDb(): Chord[] {
   if (!_isChordDbInitialized) {
     _isChordDbInitialized = true;
     const generatedChords = generateMissingChords();
     chordDatabase.push(...generatedChords);
+    _chordByIdMap = new Map();
+    for (let i = 0; i < chordDatabase.length; i++) {
+      const c = chordDatabase[i];
+      _chordByIdMap.set(c.id, c);
+      _chordByIdMap.set(c.id.toLowerCase(), c);
+      const cleanName = c.name.replace(/\s/g, '').toLowerCase();
+      if (!_chordByNameCache.has(cleanName)) {
+        _chordByNameCache.set(cleanName, c);
+      }
+    }
   }
   return chordDatabase;
 }
@@ -1439,7 +1451,9 @@ export function getAllChords(): Chord[] {
 }
 
 export function getChordById(id: string): Chord | undefined {
-  return ensureChordDb().find((c) => c.id === id);
+  if (!id) return undefined;
+  ensureChordDb();
+  return _chordByIdMap?.get(id) || _chordByIdMap?.get(id.toLowerCase());
 }
 
 export function searchChords(query: string): Chord[] {
@@ -1457,9 +1471,9 @@ export function searchChords(query: string): Chord[] {
 
 export function getRelatedChords(chord: Chord): Chord[] {
   if (!chord.relatedChords) return [];
-  const db = ensureChordDb();
+  ensureChordDb();
   return chord.relatedChords
-    .map((name) => db.find((c) => c.name === name))
+    .map((name) => getChordByName(name))
     .filter(Boolean) as Chord[];
 }
 
@@ -1734,47 +1748,55 @@ function toCanonicalRoot(root: string): string {
 }
 
 export function getChordByName(name: string): Chord | undefined {
-  const db = ensureChordDb();
+  if (!name) return undefined;
+  ensureChordDb();
   const normName = normalizeChordName(name);
   const normalized = normName.toLowerCase();
+  const cached = _chordByNameCache.get(normalized);
+  if (cached !== undefined) return cached ?? undefined;
+
+  const db = chordDatabase;
 
   // 1. Direct name match
   let found = db.find((c) => c.name.replace(/\s/g, '').toLowerCase() === normalized);
-  if (found) return found;
-
-  // 2. ID match
-  found = db.find((c) => c.id.toLowerCase() === normalized);
-  if (found) return found;
-
-  // 3. Match parts of a slash-separated name (e.g. "C#/Db" matching "C#" or "Db")
-  found = db.find((c) => {
-    const cName = c.name.replace(/\s/g, '').toLowerCase();
-    if (cName.includes('/')) {
-      const parts = cName.split('/');
-      return parts.includes(normalized);
-    }
-    return false;
-  });
-  if (found) return found;
-
-  // 4. Enharmonic fallback
-  const match = normalized.match(/^([a-g][#b]?)(.*)$/);
-  if (match) {
-    const queryRoot = toCanonicalRoot(match[1].charAt(0).toUpperCase() + match[1].slice(1));
-    const querySuffix = match[2];
-
+  if (!found) {
+    // 2. ID match
+    found = db.find((c) => c.id.toLowerCase() === normalized);
+  }
+  if (!found) {
+    // 3. Match parts of a slash-separated name (e.g. "C#/Db" matching "C#" or "Db")
     found = db.find((c) => {
-      const baseName = c.name.split('/')[0].trim();
-      const cMatch = baseName.toLowerCase().match(/^([a-g][#b]?)(.*)$/);
-      if (cMatch) {
-        const cRoot = toCanonicalRoot(cMatch[1].charAt(0).toUpperCase() + cMatch[1].slice(1));
-        const cSuffix = cMatch[2];
-        return cRoot === queryRoot && cSuffix === querySuffix;
+      const cName = c.name.replace(/\s/g, '').toLowerCase();
+      if (cName.includes('/')) {
+        const parts = cName.split('/');
+        return parts.includes(normalized);
       }
       return false;
     });
-    if (found) return found;
+  }
+  if (!found) {
+    // 4. Enharmonic fallback
+    const match = normalized.match(/^([a-g][#b]?)(.*)$/);
+    if (match) {
+      const queryRoot = toCanonicalRoot(match[1].charAt(0).toUpperCase() + match[1].slice(1));
+      const querySuffix = match[2];
+
+      found = db.find((c) => {
+        const baseName = c.name.split('/')[0].trim();
+        const cMatch = baseName.toLowerCase().match(/^([a-g][#b]?)(.*)$/);
+        if (cMatch) {
+          const cRoot = toCanonicalRoot(cMatch[1].charAt(0).toUpperCase() + cMatch[1].slice(1));
+          const cSuffix = cMatch[2];
+          return cRoot === queryRoot && cSuffix === querySuffix;
+        }
+        return false;
+      });
+    }
   }
 
-  return undefined;
+  if (_chordByNameCache.size >= 1000) {
+    _chordByNameCache.clear();
+  }
+  _chordByNameCache.set(normalized, found ?? null);
+  return found;
 }

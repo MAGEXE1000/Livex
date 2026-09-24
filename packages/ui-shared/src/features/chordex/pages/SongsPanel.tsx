@@ -4107,7 +4107,7 @@ export default function SongsPanel() {
   const pendingImport = useChordStore(useShallow((s) => s.pendingImport));
   const clearPendingImport = useChordStore(useShallow((s) => s.clearPendingImport));
   const deduplicateAllPresets = useChordStore(useShallow((s) => s.deduplicateAllPresets));
-  const accent = resolveAccent(settings.accentColor);
+  const accent = useMemo(() => resolveAccent(settings.accentColor), [settings.accentColor]);
   const preferFlats = settings.preferFlats ?? false;
   const isNative =
     typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * accentUtils.ts
  *
  * Canonical color mathematics and preset definitions for the Studio/Livex
@@ -112,18 +112,24 @@ export function lighten(hex: string, amount: number): string {
   return rgbToHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount);
 }
 
+const _accentCache = new Map<string, ResolvedAccent>();
+
 /**
  * Resolve any preset ID or custom hex code into complete semantic accent tokens.
  */
 export function resolveAccent(accentColor?: string): ResolvedAccent {
   const input = (accentColor || DEFAULT_ACCENT_ID).trim();
+  const cached = _accentCache.get(input);
+  if (cached) return cached;
+
+  let result: ResolvedAccent;
 
   // 1. Check if it's a known preset ID
   const preset = ACCENT_PRESETS.find((p) => p.id.toLowerCase() === input.toLowerCase());
   if (preset) {
     const [r, g, b] = hexToRgb(preset.to);
     const lum = calculateLuminance(r, g, b);
-    return {
+    result = {
       id: preset.id,
       from: preset.from,
       to: preset.to,
@@ -137,47 +143,53 @@ export function resolveAccent(accentColor?: string): ResolvedAccent {
       hover: lighten(preset.to, 0.15),
       active: adjustBrightness(preset.to, 0.9),
     };
+  } else {
+    // 2. Otherwise treat as a custom hex color
+    const baseHex = input.startsWith('#') ? input : `#${input}`;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(baseHex)) {
+      // If not a valid 6-char hex, fallback to default blue
+      const defaultPreset = ACCENT_PRESETS[0];
+      const [r, g, b] = hexToRgb(defaultPreset.to);
+      result = {
+        id: defaultPreset.id,
+        from: defaultPreset.from,
+        to: defaultPreset.to,
+        mid: defaultPreset.mid,
+        rgb: `${r}, ${g}, ${b}`,
+        contrast: '#ffffff',
+        soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
+        subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
+        glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
+        border: `rgba(${r}, ${g}, ${b}, 0.35)`,
+        hover: lighten(defaultPreset.to, 0.15),
+        active: adjustBrightness(defaultPreset.to, 0.9),
+      };
+    } else {
+      const [r, g, b] = hexToRgb(baseHex);
+      const fromHex = lighten(baseHex, 0.28);
+      const midHex = lighten(baseHex, 0.12);
+      const lum = calculateLuminance(r, g, b);
+
+      result = {
+        id: 'custom',
+        from: fromHex,
+        to: baseHex,
+        mid: midHex,
+        rgb: `${r}, ${g}, ${b}`,
+        contrast: lum > 0.55 ? '#09090b' : '#ffffff',
+        soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
+        subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
+        glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
+        border: `rgba(${r}, ${g}, ${b}, 0.35)`,
+        hover: lighten(baseHex, 0.15),
+        active: adjustBrightness(baseHex, 0.9),
+      };
+    }
   }
 
-  // 2. Otherwise treat as a custom hex color
-  const baseHex = input.startsWith('#') ? input : `#${input}`;
-  if (!/^#[0-9A-Fa-f]{6}$/.test(baseHex)) {
-    // If not a valid 6-char hex, fallback to default blue
-    const defaultPreset = ACCENT_PRESETS[0];
-    const [r, g, b] = hexToRgb(defaultPreset.to);
-    return {
-      id: defaultPreset.id,
-      from: defaultPreset.from,
-      to: defaultPreset.to,
-      mid: defaultPreset.mid,
-      rgb: `${r}, ${g}, ${b}`,
-      contrast: '#ffffff',
-      soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
-      subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
-      glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
-      border: `rgba(${r}, ${g}, ${b}, 0.35)`,
-      hover: lighten(defaultPreset.to, 0.15),
-      active: adjustBrightness(defaultPreset.to, 0.9),
-    };
+  if (_accentCache.size >= 256) {
+    _accentCache.clear();
   }
-
-  const [r, g, b] = hexToRgb(baseHex);
-  const fromHex = lighten(baseHex, 0.28);
-  const midHex = lighten(baseHex, 0.12);
-  const lum = calculateLuminance(r, g, b);
-
-  return {
-    id: 'custom',
-    from: fromHex,
-    to: baseHex,
-    mid: midHex,
-    rgb: `${r}, ${g}, ${b}`,
-    contrast: lum > 0.55 ? '#09090b' : '#ffffff',
-    soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
-    subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
-    glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
-    border: `rgba(${r}, ${g}, ${b}, 0.35)`,
-    hover: lighten(baseHex, 0.15),
-    active: adjustBrightness(baseHex, 0.9),
-  };
+  _accentCache.set(input, result);
+  return result;
 }
