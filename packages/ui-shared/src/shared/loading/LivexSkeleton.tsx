@@ -753,9 +753,463 @@ export function DrumEditorSkeleton() {
   );
 }
 
-// ── CUSTOM CHORDEX PAGES SKELETON ──────────────────────────────────────────────
+// ── SECTION-SPECIFIC CHORDEX SKELETONS ─────────────────────────────────────────
 
-export function ChordexPanelSkeleton() {
+export function ChordexSongsSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top Header & Search Capsule */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="studio-shimmer" style={{ width: 110, height: 26, borderRadius: 8 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          </div>
+        </div>
+        <div
+          className="studio-shimmer"
+          style={{ width: '100%', height: 46, borderRadius: 9999 }}
+        />
+      </div>
+
+      {/* Song Cards List (matching PresetCard) */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          flex: 1,
+          overflow: 'hidden',
+        }}
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              borderRadius: 24,
+              background: 'var(--surface-card-bg, var(--app-surface))',
+              border: '1px solid rgba(128,128,128,0.08)',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Leading music icon box (w-11 h-11 rounded-2xl) */}
+            <div
+              className="studio-shimmer"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 16,
+                flexShrink: 0,
+              }}
+            />
+            {/* Song title, artist & metadata pills */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div
+                className="studio-shimmer"
+                style={{
+                  width: `${60 - (i % 3) * 10}%`,
+                  height: 16,
+                  borderRadius: 4,
+                }}
+              />
+              <div
+                className="studio-shimmer"
+                style={{
+                  width: `${40 - (i % 2) * 8}%`,
+                  height: 11,
+                  borderRadius: 3,
+                }}
+              />
+              {/* Badge pills row */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                <div
+                  className="studio-shimmer"
+                  style={{ width: 44, height: 18, borderRadius: 6 }}
+                />
+                <div
+                  className="studio-shimmer"
+                  style={{ width: 54, height: 18, borderRadius: 6 }}
+                />
+                <div
+                  className="studio-shimmer"
+                  style={{ width: 62, height: 18, borderRadius: 6 }}
+                />
+              </div>
+            </div>
+            {/* Right chevron affordance */}
+            <div
+              className="studio-shimmer"
+              style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0 }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ChordexLibrarySkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header bar and search layout */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="studio-shimmer" style={{ width: 120, height: 26, borderRadius: 8 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          </div>
+        </div>
+        <div className="studio-shimmer" style={{ width: '100%', height: 46, borderRadius: 9999 }} />
+      </div>
+
+      {/* Hero Chord of the Day Card */}
+      <div
+        style={{
+          borderRadius: 24,
+          background: 'var(--surface-card-bg, var(--app-surface))',
+          border: '1px solid rgba(128,128,128,0.08)',
+          padding: '16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div
+            className="studio-shimmer"
+            style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0 }}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="studio-shimmer" style={{ width: 80, height: 10, borderRadius: 3 }} />
+            <div className="studio-shimmer" style={{ width: 60, height: 22, borderRadius: 6 }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div className="studio-shimmer" style={{ width: 38, height: 38, borderRadius: '50%' }} />
+          <div className="studio-shimmer" style={{ width: 80, height: 38, borderRadius: 9999 }} />
+        </div>
+      </div>
+
+      {/* Recent Chords row */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 120, height: 14, borderRadius: 4 }} />
+        <div style={{ display: 'flex', gap: 10, overflow: 'hidden' }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="studio-shimmer"
+              style={{
+                width: 90,
+                height: 56,
+                borderRadius: 16,
+                flexShrink: 0,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Categories 2-Column Grid */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'hidden' }}>
+        <div className="studio-shimmer" style={{ width: 90, height: 14, borderRadius: 4 }} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 10,
+            flex: 1,
+            overflow: 'hidden',
+          }}
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="studio-shimmer"
+              style={{
+                height: 72,
+                borderRadius: 18,
+                background: 'var(--surface-card-bg, var(--app-surface))',
+                border: '1px solid rgba(128,128,128,0.08)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ChordexPreferencesSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 16,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 130, height: 26, borderRadius: 8 }} />
+      </div>
+
+      {/* Grouped Settings Section 1 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 90, height: 12, borderRadius: 3 }} />
+        <div
+          style={{
+            borderRadius: 20,
+            background: 'var(--surface-card-bg, var(--app-surface))',
+            border: '1px solid rgba(128,128,128,0.08)',
+            padding: '4px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 0',
+                borderBottom: i < 2 ? '1px solid rgba(128,128,128,0.07)' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div className="studio-shimmer" style={{ width: 130, height: 14, borderRadius: 4 }} />
+                <div className="studio-shimmer" style={{ width: 190, height: 10, borderRadius: 3 }} />
+              </div>
+              <div
+                className="studio-shimmer"
+                style={{ width: 48, height: 26, borderRadius: 9999, flexShrink: 0 }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Grouped Settings Section 2 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'hidden' }}>
+        <div className="studio-shimmer" style={{ width: 110, height: 12, borderRadius: 3 }} />
+        <div
+          style={{
+            borderRadius: 20,
+            background: 'var(--surface-card-bg, var(--app-surface))',
+            border: '1px solid rgba(128,128,128,0.08)',
+            padding: '4px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 0',
+                borderBottom: i < 2 ? '1px solid rgba(128,128,128,0.07)' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div className="studio-shimmer" style={{ width: 140, height: 14, borderRadius: 4 }} />
+                <div className="studio-shimmer" style={{ width: 210, height: 10, borderRadius: 3 }} />
+              </div>
+              <div
+                className="studio-shimmer"
+                style={{ width: 70, height: 28, borderRadius: 8, flexShrink: 0 }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ChordexPracticeSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 130, height: 26, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+      </div>
+
+      {/* Mode selector pills */}
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 72, height: 32, borderRadius: 9999 }} />
+        <div className="studio-shimmer" style={{ width: 72, height: 32, borderRadius: 9999 }} />
+        <div className="studio-shimmer" style={{ width: 72, height: 32, borderRadius: 9999 }} />
+      </div>
+
+      {/* Main instrument view container */}
+      <div
+        className="studio-shimmer"
+        style={{
+          flex: 1,
+          borderRadius: 24,
+          background: 'var(--surface-card-bg, var(--app-surface))',
+          border: '1px solid rgba(128,128,128,0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 260,
+        }}
+      />
+
+      {/* Bottom control bar */}
+      <div
+        className="studio-shimmer"
+        style={{
+          width: '100%',
+          height: 56,
+          borderRadius: 16,
+          flexShrink: 0,
+        }}
+      />
+    </div>
+  );
+}
+
+// Retain ChordexPanelSkeleton alias for backwards compatibility
+export const ChordexPanelSkeleton = ChordexLibrarySkeleton;
+
+// ── SECTION-SPECIFIC DRUMEX SKELETONS ─────────────────────────────────────────
+
+export function DrumSongsSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top Header & Search Capsule */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="studio-shimmer" style={{ width: 120, height: 26, borderRadius: 8 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+            <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          </div>
+        </div>
+        <div
+          className="studio-shimmer"
+          style={{ width: '100%', height: 44, borderRadius: 9999 }}
+        />
+        {/* Kit filter pills */}
+        <div style={{ display: 'flex', gap: 8, overflow: 'hidden' }}>
+          <div className="studio-shimmer" style={{ width: 68, height: 30, borderRadius: 9999, flexShrink: 0 }} />
+          <div className="studio-shimmer" style={{ width: 76, height: 30, borderRadius: 9999, flexShrink: 0 }} />
+          <div className="studio-shimmer" style={{ width: 84, height: 30, borderRadius: 9999, flexShrink: 0 }} />
+          <div className="studio-shimmer" style={{ width: 72, height: 30, borderRadius: 9999, flexShrink: 0 }} />
+        </div>
+      </div>
+
+      {/* Drum Beat Cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              borderRadius: 20,
+              background: 'var(--surface-card-bg, var(--app-surface))',
+              border: '1px solid rgba(128,128,128,0.08)',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Play preview button circle */}
+            <div
+              className="studio-shimmer"
+              style={{ width: 42, height: 42, borderRadius: '50%', flexShrink: 0 }}
+            />
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <div
+                className="studio-shimmer"
+                style={{ width: `${55 - (i % 2) * 10}%`, height: 15, borderRadius: 4 }}
+              />
+              <div
+                className="studio-shimmer"
+                style={{ width: `${38 - (i % 3) * 6}%`, height: 11, borderRadius: 3 }}
+              />
+              <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                <div className="studio-shimmer" style={{ width: 50, height: 16, borderRadius: 4 }} />
+                <div className="studio-shimmer" style={{ width: 42, height: 16, borderRadius: 4 }} />
+              </div>
+            </div>
+            {/* More options button */}
+            <div
+              className="studio-shimmer"
+              style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0 }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function DrumMetronomeSkeleton() {
   return (
     <div
       style={{
@@ -763,122 +1217,261 @@ export function ChordexPanelSkeleton() {
         flexDirection: 'column',
         height: '100dvh',
         padding: '24px 20px',
-        gap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'var(--app-bg)',
         boxSizing: 'border-box',
       }}
     >
-      {/* Header bar and search layout */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="studio-shimmer" style={{ width: 120, height: 26, borderRadius: 6 }} />
-          <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
-        </div>
-        <div className="studio-shimmer" style={{ width: '100%', height: 42, borderRadius: 14 }} />
+      {/* Header */}
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="studio-shimmer" style={{ width: 110, height: 26, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 68, height: 28, borderRadius: 9999 }} />
       </div>
 
-      {/* Grid of Chord cells representing standard guitar frets diagrams */}
+      {/* Large circular tempo dial */}
       <div
+        className="studio-shimmer"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 10,
-          flex: 1,
-          overflow: 'hidden',
+          width: 'clamp(200px, 28vh, 250px)',
+          height: 'clamp(200px, 28vh, 250px)',
+          borderRadius: '50%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          border: '6px solid rgba(128,128,128,0.12)',
         }}
       >
-        {Array.from({ length: 9 }).map((_, i) => (
+        <div className="studio-shimmer" style={{ width: 80, height: 42, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 44, height: 12, borderRadius: 4 }} />
+      </div>
+
+      {/* Beat indicator dots */}
+      <div style={{ display: 'flex', gap: 14 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
             className="studio-shimmer"
-            style={{
-              borderRadius: 16,
-              background: 'var(--app-surface-low)',
-              border: '1px solid rgba(128,128,128,0.06)',
-              padding: 12,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 8,
-              boxSizing: 'border-box',
-              height: 114,
-            }}
-          >
-            {/* Chord name placeholder */}
+            style={{ width: 16, height: 16, borderRadius: '50%' }}
+          />
+        ))}
+      </div>
+
+      {/* Transport button */}
+      <div
+        className="studio-shimmer"
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          marginBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+        }}
+      />
+    </div>
+  );
+}
+
+export function DrumPreferencesSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 16,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 140, height: 26, borderRadius: 8 }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflow: 'hidden' }}>
+        <div className="studio-shimmer" style={{ width: 100, height: 12, borderRadius: 3 }} />
+        <div
+          style={{
+            borderRadius: 20,
+            background: 'var(--surface-card-bg, var(--app-surface))',
+            border: '1px solid rgba(128,128,128,0.08)',
+            padding: '4px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
             <div
+              key={i}
               style={{
-                width: '60%',
-                height: 12,
-                background: 'var(--app-surface-highest)',
-                borderRadius: 3,
-              }}
-            />
-            {/* Guitar fret lines mock diagram */}
-            <div
-              style={{
-                width: '100%',
-                flex: 1,
-                border: '1px solid rgba(128,128,128,0.15)',
                 display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                justifyContent: 'space-around',
-                position: 'relative',
-                background: 'var(--app-surface-lowest)',
-                opacity: 0.4,
+                padding: '14px 0',
+                borderBottom: i < 3 ? '1px solid rgba(128,128,128,0.07)' : 'none',
               }}
             >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div className="studio-shimmer" style={{ width: 130, height: 14, borderRadius: 4 }} />
+                <div className="studio-shimmer" style={{ width: 180, height: 10, borderRadius: 3 }} />
+              </div>
               <div
-                style={{
-                  width: '100%',
-                  height: 1,
-                  background: 'rgba(128,128,128,0.15)',
-                  position: 'absolute',
-                  top: '30%',
-                }}
-              />
-              <div
-                style={{
-                  width: '100%',
-                  height: 1,
-                  background: 'rgba(128,128,128,0.15)',
-                  position: 'absolute',
-                  top: '65%',
-                }}
-              />
-              {/* String lines */}
-              <div style={{ width: 1, height: '100%', background: 'rgba(128,128,128,0.2)' }} />
-              <div style={{ width: 1, height: '100%', background: 'rgba(128,128,128,0.2)' }} />
-              <div style={{ width: 1, height: '100%', background: 'rgba(128,128,128,0.2)' }} />
-              {/* Finger circle dot */}
-              <div
-                style={{
-                  position: 'absolute',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--c-text-primary)',
-                  top: '40%',
-                  left: '30%',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--c-text-primary)',
-                  top: '50%',
-                  left: '70%',
-                }}
+                className="studio-shimmer"
+                style={{ width: 48, height: 26, borderRadius: 9999, flexShrink: 0 }}
               />
             </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SECTION-SPECIFIC DEVTOOLS SKELETON ────────────────────────────────────────
+
+export function DevToolsSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 150, height: 26, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, flexShrink: 0 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="studio-shimmer"
+            style={{ height: 68, borderRadius: 16 }}
+          />
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 68, height: 32, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 78, height: 32, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 72, height: 32, borderRadius: 8 }} />
+      </div>
+      <div
+        className="studio-shimmer"
+        style={{ flex: 1, borderRadius: 18, minHeight: 180 }}
+      />
+    </div>
+  );
+}
+
+// ── SECTION-SPECIFIC VOCALEX SKELETONS ────────────────────────────────────────
+
+export function VocalexCoachSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '24px 20px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="studio-shimmer" style={{ width: 120, height: 26, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+      </div>
+      <div
+        className="studio-shimmer"
+        style={{
+          width: 'clamp(180px, 25vh, 230px)',
+          height: 'clamp(180px, 25vh, 230px)',
+          borderRadius: '50%',
+          border: '6px solid rgba(128,128,128,0.12)',
+        }}
+      />
+      <div
+        className="studio-shimmer"
+        style={{ width: '100%', height: 100, borderRadius: 18 }}
+      />
+      <div
+        className="studio-shimmer"
+        style={{ width: 68, height: 68, borderRadius: '50%', marginBottom: 16 }}
+      />
+    </div>
+  );
+}
+
+export const VocalexPreferencesSkeleton = ChordexPreferencesSkeleton;
+
+// ── SECTION-SPECIFIC GROOVEX SKELETONS ────────────────────────────────────────
+
+export function GroovexLibrarySkeleton() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        padding: '20px 16px',
+        gap: 14,
+        background: 'var(--app-bg)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div className="studio-shimmer" style={{ width: 130, height: 26, borderRadius: 8 }} />
+        <div className="studio-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+      </div>
+      <div
+        className="studio-shimmer"
+        style={{ width: '100%', height: 44, borderRadius: 9999, flexShrink: 0 }}
+      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflow: 'hidden' }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              borderRadius: 20,
+              background: 'var(--surface-card-bg, var(--app-surface))',
+              border: '1px solid rgba(128,128,128,0.08)',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <div
+              className="studio-shimmer"
+              style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0 }}
+            />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="studio-shimmer" style={{ width: '55%', height: 16, borderRadius: 4 }} />
+              <div className="studio-shimmer" style={{ width: '35%', height: 11, borderRadius: 3 }} />
+            </div>
+            <div
+              className="studio-shimmer"
+              style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0 }}
+            />
           </div>
         ))}
       </div>
     </div>
   );
 }
+
+export const GroovexPreferencesSkeleton = ChordexPreferencesSkeleton;
 
 export function GroovexMixerSkeleton({ tracksCount = 4 }: { tracksCount?: number }) {
   return (
@@ -954,3 +1547,4 @@ export const LivexSkeletonHeader = StudioSkeletonHeader;
 export const LivexSkeletonProfile = StudioSkeletonProfile;
 export const LivexSkeletonGrid = StudioSkeletonGrid;
 export const LivexHubSkeleton = StudioHubSkeleton;
+

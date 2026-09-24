@@ -29,7 +29,12 @@ import {
   SharedNavigationBar,
   type SharedNavigationItem,
 } from '../../hub/navigation/SharedNavigationBar';
-import { GroovexAppSkeleton } from '../../../shared/loading/StudioSkeleton';
+import {
+  GroovexAppSkeleton,
+  GroovexLibrarySkeleton,
+  GroovexMixerSkeleton,
+  GroovexPreferencesSkeleton,
+} from '../../../shared/loading/StudioSkeleton';
 
 const GroovexLibrary = lazy(() => import('../components/GroovexLibrary'));
 const GroovexPlayer = lazy(() => import('../components/GroovexPlayer'));
@@ -173,13 +178,23 @@ export default function GroovexApp() {
           }}
         >
           <SharedNavigationContainer activeView={view} viewOrder={VIEW_ORDER}>
-            {(viewId) => (
-              <Suspense fallback={<GroovexAppSkeleton />}>
-                {viewId === 'library' && <GroovexLibrary />}
-                {viewId === 'player' && <GroovexPlayer />}
-                {viewId === 'preferences' && <GroovexPreferences />}
-              </Suspense>
-            )}
+            {(viewId) => {
+              const fallback =
+                viewId === 'player' ? (
+                  <GroovexMixerSkeleton />
+                ) : viewId === 'preferences' ? (
+                  <GroovexPreferencesSkeleton />
+                ) : (
+                  <GroovexLibrarySkeleton />
+                );
+              return (
+                <Suspense fallback={fallback}>
+                  {viewId === 'library' && <GroovexLibrary />}
+                  {viewId === 'player' && <GroovexPlayer />}
+                  {viewId === 'preferences' && <GroovexPreferences />}
+                </Suspense>
+              );
+            }}
           </SharedNavigationContainer>
         </div>
       </div>

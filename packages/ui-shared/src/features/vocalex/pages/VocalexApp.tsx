@@ -18,7 +18,11 @@ import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
-import { VocalexTakesSkeleton } from '../../../shared/loading/StudioSkeleton';
+import {
+  VocalexTakesSkeleton,
+  VocalexCoachSkeleton,
+  VocalexPreferencesSkeleton,
+} from '../../../shared/loading/StudioSkeleton';
 
 const CoachPanelLazy = lazy(() =>
   import('../components/CoachPanel').then((m) => ({ default: m.default || m }))
@@ -215,7 +219,7 @@ export default function VocalexApp() {
                   }}
                 >
                   {viewId === 'coach' && (
-                    <Suspense fallback={<VocalexTakesSkeleton />}>
+                    <Suspense fallback={<VocalexCoachSkeleton />}>
                       <CoachPanelLazy active={activeTab === 'coach'} />
                     </Suspense>
                   )}
@@ -225,7 +229,7 @@ export default function VocalexApp() {
                     </Suspense>
                   )}
                   {viewId === 'preferences' && (
-                    <Suspense fallback={<VocalexTakesSkeleton />}>
+                    <Suspense fallback={<VocalexPreferencesSkeleton />}>
                       <PreferencesPanelLazy />
                     </Suspense>
                   )}

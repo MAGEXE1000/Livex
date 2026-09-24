@@ -30,6 +30,7 @@ import {
   subscribeSyncStatus,
   syncNow,
   useSettingsStore,
+  useSessionStore,
   authRepository,
   EasingPresets,
   type AppKey,
@@ -42,8 +43,16 @@ import {
   GroovexAppSkeleton,
   StagexPanelSkeleton,
   DrumEditorSkeleton,
+  DrumSongsSkeleton,
+  DrumMetronomeSkeleton,
+  DrumPreferencesSkeleton,
+  ChordexSongsSkeleton,
+  ChordexLibrarySkeleton,
+  ChordexPreferencesSkeleton,
+  ChordexPracticeSkeleton,
   ChordexPanelSkeleton,
   VocalexTakesSkeleton,
+  DevToolsSkeleton,
 } from '../loading/StudioSkeleton';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
 import { useAnimationSpeed } from '../../shared/animation';
@@ -120,6 +129,30 @@ function FallbackTracker({ app, children }: { app: AppKey; children: React.React
   return <>{children}</>;
 }
 
+function DrumexDynamicSkeleton() {
+  const activeTab = useNavigationStore((s) => {
+    const lastRoute = s.history[s.history.length - 1];
+    if (lastRoute?.app === 'drumex' && lastRoute.page) {
+      const page = lastRoute.page;
+      if (page === 'metronome') return 'metronome';
+      if (page === 'songs' || page === 'beats') return 'songs';
+      if (page === 'prefs' || page === 'preferences') return 'prefs';
+      if (page === 'patterns') return 'patterns';
+    }
+    const st = useSettingsStore.getState();
+    if (st.settings?.restoreLastSession) {
+      const last = useSessionStore.getState().lastSession?.drumexTab;
+      if (last) return last;
+    }
+    return st.settings?.defaultDrumTab || 'songs';
+  });
+
+  if (activeTab === 'metronome') return <DrumMetronomeSkeleton />;
+  if (activeTab === 'prefs') return <DrumPreferencesSkeleton />;
+  if (activeTab === 'patterns') return <DrumEditorSkeleton />;
+  return <DrumSongsSkeleton />;
+}
+
 const SubAppWrapper = memo(function SubAppWrapper({
   app,
   activePanel,
@@ -151,7 +184,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="devtools">
             <ErrorBoundary moduleName="DevTools">
-              <Suspense fallback={<StudioHubSkeleton />}>
+              <Suspense fallback={<DevToolsSkeleton />}>
                 <AppReadyNotifier app="devtools" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.devtools}
@@ -239,7 +272,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="drumex">
             <ErrorBoundary moduleName="Drumex">
-              <Suspense fallback={<DrumEditorSkeleton />}>
+              <Suspense fallback={<DrumexDynamicSkeleton />}>
                 <AppReadyNotifier app="drumex" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.drumex}
@@ -278,17 +311,29 @@ const SubAppWrapper = memo(function SubAppWrapper({
                 <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
                   <ErrorBoundary moduleName="Chordex">
                     <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
-                      {(panel) => (
-                        <Suspense fallback={<ChordexPanelSkeleton />}>
-                          <AppReadyNotifier app="chordex" onReady={onReady} />
-                          <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                            {panel === 'songs' && subApps.chordex?.songs}
-                            {panel === 'practice' && subApps.chordex?.practice}
-                            {panel === 'library' && subApps.chordex?.library}
-                            {panel === 'preferences' && subApps.chordex?.preferences}
-                          </div>
-                        </Suspense>
-                      )}
+                      {(panel) => {
+                        const fallback =
+                          panel === 'songs' ? (
+                            <ChordexSongsSkeleton />
+                          ) : panel === 'library' ? (
+                            <ChordexLibrarySkeleton />
+                          ) : panel === 'preferences' ? (
+                            <ChordexPreferencesSkeleton />
+                          ) : (
+                            <ChordexPracticeSkeleton />
+                          );
+                        return (
+                          <Suspense fallback={fallback}>
+                            <AppReadyNotifier app="chordex" onReady={onReady} />
+                            <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                              {panel === 'songs' && subApps.chordex?.songs}
+                              {panel === 'practice' && subApps.chordex?.practice}
+                              {panel === 'library' && subApps.chordex?.library}
+                              {panel === 'preferences' && subApps.chordex?.preferences}
+                            </div>
+                          </Suspense>
+                        );
+                      }}
                     </SharedNavigationContainer>
                   </ErrorBoundary>
                 </div>
