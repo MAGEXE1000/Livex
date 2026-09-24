@@ -52,6 +52,12 @@ export interface ChordProgressionRecommendation {
   timeSignature?: string;
   voicings?: Array<GuitarChordData | null>;
   repetitions?: number;
+  title?: string;
+  genre?: string;
+  mood?: string;
+  harmonicContext?: string;
+  referenceContext?: string;
+  explanation?: string;
 }
 
 export interface ToneRecipeRecommendation {

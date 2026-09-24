@@ -4,6 +4,7 @@ import {
   resolveChordProgression,
   createSongPresetFromProgression,
   importProgressionToChordex,
+  extractChordProgressionFromText,
 } from '../chordResolution';
 import { normalizeChordName } from '../../../data/chords';
 import { useChordStore } from '../../../store/useChordStore';
@@ -272,6 +273,152 @@ describe('Chord Resolution & Progression Architecture', () => {
       expect(currentRoute.page).toBe('songs');
       expect((currentRoute as any).subView).toBe('editor');
       expect((currentRoute as any).id).toBe(presetId);
+    });
+  });
+
+  describe('extractChordProgressionFromText - Musical Context & Structured Generation', () => {
+    it('Case 1: extracts melancholic progression in C major with Roman numerals and explanation', () => {
+      const prompt = 'Give me a melancholic progression in C major.';
+      const responseText = `### Melancholic C Major Progression
+
+**Key:** C Major | **Tempo:** 72 BPM | **Feel:** Bittersweet, reflective
+
+**Progression:**
+\`C\` → \`Em\` → \`F\` → \`Fm\`
+
+**Harmonic Analysis:**
+\`I\` → \`iii\` → \`IV\` → \`iv\`
+
+**Why It Works:**
+The shift from IV (\`F\`) to minor iv (\`Fm\`) introduces the minor sixth degree (Ab), creating a classic minor plagal cadence that resolves gently down to the fifth (G) of the tonic \`C\`.`;
+
+      const rec = extractChordProgressionFromText(responseText, prompt);
+      expect(rec).not.toBeNull();
+      expect(rec?.key).toBe('C');
+      expect(rec?.mode).toBe('Major');
+      expect(rec?.mood).toBe('Melancholic');
+      expect(rec?.tempo).toBe(72);
+      expect(rec?.chords).toEqual(['C', 'Em', 'F', 'Fm']);
+      expect(rec?.romanNumerals).toEqual(['I', 'iii', 'IV', 'iv']);
+      expect(rec?.harmonicContext).toBe('I → iii → IV → iv');
+      expect(rec?.explanation).toContain('minor plagal cadence');
+      expect(rec?.title).toBe('Melancholic C Major Progression');
+
+      // Verify that canonical Chordex resolution resolves all chords
+      const resolved = resolveChordProgression(rec!);
+      expect(resolved.allResolved).toBe(true);
+      expect(resolved.resolvedCount).toBe(4);
+      expect(resolved.chords[3].name).toBe('Fm');
+      expect(resolved.chords[3].guitarData).not.toBeNull();
+    });
+
+    it('Case 2: extracts neo-soul progression in D with jazz extensions and secondary dominant', () => {
+      const prompt = 'Give me a neo-soul progression in D.';
+      const responseText = `### Lush Neo-Soul Progression in D
+
+**Key:** D | **Mode:** Major | **Tempo:** 84 BPM | **Feel:** Laid-back swing
+
+**Progression:**
+\`Em9\` → \`A13\` → \`F#m7\` → \`B7b9\`
+
+**Harmonic Analysis:**
+\`ii9\` → \`V13\` → \`iii7\` → \`VI7(b9)\`
+
+**Why It Works:**
+A smooth jazz turnaround with 9th and 13th extensions, using \`B7b9\` as an altered secondary dominant to resolve cyclically back into the \`Em9\` tonic minor.`;
+
+      const rec = extractChordProgressionFromText(responseText, prompt);
+      expect(rec).not.toBeNull();
+      expect(rec?.key).toBe('D');
+      expect(rec?.mode).toBe('Major');
+      expect(rec?.genre).toBe('Neo-Soul');
+      expect(rec?.tempo).toBe(84);
+      expect(rec?.chords).toEqual(['Em9', 'A13', 'F#m7', 'B7b9']);
+      expect(rec?.romanNumerals).toEqual(['ii9', 'V13', 'iii7', 'VI7(b9)']);
+      expect(rec?.explanation).toContain('smooth jazz turnaround');
+
+      const resolved = resolveChordProgression(rec!);
+      expect(resolved.allResolved).toBe(true);
+      expect(resolved.resolvedCount).toBe(4);
+      expect(resolved.chords[0].name).toBe('Em9');
+      expect(resolved.chords[0].guitarData).toBeDefined();
+      expect(resolved.chords[1].name).toBe('A13');
+      expect(resolved.chords[1].guitarData).toBeDefined();
+    });
+
+    it('Case 3: extracts reference-inspired original progression without copying copyrighted work', () => {
+      const prompt = 'Analyze the harmonic characteristics of Radiohead / Pyramid Song and create a new progression inspired by those characteristics without copying it.';
+      const responseText = `### Modal Tension Progression (Inspired by Radiohead)
+
+**Harmonic Characteristics of Reference:**
+Radiohead's "Pyramid Song" famously avoids clear functional cadence by hovering in F# minor / Phrygian with swing phrasing, using dark modal color chords like \`F#m\`, \`Gmaj7\`, and \`A\`, leaning heavily on the flattened second degree (Phrygian) and pedal ambiguity.
+
+**New Inspired Progression:**
+Here is an original progression inspired by that modal tension and dark harmonic oscillation, without reproducing the composition:
+
+**Key:** F# | **Mode:** Phrygian | **Tempo:** 68 BPM | **Feel:** Haunting, suspended
+
+**Progression:**
+\`F#m\` → \`Gmaj7\` → \`Em\` → \`F#m\`
+
+**Harmonic Analysis:**
+\`i\` → \`bIImaj7\` → \`vii\` → \`i\`
+
+**Why It Works:**
+The \`bIImaj7\` (\`Gmaj7\`) provides the quintessential Phrygian half-step contrast against the tonic \`F#m\`, creating immediate harmonic mystery without resolving in a standard functional V-i manner.`;
+
+      const rec = extractChordProgressionFromText(responseText, prompt);
+      expect(rec).not.toBeNull();
+      expect(rec?.key).toBe('F#');
+      expect(rec?.mode).toBe('Phrygian');
+      expect(rec?.tempo).toBe(68);
+      expect(rec?.chords).toEqual(['F#m', 'Gmaj7', 'Em', 'F#m']);
+      expect(rec?.romanNumerals).toEqual(['i', 'bIImaj7', 'vii', 'i']);
+      expect(rec?.referenceContext).toContain('Radiohead');
+      expect(rec?.explanation).toContain('Phrygian half-step contrast');
+
+      const resolved = resolveChordProgression(rec!);
+      expect(resolved.allResolved).toBe(true);
+      expect(resolved.referenceContext).toBeDefined();
+    });
+
+    it('Case 4: non-music AI question returns null and does not false-positive', () => {
+      const prompt = 'What is the difference between a stack and a queue?';
+      const responseText = `A stack is a Last-In, First-Out (LIFO) data structure, whereas a queue is a First-In, First-Out (FIFO) data structure.
+For example, in a stack, elements are added and removed from the top using push and pop. In a queue, elements are enqueued at the back and dequeued from the front.`;
+
+      const rec = extractChordProgressionFromText(responseText, prompt);
+      expect(rec).toBeNull();
+    });
+
+    it('Case 5: parses explicit JSON chord-progression block when emitted by model', () => {
+      const prompt = 'Suggest a jazz ballad progression in Bb';
+      const responseText = `Here is a sophisticated jazz progression:
+
+\`\`\`chord-progression
+{
+  "title": "Jazz Ballad in Bb",
+  "key": "Bb",
+  "mode": "Major",
+  "tempo": 64,
+  "timeSignature": "4/4",
+  "genre": "Jazz",
+  "mood": "Romantic",
+  "chords": ["Bbmaj7", "G7", "Cm7", "F7"],
+  "romanNumerals": ["Imaj7", "VI7", "ii7", "V7"],
+  "harmonicContext": "Imaj7 → VI7 → ii7 → V7",
+  "explanation": "Standard jazz circle of fifths turnaround."
+}
+\`\`\``;
+
+      const rec = extractChordProgressionFromText(responseText, prompt);
+      expect(rec).not.toBeNull();
+      expect(rec?.title).toBe('Jazz Ballad in Bb');
+      expect(rec?.key).toBe('Bb');
+      expect(rec?.chords).toEqual(['Bbmaj7', 'G7', 'Cm7', 'F7']);
+      expect(rec?.romanNumerals).toEqual(['Imaj7', 'VI7', 'ii7', 'V7']);
+      expect(rec?.tempo).toBe(64);
+      expect(rec?.explanation).toBe('Standard jazz circle of fifths turnaround.');
     });
   });
 });

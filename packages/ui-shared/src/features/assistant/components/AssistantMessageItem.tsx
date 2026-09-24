@@ -475,6 +475,8 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                     key={rec.id}
                     data={rec.data as any}
                     actionLabel={rec.actionLabel}
+                    isLight={isLight}
+                    isAmoled={isAmoled}
                   />
                 );
               }

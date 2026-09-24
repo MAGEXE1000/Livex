@@ -42,9 +42,18 @@ Core Directives:
    - Respond in the language used by the user (multilingual fluency in English, Spanish, Japanese, Portuguese, German, French, etc.).
    - If using reasoning tags like <think>...</think>, always output your final answer and explanation outside of the think tags.
 
-2. Music Theory Rigor:
+2. Music Theory Rigor & Chord Progression Generation:
    - Always format chords with clean markdown backticks: e.g. \`Dbmaj9\`, \`F#m7(b5)\`, \`G7(#9)\`, \`C13\`.
-   - Format harmonic analysis with Roman numerals and extensions: e.g. \`ii9 -> V13(b9) -> Imaj9\` or \`i -> bVImaj7 -> iv7 -> V7(b9)\`.
+   - When requested to generate or analyze a chord progression:
+     * Provide a musically coherent, context-aware, and original progression.
+     * Respect all requested musical parameters: key, mode, genre, mood, tempo, and harmonic function.
+     * When analyzing artist or song references (e.g. "Analyze the harmonic characteristics of [artist/song] and create a new progression inspired by it"): examine the harmonic characteristics, modal flavor, voice leading, and characteristic chord movements; then compose a fresh, original progression embodying those stylistic techniques. Distinguish analytical reference notes from the generated original progression (never copy copyrighted songs or lyrics).
+     * Structure the harmonic output cleanly:
+       - Clear descriptive title (e.g. "### Melancholic C Major Progression")
+       - Metadata line: **Key:** C Major | **Tempo:** 72 BPM | **Feel:** Bittersweet, reflective
+       - Progression: \`C\` → \`Em\` → \`F\` → \`Fm\`
+       - Harmonic Analysis: \`I\` → \`iii\` → \`IV\` → \`iv\`
+       - Why It Works: concise explanation of voice leading, tension, resolution, or modal borrowing.
    - Detail voice leading, chord inversions, modal interchange, secondary dominants, and tritone substitutions with precision.
 
 3. Instrument & Signal Chain Staging:
@@ -79,32 +88,270 @@ Core Directives:
 function extractStructuredRecommendation(text, prompt) {
   if (!text || typeof text !== 'string') return null;
 
-  // 1. Detect Chord Progression
-  const chordRegex = /`([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)?[0-9]?(?:\([^)]+\))?)`/g;
-  const matches = [...text.matchAll(chordRegex)].map((m) => m[1]);
+  const combinedContext = `${prompt || ''}\n${text}`;
 
-  if (matches.length >= 3) {
-    const uniqueChords = [...new Set(matches)];
-    const keyMatch = text.match(/(?:key of|in the key of|tonalidad de|en la tonalidad de)\s+([A-G][b#]?(?:\s*(?:major|minor|menor|mayor))?)/i);
-    const key = keyMatch ? keyMatch[1].trim() : matches[0].replace(/[^A-G#b]/g, '');
-
-    // Extract Roman numerals if present
-    const romanRegex = /\b([ivIV]+(?:[0-9]|maj|min|dim|aug|sus)?(?:\([^)]+\))?)\b/g;
-    const romanMatches = [...text.matchAll(romanRegex)].map((m) => m[1]).slice(0, matches.length);
-
-    return {
-      id: `rec-chord-${Date.now()}`,
-      type: 'chord_progression',
-      title: 'Extracted Chord Progression',
-      data: {
-        chords: matches.slice(0, 8),
-        romanNumerals: romanMatches.length >= 2 ? romanMatches : ['i', 'iv', 'v', 'i'],
-        key: key || 'C',
-        description: 'Auto-extracted harmonic progression from response',
-      },
-      actionLabel: 'Import to Chordex',
-    };
+  // 1. Detect Explicit JSON or code block
+  const jsonBlockMatch = text.match(/```(?:chord-progression|json)?\s*([\s\S]*?)\s*```/);
+  if (jsonBlockMatch) {
+    try {
+      const parsed = JSON.parse(jsonBlockMatch[1]);
+      if (parsed && Array.isArray(parsed.chords) && parsed.chords.length >= 2) {
+        return {
+          id: `rec-chord-${Date.now()}`,
+          type: 'chord_progression',
+          title: parsed.title || 'Harmonic Progression',
+          data: {
+            chords: parsed.chords.map((c) => String(c).trim()).filter(Boolean),
+            romanNumerals: Array.isArray(parsed.romanNumerals) ? parsed.romanNumerals.map(String) : undefined,
+            key: String(parsed.key || 'C').trim(),
+            mode: parsed.mode ? String(parsed.mode).trim() : undefined,
+            tempo: typeof parsed.tempo === 'number' ? parsed.tempo : undefined,
+            timeSignature: parsed.timeSignature ? String(parsed.timeSignature).trim() : undefined,
+            feel: parsed.feel ? String(parsed.feel).trim() : undefined,
+            genre: parsed.genre ? String(parsed.genre).trim() : undefined,
+            mood: parsed.mood ? String(parsed.mood).trim() : undefined,
+            title: parsed.title ? String(parsed.title).trim() : undefined,
+            harmonicContext: parsed.harmonicContext ? String(parsed.harmonicContext).trim() : undefined,
+            referenceContext: parsed.referenceContext || parsed.inspiredBy ? String(parsed.referenceContext || parsed.inspiredBy).trim() : undefined,
+            explanation: parsed.explanation || parsed.whyItWorks ? String(parsed.explanation || parsed.whyItWorks).trim() : undefined,
+            description: parsed.description || parsed.explanation || undefined,
+          },
+          actionLabel: 'Import to Chordex',
+        };
+      }
+    } catch {}
   }
+
+  // 2. Detect Musical Chord Progression Context
+  const isMusicContext =
+    /(?:progression|progresi[oó]n|chord|acorde|harmoni[ac]|cadence|tonalidad|key of|tonalidad de|tempo|bpm|ii-V|I-IV|i-iv|modal|voicing|triad|arpeggio)/i.test(
+      combinedContext
+    );
+  if (!isMusicContext) return null;
+
+  // Extract chords sequence
+  let chords = [];
+  const cleanText = text.replace(/[*_]/g, '');
+  const cleanContext = combinedContext.replace(/[*_]/g, '');
+
+  const progressionLineMatch = cleanText.match(
+    /(?:^|\n)[ \t]*(?:Progression|Chords|Acordes|Secuencia):?[ \t]*(?:\r?\n[ \t]*)?(`[A-G][b#]?[^\n]+)/i
+  );
+
+  const chordTokenRegex =
+    /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)[0-9]*(?:[#b][0-9]+)*(?:\([^)]+\))?(?:\/[A-G][b#]?)?)\b)/g;
+
+  if (progressionLineMatch) {
+    const lineChords = [...progressionLineMatch[1].matchAll(chordTokenRegex)]
+      .map((m) => m[1] || m[2])
+      .filter(Boolean);
+    if (lineChords.length >= 2) {
+      chords = lineChords;
+    }
+  }
+
+  if (chords.length < 2) {
+    const backtickedRegex = /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`/g;
+    const allMatches = [...text.matchAll(backtickedRegex)].map((m) => m[1]);
+    if (allMatches.length >= 2) {
+      chords = allMatches.slice(0, 8);
+    }
+  }
+
+  if (chords.length < 2) return null;
+
+  // Extract Key and Mode
+  let key = 'C';
+  let mode;
+
+  const explicitModeMatch = cleanContext.match(
+    /(?:^|\n|\|)[ \t]*(?:Mode|Modo):?[ \t]*([A-Za-z]+)/i
+  );
+  if (explicitModeMatch) {
+    const rawMode = explicitModeMatch[1].toLowerCase();
+    mode =
+      rawMode === 'mayor'
+        ? 'Major'
+        : rawMode === 'menor'
+          ? 'Minor'
+          : rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
+  }
+
+  const keyHeaderMatch = cleanContext.match(
+    /(?:^|\n|\|)[ \t]*(?:Key(?:\s*of)?|Tonalidad(?:\s*de)?):?[ \t]*([A-G][b#]?)(?:[ \t]+(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|locrian|mayor|menor))?/i
+  );
+
+  if (keyHeaderMatch) {
+    key = keyHeaderMatch[1].trim().toUpperCase();
+    if (keyHeaderMatch[2] && !mode) {
+      const rawMode = keyHeaderMatch[2].toLowerCase();
+      mode =
+        rawMode === 'mayor'
+          ? 'Major'
+          : rawMode === 'menor'
+            ? 'Minor'
+            : rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
+    }
+  } else {
+    const promptKeyMatch = (prompt || '').match(
+      /\bin\s+([A-G][b#]?)(?:[ \t]+(major|minor|dorian|mixolydian|lydian|phrygian|aeolian|locrian|mayor|menor))?/i
+    );
+    if (promptKeyMatch) {
+      key = promptKeyMatch[1].trim().toUpperCase();
+      if (promptKeyMatch[2] && !mode) {
+        const rawMode = promptKeyMatch[2].toLowerCase();
+        mode =
+          rawMode === 'mayor'
+            ? 'Major'
+            : rawMode === 'menor'
+              ? 'Minor'
+              : rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
+      }
+    } else {
+      const rootMatch = chords[0].match(/^[A-G][b#]?/);
+      if (rootMatch) {
+        key = rootMatch[0].toUpperCase();
+      }
+    }
+  }
+
+  if (!mode) {
+    if (/\b(?:minor|menor)\b/i.test(prompt || '')) {
+      mode = 'Minor';
+    } else if (/\b(?:major|mayor)\b/i.test(prompt || '')) {
+      mode = 'Major';
+    } else if (/m(?:aj|in)?\b/.test(chords[0])) {
+      mode = chords[0].startsWith(key + 'm') && !chords[0].startsWith(key + 'maj') ? 'Minor' : 'Major';
+    } else {
+      mode = 'Major';
+    }
+  }
+
+  // Extract Roman Numerals / Harmonic Analysis
+  let romanNumerals;
+  const analysisLineMatch = cleanText.match(
+    /(?:^|\n)[ \t]*(?:Harmonic Analysis|Analysis|An[aá]lisis|Roman Numerals):?[ \t]*(?:\r?\n[ \t]*)?(`?[b#]?[ivIV]+[^\n]+)/i
+  );
+
+  const romanTokenRegex =
+    /`([b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([b#]?[ivIV]+(?:[0-9]|maj|min|m|M|dim|aug|sus|#|b)*(?:\([^)]+\))?)\b)/g;
+
+  if (analysisLineMatch) {
+    const lineRomans = [...analysisLineMatch[1].matchAll(romanTokenRegex)]
+      .map((m) => m[1] || m[2])
+      .filter(Boolean);
+    if (lineRomans.length >= 2) {
+      romanNumerals = lineRomans.slice(0, chords.length);
+    }
+  }
+
+  if (!romanNumerals) {
+    const allRomans = [...text.matchAll(romanTokenRegex)]
+      .map((m) => m[1] || m[2])
+      .filter(Boolean);
+    if (allRomans.length >= chords.length) {
+      romanNumerals = allRomans.slice(0, chords.length);
+    }
+  }
+
+  // Extract Tempo / BPM
+  let tempo;
+  const tempoMatch = combinedContext.match(/(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*(?:bpm|BPM)/i);
+  if (tempoMatch) {
+    const val = parseInt(tempoMatch[1] || tempoMatch[2], 10);
+    if (val >= 40 && val <= 240) {
+      tempo = val;
+    }
+  }
+
+  // Extract Time Signature
+  let timeSignature;
+  const timeSigMatch = combinedContext.match(/(?:time signature|comp[aá]s)\s*:?\s*([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b/i);
+  if (timeSigMatch) {
+    timeSignature = timeSigMatch[1] || timeSigMatch[2];
+  }
+
+  // Extract Feel / Genre / Mood
+  let feel;
+  let genre;
+  let mood;
+
+  const feelMatch = text.match(/(?:feel|sensaci[oó]n|groove)\s*:?\s*([^\n.,]+)/i);
+  if (feelMatch) {
+    feel = feelMatch[1].replace(/[*_]/g, '').trim();
+  }
+
+  const moodMatches = combinedContext.match(/\b(melancholic|melanc[oó]lic[ao]|sad|dark|nostalgic|bittersweet|uplifting|happy|bright|dreamy|tense|chill|relaxed|energetic|emotional)\b/i);
+  if (moodMatches) {
+    const m = moodMatches[1].toLowerCase();
+    mood = m.startsWith('melanc') ? 'Melancholic' : m.charAt(0).toUpperCase() + m.slice(1);
+  }
+
+  const genreMatches = combinedContext.match(/\b(neo-soul|jazz|bossa nova|r&b|indie rock|blues|gospel|folk|ambient|city pop|rock en espa[nñ]ol|latin jazz|pop|shoegaze|funk)\b/i);
+  if (genreMatches) {
+    genre = genreMatches[1]
+      .split(/([ -])/)
+      .map((w) => (w === '-' || w === ' ' ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+      .join('');
+  }
+
+  // Extract Reference / Inspired By Context
+  let referenceContext;
+  const refPromptMatch = combinedContext.match(/(?:analyze(?: the)? harmonic characteristics of|characteristics of|inspired by|in the style of|al estilo de|inspirado en)\s+([^,.\n]+?)(?:and create|and write|without copying|\.|\n|$)/i);
+  if (refPromptMatch) {
+    const refTarget = refPromptMatch[1].replace(/[*_]/g, '').trim();
+    if (refTarget && refTarget.length > 2 && refTarget.length < 60) {
+      referenceContext = `Inspired by the harmonic characteristics of ${refTarget} (original progression)`;
+    }
+  }
+
+  // Extract Explanation ("Why it works")
+  let explanation;
+  const whyMatch = text.match(/(?:(?:\*{1,2})?(?:Why It Works|Por qu[eé] funciona|Harmonic Movement|Voice Leading)(?:\*{1,2})?:?[ \t]*)([\s\S]*?)(?:\n\s*\n|\n###|\n\*\*|$)/i);
+  if (whyMatch) {
+    const cleanWhy = whyMatch[1].replace(/[*_`]/g, '').replace(/\n+/g, ' ').trim();
+    if (cleanWhy.length > 10) {
+      explanation = cleanWhy.length > 240 ? cleanWhy.slice(0, 237) + '…' : cleanWhy;
+    }
+  }
+
+  // Compose Title
+  let title = 'Harmonic Progression';
+  if (mood && genre) {
+    title = `${mood} ${genre} Progression`;
+  } else if (mood) {
+    title = `${mood} ${key}${mode ? ' ' + mode : ''} Progression`;
+  } else if (genre) {
+    title = `${genre} Progression in ${key}`;
+  } else if (key) {
+    title = `${key}${mode ? ' ' + mode : ''} Progression`;
+  }
+
+  const harmonicContext = romanNumerals ? romanNumerals.join(' → ') : undefined;
+
+  return {
+    id: `rec-chord-${Date.now()}`,
+    type: 'chord_progression',
+    title,
+    data: {
+      chords,
+      romanNumerals,
+      key,
+      mode,
+      tempo,
+      timeSignature: timeSignature || '4/4',
+      feel: feel || mood || genre,
+      genre,
+      mood,
+      title,
+      harmonicContext,
+      referenceContext,
+      explanation,
+      description: explanation || `${title} (${chords.join(' - ')})`,
+    },
+    actionLabel: 'Import to Chordex',
+  };
+}
 
   // 2. Detect Tone Recipe
   if (/pedal\s*chain|cadena de pedales|amp\s*staging|amplificador/i.test(text) && /gain|overdrive|fuzz|delay|reverb/i.test(text)) {

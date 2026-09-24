@@ -14,17 +14,35 @@ export interface ChordProgressionCardProps {
   data: ChordProgressionRecommendation;
   actionLabel?: string;
   onAction?: () => void;
+  isLight?: boolean;
+  isAmoled?: boolean;
 }
 
 export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
   data,
   actionLabel = 'Import to Chordex',
   onAction,
+  isLight,
+  isAmoled,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const playbackTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const theme = useSettingsStore((s) => s.settings?.theme);
+  const amoledMode = useSettingsStore((s) => s.settings?.amoledMode);
+  const effectiveIsLight =
+    isLight !== undefined
+      ? isLight
+      : theme === 'light' ||
+        (theme === 'system' &&
+          typeof window !== 'undefined' &&
+          window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const effectiveIsAmoled =
+    isAmoled !== undefined
+      ? isAmoled
+      : !effectiveIsLight && Boolean(amoledMode);
 
   const accentColor = useSettingsStore((s) => s.settings?.accentColor);
   const accent = useMemo(() => resolveAccent(accentColor), [accentColor]);
@@ -78,7 +96,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
     const chords = resolvedProgression.chords;
     if (chords.length === 0) return;
 
-    const bpm = data.tempo || 120;
+    const bpm = data.tempo || 100;
     // Calculate interval duration: 2 beats per chord at specified tempo
     const stepDurationMs = Math.max(500, Math.min(2000, Math.round((60 / bpm) * 1000 * 2)));
 
@@ -124,73 +142,151 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
 
   const isPlayingProgression = playbackTimerRef.current !== null || playingIndex !== null;
 
+  // Visual Theme Tokens
+  const cardBg = effectiveIsAmoled
+    ? '#000000'
+    : effectiveIsLight
+      ? '#ffffff'
+      : 'rgba(20, 20, 24, 0.94)';
+
+  const cardBorder = effectiveIsAmoled
+    ? 'rgba(255, 255, 255, 0.12)'
+    : effectiveIsLight
+      ? 'rgba(0, 0, 0, 0.08)'
+      : 'rgba(255, 255, 255, 0.09)';
+
+  const cardShadow = effectiveIsAmoled
+    ? '0 12px 32px rgba(0, 0, 0, 0.85)'
+    : effectiveIsLight
+      ? '0 6px 20px rgba(0, 0, 0, 0.05)'
+      : '0 12px 36px rgba(0, 0, 0, 0.4)';
+
+  const titleColor = effectiveIsLight ? '#0f172a' : '#f8fafc';
+  const subtitleColor = effectiveIsLight ? '#475569' : '#94a3b8';
+  const mutedTextColor = effectiveIsLight ? '#64748b' : '#a1a1aa';
+
+  const badgeBg = effectiveIsLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)';
+  const badgeBorder = effectiveIsLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+
+  const railBg = effectiveIsAmoled
+    ? '#060608'
+    : effectiveIsLight
+      ? '#f8fafc'
+      : 'rgba(10, 10, 14, 0.55)';
+
+  const railBorder = effectiveIsLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)';
+
+  const cardItemBg = effectiveIsAmoled
+    ? '#0e0e12'
+    : effectiveIsLight
+      ? '#ffffff'
+      : 'rgba(255, 255, 255, 0.04)';
+
+  const cardItemBorder = effectiveIsLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.07)';
+
+  const diagramBoxBg = effectiveIsAmoled
+    ? '#000000'
+    : effectiveIsLight
+      ? '#f1f5f9'
+      : 'rgba(0, 0, 0, 0.45)';
+
+  const amberWarm = '#f59e0b';
+  const amberActive = '#fbbf24';
+
+  const displayTitle =
+    data.title ||
+    (resolvedProgression.key
+      ? `${resolvedProgression.key}${resolvedProgression.mode ? ' ' + resolvedProgression.mode : ''} Progression`
+      : 'Harmonic Progression');
+
   return (
     <div
       style={{
         marginTop: 12,
         borderRadius: 16,
         padding: '14px 16px',
-        background:
-          'linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        background: cardBg,
+        border: `1px solid ${cardBorder}`,
+        boxShadow: cardShadow,
+        backdropFilter: effectiveIsAmoled ? 'none' : 'blur(16px)',
+        WebkitBackdropFilter: effectiveIsAmoled ? 'none' : 'blur(16px)',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
         fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* 1. Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0, flex: 1 }}>
           <div
             style={{
               width: 32,
               height: 32,
               borderRadius: 9,
-              background: `linear-gradient(135deg, ${accent.soft}, ${accent.subtle})`,
-              border: `1px solid ${accent.border}`,
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: accent.from,
-              boxShadow: accent.glow,
+              color: amberWarm,
+              flexShrink: 0,
+              marginTop: 1,
             }}
           >
             <StudioIcon name="queue_music" size={18} />
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', lineHeight: 1.2 }}>
-              Chord Progression
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: titleColor,
+                lineHeight: 1.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {displayTitle}
             </div>
+
+            {/* Badges Row */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                marginTop: 2,
+                marginTop: 4,
                 flexWrap: 'wrap',
               }}
             >
+              {/* Key and Mode */}
               <span
                 style={{
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  color: accent.from,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  padding: '1px 6px',
-                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 650,
+                  color: amberWarm,
+                  background: 'rgba(245, 158, 11, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.2)',
+                  padding: '1.5px 7px',
+                  borderRadius: 5,
                 }}
               >
-                Key of {resolvedProgression.key} {resolvedProgression.mode || ''}
+                Key: {resolvedProgression.key} {resolvedProgression.mode || ''}
               </span>
+
+              {/* Tempo */}
               {data.tempo && (
                 <span
                   style={{
                     fontSize: 10.5,
-                    color: '#94a3b8',
+                    fontWeight: 500,
+                    color: subtitleColor,
+                    background: badgeBg,
+                    border: `1px solid ${badgeBorder}`,
+                    padding: '1.5px 6px',
+                    borderRadius: 5,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 3,
@@ -199,22 +295,38 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                   ⏱ {data.tempo} BPM
                 </span>
               )}
+
+              {/* Time Signature */}
               {data.timeSignature && (
-                <span style={{ fontSize: 10.5, color: '#94a3b8' }}>
-                  {data.timeSignature}
-                </span>
-              )}
-              {data.repetitions && (
                 <span
                   style={{
                     fontSize: 10.5,
-                    color: '#38bdf8',
-                    background: 'rgba(56, 189, 248, 0.1)',
-                    padding: '1px 5px',
-                    borderRadius: 4,
+                    fontWeight: 500,
+                    color: subtitleColor,
+                    background: badgeBg,
+                    border: `1px solid ${badgeBorder}`,
+                    padding: '1.5px 6px',
+                    borderRadius: 5,
                   }}
                 >
-                  {data.repetitions}x
+                  {data.timeSignature}
+                </span>
+              )}
+
+              {/* Genre / Feel */}
+              {(data.genre || data.feel) && (
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 500,
+                    color: subtitleColor,
+                    background: badgeBg,
+                    border: `1px solid ${badgeBorder}`,
+                    padding: '1.5px 6px',
+                    borderRadius: 5,
+                  }}
+                >
+                  {data.genre || data.feel}
                 </span>
               )}
             </div>
@@ -222,7 +334,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
         </div>
 
         {/* Header Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {/* Audio Preview Button */}
           {resolvedProgression.resolvedCount > 0 && (
             <button
@@ -230,12 +342,12 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
               title={isPlayingProgression ? 'Stop preview' : 'Play progression preview'}
               style={{
                 background: isPlayingProgression
-                  ? accent.soft
-                  : 'rgba(255, 255, 255, 0.06)',
-                border: `1px solid ${isPlayingProgression ? accent.border : 'rgba(255, 255, 255, 0.1)'}`,
-                color: isPlayingProgression ? accent.from : '#cbd5e1',
+                  ? 'rgba(245, 158, 11, 0.16)'
+                  : badgeBg,
+                border: `1px solid ${isPlayingProgression ? 'rgba(245, 158, 11, 0.35)' : badgeBorder}`,
+                color: isPlayingProgression ? amberWarm : subtitleColor,
                 cursor: 'pointer',
-                padding: '5px 8px',
+                padding: '5px 9px',
                 borderRadius: 8,
                 display: 'flex',
                 alignItems: 'center',
@@ -260,7 +372,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: copied ? '#4ade80' : '#94a3b8',
+              color: copied ? '#22c55e' : subtitleColor,
               cursor: 'pointer',
               padding: 6,
               borderRadius: 6,
@@ -276,15 +388,37 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
         </div>
       </div>
 
-      {/* Chords Sequence Container with Canonical Chordex Diagrams */}
+      {/* 2. Reference / Inspiration Banner (if applicable) */}
+      {data.referenceContext && (
+        <div
+          style={{
+            padding: '7px 10px',
+            borderRadius: 8,
+            background: effectiveIsLight ? 'rgba(245, 158, 11, 0.07)' : 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            fontSize: 11,
+            color: effectiveIsLight ? '#92400e' : '#fde68a',
+            lineHeight: 1.35,
+          }}
+        >
+          <StudioIcon name="auto_awesome" size={13} style={{ flexShrink: 0, color: amberWarm }} />
+          <span>{data.referenceContext}</span>
+        </div>
+      )}
+
+      {/* 3. Chords Rail with Canonical Chordex Diagrams */}
       <div
         style={{
           display: 'flex',
-          gap: 10,
+          gap: 8,
           alignItems: 'stretch',
-          padding: '10px 10px',
-          background: 'rgba(0, 0, 0, 0.32)',
-          borderRadius: 14,
+          padding: '8px 8px',
+          background: railBg,
+          border: `1px solid ${railBorder}`,
+          borderRadius: 12,
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
@@ -303,21 +437,21 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 6px 8px',
-                borderRadius: 10,
+                padding: '6px 5px 7px',
+                borderRadius: 9,
                 background: isCurrent
-                  ? accent.soft
-                  : 'rgba(255, 255, 255, 0.04)',
+                  ? 'rgba(245, 158, 11, 0.12)'
+                  : cardItemBg,
                 border: `1px solid ${
                   isCurrent
-                    ? accent.from
+                    ? amberWarm
                     : chord.resolved
-                      ? 'rgba(255, 255, 255, 0.08)'
-                      : 'rgba(239, 68, 68, 0.25)'
+                      ? cardItemBorder
+                      : 'rgba(239, 68, 68, 0.3)'
                 }`,
-                boxShadow: isCurrent ? accent.glow : 'none',
-                minWidth: 64,
-                maxWidth: 78,
+                boxShadow: isCurrent ? '0 0 12px rgba(245, 158, 11, 0.25)' : 'none',
+                minWidth: 62,
+                maxWidth: 76,
                 flexShrink: 0,
                 cursor: chord.resolved ? 'pointer' : 'default',
                 transition: 'all 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
@@ -329,7 +463,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: isCurrent ? accent.from : '#94a3b8',
+                  color: isCurrent ? amberWarm : subtitleColor,
                   minHeight: 14,
                   lineHeight: '14px',
                   textAlign: 'center',
@@ -338,19 +472,19 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                 {chord.romanNumeral || ''}
               </div>
 
-              {/* Chord Diagram or Unresolved Fallback Box */}
+              {/* Chord Diagram Box */}
               <div
                 style={{
-                  background: 'rgba(15, 23, 42, 0.65)',
-                  borderRadius: 8,
-                  padding: '3px 3px 1px',
-                  width: '54px',
-                  height: '52px',
+                  background: diagramBoxBg,
+                  borderRadius: 7,
+                  padding: '3px 2px 1px',
+                  width: '52px',
+                  height: '50px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginTop: 3,
-                  marginBottom: 6,
+                  marginBottom: 5,
                   overflow: 'hidden',
                   position: 'relative',
                 }}
@@ -358,7 +492,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                 {chord.resolved && chord.guitarData ? (
                   <ChordDiagram
                     data={chord.guitarData}
-                    accentFrom={isCurrent ? accent.from : 'var(--c-accent-from, #38bdf8)'}
+                    accentFrom={isCurrent ? amberActive : amberWarm}
                   />
                 ) : (
                   <div
@@ -377,7 +511,7 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
                     <span
                       style={{
                         fontSize: '9px',
-                        color: '#94a3b8',
+                        color: subtitleColor,
                         textTransform: 'uppercase',
                         fontWeight: 700,
                         letterSpacing: 0.3,
@@ -392,9 +526,9 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
               {/* Chord Name Label */}
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: 12.5,
                   fontWeight: 800,
-                  color: isCurrent ? '#ffffff' : chord.resolved ? '#f1f5f9' : '#f87171',
+                  color: isCurrent ? amberActive : chord.resolved ? titleColor : '#ef4444',
                   lineHeight: 1.1,
                   textAlign: 'center',
                   letterSpacing: -0.2,
@@ -407,23 +541,40 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
         })}
       </div>
 
-      {/* Feel / Description */}
-      {(data.feel || data.description) && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {data.feel && (
-            <div style={{ fontSize: 11, fontWeight: 600, color: accent.from }}>
-              Feel: {data.feel}
+      {/* 4. Harmonic Analysis / Explanation ("Why It Works") */}
+      {(data.harmonicContext || data.explanation || data.description) && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            padding: '8px 10px',
+            borderRadius: 9,
+            background: badgeBg,
+            border: `1px solid ${badgeBorder}`,
+          }}
+        >
+          {data.harmonicContext && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: amberWarm }}>
+              <StudioIcon name="linear_scale" size={13} />
+              <span>{data.harmonicContext}</span>
             </div>
           )}
-          {data.description && (
-            <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.45 }}>
-              {data.description}
+          {(data.explanation || data.description) && (
+            <div
+              style={{
+                fontSize: 11.5,
+                color: mutedTextColor,
+                lineHeight: 1.5,
+              }}
+            >
+              {data.explanation || data.description}
             </div>
           )}
         </div>
       )}
 
-      {/* Action Footer: Import to Chordex */}
+      {/* 5. Action Footer: Import to Chordex */}
       <button
         onClick={handleApplyToChordex}
         disabled={isImporting}
@@ -436,14 +587,24 @@ export const ChordProgressionCard: React.FC<ChordProgressionCardProps> = ({
           padding: '9px 16px',
           borderRadius: 10,
           background: isImporting
-            ? 'rgba(34, 197, 94, 0.2)'
-            : `linear-gradient(135deg, ${accent.from} 0%, ${accent.to} 100%)`,
-          color: isImporting ? '#4ade80' : accent.contrast,
-          border: isImporting ? '1px solid rgba(74, 222, 128, 0.3)' : 'none',
+            ? 'rgba(34, 197, 94, 0.16)'
+            : effectiveIsLight
+              ? '#0f172a'
+              : 'rgba(255, 255, 255, 0.08)',
+          color: isImporting
+            ? '#22c55e'
+            : effectiveIsLight
+              ? '#ffffff'
+              : '#f8fafc',
+          border: isImporting
+            ? '1px solid rgba(34, 197, 94, 0.3)'
+            : effectiveIsLight
+              ? '1px solid #0f172a'
+              : '1px solid rgba(255, 255, 255, 0.14)',
           fontSize: 12.5,
           fontWeight: 700,
           cursor: isImporting ? 'default' : 'pointer',
-          boxShadow: isImporting ? 'none' : accent.glow,
+          boxShadow: isImporting ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.15)',
           transition: 'all 150ms ease',
         }}
       >
