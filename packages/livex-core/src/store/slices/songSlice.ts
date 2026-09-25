@@ -337,24 +337,46 @@ export const createSongSlice: StateCreator<
   },
 
   deduplicateAllPresets: () => {
-    set((state: any) => ({
-      presets: state.presets.map((p: SongPreset) => {
+    set((state: any) => {
+      let hasDuplicates = false;
+      const nextPresets = state.presets.map((p: SongPreset) => {
         if (p.sections && p.sections.length > 0) {
+          let sectionChanged = false;
+          const nextSections = p.sections.map((s) => {
+            const nextChords = s.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
+            if (nextChords.length !== s.chords.length) {
+              sectionChanged = true;
+              return { ...s, chords: nextChords };
+            }
+            return s;
+          });
+          if (sectionChanged) {
+            hasDuplicates = true;
+            return {
+              ...p,
+              sections: nextSections,
+              updatedAt: Date.now(),
+            };
+          }
+          return p;
+        }
+        const nextChords = p.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
+        if (nextChords.length !== p.chords.length) {
+          hasDuplicates = true;
           return {
             ...p,
-            sections: p.sections.map((s) => ({
-              ...s,
-              chords: s.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]),
-            })),
+            chords: nextChords,
             updatedAt: Date.now(),
           };
         }
-        return {
-          ...p,
-          chords: p.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]),
-          updatedAt: Date.now(),
-        };
-      }),
-    }));
+        return p;
+      });
+
+      if (!hasDuplicates) {
+        return state;
+      }
+
+      return { presets: nextPresets };
+    });
   },
 });

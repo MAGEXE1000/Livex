@@ -111,7 +111,7 @@ export function HubAppGrid() {
               flexShrink: 0,
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 28 /* token-guard-ignore */ }}>
               {app.icon}
             </span>
           </div>

@@ -54,6 +54,7 @@ import {
   VocalexTakesSkeleton,
   DevToolsSkeleton,
 } from '../loading/StudioSkeleton';
+import { DeferredSkeleton } from '../loading/SmartLoading';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
 import { useAnimationSpeed } from '../../shared/animation';
 import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
@@ -61,7 +62,7 @@ import { SharedNavigationContainer } from '../../navigation/SharedNavigationCont
 import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/animation';
 import { Toaster } from '../../components/ui/sonner';
 
-const ALL_PANELS = ['songs', 'library', 'preferences'] as const;
+const ALL_PANELS = ['songs', 'library', 'practice', 'preferences'] as const;
 
 export interface SharedAppShellProps {
   isAndroid?: boolean;
@@ -184,7 +185,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="devtools">
             <ErrorBoundary moduleName="DevTools">
-              <Suspense fallback={<DevToolsSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><DevToolsSkeleton /></DeferredSkeleton>}>
                 <AppReadyNotifier app="devtools" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.devtools}
@@ -206,7 +207,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="groovex">
             <ErrorBoundary moduleName="Groovex">
-              <Suspense fallback={<GroovexAppSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><GroovexAppSkeleton /></DeferredSkeleton>}>
                 <AppReadyNotifier app="groovex" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.groovex}
@@ -228,7 +229,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="vocalex">
             <ErrorBoundary moduleName="Vocalex">
-              <Suspense fallback={<VocalexTakesSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><VocalexTakesSkeleton /></DeferredSkeleton>}>
                 <AppReadyNotifier app="vocalex" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.vocalex}
@@ -250,7 +251,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="stagex">
             <ErrorBoundary moduleName="Stagex">
-              <Suspense fallback={<StagexPanelSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><StagexPanelSkeleton /></DeferredSkeleton>}>
                 <AppReadyNotifier app="stagex" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.stagex}
@@ -272,7 +273,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
         >
           <SubAppScaffold appKey="drumex">
             <ErrorBoundary moduleName="Drumex">
-              <Suspense fallback={<DrumexDynamicSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><DrumexDynamicSkeleton /></DeferredSkeleton>}>
                 <AppReadyNotifier app="drumex" onReady={onReady} />
                 <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                   {subApps.drumex}
@@ -323,7 +324,7 @@ const SubAppWrapper = memo(function SubAppWrapper({
                             <ChordexPracticeSkeleton />
                           );
                         return (
-                          <Suspense fallback={fallback}>
+                          <Suspense fallback={<DeferredSkeleton>{fallback}</DeferredSkeleton>}>
                             <AppReadyNotifier app="chordex" onReady={onReady} />
                             <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                               {panel === 'songs' && subApps.chordex?.songs}
@@ -512,7 +513,7 @@ export function SharedAppShell({
           >
             {renderSidebar?.()}
             {showHub && (
-              <Suspense fallback={<StudioHubSkeleton />}>
+              <Suspense fallback={<DeferredSkeleton><StudioHubSkeleton /></DeferredSkeleton>}>
                 <div
                   key={hubRenderKey}
                   style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}

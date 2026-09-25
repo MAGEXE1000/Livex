@@ -157,33 +157,65 @@ export function AppLoadingScreen({ app }: { app?: AppKey | string }) {
   );
 }
 
+export function DeferredSkeleton({
+  children,
+  delayMs = 120,
+}: {
+  children: React.ReactNode;
+  delayMs?: number;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisible(true);
+    }, delayMs);
+    return () => clearTimeout(timer);
+  }, [delayMs]);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="deferred-skeleton-container"
+      style={{ animation: 'skeleton-fade-in 200ms ease both', width: '100%', height: '100%' }}
+    >
+      <style>{`
+        @keyframes skeleton-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+      {children}
+    </div>
+  );
+}
+
 export default function SmartLoading({
   fallbackSkeleton,
   subtleLoading,
-  delayMs = 150,
-  skeletonMs = 400,
+  delayMs = 120,
+  skeletonMs = 350,
   app,
 }: SmartLoadingProps) {
-  const [loadState, setLoadState] = useState<'none' | 'subtle' | 'skeleton'>(
-    app || fallbackSkeleton ? 'skeleton' : 'none'
-  );
+  const [loadState, setLoadState] = useState<'none' | 'subtle' | 'skeleton'>('none');
 
   useEffect(() => {
-    if (app || fallbackSkeleton) return; // Skip timers if app loading screen or fallback skeleton is present
-
+    // Fast path: if content arrives within delayMs, timers are cleared on unmount and no skeleton/spinner ever renders.
+    // If loading exceeds delayMs, show subtle loading (or full skeleton directly if no subtleLoading).
     const subtleTimer = setTimeout(() => {
-      setLoadState('subtle');
+      setLoadState(subtleLoading ? 'subtle' : 'skeleton');
     }, delayMs);
 
     const skeletonTimer = setTimeout(() => {
       setLoadState('skeleton');
-    }, skeletonMs);
+    }, subtleLoading ? skeletonMs : delayMs);
 
     return () => {
       clearTimeout(subtleTimer);
       clearTimeout(skeletonTimer);
     };
-  }, [delayMs, skeletonMs, app, fallbackSkeleton]);
+  }, [delayMs, skeletonMs, subtleLoading]);
 
   if (loadState === 'none') {
     return null;
@@ -206,7 +238,7 @@ export default function SmartLoading({
   }
 
   return (
-    <div style={{ animation: 'skeleton-fade-in 300ms ease both' }}>
+    <div style={{ animation: 'skeleton-fade-in 200ms ease both' }}>
       <style>{`
         @keyframes skeleton-fade-in {
           from { opacity: 0; transform: translateY(4px); }

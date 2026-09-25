@@ -346,7 +346,7 @@ export function DetailFretboardDiagram({
   );
 }
 
-export function LibraryChordDetail({
+export const LibraryChordDetail = React.memo(function LibraryChordDetail({
   state,
   isDefaultPreview = false,
   onBack,
@@ -690,7 +690,7 @@ export function LibraryChordDetail({
       </div>
     </div>
   );
-}
+});
 
 export function ChordHeroFretboard({
   chordData,
@@ -1005,7 +1005,7 @@ export function ChordCardMiniFretboard({
 
 const CATEGORY_ROOTS = ['ALL', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
 
-export function CategoryScreenView({
+export const CategoryScreenView = React.memo(function CategoryScreenView({
   activeType,
   setActiveType,
   activeCategoryObject,
@@ -1235,9 +1235,9 @@ export function CategoryScreenView({
       </div>
     </div>
   );
-}
+});
 
-export function LibraryMainView({ state }: { state: any }) {
+export const LibraryMainView = React.memo(function LibraryMainView({ state }: { state: any }) {
   const {
     scrollRef,
     allChords,
@@ -1813,4 +1813,4 @@ export function LibraryMainView({ state }: { state: any }) {
       </div>
     </div>
   );
-}
+});

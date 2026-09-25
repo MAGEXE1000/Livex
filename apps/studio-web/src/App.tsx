@@ -48,6 +48,29 @@ if (typeof window !== 'undefined') {
   (window as any).NavigationDispatcher = NavigationDispatcher;
 }
 
+function ChordexWebSidebar() {
+  const activePanel = useNavigationStore((s) => {
+    const last = s.history[s.history.length - 1];
+    return last?.app === 'chordex' && last.page ? (last.page as ActivePanel) : 'library';
+  });
+
+  const handleSetActivePanel = useCallback((panel: ActivePanel) => {
+    const history = useNavigationStore.getState().history;
+    const current = history[history.length - 1];
+    if (current?.app === 'chordex' && current.page !== panel) {
+      NavigationDispatcher.push({ app: 'chordex', page: panel });
+    }
+  }, []);
+
+  return (
+    <WebAppSectionDock
+      app="chordex"
+      activeSection={activePanel}
+      onChangeSection={handleSetActivePanel as any}
+    />
+  );
+}
+
 export default function App() {
   const theme = useSettingsStore((s) => s.settings.theme);
   const globalAmoled = useSettingsStore((s) => s.settings.amoledMode);
@@ -184,19 +207,6 @@ export default function App() {
 
   const isWebDesktop = useIsWebDesktop();
 
-  const activePanel = useNavigationStore((s) => {
-    const last = s.history[s.history.length - 1];
-    return last?.app === 'chordex' && last.page ? (last.page as ActivePanel) : 'library';
-  });
-
-  const handleSetActivePanel = useCallback((panel: ActivePanel) => {
-    const history = useNavigationStore.getState().history;
-    const current = history[history.length - 1];
-    if (current?.app === 'chordex' && current.page !== panel) {
-      NavigationDispatcher.push({ app: 'chordex', page: panel });
-    }
-  }, []);
-
   const subApps = useMemo(
     () => ({
       devtools: <DevToolsApp />,
@@ -205,20 +215,14 @@ export default function App() {
       stagex: <StageCorePanel />,
       drumex: <DrumEditor />,
       chordex: {
-        sidebar: isWebDesktop ? (
-          <WebAppSectionDock
-            app="chordex"
-            activeSection={activePanel}
-            onChangeSection={handleSetActivePanel as any}
-          />
-        ) : null,
+        sidebar: isWebDesktop ? <ChordexWebSidebar /> : null,
         songs: <SongsPanel />,
         practice: <SaxophonePracticePanel />,
         library: <LibraryPanel />,
         preferences: <SettingsPanel />,
       },
     }),
-    [isWebDesktop, activePanel, handleSetActivePanel]
+    [isWebDesktop]
   );
 
   const handleLaunchOverlayComplete = useCallback(() => {

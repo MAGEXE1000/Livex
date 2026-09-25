@@ -5,7 +5,7 @@ export { default as AppSpinner } from './shared/loading/AppSpinner';
 export { default as SnakeLoader, LivexSnakeLoader } from './shared/loading/SnakeLoader';
 export { default as ElasticSlider } from './shared/progress/ElasticSlider';
 export { default as GradientBorderCard } from './shared/cards/GradientBorderCard';
-export { default as SmartLoading, AppLoadingScreen } from './shared/loading/SmartLoading';
+export { default as SmartLoading, AppLoadingScreen, DeferredSkeleton } from './shared/loading/SmartLoading';
 export { SharedNavigationContainer } from './navigation/SharedNavigationContainer';
 export { LivexPageTransition, StudioPageTransition, UNIFIED_NAV_TRANSITION } from './components/LivexPageTransition';
 export { default as LivexCountUpPercentage, default as StudioCountUpPercentage } from './shared/progress/LivexCountUpPercentage';
