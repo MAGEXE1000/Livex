@@ -23,18 +23,25 @@ export const ROOT_NOTES = ['ALL', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#
 
 export function useLibraryState() {
   const isWebDesktop = useIsWebDesktop();
-  const currentRoute = useNavigationStore(useShallow((s) => s.history[s.history.length - 1])) || {
-    app: 'hub',
-  };
+  const routeApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+  const routePage = useNavigationStore((s) => s.history[s.history.length - 1]?.page ?? 'library');
+  const routeSubView = useNavigationStore((s) => s.history[s.history.length - 1]?.subView);
+  const routeId = useNavigationStore((s) => s.history[s.history.length - 1]?.id);
+
+  const currentRoute = useMemo(
+    () => ({ app: routeApp, page: routePage, subView: routeSubView, id: routeId }),
+    [routeApp, routePage, routeSubView, routeId]
+  );
+
   const selectedChordId =
-    currentRoute.app === 'chordex' && ['chord', 'library'].includes(currentRoute.page || '')
-      ? currentRoute.id || null
+    routeApp === 'chordex' && ['chord', 'library'].includes(routePage || '')
+      ? routeId || null
       : null;
   const activePanel =
-    currentRoute.app === 'chordex' && currentRoute.page
-      ? currentRoute.page === 'chord'
+    routeApp === 'chordex' && routePage
+      ? routePage === 'chord'
         ? 'library'
-        : (currentRoute.page as ActivePanel)
+        : (routePage as ActivePanel)
       : 'library';
 
   const recentChords = useChordStore(useShallow((s) => s.recentChords));

@@ -860,18 +860,13 @@ export default function LivexHub() {
     StartupCoordinator.notifyHubMounted();
   }, []);
   const [zooming, setZooming] = useState(false);
-  const activeRoute = useNavigationStore((s) => s.history[s.history.length - 1]) || {
-    app: 'hub',
-    tab: 'home',
-  };
+  const routeApp = currentApp;
+  const routeTab = useNavigationStore((s) => s.history[s.history.length - 1]?.tab ?? 'home');
+  const routePage = useNavigationStore((s) => s.history[s.history.length - 1]?.page ?? 'main');
   const page =
-    activeRoute.app === 'hub' && activeRoute.tab === 'settings'
-      ? (activeRoute.page ?? 'main')
+    routeApp === 'hub' && routeTab === 'settings'
+      ? (routePage ?? 'main')
       : 'main';
-
-  const routeApp = activeRoute.app;
-  const routeTab = activeRoute.tab;
-  const routePage = activeRoute.page;
   const isLight =
     theme === 'light' ||
     (theme === 'system' &&
@@ -916,7 +911,7 @@ export default function LivexHub() {
     };
   }, [shortcutPickerOpen, isEditMode]);
 
-  const activeRouteApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+  const activeRouteApp = currentApp;
 
   useEffect(() => {
     try {

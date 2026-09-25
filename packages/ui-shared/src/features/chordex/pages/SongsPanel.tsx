@@ -27,7 +27,6 @@ import {
   useSettingsStore,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
-import { SongCardGrid } from '../components/SongCardGrid';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion } from 'motion/react';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
@@ -4067,10 +4066,10 @@ export default function SongsPanel() {
   const isWebDesktop = useIsWebDesktop();
   const presets = useChordStore(useShallow((s) => s.presets));
   const activePresetId = useChordStore(useShallow((s) => s.activePresetId));
-  const currentRoute = useNavigationStore(useShallow((s) => s.history[s.history.length - 1])) || {
-    app: 'hub',
-  };
-  const activePanel = currentRoute.app === 'chordex' ? currentRoute.page || 'library' : 'library';
+  const isSongsActive = useNavigationStore((s) => {
+    const top = s.history[s.history.length - 1];
+    return top?.app === 'chordex' && (top.page || 'library') === 'songs';
+  });
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
@@ -4081,32 +4080,61 @@ export default function SongsPanel() {
   );
   const transpositions = useChordStore(useShallow((s) => s.transpositions));
   const customChords = useChordStore(useShallow((s) => s.customChords));
-  const setActivePreset = useChordStore(useShallow((s) => s.setActivePreset));
-  const createPreset = useChordStore(useShallow((s) => s.createPreset));
-  const updatePreset = useChordStore(useShallow((s) => s.updatePreset));
-  const deletePreset = useChordStore(useShallow((s) => s.deletePreset));
-  const addChordToPreset = useChordStore(useShallow((s) => s.addChordToPreset));
-  const removeChordFromPreset = useChordStore(useShallow((s) => s.removeChordFromPreset));
-  const reorderPresetChords = useChordStore(useShallow((s) => s.reorderPresetChords));
-  const duplicateChordInPreset = useChordStore(useShallow((s) => s.duplicateChordInPreset));
-  const setTranspose = useChordStore(useShallow((s) => s.setTranspose));
-  const resetTranspose = useChordStore(useShallow((s) => s.resetTranspose));
-
-  const saveCustomChord = useChordStore(useShallow((s) => s.saveCustomChord));
-  const updateCustomChord = useChordStore(useShallow((s) => s.updateCustomChord));
-  const deleteCustomChord = useChordStore(useShallow((s) => s.deleteCustomChord));
-  const addSection = useChordStore(useShallow((s) => s.addSection));
-  const updateSection = useChordStore(useShallow((s) => s.updateSection));
-  const deleteSection = useChordStore(useShallow((s) => s.deleteSection));
-  const addChordToSection = useChordStore(useShallow((s) => s.addChordToSection));
-  const removeChordFromSection = useChordStore(useShallow((s) => s.removeChordFromSection));
-  const reorderSectionChords = useChordStore(useShallow((s) => s.reorderSectionChords));
-  const duplicateChordInSection = useChordStore(useShallow((s) => s.duplicateChordInSection));
-  const reorderSection = useChordStore(useShallow((s) => s.reorderSection));
-  const convertToSections = useChordStore(useShallow((s) => s.convertToSections));
   const pendingImport = useChordStore(useShallow((s) => s.pendingImport));
-  const clearPendingImport = useChordStore(useShallow((s) => s.clearPendingImport));
-  const deduplicateAllPresets = useChordStore(useShallow((s) => s.deduplicateAllPresets));
+
+  const {
+    setActivePreset,
+    createPreset,
+    updatePreset,
+    deletePreset,
+    addChordToPreset,
+    removeChordFromPreset,
+    reorderPresetChords,
+    duplicateChordInPreset,
+    setTranspose,
+    resetTranspose,
+    saveCustomChord,
+    updateCustomChord,
+    deleteCustomChord,
+    addSection,
+    updateSection,
+    deleteSection,
+    addChordToSection,
+    removeChordFromSection,
+    reorderSectionChords,
+    duplicateChordInSection,
+    reorderSection,
+    convertToSections,
+    clearPendingImport,
+    deduplicateAllPresets,
+  } = useChordStore(
+    useShallow((s) => ({
+      setActivePreset: s.setActivePreset,
+      createPreset: s.createPreset,
+      updatePreset: s.updatePreset,
+      deletePreset: s.deletePreset,
+      addChordToPreset: s.addChordToPreset,
+      removeChordFromPreset: s.removeChordFromPreset,
+      reorderPresetChords: s.reorderPresetChords,
+      duplicateChordInPreset: s.duplicateChordInPreset,
+      setTranspose: s.setTranspose,
+      resetTranspose: s.resetTranspose,
+      saveCustomChord: s.saveCustomChord,
+      updateCustomChord: s.updateCustomChord,
+      deleteCustomChord: s.deleteCustomChord,
+      addSection: s.addSection,
+      updateSection: s.updateSection,
+      deleteSection: s.deleteSection,
+      addChordToSection: s.addChordToSection,
+      removeChordFromSection: s.removeChordFromSection,
+      reorderSectionChords: s.reorderSectionChords,
+      duplicateChordInSection: s.duplicateChordInSection,
+      reorderSection: s.reorderSection,
+      convertToSections: s.convertToSections,
+      clearPendingImport: s.clearPendingImport,
+      deduplicateAllPresets: s.deduplicateAllPresets,
+    }))
+  );
   const accent = useMemo(() => resolveAccent(settings.accentColor), [settings.accentColor]);
   const preferFlats = settings.preferFlats ?? false;
   const isNative =
@@ -4130,9 +4158,10 @@ export default function SongsPanel() {
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
   const filteredPresets = useMemo(() => {
-    if (!searchQuery) return presets;
-    const q = searchQuery.toLowerCase();
+    if (!deferredSearchQuery) return presets;
+    const q = deferredSearchQuery.toLowerCase();
     return presets.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
@@ -4142,7 +4171,7 @@ export default function SongsPanel() {
           Array.isArray((p as any).tags) &&
           (p as any).tags.some((t: string) => typeof t === 'string' && t.toLowerCase().includes(q)))
     );
-  }, [presets, searchQuery]);
+  }, [presets, deferredSearchQuery]);
 
   // Section state
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
@@ -4267,7 +4296,7 @@ export default function SongsPanel() {
   useBackHandler(
     'nested',
     () => {
-      if (activePanel !== 'songs') return false;
+      if (!isSongsActive) return false;
       if (showSectionPicker) {
         setShowSectionPicker(false);
         return true;
@@ -4309,7 +4338,7 @@ export default function SongsPanel() {
       return false;
     },
     [
-      activePanel,
+      isSongsActive,
       showSectionPicker,
       showCustomBuilder,
       showPicker,

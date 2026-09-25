@@ -1247,6 +1247,7 @@ function MixerView({
   const masterGainRef = useRef<GainNode | null>(null);
   const startTimeRef = useRef(0);
   const animRef = useRef(0);
+  const lastTimeUpdateRef = useRef(0);
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
@@ -1434,8 +1435,13 @@ function MixerView({
     const tick = () => {
       if (!ctxRef.current) return;
       const elapsed = (ctxRef.current.currentTime - startTimeRef.current) * 1000;
-      setCurrentTime(elapsed);
+      const now = performance.now();
+      if (now - lastTimeUpdateRef.current >= 24) {
+        lastTimeUpdateRef.current = now;
+        setCurrentTime(elapsed);
+      }
       if (elapsed >= longestMs) {
+        setCurrentTime(longestMs);
         stopPlayback();
         return;
       }

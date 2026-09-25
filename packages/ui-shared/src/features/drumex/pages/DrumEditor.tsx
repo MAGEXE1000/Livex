@@ -1418,11 +1418,29 @@ export default function DrumEditor() {
 
   // ── Refs ─────────────────────────────────────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollDimsRef = useRef({ width: 0, height: 0 });
   const playheadRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const isDragging = useRef(false);
   const dragFilled = useRef(new Set<string>());
   const countInTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Cache scroll container dimensions to eliminate synchronous layout reflows during playback
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    scrollDimsRef.current = { width: el.clientWidth, height: el.clientHeight };
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === el) {
+          scrollDimsRef.current = { width: el.clientWidth, height: el.clientHeight };
+        }
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1520,27 +1538,48 @@ export default function DrumEditor() {
       const stepInRow = measureInRow * sp + stepInM;
       const x = LABEL_W + stepInRow * sw;
       const y = systemIdx * sh;
-      if (playheadRef.current) {
-        playheadRef.current.style.transform = `translate(${x}px, ${y}px)`;
-        playheadRef.current.style.display = 'block';
-      }
+
+      // Read geometry and calculate targets before applying any DOM writes (eliminates forced synchronous reflow)
       const el = scrollRef.current;
+      let targetScrollTop: number | null = null;
+      let targetScrollLeft: number | null = null;
+
       if (el) {
+        const cWidth = scrollDimsRef.current.width || el.clientWidth;
+        const cHeight = scrollDimsRef.current.height || el.clientHeight;
+        const curScrollTop = el.scrollTop;
+        const curScrollLeft = el.scrollLeft;
+
         const rowBottom =
           y +
           RULER_H +
           allInstsRef.current.length * ROW_H +
           (allInstsRef.current.length > 0 ? (allInstsRef.current.length - 1) * rowGap : 0);
-        if (y < el.scrollTop || rowBottom > el.scrollTop + el.clientHeight)
-          el.scrollTop = Math.max(0, y - 40);
+        if (y < curScrollTop || rowBottom > curScrollTop + cHeight) {
+          targetScrollTop = Math.max(0, y - 40);
+        }
 
         // Horizontal auto-scroll
-        const leftBound = el.scrollLeft + LABEL_W;
-        const rightBound = el.scrollLeft + el.clientWidth;
+        const leftBound = curScrollLeft + LABEL_W;
+        const rightBound = curScrollLeft + cWidth;
         if (x < leftBound) {
-          el.scrollLeft = Math.max(0, x - LABEL_W - 20);
+          targetScrollLeft = Math.max(0, x - LABEL_W - 20);
         } else if (x > rightBound - 40) {
-          el.scrollLeft = x - el.clientWidth + 40;
+          targetScrollLeft = x - cWidth + 40;
+        }
+      }
+
+      // Single write phase
+      if (playheadRef.current) {
+        playheadRef.current.style.transform = `translate(${x}px, ${y}px)`;
+        playheadRef.current.style.display = 'block';
+      }
+      if (el) {
+        if (targetScrollTop !== null && targetScrollTop !== el.scrollTop) {
+          el.scrollTop = targetScrollTop;
+        }
+        if (targetScrollLeft !== null && targetScrollLeft !== el.scrollLeft) {
+          el.scrollLeft = targetScrollLeft;
         }
       }
       // ── Auto-expand ────────────────────────────────────────────────────────

@@ -343,6 +343,7 @@ export default function TakeDetailView({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const rafRef = useRef<number>(0);
+  const lastProgressUpdateRef = useRef<number>(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -462,13 +463,20 @@ export default function TakeDetailView({
   const updateProgress = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    const now = performance.now();
     if (audio.duration && isFinite(audio.duration)) {
-      setProgress((audio.currentTime / audio.duration) * 100);
+      if (now - lastProgressUpdateRef.current >= 24) {
+        lastProgressUpdateRef.current = now;
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
     }
     if (!audio.paused && !audio.ended) {
       rafRef.current = requestAnimationFrame(updateProgress);
     } else {
       rafRef.current = 0;
+      if (audio.duration && isFinite(audio.duration)) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
     }
   }, []);
 

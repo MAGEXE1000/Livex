@@ -239,12 +239,23 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
   // Playback/scrolling states
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [activePlaybackIndices, setActivePlaybackIndices] = useState({
+    activeLineIndex: 0,
+    activeChordIndex: -1,
+    activeSegmentIndex: -1,
+  });
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const elapsedTimeRef = useRef<number>(0);
+  const activeLineIndexRef = useRef<number>(0);
+  const activeChordIndexRef = useRef<number>(-1);
+  const activeSegIndexRef = useRef<number>(-1);
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const timeLabelRef = useRef<HTMLSpanElement>(null);
+  const lastDisplayedSecRef = useRef<number>(0);
 
   // Chord Provider States
   const [activeChart, setActiveChart] = useState<NormalizedChordChart | null>(null);
@@ -545,6 +556,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
       chords: NormalizedChordMarker[];
       timestamp: number;
       duration: number;
+      segments: ReturnType<typeof getLineSegments>;
     }[] = [];
     let currentTime = 0;
     const beatDurationMs = (60 / tempo) * 1000;
@@ -563,6 +575,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
           chords: line.chords || [],
           timestamp: lineTime,
           duration: lineDur,
+          segments: getLineSegments(line.lyrics, line.chords, lineTime, lineDur),
         });
         currentTime = lineTime + lineDur;
       });
@@ -597,27 +610,73 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
     return list.sort((a, b) => a.time - b.time);
   }, [parsedLines]);
 
+  // Helper to find indices for a timestamp
+  const resolvePlaybackIndices = useCallback(
+    (time: number) => {
+      let lineIdx = 0;
+      for (let i = 0; i < parsedLines.length; i++) {
+        const line = parsedLines[i];
+        const next = parsedLines[i + 1];
+        if (time >= line.timestamp && (!next || time < next.timestamp)) {
+          lineIdx = i;
+          break;
+        }
+      }
+      let chordIdx = -1;
+      for (let i = 0; i < flatChords.length; i++) {
+        const c = flatChords[i];
+        const next = flatChords[i + 1];
+        if (time >= c.time && (!next || time < next.time)) {
+          chordIdx = i;
+          break;
+        }
+      }
+      let segIdx = -1;
+      const curLine = parsedLines[lineIdx];
+      if (curLine?.segments) {
+        for (let i = 0; i < curLine.segments.length; i++) {
+          const seg = curLine.segments[i];
+          if (
+            seg.startTime !== undefined &&
+            seg.endTime !== undefined &&
+            time >= seg.startTime &&
+            time < seg.endTime
+          ) {
+            segIdx = i;
+            break;
+          }
+        }
+      }
+      return { lineIdx, chordIdx, segIdx };
+    },
+    [parsedLines, flatChords]
+  );
+
+  // Sync playback indices when song chart or lines change
+  useEffect(() => {
+    const { lineIdx, chordIdx, segIdx } = resolvePlaybackIndices(elapsedTimeRef.current);
+    activeLineIndexRef.current = lineIdx;
+    activeChordIndexRef.current = chordIdx;
+    activeSegIndexRef.current = segIdx;
+    setActivePlaybackIndices({
+      activeLineIndex: lineIdx,
+      activeChordIndex: chordIdx,
+      activeSegmentIndex: segIdx,
+    });
+  }, [resolvePlaybackIndices]);
+
   // Resolve current active line and active chords
   const activeLine = useMemo(() => {
-    const current = parsedLines.find((line, idx) => {
-      const next = parsedLines[idx + 1];
-      return elapsedTime >= line.timestamp && (!next || elapsedTime < next.timestamp);
-    });
-    return current ?? parsedLines[0];
-  }, [parsedLines, elapsedTime]);
+    return parsedLines[activePlaybackIndices.activeLineIndex] ?? parsedLines[0];
+  }, [parsedLines, activePlaybackIndices.activeLineIndex]);
 
-  const activeChordIndex = useMemo(() => {
-    return flatChords.findIndex((c, idx) => {
-      const next = flatChords[idx + 1];
-      return elapsedTime >= c.time && (!next || elapsedTime < next.time);
-    });
-  }, [flatChords, elapsedTime]);
+  const activeChordIndex = activePlaybackIndices.activeChordIndex;
 
   const currentChord =
-    activeChordIndex !== -1 ? flatChords[activeChordIndex].chord : flatChords[0]?.chord || '—';
+    activeChordIndex !== -1 ? flatChords[activeChordIndex]?.chord || '—' : flatChords[0]?.chord || '—';
   const nextChord =
     activeChordIndex !== -1 && activeChordIndex + 1 < flatChords.length
-      ? flatChords[activeChordIndex + 1].chord
+      ? flatChords[activeChordIndex + 1]?.chord || '—'
       : '—';
 
   // Retrieve actual Chord shape from the library, supporting slash chord fallbacks
@@ -649,7 +708,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
   const currentChordObj = resolvedChordData.chordObj;
   const currentBassNote = resolvedChordData.bassNote;
 
-  // Playback timer loop
+  // Playback timer loop - direct DOM updates for 120Hz slider, React state updates only on transitions
   useEffect(() => {
     if (!isPlaying) {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
@@ -662,10 +721,77 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
       const delta = Date.now() - startTimeRef.current;
       const nextTime = Math.min(totalDuration, delta);
       elapsedTimeRef.current = nextTime;
-      setElapsedTime(nextTime);
+
+      // Update slider and time display via DOM refs to avoid 120Hz React render storms
+      if (sliderRef.current) {
+        sliderRef.current.value = String(nextTime);
+      }
+      const curSec = Math.floor(nextTime / 1000);
+      if (curSec !== lastDisplayedSecRef.current) {
+        lastDisplayedSecRef.current = curSec;
+        if (timeLabelRef.current) {
+          timeLabelRef.current.textContent = `${curSec}s`;
+        }
+      }
+
+      // Check for line transition
+      let nextLineIdx = 0;
+      for (let i = 0; i < parsedLines.length; i++) {
+        const line = parsedLines[i];
+        const next = parsedLines[i + 1];
+        if (nextTime >= line.timestamp && (!next || nextTime < next.timestamp)) {
+          nextLineIdx = i;
+          break;
+        }
+      }
+
+      // Check for chord transition
+      let nextChordIdx = -1;
+      for (let i = 0; i < flatChords.length; i++) {
+        const c = flatChords[i];
+        const next = flatChords[i + 1];
+        if (nextTime >= c.time && (!next || nextTime < next.time)) {
+          nextChordIdx = i;
+          break;
+        }
+      }
+
+      // Check for segment transition
+      let nextSegIdx = -1;
+      const curLine = parsedLines[nextLineIdx];
+      if (curLine?.segments) {
+        for (let i = 0; i < curLine.segments.length; i++) {
+          const seg = curLine.segments[i];
+          if (
+            seg.startTime !== undefined &&
+            seg.endTime !== undefined &&
+            nextTime >= seg.startTime &&
+            nextTime < seg.endTime
+          ) {
+            nextSegIdx = i;
+            break;
+          }
+        }
+      }
+
+      if (
+        nextLineIdx !== activeLineIndexRef.current ||
+        nextChordIdx !== activeChordIndexRef.current ||
+        nextSegIdx !== activeSegIndexRef.current
+      ) {
+        activeLineIndexRef.current = nextLineIdx;
+        activeChordIndexRef.current = nextChordIdx;
+        activeSegIndexRef.current = nextSegIdx;
+        setActivePlaybackIndices({
+          activeLineIndex: nextLineIdx,
+          activeChordIndex: nextChordIdx,
+          activeSegmentIndex: nextSegIdx,
+        });
+      }
 
       if (nextTime >= totalDuration) {
         setIsPlaying(false);
+        setElapsedTime(totalDuration);
       } else {
         animationFrameRef.current = requestAnimationFrame(tick);
       }
@@ -676,7 +802,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isPlaying, totalDuration]);
+  }, [isPlaying, totalDuration, parsedLines, flatChords]);
 
   // Scroll to active line
   useEffect(() => {
@@ -698,6 +824,18 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
     if (elapsedTimeRef.current >= totalDuration) {
       elapsedTimeRef.current = 0;
       setElapsedTime(0);
+      activeLineIndexRef.current = 0;
+      activeChordIndexRef.current = -1;
+      activeSegIndexRef.current = -1;
+      setActivePlaybackIndices({
+        activeLineIndex: 0,
+        activeChordIndex: -1,
+        activeSegmentIndex: -1,
+      });
+      if (sliderRef.current) sliderRef.current.value = '0';
+      if (timeLabelRef.current) timeLabelRef.current.textContent = '0s';
+    } else {
+      setElapsedTime(elapsedTimeRef.current);
     }
     setIsPlaying(!isPlaying);
   };
@@ -706,6 +844,18 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
     const nextTime = parseFloat(e.target.value);
     elapsedTimeRef.current = nextTime;
     setElapsedTime(nextTime);
+    const { lineIdx, chordIdx, segIdx } = resolvePlaybackIndices(nextTime);
+    activeLineIndexRef.current = lineIdx;
+    activeChordIndexRef.current = chordIdx;
+    activeSegIndexRef.current = segIdx;
+    setActivePlaybackIndices({
+      activeLineIndex: lineIdx,
+      activeChordIndex: chordIdx,
+      activeSegmentIndex: segIdx,
+    });
+    if (timeLabelRef.current) {
+      timeLabelRef.current.textContent = `${Math.floor(nextTime / 1000)}s`;
+    }
     if (isPlaying) {
       startTimeRef.current = Date.now() - nextTime;
     }
@@ -1053,12 +1203,14 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
                       activeLine && parsed && activeLine.lineIndex === parsed.lineIndex;
                     const showHighlight = isLineActive;
 
-                    const segments = getLineSegments(
-                      line.lyrics,
-                      line.chords,
-                      parsed ? parsed.timestamp : 0,
-                      parsed ? parsed.duration : 0
-                    );
+                    const segments =
+                      parsed?.segments ||
+                      getLineSegments(
+                        line.lyrics,
+                        line.chords,
+                        parsed ? parsed.timestamp : 0,
+                        parsed ? parsed.duration : 0
+                      );
 
                     return (
                       <div
@@ -1079,10 +1231,12 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
                           {segments.map((seg, segIdx) => {
                             const isSegActive =
                               isLineActive &&
-                              seg.startTime !== undefined &&
-                              seg.endTime !== undefined &&
-                              elapsedTime >= seg.startTime &&
-                              elapsedTime < seg.endTime;
+                              (activePlaybackIndices.activeSegmentIndex !== -1
+                                ? segIdx === activePlaybackIndices.activeSegmentIndex
+                                : seg.startTime !== undefined &&
+                                  seg.endTime !== undefined &&
+                                  elapsedTime >= seg.startTime &&
+                                  elapsedTime < seg.endTime);
                             return (
                               <div
                                 key={segIdx}
@@ -1787,11 +1941,13 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
           {/* Progress Slider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span
+              ref={timeLabelRef}
               style={{ fontSize: '9px', color: 'var(--c-text-muted)', fontFamily: 'monospace' }}
             >
               {Math.floor(elapsedTime / 1000)}s
             </span>
             <input
+              ref={sliderRef}
               type="range"
               min="0"
               max={totalDuration}
@@ -1819,6 +1975,16 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
               onClick={() => {
                 elapsedTimeRef.current = 0;
                 setElapsedTime(0);
+                activeLineIndexRef.current = 0;
+                activeChordIndexRef.current = -1;
+                activeSegIndexRef.current = -1;
+                setActivePlaybackIndices({
+                  activeLineIndex: 0,
+                  activeChordIndex: -1,
+                  activeSegmentIndex: -1,
+                });
+                if (sliderRef.current) sliderRef.current.value = '0';
+                if (timeLabelRef.current) timeLabelRef.current.textContent = '0s';
               }}
               style={{
                 background: 'none',
