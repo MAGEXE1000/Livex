@@ -1,11 +1,13 @@
-# Version 4.6.46
+# Version 4.6.47
 
-Release Date: 2026-09-24
+Release Date: 2026-09-25
+
+### Added
+- Revolut-Style Flat Bottom Navigation: Implemented flat minimal interaction model with a solid borderless surface, equal-width tabs, and responsive indicator across mobile and Android.
+- Keep-Alive Tab Navigation Architecture: Integrated persistent component trees across Chordex, Drumex, Stagex, Groovex, and Vocalex to retain DOM state and scroll positions during tab switching.
 
 ### Improved
-- Accent Resolution Throughput: Memoized `resolveAccent` with bounded caching, reducing color math latency from 248ms to 7.8ms (31.7x speedup) and maintaining referential stability across component renders.
-- Chord Database Lookups: Replaced linear array scans in `getChordById` and `getChordByName` with O(1) hash maps, increasing lookup throughput by 44%.
-- Drumex Metronome Render Isolation: Decoupled beat and subdivision tick subscriptions from `MetronomePanel` root into isolated memoized `BeatCells` and `SubdivisionDots`, eliminating up to 960 full-tree re-renders per minute.
-- Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.
-- Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.
-- Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.
+- Fast-Path Loading Architecture: Implemented synchronous memory-first rendering that immediately renders cached data and avoids skeleton flicker, reserving skeletons strictly for slow asynchronous network fetches.
+
+### Fixed
+- Hub Module Logos: Removed rounded-square framing containers, artificial borders, backgrounds, and glows from module cards on the Home screen to display clean brand logos.
