@@ -693,14 +693,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <div
                 style={{
-                  width: 'clamp(40px, 5.4vh, 50px)',
-                  height: 'clamp(40px, 5.4vh, 50px)',
-                  borderRadius: 'clamp(12px, 1.5vh, 16px)',
-                  background: isLight ? `${color}14` : `${color}1a`,
-                  border: `1px solid ${color}35`,
-                  boxShadow: isLight
-                    ? `0 2px 8px ${color}16`
-                    : `0 2px 10px ${color}20`,
+                  width: 'clamp(32px, 4.4vh, 38px)',
+                  height: 'clamp(32px, 4.4vh, 38px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -708,7 +702,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
                   flexShrink: 0,
                 }}
               >
-                <Logo size={24} />
+                <Logo size={28} />
               </div>
               <div
                 style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}

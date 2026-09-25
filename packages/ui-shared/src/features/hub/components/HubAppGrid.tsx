@@ -102,18 +102,16 @@ export function HubAppGrid() {
 
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              background: `${app.color}18`,
-              border: `1px solid ${app.color}30`,
+              width: 36,
+              height: 36,
               color: app.color,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
               {app.icon}
             </span>
           </div>
