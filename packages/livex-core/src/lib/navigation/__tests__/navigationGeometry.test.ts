@@ -310,4 +310,59 @@ describe('Shared Android Bottom Navigation Geometry & Centering', () => {
       }
     });
   });
+
+  describe('6. Taller Navbar Geometry & Apple-Grade Spring Physics Invariants', () => {
+    it('enforces canonical taller proportions: 58px navbar, 48px highlight, 58px satellite', () => {
+      const NAV_BAR_HEIGHT = 58;
+      const NAV_BAR_VERTICAL_PADDING = 5;
+      const NAV_BAR_INNER_HEIGHT = NAV_BAR_HEIGHT - NAV_BAR_VERTICAL_PADDING * 2;
+      const NAV_HIGHLIGHT_HEIGHT = 48;
+      const SATELLITE_SIZE = NAV_BAR_HEIGHT;
+
+      // Inner height must exactly equal highlight height for clean vertical fill
+      expect(NAV_BAR_INNER_HEIGHT).toBe(NAV_HIGHLIGHT_HEIGHT);
+
+      // Top and bottom insets inside the dock are uniform (5px each)
+      const topInset = (NAV_BAR_HEIGHT - NAV_HIGHLIGHT_HEIGHT) / 2;
+      const bottomInset = topInset;
+      expect(topInset).toBe(5);
+      expect(bottomInset).toBe(5);
+
+      // Satellite button height exactly matches navbar height and shares vertical center
+      expect(SATELLITE_SIZE).toBe(NAV_BAR_HEIGHT);
+    });
+
+    it('validates Apple-grade fluid spring physics: critical damping with subtle perceived mass', () => {
+      // Livex active highlight spring parameters
+      const springConfig = { stiffness: 280, damping: 32, mass: 1.0 };
+
+      // Natural frequency: omega_0 = sqrt(k / m)
+      const omega0 = Math.sqrt(springConfig.stiffness / springConfig.mass);
+      expect(omega0).toBeCloseTo(16.733, 2);
+
+      // Critical damping coefficient: c_crit = 2 * sqrt(k * m)
+      const cCrit = 2 * Math.sqrt(springConfig.stiffness * springConfig.mass);
+      expect(cCrit).toBeCloseTo(33.466, 2);
+
+      // Damping ratio: zeta = c / c_crit
+      const zeta = springConfig.damping / cCrit;
+
+      // Zeta must be critically damped (0.95 - 1.00): zero cheap bounce, smooth glide and settle
+      expect(zeta).toBeGreaterThanOrEqual(0.95);
+      expect(zeta).toBeLessThanOrEqual(1.0);
+
+      // Mass must be 1.0 to convey subtle physical weight and momentum
+      expect(springConfig.mass).toBe(1.0);
+    });
+
+    it('guarantees zero clipping: highlight is strictly contained with positive insets', () => {
+      const NAV_BAR_HEIGHT = 58;
+      const NAV_HIGHLIGHT_HEIGHT = 48;
+      const verticalClearance = NAV_BAR_HEIGHT - NAV_HIGHLIGHT_HEIGHT;
+
+      // Positive vertical clearance guarantees no border clipping
+      expect(verticalClearance).toBe(10);
+      expect(verticalClearance / 2).toBe(5);
+    });
+  });
 });

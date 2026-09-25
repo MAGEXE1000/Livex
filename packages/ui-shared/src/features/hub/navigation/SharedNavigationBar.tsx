@@ -77,6 +77,7 @@ const NavigationItem = React.memo(
     item,
     index,
     onClick,
+    onPointerDown,
     isActive,
     isLight = false,
     isSwitcherOpen,
@@ -87,6 +88,7 @@ const NavigationItem = React.memo(
     item: any;
     index: number;
     onClick: () => void;
+    onPointerDown?: () => void;
     isActive: boolean;
     isLight?: boolean;
     isSwitcherOpen?: boolean;
@@ -135,7 +137,7 @@ const NavigationItem = React.memo(
     const fallbackScroll = useMotionValue(0);
     const effectiveScroll = scrollOffsetSpring || fallbackScroll;
     // GPU compositor transforms only: 0 layout reflows during continuous scroll
-    const iconY = useTransform(effectiveScroll, [0, 0.35], [isSwitcherOpen ? 0 : -5, 0]);
+    const iconY = useTransform(effectiveScroll, [0, 0.35], [isSwitcherOpen ? 0 : -4.5, 0]);
     const labelOpacity = useTransform(effectiveScroll, [0, 0.28], [1, 0]);
     const labelScale = useTransform(effectiveScroll, [0, 0.28], [1, 0.85]);
     const labelY = useTransform(effectiveScroll, [0, 0.28], [0, 2]);
@@ -143,6 +145,7 @@ const NavigationItem = React.memo(
     return (
       <motion.button
         onClick={onClick}
+        onPointerDown={onPointerDown}
         role="tab"
         aria-selected={isActive}
         aria-label={item.label}
@@ -215,7 +218,7 @@ const NavigationItem = React.memo(
             <motion.span
               style={{
                 position: 'absolute',
-                bottom: '4px',
+                bottom: '5px',
                 left: 0,
                 right: 0,
                 fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
@@ -388,15 +391,15 @@ export function SharedNavigationBar({
   const totalSlots = N;
 
 
-  // Canonical Navigation Geometry
-  const NAV_BAR_HEIGHT = 56;
-  const NAV_BAR_VERTICAL_PADDING = 4;
+  // Canonical Navigation Geometry (Restored taller proportions)
+  const NAV_BAR_HEIGHT = 58;
+  const NAV_BAR_VERTICAL_PADDING = 5;
   const NAV_BAR_INNER_HEIGHT = NAV_BAR_HEIGHT - NAV_BAR_VERTICAL_PADDING * 2; // 48px
-  const NAV_HIGHLIGHT_HEIGHT = 42;
+  const NAV_HIGHLIGHT_HEIGHT = 48;
   const NAV_HIGHLIGHT_RADIUS = 9999;
-  const SATELLITE_SIZE = NAV_BAR_INNER_HEIGHT; // 48px (strictly <= NAV_BAR_HEIGHT, derived from inner dock height)
+  const SATELLITE_SIZE = NAV_BAR_HEIGHT; // 58px (strictly equal to NAV_BAR_HEIGHT, matching vertical center)
   const DOCK_GAP = 8;
-  const SATELLITE_SLOT_TOTAL = SATELLITE_SIZE + DOCK_GAP; // 56px
+  const SATELLITE_SLOT_TOTAL = SATELLITE_SIZE + DOCK_GAP; // 66px
   const SCREEN_PADDING_HORIZONTAL = 16;
 
   const showAiButton = isHub;
@@ -429,9 +432,9 @@ export function SharedNavigationBar({
   }, [currentItems, currentApp, isSwitcherOpen]);
 
   // Canonical selected-item highlight geometry:
-  // Revolut-style flat minimal highlight perfectly contained with uniform 3px insets
+  // Flat minimal highlight perfectly contained with uniform insets
   const NAV_HIGHLIGHT_WIDTH = Math.max(32, Math.round(itemWidth - 6));
-  const pillTop = Math.max(0, Math.round((NAV_BAR_INNER_HEIGHT - NAV_HIGHLIGHT_HEIGHT) / 2)); // 3px
+  const pillTop = Math.max(0, Math.round((NAV_BAR_INNER_HEIGHT - NAV_HIGHLIGHT_HEIGHT) / 2)); // 0px inside 48px innerWrapper, leaving uniform 5px margin
 
   const pillWidthVal = isSwitcherOpen ? Math.min(itemWidth - 6, 42) : NAV_HIGHLIGHT_WIDTH;
   const pillHeightVal = NAV_HIGHLIGHT_HEIGHT;
@@ -458,12 +461,12 @@ export function SharedNavigationBar({
   const scrollOffsetRaw = useMotionValue(getNavScrollOffset());
   const profileOpenRaw = useMotionValue(isProfileMenuOpen ? 1 : 0);
 
-  // Synchronized Apple-grade critically damped spring physics for active tab glide (zeta = 1.04)
+  // Synchronized Apple-grade critically damped spring physics for active tab glide (zeta = 0.96 - 1.0)
   const pillXSpring = useSpring(
     pillXRaw,
     prefersReduced
       ? { stiffness: 4000, damping: 200, mass: 0.001 }
-      : { stiffness: 380, damping: 30, mass: 0.55 }
+      : { stiffness: 280, damping: 32, mass: 1.0 }
   );
 
   const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 32, mass: 0.7 });
@@ -610,20 +613,6 @@ export function SharedNavigationBar({
         navigationEpochRef.current += 1;
         setNavigationEpoch(navigationEpochRef.current);
         targetItem.onClick();
-      }
-    } else {
-      const rect =
-        innerWrapperRef.current?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-      const relativeX = e.clientX - rect.left;
-      const clickIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
-      const clickedItem = currentItems[clickIndex];
-
-      if (clickedItem) {
-        pillXRaw.set(clickIndex * itemWidth + centerOffset);
-        pointerUpHandledAtRef.current = performance.now();
-        navigationEpochRef.current += 1;
-        setNavigationEpoch(navigationEpochRef.current);
-        clickedItem.onClick();
       }
     }
   };
@@ -931,23 +920,26 @@ export function SharedNavigationBar({
                   alignItems: 'center',
                   position: 'relative',
                   touchAction: 'none',
-                  // overflow:hidden keeps nav items clipped to pill shape without breaking
-                  // Android WebView compositing of the parent's backdrop-filter.
-                  overflow: 'hidden',
+                  // overflow:visible ensures active highlight borders, geometry and corners are never clipped
+                  overflow: 'visible',
                   borderRadius: '9999px',
                 }}
               >
-                {/* Active lens pill — Revolut-style flat minimal highlight */}
+                {/* Active lens pill — clean, flat minimal highlight with Apple-grade fluid glide */}
                 <motion.div
                   animate={{
                     width: pillWidthVal,
                   }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 380,
-                    damping: 30,
-                    mass: 0.55,
-                  }}
+                  transition={
+                    prefersReduced
+                      ? { duration: 0 }
+                      : {
+                          type: 'spring',
+                          stiffness: 280,
+                          damping: 32,
+                          mass: 1.0,
+                        }
+                  }
                   style={{
                     position: 'absolute',
                     top: pillTop,
@@ -957,7 +949,7 @@ export function SharedNavigationBar({
                     x: animatedPillX,
                     background: 'var(--surface-glass-lens-bg)',
                     border: 'var(--surface-glass-lens-border)',
-                    boxShadow: 'var(--surface-glass-lens-shadow)',
+                    boxShadow: 'none',
                     pointerEvents: 'none',
                     zIndex: 0,
                     willChange: 'transform',
@@ -1027,9 +1019,13 @@ export function SharedNavigationBar({
                             <NavigationItem
                               item={item}
                               index={index}
+                              onPointerDown={() => {
+                                if (isEffectiveHidden) return;
+                                pillXRaw.set(index * itemWidth + centerOffset);
+                              }}
                               onClick={() => {
                                 if (isEffectiveHidden) return;
-                                if (performance.now() - pointerUpHandledAtRef.current < 100) return;
+                                pillXRaw.set(index * itemWidth + centerOffset);
                                 navigationEpochRef.current += 1;
                                 setNavigationEpoch(navigationEpochRef.current);
                                 item.onClick();
@@ -1122,9 +1118,13 @@ export function SharedNavigationBar({
                               <NavigationItem
                                 item={item}
                                 index={index}
+                                onPointerDown={() => {
+                                  if (isEffectiveHidden) return;
+                                  pillXRaw.set(index * itemWidth + centerOffset);
+                                }}
                                 onClick={() => {
                                   if (isEffectiveHidden) return;
-                                  if (performance.now() - pointerUpHandledAtRef.current < 100) return;
+                                  pillXRaw.set(index * itemWidth + centerOffset);
                                   navigationEpochRef.current += 1;
                                   setNavigationEpoch(navigationEpochRef.current);
                                   item.onClick();
