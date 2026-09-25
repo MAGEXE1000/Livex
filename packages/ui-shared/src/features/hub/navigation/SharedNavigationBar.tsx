@@ -134,10 +134,11 @@ const NavigationItem = React.memo(
 
     const fallbackScroll = useMotionValue(0);
     const effectiveScroll = scrollOffsetSpring || fallbackScroll;
-    const labelOpacity = useTransform(effectiveScroll, [0, 0.35], [1, 0]);
-    const labelScale = useTransform(effectiveScroll, [0, 0.35], [1, 0.75]);
-    const labelHeight = useTransform(effectiveScroll, [0, 0.45], [14, 0]);
-    const labelMarginTop = useTransform(effectiveScroll, [0, 0.45], [2, 0]);
+    // GPU compositor transforms only: 0 layout reflows during continuous scroll
+    const iconY = useTransform(effectiveScroll, [0, 0.35], [isSwitcherOpen ? 0 : -5, 0]);
+    const labelOpacity = useTransform(effectiveScroll, [0, 0.28], [1, 0]);
+    const labelScale = useTransform(effectiveScroll, [0, 0.28], [1, 0.85]);
+    const labelY = useTransform(effectiveScroll, [0, 0.28], [0, 2]);
 
     return (
       <motion.button
@@ -175,9 +176,10 @@ const NavigationItem = React.memo(
             justifyContent: 'center',
             width: '100%',
             height: '100%',
+            position: 'relative',
           }}
         >
-          <div
+          <motion.div
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -185,6 +187,7 @@ const NavigationItem = React.memo(
               width: isSwitcherOpen ? 32 : 24,
               height: isSwitcherOpen ? 32 : 24,
               flexShrink: 0,
+              y: iconY,
             }}
           >
             {isIconString ? (
@@ -206,11 +209,15 @@ const NavigationItem = React.memo(
                 animationEpoch={animationEpoch}
               />
             )}
-          </div>
+          </motion.div>
 
           {!isSwitcherOpen && item.label && (
             <motion.span
               style={{
+                position: 'absolute',
+                bottom: '4px',
+                left: 0,
+                right: 0,
                 fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
                 fontSize,
                 fontWeight: isActive ? 650 : 500,
@@ -221,14 +228,14 @@ const NavigationItem = React.memo(
                 textAlign: 'center',
                 userSelect: 'none',
                 maxWidth: '100%',
+                padding: '0 2px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 opacity: labelOpacity,
                 scale: labelScale,
-                height: labelHeight,
-                marginTop: labelMarginTop,
+                y: labelY,
                 display: 'block',
-                transformOrigin: 'center top',
+                transformOrigin: 'center bottom',
                 pointerEvents: 'none',
                 transition: 'color 160ms ease, font-weight 160ms ease',
               }}
@@ -381,23 +388,33 @@ export function SharedNavigationBar({
   const totalSlots = N;
 
 
+  // Canonical Navigation Geometry
+  const NAV_BAR_HEIGHT = 56;
+  const NAV_BAR_VERTICAL_PADDING = 4;
+  const NAV_BAR_INNER_HEIGHT = NAV_BAR_HEIGHT - NAV_BAR_VERTICAL_PADDING * 2; // 48px
+  const NAV_HIGHLIGHT_HEIGHT = 42;
+  const NAV_HIGHLIGHT_RADIUS = 9999;
+  const SATELLITE_SIZE = NAV_BAR_INNER_HEIGHT; // 48px (strictly <= NAV_BAR_HEIGHT, derived from inner dock height)
+  const DOCK_GAP = 8;
+  const SATELLITE_SLOT_TOTAL = SATELLITE_SIZE + DOCK_GAP; // 56px
+  const SCREEN_PADDING_HORIZONTAL = 16;
+
   const showAiButton = isHub;
   const hasRightBubble = showSwitcherButton || showAiButton;
-  const satelliteWidth = 50;
-  const dockGap = 8;
-  const screenMargin = 12;
 
-  // Maximum width available on screen
-  const maxAvailableWidth = Math.max(260, windowWidth - screenMargin * 2);
+  // Maximum width available on screen, guaranteeing 16px screen padding on both sides
+  const maxAvailableWidth = Math.max(260, windowWidth - SCREEN_PADDING_HORIZONTAL * 2);
 
   // When satellite button is present, reserve space for it so the combined assembly fits
   const maxDockWidth = hasRightBubble
-    ? Math.min(maxAvailableWidth - satelliteWidth - dockGap, 420)
+    ? Math.min(maxAvailableWidth - SATELLITE_SLOT_TOTAL, 420)
     : Math.min(maxAvailableWidth, 460);
 
   // Bar width fills the available dock space length-wise
   const barWidth = isSwitcherOpen
-    ? Math.min(maxAvailableWidth, 380)
+    ? hasRightBubble
+      ? Math.min(maxAvailableWidth - SATELLITE_SLOT_TOTAL, 380)
+      : Math.min(maxAvailableWidth, 380)
     : Math.max(220, maxDockWidth);
 
   const paddingX = 4;
@@ -412,13 +429,12 @@ export function SharedNavigationBar({
   }, [currentItems, currentApp, isSwitcherOpen]);
 
   // Canonical selected-item highlight geometry:
-  // Revolut-style flat minimal highlight filling the slot with 2px horizontal margin
-  const NAV_HIGHLIGHT_WIDTH = Math.max(32, Math.round(itemWidth - 2));
-  const NAV_HIGHLIGHT_HEIGHT = 50;
-  const NAV_HIGHLIGHT_RADIUS = 9999;
+  // Revolut-style flat minimal highlight perfectly contained with uniform 3px insets
+  const NAV_HIGHLIGHT_WIDTH = Math.max(32, Math.round(itemWidth - 6));
+  const pillTop = Math.max(0, Math.round((NAV_BAR_INNER_HEIGHT - NAV_HIGHLIGHT_HEIGHT) / 2)); // 3px
 
-  const pillWidthVal = isSwitcherOpen ? Math.min(itemWidth - 4, 44) : NAV_HIGHLIGHT_WIDTH;
-  const pillHeightVal = isSwitcherOpen ? 44 : NAV_HIGHLIGHT_HEIGHT;
+  const pillWidthVal = isSwitcherOpen ? Math.min(itemWidth - 6, 42) : NAV_HIGHLIGHT_WIDTH;
+  const pillHeightVal = NAV_HIGHLIGHT_HEIGHT;
   const pillRadiusVal = NAV_HIGHLIGHT_RADIUS;
 
   const centerOffset = Math.max(0, Math.round((itemWidth - pillWidthVal) / 2));
@@ -436,17 +452,18 @@ export function SharedNavigationBar({
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Root MotionValues
-  const activeIdxRaw = useMotionValue(activeIndex);
+  const targetPillX = activeIndex * itemWidth + centerOffset;
+  const pillXRaw = useMotionValue(targetPillX);
   const dragPillX = useMotionValue(0);
   const scrollOffsetRaw = useMotionValue(getNavScrollOffset());
   const profileOpenRaw = useMotionValue(isProfileMenuOpen ? 1 : 0);
 
-  // Synchronized Apple-grade critically damped spring physics (zero overshoot, zero bounce)
-  const activeIdxSpring = useSpring(
-    activeIdxRaw,
+  // Synchronized Apple-grade critically damped spring physics for active tab glide (zeta = 1.04)
+  const pillXSpring = useSpring(
+    pillXRaw,
     prefersReduced
       ? { stiffness: 4000, damping: 200, mass: 0.001 }
-      : { stiffness: 420, damping: 38, mass: 0.6 }
+      : { stiffness: 380, damping: 30, mass: 0.55 }
   );
 
   const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 32, mass: 0.7 });
@@ -454,8 +471,10 @@ export function SharedNavigationBar({
 
   // Update root raw MotionValues continuously on state changes
   useEffect(() => {
-    activeIdxRaw.set(activeIndex);
-  }, [activeIndex, activeIdxRaw]);
+    if (!isScrubbingRef.current) {
+      pillXRaw.set(activeIndex * itemWidth + centerOffset);
+    }
+  }, [activeIndex, itemWidth, centerOffset, pillXRaw]);
 
   // Connect scroll listener directly without causing React component re-renders
   useEffect(() => {
@@ -477,38 +496,26 @@ export function SharedNavigationBar({
     scrollOffsetSpring.jump(0);
   }, [currentApp, scrollOffsetRaw, scrollOffsetSpring]);
 
-  useEffect(() => {
-    if (collapsed !== undefined) {
-      scrollOffsetRaw.set(collapsed ? 1 : 0);
-    }
-  }, [collapsed, scrollOffsetRaw]);
-
   // Safari/Revolut-style physical compression: dock scales down (1.00 → 0.90) toward center on scroll
   const containerScale = useTransform(scrollOffsetSpring, [0, 1], [1.0, 0.90]);
   const containerY = useTransform(scrollOffsetSpring, () => 0);
 
-  // Centering shift:
-  // When satellite is visible, shift dock left by half of (dockGap + satelliteWidth) so the combined assembly is centered.
-  // When scrolling down, satellite collapses and shift smoothly returns to 0 (dock centered in viewport).
-  const shiftX = hasRightBubble ? (dockGap + satelliteWidth) / 2 : 0;
-  const dockShiftX = useTransform(scrollOffsetSpring, (offset) => {
-    if (!hasRightBubble) return 0;
-    const progress = Math.min(1, offset / 0.45);
-    return -shiftX * (1 - progress);
-  });
-
-  // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll
-  const satelliteOpacity = useTransform(scrollOffsetSpring, [0, 0.35], [1, 0]);
-  const satelliteScale = useTransform(scrollOffsetSpring, [0, 0.35], [1, 0.5]);
-  const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
-    offset > 0.2 ? 'none' : 'auto'
+  // Satellite slot fluid collapse transforms (peer flex item in centered row)
+  const satelliteSlotWidth = useTransform(
+    scrollOffsetSpring,
+    [0, 0.35],
+    [hasRightBubble ? SATELLITE_SLOT_TOTAL : 0, 0]
   );
-
-  // Dynamic satellite X position: positioned adjacent to the dock, collapsing inward on scroll
-  const satelliteX = useTransform(scrollOffsetSpring, (offset) => {
-    const curShift = !hasRightBubble ? 0 : -shiftX * (1 - Math.min(1, offset / 0.45));
-    return curShift + barWidth / 2 + dockGap;
-  });
+  const satelliteSlotPadding = useTransform(
+    scrollOffsetSpring,
+    [0, 0.35],
+    [hasRightBubble ? DOCK_GAP : 0, 0]
+  );
+  const satelliteOpacity = useTransform(scrollOffsetSpring, [0, 0.28], [1, 0]);
+  const satelliteScale = useTransform(scrollOffsetSpring, [0, 0.32], [1, 0.5]);
+  const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
+    offset > 0.15 ? 'none' : 'auto'
+  );
 
   const switcherOpacity = satelliteOpacity;
   const switcherScale = satelliteScale;
@@ -516,18 +523,13 @@ export function SharedNavigationBar({
 
   // Derived continuous pill movement:
   // When scrubbing: directly follows finger via dragPillX.
-  // When idle or tab-switching: follows activeIdxSpring (critically damped, zero bounce).
-  const animatedPillX = useTransform(
-    [activeIdxSpring, dragPillX],
-    ([springIdx, dragVal]) => {
-      if (isScrubbingRef.current) {
-        return dragVal as number;
-      }
-      const idx = Math.max(0, Math.min(totalSlots - 1, springIdx as number));
-      const rawX = idx * itemWidth + centerOffset;
-      return Math.max(0, Math.min(usableWidth - pillWidthVal, rawX));
+  // When idle or tab-switching: follows pillXSpring (critically damped, zero bounce).
+  const animatedPillX = useTransform([pillXSpring, dragPillX], ([springX, dragVal]) => {
+    if (isScrubbingRef.current) {
+      return dragVal as number;
     }
-  );
+    return springX as number;
+  });
 
   // Derived continuous profile menu transformations
   const profileCardOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
@@ -570,7 +572,7 @@ export function SharedNavigationBar({
     const hoveredIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
     if (hoveredIndex !== scrubbingIndexRef.current) {
       scrubbingIndexRef.current = hoveredIndex;
-      activeIdxRaw.set(hoveredIndex);
+      pillXRaw.set(hoveredIndex * itemWidth + centerOffset);
       if (
         typeof window !== 'undefined' &&
         window.navigator &&
@@ -600,7 +602,8 @@ export function SharedNavigationBar({
       const finalIndex = scrubbingIndexRef.current;
       const targetItem = currentItems[finalIndex];
 
-      activeIdxRaw.set(finalIndex);
+      pillXSpring.jump(dragPillX.get());
+      pillXRaw.set(finalIndex * itemWidth + centerOffset);
 
       if (targetItem && finalIndex !== activeIndex) {
         pointerUpHandledAtRef.current = performance.now();
@@ -616,7 +619,7 @@ export function SharedNavigationBar({
       const clickedItem = currentItems[clickIndex];
 
       if (clickedItem) {
-        activeIdxRaw.set(clickIndex);
+        pillXRaw.set(clickIndex * itemWidth + centerOffset);
         pointerUpHandledAtRef.current = performance.now();
         navigationEpochRef.current += 1;
         setNavigationEpoch(navigationEpochRef.current);
@@ -636,7 +639,7 @@ export function SharedNavigationBar({
 
     isScrubbingRef.current = false;
     setIsScrubbing(false);
-    activeIdxRaw.set(activeIndex);
+    pillXRaw.set(activeIndex * itemWidth + centerOffset);
   };
 
   const lastProfileToggleTimeRef = useRef(0);
@@ -891,7 +894,7 @@ export function SharedNavigationBar({
                 contain: 'layout style',
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
-                height: '58px',
+                height: `${NAV_BAR_HEIGHT}px`,
                 borderRadius: '9999px',
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
@@ -905,15 +908,14 @@ export function SharedNavigationBar({
                 justifyContent: 'space-around',
                 paddingLeft: paddingX,
                 paddingRight: paddingX,
-                paddingTop: '4px',
-                paddingBottom: '4px',
+                paddingTop: `${NAV_BAR_VERTICAL_PADDING}px`,
+                paddingBottom: `${NAV_BAR_VERTICAL_PADDING}px`,
                 position: 'relative',
                 touchAction: 'none',
                 userSelect: 'none',
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
-                x: dockShiftX,
               }}
             >
               <div
@@ -939,18 +941,18 @@ export function SharedNavigationBar({
                 <motion.div
                   animate={{
                     width: pillWidthVal,
-                    height: pillHeightVal,
-                    borderRadius: pillRadiusVal,
                   }}
                   transition={{
                     type: 'spring',
-                    stiffness: 420,
-                    damping: 38,
-                    mass: 0.6,
+                    stiffness: 380,
+                    damping: 30,
+                    mass: 0.55,
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? Math.max(0, Math.round((50 - pillHeightVal) / 2)) : 0,
+                    top: pillTop,
+                    height: NAV_HIGHLIGHT_HEIGHT,
+                    borderRadius: NAV_HIGHLIGHT_RADIUS,
                     left: 0,
                     x: animatedPillX,
                     background: 'var(--surface-glass-lens-bg)',
@@ -1144,144 +1146,159 @@ export function SharedNavigationBar({
               </div>
             </motion.div>
 
-            {showSwitcherButton && (
+            {hasRightBubble && (
               <motion.div
-                className="shared-nav-satellite"
+                className="shared-nav-satellite-slot"
                 style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: 0,
-                  bottom: 0,
+                  width: satelliteSlotWidth,
+                  paddingLeft: satelliteSlotPadding,
                   display: 'flex',
                   alignItems: 'center',
-                  pointerEvents: switcherPointerEvents,
-                  x: satelliteX,
-                }}
-              >
-                <motion.button
-                  onClick={() => {
-                    if (isEffectiveHidden) return;
-                    setIsSwitcherOpen(!isSwitcherOpen);
-                  }}
-                  whileTap={prefersReduced ? undefined : { scale: 0.92 }}
-                  whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
-                  transition={
-                    prefersReduced
-                      ? { duration: 0 }
-                      : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
-                  }
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '9999px',
-                    background: 'var(--surface-topbar-bg)',
-                    border: 'var(--surface-topbar-border)',
-                    backdropFilter: 'var(--surface-topbar-backdrop)',
-                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                    boxShadow: isLight
-                      ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
-                      : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isLight
-                      ? isSwitcherOpen
-                        ? '#0f172a'
-                        : 'rgba(15, 23, 42, 0.75)'
-                      : isSwitcherOpen
-                        ? '#ffffff'
-                        : 'rgba(255, 255, 255, 0.65)',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    WebkitTapHighlightColor: 'transparent',
-                    transformOrigin: 'center bottom',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    opacity: switcherOpacity,
-                    scale: switcherScale,
-                    pointerEvents: switcherPointerEvents,
-                  }}
-                >
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.div
-                      key={isSwitcherOpen ? 'close' : 'apps'}
-                      initial={{ rotate: isSwitcherOpen ? -90 : 90, opacity: 0, scale: 0.7 }}
-                      animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                      exit={{ rotate: isSwitcherOpen ? 90 : -90, opacity: 0, scale: 0.7 }}
-                      transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.7 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <StudioIcon
-                        name={isSwitcherOpen ? 'close' : 'apps'}
-                        size={20}
-                        style={{ display: 'block' }}
-                      />
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.button>
-              </motion.div>
-            )}
-
-            {showAiButton && (
-              <motion.div
-                className="shared-nav-satellite"
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxSizing: 'border-box',
+                  overflow: 'visible',
                   pointerEvents: satellitePointerEvents,
-                  x: satelliteX,
+                  scale: containerScale,
+                  y: containerY,
+                  transformOrigin: 'center bottom',
                 }}
               >
-                <motion.button
-                  onClick={() => {
-                    if (isEffectiveHidden) return;
-                    NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
-                  }}
-                  whileTap={prefersReduced ? undefined : { scale: 0.92 }}
-                  whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
-                  transition={
-                    prefersReduced
-                      ? { duration: 0 }
-                      : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
-                  }
-                  title="Music AI Assistant"
-                  aria-label="Open Music AI Assistant"
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '9999px',
-                    background: 'var(--surface-topbar-bg)',
-                    border: 'var(--surface-topbar-border)',
-                    backdropFilter: 'var(--surface-topbar-backdrop)',
-                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                    boxShadow: isLight
-                      ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
-                      : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    WebkitTapHighlightColor: 'transparent',
-                    transformOrigin: 'center bottom',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    opacity: satelliteOpacity,
-                    scale: satelliteScale,
-                    pointerEvents: satellitePointerEvents,
-                  }}
-                >
-                  <LivexAssistantMascot
-                    size={24}
-                    mode="dock"
-                    state={mascotState}
-                    interactive={false}
-                  />
-                </motion.button>
+                {showSwitcherButton && (
+                  <motion.div
+                    className="shared-nav-satellite"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <motion.button
+                      onClick={() => {
+                        if (isEffectiveHidden) return;
+                        setIsSwitcherOpen(!isSwitcherOpen);
+                      }}
+                      whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                      whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+                      transition={
+                        prefersReduced
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                      }
+                      aria-label={isSwitcherOpen ? 'Close App Switcher' : 'Open App Switcher'}
+                      style={{
+                        width: `${SATELLITE_SIZE}px`,
+                        height: `${SATELLITE_SIZE}px`,
+                        borderRadius: '9999px',
+                        background: 'var(--surface-topbar-bg)',
+                        border: 'var(--surface-topbar-border)',
+                        backdropFilter: 'var(--surface-topbar-backdrop)',
+                        WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                        boxShadow: isLight
+                          ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
+                          : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        color: isLight
+                          ? isSwitcherOpen
+                            ? '#0f172a'
+                            : 'rgba(15, 23, 42, 0.75)'
+                          : isSwitcherOpen
+                            ? '#ffffff'
+                            : 'rgba(255, 255, 255, 0.65)',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        transformOrigin: 'center center',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        opacity: switcherOpacity,
+                        scale: switcherScale,
+                        pointerEvents: switcherPointerEvents,
+                      }}
+                    >
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.div
+                          key={isSwitcherOpen ? 'close' : 'apps'}
+                          initial={{ rotate: isSwitcherOpen ? -90 : 90, opacity: 0, scale: 0.7 }}
+                          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                          exit={{ rotate: isSwitcherOpen ? 90 : -90, opacity: 0, scale: 0.7 }}
+                          transition={{ type: 'spring', stiffness: 360, damping: 24, mass: 0.7 }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <StudioIcon
+                            name={isSwitcherOpen ? 'close' : 'apps'}
+                            size={20}
+                            style={{ display: 'block' }}
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                    </motion.button>
+                  </motion.div>
+                )}
+
+                {showAiButton && (
+                  <motion.div
+                    className="shared-nav-satellite"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <motion.button
+                      onClick={() => {
+                        if (isEffectiveHidden) return;
+                        NavigationDispatcher.push({ app: 'hub', tab: 'assistant' });
+                      }}
+                      whileTap={prefersReduced ? undefined : { scale: 0.92 }}
+                      whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}
+                      transition={
+                        prefersReduced
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
+                      }
+                      title="Music AI Assistant"
+                      aria-label="Open Music AI Assistant"
+                      style={{
+                        width: `${SATELLITE_SIZE}px`,
+                        height: `${SATELLITE_SIZE}px`,
+                        borderRadius: '9999px',
+                        background: 'var(--surface-topbar-bg)',
+                        border: 'var(--surface-topbar-border)',
+                        backdropFilter: 'var(--surface-topbar-backdrop)',
+                        WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+                        boxShadow: isLight
+                          ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
+                          : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        transformOrigin: 'center center',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        opacity: satelliteOpacity,
+                        scale: satelliteScale,
+                        pointerEvents: satellitePointerEvents,
+                      }}
+                    >
+                      <LivexAssistantMascot
+                        size={24}
+                        mode="dock"
+                        state={mascotState}
+                        interactive={false}
+                      />
+                    </motion.button>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </div>
