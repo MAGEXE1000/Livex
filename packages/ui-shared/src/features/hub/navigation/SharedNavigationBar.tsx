@@ -82,6 +82,7 @@ const NavigationItem = React.memo(
     isSwitcherOpen,
     totalSlots = 3,
     animationEpoch,
+    scrollOffsetSpring,
   }: {
     item: any;
     index: number;
@@ -95,40 +96,48 @@ const NavigationItem = React.memo(
     onMeasureGeometry?: (index: number, width: number, leftOffset: number) => void;
     innerWrapperRef?: React.RefObject<HTMLDivElement | null>;
     animationEpoch?: number;
+    scrollOffsetSpring?: any;
   }) => {
     const isIconString = typeof item.icon === 'string';
 
     const iconColor = isLight
       ? isActive
-        ? '#2563eb'
+        ? '#0f172a'
         : 'var(--c-text-secondary, rgba(15, 23, 42, 0.60))'
       : isActive
-        ? 'var(--studio-accent-from, #60a5fa)'
+        ? '#ffffff'
         : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))';
 
     const labelColor = isLight
       ? isActive
-        ? '#2563eb'
+        ? '#0f172a'
         : 'var(--c-text-secondary, rgba(15, 23, 42, 0.60))'
       : isActive
-        ? 'var(--studio-accent-from, #60a5fa)'
+        ? '#ffffff'
         : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))';
 
     const labelLen = item.label ? item.label.length : 0;
     const fontSize =
       labelLen >= 13
-        ? '9px'
+        ? '9.5px'
         : labelLen >= 11
-          ? '9.5px'
+          ? '10px'
           : totalSlots >= 4 || labelLen >= 9
-            ? '10px'
-            : '10.5px';
+            ? '10.5px'
+            : '11px';
     const letterSpacing =
       labelLen >= 12
-        ? '-0.03em'
+        ? '-0.025em'
         : labelLen >= 10
-          ? '-0.02em'
-          : '-0.01em';
+          ? '-0.015em'
+          : '-0.005em';
+
+    const fallbackScroll = useMotionValue(0);
+    const effectiveScroll = scrollOffsetSpring || fallbackScroll;
+    const labelOpacity = useTransform(effectiveScroll, [0, 0.35], [1, 0]);
+    const labelScale = useTransform(effectiveScroll, [0, 0.35], [1, 0.75]);
+    const labelHeight = useTransform(effectiveScroll, [0, 0.45], [14, 0]);
+    const labelMarginTop = useTransform(effectiveScroll, [0, 0.45], [2, 0]);
 
     return (
       <motion.button
@@ -138,7 +147,7 @@ const NavigationItem = React.memo(
         aria-label={item.label}
         title={item.label}
         data-nav-item-index={index}
-        whileTap={{ scale: 0.97 }}
+        whileTap={{ scale: 0.96 }}
         transition={{ type: 'spring', stiffness: 450, damping: 35 }}
         style={{
           flex: 1,
@@ -149,13 +158,12 @@ const NavigationItem = React.memo(
           justifyContent: 'center',
           background: 'transparent',
           border: 'none',
-          borderRadius: '22px',
+          borderRadius: '9999px',
           cursor: 'pointer',
           position: 'relative',
           zIndex: 1,
           padding: '2px 4px',
           WebkitTapHighlightColor: 'transparent',
-          gap: '2px',
         }}
       >
         <div
@@ -165,7 +173,6 @@ const NavigationItem = React.memo(
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: isSwitcherOpen ? '0px' : '1.5px',
             width: '100%',
             height: '100%',
           }}
@@ -175,15 +182,16 @@ const NavigationItem = React.memo(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: isSwitcherOpen ? 32 : 22,
-              height: isSwitcherOpen ? 32 : 22,
+              width: isSwitcherOpen ? 32 : 24,
+              height: isSwitcherOpen ? 32 : 24,
+              flexShrink: 0,
             }}
           >
             {isIconString ? (
               <AnimatedNavigationIcon
                 itemKey={item.key}
                 iconName={item.icon as string}
-                size={isSwitcherOpen ? 22 : 21}
+                size={isSwitcherOpen ? 22 : 22}
                 color={iconColor}
                 isActive={isActive}
                 animationEpoch={animationEpoch}
@@ -192,7 +200,7 @@ const NavigationItem = React.memo(
               <AnimatedNavigationIcon
                 itemKey={item.key}
                 iconNode={item.icon}
-                size={isSwitcherOpen ? 22 : 21}
+                size={isSwitcherOpen ? 22 : 22}
                 color={iconColor}
                 isActive={isActive}
                 animationEpoch={animationEpoch}
@@ -201,11 +209,11 @@ const NavigationItem = React.memo(
           </div>
 
           {!isSwitcherOpen && item.label && (
-            <span
+            <motion.span
               style={{
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
                 fontSize,
-                fontWeight: isActive ? 700 : 550,
+                fontWeight: isActive ? 650 : 500,
                 color: labelColor,
                 whiteSpace: 'nowrap',
                 letterSpacing,
@@ -215,11 +223,18 @@ const NavigationItem = React.memo(
                 maxWidth: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                transition: 'color 180ms ease, font-weight 180ms ease',
+                opacity: labelOpacity,
+                scale: labelScale,
+                height: labelHeight,
+                marginTop: labelMarginTop,
+                display: 'block',
+                transformOrigin: 'center top',
+                pointerEvents: 'none',
+                transition: 'color 160ms ease, font-weight 160ms ease',
               }}
             >
               {item.label}
-            </span>
+            </motion.span>
           )}
         </div>
       </motion.button>
@@ -365,44 +380,27 @@ export function SharedNavigationBar({
   const N = currentItems.length || 1;
   const totalSlots = N;
 
-  const idealSlotWidth = isSwitcherOpen
-    ? 46
-    : isHub
-      ? totalSlots >= 4
-        ? 68
-        : 82
-      : totalSlots >= 4
-        ? 60
-        : totalSlots === 2
-          ? 88
-          : 76;
-  const paddingX = isSwitcherOpen ? 6 : 8;
 
   const showAiButton = isHub;
-  // hasRightBubble: true when App Changer or AI satellite button is shown
   const hasRightBubble = showSwitcherButton || showAiButton;
-  const satelliteWidth = 58;
+  const satelliteWidth = 50;
   const dockGap = 8;
-  const edgeMargin = 6;
-  const maxScreenWidth = Math.min(windowWidth - 24, 600);
-  // Satellite button is positioned at barWidth / 2 + dockGap.
-  // To keep it strictly within the visible viewport: barWidth / 2 + dockGap + satelliteWidth <= windowWidth / 2 - edgeMargin
-  const maxBarWithSatellite = Math.max(
-    180,
-    (windowWidth / 2 - dockGap - satelliteWidth - edgeMargin) * 2
-  );
-  const maxBarWidth = hasRightBubble
-    ? Math.min(maxScreenWidth, maxBarWithSatellite)
-    : maxScreenWidth;
+  const screenMargin = 12;
 
-  const targetBarWidth = totalSlots * idealSlotWidth + paddingX * 2;
-  const minBarW = isSwitcherOpen
-    ? Math.min(240, maxBarWidth)
-    : windowWidth < 480
-      ? Math.min(180, maxBarWidth)
-      : 220;
-  const barWidth = Math.max(Math.min(targetBarWidth, maxBarWidth), Math.min(minBarW, maxBarWidth));
+  // Maximum width available on screen
+  const maxAvailableWidth = Math.max(260, windowWidth - screenMargin * 2);
 
+  // When satellite button is present, reserve space for it so the combined assembly fits
+  const maxDockWidth = hasRightBubble
+    ? Math.min(maxAvailableWidth - satelliteWidth - dockGap, 420)
+    : Math.min(maxAvailableWidth, 460);
+
+  // Bar width fills the available dock space length-wise
+  const barWidth = isSwitcherOpen
+    ? Math.min(maxAvailableWidth, 380)
+    : Math.max(220, maxDockWidth);
+
+  const paddingX = 4;
   const usableWidth = barWidth - paddingX * 2;
   const itemWidth = usableWidth / totalSlots;
 
@@ -414,19 +412,16 @@ export function SharedNavigationBar({
   }, [currentItems, currentApp, isSwitcherOpen]);
 
   // Canonical selected-item highlight geometry:
-  // Substantially larger than the previous highlight, occupying ~92% of the slot
-  // to read as an integrated selected segment/capsule within the navigation bar.
-  // Maintains stable, invariant geometry within each active screen.
-  const horizontalGap = isSwitcherOpen ? 6 : totalSlots >= 4 ? 4 : 6;
-  const NAV_HIGHLIGHT_WIDTH = Math.round(itemWidth - horizontalGap);
-  const NAV_HIGHLIGHT_HEIGHT = 48;
+  // Revolut-style flat minimal highlight filling the slot with 2px horizontal margin
+  const NAV_HIGHLIGHT_WIDTH = Math.max(32, Math.round(itemWidth - 2));
+  const NAV_HIGHLIGHT_HEIGHT = 50;
   const NAV_HIGHLIGHT_RADIUS = 9999;
 
-  const pillWidthVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_WIDTH;
-  const pillHeightVal = isSwitcherOpen ? 38 : NAV_HIGHLIGHT_HEIGHT;
+  const pillWidthVal = isSwitcherOpen ? Math.min(itemWidth - 4, 44) : NAV_HIGHLIGHT_WIDTH;
+  const pillHeightVal = isSwitcherOpen ? 44 : NAV_HIGHLIGHT_HEIGHT;
   const pillRadiusVal = NAV_HIGHLIGHT_RADIUS;
 
-  const centerOffset = Math.round((itemWidth - pillWidthVal) / 2);
+  const centerOffset = Math.max(0, Math.round((itemWidth - pillWidthVal) / 2));
 
   const getPillX = useCallback(
     (index: number) => {
@@ -442,40 +437,19 @@ export function SharedNavigationBar({
 
   // Root MotionValues
   const activeIdxRaw = useMotionValue(activeIndex);
+  const dragPillX = useMotionValue(0);
   const scrollOffsetRaw = useMotionValue(getNavScrollOffset());
   const profileOpenRaw = useMotionValue(isProfileMenuOpen ? 1 : 0);
-
-  const dragXRaw = useMotionValue(0);
-  const dragSkewRaw = useMotionValue(0);
-  const pressPressureRaw = useMotionValue(0);
 
   // Synchronized Apple-grade critically damped spring physics (zero overshoot, zero bounce)
   const activeIdxSpring = useSpring(
     activeIdxRaw,
     prefersReduced
       ? { stiffness: 4000, damping: 200, mass: 0.001 }
-      : { stiffness: 340, damping: 36, mass: 0.8 }
+      : { stiffness: 420, damping: 38, mass: 0.6 }
   );
 
-  // Dynamic specular light reflection that glides fluidly across the curved glass lens during travel
-  const specularShiftPercent = useTransform(
-    [activeIdxRaw, activeIdxSpring],
-    ([raw, spring]) => {
-      if (prefersReduced) return 0;
-      const diff = (raw as number) - (spring as number);
-      // Fluid specular refraction bias along direction of motion, clamped to [-12%, +12%]
-      return Math.max(-12, Math.min(12, diff * 16));
-    }
-  );
-
-  const dynamicSpecularBg = useTransform(specularShiftPercent, (shift) => {
-    const posX = 50 + shift;
-    return isLight
-      ? `radial-gradient(ellipse 65% 50% at ${posX}% 10%, rgba(255, 255, 255, 0.45) 0%, transparent 100%)`
-      : `radial-gradient(ellipse 65% 50% at ${posX}% 10%, rgba(255, 255, 255, 0.14) 0%, transparent 100%)`;
-  });
-
-  const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 30, mass: 0.7 });
+  const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 32, mass: 0.7 });
   const profileOpenSpring = useSpring(profileOpenRaw, { stiffness: 420, damping: 28, mass: 0.8 });
 
   // Update root raw MotionValues continuously on state changes
@@ -509,57 +483,51 @@ export function SharedNavigationBar({
     }
   }, [collapsed, scrollOffsetRaw]);
 
-  // Safari-style physical compression: dock scales down (1.00 → 0.88) toward center on scroll
-  const containerScale = useTransform(scrollOffsetSpring, (offset) => {
-    return 1.0 - offset * 0.12;
-  });
-
-  // With transformOrigin 'center bottom', dock remains centered and fully visible within viewport
+  // Safari/Revolut-style physical compression: dock scales down (1.00 → 0.90) toward center on scroll
+  const containerScale = useTransform(scrollOffsetSpring, [0, 1], [1.0, 0.90]);
   const containerY = useTransform(scrollOffsetSpring, () => 0);
 
+  // Centering shift:
+  // When satellite is visible, shift dock left by half of (dockGap + satelliteWidth) so the combined assembly is centered.
+  // When scrolling down, satellite collapses and shift smoothly returns to 0 (dock centered in viewport).
+  const shiftX = hasRightBubble ? (dockGap + satelliteWidth) / 2 : 0;
+  const dockShiftX = useTransform(scrollOffsetSpring, (offset) => {
+    if (!hasRightBubble) return 0;
+    const progress = Math.min(1, offset / 0.45);
+    return -shiftX * (1 - progress);
+  });
+
   // Satellite buttons (App Changer & AI Assistant): smooth progressive fade-out and scale-down to 0 on scroll
-  const satelliteOpacity = useTransform(scrollOffsetSpring, (offset) => {
-    if (offset <= 0) return 1.0;
-    if (offset >= 0.45) return 0;
-    return 1.0 - offset / 0.45;
-  });
-
-  const satelliteScale = useTransform(scrollOffsetSpring, (offset) => {
-    if (offset <= 0) return 1.0;
-    if (offset >= 0.45) return 0;
-    return 1.0 - offset / 0.45;
-  });
-
+  const satelliteOpacity = useTransform(scrollOffsetSpring, [0, 0.35], [1, 0]);
+  const satelliteScale = useTransform(scrollOffsetSpring, [0, 0.35], [1, 0.5]);
   const satellitePointerEvents = useTransform(scrollOffsetSpring, (offset) =>
-    offset > 0.25 ? 'none' : 'auto'
+    offset > 0.2 ? 'none' : 'auto'
   );
 
-  // Dynamic satellite X position: collapses occupied space toward the dock center on scroll
+  // Dynamic satellite X position: positioned adjacent to the dock, collapsing inward on scroll
   const satelliteX = useTransform(scrollOffsetSpring, (offset) => {
-    const basePos = barWidth / 2 + dockGap;
-    const collapsedPos = (barWidth / 2) * (1.0 - offset * 0.12);
-    return basePos + (collapsedPos - basePos) * Math.min(1, offset * 1.5);
+    const curShift = !hasRightBubble ? 0 : -shiftX * (1 - Math.min(1, offset / 0.45));
+    return curShift + barWidth / 2 + dockGap;
   });
 
   const switcherOpacity = satelliteOpacity;
   const switcherScale = satelliteScale;
   const switcherPointerEvents = satellitePointerEvents;
 
-  // Derived continuous pill movement with zero layout jumps
-  const pillX = useTransform(
-    [activeIdxRaw, activeIdxSpring, dragXRaw],
-    ([rawIdx, springIdx, dragVal]) => {
-      const isScrubbingActive = isScrubbingRef.current;
-      const idxVal = isScrubbingActive ? (rawIdx as number) : (springIdx as number);
-      const idx = Math.max(0, Math.min(totalSlots - 1, idxVal));
-      const rawX = idx * itemWidth + centerOffset + (dragVal as number);
+  // Derived continuous pill movement:
+  // When scrubbing: directly follows finger via dragPillX.
+  // When idle or tab-switching: follows activeIdxSpring (critically damped, zero bounce).
+  const animatedPillX = useTransform(
+    [activeIdxSpring, dragPillX],
+    ([springIdx, dragVal]) => {
+      if (isScrubbingRef.current) {
+        return dragVal as number;
+      }
+      const idx = Math.max(0, Math.min(totalSlots - 1, springIdx as number));
+      const rawX = idx * itemWidth + centerOffset;
       return Math.max(0, Math.min(usableWidth - pillWidthVal, rawX));
     }
   );
-
-  const animatedPillX = pillX;
-
-  const pillPressScale = useTransform(pressPressureRaw, [0, 5], [1, 0.96]);
 
   // Derived continuous profile menu transformations
   const profileCardOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
@@ -568,32 +536,19 @@ export function SharedNavigationBar({
   const profileBackdropOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
 
   const startXRef = useRef(0);
-  const lastXRef = useRef(0);
-  const lastTimeRef = useRef(0);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isEffectiveHidden || e.button !== 0) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const relativeX = e.clientX - rect.left;
-    const minX = getPillX(0);
-    const maxX = getPillX(N - 1);
-    const clampedX = Math.max(minX, Math.min(maxX, relativeX));
-
     startXRef.current = e.clientX;
-    lastXRef.current = e.clientX;
-    lastTimeRef.current = performance.now();
     isScrubbingRef.current = false;
     scrubbingIndexRef.current = activeIndex;
-
-    animate(pressPressureRaw, 5, { ...SpringPresets.stiff });
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isEffectiveHidden) return;
     const dragDistance = Math.abs(e.clientX - startXRef.current);
-    if (!isScrubbingRef.current && dragDistance > 2) {
+    if (!isScrubbingRef.current && dragDistance > 4) {
       isScrubbingRef.current = true;
       setIsScrubbing(true);
       try {
@@ -603,36 +558,16 @@ export function SharedNavigationBar({
 
     if (!isScrubbingRef.current) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect =
+      innerWrapperRef.current?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
-    const minX = getPillX(0);
-    const maxX = getPillX(N - 1);
-    const clampedX = Math.max(minX, Math.min(maxX, relativeX));
-    const now = performance.now();
-    const dt = now - lastTimeRef.current;
-    const dx = e.clientX - lastXRef.current;
 
-    const velocity = dt > 0 ? dx / dt : 0;
-    lastXRef.current = e.clientX;
-    lastTimeRef.current = now;
+    // Direct 1:1 positioning of pill center with touch position
+    const targetX = relativeX - pillWidthVal / 2;
+    const clampedX = Math.max(0, Math.min(usableWidth - pillWidthVal, targetX));
+    dragPillX.set(clampedX);
 
-    dragXRaw.set(clampedX - getPillX(activeIndex));
-
-    const skew = Math.max(-10, Math.min(10, velocity * 3.5));
-    dragSkewRaw.set(skew);
-
-    let hoveredIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
-    if (typeof document !== 'undefined') {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const itemEl = el?.closest('[data-nav-item-index]');
-      if (itemEl) {
-        const idx = Number(itemEl.getAttribute('data-nav-item-index'));
-        if (!isNaN(idx) && idx >= 0 && idx < N) {
-          hoveredIndex = idx;
-        }
-      }
-    }
-
+    const hoveredIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
     if (hoveredIndex !== scrubbingIndexRef.current) {
       scrubbingIndexRef.current = hoveredIndex;
       activeIdxRaw.set(hoveredIndex);
@@ -653,12 +588,10 @@ export function SharedNavigationBar({
 
     useBottomNavigationStore.getState().setMotionState('Idle');
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     }
-
-    animate(dragSkewRaw, 0, { ...SpringPresets.expressive });
-    animate(pressPressureRaw, 0, { ...SpringPresets.expressive });
-    animate(dragXRaw, 0, { ...SpringPresets.soft });
 
     if (isScrubbingRef.current) {
       isScrubbingRef.current = false;
@@ -667,6 +600,8 @@ export function SharedNavigationBar({
       const finalIndex = scrubbingIndexRef.current;
       const targetItem = currentItems[finalIndex];
 
+      activeIdxRaw.set(finalIndex);
+
       if (targetItem && finalIndex !== activeIndex) {
         pointerUpHandledAtRef.current = performance.now();
         navigationEpochRef.current += 1;
@@ -674,13 +609,14 @@ export function SharedNavigationBar({
         targetItem.onClick();
       }
     } else {
-      const rect = e.currentTarget.getBoundingClientRect();
+      const rect =
+        innerWrapperRef.current?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
       const relativeX = e.clientX - rect.left;
-      const progress = relativeX / usableWidth;
-      const clickIndex = Math.max(0, Math.min(N - 1, Math.floor(progress * N)));
+      const clickIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
       const clickedItem = currentItems[clickIndex];
 
       if (clickedItem) {
+        activeIdxRaw.set(clickIndex);
         pointerUpHandledAtRef.current = performance.now();
         navigationEpochRef.current += 1;
         setNavigationEpoch(navigationEpochRef.current);
@@ -693,15 +629,14 @@ export function SharedNavigationBar({
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
     useBottomNavigationStore.getState().setMotionState('Idle');
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     }
-
-    animate(dragSkewRaw, 0, { ...SpringPresets.expressive });
-    animate(pressPressureRaw, 0, { ...SpringPresets.expressive });
-    animate(dragXRaw, 0, { ...SpringPresets.soft });
 
     isScrubbingRef.current = false;
     setIsScrubbing(false);
+    activeIdxRaw.set(activeIndex);
   };
 
   const lastProfileToggleTimeRef = useRef(0);
@@ -945,13 +880,12 @@ export function SharedNavigationBar({
               className="shared-bottom-nav glass-nav"
               animate={{
                 width: barWidth,
-                x: 0,
               }}
               transition={{
                 type: 'spring',
-                stiffness: 340,
-                damping: 26,
-                mass: 0.75,
+                stiffness: 380,
+                damping: 32,
+                mass: 0.7,
               }}
               style={{
                 contain: 'layout style',
@@ -961,7 +895,9 @@ export function SharedNavigationBar({
                 borderRadius: '9999px',
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
-                boxShadow: 'var(--surface-topbar-shadow)',
+                boxShadow: isLight
+                  ? '0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)'
+                  : '0 8px 32px -4px rgba(0, 0, 0, 0.50), 0 2px 8px -2px rgba(0, 0, 0, 0.35)',
                 backdropFilter: 'var(--surface-topbar-backdrop)',
                 WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
                 display: 'flex',
@@ -969,34 +905,17 @@ export function SharedNavigationBar({
                 justifyContent: 'space-around',
                 paddingLeft: paddingX,
                 paddingRight: paddingX,
-                paddingTop: '3px',
-                paddingBottom: '3px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
                 position: 'relative',
                 touchAction: 'none',
                 userSelect: 'none',
-                // 'center bottom': scale collapses downward toward the fixed
-                // bottom anchor so the pill shrinks vertically/downward, not
-                // equally inward. This keeps the nav visually centered and
-                // prevents any drift toward the bottom-right.
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
+                x: dockShiftX,
               }}
             >
-              {/* Inner Radial Vignette — realistic optical depth / gentle fresnel reflection */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '9999px',
-                  background: isLight
-                    ? 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.12) 0%, transparent 100%)'
-                    : 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 100%)',
-                  pointerEvents: 'none',
-                  zIndex: 0,
-                }}
-              />
-
               <div
                 ref={innerWrapperRef}
                 onPointerDown={handlePointerDown}
@@ -1010,14 +929,13 @@ export function SharedNavigationBar({
                   alignItems: 'center',
                   position: 'relative',
                   touchAction: 'none',
-                  // overflow:hidden here (not on the outer backdrop-filter element)
-                  // keeps nav items clipped to pill shape without breaking
-                  // Android WebView's compositing of the parent's backdrop-filter.
+                  // overflow:hidden keeps nav items clipped to pill shape without breaking
+                  // Android WebView compositing of the parent's backdrop-filter.
                   overflow: 'hidden',
                   borderRadius: '9999px',
                 }}
               >
-                {/* Active lens pill — single persistent Liquid Glass morphing surface */}
+                {/* Active lens pill — Revolut-style flat minimal highlight */}
                 <motion.div
                   animate={{
                     width: pillWidthVal,
@@ -1026,13 +944,13 @@ export function SharedNavigationBar({
                   }}
                   transition={{
                     type: 'spring',
-                    stiffness: 340,
-                    damping: 36,
-                    mass: 0.75,
+                    stiffness: 420,
+                    damping: 38,
+                    mass: 0.6,
                   }}
                   style={{
                     position: 'absolute',
-                    top: isSwitcherOpen ? 7 : 2,
+                    top: isSwitcherOpen ? Math.max(0, Math.round((50 - pillHeightVal) / 2)) : 0,
                     left: 0,
                     x: animatedPillX,
                     background: 'var(--surface-glass-lens-bg)',
@@ -1040,21 +958,9 @@ export function SharedNavigationBar({
                     boxShadow: 'var(--surface-glass-lens-shadow)',
                     pointerEvents: 'none',
                     zIndex: 0,
-                    scale: pillPressScale,
                     willChange: 'transform',
                   }}
-                >
-                  {/* Dynamic Specular Lens Refraction — moves fluidly across the curved glass during travel */}
-                  <motion.div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: pillRadiusVal,
-                      background: dynamicSpecularBg,
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </motion.div>
+                />
 
                 {/* Navigation items — fluid liquid continuous transformation */}
                 <AnimatePresence mode="popLayout" initial={false}>
@@ -1131,6 +1037,7 @@ export function SharedNavigationBar({
                               isSwitcherOpen={true}
                               totalSlots={totalSlots}
                               animationEpoch={navigationEpoch}
+                              scrollOffsetSpring={scrollOffsetSpring}
                             />
                           </motion.div>
                         );
@@ -1225,6 +1132,7 @@ export function SharedNavigationBar({
                                 isSwitcherOpen={false}
                                 totalSlots={totalSlots}
                                 animationEpoch={navigationEpoch}
+                                scrollOffsetSpring={scrollOffsetSpring}
                               />
                             </motion.div>
                           </React.Fragment>
@@ -1263,14 +1171,16 @@ export function SharedNavigationBar({
                       : { type: 'spring', stiffness: 360, damping: 24, mass: 0.75 }
                   }
                   style={{
-                    width: '58px',
-                    height: '58px',
+                    width: '50px',
+                    height: '50px',
                     borderRadius: '9999px',
                     background: 'var(--surface-topbar-bg)',
                     border: 'var(--surface-topbar-border)',
                     backdropFilter: 'var(--surface-topbar-backdrop)',
                     WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                    boxShadow: 'var(--surface-topbar-shadow)',
+                    boxShadow: isLight
+                      ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
+                      : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1292,18 +1202,6 @@ export function SharedNavigationBar({
                     pointerEvents: switcherPointerEvents,
                   }}
                 >
-                  {/* Radial Center Glow */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '9999px',
-                      background: isLight
-                        ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
-                        : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.div
                       key={isSwitcherOpen ? 'close' : 'apps'}
@@ -1353,14 +1251,16 @@ export function SharedNavigationBar({
                   title="Music AI Assistant"
                   aria-label="Open Music AI Assistant"
                   style={{
-                    width: '58px',
-                    height: '58px',
+                    width: '50px',
+                    height: '50px',
                     borderRadius: '9999px',
                     background: 'var(--surface-topbar-bg)',
                     border: 'var(--surface-topbar-border)',
                     backdropFilter: 'var(--surface-topbar-backdrop)',
                     WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                    boxShadow: 'var(--surface-topbar-shadow)',
+                    boxShadow: isLight
+                      ? '0 4px 16px -2px rgba(0, 0, 0, 0.08)'
+                      : '0 8px 28px -4px rgba(0, 0, 0, 0.50)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1375,20 +1275,8 @@ export function SharedNavigationBar({
                     pointerEvents: satellitePointerEvents,
                   }}
                 >
-                  {/* Radial Center Glow */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '9999px',
-                      background: isLight
-                        ? 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.12) 0%, transparent 100%)'
-                        : 'radial-gradient(ellipse 70% 55% at 50% 8%, rgba(255,255,255,0.04) 0%, transparent 100%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
                   <LivexAssistantMascot
-                    size={26}
+                    size={24}
                     mode="dock"
                     state={mascotState}
                     interactive={false}

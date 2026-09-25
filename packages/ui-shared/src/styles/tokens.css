@@ -1846,18 +1846,10 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.1) 50%,
     transparent 100%
   );
-  /* Active lens pill — integrated Liquid Glass morphing material */
-  --surface-glass-lens-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.09);
-  --surface-glass-lens-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    inset 0 0 16px rgba(255, 255, 255, 0.015),
-    0 1px 3px rgba(0, 0, 0, 0.12);
+  /* Active lens pill — Revolut-style flat minimal highlight surface */
+  --surface-glass-lens-bg: rgba(255, 255, 255, 0.12);
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.08);
+  --surface-glass-lens-shadow: none;
   --surface-modal-bg: rgba(0, 0, 0, 0.6); /* sheet / modal scrim      */
   --surface-dialog-bg: var(--app-surface-high, #151518);
   --surface-modal-surface: var(--app-surface-high, #151518);
@@ -1913,16 +1905,9 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.03) 50%,
     transparent 100%
   );
-  --surface-glass-lens-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(240, 244, 252, 0.88) 100%
-  );
-  --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.06);
-  --surface-glass-lens-shadow:
-    inset 0 1px 0 #ffffff,
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.04);
+  --surface-glass-lens-bg: rgba(0, 0, 0, 0.06);
+  --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.04);
+  --surface-glass-lens-shadow: none;
   --surface-modal-bg: rgba(0, 0, 0, 0.35);
   --surface-dialog-bg: var(--app-surface-highest, #ffffff);
   --surface-modal-surface: var(--app-surface-highest, #ffffff);
@@ -1964,16 +1949,9 @@ html[data-perf-mode='on'] *::after {
     rgba(0, 0, 0, 0.15) 50%,
     transparent 100%
   );
-  --surface-glass-lens-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    rgba(255, 255, 255, 0.015) 100%
-  );
-  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.11);
-  --surface-glass-lens-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.18);
+  --surface-glass-lens-bg: rgba(255, 255, 255, 0.14);
+  --surface-glass-lens-border: 1px solid rgba(255, 255, 255, 0.10);
+  --surface-glass-lens-shadow: none;
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
   --surface-dialog-bg: #000000;
   --surface-modal-surface: #000000;
