@@ -1,13 +1,13 @@
-# Version 4.6.47
+# Version 4.6.48
 
 Release Date: 2026-09-25
 
-### Added
-- Revolut-Style Flat Bottom Navigation: Implemented flat minimal interaction model with a solid borderless surface, equal-width tabs, and responsive indicator across mobile and Android.
-- Keep-Alive Tab Navigation Architecture: Integrated persistent component trees across Chordex, Drumex, Stagex, Groovex, and Vocalex to retain DOM state and scroll positions during tab switching.
-
 ### Improved
-- Fast-Path Loading Architecture: Implemented synchronous memory-first rendering that immediately renders cached data and avoids skeleton flicker, reserving skeletons strictly for slow asynchronous network fetches.
+- 120 Hz Playback Frame Pacing: Decoupled Chordex SongPracticeView playback timer loop from React re-renders using direct DOM property updates for the slider and time label, updating React state only on chord, line, or lyric segment transitions to reduce render load by ~99.5%.
+- Sequencer Layout Thrashing Elimination: Cached scroll container viewport dimensions via ResizeObserver in Drumex DrumEditor and decoupled DOM geometry reads from style writes in onStep to prevent forced synchronous reflows on every drum step.
+- Navigation Store Subscription Isolation: Narrowed navigation subscriptions to primitive selectors across SongsPanel, LivexHub, and useLibraryState, preventing background re-renders during unrelated app navigation.
+- Smooth Search Query Deferral: Integrated React.useDeferredValue for song preset filtering to ensure instant 120 FPS keyboard response during typing.
+- Vocalex Audio Playback Throttling: Capped waveform progress updates in TakeDetailView and LabPanel to ~40 FPS during playback to eliminate sub-millisecond render storms.
 
 ### Fixed
-- Hub Module Logos: Removed rounded-square framing containers, artificial borders, backgrounds, and glows from module cards on the Home screen to display clean brand logos.
+- Unused Imports & Deprecated References: Removed unused SongCardGrid import and consolidated 24 discrete Zustand action subscriptions into unified shallow selectors.

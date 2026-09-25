@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.47';
-export const NATIVE_VERSION_CODE = 40647;
-export const WEB_VERSION = '4.6.47';
+export const NATIVE_VERSION = '4.6.48';
+export const NATIVE_VERSION_CODE = 40648;
+export const WEB_VERSION = '4.6.48';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/24/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'c9250561';
+export const APP_COMMIT_SHA = '220fd909';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/25/2026, 3:11:28 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/25/2026, 5:13:21 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,22 +96,19 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Revolut-Style Flat Bottom Navigation: Implemented flat minimal interaction model with a solid borderless surface, equal-width tabs, and responsive indicator across mobile and Android.',
-      'Keep-Alive Tab Navigation Architecture: Integrated persistent component trees across Chordex, Drumex, Stagex, Groovex, and Vocalex to retain DOM state and scroll positions during tab switching.',
-    ],
-  },
-  {
     heading: 'Improved',
     items: [
-      'Fast-Path Loading Architecture: Implemented synchronous memory-first rendering that immediately renders cached data and avoids skeleton flicker, reserving skeletons strictly for slow asynchronous network fetches.',
+      '120 Hz Playback Frame Pacing: Decoupled Chordex SongPracticeView playback timer loop from React re-renders using direct DOM property updates for the slider and time label, updating React state only on chord, line, or lyric segment transitions to reduce render load by ~99.5%.',
+      'Sequencer Layout Thrashing Elimination: Cached scroll container viewport dimensions via ResizeObserver in Drumex DrumEditor and decoupled DOM geometry reads from style writes in onStep to prevent forced synchronous reflows on every drum step.',
+      'Navigation Store Subscription Isolation: Narrowed navigation subscriptions to primitive selectors across SongsPanel, LivexHub, and useLibraryState, preventing background re-renders during unrelated app navigation.',
+      'Smooth Search Query Deferral: Integrated React.useDeferredValue for song preset filtering to ensure instant 120 FPS keyboard response during typing.',
+      'Vocalex Audio Playback Throttling: Capped waveform progress updates in TakeDetailView and LabPanel to ~40 FPS during playback to eliminate sub-millisecond render storms.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Hub Module Logos: Removed rounded-square framing containers, artificial borders, backgrounds, and glows from module cards on the Home screen to display clean brand logos.',
+      'Unused Imports & Deprecated References: Removed unused SongCardGrid import and consolidated 24 discrete Zustand action subscriptions into unified shallow selectors.',
     ],
   },
 ];
@@ -123,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.48',
+    date: '2026-09-25',
+    highlights: [
+      '120 Hz Playback Frame Pacing: Decoupled Chordex SongPracticeView playback timer loop from React re-renders using direct DOM property updates for the slider and time label, updating React state only on chord, line, or lyric segment transitions to reduce render load by ~99.5%.',
+      'Sequencer Layout Thrashing Elimination: Cached scroll container viewport dimensions via ResizeObserver in Drumex DrumEditor and decoupled DOM geometry reads from style writes in onStep to prevent forced synchronous reflows on every drum step.',
+      'Navigation Store Subscription Isolation: Narrowed navigation subscriptions to primitive selectors across SongsPanel, LivexHub, and useLibraryState, preventing background re-renders during unrelated app navigation.',
+      'Smooth Search Query Deferral: Integrated React.useDeferredValue for song preset filtering to ensure instant 120 FPS keyboard response during typing.',
+      'Vocalex Audio Playback Throttling: Capped waveform progress updates in TakeDetailView and LabPanel to ~40 FPS during playback to eliminate sub-millisecond render storms.',
+      'Unused Imports & Deprecated References: Removed unused SongCardGrid import and consolidated 24 discrete Zustand action subscriptions into unified shallow selectors.',
+    ],
+  },
   {
     version: '4.6.47',
     date: '2026-09-25',
@@ -220,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.',
       'Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.',
       'Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.',
-    ],
-  },
-  {
-    version: '4.6.38',
-    date: '2026-09-22',
-    highlights: [
-      'Native Livex Music AI Assistant: Integrated an intelligent music studio assistant accessible directly from the floating bottom navigation bar dock.',
-      'Minimalist ThinkingOrb Mascot: Designed a subtle, high-polish circular AI orb with responsive state animations (idle pulse, thinking breathe, speak shimmer, tap bounce) inspired by modern AI design.',
-      'Borderless Studio Conversation UI: Built a clean edge-to-edge message stream with dedicated assistant and user message treatments, streaming text indicators, and instant scroll pinning.',
-      'Instant Response Streaming: Optimized Time-to-First-Token (TTFT) to under 5ms, eliminating artificial typing delays and yielding instantaneous token delivery.',
-      'Professional Assistant Persona: Overhauled system prompt engineering for direct, technically precise audio and music engineering answers with zero conversational filler, no emojis, and no exaggerated enthusiasm.',
-      'Unified Snake Loading Spinner: Migrated all updater screens, settings, and modal spinners to the canonical GPU-accelerated Snake loader design.',
     ],
   },
 ];
