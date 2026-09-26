@@ -171,11 +171,17 @@ export function useScrollMorph({
         titleEl.style.transformOrigin = 'center center';
       }
 
-      // ── 6. Canonical Navigation Material Surface (Persistent across all scroll states) ──
+      // ── 6. Canonical Navigation Material Surface (Scroll-triggered progressive emergence) ──
       if (glassEl) {
         glassEl.style.borderRadius = '9999px';
-        glassEl.style.opacity = '1';
-        glassEl.style.visibility = 'visible';
+        if (p <= 0.005) {
+          glassEl.style.opacity = '0';
+          glassEl.style.visibility = 'hidden';
+        } else {
+          glassEl.style.visibility = 'visible';
+          const surfaceAlpha = Math.min(1, Math.max(0, p));
+          glassEl.style.opacity = surfaceAlpha.toFixed(3);
+        }
       }
 
       // ── 7. Progressive Blur Zone (Disabled to prevent dark tinting) ──
@@ -235,7 +241,13 @@ export function useScrollMorph({
           rafId.current = requestAnimationFrame(() => {
             rafId.current = null;
             const p = calculateMorphProgress(scrollEl.scrollTop, startOffset, morphDistance);
-            if (Math.abs(p - lastP.current) < 0.002) return;
+            if (
+              Math.abs(p - lastP.current) < 0.002 &&
+              !(p === 0 && lastP.current !== 0) &&
+              !(p === 1 && lastP.current !== 1)
+            ) {
+              return;
+            }
             lastP.current = p;
             applyMorph(p);
           });

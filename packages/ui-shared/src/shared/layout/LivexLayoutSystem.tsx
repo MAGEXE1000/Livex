@@ -303,7 +303,7 @@ export function SharedFloatingHeader({
           userSelect: 'none',
         }}
       >
-        {/* Canonical Persistent Navigation Surface (Inherits identical visual material as bottom navbar) */}
+        {/* Canonical Scroll-Triggered Navigation Surface (Inherits identical visual material as bottom navbar) */}
         <div
           ref={glassSurfaceRef}
           data-testid="shared-floating-header-glass-surface"
@@ -320,6 +320,8 @@ export function SharedFloatingHeader({
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
+            opacity: 0,
+            visibility: 'hidden',
             zIndex: 0,
           }}
         />
