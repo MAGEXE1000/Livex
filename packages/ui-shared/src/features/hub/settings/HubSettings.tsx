@@ -759,7 +759,13 @@ export function HubSettings({
       }
       return p as SettingsPageId;
     }
-    return (last?.tab === 'settings' ? (last.page ?? 'main') : 'main') as SettingsPageId;
+    if (last?.tab === 'settings') {
+      if (!last.page || last.page === 'settings') {
+        return 'main' as SettingsPageId;
+      }
+      return last.page as SettingsPageId;
+    }
+    return 'main' as SettingsPageId;
   });
   const pageKey = historyLength;
 

@@ -498,6 +498,18 @@ export function SharedAppShell({
       </ErrorBoundary>
       <Toaster />
       {renderLaunchOverlay?.()}
+      <AnimatePresence>
+        {!isWebDesktop && launchingApp && launchingApp !== 'hub' && (
+          <ApplicationTransitionEngine
+            appKey={launchingApp}
+            preloaded={appPreloaded}
+            onComplete={() => {}}
+            isLight={isTransitionLight}
+            isAmoled={isTransitionAmoled}
+            sourceRect={sourceRect}
+          />
+        )}
+      </AnimatePresence>
       {InspectorRouteTracer && developerMode && isInspectorEnabled && showRouteTracer && (
         <Suspense fallback={null}>
           <InspectorRouteTracer />

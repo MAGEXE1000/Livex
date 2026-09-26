@@ -331,9 +331,9 @@ export function BottomNavigationController() {
           key: 'settings',
           icon: 'cog',
           label: getTranslation('settings'),
-          isActive: activeTab === 'settings' || activePage === 'settings',
+          isActive: activeTab === 'settings' || activePage === 'settings' || activePage === 'main',
           onClick: () => {
-            NavigationDispatcher.push({ app: 'hub', page: 'settings', tab: 'settings' });
+            NavigationDispatcher.push({ app: 'hub', page: 'main', tab: 'settings' });
             setProfileMenuOpen(false);
           },
         },

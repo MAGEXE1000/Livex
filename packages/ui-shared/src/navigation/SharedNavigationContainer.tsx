@@ -36,99 +36,91 @@ export function SharedNavigationContainer({
     return initial;
   });
 
-  if (!visitedViews.has(activeView)) {
-    const next = new Set(visitedViews);
-    next.add(activeView);
-    setVisitedViews(next);
-  }
+  // Synchronous transition state engine — eliminates 1-frame settled flash and duplicate animation
+  const [transitionState, setTransitionState] = useState<{
+    activeView: string;
+    exitingView: string | null;
+    transitionDir: 'forward' | 'backward' | 'elevation' | 'elevation-reverse';
+    isTransitioning: boolean;
+    epoch: number;
+  }>(() => ({
+    activeView,
+    exitingView: null,
+    transitionDir: 'elevation',
+    isTransitioning: false,
+    epoch: 0,
+  }));
 
-  // Active view tracking
-  const prevViewRef = useRef(activeView);
-  const [exitingView, setExitingView] = useState<string | null>(null);
-  const [transitionDir, setTransitionDir] = useState<
-    'forward' | 'backward' | 'elevation' | 'elevation-reverse'
-  >('elevation');
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Synchronously compute trajectory and trigger transition on prop change during render
+  if (activeView !== transitionState.activeView) {
+    const prevView = transitionState.activeView;
 
-  const viewOrderRef = useRef(viewOrder);
-  viewOrderRef.current = viewOrder;
-  const variantRef = useRef(variant);
-  variantRef.current = variant;
-  const directionRef = useRef(direction);
-  directionRef.current = direction;
-
-  const activeEpochRef = useRef(0);
-  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const prevView = prevViewRef.current;
-    if (activeView === prevView) return;
-    prevViewRef.current = activeView;
-
-    if (prefersReduced) {
-      setExitingView(null);
-      setIsTransitioning(false);
-      return;
-    }
-
-    const currentDirection = directionRef.current;
-    const currentViewOrder = viewOrderRef.current;
-    const currentVariant = variantRef.current;
-
-    // Calculate transition trajectory based on explicit direction, viewOrder or variant
     let dir: 'forward' | 'backward' | 'elevation' | 'elevation-reverse' = 'elevation';
-    if (currentDirection === 'right') {
+    if (direction === 'right') {
       dir = 'forward';
-    } else if (currentDirection === 'left') {
+    } else if (direction === 'left') {
       dir = 'backward';
-    } else if (currentViewOrder && currentViewOrder.length > 0) {
-      const oldIdx = (currentViewOrder as readonly string[]).indexOf(prevView);
-      const newIdx = (currentViewOrder as readonly string[]).indexOf(activeView);
+    } else if (viewOrder && viewOrder.length > 0) {
+      const oldIdx = (viewOrder as readonly string[]).indexOf(prevView);
+      const newIdx = (viewOrder as readonly string[]).indexOf(activeView);
       if (oldIdx !== -1 && newIdx !== -1) {
         dir = newIdx > oldIdx ? 'forward' : 'backward';
-      } else if (currentVariant === 'drilldown') {
+      } else if (variant === 'drilldown') {
         dir =
           newIdx === -1 && (activeView === 'main' || activeView === 'list' || activeView === 'home')
             ? 'elevation-reverse'
             : 'elevation';
       }
-    } else if (currentVariant === 'drilldown') {
+    } else if (variant === 'drilldown') {
       dir =
         activeView === 'main' || activeView === 'list' || activeView === 'home'
           ? 'elevation-reverse'
           : 'elevation';
     }
 
-    setTransitionDir(dir);
-    setExitingView(prevView);
-    setIsTransitioning(true);
+    if (!visitedViews.has(activeView)) {
+      const nextVisited = new Set(visitedViews);
+      nextVisited.add(activeView);
+      setVisitedViews(nextVisited);
+    }
 
-    activeEpochRef.current += 1;
-    const epoch = activeEpochRef.current;
+    setTransitionState({
+      activeView,
+      exitingView: prefersReduced ? null : prevView,
+      transitionDir: dir,
+      isTransitioning: !prefersReduced,
+      epoch: transitionState.epoch + 1,
+    });
+  }
 
-    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+  // Lifecycle timers for exit (150ms) and settle (200ms)
+  useEffect(() => {
+    if (!transitionState.isTransitioning) return;
+    const epoch = transitionState.epoch;
 
-    // Outgoing view exits in 150ms to eliminate double-exposure visual muddiness
-    exitTimerRef.current = setTimeout(() => {
-      if (activeEpochRef.current === epoch) {
-        setExitingView(null);
-      }
+    const exitTimer = setTimeout(() => {
+      setTransitionState((prev) => {
+        if (prev.epoch === epoch) {
+          return { ...prev, exitingView: null };
+        }
+        return prev;
+      });
     }, CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS);
 
-    // Incoming view finishes settling in 200ms
-    settleTimerRef.current = setTimeout(() => {
-      if (activeEpochRef.current === epoch) {
-        setIsTransitioning(false);
-      }
+    const settleTimer = setTimeout(() => {
+      setTransitionState((prev) => {
+        if (prev.epoch === epoch) {
+          return { ...prev, isTransitioning: false };
+        }
+        return prev;
+      });
     }, CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS);
 
     return () => {
-      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+      clearTimeout(exitTimer);
+      clearTimeout(settleTimer);
     };
-  }, [activeView, prefersReduced]);
+  }, [transitionState.epoch, transitionState.isTransitioning]);
 
   return (
     <div
@@ -265,8 +257,8 @@ export function SharedNavigationContainer({
       `}</style>
 
       {Array.from(visitedViews).map((viewId) => {
-        const isCurrent = viewId === activeView;
-        const isExiting = viewId === exitingView;
+        const isCurrent = viewId === transitionState.activeView;
+        const isExiting = viewId === transitionState.exitingView;
         const content = children(viewId);
         if (content == null) return null;
 
@@ -294,10 +286,10 @@ export function SharedNavigationContainer({
         }
 
         const animationClass = isCurrent
-          ? isTransitioning
-            ? `livex-content-enter-${transitionDir}`
+          ? transitionState.isTransitioning
+            ? `livex-content-enter-${transitionState.transitionDir}`
             : 'livex-content-settled'
-          : `livex-content-exit-${transitionDir}`;
+          : `livex-content-exit-${transitionState.transitionDir}`;
 
         return (
           <div
@@ -315,7 +307,7 @@ export function SharedNavigationContainer({
               pointerEvents: isCurrent ? 'auto' : 'none',
               zIndex: isCurrent ? 2 : 1,
               contain: 'strict',
-              willChange: isTransitioning || isExiting ? 'transform, opacity' : 'auto',
+              willChange: transitionState.isTransitioning || isExiting ? 'transform, opacity' : 'auto',
             }}
           >
             {content}
