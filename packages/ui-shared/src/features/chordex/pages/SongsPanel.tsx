@@ -1,3 +1,7 @@
+import { SongLibraryList } from '../components/SongLibraryList';
+import { SongEditorForm, PresetFormContent, FormData } from '../components/SongEditorForm';
+import { TransposeControls } from '../components/TransposeControls';
+import { useDragReorder } from '../components/useDragReorder';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import {
   getAllChords,
@@ -3668,197 +3672,7 @@ function ChordPicker({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Preset Form Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-interface FormData {
-  name: string;
-  artist: string;
-  bpm: string;
-  key: string;
-  notes: string;
-}
-const KEYS = [
-  'C',
-  'C#',
-  'D',
-  'Eb',
-  'E',
-  'F',
-  'F#',
-  'G',
-  'Ab',
-  'A',
-  'Bb',
-  'B',
-  'Cm',
-  'C#m',
-  'Dm',
-  'Ebm',
-  'Em',
-  'Fm',
-  'F#m',
-  'Gm',
-  'Abm',
-  'Am',
-  'Bbm',
-  'Bm',
-];
 
-export interface PresetFormContentProps {
-  initial?: FormData;
-  isEditing?: boolean;
-  onSave: (d: FormData) => void;
-  onCancel: () => void;
-  accent: { from: string; to: string; mid?: string };
-  showFooterButtons?: boolean;
-}
-
-export function PresetFormContent({
-  initial,
-  isEditing = false,
-  onSave,
-  onCancel,
-  accent,
-  showFooterButtons = true,
-}: PresetFormContentProps) {
-  const t = useT();
-  const [form, setForm] = useState<FormData>(
-    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '' }
-  );
-
-  useEffect(() => {
-    if (initial) {
-      setForm(initial);
-    }
-  }, [initial]);
-
-  const selectStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--c-surface-high)',
-    border: '1px solid var(--c-border)',
-    borderRadius: 'var(--radius-md)',
-    padding: '10px 14px',
-    color: 'var(--c-text-primary)',
-    fontFamily: 'var(--font-body)',
-    fontSize: '13px',
-    outline: 'none',
-  };
-  const labelStyle: React.CSSProperties = {
-    color: 'var(--c-text-secondary)',
-    fontFamily: 'var(--font-headline)',
-    fontWeight: 800,
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
-    display: 'block',
-    marginBottom: '4px',
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '6px 4px 4px 4px' }}>
-      <Input
-        label={t.songs.songTitle}
-        value={form.name}
-        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-        placeholder="e.g. Blackbird"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && form.name.trim()) {
-            onSave(form);
-          }
-        }}
-      />
-      <Input
-        label={t.songs.artist}
-        value={form.artist}
-        onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
-        placeholder="e.g. The Beatles"
-      />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <Input
-          type="number"
-          label={t.songs.bpm}
-          min={20}
-          max={400}
-          value={form.bpm}
-          onChange={(e) => setForm((f) => ({ ...f, bpm: e.target.value }))}
-        />
-        <div>
-          <label style={labelStyle}>{t.songs.key}</label>
-          <select
-            value={form.key}
-            onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
-            style={{ ...selectStyle, cursor: 'pointer' }}
-          >
-            {KEYS.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div>
-        <label style={labelStyle}>{t.songs.notes}</label>
-        <textarea
-          value={form.notes}
-          onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-          rows={2}
-          placeholder={t.songs.notesPlaceholder}
-          style={{ ...selectStyle, resize: 'none' }}
-        />
-      </div>
-      {showFooterButtons && (
-        <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '6px' }}>
-          <Button onClick={onCancel} style={{ flex: 1 }}>
-            {t.songs.cancel}
-          </Button>
-          <Button
-            variant="primary"
-            disabled={!form.name.trim()}
-            onClick={() => {
-              if (form.name.trim()) onSave(form);
-            }}
-            style={{ flex: 1 }}
-          >
-            {isEditing ? t.songs.save : t.songs.newSong}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PresetForm({
-  initial,
-  isEditing,
-  onSave,
-  onCancel,
-  accent,
-}: {
-  initial?: FormData;
-  isEditing?: boolean;
-  onSave: (d: FormData) => void;
-  onCancel: () => void;
-  accent: { from: string; to: string; mid: string };
-}) {
-  const t = useT();
-  return (
-    <Dialog
-      open={true}
-      onClose={onCancel}
-      title={isEditing ? t.songs.editSong : t.songs.newSong}
-    >
-      <PresetFormContent
-        key={isEditing ? 'edit' : initial?.name ? `import-${initial.name}` : 'new'}
-        initial={initial}
-        isEditing={isEditing}
-        onSave={onSave}
-        onCancel={onCancel}
-        accent={accent}
-        showFooterButtons={true}
-      />
-    </Dialog>
-  );
-}
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Main SongsPanel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const ITEM_H = 76;
@@ -4364,24 +4178,21 @@ export default function SongsPanel() {
     deduplicateAllPresets();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Drag & drop
-  const [localChords, setLocalChords] = useState<string[]>([]);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragDeltaY, setDragDeltaY] = useState(0); // only updated on slot change (not every pointermove)
-  const dragStartY = useRef(0);
-  const dragStartIdx = useRef(0);
-  const dragNodeRef = useRef<HTMLDivElement | null>(null); // imperative handle to active DOM node
-  const dragDeltaRef = useRef(0); // always up-to-date delta (no re-render)
-  const dragCountRef = useRef(0); // total chord count at drag start (for clamping)
-  const instanceKeys = useRef<string[]>([]); // stable per-slot key so DOM nodes survive reorder
-  const localChordsRef = useRef<string[]>([]); // always up-to-date chord list (avoids stale closure)
-
   // Scroll ref for nav-hide on Songs list (never attached to editor)
   const listScrollRef = useRef<HTMLDivElement>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(listScrollRef);
 
   const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
+
+  // Drag & drop
+  const { localChords, dragIdx, dragDeltaY, dragNodeRef, instanceKeys, onDragStart } = useDragReorder({
+    activePreset,
+    updatePreset,
+    editorScrollRef,
+    ITEM_H,
+  });
+
   const transposeOffset = activePreset ? (transpositions[activePreset.id] ?? 0) : 0;
 
   // Lock nav bar hidden in editor view or when any sheet/form is open
@@ -4439,104 +4250,6 @@ export default function SongsPanel() {
     [createPreset, updatePreset]
   );
 
-  useEffect(() => {
-    if (dragIdx === null) {
-      const chords = activePreset?.chords ?? [];
-      instanceKeys.current = chords.map(() => Math.random().toString(36).slice(2));
-      localChordsRef.current = [...chords];
-      setLocalChords([...chords]);
-    }
-  }, [activePreset?.chords, dragIdx]);
-
-  // Track the active pointer id so window listeners only react to the right finger
-  const dragPointerIdRef = useRef<number | null>(null);
-  // Stable ref to active preset id â€” avoids stale closure in the window end handler
-  const activePresetIdRef = useRef<string | null>(null);
-
-  // Core move logic â€” reads only from refs so it's safe to call from a window listener
-  const executeDragMove = (clientY: number) => {
-    if (dragNodeRef.current === null) return;
-    const slot = dragStartIdx.current;
-
-    // â”€â”€ Clamp pointer to screen AND list bounds so items can't fly off screen â”€â”€
-    const containerRect = cachedContainerRectRef.current;
-    const screenClampedY = containerRect
-      ? Math.max(containerRect.top + 8, Math.min(containerRect.bottom - 8, clientY))
-      : clientY;
-    const unclamped = screenClampedY - dragStartY.current;
-    const minDelta = -slot * ITEM_H;
-    const maxDelta = (dragCountRef.current - 1 - slot) * ITEM_H;
-    const raw = Math.max(minDelta, Math.min(maxDelta, unclamped));
-    dragDeltaRef.current = raw;
-
-    // â”€â”€ Fast path: move the active node directly on the DOM â€” zero React overhead â”€â”€
-    dragNodeRef.current.style.top = `${slot * ITEM_H + 8 + raw}px`;
-
-    // â”€â”€ Slot change detection â”€â”€
-    const rawTarget = Math.round(raw / ITEM_H) + slot;
-    const target = Math.max(0, Math.min(dragCountRef.current - 1, rawTarget));
-    if (target !== slot) {
-      // Reorder both the chord list AND the stable instance-key list in lockstep
-      const newChords = [...localChordsRef.current]; // always fresh â€” avoids stale closure
-      const newKeys = [...instanceKeys.current];
-      const [movedChord] = newChords.splice(slot, 1);
-      const [movedKey] = newKeys.splice(slot, 1);
-      newChords.splice(target, 0, movedChord);
-      newKeys.splice(target, 0, movedKey);
-
-      dragStartY.current += (target - slot) * ITEM_H;
-      dragDeltaRef.current = clientY - dragStartY.current;
-      dragStartIdx.current = target;
-      instanceKeys.current = newKeys;
-      localChordsRef.current = newChords; // keep ref in sync before React re-renders
-
-      // React re-render only on slot change (rare), not every pointermove
-      setLocalChords(newChords);
-      setDragIdx(target);
-      setDragDeltaY(dragDeltaRef.current); // JSX will set correct `top` after render
-    }
-  };
-
-  // Core end logic â€” uses refs so it's safe to call from a window listener
-  const executeDragEnd = () => {
-    cachedContainerRectRef.current = null;
-    const presetId = activePresetIdRef.current;
-    if (presetId !== null) updatePreset(presetId, { chords: localChordsRef.current });
-    dragNodeRef.current = null;
-    dragDeltaRef.current = 0;
-    dragPointerIdRef.current = null;
-    setDragIdx(null);
-    setDragDeltaY(0);
-  };
-
-  const onDragStart = (e: React.PointerEvent, index: number) => {
-    e.preventDefault();
-    activePresetIdRef.current = activePreset?.id ?? null;
-    dragPointerIdRef.current = e.pointerId;
-    dragStartY.current = e.clientY;
-    dragStartIdx.current = index;
-    cachedContainerRectRef.current = editorScrollRef.current?.getBoundingClientRect() ?? null;
-    dragDeltaRef.current = 0;
-    dragCountRef.current = localChords.length;
-    setDragIdx(index);
-    setDragDeltaY(0);
-
-    // â”€â”€ Bind to window so React re-renders can't lose the pointer stream â”€â”€
-    const handleMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== dragPointerIdRef.current) return;
-      executeDragMove(ev.clientY);
-    };
-    const handleEnd = (ev: PointerEvent) => {
-      if (ev.pointerId !== dragPointerIdRef.current) return;
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleEnd);
-      window.removeEventListener('pointercancel', handleEnd);
-      executeDragEnd();
-    };
-    window.addEventListener('pointermove', handleMove, { passive: true });
-    window.addEventListener('pointerup', handleEnd);
-    window.addEventListener('pointercancel', handleEnd);
-  };
 
   const editingPreset = editingId ? presets.find((p) => p.id === editingId) : null;
   const editingFormData = editingPreset
@@ -4949,86 +4662,17 @@ export default function SongsPanel() {
                 </div>
 
                 {/* Right: Transposition Controls */}
-                <div
-                  className="flex items-center rounded-full px-1.5 py-1 border shadow-sm gap-0.5"
-                  style={{
-                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                  }}
-                  data-purpose="transpose-controls"
-                >
-                  {transposeOffset !== 0 && (
-                    <button
-                      type="button"
-                      onClick={() => resetTranspose(activePreset.id)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all cursor-pointer"
-                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                      title="Reset key"
-                    >
-                      <span className="material-symbols-rounded text-sm">restart_alt</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      useSettingsStore.getState().updateSettings({ preferFlats: !preferFlats })
-                    }
-                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all cursor-pointer"
-                    style={{
-                      color: 'var(--c-text-secondary, #6B7280)',
-                      fontFamily: 'var(--font-headline)',
-                      fontWeight: 800,
-                      fontSize: '12px',
-                    }}
-                    title={
-                      preferFlats
-                        ? 'Using flats (click for sharps)'
-                        : 'Using sharps (click for flats)'
-                    }
-                  >
-                    {preferFlats ? '♭' : '♯'}
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Transpose down"
-                    data-testid="transpose-down"
-                    id="btn-transpose-down"
-                    disabled={transposeOffset <= -11}
-                    onClick={() => setTranspose(activePreset.id, transposeOffset - 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all cursor-pointer disabled:opacity-40"
-                    style={{ color: 'var(--c-text-primary, #111827)' }}
-                  >
-                    <span className="material-symbols-rounded text-sm">remove</span>
-                  </button>
-
-                  <span
-                    id="transpose-value"
-                    className="text-xs font-bold font-mono px-1 select-none min-w-[24px] text-center"
-                    style={{
-                      color:
-                        transposeOffset !== 0
-                          ? 'var(--c-accent-from, #2563EB)'
-                          : 'var(--c-text-primary, #111827)',
-                    }}
-                  >
-                    {formatOffset(transposeOffset)}
-                  </span>
-
-                  <button
-                    type="button"
-                    aria-label="Transpose up"
-                    data-testid="transpose-up"
-                    id="btn-transpose-up"
-                    disabled={transposeOffset >= 11}
-                    onClick={() => setTranspose(activePreset.id, transposeOffset + 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all cursor-pointer disabled:opacity-40"
-                    style={{ color: 'var(--c-text-primary, #111827)' }}
-                  >
-                    <span className="material-symbols-rounded text-sm">add</span>
-                  </button>
-                </div>
+                <TransposeControls
+                  variant="mobile"
+                  activePresetId={activePreset.id}
+                  transposeOffset={transposeOffset}
+                  setTranspose={setTranspose}
+                  resetTranspose={resetTranspose}
+                  preferFlats={preferFlats}
+                  formatOffset={formatOffset}
+                  accent={accent}
+                  t={t}
+                />
               </section>
               {/* END: SongMetadataToolbar */}
             </div>
@@ -5243,105 +4887,17 @@ export default function SongsPanel() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                {transposeOffset !== 0 && (
-                  <button
-                    onClick={() => resetTranspose(activePreset.id)}
-                    className="btn-smooth"
-                    title={t.songs.resetKey}
-                    style={{
-                      padding: '3px 6px',
-                      borderRadius: '9999px',
-                      background: 'var(--app-surface-high)',
-                      color: 'var(--c-text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
-                      restart_alt
-                    </span>
-                  </button>
-                )}
-                <button
-                  onClick={() =>
-                    useSettingsStore.getState().updateSettings({ preferFlats: !preferFlats })
-                  }
-                  className="btn-smooth"
-                  title={preferFlats ? t.songs.usingFlats : t.songs.usingSharps}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '7px',
-                    background: 'var(--app-surface-high)',
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'var(--font-headline)',
-                    fontWeight: 800,
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {preferFlats ? '♭' : '♯'}
-                </button>
-                <button
-                  onClick={() => setTranspose(activePreset.id, transposeOffset - 1)}
-                  className="btn-smooth"
-                  data-testid="transpose-down"
-                  disabled={transposeOffset <= -11}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: 'var(--app-surface-high)',
-                    color: transposeOffset > -11 ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: transposeOffset <= -11 ? 0.4 : 1,
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>
-                    remove
-                  </span>
-                </button>
-                <div
-                  style={{
-                    width: '30px',
-                    textAlign: 'center',
-                    fontFamily: 'var(--font-headline)',
-                    fontWeight: 900,
-                    fontSize: '12px',
-                    color: transposeOffset !== 0 ? accent.from : 'var(--c-text-muted)',
-                    transition: 'color 250ms ease',
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatOffset(transposeOffset)}
-                </div>
-                <button
-                  onClick={() => setTranspose(activePreset.id, transposeOffset + 1)}
-                  className="btn-smooth"
-                  data-testid="transpose-up"
-                  disabled={transposeOffset >= 11}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: 'var(--app-surface-high)',
-                    color: transposeOffset < 11 ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: transposeOffset >= 11 ? 0.4 : 1,
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>
-                    add
-                  </span>
-                </button>
-              </div>
+              <TransposeControls
+                  variant="desktop"
+                  activePresetId={activePreset.id}
+                  transposeOffset={transposeOffset}
+                  setTranspose={setTranspose}
+                  resetTranspose={resetTranspose}
+                  preferFlats={preferFlats}
+                  formatOffset={formatOffset}
+                  accent={accent}
+                  t={t}
+                />
             </div>
           </header>
         )}
@@ -6419,7 +5975,7 @@ export default function SongsPanel() {
         )}
 
         {showForm && (
-          <PresetForm
+          <SongEditorForm
             accent={accent}
             initial={editingFormData}
             isEditing={Boolean(editingId)}
@@ -6457,184 +6013,17 @@ export default function SongsPanel() {
         className="flex w-full h-full overflow-hidden"
         style={{ position: 'relative', background: 'var(--c-background)' }}
       >
-        {/* Left Column: Setlist song list */}
-        <div
-          style={{
-            width: '280px',
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            overflow: 'hidden',
-            borderRight: '1px solid var(--c-border)',
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
-              padding: '12px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexShrink: 0,
-              borderBottom: '1px solid var(--c-border)',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '9px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--c-text-secondary)',
-              }}
-            >
-              SETLIST
-            </span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <PlusMenu
-                openWidth={180}
-                openHeight={100}
-                closedSize={32}
-                closedRadius={16}
-                openRadius={14}
-                triggerAriaLabel={t.songs.newSong}
-                triggerIcon={
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                    add
-                  </span>
-                }
-                style={{
-                  background: 'var(--surface-dialog-bg, #1c1c22)',
-                  borderColor: 'var(--c-border)',
-                }}
-              >
-                {({ close }) => (
-                  <div className="flex flex-col p-1.5 gap-1 w-full h-full justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        close();
-                        setEditingId(null);
-                        setShowForm(true);
-                      }}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]" style={{ color: accent.from }}>
-                        add
-                      </span>
-                      <span>{t.songs.newSong}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        close();
-                        setShowImport(true);
-                      }}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--c-text-secondary)' }}>
-                        upload_file
-                      </span>
-                      <span>{t.songs.importSong}</span>
-                    </button>
-                  </div>
-                )}
-              </PlusMenu>
-            </div>
-          </div>
-          {/* List of songs */}
-          <div className="flex-1 overflow-y-auto no-scrollbar" style={{ padding: '8px' }}>
-            {presets.length === 0 ? (
-              <div
-                style={{
-                  padding: '24px',
-                  textAlign: 'center',
-                  color: 'var(--c-text-muted)',
-                  fontSize: '12px',
-                }}
-              >
-                No Songs
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {presets.map((p) => {
-                  const isActive = p.id === activePresetId;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => setActivePreset(p.id)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        textAlign: 'left',
-                        background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        transition: 'background 150ms ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          width: '100%',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: '12.5px',
-                            fontWeight: isActive ? '700' : '500',
-                            color: isActive ? '#fff' : 'var(--c-text-primary)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {p.name}
-                        </span>
-                        {p.key && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              color: 'var(--c-text-secondary)',
-                              opacity: 0.8,
-                            }}
-                          >
-                            {p.key}
-                          </span>
-                        )}
-                      </div>
-                      {p.artist && (
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            color: 'var(--c-text-secondary)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {p.artist}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+                {/* Left Column: Setlist song list */}
+        <SongLibraryList
+          presets={presets}
+          activePresetId={activePresetId}
+          setActivePreset={setActivePreset}
+          setEditingId={setEditingId}
+          setShowForm={setShowForm}
+          setShowImport={setShowImport}
+          accent={accent}
+          t={t}
+        />
 
         {/* Right Column: Preset Editor or Empty State */}
         <div
@@ -6682,7 +6071,7 @@ export default function SongsPanel() {
 
         {/* Form and Modals */}
         {showForm && (
-          <PresetForm
+          <SongEditorForm
             accent={accent}
             initial={editingFormData}
             isEditing={Boolean(editingId)}
@@ -6750,7 +6139,7 @@ export default function SongsPanel() {
   return (
     <div className="flex flex-col h-full overflow-hidden app-bg" style={{ position: 'relative' }}>
       {showForm && (
-        <PresetForm
+        <SongEditorForm
           accent={accent}
           initial={editingFormData}
           isEditing={Boolean(editingId)}
