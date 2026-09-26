@@ -974,7 +974,7 @@ class HouseKitPool {
       { name: 'tom14', vels: ['hard', 'med', 'soft'] },
     ];
 
-    const tasks: Promise<void>[] = [];
+    const tasks: (() => Promise<void>)[] = [];
     let total = 0;
     let loaded = 0;
 
@@ -987,28 +987,37 @@ class HouseKitPool {
           const loadMic = name === 'kick' && mic === 'oh' ? 'blend' : mic;
           const key = this._key(name, loadMic, vel, rr);
           const path = `/drums/realistic/${name}/${loadMic}/${vel}_${rr}.opus`;
-          tasks.push(
-            (async () => {
-              try {
-                const url = await drumAssetUrl(path);
-                const resp = await fetch(url, { cache: 'force-cache' });
-                if (!resp.ok) return;
-                const ab = await resp.arrayBuffer();
-                const buf = await ctx.decodeAudioData(ab);
-                this._buffers.set(key, buf);
-              } catch {
-                /* silently skip missing files */
-              }
-              loaded++;
-              this.onStatusChange?.(loaded, total);
-            })()
-          );
+          tasks.push(async () => {
+            try {
+              const url = await drumAssetUrl(path);
+              const resp = await fetch(url, { cache: 'force-cache' });
+              if (!resp.ok) return;
+              const ab = await resp.arrayBuffer();
+              const buf = await ctx.decodeAudioData(ab);
+              this._buffers.set(key, buf);
+            } catch {
+              /* silently skip missing files */
+            }
+            loaded++;
+            this.onStatusChange?.(loaded, total);
+          });
         }
       }
     }
 
-    await Promise.all(tasks);
+    // Run decodes with bounded concurrency (max 6 simultaneous) to avoid
+    // saturating the audio thread and causing jank on kit load.
+    const DECODE_CONCURRENCY = 6;
+    const queue = [...tasks];
+    const workers = Array.from({ length: Math.min(DECODE_CONCURRENCY, queue.length) }, async () => {
+      while (queue.length > 0) {
+        const task = queue.shift()!;
+        await task();
+      }
+    });
+    await Promise.all(workers);
     this._loaded = true;
+
     this._loading = false;
   }
 
@@ -2188,13 +2197,19 @@ function playSoundAt(
     gateGain.connect(chainInput);
     noteDest = gateGain;
 
-    // Disconnect the GainNode after envelope completes so it can be GC'd
-    const msUntilDone = (hold + release + 0.2) * 1000;
-    setTimeout(() => {
-      try {
-        gateGain.disconnect(chainInput);
-      } catch {}
-    }, msUntilDone);
+    // Disconnect the GainNode after envelope completes using audio-clock timing.
+    // A 1-sample dummy source stopped at the envelope end fires onended off the main thread,
+    // avoiding a JS setTimeout that would pin the main thread for up to ~2 s.
+    const gateEndTime = t + 0.002 + hold + release + 0.05; // small tail buffer
+    const sentinel = ctx.createBufferSource();
+    sentinel.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    sentinel.connect(ctx.destination);
+    sentinel.onended = () => {
+      try { gateGain.disconnect(chainInput); } catch {}
+      try { sentinel.disconnect(); } catch {}
+    };
+    sentinel.start(gateEndTime);
+    sentinel.stop(gateEndTime + 1 / ctx.sampleRate);
   }
 
   // ── House Kit — multi-velocity + round-robin sample playback ─────────────────
