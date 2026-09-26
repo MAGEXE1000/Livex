@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.48';
-export const NATIVE_VERSION_CODE = 40648;
-export const WEB_VERSION = '4.6.48';
+export const NATIVE_VERSION = '4.6.49';
+export const NATIVE_VERSION_CODE = 40649;
+export const WEB_VERSION = '4.6.49';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/24/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '220fd909';
+export const APP_COMMIT_SHA = '4e2cd9b4';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/25/2026, 5:13:21 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/25/2026, 6:09:25 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,17 +98,11 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      '120 Hz Playback Frame Pacing: Decoupled Chordex SongPracticeView playback timer loop from React re-renders using direct DOM property updates for the slider and time label, updating React state only on chord, line, or lyric segment transitions to reduce render load by ~99.5%.',
-      'Sequencer Layout Thrashing Elimination: Cached scroll container viewport dimensions via ResizeObserver in Drumex DrumEditor and decoupled DOM geometry reads from style writes in onStep to prevent forced synchronous reflows on every drum step.',
-      'Navigation Store Subscription Isolation: Narrowed navigation subscriptions to primitive selectors across SongsPanel, LivexHub, and useLibraryState, preventing background re-renders during unrelated app navigation.',
-      'Smooth Search Query Deferral: Integrated React.useDeferredValue for song preset filtering to ensure instant 120 FPS keyboard response during typing.',
-      'Vocalex Audio Playback Throttling: Capped waveform progress updates in TakeDetailView and LabPanel to ~40 FPS during playback to eliminate sub-millisecond render storms.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Unused Imports & Deprecated References: Removed unused SongCardGrid import and consolidated 24 discrete Zustand action subscriptions into unified shallow selectors.',
+      'Restored Taller Navbar Geometry: Restored canonical 58px navbar height and 58px circular satellite buttons matching the vertical dock center with generous negative space.',
+      'Zero-Clipping Active Highlight Containment: Configured `overflow: visible` on the inner navigation container and established 5px uniform insets around the 48px highlight capsule, completely eliminating lower-edge and rounded-corner clipping artifacts on Android WebView.',
+      'Apple-Grade Fluid Spring Physics: Replaced high-stiffness, low-mass snapping with critically damped fluid spring physics (`stiffness: 280, damping: 32, mass: 1.0`), delivering a subtle sense of physical inertia, controlled momentum, and smooth glide without cheap bounce or overshoot.',
+      '0ms Press Response & Full Interruption: Added `onPointerDown` tap listeners to initiate highlight motion the instant the finger touches the screen, and removed redundant 100ms throttle guards so rapid tab sequences retarget velocity seamlessly.',
+      'Balanced Optical Vertical Centering: Aligned icon (22px) and label (10.5px) in an optically centered flex hierarchy with balanced negative space above and below.',
     ],
   },
 ];
@@ -120,6 +114,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.49',
+    date: '2026-09-25',
+    highlights: [
+      'Restored Taller Navbar Geometry: Restored canonical 58px navbar height and 58px circular satellite buttons matching the vertical dock center with generous negative space.',
+      'Zero-Clipping Active Highlight Containment: Configured `overflow: visible` on the inner navigation container and established 5px uniform insets around the 48px highlight capsule, completely eliminating lower-edge and rounded-corner clipping artifacts on Android WebView.',
+      'Apple-Grade Fluid Spring Physics: Replaced high-stiffness, low-mass snapping with critically damped fluid spring physics (`stiffness: 280, damping: 32, mass: 1.0`), delivering a subtle sense of physical inertia, controlled momentum, and smooth glide without cheap bounce or overshoot.',
+      '0ms Press Response & Full Interruption: Added `onPointerDown` tap listeners to initiate highlight motion the instant the finger touches the screen, and removed redundant 100ms throttle guards so rapid tab sequences retarget velocity seamlessly.',
+      'Balanced Optical Vertical Centering: Aligned icon (22px) and label (10.5px) in an optically centered flex hierarchy with balanced negative space above and below.',
+    ],
+  },
   {
     version: '4.6.48',
     date: '2026-09-25',
@@ -217,18 +222,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'PaceUI In-Place Morphing Updater: Transformed the updater into one persistent dialog surface where Cancel and Download & Install seamlessly morph into progress and installing states.',
       "Clean Updater Header Layout: Removed the redundant top-right close 'X' button to achieve clean symmetrical header typography, anchoring all cancellation to the dedicated bottom action controls.",
       'Real Measured Updater Telemetry: Replaced all static and arbitrary size fallbacks with 100% measured byte calculations from hardware network events and remote manifests.',
-    ],
-  },
-  {
-    version: '4.6.39',
-    date: '2026-09-23',
-    highlights: [
-      'Unified Three-State Theme Toggle: Replaced disjoint theme controls with one unified cyclic three-state theme toggle (WHITE → BLACK → AMOLED) across top bar and settings.',
-      'Shadcn Motion Theme Integrations: Integrated @toggles/around and @toggles/eclipse micro-interaction toggles for fluid, spring-physics theme transitions.',
-      'Enterprise Music AI Assistant Gateway: Integrated Gemini 2.5 streaming backend with Google Search grounding and domain-specific music engineering knowledge.',
-      'Contextual Assistant Audio Attachments: Added quick attachment injection for Vocal Pitch, Chords & Key, Stage Plot, Audio Stems, and Drum Patterns.',
-      'Theme Cycle State Architecture: Enforced persistent, single-source-of-truth three-state theme progression with comprehensive unit test coverage.',
-      'Assistant Studio Layout & Stream Fluidity: Optimized chat stream response rendering with sub-5ms TTFT, zero emoji fluff, and auto-scroll pinning.',
     ],
   },
 ];
