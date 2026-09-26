@@ -2483,7 +2483,7 @@ class DrumScheduler {
     }
   }
 
-  private scheduleNote(step: number, time: number) {
+  private scheduleNote(step: number, time: number, drumPrefs: ReturnType<typeof useDrumStore.getState>['drumPrefs']) {
     if (!this._pattern || !_masterGain) return;
     const spm = stepsPerMeasure(this._pattern);
     const mIdx = Math.floor(step / spm);
@@ -2491,12 +2491,11 @@ class DrumScheduler {
     if (mIdx >= this._pattern.measures.length) return;
 
     // ── Metronome scheduling on the audio thread ──
-    const prefs = useDrumStore.getState().drumPrefs;
-    if (prefs.metronome) {
+    if (drumPrefs.metronome) {
       const spBeat = spm / 4;
       if (sInM % spBeat === 0) {
         const isBeat1 = sInM === 0;
-        this.playMetronomeClickAt(time, isBeat1, prefs.metronomeSound || 'classic');
+        this.playMetronomeClickAt(time, isBeat1, drumPrefs.metronomeSound || 'classic');
       }
     }
 
@@ -2543,10 +2542,12 @@ class DrumScheduler {
     const now = _ctx.currentTime;
     const sub = this.subLoopBounds();
     const shouldLoop = sub !== null || this._looping;
+    const drumPrefs = useDrumStore.getState().drumPrefs;
 
     while (this._nextStepTime < now + (this._lowLatency ? LOOKAHEAD_S_LOW : LOOKAHEAD_S)) {
       const playTime = this._nextStepTime + this.swingShift(this._currentStep);
-      this.scheduleNote(this._currentStep, playTime);
+      this.scheduleNote(this._currentStep, playTime, drumPrefs);
+
       this._nextStepTime += this.secPerStep();
       this._currentStep++;
       const insideSub = sub !== null && this._currentStep > sub.startStep;
@@ -2721,10 +2722,12 @@ export const drumScheduler = new DrumScheduler();
 let _lastActivePatternId: string | null = null;
 let _lastActivePatternRef: unknown = null;
 
-// Subscribe to active pattern changes in useDrumStore to update the scheduler immediately
-useDrumStore.subscribe((state) => {
-  const activePattern =
-    state.patterns.find((p) => p.id === state.activePatternId) ?? state.patterns[0];
+// Subscribe to active pattern changes in useDrumStore to update the scheduler immediately.
+// The callback short-circuits on the inner identity checks so unrelated store updates are
+// effectively ignored without requiring the subscribeWithSelector middleware.
+const _unsubDrumStore = useDrumStore.subscribe((state) => {
+  const { patterns, activePatternId } = state;
+  const activePattern = patterns.find((p) => p.id === activePatternId) ?? patterns[0];
   if (
     activePattern &&
     (activePattern.id !== _lastActivePatternId || activePattern !== _lastActivePatternRef)
@@ -2734,3 +2737,5 @@ useDrumStore.subscribe((state) => {
     drumScheduler.updatePattern(activePattern);
   }
 });
+// Module-level subscription — intentionally retained for the lifetime of the module.
+void _unsubDrumStore;

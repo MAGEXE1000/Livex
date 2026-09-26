@@ -198,8 +198,7 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
 
   useEffect(() => {
     let rafId: number | null = null;
-    let pollTimer: any = null;
-    let pollCount = 0;
+    let mo: MutationObserver | null = null;
 
     const checkAndBind = () => {
       const el = ref.current;
@@ -219,9 +218,9 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
       lastElementRef.current = el;
 
       if (el) {
-        if (pollTimer) {
-          clearInterval(pollTimer);
-          pollTimer = null;
+        if (mo) {
+          mo.disconnect();
+          mo = null;
         }
         _registeredScrollElements.add(el);
 
@@ -274,21 +273,20 @@ export function useScrollHide(ref: React.RefObject<HTMLElement | null>, dependen
 
     if (!ref.current) {
       rafId = requestAnimationFrame(checkAndBind);
-      pollTimer = setInterval(() => {
-        pollCount++;
-        checkAndBind();
-        if (ref.current || pollCount > 30) {
-          if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
-          }
+      mo = new MutationObserver(() => {
+        if (ref.current) {
+          mo!.disconnect();
+          mo = null;
+          checkAndBind();
         }
-      }, 50);
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
     }
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
-      if (pollTimer !== null) clearInterval(pollTimer);
+      if (mo !== null) { mo.disconnect(); mo = null; }
+
       const el = lastElementRef.current;
       if (el) {
         _registeredScrollElements.delete(el);
