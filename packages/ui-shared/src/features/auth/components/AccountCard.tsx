@@ -36,7 +36,7 @@ import { Loader } from '../../../components/motion/loader';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
-import StudioAuthCard from './StudioAuthCard';
+import { AccountSignInFlow } from './settings/AccountSignInFlow';
 import { AccountDangerZone } from './settings/AccountDangerZone';
 import { SettingsRow } from './settings/SettingsRow';
 import { isFirebaseConfigured, type AuthUser, authRepository } from '@workspace/livex-core';
@@ -662,41 +662,7 @@ export default function AccountCard({ accent, cardStyle, rowStyle, onAccountSett
     );
   }
 
-  async function doGoogle() {
-    setBusy(true);
-    setErr(null);
-    try {
-      await authRepository.signInGoogle();
-    } catch (e) {
-      setErr(prettyErr(e, lang));
-    } finally {
-      setBusy(false);
-    }
-  }
 
-  async function doEmailSubmit(
-    submitMode: 'email-signin' | 'email-register',
-    submitEmail: string,
-    submitPassword: string,
-    submitName?: string
-  ) {
-    if (!submitEmail.trim() || !submitPassword) {
-      setErr(t.errMissing);
-      return;
-    }
-    setBusy(true);
-    setErr(null);
-    try {
-      if (submitMode === 'email-signin')
-        await authRepository.signInEmail(submitEmail, submitPassword);
-      else await authRepository.registerEmail(submitEmail, submitPassword, submitName || '');
-    } catch (e) {
-      setErr(prettyErr(e, lang));
-      throw e;
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function doSyncNow() {
     setBusy(true);
@@ -954,14 +920,14 @@ export default function AccountCard({ accent, cardStyle, rowStyle, onAccountSett
 
   // ── Signed out ──
   return (
-    <StudioAuthCard
+    <AccountSignInFlow
       accent={accent}
+      lang={lang}
       t={t}
       busy={busy}
+      setBusy={setBusy}
       err={err}
       setErr={setErr}
-      doGoogle={doGoogle}
-      doEmailSubmit={doEmailSubmit}
     />
   );
 }
@@ -969,7 +935,7 @@ export default function AccountCard({ accent, cardStyle, rowStyle, onAccountSett
 // ── Standalone Danger Zone (rendered in StudioHub below Language) ────────────
 
 
-function prettyErr(e: unknown, lang: string): string {
+export function prettyErr(e: unknown, lang: string): string {
   const code = (e as { code?: string })?.code ?? '';
   const msg = (e as { message?: string })?.message ?? 'Unknown error';
   const es = lang === 'es';
