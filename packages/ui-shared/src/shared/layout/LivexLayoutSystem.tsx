@@ -275,39 +275,13 @@ export function SharedFloatingHeader({
         boxSizing: 'border-box',
       }}
     >
-      {/* Flagship Progressive Scrim Layer at Top of Scroll Container */}
+      {/* Progressive Scrim Layer (Zero-cost display none to prevent dark tinting) */}
       <div
         ref={progressiveBlurRef}
         aria-hidden="true"
         data-testid="shared-floating-header-progressive-blur"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 'calc(env(safe-area-inset-top, 0px) + 88px)',
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: 0,
-          overflow: 'hidden',
-          maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.6) 40%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.6) 40%, transparent 100%)',
-        }}
-      >
-        {/* Ambient atmospheric gradient scrim to preserve theme luminance without redundant GPU blur passes */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: isLight
-              ? 'linear-gradient(to bottom, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.15) 55%, transparent 100%)'
-              : isAmoled
-                ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.70) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 100%)'
-                : 'linear-gradient(to bottom, rgba(14, 14, 18, 0.50) 0%, rgba(14, 14, 18, 0.20) 55%, transparent 100%)',
-            pointerEvents: 'none',
-          }}
-        />
-      </div>
+        style={{ display: 'none' }}
+      />
 
       <header
         ref={actualHeaderRef}
@@ -329,56 +303,28 @@ export function SharedFloatingHeader({
           userSelect: 'none',
         }}
       >
-        {/* Canonical Persistent Liquid Glass Surface (Smoothly forms on scroll, dissolves on top) */}
+        {/* Canonical Persistent Navigation Surface (Inherits identical visual material as bottom navbar) */}
         <div
           ref={glassSurfaceRef}
           data-testid="shared-floating-header-glass-surface"
+          className="shared-topbar-surface glass-nav"
           style={{
             position: 'absolute',
             inset: 0,
             borderRadius: '9999px',
+            clipPath: 'inset(0 round 9999px)',
             background: 'var(--surface-topbar-bg)',
             border: 'var(--surface-topbar-border)',
-            backdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
-            WebkitBackdropFilter: 'var(--surface-topbar-backdrop, var(--surface-topbar-blur))',
+            backdropFilter: 'var(--surface-topbar-backdrop)',
+            WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
-            opacity: 0,
-            visibility: 'hidden',
             zIndex: 0,
           }}
-        >
-          {/* Internal Optical Specular Reflection Plane (Hardware-accelerated subtle gradient reflection) */}
-          <div
-            className="liquid-glass-refraction"
-            style={{
-              position: 'absolute',
-              inset: '-2px',
-              borderRadius: 'inherit',
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%, rgba(255, 255, 255, 0.02) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
+        />
 
-          {/* Subtle Specular Top Curvature Sheen Response */}
-          <div
-            ref={specularRef}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'inherit',
-              background: isLight
-                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.25) 0%, transparent 100%)'
-                : isAmoled
-                ? 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.10) 0%, transparent 100%)'
-                : 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 100%)',
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
-
-        {/* Left Back Action Button (Tightly positioned toward left edge with >=44px touch hit area) */}
+        {/* Left Back Action Button (Integrated seamlessly inside canonical topbar capsule) */}
         {onBack && !hideBack ? (
           <motion.button
             type="button"
@@ -397,11 +343,9 @@ export function SharedFloatingHeader({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'var(--surface-pill-bg)',
-              border: 'var(--surface-pill-border)',
-              backdropFilter: 'var(--surface-pill-backdrop)',
-              WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
-              boxShadow: 'var(--surface-pill-shadow)',
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
               color: 'var(--c-text-primary)',
               cursor: 'pointer',
               zIndex: 2,
@@ -409,7 +353,7 @@ export function SharedFloatingHeader({
               outline: 'none',
               WebkitTapHighlightColor: 'transparent',
               flexShrink: 0,
-              marginLeft: '2px',
+              marginLeft: '4px',
               position: 'relative',
               transform: 'scale(var(--morph-btn-scale, 1))',
             }}

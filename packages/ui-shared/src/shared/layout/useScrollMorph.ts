@@ -171,27 +171,16 @@ export function useScrollMorph({
         titleEl.style.transformOrigin = 'center center';
       }
 
-      // ── 6. Liquid Glass Material Progressive Emergence ─────────────────────────────
+      // ── 6. Canonical Navigation Material Surface (Persistent across all scroll states) ──
       if (glassEl) {
         glassEl.style.borderRadius = '9999px';
-        if (p <= 0.005) {
-          glassEl.style.opacity = '0';
-          glassEl.style.visibility = 'hidden';
-        } else {
-          glassEl.style.visibility = 'visible';
-          const surfaceAlpha = Math.min(1, Math.max(0, p));
-          glassEl.style.opacity = surfaceAlpha.toFixed(3);
-        }
+        glassEl.style.opacity = '1';
+        glassEl.style.visibility = 'visible';
       }
 
-      // ── 7. Progressive Blur Zone Interpolation (Subtle ambience without rectangular boundary) ──
+      // ── 7. Progressive Blur Zone (Disabled to prevent dark tinting) ──
       if (blurEl) {
-        if (p <= 0.005) {
-          blurEl.style.opacity = '0';
-        } else {
-          const blurAlpha = Math.min(0.35, Math.max(0, p * 0.35));
-          blurEl.style.opacity = blurAlpha.toFixed(3);
-        }
+        blurEl.style.display = 'none';
       }
     },
     [headerRef, titleRef, glassSurfaceRef, progressiveBlurRef]

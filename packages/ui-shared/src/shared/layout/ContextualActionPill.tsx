@@ -45,12 +45,10 @@ export const ContextualActionPill: React.FC<ContextualActionPillProps> = ({
       className={`contextual-action-pill pointer-events-auto flex items-center rounded-full ${className}`}
       style={{
         height: 38,
-        padding: '0 3px',
-        background: 'var(--surface-pill-bg)',
-        border: 'var(--surface-pill-border)',
-        backdropFilter: 'var(--surface-pill-backdrop)',
-        WebkitBackdropFilter: 'var(--surface-pill-backdrop)',
-        boxShadow: 'var(--surface-pill-shadow)',
+        padding: '0 2px',
+        background: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
         boxSizing: 'border-box',
         ...style,
       }}

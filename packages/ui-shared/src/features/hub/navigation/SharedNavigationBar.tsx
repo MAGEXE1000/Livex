@@ -959,9 +959,7 @@ export function SharedNavigationBar({
                 height: `${NAV_BAR_HEIGHT}px`,
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
-                boxShadow: isLight
-                  ? '0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)'
-                  : '0 8px 32px -4px rgba(0, 0, 0, 0.50), 0 2px 8px -2px rgba(0, 0, 0, 0.35)',
+                boxShadow: 'var(--surface-topbar-shadow)',
                 backdropFilter: 'var(--surface-topbar-backdrop)',
                 WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
                 display: 'flex',
