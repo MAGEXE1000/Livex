@@ -48,9 +48,9 @@ import {
   VocalexLogo,
 } from '../../chordex/icons/ChordexLogo';
 import AccountCard, {
-  AccountDangerZone,
   AccountSettingsPage,
 } from '../../auth/components/AccountCard';
+import { AccountDangerZone } from '../../auth/components/settings/AccountDangerZone';
 const DevToolsDashboard = lazy(() => import('../../devtools/components/DevToolsDashboard'));
 import {
   useBackHandler,

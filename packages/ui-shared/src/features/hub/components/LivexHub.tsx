@@ -126,9 +126,9 @@ const syncController = {
 };
 
 import AccountCard, {
-  AccountDangerZone,
   AccountSettingsPage,
 } from '../../auth/components/AccountCard';
+import { AccountDangerZone } from '../../auth/components/settings/AccountDangerZone';
 import { AssistantChatView } from '../../assistant/pages/AssistantChatView';
 
 import {
