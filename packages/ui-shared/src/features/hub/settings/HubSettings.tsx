@@ -397,6 +397,9 @@ function getUpdaterStatusText(updater: any, lang: string) {
     return lang === 'es' ? 'Actualización disponible' : 'Update available';
   }
 
+  return lang === 'es' ? 'Al día' : 'Up to date';
+}
+
 function UpdaterSettingsContent({
   lang,
   updater,
