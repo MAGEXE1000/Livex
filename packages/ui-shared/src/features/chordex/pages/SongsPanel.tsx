@@ -1771,6 +1771,63 @@ function PaperPreview({
 }
 
 /* ──────────────────── Export Config Modal ──────────────────── */
+const Toggle = ({
+  on,
+  onChange,
+  accent,
+}: {
+  on: boolean;
+  onChange: () => void;
+  accent: { from: string; to: string };
+}) => (
+  <LiquidSwitch
+    checked={on}
+    onChange={() => onChange()}
+    size="sm"
+    accentFrom={accent.from}
+    accentTo={accent.to}
+  />
+);
+
+const Row = ({ label, sub, right }: { label: string; sub?: string; right: React.ReactNode }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 16px',
+      background: 'var(--app-surface-high)',
+      borderRadius: '14px',
+    }}
+  >
+    <div>
+      <p
+        style={{
+          fontFamily: 'var(--font-headline)',
+          fontWeight: 600,
+          fontSize: '14px',
+          color: 'var(--c-text-primary)',
+        }}
+      >
+        {label}
+      </p>
+      {sub && (
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '11px',
+            color: 'var(--c-text-secondary)',
+            marginTop: '1px',
+          }}
+        >
+          {sub}
+        </p>
+      )}
+    </div>
+    {right}
+  </div>
+);
+
 function ExportModal({
   preset,
   accent,
@@ -1842,16 +1899,6 @@ function ExportModal({
     }
   };
 
-  /* Appllama LiquidSwitch */
-  const Toggle = ({ on, onChange }: { on: boolean; onChange: () => void }) => (
-    <LiquidSwitch
-      checked={on}
-      onChange={() => onChange()}
-      size="sm"
-      accentFrom={accent.from}
-      accentTo={accent.to}
-    />
-  );
 
   /* Segmented control */
   const Segment = <T extends string>({
@@ -1900,45 +1947,6 @@ function ExportModal({
     </div>
   );
 
-  /* Settings row */
-  const Row = ({ label, sub, right }: { label: string; sub?: string; right: React.ReactNode }) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 16px',
-        background: 'var(--app-surface-high)',
-        borderRadius: '14px',
-      }}
-    >
-      <div>
-        <p
-          style={{
-            fontFamily: 'var(--font-headline)',
-            fontWeight: 600,
-            fontSize: '14px',
-            color: 'var(--c-text-primary)',
-          }}
-        >
-          {label}
-        </p>
-        {sub && (
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '11px',
-              color: 'var(--c-text-secondary)',
-              marginTop: '1px',
-            }}
-          >
-            {sub}
-          </p>
-        )}
-      </div>
-      {right}
-    </div>
-  );
 
   const totalChordCount = preset.sections?.length
     ? preset.sections.reduce((n, s) => n + s.chords.length, 0)
@@ -2570,6 +2578,53 @@ export interface ImportSongContentProps {
   onClose?: () => void;
 }
 
+const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '16px 16px 12px',
+      flexShrink: 0,
+    }}
+  >
+    <Button
+      variant="secondary"
+      size="icon"
+      onClick={onClose}
+      style={{ borderRadius: '50%', width: 38, height: 38 }}
+      icon="close"
+    />
+    <p
+      style={{
+        fontFamily: 'var(--font-headline)',
+        fontWeight: 800,
+        fontSize: '18px',
+        color: 'var(--c-text-primary)',
+      }}
+    >
+      {title}
+    </p>
+  </div>
+);
+
+const Pill = ({ label, color }: { label: string; color: string }) => (
+  <span
+    style={{
+      padding: '3px 10px',
+      borderRadius: '9999px',
+      background: `${color}18`,
+      color,
+      fontFamily: 'var(--font-headline)',
+      fontWeight: 700,
+      fontSize: '11px',
+      border: `1px solid ${color}33`,
+    }}
+  >
+    {label}
+  </span>
+);
+
 export function ImportSongContent({
   accent,
   existingPresets,
@@ -2690,54 +2745,7 @@ export function ImportSongContent({
     setConflictId(null);
   };
 
-  /* ── Shared header ── */
-  const ModalHeader = ({ title }: { title: string }) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '16px 16px 12px',
-        flexShrink: 0,
-      }}
-    >
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={onClose}
-        style={{ borderRadius: '50%', width: 38, height: 38 }}
-        icon="close"
-      />
-      <p
-        style={{
-          fontFamily: 'var(--font-headline)',
-          fontWeight: 800,
-          fontSize: '18px',
-          color: 'var(--c-text-primary)',
-        }}
-      >
-        {title}
-      </p>
-    </div>
-  );
 
-  /* ── Pill badge ── */
-  const Pill = ({ label, color }: { label: string; color: string }) => (
-    <span
-      style={{
-        padding: '3px 10px',
-        borderRadius: '9999px',
-        background: `${color}18`,
-        color,
-        fontFamily: 'var(--font-headline)',
-        fontWeight: 700,
-        fontSize: '11px',
-        border: `1px solid ${color}33`,
-      }}
-    >
-      {label}
-    </span>
-  );
 
   return (
     <>
@@ -4451,7 +4459,7 @@ export default function SongsPanel() {
     const slot = dragStartIdx.current;
 
     // â”€â”€ Clamp pointer to screen AND list bounds so items can't fly off screen â”€â”€
-    const containerRect = editorScrollRef.current?.getBoundingClientRect();
+    const containerRect = cachedContainerRectRef.current;
     const screenClampedY = containerRect
       ? Math.max(containerRect.top + 8, Math.min(containerRect.bottom - 8, clientY))
       : clientY;
@@ -4491,6 +4499,7 @@ export default function SongsPanel() {
 
   // Core end logic â€” uses refs so it's safe to call from a window listener
   const executeDragEnd = () => {
+    cachedContainerRectRef.current = null;
     const presetId = activePresetIdRef.current;
     if (presetId !== null) updatePreset(presetId, { chords: localChordsRef.current });
     dragNodeRef.current = null;
@@ -4506,6 +4515,7 @@ export default function SongsPanel() {
     dragPointerIdRef.current = e.pointerId;
     dragStartY.current = e.clientY;
     dragStartIdx.current = index;
+    cachedContainerRectRef.current = editorScrollRef.current?.getBoundingClientRect() ?? null;
     dragDeltaRef.current = 0;
     dragCountRef.current = localChords.length;
     setDragIdx(index);
@@ -4633,6 +4643,8 @@ export default function SongsPanel() {
   }, [activePreset?.sections, secDragIdx]);
 
   const localSectionsRef = useRef<SongSection[]>([]);
+  const cachedContainerRectRef = useRef<DOMRect | null>(null);
+  const cachedNodeHeightRef = useRef<number>(0);
   const lastSwapTime = useRef<number>(0);
 
   const onSecDragStart = (e: React.PointerEvent, index: number) => {
@@ -4641,6 +4653,8 @@ export default function SongsPanel() {
     secGrabOffsetY.current = nodeEl ? e.clientY - nodeEl.getBoundingClientRect().top : 0;
     secRawRef.current = 0;
     secDragStartIdx.current = index;
+    cachedContainerRectRef.current = editorScrollRef.current?.getBoundingClientRect() ?? null;
+    cachedNodeHeightRef.current = nodeEl?.offsetHeight ?? 0;
     lastSwapTime.current = 0;
     localSectionsRef.current = [...localSections];
     setSecDragIdx(index);
@@ -4651,12 +4665,12 @@ export default function SongsPanel() {
     if (!node) return;
 
     const slot = secDragStartIdx.current;
-    const containerRect = editorScrollRef.current?.getBoundingClientRect();
+    const containerRect = cachedContainerRectRef.current;
 
     // Natural (untransformed) top â€” derived from the TRACKED raw, never from a drifting origin.
     const nodeRect = node.getBoundingClientRect();
     const nodeNatTop = nodeRect.top - secRawRef.current;
-    const nodeH = node.offsetHeight;
+    const nodeH = cachedNodeHeightRef.current;
 
     // Where the user wants the node top to be (unconstrained).
     const desiredTop = e.clientY - secGrabOffsetY.current;
@@ -4732,6 +4746,8 @@ export default function SongsPanel() {
   };
 
   const onSecDragEnd = () => {
+    cachedContainerRectRef.current = null;
+    cachedNodeHeightRef.current = 0;
     const node = secDragNodeRef.current;
     if (node) {
       node.style.transform = '';

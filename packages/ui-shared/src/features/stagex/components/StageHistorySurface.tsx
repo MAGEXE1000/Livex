@@ -45,12 +45,15 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
   // Auto-scroll active history card into view
   useEffect(() => {
     if (historyContainerRef.current && currentIndex >= 0) {
-      const activeEl = historyContainerRef.current.querySelector<HTMLElement>(
-        `[data-testid="history-item-${currentIndex}"]`
-      );
-      if (activeEl) {
-        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      }
+      requestAnimationFrame(() => {
+        if (!historyContainerRef.current) return;
+        const activeEl = historyContainerRef.current.querySelector<HTMLElement>(
+          `[data-testid="history-item-${currentIndex}"]`
+        );
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      });
     }
   }, [currentIndex]);
 

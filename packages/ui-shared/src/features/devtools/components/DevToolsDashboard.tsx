@@ -453,6 +453,120 @@ const WarningsInspector = ({ logs, showToast, moduleFilter, appKey }: WarningsIn
   );
 };
 
+  // Reusable Phone-Responsive Diagnostics Components
+  const CollapsibleSection = ({
+    title,
+    collapsed,
+    onToggle,
+    children,
+  }: {
+    title: string;
+    collapsed: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+  }) => (
+    <div
+      style={{
+        background: 'var(--app-surface-high, var(--app-surface))',
+        border: '1px solid var(--c-border)',
+        borderRadius: 14,
+        marginBottom: 12,
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--c-text-primary)',
+          fontFamily: 'var(--studio-font-display)',
+          fontWeight: 800,
+          fontSize: '13px',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span>{title}</span>
+        <span
+          className="material-symbols-outlined"
+          style={{
+            fontSize: 18,
+            transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        >
+          expand_more
+        </span>
+      </button>
+      {!collapsed && (
+        <div
+          style={{
+            padding: '14px 16px',
+            borderTop: '1px solid var(--c-border)',
+            background: 'var(--app-surface-low, var(--app-surface))',
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+
+  const DiagnosticField = ({
+    label,
+    value,
+    isCode,
+  }: {
+    label: string;
+    value: string | null;
+    isCode?: boolean;
+  }) => (
+    <div style={{ marginBottom: 12 }}>
+      <label
+        style={{
+          display: 'block',
+          fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
+          fontWeight: 700,
+          fontSize: 10,
+          color: 'var(--c-text-secondary)',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </label>
+      <div
+        style={{
+          fontFamily: isCode ? 'monospace' : 'Inter',
+          fontSize: isCode ? 11 : 13,
+          lineHeight: 1.4,
+          color: 'var(--c-text-primary)',
+          overflowWrap: 'break-word',
+                      wordBreak: 'normal',
+          whiteSpace: 'pre-wrap',
+          background: isCode ? 'var(--app-surface-bright, var(--app-surface))' : 'transparent',
+          border: isCode ? '1px solid var(--c-border)' : 'none',
+          padding: isCode ? '6px 10px' : 0,
+          borderRadius: isCode ? 6 : 0,
+          maxHeight: isCode ? 120 : 'none',
+          overflowY: isCode ? 'auto' : 'visible',
+        }}
+      >
+        {value || 'N/A'}
+      </div>
+    </div>
+  );
 export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props) {
   const settings = useSettingsStore(
     useShallow((state) => ({
@@ -1090,120 +1204,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     failures: false,
   });
 
-  // Reusable Phone-Responsive Diagnostics Components
-  const CollapsibleSection = ({
-    title,
-    collapsed,
-    onToggle,
-    children,
-  }: {
-    title: string;
-    collapsed: boolean;
-    onToggle: () => void;
-    children: React.ReactNode;
-  }) => (
-    <div
-      style={{
-        background: 'var(--app-surface-high, var(--app-surface))',
-        border: '1px solid var(--c-border)',
-        borderRadius: 14,
-        marginBottom: 12,
-        overflow: 'hidden',
-      }}
-    >
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-
-        style={{
-          width: '100%',
-          padding: '12px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--c-text-primary)',
-          fontFamily: 'var(--studio-font-display)',
-          fontWeight: 800,
-          fontSize: '13px',
-          cursor: 'pointer',
-          textAlign: 'left',
-        }}
-      >
-        <span>{title}</span>
-        <span
-          className="material-symbols-outlined"
-          style={{
-            fontSize: 18,
-            transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
-          }}
-        >
-          expand_more
-        </span>
-      </button>
-      {!collapsed && (
-        <div
-          style={{
-            padding: '14px 16px',
-            borderTop: '1px solid var(--c-border)',
-            background: 'var(--app-surface-low, var(--app-surface))',
-          }}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-
-  const DiagnosticField = ({
-    label,
-    value,
-    isCode,
-  }: {
-    label: string;
-    value: string | null;
-    isCode?: boolean;
-  }) => (
-    <div style={{ marginBottom: 12 }}>
-      <label
-        style={{
-          display: 'block',
-          fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
-          fontWeight: 700,
-          fontSize: 10,
-          color: 'var(--c-text-secondary)',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          marginBottom: 4,
-        }}
-      >
-        {label}
-      </label>
-      <div
-        style={{
-          fontFamily: isCode ? 'monospace' : 'Inter',
-          fontSize: isCode ? 11 : 13,
-          lineHeight: 1.4,
-          color: 'var(--c-text-primary)',
-          overflowWrap: 'break-word',
-                      wordBreak: 'normal',
-          whiteSpace: 'pre-wrap',
-          background: isCode ? 'var(--app-surface-bright, var(--app-surface))' : 'transparent',
-          border: isCode ? '1px solid var(--c-border)' : 'none',
-          padding: isCode ? '6px 10px' : 0,
-          borderRadius: isCode ? 6 : 0,
-          maxHeight: isCode ? 120 : 'none',
-          overflowY: isCode ? 'auto' : 'visible',
-        }}
-      >
-        {value || 'N/A'}
-      </div>
-    </div>
-  );
 
   // Render Inline Updater Diagnostics & Laboratory View
   const renderUpdaterView = () => {

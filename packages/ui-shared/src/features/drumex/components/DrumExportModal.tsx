@@ -366,6 +366,49 @@ async function exportDrumSongPDF(
   return true;
 }
 
+const Toggle = ({ on, onChange, accent }: { on: boolean; onChange: () => void; accent: { from: string, to: string } }) => (
+  <ToggleComponent value={on} onChange={onChange} accentFrom={accent.from} accentTo={accent.to} />
+);
+
+const Row = ({ label, sub, right }: { label: string; sub?: string; right: React.ReactNode }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 16px',
+      background: 'var(--app-surface-high)',
+      borderRadius: 14,
+    }}
+  >
+    <div>
+      <p
+        style={{
+          fontFamily: 'var(--font-headline)',
+          fontWeight: 600,
+          fontSize: 14,
+          color: 'var(--c-text-primary)',
+        }}
+      >
+        {label}
+      </p>
+      {sub && (
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 11,
+            color: 'var(--c-text-secondary)',
+            marginTop: 1,
+          }}
+        >
+          {sub}
+        </p>
+      )}
+    </div>
+    {right}
+  </div>
+);
+
 export function DrumExportModal({
   patterns,
   song,
@@ -438,9 +481,6 @@ export function DrumExportModal({
     }
   };
 
-  const Toggle = ({ on, onChange }: { on: boolean; onChange: () => void }) => (
-    <ToggleComponent value={on} onChange={onChange} accentFrom={accent.from} accentTo={accent.to} />
-  );
 
   const Segment = <T extends string>({
     options,
@@ -461,44 +501,6 @@ export function DrumExportModal({
     />
   );
 
-  const Row = ({ label, sub, right }: { label: string; sub?: string; right: React.ReactNode }) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 16px',
-        background: 'var(--app-surface-high)',
-        borderRadius: 14,
-      }}
-    >
-      <div>
-        <p
-          style={{
-            fontFamily: 'var(--font-headline)',
-            fontWeight: 600,
-            fontSize: 14,
-            color: 'var(--c-text-primary)',
-          }}
-        >
-          {label}
-        </p>
-        {sub && (
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 11,
-              color: 'var(--c-text-secondary)',
-              marginTop: 1,
-            }}
-          >
-            {sub}
-          </p>
-        )}
-      </div>
-      {right}
-    </div>
-  );
 
   const isWebDesktop = useIsWebDesktop();
 

@@ -26,7 +26,7 @@ import {
   SpringPresets,
   useShallow,
 } from '@workspace/livex-core';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button, StatefulButton } from '../../../shared/design-system/StudioDesignSystem';
 import { createPortal } from 'react-dom';
@@ -48,7 +48,7 @@ import {
   subscribeUserCover,
   type AvatarIcon,
 } from '@workspace/livex-core';
-import StudioPricingSection from './StudioPricingSection';
+const StudioPricingSection = lazy(() => import('./StudioPricingSection'));
 import { AccountProfileHeader } from './sections/AccountProfileHeader';
 import { AccountSyncSection } from './sections/AccountSyncSection';
 
@@ -4985,15 +4985,17 @@ export function AccountSettingsPage({
           }}
           className="no-scrollbar animate-fade-in"
         >
-          <StudioPricingSection
-            accent={accent}
-            lang={lang}
-            profile={profile}
-            user={user}
-            onShowToast={showToast}
-            isAmoled={isAmoled}
-            isLight={isLight}
-          />
+          <Suspense fallback={null}>
+            <StudioPricingSection
+              accent={accent}
+              lang={lang}
+              profile={profile}
+              user={user}
+              onShowToast={showToast}
+              isAmoled={isAmoled}
+              isLight={isLight}
+            />
+          </Suspense>
         </div>
       </ProfileMorphModal>
 

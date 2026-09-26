@@ -585,7 +585,7 @@ export async function syncWriteProfileMain(
  * every await and bails out if it has shifted.
  */
 let epoch = 0;
-let tickHandle: ReturnType<typeof setInterval> | null = null;
+
 let unsubAuth: (() => void) | null = null;
 let listeners = new Set<Listener>();
 let status: SyncStatus = {
