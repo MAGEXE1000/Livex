@@ -630,7 +630,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
   );
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.1vh, 10px)' }}>
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(7px, 1.2vh, 12px)' }}>
       <h3
         style={{
           fontFamily: 'Inter, sans-serif',
@@ -646,7 +646,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
         {lang === 'es' ? 'Módulos del Ecosistema' : 'Livex Modules'}
       </h3>
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.0vh, 10px)' }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.3vh, 13px)' }}
         className="w-full"
       >
         {modules.map(({ app, Logo, name, desc, color, active }) => (
@@ -661,8 +661,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
               display: 'flex',
               alignItems: 'center',
               width: '100%',
-              minHeight: 'clamp(50px, 7.6vh, 74px)',
-              padding: 'clamp(6px, 1.3vh, 14px) clamp(14px, 3.6vw, 18px)',
+              minHeight: 'clamp(54px, 8.0vh, 72px)',
+              padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
               background: isLight
                 ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
                 : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
@@ -693,8 +693,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <div
                 style={{
-                  width: 'clamp(32px, 4.4vh, 38px)',
-                  height: 'clamp(32px, 4.4vh, 38px)',
+                  width: 'clamp(34px, 4.6vh, 40px)',
+                  height: 'clamp(34px, 4.6vh, 40px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1352,7 +1352,7 @@ export default function LivexHub() {
                       touchAction: 'pan-x',
                       padding: '0 clamp(12px, 3.5vw, 16px)',
                       paddingTop:
-                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(8px, 1.8vh, 24px))',
+                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(8px, 1.4vh, 18px))',
                       paddingBottom:
                         'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + var(--nav-h, 58px) + clamp(8px, 1.6vh, 18px))',
                     }}
@@ -1365,8 +1365,9 @@ export default function LivexHub() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        gap: 'clamp(8px, 1.6vh, 18px)',
+                        gap: 'clamp(10px, 1.6vh, 18px)',
                         margin: 'auto 0',
+                        transform: 'translateY(clamp(-22px, calc((100vh - 720px) * -0.15), 0px))',
                       }}
                       className="w-full"
                     >
@@ -1383,7 +1384,7 @@ export default function LivexHub() {
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 'clamp(6px, 1.1vh, 12px)',
+                          gap: 'clamp(7px, 1.2vh, 11px)',
                         }}
                       >
                         <div
@@ -1919,8 +1920,8 @@ export default function LivexHub() {
                             style={{
                               display: 'grid',
                               gridTemplateColumns: 'repeat(5, 1fr)',
-                              gap: '10px',
-                              padding: '2px 0 6px',
+                              gap: 'clamp(6px, 1.8vw, 10px)',
+                              padding: '2px 0 4px',
                               listStyle: 'none',
                               margin: 0,
                             }}
@@ -1976,8 +1977,8 @@ export default function LivexHub() {
                                         : { rotate: 0 }
                                     }
                                     style={{
-                                      width: 'clamp(44px, 5.5vh, 52px)',
-                                      height: 'clamp(44px, 5.5vh, 52px)',
+                                      width: 'clamp(50px, 6.2vh, 58px)',
+                                      height: 'clamp(50px, 6.2vh, 58px)',
                                       borderRadius: '9999px',
                                       background: isLight
                                         ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.90) 0%, rgba(240, 244, 255, 0.75) 100%)'
@@ -2006,7 +2007,7 @@ export default function LivexHub() {
                                         opacity: 0.8,
                                       }}
                                     />
-                                    {renderShortcutIcon(opt.icon, 22)}
+                                    {renderShortcutIcon(opt.icon, 25)}
 
                                     {isEditMode && (
                                       <button
@@ -2046,9 +2047,9 @@ export default function LivexHub() {
                                       </button>
                                     )}
                                   </motion.div>
-                                  <span
+                                   <span
                                     style={{
-                                      fontSize: '10.5px',
+                                      fontSize: '11px',
                                       fontWeight: 650,
                                       color: 'var(--c-text-secondary)',
                                       marginTop: '6px',
@@ -2082,8 +2083,8 @@ export default function LivexHub() {
                                   whileHover={canHover && !prefersReduced ? { scale: 1.06, y: -2 } : undefined}
                                   transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 24 }}
                                   style={{
-                                    width: 'clamp(44px, 5.5vh, 52px)',
-                                    height: 'clamp(44px, 5.5vh, 52px)',
+                                    width: 'clamp(50px, 6.2vh, 58px)',
+                                    height: 'clamp(50px, 6.2vh, 58px)',
                                     borderRadius: '9999px',
                                     background: 'rgba(255, 255, 255, 0.02)',
                                     border: '1.5px dashed rgba(255, 255, 255, 0.20)',
@@ -2094,7 +2095,7 @@ export default function LivexHub() {
                                 >
                                   <StudioIcon
                                     name="add"
-                                    size={20}
+                                    size={22}
                                     style={{
                                       color: 'var(--c-text-secondary)',
                                       opacity: 0.7,
@@ -2103,7 +2104,7 @@ export default function LivexHub() {
                                 </motion.div>
                                 <span
                                   style={{
-                                    fontSize: '10.5px',
+                                    fontSize: '11px',
                                     fontWeight: 650,
                                     color: 'var(--c-text-secondary)',
                                     marginTop: '6px',
