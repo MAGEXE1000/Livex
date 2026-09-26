@@ -121,6 +121,7 @@ import {
   settingsController,
   getUserCover,
   subscribeUserCover,
+  usePerformanceTrack,
 } from '@workspace/livex-core';
 import {
   HubTab,
@@ -396,7 +397,256 @@ function getUpdaterStatusText(updater: any, lang: string) {
     return lang === 'es' ? 'Actualización disponible' : 'Update available';
   }
 
-  return lang === 'es' ? 'Estás al día' : 'Up to date';
+function UpdaterSettingsContent({
+  lang,
+  updater,
+  accent,
+  showDevToast,
+  navigate,
+}: {
+  lang: string;
+  updater: any;
+  accent: { from: string; to: string; mid?: string };
+  showDevToast: (msg: string) => void;
+  navigate: (page: SettingsPageId) => void;
+}) {
+  const isNative = Capacitor.isNativePlatform();
+  const [autoUpdates, setAutoUpdates] = useState(() => {
+    return localStorage.getItem('studio:automatic_updates') !== 'false';
+  });
+  const handleToggleAutoUpdates = (val: boolean) => {
+    setAutoUpdates(val);
+    localStorage.setItem('studio:automatic_updates', String(val));
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-4)',
+        width: '100%',
+        paddingBottom: 'var(--space-6)',
+      }}
+    >
+      <SettingSection title={lang === 'es' ? 'SISTEMA DE ACTUALIZACIONES' : 'UPDATE SYSTEM'}>
+        {/* Current Version */}
+        <SettingRow
+          label={lang === 'es' ? 'Versión actual' : 'Current Version'}
+          desc={`${APP_VERSION_TAG} ${APP_VERSION} (Build ${APP_VERSION_DATE})`}
+        >
+          <span style={{ fontSize: 12, color: 'var(--c-text-secondary)', fontWeight: 600 }}>
+            {lang === 'es' ? 'Instalado' : 'Installed'}
+          </span>
+        </SettingRow>
+
+        {/* Check for Updates */}
+        <SettingRow
+          label={lang === 'es' ? 'Buscar actualizaciones' : 'Check for Updates'}
+          desc={getUpdaterStatusText(updater, lang)}
+        >
+          {updater.loading ? (
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontSize: 18,
+                color: accent.from,
+                animation: 'updater-check-spin 1s linear infinite',
+                display: 'inline-block',
+              }}
+            >
+              refresh
+            </span>
+          ) : updater.updateAvailable ? (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => updater.openModal()}
+              icon={
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
+                    updater.updateState
+                  )
+                    ? 'install_mobile'
+                    : 'download'}
+                </span>
+              }
+            >
+              {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
+                updater.updateState
+              )
+                ? lang === 'es'
+                  ? 'Instalar'
+                  : 'Install Update'
+                : lang === 'es'
+                  ? 'Continuar'
+                  : 'Continue Update'}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                await updater.checkNow();
+              }}
+            >
+              {lang === 'es' ? 'Buscar' : 'Check Now'}
+            </Button>
+          )}
+        </SettingRow>
+
+        {/* Automatic Updates */}
+        <SettingRow
+          label={lang === 'es' ? 'Actualizaciones automáticas' : 'Automatic Updates'}
+          desc={
+            lang === 'es'
+              ? 'Buscar y descargar compilaciones en segundo plano'
+              : 'Check and download builds in the background'
+          }
+        >
+          <Toggle value={autoUpdates} onChange={handleToggleAutoUpdates} />
+        </SettingRow>
+
+        {/* Update Diagnostics */}
+        <SettingRow
+          label={lang === 'es' ? 'Diagnósticos de actualización' : 'Update Diagnostics'}
+          desc={
+            lang === 'es'
+              ? 'Copiar informes de depuración y estado del actualizador'
+              : 'Copy debug reports and check recovery logs'
+          }
+        >
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={async () => {
+              try {
+                const report = await updater.getDiagnosticsReport();
+                await navigator.clipboard.writeText(report);
+                showDevToast(
+                  lang === 'es' ? 'Copiado al portapapeles' : 'Copied report to clipboard'
+                );
+              } catch (e) {
+                alert(e instanceof Error ? e.message : String(e));
+              }
+            }}
+            icon={
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                content_copy
+              </span>
+            }
+          >
+            {lang === 'es' ? 'Copiar' : 'Copy'}
+          </Button>
+        </SettingRow>
+
+        {/* Changelog */}
+        <SettingRow
+          label={lang === 'es' ? 'Historial de cambios' : 'Changelog'}
+          desc={
+            lang === 'es'
+              ? 'Ver notas de lanzamiento completas'
+              : 'View full chronological release notes'
+          }
+        >
+          <button
+            onClick={() => navigate('changelog')}
+            className="btn-smooth animate-click"
+            style={{
+              padding: '6px 14px',
+              borderRadius: 10,
+              background: 'var(--c-surface-low)',
+              color: 'var(--c-text-primary)',
+              border: '1px solid var(--c-border)',
+              fontSize: 'var(--font-section-label)',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              history
+            </span>
+            {lang === 'es' ? 'Ver' : 'View'}
+          </button>
+        </SettingRow>
+      </SettingSection>
+
+      {/* About this Update */}
+      {updater.updateAvailable && updater.changelog && (
+        <SettingSection
+          title={lang === 'es' ? 'ACERCA DE ESTA ACTUALIZACIÓN' : 'ABOUT THIS UPDATE'}
+        >
+          <div
+            style={{
+              padding: 'var(--density-row-pad)',
+              color: 'var(--c-text-secondary)',
+              fontSize: 13,
+              lineHeight: 1.6,
+            }}
+          >
+            <p style={{ margin: '0 0 10px 0', fontWeight: 700, color: 'var(--c-text-primary)' }}>
+              {lang === 'es' ? 'Novedades en v' : "What's new in v"}
+              {updater.remoteVersion}:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {updater.changelog.split('\n').map((line: string, idx: number) => {
+                const cleanLine = line.replace(/^[•\s*-]+/g, '').trim();
+                if (!cleanLine) return null;
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <span style={{ color: accent.from, marginTop: 1 }}>•</span>
+                    <span>{cleanLine}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </SettingSection>
+      )}
+
+      {/* Recovery official releases link */}
+      {isNative && (
+        <SettingSection title={lang === 'es' ? 'RECUPERACIÓN' : 'RECOVERY'}>
+          <SettingRow
+            label={lang === 'es' ? 'Descargas oficiales' : 'Official Downloads'}
+            desc={
+              lang === 'es'
+                ? 'Descargar compilaciones firmadas desde GitHub'
+                : 'Download signed production builds from GitHub'
+            }
+          >
+            <button
+              onClick={() =>
+                window.open('https://github.com/MAGEXE1000/Livex/releases', '_system')
+              }
+              className="btn-smooth animate-click"
+              style={{
+                padding: '6px 14px',
+                borderRadius: 10,
+                background: 'var(--c-surface-low)',
+                color: 'var(--c-text-primary)',
+                border: '1px solid var(--c-border)',
+                fontSize: 'var(--font-section-label)',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                download
+              </span>
+              GitHub
+            </button>
+          </SettingRow>
+        </SettingSection>
+      )}
+    </div>
+  );
 }
 
 export function HubSettings({
@@ -422,6 +672,7 @@ export function HubSettings({
   devToast?: string | null;
   renderDevToast?: () => React.ReactNode;
 }) {
+  usePerformanceTrack('HubSettings');
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
   const settings = useSettingsStore(
@@ -835,7 +1086,6 @@ export function HubSettings({
   const [devVersionCode, setDevVersionCode] = useState<string>('Loading...');
   const [preferencesDump, setPreferencesDump] = useState<string>('Loading...');
   const [localStorageStatus, setLocalStorageStatus] = useState<string>('Loading...');
-  const [devLoadingAction, setDevLoadingAction] = useState<string | null>(null);
   const [firebaseVersionJson, setFirebaseVersionJson] = useState<string>('Loading...');
   const [firebaseAppReleaseJson, setFirebaseAppReleaseJson] = useState<string>('Loading...');
   const [verboseLogs, setVerboseLogs] = useState<boolean>(
@@ -2104,1272 +2354,6 @@ export function HubSettings({
     );
   }
 
-  function renderDeveloperContent() {
-    try {
-      const diag = getSyncDiagnostics();
-      const wrapAction = async (actionId: string, fn: () => Promise<void> | void) => {
-        setDevLoadingAction(actionId);
-        try {
-          await fn();
-        } catch (err: any) {
-          showDevToast(`Failed: ${err?.message || String(err)}`);
-        } finally {
-          setDevLoadingAction(null);
-        }
-      };
-
-      const DevButtonRow = ({
-        label,
-        desc,
-        actionLabel,
-        actionId,
-        onPress,
-        disabled = false,
-        isDestructive = false,
-      }: {
-        label: string;
-        desc?: string;
-        actionLabel: string;
-        actionId: string;
-        onPress: () => void;
-        disabled?: boolean;
-        isDestructive?: boolean;
-      }) => {
-        const isLoading = devLoadingAction === actionId;
-        return (
-          <div
-            style={{
-              padding: 'var(--density-row-pad)',
-              borderBottom: '1px solid rgba(128,128,128,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: 'var(--font-base)',
-                  fontWeight: 600,
-                  color: 'var(--c-text-primary)',
-                  fontFamily: 'var(--studio-font-display)',
-                  margin: 0,
-                }}
-              >
-                {label}
-              </p>
-              {desc && (
-                <p
-                  style={{
-                    fontSize: 'var(--font-sm)',
-                    marginTop: '2px',
-                    lineHeight: 1.3,
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'Inter',
-                    margin: '4px 0 0',
-                  }}
-                >
-                  {desc}
-                </p>
-              )}
-            </div>
-            <StatefulButton
-              state={isLoading ? 'loading' : 'idle'}
-              onClick={onPress}
-              disabled={disabled || devLoadingAction !== null}
-              variant={isDestructive ? 'danger' : 'secondary'}
-              size="sm"
-              style={{
-                borderRadius: '8px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {actionLabel}
-            </StatefulButton>
-          </div>
-        );
-      };
-
-      const DevInfoRow = ({
-        label,
-        desc,
-        value,
-        canCopy = false,
-      }: {
-        label: string;
-        desc?: string;
-        value: string;
-        canCopy?: boolean;
-      }) => (
-        <div
-          style={{
-            padding: 'var(--density-row-pad)',
-            borderBottom: '1px solid rgba(128,128,128,0.08)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              gap: 12,
-              marginBottom: '6px',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: 'var(--font-base)',
-                  fontWeight: 600,
-                  color: 'var(--c-text-primary)',
-                  fontFamily: 'var(--studio-font-display)',
-                  margin: 0,
-                }}
-              >
-                {label}
-              </p>
-              {desc && (
-                <p
-                  style={{
-                    fontSize: 'var(--font-sm)',
-                    marginTop: '2px',
-                    lineHeight: 1.3,
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'Inter',
-                    margin: '4px 0 0',
-                  }}
-                >
-                  {desc}
-                </p>
-              )}
-            </div>
-            {canCopy && (
-              <button
-                onClick={() => {
-                  navigator.clipboard
-                    .writeText(value)
-                    .then(() => showDevToast('Copied to clipboard'));
-                }}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  background: 'rgba(128,128,128,0.08)',
-                  border: '1px solid rgba(128,128,128,0.15)',
-                  color: 'var(--c-text-primary)',
-                  fontSize: '11px',
-                  fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Copy
-              </button>
-            )}
-          </div>
-          <div
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              background: 'rgba(128,128,128,0.06)',
-              fontFamily: 'monospace',
-              fontSize: '12px',
-              color: 'var(--c-text-primary)',
-              wordBreak: 'break-word',
-              whiteSpace: 'pre-wrap',
-              maxHeight: '160px',
-              overflowY: 'auto',
-            }}
-          >
-            {value}
-          </div>
-        </div>
-      );
-
-      const DevCollapsibleRow = ({
-        label,
-        desc,
-        value,
-        canCopy = false,
-      }: {
-        label: string;
-        desc?: string;
-        value: string;
-        canCopy?: boolean;
-      }) => {
-        const [open, setOpen] = useState(false);
-        return (
-          <div
-            style={{
-              padding: 'var(--density-row-pad)',
-              borderBottom: '1px solid rgba(128,128,128,0.08)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 12,
-              }}
-            >
-              <div
-                style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
-                onClick={() => setOpen(!open)}
-              >
-                <p
-                  style={{
-                    fontSize: 'var(--font-base)',
-                    fontWeight: 600,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-display)',
-                    margin: 0,
-                  }}
-                >
-                  {open ? '▼' : '▶'} {label}
-                </p>
-                {desc && (
-                  <p
-                    style={{
-                      fontSize: 'var(--font-sm)',
-                      marginTop: '2px',
-                      lineHeight: 1.3,
-                      color: 'var(--c-text-secondary)',
-                      fontFamily: 'Inter',
-                      margin: '4px 0 0',
-                    }}
-                  >
-                    {desc}
-                  </p>
-                )}
-              </div>
-              {canCopy && (
-                <button
-                  onClick={() => {
-                    navigator.clipboard
-                      .writeText(value)
-                      .then(() => showDevToast('Copied to clipboard'));
-                  }}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    background: 'rgba(128,128,128,0.08)',
-                    border: '1px solid rgba(128,128,128,0.15)',
-                    color: 'var(--c-text-primary)',
-                    fontSize: '11px',
-                    fontFamily: 'var(--type-button-font, var(--studio-font-body))',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Copy
-                </button>
-              )}
-            </div>
-            {open && (
-              <div
-                style={{
-                  marginTop: '10px',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  background: 'rgba(128,128,128,0.06)',
-                  fontFamily: 'monospace',
-                  fontSize: '11px',
-                  color: 'var(--c-text-primary)',
-                  wordBreak: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                  maxHeight: '240px',
-                  overflowY: 'auto',
-                  border: '1px solid rgba(128,128,128,0.12)',
-                }}
-              >
-                {value}
-              </div>
-            )}
-          </div>
-        );
-      };
-
-      const handleClearUpdateCacheAction = () => {
-        if (!window.confirm('Delete downloaded APK files and reset local update history?')) return;
-        wrapAction('clear-cache', handleClearUpdateCache);
-      };
-
-      const handleClearDismissedAction = () => {
-        if (!window.confirm('Clear skip update choices?')) return;
-        wrapAction('clear-dismissed', handleClearDismissed);
-      };
-
-      const handleClearAppliedAction = () => {
-        if (!window.confirm('Clear list of installed Updater/APK updates?')) return;
-        wrapAction('clear-applied', handleClearApplied);
-      };
-
-      const handleClearFailedUpdateAction = () => {
-        if (!window.confirm('Clear update error codes and reset checking status?')) return;
-        wrapAction('clear-failed', () => {
-          resetAppUpdateState();
-          showDevToast('Failed update state cleared.');
-        });
-      };
-
-      const handleResetOtaAction = () => {
-        if (
-          !window.confirm(
-            'Revert Updater bundles back to built-in factory default? App will reload.'
-          )
-        )
-          return;
-        wrapAction('reset-updater', handleResetOta);
-      };
-
-      const handleValidateInstallerAction = () => {
-        wrapAction('validate-installer', async () => {
-          const cap = (window as any).Capacitor;
-          const appInstallerExists = cap
-            ? (cap.isPluginAvailable?.('AppInstaller') ?? false)
-            : false;
-          if (!appInstallerExists) {
-            throw new Error('AppInstaller native plugin is unavailable on this platform.');
-          }
-          const avail = isAppInstallerAvailable();
-          if (avail) {
-            showDevToast('AppInstaller validation PASSED: all native methods are registered.');
-          } else {
-            throw new Error('AppInstaller registered but missing required native methods.');
-          }
-        });
-      };
-
-      const handleClearTemporaryAction = () => {
-        if (!window.confirm('Clear all session configurations and temporary mock data?')) return;
-        wrapAction('clear-temp', () => {
-          sessionStorage.clear();
-          showDevToast('Temporary mock settings cleared.');
-        });
-      };
-
-      const handleExportLocalDiagnosticsAction = () => {
-        wrapAction('export-local', () => {
-          const dump = {
-            timestamp: new Date().toISOString(),
-            localStorage: { ...localStorage },
-            preferencesDump,
-          };
-          const text = JSON.stringify(dump, null, 2);
-          const filename = `studio-local-diagnostics-${Date.now()}.json`;
-          const blob = new Blob([text], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          showDevToast('Local diagnostics exported.');
-        });
-      };
-
-      const handleResetAppShellAction = () => {
-        if (
-          !window.confirm('Reset all user settings, active theme, and layouts to factory default?')
-        )
-          return;
-        wrapAction('reset-shell', () => {
-          localStorage.clear();
-          sessionStorage.clear();
-          showDevToast('App shell reset completed. Please restart the app.');
-          setTimeout(() => window.location.reload(), 1500);
-        });
-      };
-
-      const handleForceReturnHubAction = () => {
-        wrapAction('force-return', () => {
-          (window as any).returnToStudioHub?.();
-          showDevToast('Return to Hub triggered.');
-        });
-      };
-
-      const handleResetDeveloperAction = () => {
-        if (!window.confirm('Disable developer mode and hide this menu?')) return;
-        wrapAction('reset-developer', () => {
-          settingsController.updateSettings({ developerMode: false });
-          goBack();
-          showDevToast('Developer options disabled.');
-        });
-      };
-
-      const handleClearDebugLogsAction = () => {
-        if (!window.confirm('Clear diagnostic logs memory?')) return;
-        wrapAction('clear-logs', () => {
-          updateDebugLogs.fetchedVersionJson = null;
-          updateDebugLogs.fetchedAppReleaseJson = null;
-          updateDebugLogs.installError = null;
-          updateDebugLogs.lastExceptionStackTrace = null;
-          showDevToast('Logs memory reset.');
-        });
-      };
-
-      const handleResetUpdateStateAction = () => {
-        if (!window.confirm('Reset all Updater and APK update logs and persistent history?'))
-          return;
-        wrapAction('reset-update-state', () => {
-          resetAppUpdateState();
-          localStorage.removeItem('studio:appliedVersions');
-          localStorage.removeItem('studio:appliedUpdateVersion');
-          localStorage.removeItem('studio:dismissedVersions');
-          localStorage.removeItem('studio:notifiedVersions');
-          localStorage.removeItem('studio:downloadedApkPath');
-          localStorage.removeItem('studio:downloadedApkVersion');
-          localStorage.removeItem('studio:downloadedBundleId');
-          localStorage.removeItem('studio:downloadedVersions');
-          if (Capacitor.isNativePlatform()) {
-            import('@workspace/livex-core')
-              .then(({ AppInstaller }) => {
-                AppInstaller.clearInstallerLogHistory();
-              })
-              .catch((err) => console.error(err));
-          }
-          showDevToast('Update state fully reset.');
-        });
-      };
-
-      const getLocalRecordCounts = () => {
-        let chordexPresets = 0;
-        let chordexProgressions = 0;
-        let chordexChords = 0;
-        let drumexSongs = 0;
-        let drumexGrooves = 0;
-        let groovexSongs = 0;
-
-        try {
-          const chordex = localStorage.getItem('chord-explorer-storage-v3');
-          if (chordex) {
-            const parsed = JSON.parse(chordex);
-            const state = parsed.state || {};
-            chordexPresets = state.presets?.length || 0;
-            chordexProgressions = state.progressions?.length || 0;
-            chordexChords = state.customChords?.length || 0;
-          }
-        } catch {}
-
-        try {
-          const drumex = localStorage.getItem('chordex-drums');
-          if (drumex) {
-            const parsed = JSON.parse(drumex);
-            const state = parsed.state || {};
-            drumexSongs = state.drumSongs?.length || 0;
-            drumexGrooves = state.grooves?.length || 0;
-          }
-        } catch {}
-
-        try {
-          const groovex = localStorage.getItem('groovex-storage-v1');
-          if (groovex) {
-            const parsed = JSON.parse(groovex);
-            const state = parsed.state || {};
-            groovexSongs = state.recentSongs?.length || 0;
-          }
-        } catch {}
-
-        return `Chordex: ${chordexPresets} presets, ${chordexProgressions} progressions, ${chordexChords} custom chords\nDrumex: ${drumexSongs} songs, ${drumexGrooves} grooves\nGroovex: ${groovexSongs} recent songs`;
-      };
-
-      const handleForceSyncNow = () => {
-        wrapAction('force-sync', async () => {
-          await syncController.syncNow();
-          showDevToast('Force sync completed.');
-        });
-      };
-
-      const handleResetSyncState = () => {
-        if (
-          !window.confirm(
-            'WARNING: This will reset local sync state. It will NOT delete local data. Reset now?'
-          )
-        )
-          return;
-        wrapAction('reset-sync', () => {
-          localStorage.removeItem('chordex_sync_meta_v1');
-          localStorage.removeItem('chordex_sync_first_pull_done_v1');
-          showDevToast('Local sync state reset. Re-syncing on next app open.');
-          setTimeout(() => window.location.reload(), 1500);
-        });
-      };
-
-      const handleUploadSnapshot = () => {
-        if (
-          !window.confirm(
-            'Upload a full backup snapshot of your current local data to your cloud account?'
-          )
-        )
-          return;
-        wrapAction('upload-snapshot', async () => {
-          await createCloudBackup('manual_dev_options');
-          showDevToast('Backup snapshot uploaded successfully.');
-        });
-      };
-
-      const handleClearSyncLogs = () => {
-        wrapAction('clear-sync-logs', () => {
-          clearConflictLogs();
-          showDevToast('Sync conflict logs cleared.');
-        });
-      };
-
-      const conflictLogsText =
-        getConflictLogs()
-          .map(
-            (log) =>
-              `[${new Date(log.timestamp).toLocaleTimeString()}] App: ${log.app}\nItem: ${log.itemName} (${log.itemId})\nLocal Time: ${new Date(log.localTime).toLocaleString()}\nCloud Time: ${new Date(log.cloudTime).toLocaleString()}\nResolution: ${log.resolution}`
-          )
-          .join('\n\n') || 'No conflicts logged in this session.';
-
-      return (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            width: '100%',
-            paddingBottom: 32,
-          }}
-        >
-          <SettingsSectionLabel>1. App & Build</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevInfoRow
-              label="App Version"
-              desc="Hardcoded version in app bundle (APP_VERSION)"
-              value={APP_VERSION}
-            />
-            <DevInfoRow
-              label="APK Version"
-              desc="Android native APK binary version wrapper"
-              value={devNativeVersion}
-            />
-            <DevInfoRow
-              label="Updater Version"
-              desc="Active dynamically applied bundle version"
-              value={devOtaVersion}
-            />
-            <DevInfoRow
-              label="Build Type"
-              desc="Execution platform compilation target"
-              value={Capacitor.isNativePlatform() ? 'Native Release' : 'Web'}
-            />
-            <DevInfoRow
-              label="Package Name"
-              desc="Unique application package identifier"
-              value={devBundleId}
-            />
-            <DevInfoRow
-              label="versionCode"
-              desc="Android manifest build increment number"
-              value={devVersionCode}
-            />
-            <DevInfoRow
-              label="Firebase App ID"
-              desc="Firebase application reference ID"
-              value={devBundleId}
-            />
-            <DevInfoRow
-              label="Signing Fingerprint"
-              desc="Public SHA-256 production certificate key"
-              value="90:0C:F2:59:18:5C:81:10:0C:DA:8B:B0:85:71:FA:23:55:2E:97:89:13:1C:F0:7A:8F:40:56:E4:D4:12:92:06"
-              canCopy
-            />
-            <DevInfoRow
-              label="Signature SHA-256"
-              desc="Active loaded certificate hash key"
-              value={installedPackageDetails?.signingSha256 || 'N/A'}
-              canCopy
-            />
-            <DevInfoRow
-              label="Debuggable Status"
-              desc="Security debugging compiled state"
-              value={Capacitor.isNativePlatform() ? 'false (Release Build)' : 'true (Web Dev Mode)'}
-            />
-            {!Capacitor.isNativePlatform() && (
-              <>
-                <DevInfoRow
-                  label="Web App Version"
-                  desc="Hardcoded web application version"
-                  value={APP_VERSION}
-                />
-                <DevInfoRow
-                  label="Web Sync Supported"
-                  desc="Is cloud sync supported on web platforms"
-                  value={diag.webSyncSupported ? 'true' : 'false'}
-                />
-                <DevInfoRow
-                  label="Firebase Auth Available"
-                  desc="Is Firebase Authentication client library available"
-                  value={diag.firebaseAuthAvailable ? 'true' : 'false'}
-                />
-                <DevInfoRow
-                  label="Firestore Available"
-                  desc="Is Firestore Database client library available"
-                  value={diag.firestoreAvailable ? 'true' : 'false'}
-                />
-                <DevInfoRow
-                  label="Storage Available"
-                  desc="Is Firebase Storage client library available"
-                  value={diag.storageAvailable ? 'true' : 'false'}
-                />
-                <DevInfoRow
-                  label="Device Registration"
-                  desc="Status of this web device registration"
-                  value={diag.deviceRegistrationStatus}
-                />
-              </>
-            )}
-          </div>
-
-          <SettingsSectionLabel>2. Update System</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevButtonRow
-              label="Check For Updates"
-              desc="Run default foreground query"
-              actionLabel="Check"
-              actionId="check-normal"
-              onPress={() =>
-                wrapAction('check-normal', async () => {
-                  await checkForUpdate(
-                    false,
-                    'developer_settings',
-                    'Check For Updates button tapped'
-                  );
-                })
-              }
-            />
-            <DevButtonRow
-              label="Force Update Check"
-              desc="Bypass all skip & check intervals"
-              actionLabel="Force Check"
-              actionId="check-force"
-              onPress={() =>
-                wrapAction('check-force', async () => {
-                  await checkForUpdate(
-                    true,
-                    'developer_settings',
-                    'Force Update Check button tapped'
-                  );
-                })
-              }
-            />
-            <DevButtonRow
-              label="Clear Update Cache"
-              desc="Delete downloaded APK files & paths"
-              actionLabel="Clear"
-              actionId="clear-cache"
-              onPress={handleClearUpdateCacheAction}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Clear Dismissed Versions"
-              desc="Reset choices for skipped versions"
-              actionLabel="Clear"
-              actionId="clear-dismissed"
-              onPress={handleClearDismissedAction}
-            />
-            <DevButtonRow
-              label="Clear Applied Versions"
-              desc="Reset installed update database"
-              actionLabel="Clear"
-              actionId="clear-applied"
-              onPress={handleClearAppliedAction}
-            />
-            <DevButtonRow
-              label="Clear Failed Update State"
-              desc="Clear error logs and update states"
-              actionLabel="Reset"
-              actionId="clear-failed"
-              onPress={handleClearFailedUpdateAction}
-            />
-            <DevButtonRow
-              label="Reset Updater State"
-              desc="Revert active bundle to standard build"
-              actionLabel="Reset Bundle"
-              actionId="reset-updater"
-              onPress={handleResetOtaAction}
-              isDestructive
-            />
-            <DevCollapsibleRow
-              label="version.json Manifest"
-              desc="Cached raw content of version.json metadata"
-              value={firebaseVersionJson}
-              canCopy
-            />
-            <DevCollapsibleRow
-              label="app-release.json Manifest"
-              desc="Cached raw content of app-release.json metadata"
-              value={firebaseAppReleaseJson}
-              canCopy
-            />
-            <DevButtonRow
-              label="Copy Update Diagnostics"
-              desc="Copy full updater debug reports"
-              actionLabel="Copy"
-              actionId="copy-diag"
-              onPress={() => {
-                navigator.clipboard
-                  .writeText(getDiagnosticsText())
-                  .then(() => showDevToast('Diagnostics copied.'));
-              }}
-            />
-            <DevButtonRow
-              label="Export Update Diagnostics"
-              desc="Save reports file to memory"
-              actionLabel="Export"
-              actionId="export-diag"
-              onPress={() => wrapAction('export-diag', handleExportDiagnostics)}
-            />
-          </div>
-
-          <SettingsSectionLabel>3. AppInstaller & Plugins</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevInfoRow
-              label="AppInstaller Available"
-              value={updateDebugLogs.appInstallerAvailable ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="downloadApk Available"
-              value={updateDebugLogs.downloadApkAvailable ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="verifyApkSha256 Available"
-              value={updateDebugLogs.verifyApkSha256Available ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="installApk Available"
-              value={updateDebugLogs.installApkAvailable ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="openInstallPermissionSettings Available"
-              value={updateDebugLogs.openInstallPermissionSettingsAvailable ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="Registered Capacitor Plugins"
-              value={updateDebugLogs.registeredPlugins}
-            />
-            <DevButtonRow
-              label="Validate Installer Capability"
-              desc="Perform active registration assertions"
-              actionLabel="Validate"
-              actionId="validate-installer"
-              onPress={handleValidateInstallerAction}
-            />
-
-            {Capacitor.isNativePlatform() && installedPackageDetails && (
-              <>
-                <div style={{ height: 1, background: 'rgba(128,128,128,0.12)', margin: '8px 0' }} />
-                <div
-                  style={{
-                    fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
-                    fontWeight: 800,
-                    fontSize: 'var(--font-section-label)',
-                    padding: '4px 0',
-                    opacity: 0.75,
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  Installed Package Details
-                </div>
-                <DevInfoRow
-                  label="Installed Package Name"
-                  value={installedPackageDetails.packageName}
-                />
-                <DevInfoRow
-                  label="Installed Version Name"
-                  value={installedPackageDetails.versionName}
-                />
-                <DevInfoRow
-                  label="Installed Version Code"
-                  value={String(installedPackageDetails.versionCode)}
-                />
-                <DevInfoRow
-                  label="Installed Signature SHA-256"
-                  value={installedPackageDetails.signatures}
-                  canCopy
-                />
-              </>
-            )}
-
-            {Capacitor.isNativePlatform() && downloadedApkDetails && (
-              <>
-                <div style={{ height: 1, background: 'rgba(128,128,128,0.12)', margin: '8px 0' }} />
-                <div
-                  style={{
-                    fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
-                    fontWeight: 800,
-                    fontSize: 'var(--font-section-label)',
-                    padding: '4px 0',
-                    opacity: 0.75,
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  Downloaded APK Details
-                </div>
-                <DevInfoRow
-                  label="Downloaded Package Name"
-                  value={downloadedApkDetails.packageName}
-                />
-                <DevInfoRow
-                  label="Downloaded Version Name"
-                  value={downloadedApkDetails.versionName}
-                />
-                <DevInfoRow
-                  label="Downloaded Version Code"
-                  value={String(downloadedApkDetails.versionCode)}
-                />
-                <DevInfoRow
-                  label="Downloaded Signature SHA-256"
-                  value={downloadedApkDetails.signingSha256}
-                  canCopy
-                />
-                <DevInfoRow
-                  label="Debuggable"
-                  value={downloadedApkDetails.debuggable ? 'TRUE' : 'FALSE'}
-                />
-                <DevInfoRow
-                  label="APK Valid"
-                  value={downloadedApkDetails.isValidApk ? 'TRUE' : 'FALSE'}
-                />
-              </>
-            )}
-
-            {Capacitor.isNativePlatform() && apkEligibility && (
-              <>
-                <div style={{ height: 1, background: 'rgba(128,128,128,0.12)', margin: '8px 0' }} />
-                <div
-                  style={{
-                    fontFamily: 'var(--type-caption-font, var(--studio-font-body))',
-                    fontWeight: 800,
-                    fontSize: 'var(--font-section-label)',
-                    padding: '4px 0',
-                    opacity: 0.75,
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  APK Install Eligibility
-                </div>
-                <DevInfoRow
-                  label="Package Name Match"
-                  value={
-                    apkEligibility.installed?.packageName && apkEligibility.downloaded?.packageName
-                      ? String(
-                          apkEligibility.installed.packageName ===
-                            apkEligibility.downloaded.packageName
-                        ).toUpperCase()
-                      : 'N/A'
-                  }
-                />
-                <DevInfoRow
-                  label="Signing Certificate Match"
-                  value={
-                    apkEligibility.installed?.signingSha256 &&
-                    apkEligibility.downloaded?.signingSha256
-                      ? String(
-                          apkEligibility.installed.signingSha256.replace(/:/g, '').toLowerCase() ===
-                            apkEligibility.downloaded.signingSha256.replace(/:/g, '').toLowerCase()
-                        ).toUpperCase()
-                      : 'N/A'
-                  }
-                />
-                <DevInfoRow
-                  label="New Version Code Higher"
-                  value={
-                    apkEligibility.installed?.versionCode && apkEligibility.downloaded?.versionCode
-                      ? String(
-                          apkEligibility.downloaded.versionCode >
-                            apkEligibility.installed.versionCode
-                        ).toUpperCase()
-                      : 'N/A'
-                  }
-                />
-                <DevInfoRow
-                  label="APK Installable"
-                  value={apkEligibility.eligible ? 'TRUE' : 'FALSE'}
-                />
-                <DevInfoRow
-                  label="Final Decision"
-                  value={apkEligibility.eligible ? 'CAN INSTALL' : 'CANNOT INSTALL'}
-                />
-                {!apkEligibility.eligible && (
-                  <DevInfoRow
-                    label="Reason if Cannot Install"
-                    value={apkEligibility.errorDetails || apkEligibility.reason || 'N/A'}
-                  />
-                )}
-              </>
-            )}
-          </div>
-
-          <SettingsSectionLabel>4. Storage & Sync</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevInfoRow
-              label="Active Sync Provider"
-              value={diag.activeSyncProvider || 'supabase-realtime'}
-            />
-            <DevInfoRow label="Database Provider" value={diag.databaseProvider || 'supabase'} />
-            <DevInfoRow label="Auth UID" value={diag.authUid} />
-            <DevInfoRow label="Current Device ID" value={diag.deviceId || diag.currentDeviceId} />
-
-            {diag.activeSyncProvider === 'supabase-realtime' ? (
-              <>
-                <DevInfoRow label="Supabase Host" value={diag.supabaseUrlHost || 'N/A'} />
-                <DevInfoRow
-                  label="Supabase Key Mask"
-                  value={
-                    diag.supabaseAnonKeyPrefix
-                      ? `${diag.supabaseAnonKeyPrefix}... (${diag.supabaseAnonKeyLength} chars)`
-                      : 'N/A'
-                  }
-                />
-                <DevInfoRow
-                  label="Supabase Client Ready"
-                  value={diag.supabaseClientReady ? 'Yes' : 'No'}
-                />
-                <DevInfoRow
-                  label="Supabase Db Available"
-                  value={diag.supabaseDbAvailable ? 'Yes' : 'No'}
-                />
-                <DevInfoRow
-                  label="Supabase Auth Strategy"
-                  value={diag.supabaseAuthStrategy || 'N/A'}
-                />
-                <DevInfoRow label="Supabase Mapped User ID" value={diag.mappedUserId || 'N/A'} />
-                <DevInfoRow label="Supabase RLS User ID" value={diag.rlsUserId || 'N/A'} />
-                <DevInfoRow label="Devices Table" value={diag.devicesTable || 'user_devices'} />
-                <DevInfoRow label="Device Row Key" value={diag.deviceRowId || 'N/A'} />
-                <DevInfoRow label="Probe Table" value={diag.probeTable || 'sync_probe'} />
-                <DevInfoRow label="Probe Row Key" value={diag.probeRowId || 'N/A'} />
-                <DevInfoRow
-                  label="Direct Write Table"
-                  value={diag.directWriteTable || 'debug_writes'}
-                />
-                <DevInfoRow label="Direct Write Row Key" value={diag.directWriteRowId || 'N/A'} />
-                <DevInfoRow label="Profiles Table" value={diag.profileTable || 'user_profiles'} />
-                <DevInfoRow
-                  label="Appearance Table"
-                  value={diag.appearanceTable || 'user_appearance_settings'}
-                />
-                <DevInfoRow
-                  label="Preferences Table"
-                  value={diag.preferencesTable || 'user_preferences'}
-                />
-                <DevInfoRow
-                  label="Supabase Client Init Error"
-                  value={diag.supabaseInitError || 'None'}
-                />
-                <DevInfoRow
-                  label="Last Supabase Auth Error"
-                  value={diag.lastSupabaseAuthError || 'None'}
-                />
-              </>
-            ) : (
-              <>
-                <DevInfoRow
-                  label="Current Device Doc Path"
-                  value={diag.currentDeviceDocPath}
-                  canCopy
-                />
-                <DevInfoRow label="Firebase Project ID" value={diag.firebaseProjectId} />
-                <DevInfoRow
-                  label="Devices Collection Path"
-                  value={diag.devicesCollectionPath}
-                  canCopy
-                />
-                <DevInfoRow label="Device write path" value={diag.deviceWritePath || 'N/A'} />
-                <DevInfoRow
-                  label="Device listener path"
-                  value={diag.devicesListenerPath || 'N/A'}
-                />
-                <DevInfoRow label="Probe write path" value={diag.probeWritePath || 'N/A'} />
-                <DevInfoRow label="Probe listener path" value={diag.probeListenerPath || 'N/A'} />
-                <DevInfoRow label="Direct write path" value={diag.directWritePath || 'N/A'} />
-              </>
-            )}
-
-            <DevInfoRow label="Devices Snapshot Count" value={String(diag.devicesSnapshotCount)} />
-            <DevInfoRow label="Devices Snapshot IDs" value={diag.devicesSnapshotIds} />
-            <DevInfoRow label="Last Device Write Success" value={diag.lastDeviceWriteSuccess} />
-            <DevInfoRow label="Last Device Write Error" value={diag.lastDeviceWriteError} />
-            <DevInfoRow label="Last Devices Listener Error" value={diag.lastDevicesListenerError} />
-            <DevInfoRow label="Build Type" value={diag.buildType} />
-            <DevInfoRow label="Platform" value={diag.platform} />
-            <DevInfoRow label="Sync Enabled" value={diag.syncEnabled ? 'TRUE' : 'FALSE'} />
-            <DevInfoRow
-              label="Firestore Connected"
-              value={diag.firestoreConnected ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="Profile Listener Active"
-              value={diag.profileListenerActive ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="Appearance Listener Active"
-              value={diag.appearanceListenerActive ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="Preferences Listener Active"
-              value={diag.preferencesListenerActive ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow
-              label="Devices Listener Active"
-              value={diag.devicesListenerActive ? 'TRUE' : 'FALSE'}
-            />
-            <DevInfoRow label="Last Sync Success" value={diag.lastSyncSuccess} />
-            <DevInfoRow label="Last Profile Sync" value={diag.lastProfileSync} />
-            <DevInfoRow label="Last Appearance Sync" value={diag.lastAppearanceSync} />
-            <DevInfoRow label="Last Preferences Sync" value={diag.lastPreferencesSync} />
-            <DevInfoRow label="Pending Writes" value={String(diag.pendingWrites)} />
-            <DevInfoRow label="Last Sync Error" value={diag.lastSyncError} />
-            <DevInfoRow label="Local Display Name" value={diag.localDisplayName} />
-            <DevInfoRow label="Remote Display Name" value={diag.remoteDisplayName} />
-            <DevInfoRow label="Local Theme" value={diag.localTheme} />
-            <DevInfoRow label="Remote Theme" value={diag.remoteTheme} />
-            <DevInfoRow label="Local Photo URL" value={diag.localPhotoURL} canCopy />
-            <DevInfoRow label="Remote Photo URL" value={diag.remotePhotoURL} canCopy />
-            <DevInfoRow
-              label="Registered Devices Count"
-              value={String(diag.registeredDevicesCount)}
-            />
-            <DevInfoRow
-              label="Last Remote Update Timestamp"
-              value={diag.lastRemoteUpdateTimestamp}
-            />
-            <DevInfoRow label="Last Local Update Timestamp" value={diag.lastLocalUpdateTimestamp} />
-
-            <DevInfoRow
-              label="Local Storage Status"
-              desc="Key counts and total memory estimation"
-              value={localStorageStatus}
-            />
-            <DevInfoRow label="Local Records by Category" value={getLocalRecordCounts()} />
-            <DevInfoRow label="Sync Conflict Count" value={String(getConflictLogs().length)} />
-            <DevCollapsibleRow
-              label="Sync Conflict Logs"
-              desc="Item-level conflicts logged during merge runs"
-              value={conflictLogsText}
-              canCopy
-            />
-            <DevCollapsibleRow
-              label="Capacitor Preferences Dump"
-              desc="Read values in Capacitor Preferences storage"
-              value={preferencesDump}
-              canCopy
-            />
-
-            <DevButtonRow
-              label="Force Sync Now"
-              desc="Bypass all throttling and trigger cloud sync"
-              actionLabel="Sync Now"
-              actionId="force-sync"
-              onPress={handleForceSyncNow}
-            />
-            <DevButtonRow
-              label="Register This Device Now"
-              desc="Manually write/update this device document in Firestore"
-              actionLabel="Register"
-              actionId="register-device-now"
-              onPress={async () => {
-                if (!authUser?.uid) {
-                  showDevToast('Error: Not signed in');
-                  return;
-                }
-                await wrapAction('register-device-now', async () => {
-                  await registerCurrentDevice(authUser.uid, 'dev-options-button');
-                  showDevToast('Device registration completed.');
-                });
-              }}
-            />
-            <DevButtonRow
-              label="Reconnect Devices"
-              desc="Force heartbeat and rebuild active Firestore listeners"
-              actionLabel="Reconnect"
-              actionId="reconnect-devices"
-              onPress={async () => {
-                if (!authUser?.uid) {
-                  showDevToast('Error: Not signed in');
-                  return;
-                }
-                await wrapAction('reconnect-devices', async () => {
-                  await reconnectDevices();
-                  showDevToast('Device reconnection completed.');
-                });
-              }}
-            />
-            <DevButtonRow
-              label="Push Local Settings to Cloud"
-              desc="Overwrite cloud profile/settings with this device's state"
-              actionLabel="Push Settings"
-              actionId="push-settings"
-              onPress={async () => {
-                if (window.confirm('Overwrite cloud settings with local state?')) {
-                  await wrapAction('push-settings', pushLocalSettingsToCloud);
-                  showDevToast('Settings pushed successfully.');
-                }
-              }}
-            />
-            <DevButtonRow
-              label="Pull Cloud Settings to Device"
-              desc="Overwrite local settings with cloud profile/settings"
-              actionLabel="Pull Settings"
-              actionId="pull-settings"
-              onPress={async () => {
-                if (window.confirm('Overwrite local settings with cloud state?')) {
-                  await wrapAction('pull-settings', pullCloudSettingsFromCloud);
-                  showDevToast('Settings pulled successfully.');
-                }
-              }}
-            />
-            <DevButtonRow
-              label="Copy Sync Diagnostics"
-              desc="Copy formatted sync state details to clipboard"
-              actionLabel="Copy"
-              actionId="copy-sync-diag"
-              onPress={() => {
-                const report = Object.entries(getSyncDiagnostics())
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join('\n');
-                navigator.clipboard
-                  .writeText(report)
-                  .then(() => showDevToast('Sync diagnostics copied.'));
-              }}
-            />
-            <DevButtonRow
-              label="Reset Local Sync State Only"
-              desc="Clear metadata to force a clean pull next open"
-              actionLabel="Reset Sync State"
-              actionId="reset-sync"
-              onPress={handleResetSyncState}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Upload Local Data Snapshot"
-              desc="Write a custom backup doc to backups collection"
-              actionLabel="Upload Backup"
-              actionId="upload-snapshot"
-              onPress={handleUploadSnapshot}
-            />
-            <DevButtonRow
-              label="Clear Sync Logs & Errors"
-              desc="Flush all logged conflict history and reset phase error"
-              actionLabel="Clear Logs"
-              actionId="clear-sync-logs"
-              onPress={handleClearSyncLogs}
-            />
-
-            <DevButtonRow
-              label="Clear Temporary Files"
-              desc="Reset session-scoped configs"
-              actionLabel="Clear"
-              actionId="clear-temp"
-              onPress={handleClearTemporaryAction}
-            />
-            <DevButtonRow
-              label="Export Local Diagnostics"
-              desc="Download complete preferences and storage dump"
-              actionLabel="Export"
-              actionId="export-local"
-              onPress={handleExportLocalDiagnosticsAction}
-            />
-          </div>
-
-          <SettingsSectionLabel>5. UI & Navigation</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevInfoRow label="Current Root View" value="App" />
-            <DevInfoRow label="Current Active App" value="hub" />
-            <DevInfoRow label="Return-to-Hub State" value="Idle" />
-            <DevInfoRow
-              label="Overlay State"
-              desc="Count of active modals/sheets in viewport"
-              value={String(document.querySelectorAll('.modal-backdrop, .overlay').length)}
-            />
-            <DevInfoRow label="Transition State" value="Inactive" />
-            <DevButtonRow
-              label="Reset App Shell State"
-              desc="Revert all store configurations to default"
-              actionLabel="Reset Shell"
-              actionId="reset-shell"
-              onPress={handleResetAppShellAction}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Force Return to Hub"
-              desc="Bypass view locks & trigger returnToStudioHub"
-              actionLabel="Trigger Return"
-              actionId="force-return"
-              onPress={handleForceReturnHubAction}
-            />
-          </div>
-
-          <SettingsSectionLabel>6. Danger Zone</SettingsSectionLabel>
-          <div style={cardStyle}>
-            <DevButtonRow
-              label="Reset Developer Options"
-              desc="Disable developer options and lock this menu"
-              actionLabel="Reset"
-              actionId="reset-developer"
-              onPress={handleResetDeveloperAction}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Clear Debug Logs"
-              desc="Reset all current memory logs"
-              actionLabel="Clear Logs"
-              actionId="clear-logs"
-              onPress={handleClearDebugLogsAction}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Reset Update State"
-              desc="Wipe update configurations, logs & choices"
-              actionLabel="Reset Update State"
-              actionId="reset-update-state"
-              onPress={handleResetUpdateStateAction}
-              isDestructive
-            />
-            <DevButtonRow
-              label="Disable Developer Options"
-              desc="Exit developer mode immediately"
-              actionLabel="Disable"
-              actionId="disable-dev"
-              onPress={handleResetDeveloperAction}
-              isDestructive
-            />
-          </div>
-        </div>
-      );
-    } catch (e: any) {
-      console.error('Error rendering Developer Options:', e);
-      return (
-        <div
-          style={{
-            padding: '24px 0',
-            color: 'var(--c-text-secondary)',
-            fontFamily: 'var(--type-body-font, var(--studio-font-body))',
-            textAlign: 'center',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 48, color: '#ef4444', marginBottom: 12 }}
-          >
-            error
-          </span>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--c-text-primary)' }}>
-            Diagnostics unavailable
-          </p>
-          <p style={{ margin: '8px 0 0', fontSize: 13 }}>
-            An error occurred while loading developer details.
-          </p>
-        </div>
-      );
-    }
-  }
-
   function renderAboutContent() {
     const subAppLogos: { key: string; node: React.ReactNode; label: string }[] = [
       { key: 'chordex', label: 'Chordex', node: <ChordexLogo size={34} /> },
@@ -4024,252 +3008,20 @@ export function HubSettings({
     );
   }
 
-  function RenderUpdaterContent() {
-    const isNative = Capacitor.isNativePlatform();
-    const [autoUpdates, setAutoUpdates] = useState(() => {
-      return localStorage.getItem('studio:automatic_updates') !== 'false';
-    });
-    const handleToggleAutoUpdates = (val: boolean) => {
-      setAutoUpdates(val);
-      localStorage.setItem('studio:automatic_updates', String(val));
-    };
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-4)',
-          width: '100%',
-          paddingBottom: 'var(--space-6)',
-        }}
-      >
-        <SettingSection title={lang === 'es' ? 'SISTEMA DE ACTUALIZACIONES' : 'UPDATE SYSTEM'}>
-          {/* Current Version */}
-          <SettingRow
-            label={lang === 'es' ? 'Versión actual' : 'Current Version'}
-            desc={`${APP_VERSION_TAG} ${APP_VERSION} (Build ${APP_VERSION_DATE})`}
-          >
-            <span style={{ fontSize: 12, color: 'var(--c-text-secondary)', fontWeight: 600 }}>
-              {lang === 'es' ? 'Instalado' : 'Installed'}
-            </span>
-          </SettingRow>
-
-          {/* Check for Updates */}
-          <SettingRow
-            label={lang === 'es' ? 'Buscar actualizaciones' : 'Check for Updates'}
-            desc={getUpdaterStatusText(updater, lang)}
-          >
-            {updater.loading ? (
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontSize: 18,
-                  color: accent.from,
-                  animation: 'updater-check-spin 1s linear infinite',
-                  display: 'inline-block',
-                }}
-              >
-                refresh
-              </span>
-            ) : updater.updateAvailable ? (
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => updater.openModal()}
-                icon={
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                    {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
-                      updater.updateState
-                    )
-                      ? 'install_mobile'
-                      : 'download'}
-                  </span>
-                }
-              >
-                {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
-                  updater.updateState
-                )
-                  ? lang === 'es'
-                    ? 'Instalar'
-                    : 'Install Update'
-                  : lang === 'es'
-                    ? 'Continuar'
-                    : 'Continue Update'}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={async () => {
-                  await updater.checkNow();
-                }}
-              >
-                {lang === 'es' ? 'Buscar' : 'Check Now'}
-              </Button>
-            )}
-          </SettingRow>
-
-          {/* Automatic Updates */}
-          <SettingRow
-            label={lang === 'es' ? 'Actualizaciones automáticas' : 'Automatic Updates'}
-            desc={
-              lang === 'es'
-                ? 'Buscar y descargar compilaciones en segundo plano'
-                : 'Check and download builds in the background'
-            }
-          >
-            <Toggle value={autoUpdates} onChange={handleToggleAutoUpdates} />
-          </SettingRow>
-
-          {/* Update Diagnostics */}
-          <SettingRow
-            label={lang === 'es' ? 'Diagnósticos de actualización' : 'Update Diagnostics'}
-            desc={
-              lang === 'es'
-                ? 'Copiar informes de depuración y estado del actualizador'
-                : 'Copy debug reports and check recovery logs'
-            }
-          >
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={async () => {
-                try {
-                  const report = await updater.getDiagnosticsReport();
-                  await navigator.clipboard.writeText(report);
-                  showDevToast(
-                    lang === 'es' ? 'Copiado al portapapeles' : 'Copied report to clipboard'
-                  );
-                } catch (e) {
-                  alert(e instanceof Error ? e.message : String(e));
-                }
-              }}
-              icon={
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  content_copy
-                </span>
-              }
-            >
-              {lang === 'es' ? 'Copiar' : 'Copy'}
-            </Button>
-          </SettingRow>
-
-          {/* Changelog */}
-          <SettingRow
-            label={lang === 'es' ? 'Historial de cambios' : 'Changelog'}
-            desc={
-              lang === 'es'
-                ? 'Ver notas de lanzamiento completas'
-                : 'View full chronological release notes'
-            }
-          >
-            <button
-              onClick={() => navigate('changelog')}
-              className="btn-smooth animate-click"
-              style={{
-                padding: '6px 14px',
-                borderRadius: 10,
-                background: 'var(--c-surface-low)',
-                color: 'var(--c-text-primary)',
-                border: '1px solid var(--c-border)',
-                fontSize: 'var(--font-section-label)',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                history
-              </span>
-              {lang === 'es' ? 'Ver' : 'View'}
-            </button>
-          </SettingRow>
-        </SettingSection>
-
-        {/* About this Update */}
-        {updater.updateAvailable && updater.changelog && (
-          <SettingSection
-            title={lang === 'es' ? 'ACERCA DE ESTA ACTUALIZACIÓN' : 'ABOUT THIS UPDATE'}
-          >
-            <div
-              style={{
-                padding: 'var(--density-row-pad)',
-                color: 'var(--c-text-secondary)',
-                fontSize: 13,
-                lineHeight: 1.6,
-              }}
-            >
-              <p style={{ margin: '0 0 10px 0', fontWeight: 700, color: 'var(--c-text-primary)' }}>
-                {lang === 'es' ? 'Novedades en v' : "What's new in v"}
-                {updater.remoteVersion}:
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {updater.changelog.split('\n').map((line, idx) => {
-                  const cleanLine = line.replace(/^[•\s*-]+/g, '').trim();
-                  if (!cleanLine) return null;
-                  return (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                      <span style={{ color: accent.from, marginTop: 1 }}>•</span>
-                      <span>{cleanLine}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </SettingSection>
-        )}
-
-        {/* Recovery official releases link */}
-        {isNative && (
-          <SettingSection title={lang === 'es' ? 'RECUPERACIÓN' : 'RECOVERY'}>
-            <SettingRow
-              label={lang === 'es' ? 'Descargas oficiales' : 'Official Downloads'}
-              desc={
-                lang === 'es'
-                  ? 'Descargar compilaciones firmadas desde GitHub'
-                  : 'Download signed production builds from GitHub'
-              }
-            >
-              <button
-                onClick={() =>
-                  window.open('https://github.com/MAGEXE1000/Livex/releases', '_system')
-                }
-                className="btn-smooth animate-click"
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 10,
-                  background: 'var(--c-surface-low)',
-                  color: 'var(--c-text-primary)',
-                  border: '1px solid var(--c-border)',
-                  fontSize: 'var(--font-section-label)',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  download
-                </span>
-                GitHub
-              </button>
-            </SettingRow>
-          </SettingSection>
-        )}
-      </div>
-    );
-  }
-
   function renderActivePageContent(activePageId: SettingsPageId) {
     switch (activePageId as any) {
       case 'general':
         return renderGeneralContent();
       case 'updater':
-        return <RenderUpdaterContent />;
+        return (
+          <UpdaterSettingsContent
+            lang={lang}
+            updater={updater}
+            accent={accent}
+            showDevToast={showDevToast}
+            navigate={navigate}
+          />
+        );
       case 'appearance':
         console.log(
           '[APPEARANCE-RUNTIME-PROOF] StudioHub renderActivePageContent rendering StudioHubSettingsPanel for page: appearance'
@@ -4350,6 +3102,7 @@ export function HubSettings({
         >
           {(pageId) => {
             if (pageId === 'developer') {
+              if (page !== 'developer') return null;
               return (
                 <Suspense
                   fallback={

@@ -2134,7 +2134,7 @@ export default function LivexHub() {
                   </div>
                 )}
                 {/* ⚙️ SETTINGS TAB */}
-                {tabId === 'settings' && (
+                {tabId === 'settings' && tabId === tab && (
                   <Suspense fallback={null}>
                     <HubSettings
                       accent={accent}
@@ -2150,7 +2150,7 @@ export default function LivexHub() {
                   </Suspense>
                 )}
                 {/* 👤 PROFILE TAB */}
-                {tabId === 'profile' && (
+                {tabId === 'profile' && tabId === tab && (
                   <>
                     <Suspense fallback={null}>
                       <HubSettings

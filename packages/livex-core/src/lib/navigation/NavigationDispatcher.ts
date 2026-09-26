@@ -13,6 +13,7 @@ import {
   detectRecursion,
   isRootRouteOnly,
 } from './validation.js';
+import { CANONICAL_CONTENT_TRANSITION } from './navigationMotion.js';
 
 export class NavigationDispatcher {
   private static transitionTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -141,12 +142,14 @@ export class NavigationDispatcher {
       const toStr = `${to.app}${to.tab ? ':' + to.tab : ''}${to.page ? ':' + to.page : ''}`;
       const navStart = performance.now();
 
-      setTimeout(() => {
-        try {
-          const duration = performance.now() - navStart;
-          PerformanceProfiler.getInstance().recordNavigation(fromStr, toStr, type, duration);
-        } catch (_) {}
-      }, 300);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            const duration = performance.now() - navStart;
+            PerformanceProfiler.getInstance().recordNavigation(fromStr, toStr, type, duration);
+          } catch (_) {}
+        });
+      });
     } catch (_) {}
   }
 
@@ -235,7 +238,7 @@ export class NavigationDispatcher {
     this.transitionTimeout = setTimeout(() => {
       useNavigationStore.getState().setTransition(null, false);
       this.transitionTimeout = null;
-    }, 300); // 300ms matches visual transition timing
+    }, CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS);
   }
 }
 
