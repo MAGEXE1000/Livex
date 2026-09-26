@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.51';
-export const NATIVE_VERSION_CODE = 40651;
-export const WEB_VERSION = '4.6.51';
+export const NATIVE_VERSION = '4.6.52';
+export const NATIVE_VERSION_CODE = 40652;
+export const WEB_VERSION = '4.6.52';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/24/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e2f3f864';
+export const APP_COMMIT_SHA = 'b59b07fd';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/25/2026, 10:19:00 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/26/2026, 1:53:03 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,11 +101,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.',
-      'Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.',
-      'Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.',
-      'Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.',
-      'Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.',
+      'Freeverb IR Web Worker Offloading: Offloaded Freeverb impulse response generation (~1.16M floating-point calculations) to a background Web Worker, eliminating the main-thread freeze on first drum playback with reverb.',
+      'HouseKit Concurrency Cap: Implemented concurrency-capped worker queue for HouseKit audio asset loading, reducing simultaneous `decodeAudioData` operations from ~140 to 6 to eliminate memory pressure and audio thread starvation.',
+      'Audio Clock Sentinel Gate Cleanup: Replaced JavaScript `setTimeout` timers in audio note gate envelopes with audio-clock-accurate `AudioBufferSourceNode` sentinel callbacks, eliminating main-thread timer jitter and graph node accumulation.',
+      'DOM MutationObserver Header Detection: Replaced aggressive 50ms interval polling in navigation scroll observer with `MutationObserver`, completely eliminating idle CPU cycles when DOM elements are mounting.',
+      'Audio Hot-Loop Optimization: Hoisted Zustand store reads out of the per-step audio sequencer tick loop, eliminating repetitive allocations and state queries during playback.',
+      'Sync Engine Debounce & Auto-Backup Guards: Added empty-patch dirty check to `setStatus()`, debounced device registration to 5 minutes, and guarded auto-backup checks to eliminate redundant background sync work.',
+      'Theme Engine Redundant Write Elimination: Removed duplicate pre-dirty-check native storage write in theme manager.',
+      'Console Telemetry Silencing: Wrapped verbose navigation scroll and startup coordinator log calls in `DEV` environment guards, eliminating serialization and bridge overhead in production.',
     ],
   },
 ];
@@ -117,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.52',
+    date: '2026-09-26',
+    highlights: [
+      'Freeverb IR Web Worker Offloading: Offloaded Freeverb impulse response generation (~1.16M floating-point calculations) to a background Web Worker, eliminating the main-thread freeze on first drum playback with reverb.',
+      'HouseKit Concurrency Cap: Implemented concurrency-capped worker queue for HouseKit audio asset loading, reducing simultaneous `decodeAudioData` operations from ~140 to 6 to eliminate memory pressure and audio thread starvation.',
+      'Audio Clock Sentinel Gate Cleanup: Replaced JavaScript `setTimeout` timers in audio note gate envelopes with audio-clock-accurate `AudioBufferSourceNode` sentinel callbacks, eliminating main-thread timer jitter and graph node accumulation.',
+      'DOM MutationObserver Header Detection: Replaced aggressive 50ms interval polling in navigation scroll observer with `MutationObserver`, completely eliminating idle CPU cycles when DOM elements are mounting.',
+      'Audio Hot-Loop Optimization: Hoisted Zustand store reads out of the per-step audio sequencer tick loop, eliminating repetitive allocations and state queries during playback.',
+      'Sync Engine Debounce & Auto-Backup Guards: Added empty-patch dirty check to `setStatus()`, debounced device registration to 5 minutes, and guarded auto-backup checks to eliminate redundant background sync work.',
+    ],
+  },
   {
     version: '4.6.51',
     date: '2026-09-25',
@@ -216,16 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Multimodal Composer Controls: Added file validation rejecting unsupported binary formats and enabled instant submission with image/audio attachments without requiring typed text.',
       'Assistant Message Visual Parity: Rendered dedicated thumbnail preview cards for user image attachments and responsive icon badges for audio and chord documents.',
       'State-Driven ThinkingOrb Transitions: Eliminated arbitrary progress bars and fake timers, ensuring seamless handoff from reasoning and searching states into streaming content tokens.',
-    ],
-  },
-  {
-    version: '4.6.42',
-    date: '2026-09-24',
-    highlights: [
-      'Continuous Updater Surface Morphing: Eliminated dialog component unmounting between Checking and Update Available states, maintaining DOM persistence across the entire update lifecycle.',
-      'In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.',
-      'Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.',
-      'Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.',
     ],
   },
 ];
