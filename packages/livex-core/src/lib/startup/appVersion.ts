@@ -55,7 +55,10 @@ const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
   Capacitor;
-export const APP_VERSION = cap.isNativePlatform() ? NATIVE_VERSION : WEB_VERSION;
+export const APP_VERSION =
+  typeof cap?.isNativePlatform === 'function' && cap.isNativePlatform()
+    ? NATIVE_VERSION
+    : WEB_VERSION;
 
 /** Optional pre-release tag rendered in the UI (e.g. "Beta", "RC"). */
 export const APP_VERSION_TAG = '';

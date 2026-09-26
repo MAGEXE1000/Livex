@@ -1036,3 +1036,7 @@ class StartupCoordinatorClass {
 }
 
 export const StartupCoordinator = new StartupCoordinatorClass();
+
+if (typeof window !== 'undefined') {
+  (window as any).__studioStartupCoordinator = StartupCoordinator;
+}

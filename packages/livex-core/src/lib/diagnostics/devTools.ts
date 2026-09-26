@@ -717,6 +717,10 @@ export function recordPerfEvent(
   notifyListeners();
 }
 
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).__livexRecordPerfEvent = recordPerfEvent;
+}
+
 export function getPerfStats() {
   return perfRegistry;
 }

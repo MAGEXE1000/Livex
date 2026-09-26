@@ -36,6 +36,7 @@ import {
   type AppKey,
   useDeveloperInspectorStore,
   lockOrientation,
+  LivexProfiler,
 } from '@workspace/livex-core';
 
 import {
@@ -461,7 +462,7 @@ export function SharedAppShell({
                           key={hubRenderKey}
                           style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
-                          {hubElement}
+                          {hubElement && <LivexProfiler id="LivexHub">{hubElement}</LivexProfiler>}
                         </div>
                       </Suspense>
                     )}
@@ -480,12 +481,14 @@ export function SharedAppShell({
                     background: 'var(--app-bg)',
                   }}
                 >
-                  <SubAppRenderer
-                    app={currentAppKey as AppKey}
-                    activePanel={activePanel}
-                    onReady={handleAppPreloaded}
-                    subApps={subApps}
-                  />
+                  <LivexProfiler id={`SubApp:${currentAppKey}`}>
+                    <SubAppRenderer
+                      app={currentAppKey as AppKey}
+                      activePanel={activePanel}
+                      onReady={handleAppPreloaded}
+                      subApps={subApps}
+                    />
+                  </LivexProfiler>
                 </div>
               );
             }}

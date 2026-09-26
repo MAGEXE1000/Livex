@@ -6,6 +6,7 @@ import {
 import { useNavigationStore } from '../../store/useNavigationStore.js';
 import { useSettingsStore } from '../../store/useSettingsStore.js';
 import { NavigationCoordinator } from './NavigationCoordinator.js';
+import { PerformanceProfiler } from '../performance/performanceProfiler.js';
 import {
   normalizeAndValidateRoute,
   isRouteEqual,
@@ -37,6 +38,7 @@ export class NavigationDispatcher {
     else if (nextRoute.type === 'sheet') tType = 'sheet';
     else if (nextRoute.type === 'overlay') tType = 'overlay';
 
+    this.recordNavTiming(current, nextRoute, tType);
     this.lockTransition(tType);
 
     const newHistory = [...store.history, nextRoute];
@@ -49,7 +51,9 @@ export class NavigationDispatcher {
   public static replace(route: Partial<NavigationRoute>): void {
     const nextRoute = NavigationCoordinator.resolveDefaultRoute(normalizeAndValidateRoute(route));
     const store = useNavigationStore.getState();
+    const current = store.history[store.history.length - 1];
 
+    this.recordNavTiming(current, nextRoute, 'replace');
     this.lockTransition('replace');
 
     const newHistory = [...store.history.slice(0, -1), nextRoute];
@@ -66,11 +70,13 @@ export class NavigationDispatcher {
     }
 
     const poppedRoute = store.history[store.history.length - 1];
+    const prevRoute = store.history[store.history.length - 2];
     let tType: TransitionType = 'backward';
     if (poppedRoute.type === 'modal') tType = 'modal';
     else if (poppedRoute.type === 'sheet') tType = 'sheet';
     else if (poppedRoute.type === 'overlay') tType = 'overlay';
 
+    this.recordNavTiming(poppedRoute, prevRoute, tType);
     this.lockTransition(tType);
 
     const newHistory = store.history.slice(0, -1);
@@ -92,6 +98,9 @@ export class NavigationDispatcher {
       return;
     }
 
+    const current = store.history[store.history.length - 1];
+    const target = store.history[index];
+    this.recordNavTiming(current, target, 'backward');
     this.lockTransition('backward');
 
     const newHistory = store.history.slice(0, index + 1);
@@ -112,8 +121,33 @@ export class NavigationDispatcher {
     );
 
     const store = useNavigationStore.getState();
+    const current = store.history[store.history.length - 1];
+    const target = validatedStack[validatedStack.length - 1];
+    this.recordNavTiming(current, target, 'replace');
     this.lockTransition('replace');
     store.setHistory(validatedStack);
+  }
+
+  private static recordNavTiming(
+    from: NavigationRoute | undefined,
+    to: NavigationRoute | undefined,
+    type: string
+  ): void {
+    try {
+      if (!to) return;
+      const fromStr = from
+        ? `${from.app}${from.tab ? ':' + from.tab : ''}${from.page ? ':' + from.page : ''}`
+        : 'initial';
+      const toStr = `${to.app}${to.tab ? ':' + to.tab : ''}${to.page ? ':' + to.page : ''}`;
+      const navStart = performance.now();
+
+      setTimeout(() => {
+        try {
+          const duration = performance.now() - navStart;
+          PerformanceProfiler.getInstance().recordNavigation(fromStr, toStr, type, duration);
+        } catch (_) {}
+      }, 300);
+    } catch (_) {}
   }
 
   /**

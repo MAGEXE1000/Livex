@@ -1762,11 +1762,15 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           score: profiler.getScore(metrics),
           metrics,
           warnings: profiler.getWarnings(metrics),
+          snapshot: profiler.exportDiagnosticSnapshot(),
         };
-        dump.componentProfiler = Array.from(perf.entries()).map(([k, v]) => ({
-          component: k,
-          ...v,
-        }));
+        dump.componentProfiler =
+          metrics.componentRenderProfiles.length > 0
+            ? metrics.componentRenderProfiles
+            : Array.from(perf.entries()).map(([k, v]) => ({
+                component: k,
+                ...v,
+              }));
         break;
       }
       case 'Network':
@@ -2765,6 +2769,16 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
       typeof window !== 'undefined' && Boolean((window.performance as any)?.memory);
     const mem = hasMemoryAPI ? (window.performance as any).memory : null;
 
+    const handleExportSnapshot = () => {
+      const snapshot = profiler.exportDiagnosticSnapshot();
+      copyToClipboard('Performance Diagnostic Snapshot', snapshot);
+    };
+
+    const handleResetCounters = () => {
+      profiler.reset();
+      showToast('Performance counters reset.');
+    };
+
     const copyMemoryMap = () => {
       const memoryStats = {
         timestamp: new Date().toISOString(),
@@ -2781,7 +2795,10 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     };
 
     const copyComponentRenderStats = () => {
-      const stats = Array.from(perf.entries()).map(([k, v]) => ({ component: k, ...v }));
+      const stats =
+        metrics.componentRenderProfiles.length > 0
+          ? metrics.componentRenderProfiles
+          : Array.from(perf.entries()).map(([k, v]) => ({ component: k, ...v }));
       copyToClipboard('Component Render Stats', stats);
     };
 
@@ -2811,7 +2828,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           }
           @media (min-width: 1024px) {
             .perf-hero-grid {
-              grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             }
           }
           .perf-columns-grid {
@@ -2826,7 +2843,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           }
         `}</style>
 
-        {/* 1. HEALTH SCORE & LIVE TELEMETRY HERO */}
+        {/* 1. HEALTH SCORE & ACTIONABLE CONTROLS HERO */}
         <div
           style={{
             background: cardBg,
@@ -2857,15 +2874,15 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
               <div
                 style={{
-                  width: 48,
-                  height: 48,
+                  width: 50,
+                  height: 50,
                   borderRadius: '50%',
                   border: `3.5px solid ${getScoreColor(score)}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 800,
-                  fontSize: '17px',
+                  fontSize: '18px',
                   color: 'var(--c-text-primary)',
                   background: innerCardBg,
                   flexShrink: 0,
@@ -2895,9 +2912,9 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       minWidth: 0,
                     }}
                   >
-                    Runtime Performance Health
+                    Runtime Performance Diagnostics
                   </h3>
-                  {originBadge('CALCULATED')}
+                  {originBadge('MEASURED')}
                 </div>
                 <div
                   style={{
@@ -2910,17 +2927,68 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   Status:{' '}
                   <strong style={{ color: getScoreColor(score) }}>
-                    {score >= 90 ? 'Excellent' : score >= 70 ? 'Optimal' : 'Jank Detected'}
+                    {score >= 90 ? 'Optimal' : score >= 70 ? 'Moderate Load' : 'Jank Detected'}
                   </strong>{' '}
-                  • Synthesized from frame pacing, long tasks, and JS heap stability.
+                  • Synthesized from frame budget overruns, long tasks, and React reconciliation.
                 </div>
               </div>
             </div>
+
+            {/* Quick Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                onClick={handleExportSnapshot}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 10,
+                  background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--c-border)',
+                  color: 'var(--c-text-primary)',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: 'var(--studio-font-body)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--studio-accent-from, #2563eb)' }}>
+                  ios_share
+                </span>
+                Export Diagnostic Snapshot
+              </button>
+              <button
+                onClick={handleResetCounters}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 10,
+                  background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--c-border)',
+                  color: 'var(--c-text-secondary)',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontFamily: 'var(--studio-font-body)',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Reset session telemetry counters"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  restart_alt
+                </span>
+                Reset
+              </button>
+            </div>
           </div>
 
-          {/* 4 Core Telemetry Cards Grid */}
+          {/* 6 Core Telemetry Cards Grid */}
           <div className="perf-hero-grid" style={{ minWidth: 0 }}>
-            {/* Card 1: Frame Rate */}
+            {/* Card 1: Frame Rate & Percentiles */}
             <div
               style={{
                 background: innerCardBg,
@@ -2974,7 +3042,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               </div>
               <div
                 style={{
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -2987,6 +3055,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span>Avg: {metrics.averageFps}</span>
                 <span>1% Low: {metrics.low1PercentFps}</span>
+                <span>5% Low: {metrics.low5PercentFps}</span>
               </div>
             </div>
 
@@ -3039,10 +3108,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   {metrics.frameTime}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>ms</span>
+                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                  (Avg: {metrics.avgFrameTime} ms)
+                </span>
               </div>
               <div
                 style={{
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3053,18 +3125,19 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   minWidth: 0,
                 }}
               >
+                <span>Worst: {metrics.worstFrameTime}ms</span>
                 <span>Jitter: ±{metrics.frameVariance}ms</span>
                 <span
                   style={{
-                    color: metrics.droppedFrames > 0 ? '#fbbf24' : 'var(--c-text-secondary)',
+                    color: metrics.jankyFrames > 0 ? '#fbbf24' : 'var(--c-text-secondary)',
                   }}
                 >
-                  Drops: {metrics.droppedFrames}
+                  Janky: {metrics.jankyFrames}
                 </span>
               </div>
             </div>
 
-            {/* Card 3: Main Thread Lag */}
+            {/* Card 3: Frame Budget Overruns */}
             <div
               style={{
                 background: innerCardBg,
@@ -3097,7 +3170,82 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     fontFamily: 'Inter',
                   }}
                 >
-                  Event Loop Lag
+                  Frame Budget Overruns
+                </span>
+                {originBadge('MEASURED')}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 800,
+                    color:
+                      metrics.framesExceeding60Hz > 0
+                        ? '#ef4444'
+                        : metrics.framesExceeding90Hz > 0
+                          ? '#f59e0b'
+                          : 'var(--c-text-primary)',
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  {metrics.framesExceeding60Hz}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>
+                  &gt;16.67ms (60 Hz)
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'monospace',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  flexWrap: 'wrap',
+                  gap: '2px 8px',
+                  minWidth: 0,
+                }}
+              >
+                <span>&gt;11.1ms (90Hz): {metrics.framesExceeding90Hz}</span>
+                <span>&gt;8.33ms (120Hz): {metrics.framesExceeding120Hz}</span>
+              </div>
+            </div>
+
+            {/* Card 4: Event Loop & JS Thread Lag */}
+            <div
+              style={{
+                background: innerCardBg,
+                borderRadius: 14,
+                padding: '12px 14px',
+                border: '1px solid var(--c-border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 4,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'Inter',
+                  }}
+                >
+                  JS Event Loop Lag
                 </span>
                 {originBadge('MEASURED')}
               </div>
@@ -3113,10 +3261,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   {metrics.eventLoopDelay.toFixed(1)}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>ms</span>
+                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                  (Peak: {metrics.jsThreadPeak.toFixed(0)} ms)
+                </span>
               </div>
               <div
                 style={{
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3127,12 +3278,99 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   minWidth: 0,
                 }}
               >
-                <span>Long Tasks: {metrics.mainThreadBlockingTotal.toFixed(0)}ms</span>
+                <span>Long Tasks: {metrics.longTaskCount}</span>
+                <span>Total Block: {metrics.mainThreadBlockingTotal.toFixed(0)}ms</span>
                 <span>Max: {metrics.longestBlockingTask.toFixed(0)}ms</span>
               </div>
             </div>
 
-            {/* Card 4: JS Heap Usage */}
+            {/* Card 5: React Commits & Render Lifecycle */}
+            <div
+              style={{
+                background: innerCardBg,
+                borderRadius: 14,
+                padding: '12px 14px',
+                border: '1px solid var(--c-border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 4,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'Inter',
+                  }}
+                >
+                  React Commits & Renders
+                </span>
+                {originBadge('MEASURED')}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 800,
+                    color: 'var(--c-text-primary)',
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  {metrics.reactCommitCount}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>commits</span>
+                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                  (Avg: {metrics.reactAvgCommitDuration} ms)
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'monospace',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  flexWrap: 'wrap',
+                  gap: '2px 8px',
+                  minWidth: 0,
+                }}
+              >
+                <span>
+                  Slowest:{' '}
+                  {metrics.reactSlowestCommit
+                    ? `${metrics.reactSlowestCommit.duration}ms`
+                    : 'None'}
+                </span>
+                <span>
+                  Thrashing:{' '}
+                  <strong
+                    style={{
+                      color:
+                        metrics.highFrequencyComponents.length > 0 ? '#ef4444' : 'inherit',
+                    }}
+                  >
+                    {metrics.highFrequencyComponents.length}
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Card 6: JS Heap Usage */}
             <div
               style={{
                 background: innerCardBg,
@@ -3183,7 +3421,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               </div>
               <div
                 style={{
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3201,726 +3439,63 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           </div>
         </div>
 
-        {/* 2. TWO-COLUMN DETAILS: RENDERING PACING & MEMORY/HARDWARE */}
-        <div className="perf-columns-grid" style={{ minWidth: 0 }}>
-          {/* Column A: Frame Pacing Timeline & GPU Info */}
-          <div
-            style={{
-              background: cardBg,
-              borderRadius: 18,
-              padding: '16px 18px',
-              border: '1px solid var(--c-border)',
-              boxShadow: 'var(--surface-topbar-shadow)',
-              backdropFilter: 'var(--surface-float-blur)',
-              WebkitBackdropFilter: 'var(--surface-float-blur)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              minWidth: 0,
-              boxSizing: 'border-box',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 8,
-                minWidth: 0,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 18,
-                    color: 'var(--studio-accent-from, #2563eb)',
-                    flexShrink: 0,
-                  }}
-                >
-                  speed
-                </span>
-                <h4
-                  style={{
-                    margin: 0,
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-body)',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  Frame Pacing & V-Sync
-                </h4>
-              </div>
-              {originBadge('MEASURED')}
-            </div>
-
-            {/* Pacing Visualizer */}
-            <div
-              style={{
-                height: 80,
-                background: innerCardBg,
-                borderRadius: 12,
-                padding: '10px 14px 6px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-                gap: 6,
-                border: '1px solid var(--c-border)',
-                position: 'relative',
-                overflow: 'hidden',
-                minWidth: 0,
-                boxSizing: 'border-box',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  height: '100%',
-                  width: '100%',
-                  gap: 3,
-                  minWidth: 0,
-                }}
-              >
-                {chartBars.map((val, idx) => {
-                  const barHeight = Math.max(15, Math.min(100, (val / metrics.refreshRate) * 100));
-                  const isDrop = val < metrics.refreshRate * 0.85;
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        background: isDrop ? '#fbbf24' : 'var(--studio-accent-from, #2563eb)',
-                        height: `${barHeight}%`,
-                        width: '100%',
-                        borderRadius: '2px 2px 0 0',
-                        opacity: 0.4 + (idx / chartBars.length) * 0.6,
-                        transition: 'height 0.2s ease',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '2px 6px',
-                  fontSize: '9px',
-                  color: 'var(--c-text-secondary)',
-                  fontFamily: 'Inter, sans-serif',
-                  minWidth: 0,
-                }}
-              >
-                <span>Last 20 RAF Frames</span>
-                <span>V-Sync Active ({metrics.refreshRate} Hz Target)</span>
-              </div>
-            </div>
-
-            {/* GPU & Hardware Rendering Details */}
-            <div
-              style={{
-                background: innerCardBg,
-                borderRadius: 12,
-                padding: '10px 12px',
-                border: '1px solid var(--c-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                minWidth: 0,
-                boxSizing: 'border-box',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  flexWrap: 'wrap',
-                  gap: '2px 8px',
-                  fontSize: '11px',
-                  minWidth: 0,
-                }}
-              >
-                <span
-                  style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '100px' }}
-                >
-                  GPU Renderer
-                </span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'monospace',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 1,
-                  }}
-                  title={metrics.gpuRenderer}
-                >
-                  {metrics.gpuRenderer}
-                </span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  flexWrap: 'wrap',
-                  gap: '2px 8px',
-                  fontSize: '11px',
-                  minWidth: 0,
-                }}
-              >
-                <span
-                  style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '140px' }}
-                >
-                  Heavy Frame Spikes (&gt;33ms)
-                </span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontFamily: 'monospace',
-                    color: metrics.longFrames > 0 ? '#fbbf24' : 'var(--c-text-primary)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {metrics.longFrames} frames
-                </span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  flexWrap: 'wrap',
-                  gap: '2px 8px',
-                  fontSize: '11px',
-                  minWidth: 0,
-                }}
-              >
-                <span
-                  style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '130px' }}
-                >
-                  Critical Jank (&gt;50ms)
-                </span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontFamily: 'monospace',
-                    color: metrics.veryLongFrames > 0 ? '#ef4444' : 'var(--c-text-primary)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {metrics.veryLongFrames} frames
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Column B: Memory Snapshot & Engine Profile */}
-          <div
-            style={{
-              background: cardBg,
-              borderRadius: 18,
-              padding: '16px 18px',
-              border: '1px solid var(--c-border)',
-              boxShadow: 'var(--surface-topbar-shadow)',
-              backdropFilter: 'var(--surface-float-blur)',
-              WebkitBackdropFilter: 'var(--surface-float-blur)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              minWidth: 0,
-              boxSizing: 'border-box',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 8,
-                minWidth: 0,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 18,
-                    color: 'var(--studio-accent-from, #2563eb)',
-                    flexShrink: 0,
-                  }}
-                >
-                  memory
-                </span>
-                <h4
-                  style={{
-                    margin: 0,
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-body)',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  Memory & Resource Profile
-                </h4>
-              </div>
-              {originBadge(hasMemoryAPI ? 'MEASURED' : 'UNAVAILABLE')}
-            </div>
-
-            <div
-              style={{
-                background: innerCardBg,
-                borderRadius: 12,
-                padding: '10px 12px',
-                border: '1px solid var(--c-border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                flex: 1,
-                justifyContent: 'center',
-                minWidth: 0,
-                boxSizing: 'border-box',
-              }}
-            >
-              {hasMemoryAPI ? (
-                <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      flexWrap: 'wrap',
-                      gap: '2px 8px',
-                      fontSize: '11px',
-                      minWidth: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        flex: '1 1 auto',
-                        minWidth: '130px',
-                      }}
-                    >
-                      Active Used JS Heap
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary)',
-                        fontFamily: 'monospace',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {metrics.usedHeap}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      flexWrap: 'wrap',
-                      gap: '2px 8px',
-                      fontSize: '11px',
-                      minWidth: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        flex: '1 1 auto',
-                        minWidth: '130px',
-                      }}
-                    >
-                      Allocated Total JS Heap
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary)',
-                        fontFamily: 'monospace',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {metrics.heapSize}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      flexWrap: 'wrap',
-                      gap: '2px 8px',
-                      fontSize: '11px',
-                      minWidth: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        flex: '1 1 auto',
-                        minWidth: '120px',
-                      }}
-                    >
-                      V8 Heap Size Limit
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary)',
-                        fontFamily: 'monospace',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {mem ? `${Math.round(mem.jsHeapSizeLimit / (1024 * 1024))} MB` : 'N/A'}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      flexWrap: 'wrap',
-                      gap: '2px 8px',
-                      fontSize: '11px',
-                      minWidth: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        flex: '1 1 auto',
-                        minWidth: '130px',
-                      }}
-                    >
-                      Heap Allocation Velocity
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary)',
-                        fontFamily: 'monospace',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {metrics.heapGrowth}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{
-                    padding: '12px 6px',
-                    textAlign: 'center',
-                    color: 'var(--c-text-secondary)',
-                    fontSize: '11.5px',
-                    lineHeight: 1.4,
-                    minWidth: 0,
-                  }}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 22,
-                      opacity: 0.5,
-                      marginBottom: 4,
-                      display: 'block',
-                    }}
-                  >
-                    lock
-                  </span>
-                  V8 heap memory metrics are restricted in this WebView sandbox.
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={copyMemoryMap}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 10,
-                background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid var(--c-border)',
-                color: 'var(--c-text-primary)',
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 700,
-                fontSize: 11,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 13, opacity: 0.7 }}>
-                content_copy
-              </span>
-              Copy Memory Snapshot
-            </button>
-          </div>
-        </div>
-
-        {/* 3. COMPONENT RENDERING PROFILER */}
-        <div
-          style={{
-            background: cardBg,
-            borderRadius: 18,
-            padding: '16px 18px',
-            border: '1px solid var(--c-border)',
-            boxShadow: 'var(--surface-topbar-shadow)',
-            backdropFilter: 'var(--surface-float-blur)',
-            WebkitBackdropFilter: 'var(--surface-float-blur)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            minWidth: 0,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 8,
-              minWidth: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)', flexShrink: 0 }}
-              >
-                account_tree
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <h4
-                  style={{
-                    margin: 0,
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-body)',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  Component Lifecycle Profiler
-                </h4>
-                <div
-                  style={{
-                    fontSize: '10.5px',
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'Inter',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  Live React render count & mount tracking
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              {originBadge('MEASURED')}
-              <button
-                onClick={copyComponentRenderStats}
-                style={{
-                  background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: '8px',
-                  color: 'var(--c-text-primary)',
-                  padding: '5px 10px',
-                  fontWeight: 700,
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'all 0.15s ease',
-                  fontFamily: 'var(--studio-font-body)',
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 13, opacity: 0.7 }}>
-                  content_copy
-                </span>
-                Copy Stats
-              </button>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-              maxHeight: 220,
-              overflowY: 'auto',
-              paddingRight: 4,
-              minWidth: 0,
-            }}
-          >
-            {perf.size === 0 ? (
-              <div
-                style={{
-                  fontSize: '11.5px',
-                  color: 'var(--c-text-secondary)',
-                  textAlign: 'center',
-                  padding: '18px 0',
-                  fontFamily: 'Inter',
-                }}
-              >
-                No heavy component render cycles logged yet in this session.
-              </div>
-            ) : (
-              Array.from(perf.entries()).map(([comp, stats]) => {
-                const isHighRerender = stats.renders > 15;
-                return (
-                  <div
-                    key={comp}
-                    style={{
-                      padding: '8px 12px',
-                      background: innerCardBg,
-                      border: isHighRerender
-                        ? '1px solid rgba(251, 191, 36, 0.3)'
-                        : '1px solid var(--c-border)',
-                      borderRadius: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '6px 12px',
-                      minWidth: 0,
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          color: isHighRerender ? '#fbbf24' : 'var(--c-text-primary)',
-                          fontFamily: 'monospace',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                        title={comp}
-                      >
-                        {comp}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '9.5px',
-                          color: 'var(--c-text-secondary)',
-                          fontFamily: 'Inter',
-                        }}
-                      >
-                        Last: {new Date(stats.lastRenderTime).toLocaleTimeString()}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        fontSize: '10.5px',
-                        fontFamily: 'monospace',
-                        flexShrink: 0,
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span style={{ color: 'var(--c-text-secondary)' }}>
-                        Mounts: <strong style={{ color: '#10b981' }}>{stats.mounts}</strong>
-                      </span>
-                      <span style={{ color: 'var(--c-text-secondary)' }}>
-                        Renders:{' '}
-                        <strong
-                          style={{
-                            color: isHighRerender
-                              ? '#f59e0b'
-                              : 'var(--studio-accent-from, #2563eb)',
-                          }}
-                        >
-                          {stats.renders}
-                        </strong>
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* 4. ACTIVE PERFORMANCE ALERTS (ONLY BACKED BY ACTUAL MEASUREMENTS) */}
+        {/* 2. ACTIONABLE PERFORMANCE WARNINGS (BACKED BY ACTUAL MEASUREMENTS) */}
         {warnings.length > 0 && (
           <div
             style={{
               background: cardBg,
               borderRadius: 18,
               padding: '16px 18px',
-              border: '1px solid rgba(238, 125, 119, 0.3)',
+              border: '1px solid rgba(238, 125, 119, 0.35)',
               boxShadow: 'var(--surface-topbar-shadow)',
               backdropFilter: 'var(--surface-float-blur)',
               WebkitBackdropFilter: 'var(--surface-float-blur)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 10,
+              gap: 12,
               minWidth: 0,
               boxSizing: 'border-box',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ color: '#ee7d77', fontSize: 18, flexShrink: 0 }}
-              >
-                warning
-              </span>
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '14px',
-                  fontWeight: 800,
-                  color: '#ee7d77',
-                  fontFamily: 'var(--studio-font-body)',
-                  wordBreak: 'break-word',
-                }}
-              >
-                Performance Bottlenecks Detected ({warnings.length})
-              </h4>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ color: '#ee7d77', fontSize: 18, flexShrink: 0 }}
+                >
+                  warning
+                </span>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#ee7d77',
+                    fontFamily: 'var(--studio-font-body)',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  Actionable Bottlenecks Detected ({warnings.length})
+                </h4>
+              </div>
+              {originBadge('CALCULATED')}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
               {warnings.map((w, idx) => (
                 <div
                   key={idx}
                   style={{
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     background: innerCardBg,
-                    borderLeft: `3px solid ${w.severity === 'Critical' ? '#ee7d77' : '#fbbf24'}`,
+                    borderLeft: `4px solid ${w.severity === 'Critical' ? '#ee7d77' : '#fbbf24'}`,
                     borderTop: '1px solid var(--c-border)',
                     borderRight: '1px solid var(--c-border)',
                     borderBottom: '1px solid var(--c-border)',
-                    borderRadius: '4px 10px 10px 4px',
+                    borderRadius: '4px 12px 12px 4px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 4,
+                    gap: 6,
                     minWidth: 0,
                     boxSizing: 'border-box',
                   }}
@@ -3935,28 +3510,43 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       minWidth: 0,
                     }}
                   >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontWeight: 800,
+                          fontSize: '12.5px',
+                          color: 'var(--c-text-primary)',
+                          fontFamily: 'var(--studio-font-body)',
+                        }}
+                      >
+                        {w.title}
+                      </span>
+                      {w.affectedSubsystem && (
+                        <span
+                          style={{
+                            fontSize: '9.5px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(37, 99, 235, 0.12)',
+                            color: 'var(--studio-accent-from, #2563eb)',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          {w.affectedSubsystem}
+                        </span>
+                      )}
+                    </div>
                     <span
                       style={{
-                        fontWeight: 800,
-                        fontSize: '12px',
-                        color: 'var(--c-text-primary)',
-                        wordBreak: 'break-word',
-                        minWidth: 0,
-                        flex: 1,
-                      }}
-                    >
-                      {w.title}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '8.5px',
+                        fontSize: '9px',
                         fontWeight: 800,
                         background:
                           w.severity === 'Critical'
                             ? 'rgba(238, 125, 119, 0.15)'
                             : 'rgba(251, 191, 36, 0.15)',
                         color: w.severity === 'Critical' ? '#ee7d77' : '#fbbf24',
-                        padding: '1px 5px',
+                        padding: '1px 6px',
                         borderRadius: '4px',
                         textTransform: 'uppercase',
                         flexShrink: 0,
@@ -3965,41 +3555,898 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       {w.severity}
                     </span>
                   </div>
+
                   <p
                     style={{
                       margin: 0,
                       fontSize: '11px',
-                      color: 'var(--c-text-secondary)',
-                      lineHeight: 1.35,
+                      color: 'var(--c-text-primary)',
+                      lineHeight: 1.4,
                       wordBreak: 'break-word',
+                      fontWeight: 600,
                     }}
                   >
                     {w.description}
                   </p>
+
                   <div
                     style={{
-                      fontSize: '10.5px',
+                      fontSize: '10px',
                       color: 'var(--c-text-secondary)',
-                      marginTop: 2,
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '2px 8px',
-                      minWidth: 0,
+                      gap: '4px 10px',
+                      fontFamily: 'monospace',
                     }}
                   >
                     <span>
-                      Measured:{' '}
-                      <strong style={{ color: 'var(--c-text-primary)' }}>{w.measured}</strong>
-                    </span>{' '}
-                    • <span>Expected: {w.expected}</span>
+                      Measured: <strong style={{ color: 'var(--c-text-primary)' }}>{w.actualValue || w.measured}</strong>
+                    </span>
+                    <span>•</span>
+                    <span>Expected: {w.threshold || w.expected}</span>
+                    {w.timestamp && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(w.timestamp).toLocaleTimeString()}</span>
+                      </>
+                    )}
                   </div>
+
+                  {w.possibleCause && (
+                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35, marginTop: 2 }}>
+                      <strong style={{ color: 'var(--c-text-primary)' }}>Root Cause:</strong> {w.possibleCause}
+                    </div>
+                  )}
+
+                  {w.suggestedInvestigation && (
+                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35 }}>
+                      <strong style={{ color: 'var(--c-text-primary)' }}>Suggested Fix:</strong> {w.suggestedInvestigation}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 5. PLATFORM AVAILABILITY DISCLAIMER NOTE */}
+        {/* 3. TWO-COLUMN DETAILED DIAGNOSTICS */}
+        <div className="perf-columns-grid" style={{ minWidth: 0 }}>
+          {/* Column A: Frame Pacing & Recent Long Tasks */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+            {/* Box A1: Frame Pacing & V-Sync */}
+            <div
+              style={{
+                background: cardBg,
+                borderRadius: 18,
+                padding: '16px 18px',
+                border: '1px solid var(--c-border)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                backdropFilter: 'var(--surface-float-blur)',
+                WebkitBackdropFilter: 'var(--surface-float-blur)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: 18,
+                      color: 'var(--studio-accent-from, #2563eb)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    speed
+                  </span>
+                  <h4
+                    style={{
+                      margin: 0,
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    Frame Pacing & V-Sync
+                  </h4>
+                </div>
+                {originBadge('MEASURED')}
+              </div>
+
+              {/* Pacing Visualizer */}
+              <div
+                style={{
+                  height: 80,
+                  background: innerCardBg,
+                  borderRadius: 12,
+                  padding: '10px 14px 6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  gap: 6,
+                  border: '1px solid var(--c-border)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'space-between',
+                    height: '100%',
+                    width: '100%',
+                    gap: 3,
+                    minWidth: 0,
+                  }}
+                >
+                  {chartBars.map((val, idx) => {
+                    const barHeight = Math.max(15, Math.min(100, (val / metrics.refreshRate) * 100));
+                    const isDrop = val < metrics.refreshRate * 0.85;
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          background: isDrop ? '#fbbf24' : 'var(--studio-accent-from, #2563eb)',
+                          height: `${barHeight}%`,
+                          width: '100%',
+                          borderRadius: '2px 2px 0 0',
+                          opacity: 0.4 + (idx / chartBars.length) * 0.6,
+                          transition: 'height 0.2s ease',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '2px 6px',
+                    fontSize: '9px',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'Inter, sans-serif',
+                    minWidth: 0,
+                  }}
+                >
+                  <span>Last 20 RAF Frames</span>
+                  <span>Target: {metrics.refreshRate} Hz ({ (1000 / metrics.refreshRate).toFixed(2) } ms budget)</span>
+                </div>
+              </div>
+
+              {/* GPU Renderer Details */}
+              <div
+                style={{
+                  background: innerCardBg,
+                  borderRadius: 12,
+                  padding: '10px 12px',
+                  border: '1px solid var(--c-border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '100px' }}>
+                    GPU Renderer
+                  </span>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'monospace',
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 1,
+                    }}
+                    title={metrics.gpuRenderer}
+                  >
+                    {metrics.gpuRenderer}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '140px' }}>
+                    Spikes &gt;33ms (Drop 30Hz)
+                  </span>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                      color: metrics.longFrames > 0 ? '#fbbf24' : 'var(--c-text-primary)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {metrics.longFrames} frames
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto', minWidth: '130px' }}>
+                    Critical Jank &gt;50ms
+                  </span>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                      color: metrics.veryLongFrames > 0 ? '#ef4444' : 'var(--c-text-primary)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {metrics.veryLongFrames} frames
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Box A2: Recent Long Tasks Log */}
+            <div
+              style={{
+                background: cardBg,
+                borderRadius: 18,
+                padding: '16px 18px',
+                border: '1px solid var(--c-border)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                backdropFilter: 'var(--surface-float-blur)',
+                WebkitBackdropFilter: 'var(--surface-float-blur)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: 18,
+                      color: 'var(--studio-accent-from, #2563eb)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    timer
+                  </span>
+                  <h4
+                    style={{
+                      margin: 0,
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    JavaScript Long Tasks ({metrics.recentLongTasks.length})
+                  </h4>
+                </div>
+                {originBadge('MEASURED')}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  maxHeight: 240,
+                  overflowY: 'auto',
+                  paddingRight: 4,
+                  minWidth: 0,
+                }}
+              >
+                {metrics.recentLongTasks.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: '11.5px',
+                      color: 'var(--c-text-secondary)',
+                      textAlign: 'center',
+                      padding: '24px 0',
+                      fontFamily: 'Inter',
+                    }}
+                  >
+                    No main-thread blocking tasks (&gt;50ms) logged yet in this session.
+                  </div>
+                ) : (
+                  [...metrics.recentLongTasks].reverse().map((task) => {
+                    const isSevere = task.duration > 100;
+                    return (
+                      <div
+                        key={task.id}
+                        style={{
+                          padding: '8px 12px',
+                          background: innerCardBg,
+                          border: isSevere
+                            ? '1px solid rgba(238, 125, 119, 0.3)'
+                            : '1px solid var(--c-border)',
+                          borderRadius: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '6px 12px',
+                          minWidth: 0,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              color: isSevere ? '#ee7d77' : '#fbbf24',
+                              fontFamily: 'monospace',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={task.source}
+                          >
+                            {task.source}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '9.5px',
+                              color: 'var(--c-text-secondary)',
+                              fontFamily: 'Inter',
+                              marginTop: 2,
+                            }}
+                          >
+                            Category: {task.category} • {new Date(task.timestamp).toLocaleTimeString()}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            fontSize: '12px',
+                            fontFamily: 'monospace',
+                            color: isSevere ? '#ee7d77' : '#fbbf24',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {task.duration.toFixed(1)} ms
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Column B: Startup, Navigation & Component Profiler */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+            {/* Box B1: Startup & Navigation Latency */}
+            <div
+              style={{
+                background: cardBg,
+                borderRadius: 18,
+                padding: '16px 18px',
+                border: '1px solid var(--c-border)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                backdropFilter: 'var(--surface-float-blur)',
+                WebkitBackdropFilter: 'var(--surface-float-blur)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: 18,
+                      color: 'var(--studio-accent-from, #2563eb)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    rocket_launch
+                  </span>
+                  <h4
+                    style={{
+                      margin: 0,
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    Startup & Navigation Timings
+                  </h4>
+                </div>
+                {originBadge('MEASURED')}
+              </div>
+
+              {/* Startup Metrics */}
+              <div
+                style={{
+                  background: innerCardBg,
+                  borderRadius: 12,
+                  padding: '10px 12px',
+                  border: '1px solid var(--c-border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto' }}>
+                    Cold Startup Duration
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--c-text-primary)', fontFamily: 'monospace' }}>
+                    {metrics.coldStartupDuration > 0 ? `${metrics.coldStartupDuration.toFixed(0)} ms` : 'Complete'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto' }}>
+                    Time to First Interactive Frame
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--c-text-primary)', fontFamily: 'monospace' }}>
+                    {metrics.firstInteractiveTime > 0 ? `${metrics.firstInteractiveTime.toFixed(0)} ms` : 'Immediate'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    flexWrap: 'wrap',
+                    gap: '2px 8px',
+                    fontSize: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ color: 'var(--c-text-secondary)', flex: '1 1 auto' }}>
+                    Avg Navigation Transition Latency
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--c-text-primary)', fontFamily: 'monospace' }}>
+                    {metrics.avgNavigationDuration > 0 ? `${metrics.avgNavigationDuration.toFixed(1)} ms` : 'Instant'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Recent Navigation Transitions List */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  maxHeight: 140,
+                  overflowY: 'auto',
+                  paddingRight: 4,
+                  minWidth: 0,
+                }}
+              >
+                {metrics.recentNavigations.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--c-text-secondary)',
+                      textAlign: 'center',
+                      padding: '12px 0',
+                      fontFamily: 'Inter',
+                    }}
+                  >
+                    No screen navigation transitions recorded yet.
+                  </div>
+                ) : (
+                  [...metrics.recentNavigations].reverse().map((nav) => (
+                    <div
+                      key={nav.id}
+                      style={{
+                        padding: '6px 10px',
+                        background: innerCardBg,
+                        borderRadius: 8,
+                        border: '1px solid var(--c-border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        fontSize: '10.5px',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--c-text-secondary)' }}>{nav.fromRoute}</span>
+                        <span style={{ color: 'var(--studio-accent-from, #2563eb)', margin: '0 4px' }}>→</span>
+                        <span style={{ color: 'var(--c-text-primary)', fontWeight: 700 }}>{nav.toRoute}</span>
+                      </div>
+                      <span style={{ fontWeight: 700, color: nav.durationMs > 100 ? '#fbbf24' : 'var(--c-text-primary)', flexShrink: 0 }}>
+                        {nav.durationMs.toFixed(0)} ms
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Box B2: Component Lifecycle & React Profiler */}
+            <div
+              style={{
+                background: cardBg,
+                borderRadius: 18,
+                padding: '16px 18px',
+                border: '1px solid var(--c-border)',
+                boxShadow: 'var(--surface-topbar-shadow)',
+                backdropFilter: 'var(--surface-float-blur)',
+                WebkitBackdropFilter: 'var(--surface-float-blur)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                minWidth: 0,
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)', flexShrink: 0 }}
+                  >
+                    account_tree
+                  </span>
+                  <h4
+                    style={{
+                      margin: 0,
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: 'var(--c-text-primary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    Component Lifecycle Profiler
+                  </h4>
+                </div>
+                <button
+                  onClick={copyComponentRenderStats}
+                  style={{
+                    background: isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--c-border)',
+                    borderRadius: '8px',
+                    color: 'var(--c-text-primary)',
+                    padding: '4px 8px',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 13, opacity: 0.7 }}>
+                    content_copy
+                  </span>
+                  Copy
+                </button>
+              </div>
+
+              {/* Component Render Table */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                  paddingRight: 4,
+                  minWidth: 0,
+                }}
+              >
+                {metrics.componentRenderProfiles.length === 0 && perf.size === 0 ? (
+                  <div
+                    style={{
+                      fontSize: '11.5px',
+                      color: 'var(--c-text-secondary)',
+                      textAlign: 'center',
+                      padding: '18px 0',
+                      fontFamily: 'Inter',
+                    }}
+                  >
+                    No component render cycles logged yet in this session.
+                  </div>
+                ) : metrics.componentRenderProfiles.length > 0 ? (
+                  metrics.componentRenderProfiles.map((comp) => {
+                    const isHighRerender = comp.isHighFrequency || comp.renders > 25;
+                    return (
+                      <div
+                        key={comp.name}
+                        style={{
+                          padding: '8px 12px',
+                          background: innerCardBg,
+                          border: isHighRerender
+                            ? '1px solid rgba(251, 191, 36, 0.35)'
+                            : '1px solid var(--c-border)',
+                          borderRadius: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '6px 12px',
+                          minWidth: 0,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              color: isHighRerender ? '#fbbf24' : 'var(--c-text-primary)',
+                              fontFamily: 'monospace',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={comp.name}
+                          >
+                            {comp.name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '9.5px',
+                              color: 'var(--c-text-secondary)',
+                              fontFamily: 'Inter',
+                            }}
+                          >
+                            Last: {new Date(comp.lastRenderTime).toLocaleTimeString()} • Avg: {comp.avgDuration || 0} ms
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: 10,
+                            fontSize: '10.5px',
+                            fontFamily: 'monospace',
+                            flexShrink: 0,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span style={{ color: 'var(--c-text-secondary)' }}>
+                            Mounts: <strong style={{ color: '#10b981' }}>{comp.mounts}</strong>
+                          </span>
+                          <span style={{ color: 'var(--c-text-secondary)' }}>
+                            Renders:{' '}
+                            <strong
+                              style={{
+                                color: isHighRerender
+                                  ? '#f59e0b'
+                                  : 'var(--studio-accent-from, #2563eb)',
+                              }}
+                            >
+                              {comp.renders}
+                            </strong>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  Array.from(perf.entries()).map(([compName, stats]) => {
+                    const isHighRerender = stats.renders > 15;
+                    return (
+                      <div
+                        key={compName}
+                        style={{
+                          padding: '8px 12px',
+                          background: innerCardBg,
+                          border: isHighRerender
+                            ? '1px solid rgba(251, 191, 36, 0.3)'
+                            : '1px solid var(--c-border)',
+                          borderRadius: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '6px 12px',
+                          minWidth: 0,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              color: isHighRerender ? '#fbbf24' : 'var(--c-text-primary)',
+                              fontFamily: 'monospace',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={compName}
+                          >
+                            {compName}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '9.5px',
+                              color: 'var(--c-text-secondary)',
+                              fontFamily: 'Inter',
+                            }}
+                          >
+                            Last: {new Date(stats.lastRenderTime).toLocaleTimeString()}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: 12,
+                            fontSize: '10.5px',
+                            fontFamily: 'monospace',
+                            flexShrink: 0,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span style={{ color: 'var(--c-text-secondary)' }}>
+                            Mounts: <strong style={{ color: '#10b981' }}>{stats.mounts}</strong>
+                          </span>
+                          <span style={{ color: 'var(--c-text-secondary)' }}>
+                            Renders:{' '}
+                            <strong
+                              style={{
+                                color: isHighRerender
+                                  ? '#f59e0b'
+                                  : 'var(--studio-accent-from, #2563eb)',
+                              }}
+                            >
+                              {stats.renders}
+                            </strong>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Cloud Sync & Memory Summary Strip */}
+              <div
+                style={{
+                  background: innerCardBg,
+                  borderRadius: 12,
+                  padding: '10px 12px',
+                  border: '1px solid var(--c-border)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  fontSize: '10.5px',
+                  fontFamily: 'monospace',
+                }}
+              >
+                <span>
+                  Firestore Channels:{' '}
+                  <strong style={{ color: 'var(--c-text-primary)' }}>
+                    {metrics.firestoreListeners} listen, {metrics.firestoreWrites} write
+                  </strong>
+                </span>
+                <button
+                  onClick={copyMemoryMap}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--studio-accent-from, #2563eb)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: '10.5px',
+                    padding: 0,
+                  }}
+                >
+                  Copy Memory Map
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. PLATFORM AVAILABILITY DISCLAIMER NOTE */}
         <div
           style={{
             padding: '12px 14px',
@@ -4035,9 +4482,9 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               minWidth: 0,
             }}
           >
-            <strong>Platform Note:</strong> Low-level OS metrics (GPU Rasterization/Compositing
-            passes, SoC Thermal States, Battery Power States) are not exposed by the WebView sandbox
-            to JavaScript and are intentionally omitted rather than fabricated.
+            <strong>Platform Note:</strong> All reported frame rates, budget overruns, long tasks, React commits, and
+            navigation durations reflect actual measured runtime performance. Low-level OS metrics (raw hardware SoC thermal
+            throttles and battery power profiles) are not exposed by the WebView sandbox and are omitted rather than fabricated.
           </span>
         </div>
       </SettingsContentContainer>

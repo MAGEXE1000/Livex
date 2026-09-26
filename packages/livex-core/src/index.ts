@@ -74,6 +74,7 @@ export * from './lib/performanceProfiler';
 export * from './lib/performance/renderScheduler';
 export * from './lib/performance/devPerformanceMonitor';
 export * from './lib/performance/motionProfiler';
+export * from './lib/performance/livexProfiler';
 
 // Navigation Core Foundation (Sprint 9.1)
 export * from './lib/navigation/navigationTypes';

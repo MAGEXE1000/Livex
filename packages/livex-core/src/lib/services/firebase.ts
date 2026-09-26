@@ -266,3 +266,7 @@ export function getFirestoreDiagnostics() {
     storageBucket: app?.options.storageBucket || 'Not Configured',
   };
 }
+
+if (typeof window !== 'undefined') {
+  (window as any)._getFirestoreDiagnostics = getFirestoreDiagnostics;
+}
