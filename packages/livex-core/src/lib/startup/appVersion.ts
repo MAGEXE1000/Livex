@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.50';
-export const NATIVE_VERSION_CODE = 40650;
-export const WEB_VERSION = '4.6.50';
+export const NATIVE_VERSION = '4.6.51';
+export const NATIVE_VERSION_CODE = 40651;
+export const WEB_VERSION = '4.6.51';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '9/24/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'a7c146ea';
+export const APP_COMMIT_SHA = 'e2f3f864';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/25/2026, 6:59:43 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/25/2026, 10:19:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,11 +98,11 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Improved',
     items: [
-      'Unified Bottom-Navigation Motion System: Consolidated navigation animations into one canonical motion graph governed by Apple-grade critically damped spring physics (`stiffness: 280, damping: 32, mass: 1.0`), eliminating competing motion pipelines across Livex Hub and all sub-apps.',
-      'Direct Drag & Fluid Manipulation: Highlight follows touch gestures with subtle physical mass and elastic boundary resistance rather than rigid 1:1 translation, maintaining the same organic spring damping throughout direct manipulation.',
-      'Zero Between-Tabs Invariant: Introduced deterministic destination resolver (`resolveDragDestination`) with velocity flick momentum awareness, mathematically guaranteeing that the highlight can never remain stuck between tabs upon release or cancellation.',
-      'Clear Optical Text/Icon Separation: Shifted expanded icon position to -7px and adjusted tab label bottom offset to 3.5px, providing a clear 4.5px optical clearance gap that eliminates text-icon collision and centers icons at 24px in compact mode.',
-      '120 Hz Touch Performance: Cached navigation bar bounding dimensions on pointer down to eliminate forced synchronous reflows and layout thrashing during pointer move frames.',
+      'Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.',
+      'Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.',
+      'Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.',
+      'Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.',
+      'Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.',
     ],
   },
 ];
@@ -114,6 +114,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.51',
+    date: '2026-09-25',
+    highlights: [
+      'Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.',
+      'Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.',
+      'Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.',
+      'Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.',
+      'Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.',
+    ],
+  },
   {
     version: '4.6.50',
     date: '2026-09-25',
@@ -212,17 +223,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'In-Place Spring Typography & Status Transitions: Added physics-based spring layout transitions with blur crossfades for header title, description, and state labels to prevent abrupt layout pops.',
       'Coordinated 100% Download-to-Install Handoff: Decoupled the installing UI switch from download progress completion so 100% download state remains visible with a fluid smooth morph into the installing surface.',
       'Low-Performance Fallback Guard: Safeguarded blur animations on lower-tier hardware by automatically skipping high-overhead filter transforms when performance mode is set to low.',
-    ],
-  },
-  {
-    version: '4.6.41',
-    date: '2026-09-23',
-    highlights: [
-      'Ecosystem Module Cards Memoization: Extracted and memoized Hub ecosystem module cards and greetings header to prevent unnecessary Virtual DOM reconciliations during state transitions.',
-      'Android WebView Performance Pass: Eliminated continuous 60–120Hz React re-render storms during scrolling by removing unused scroll subscriptions from the bottom navigation controller.',
-      'GPU Compositor & Shader Optimization: Streamlined design token surface backdrops from 4 filter passes to 2 passes and eliminated nested backdrop-filter allocation on active lens pills to prevent dual FBO ping-pong.',
-      'Sub-App Bottom Navigation Parity: Aligned Hub bottom navigation behavior, back-stack popping, and active indicator transitions with canonical sub-app interaction models.',
-      'PaceUI Native Updater Checking Popup: Integrated smooth morph expansion into checking state and eliminated telemetry storage lock contention.',
     ],
   },
 ];

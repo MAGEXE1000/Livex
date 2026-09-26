@@ -1,22 +1,22 @@
 {
   "platform": "web",
-  "version": "4.6.50",
-  "versionName": "4.6.50",
-  "versionCode": 40650,
-  "version_code": 40650,
-  "commit": "a7c146ea",
-  "releasedAt": "9/25/2026, 6:59:43 PM CST",
-  "buildTimestamp": "9/25/2026, 6:59:43 PM CST",
+  "version": "4.6.51",
+  "versionName": "4.6.51",
+  "versionCode": 40651,
+  "version_code": 40651,
+  "commit": "e2f3f864",
+  "releasedAt": "9/25/2026, 10:19:00 PM CST",
+  "buildTimestamp": "9/25/2026, 10:19:00 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Unified Bottom-Navigation Motion System: Consolidated navigation animations into one canonical motion graph governed by Apple-grade critically damped spring physics (`stiffness: 280, damping: 32, mass: 1.0`), eliminating competing motion pipelines across Livex Hub and all sub-apps.\n• Direct Drag & Fluid Manipulation: Highlight follows touch gestures with subtle physical mass and elastic boundary resistance rather than rigid 1:1 translation, maintaining the same organic spring damping throughout direct manipulation.\n• Zero Between-Tabs Invariant: Introduced deterministic destination resolver (`resolveDragDestination`) with velocity flick momentum awareness, mathematically guaranteeing that the highlight can never remain stuck between tabs upon release or cancellation.\n• Clear Optical Text/Icon Separation: Shifted expanded icon position to -7px and adjusted tab label bottom offset to 3.5px, providing a clear 4.5px optical clearance gap that eliminates text-icon collision and centers icons at 24px in compact mode.\n• 120 Hz Touch Performance: Cached navigation bar bounding dimensions on pointer down to eliminate forced synchronous reflows and layout thrashing during pointer move frames.",
-  "whatsNew": "• Unified Bottom-Navigation Motion System: Consolidated navigation animations into one canonical motion graph governed by Apple-grade critically damped spring physics (`stiffness: 280, damping: 32, mass: 1.0`), eliminating competing motion pipelines across Livex Hub and all sub-apps.\n• Direct Drag & Fluid Manipulation: Highlight follows touch gestures with subtle physical mass and elastic boundary resistance rather than rigid 1:1 translation, maintaining the same organic spring damping throughout direct manipulation.\n• Zero Between-Tabs Invariant: Introduced deterministic destination resolver (`resolveDragDestination`) with velocity flick momentum awareness, mathematically guaranteeing that the highlight can never remain stuck between tabs upon release or cancellation.\n• Clear Optical Text/Icon Separation: Shifted expanded icon position to -7px and adjusted tab label bottom offset to 3.5px, providing a clear 4.5px optical clearance gap that eliminates text-icon collision and centers icons at 24px in compact mode.\n• 120 Hz Touch Performance: Cached navigation bar bounding dimensions on pointer down to eliminate forced synchronous reflows and layout thrashing during pointer move frames.",
+  "changelog": "• Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.\n• Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.\n• Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.\n• Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.\n• Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.",
+  "whatsNew": "• Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.\n• Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.\n• Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.\n• Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.\n• Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.",
   "releaseNotes": {
     "improved": [
-      "Unified Bottom-Navigation Motion System: Consolidated navigation animations into one canonical motion graph governed by Apple-grade critically damped spring physics (`stiffness: 280, damping: 32, mass: 1.0`), eliminating competing motion pipelines across Livex Hub and all sub-apps.",
-      "Direct Drag & Fluid Manipulation: Highlight follows touch gestures with subtle physical mass and elastic boundary resistance rather than rigid 1:1 translation, maintaining the same organic spring damping throughout direct manipulation.",
-      "Zero Between-Tabs Invariant: Introduced deterministic destination resolver (`resolveDragDestination`) with velocity flick momentum awareness, mathematically guaranteeing that the highlight can never remain stuck between tabs upon release or cancellation.",
-      "Clear Optical Text/Icon Separation: Shifted expanded icon position to -7px and adjusted tab label bottom offset to 3.5px, providing a clear 4.5px optical clearance gap that eliminates text-icon collision and centers icons at 24px in compact mode.",
-      "120 Hz Touch Performance: Cached navigation bar bounding dimensions on pointer down to eliminate forced synchronous reflows and layout thrashing during pointer move frames."
+      "Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.",
+      "Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.",
+      "Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.",
+      "Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.",
+      "Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions."
     ]
   },
   "mandatory": false
