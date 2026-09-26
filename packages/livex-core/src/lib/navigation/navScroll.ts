@@ -323,9 +323,11 @@ function scheduleWatchdogRetry(delayMs: number) {
   if (_watchdogRetryTimer) clearTimeout(_watchdogRetryTimer);
   _watchdogRetryTimer = setTimeout(() => {
     _watchdogRetryTimer = null;
-    console.log(
-      `[navScroll Watchdog] Executing scheduled watchdog check after interaction settled`
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `[navScroll Watchdog] Executing scheduled watchdog check after interaction settled`
+      );
+    }
     const tempLastInteraction = _lastInteractionTime;
     _lastInteractionTime = 0;
     resetNav();
@@ -340,9 +342,11 @@ function runWatchdogCheck() {
   // Bypasses watchdog resets during active user scrolling/interaction
   if (timeSinceLastInteraction < 1000) {
     const remaining = 1000 - timeSinceLastInteraction;
-    console.log(
-      `[navScroll Watchdog] Gated by interaction lockout: ${remaining}ms remaining. Scheduling retry.`
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `[navScroll Watchdog] Gated by interaction lockout: ${remaining}ms remaining. Scheduling retry.`
+      );
+    }
     scheduleWatchdogRetry(remaining + 50);
     return;
   }
@@ -393,7 +397,9 @@ if (typeof window !== 'undefined') {
     window.addEventListener('focus', () => {
       const timeSinceLastInteraction = Date.now() - _lastInteractionTime;
       if (timeSinceLastInteraction < 1000) {
-        console.log(`[navScroll focus] Gated by interaction lockout, scheduling watchdog retry`);
+        if (import.meta.env.DEV) {
+          console.log(`[navScroll focus] Gated by interaction lockout, scheduling watchdog retry`);
+        }
         scheduleWatchdogRetry(1000 - timeSinceLastInteraction + 50);
         return;
       }
@@ -404,9 +410,11 @@ if (typeof window !== 'undefined') {
       if (document.visibilityState === 'visible') {
         const timeSinceLastInteraction = Date.now() - _lastInteractionTime;
         if (timeSinceLastInteraction < 1000) {
-          console.log(
-            `[navScroll visibilitychange] Gated by interaction lockout, scheduling watchdog retry`
-          );
+          if (import.meta.env.DEV) {
+            console.log(
+              `[navScroll visibilitychange] Gated by interaction lockout, scheduling watchdog retry`
+            );
+          }
           scheduleWatchdogRetry(1000 - timeSinceLastInteraction + 50);
           return;
         }

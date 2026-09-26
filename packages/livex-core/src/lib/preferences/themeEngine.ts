@@ -88,9 +88,6 @@ export function applyThemeTokens(settings: any) {
     }
   } catch (_) {}
 
-  // Persist to native Android SharedPreferences for cold-start launch background
-  void nativeSet('livex_theme', effectiveThemeState);
-
   const themeClassKey = `${activeVis.theme}|${isAmoledMode}|${isLightMode}`;
   if (themeClassKey !== _lastThemeClassKey) {
     _lastThemeClassKey = themeClassKey;

@@ -112,6 +112,11 @@ const RESTORE_OP_MS = 5_000; // soft-cap on local IndexedDB restores so a wedged
  */
 const NEVER_STUCK_MS = 25_000;
 
+/** Debounce device registration: skip if last registration < 5 min ago */
+let _lastDeviceRegMs = 0;
+/** Cache: skip triggerAutoBackup() check until this timestamp */
+let _nextAutoBackupCheckMs = 0;
+
 // localStorage keys owned by each app
 const CHORDEX_LS_KEY = 'chord-explorer-storage-v3';
 const DRUMEX_LS_KEY = 'chordex-drums';
@@ -778,6 +783,7 @@ function clearSyncingWatchdog() {
 }
 
 function setStatus(patch: Partial<SyncStatus>): void {
+  if (Object.keys(patch).length === 0) return;
   const next: SyncStatus = { ...status, ...patch };
   next.syncing = next.phase === 'syncing'; // keep derived field consistent
   const wasSyncing = status.phase === 'syncing';
@@ -2048,7 +2054,8 @@ async function triggerAutoBackup(): Promise<void> {
   }
 
   if (now - lastBackupMs < frequencyMs) {
-    // Too soon to backup
+    // Too soon to backup — cache the next check time so we skip localStorage reads
+    _nextAutoBackupCheckMs = lastBackupMs + frequencyMs;
     return;
   }
   try {
@@ -2071,9 +2078,6 @@ async function triggerAutoBackup(): Promise<void> {
  */
 async function executeRun(reason: RunReason, mode: RunMode): Promise<void> {
   if (!currentUser) return;
-
-  // Best-effort device registration attempt at the start of every sync run
-  void registerCurrentDevice(currentUser.uid, 'sync-run-start');
 
   // Skip the noisy "syncing" flicker if there's literally nothing to do
   // on a push-only run. (For pull-then-push we always announce — the
@@ -2291,8 +2295,15 @@ async function executeRun(reason: RunReason, mode: RunMode): Promise<void> {
       neverStuckHandle = null;
     }
     if (currentUser) {
-      void registerCurrentDevice(currentUser.uid, 'sync-run-success');
-      void triggerAutoBackup();
+      // F-16: Debounce — only register device if 5 min have elapsed since last registration
+      if (Date.now() - _lastDeviceRegMs >= 5 * 60_000) {
+        void registerCurrentDevice(currentUser.uid, 'sync-run-success');
+        _lastDeviceRegMs = Date.now();
+      }
+      // F-17: Skip the backup check until the cached window expires
+      if (Date.now() >= _nextAutoBackupCheckMs) {
+        void triggerAutoBackup();
+      }
     }
     logSuccess(Date.now() - startedAt, pushedCount, pulledCount);
     if (pushedCount > 0 || pulledCount > 0) {

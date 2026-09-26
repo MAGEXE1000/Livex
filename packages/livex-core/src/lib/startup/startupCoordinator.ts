@@ -62,7 +62,9 @@ class StartupCoordinatorClass {
       typeof now === 'number' && typeof (now as any).toFixed === 'function'
         ? (now as any).toFixed(0)
         : String(now);
-    console.log(`[STARTUP-TRACE] ${time}ms ${message}` + (details ? ` | ${details}` : ''));
+    if (import.meta.env.DEV) {
+      console.log(`[STARTUP-TRACE] ${time}ms ${message}` + (details ? ` | ${details}` : ''));
+    }
   }
 
   private isHubMounted = false;
@@ -185,14 +187,18 @@ class StartupCoordinatorClass {
     phase.timeout = timeoutMs;
     phase.retryCount = 0;
     this.notify();
-    console.log(
-      `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) STARTED at ${phase.startTime.toFixed(0)}ms, timeout=${timeoutMs}ms`
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) STARTED at ${phase.startTime.toFixed(0)}ms, timeout=${timeoutMs}ms`
+      );
+    }
 
     let attempt = 0;
     while (attempt <= maxRetries) {
       if (this.currentRunId !== runId) {
-        console.log(`[STARTUP-TRACE] Phase ${phaseId} CANCELLED (runId mismatch)`);
+        if (import.meta.env.DEV) {
+          console.log(`[STARTUP-TRACE] Phase ${phaseId} CANCELLED (runId mismatch)`);
+        }
         return false;
       }
       try {
@@ -203,16 +209,20 @@ class StartupCoordinatorClass {
         phase.endTime = performance.now();
         phase.duration = phase.endTime - (phase.startTime || phase.endTime);
         this.notify();
-        console.log(
-          `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) COMPLETED in ${phase.duration?.toFixed(0)}ms`
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) COMPLETED in ${phase.duration?.toFixed(0)}ms`
+          );
+        }
         return true;
       } catch (err: any) {
         attempt++;
         phase.retryCount = attempt;
-        console.log(
-          `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) FAILED attempt ${attempt}/${maxRetries}: ${err.message || err}`
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) FAILED attempt ${attempt}/${maxRetries}: ${err.message || err}`
+          );
+        }
         if (attempt > maxRetries) {
           phase.status = 'failed';
           phase.result = 'failure';
@@ -220,9 +230,11 @@ class StartupCoordinatorClass {
           phase.endTime = performance.now();
           phase.duration = phase.endTime - (phase.startTime || phase.endTime);
           this.notify();
-          console.log(
-            `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) EXHAUSTED RETRIES, duration=${phase.duration?.toFixed(0)}ms`
-          );
+          if (import.meta.env.DEV) {
+            console.log(
+              `[STARTUP-TRACE] Phase ${phaseId} (${phase.name}) EXHAUSTED RETRIES, duration=${phase.duration?.toFixed(0)}ms`
+            );
+          }
           return false;
         }
       }
@@ -318,13 +330,17 @@ class StartupCoordinatorClass {
     // Phase 5: Hub initialization (Runs after Updater is ready, showing Hub)
     const p5Success = await this.executePhase('5', 5000, async () => {
       // Dispatch UI mounting events (sets startupComplete = true in App.tsx)
-      console.log(
-        `[STARTUP-TRACE] Phase 5: calling onHubShow() at ${performance.now().toFixed(0)}ms`
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          `[STARTUP-TRACE] Phase 5: calling onHubShow() at ${performance.now().toFixed(0)}ms`
+        );
+      }
       onHubShow();
-      console.log(
-        `[STARTUP-TRACE] Phase 5: onHubShow() returned, awaiting hubMountedPromise at ${performance.now().toFixed(0)}ms`
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          `[STARTUP-TRACE] Phase 5: onHubShow() returned, awaiting hubMountedPromise at ${performance.now().toFixed(0)}ms`
+        );
+      }
 
       // Await the Hub mounting notification if not already mounted
       const isDomMounted =
@@ -335,13 +351,17 @@ class StartupCoordinatorClass {
         );
       if (!this.isHubMounted && !isDomMounted) {
         await this.hubMountedPromise;
-        console.log(
-          `[STARTUP-TRACE] Phase 5: hubMountedPromise RESOLVED at ${performance.now().toFixed(0)}ms`
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[STARTUP-TRACE] Phase 5: hubMountedPromise RESOLVED at ${performance.now().toFixed(0)}ms`
+          );
+        }
       } else {
-        console.log(
-          `[STARTUP-TRACE] Phase 5: Hub already mounted (isHubMounted=${this.isHubMounted}, isDomMounted=${isDomMounted}) at ${performance.now().toFixed(0)}ms`
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[STARTUP-TRACE] Phase 5: Hub already mounted (isHubMounted=${this.isHubMounted}, isDomMounted=${isDomMounted}) at ${performance.now().toFixed(0)}ms`
+          );
+        }
       }
 
       // Await two requestAnimationFrames to ensure it has painted and the first frame is committed
@@ -352,7 +372,9 @@ class StartupCoordinatorClass {
           });
         });
       });
-      console.log(`[STARTUP-TRACE] Phase 5: 2x rAF COMPLETED at ${performance.now().toFixed(0)}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`[STARTUP-TRACE] Phase 5: 2x rAF COMPLETED at ${performance.now().toFixed(0)}ms`);
+      }
       if (typeof window !== 'undefined' && (window as any).__bootTimings) {
         (window as any).__bootTimings.hubVisible = performance.now();
       }
@@ -367,9 +389,11 @@ class StartupCoordinatorClass {
           window.dispatchEvent(new CustomEvent('livex-hub-ready'));
           window.dispatchEvent(new CustomEvent('studio-hub-ready'));
         } catch (_) {}
-        console.log(
-          `[STARTUP-TRACE] Phase 5: startup complete at ${performance.now().toFixed(0)}ms`
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[STARTUP-TRACE] Phase 5: startup complete at ${performance.now().toFixed(0)}ms`
+          );
+        }
       }
 
       this.isCompleted = true;
