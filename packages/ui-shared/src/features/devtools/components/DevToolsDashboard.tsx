@@ -412,7 +412,8 @@ const WarningsInspector = ({ logs, showToast, moduleFilter, appKey }: WarningsIn
                 <div
                   style={{
                     color: 'var(--c-text-primary)',
-                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                     whiteSpace: 'pre-wrap',
                     lineHeight: 1.3,
                     fontFamily: 'monospace',
@@ -1188,7 +1189,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           fontSize: isCode ? 11 : 13,
           lineHeight: 1.4,
           color: 'var(--c-text-primary)',
-          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+                      wordBreak: 'normal',
           whiteSpace: 'pre-wrap',
           background: isCode ? 'var(--app-surface-bright, var(--app-surface))' : 'transparent',
           border: isCode ? '1px solid var(--c-border)' : 'none',
@@ -2818,8 +2820,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         <style>{`
           .perf-hero-grid {
             display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 12px !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
           }
           @media (min-width: 640px) {
             .perf-hero-grid {
@@ -2864,14 +2866,12 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
               gap: 12,
               minWidth: 0,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', minWidth: 0 }}>
               <div
                 style={{
                   width: 50,
@@ -2908,7 +2908,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                       minWidth: 0,
                     }}
                   >
@@ -2922,7 +2923,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     fontSize: '11px',
                     color: 'var(--c-text-secondary)',
                     fontFamily: 'Inter, sans-serif',
-                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'normal',
                   }}
                 >
                   Status:{' '}
@@ -2935,7 +2937,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             </div>
 
             {/* Quick Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', width: '100%' }}>
               <button
                 onClick={handleExportSnapshot}
                 style={{
@@ -2957,7 +2959,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--studio-accent-from, #2563eb)' }}>
                   ios_share
                 </span>
-                Export Diagnostic Snapshot
+                Export Snapshot
               </button>
               <button
                 onClick={handleResetCounters}
@@ -2993,7 +2995,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3014,7 +3016,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3028,7 +3030,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 800,
                     color: 'var(--c-text-primary)',
                     fontFamily: 'var(--studio-font-body)',
@@ -3036,13 +3038,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   {metrics.currentFps}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)' }}>
                   / {metrics.refreshRate} Hz
                 </span>
               </div>
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3064,7 +3066,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3085,7 +3087,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3099,7 +3101,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 800,
                     color: 'var(--c-text-primary)',
                     fontFamily: 'var(--studio-font-body)',
@@ -3107,14 +3109,14 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   {metrics.frameTime}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>ms</span>
-                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)' }}>ms</span>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
                   (Avg: {metrics.avgFrameTime} ms)
                 </span>
               </div>
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3142,7 +3144,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3163,7 +3165,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3177,7 +3179,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 800,
                     color:
                       metrics.framesExceeding60Hz > 0
@@ -3190,13 +3192,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   {metrics.framesExceeding60Hz}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)' }}>
                   &gt;16.67ms (60 Hz)
                 </span>
               </div>
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3217,7 +3219,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3238,7 +3240,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3252,7 +3254,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 800,
                     color: 'var(--c-text-primary)',
                     fontFamily: 'var(--studio-font-body)',
@@ -3260,14 +3262,14 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   {metrics.eventLoopDelay.toFixed(1)}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>ms</span>
-                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)' }}>ms</span>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
                   (Peak: {metrics.jsThreadPeak.toFixed(0)} ms)
                 </span>
               </div>
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3289,7 +3291,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3310,7 +3312,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3324,7 +3326,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 800,
                     color: 'var(--c-text-primary)',
                     fontFamily: 'var(--studio-font-body)',
@@ -3332,14 +3334,14 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 >
                   {metrics.reactCommitCount}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)' }}>commits</span>
-                <span style={{ fontSize: '10px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)' }}>commits</span>
+                <span style={{ fontSize: '9.5px', color: 'var(--c-text-secondary)', marginLeft: 4 }}>
                   (Avg: {metrics.reactAvgCommitDuration} ms)
                 </span>
               </div>
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9.5px',
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'monospace',
                   display: 'flex',
@@ -3375,7 +3377,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 background: innerCardBg,
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '1px solid var(--c-border)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -3396,7 +3398,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               >
                 <span
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: 'var(--c-text-secondary)',
@@ -3472,7 +3474,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     fontWeight: 800,
                     color: '#ee7d77',
                     fontFamily: 'var(--studio-font-body)',
-                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                   }}
                 >
                   Actionable Bottlenecks Detected ({warnings.length})
@@ -3486,7 +3489,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 <div
                   key={idx}
                   style={{
-                    padding: '10px 14px',
+                    padding: '10px 12px',
                     background: innerCardBg,
                     borderLeft: `4px solid ${w.severity === 'Critical' ? '#ee7d77' : '#fbbf24'}`,
                     borderTop: '1px solid var(--c-border)',
@@ -3495,7 +3498,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     borderRadius: '4px 12px 12px 4px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6,
+                    gap: 4,
                     minWidth: 0,
                     boxSizing: 'border-box',
                   }}
@@ -3503,40 +3506,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   <div
                     style={{
                       display: 'flex',
-                      justifyContent: 'space-between',
+                      justifyContent: 'flex-start',
                       alignItems: 'center',
                       flexWrap: 'wrap',
                       gap: 6,
                       minWidth: 0,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
-                      <span
-                        style={{
-                          fontWeight: 800,
-                          fontSize: '12.5px',
-                          color: 'var(--c-text-primary)',
-                          fontFamily: 'var(--studio-font-body)',
-                        }}
-                      >
-                        {w.title}
-                      </span>
-                      {w.affectedSubsystem && (
-                        <span
-                          style={{
-                            fontSize: '9.5px',
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            background: 'rgba(37, 99, 235, 0.12)',
-                            color: 'var(--studio-accent-from, #2563eb)',
-                            fontFamily: 'monospace',
-                          }}
-                        >
-                          {w.affectedSubsystem}
-                        </span>
-                      )}
-                    </div>
                     <span
                       style={{
                         fontSize: '9px',
@@ -3554,6 +3530,31 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     >
                       {w.severity}
                     </span>
+                    <span
+                      style={{
+                        fontWeight: 800,
+                        fontSize: '12.5px',
+                        color: 'var(--c-text-primary)',
+                        fontFamily: 'var(--studio-font-body)',
+                      }}
+                    >
+                      {w.title}
+                    </span>
+                    {w.affectedSubsystem && (
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(37, 99, 235, 0.12)',
+                          color: 'var(--studio-accent-from, #2563eb)',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {w.affectedSubsystem}
+                      </span>
+                    )}
                   </div>
 
                   <p
@@ -3562,7 +3563,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontSize: '11px',
                       color: 'var(--c-text-primary)',
                       lineHeight: 1.4,
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                       fontWeight: 600,
                     }}
                   >
@@ -3593,13 +3595,13 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   </div>
 
                   {w.possibleCause && (
-                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35, marginTop: 2 }}>
+                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35, marginTop: 2, overflowWrap: 'break-word', wordBreak: 'normal' }}>
                       <strong style={{ color: 'var(--c-text-primary)' }}>Root Cause:</strong> {w.possibleCause}
                     </div>
                   )}
 
                   {w.suggestedInvestigation && (
-                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35 }}>
+                    <div style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', lineHeight: 1.35, overflowWrap: 'break-word', wordBreak: 'normal' }}>
                       <strong style={{ color: 'var(--c-text-primary)' }}>Suggested Fix:</strong> {w.suggestedInvestigation}
                     </div>
                   )}
@@ -3658,7 +3660,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                     }}
                   >
                     Frame Pacing & V-Sync
@@ -3874,7 +3877,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                     }}
                   >
                     JavaScript Long Tasks ({metrics.recentLongTasks.length})
@@ -3928,7 +3932,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                           boxSizing: 'border-box',
                         }}
                       >
-                        <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontWeight: 700,
@@ -4020,7 +4024,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                     }}
                   >
                     Startup & Navigation Timings
@@ -4140,7 +4145,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                         fontFamily: 'monospace',
                       }}
                     >
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
                         <span style={{ color: 'var(--c-text-secondary)' }}>{nav.fromRoute}</span>
                         <span style={{ color: 'var(--studio-accent-from, #2563eb)', margin: '0 4px' }}>→</span>
                         <span style={{ color: 'var(--c-text-primary)', fontWeight: 700 }}>{nav.toRoute}</span>
@@ -4195,7 +4200,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontWeight: 800,
                       color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
-                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
                     }}
                   >
                     Component Lifecycle Profiler
@@ -4272,7 +4278,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                           boxSizing: 'border-box',
                         }}
                       >
-                        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontWeight: 700,
@@ -4348,7 +4354,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                           boxSizing: 'border-box',
                         }}
                       >
-                        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontWeight: 700,
@@ -4449,7 +4455,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         {/* 4. PLATFORM AVAILABILITY DISCLAIMER NOTE */}
         <div
           style={{
-            padding: '12px 14px',
+            padding: '10px 12px',
             borderRadius: 12,
             background: innerCardBg,
             border: '1px solid var(--c-border)',
@@ -4477,7 +4483,8 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               color: 'var(--c-text-secondary)',
               lineHeight: 1.4,
               fontFamily: 'Inter, sans-serif',
-              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+                      wordBreak: 'normal',
               flex: 1,
               minWidth: 0,
             }}
