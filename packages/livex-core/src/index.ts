@@ -86,6 +86,7 @@ export * from './lib/navigation/GestureDispatcher';
 export * from './lib/navigation/TransitionCoordinator';
 export * from './lib/navigation/validation';
 export * from './lib/navigation/useBackHandler';
+export * from './lib/navigation/navigationMotion';
 
 export * from './hooks/useAppUpdate';
 

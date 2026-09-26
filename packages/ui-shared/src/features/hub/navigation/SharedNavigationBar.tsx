@@ -32,6 +32,11 @@ import { AnimatedNavigationIcon } from './AnimatedNavigationIcon';
 import { NavigationAnimationProvider } from './NavigationAnimationProvider';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
+import {
+  CANONICAL_NAV_GEOMETRY,
+  CANONICAL_NAV_MOTION,
+  resolveDragDestination,
+} from './navigationMotion';
 
 function useStartupComplete() {
   const [complete, setComplete] = useState(() => StartupCoordinator.isStartupComplete());
@@ -137,10 +142,17 @@ const NavigationItem = React.memo(
     const fallbackScroll = useMotionValue(0);
     const effectiveScroll = scrollOffsetSpring || fallbackScroll;
     // GPU compositor transforms only: 0 layout reflows during continuous scroll
-    const iconY = useTransform(effectiveScroll, [0, 0.35], [isSwitcherOpen ? 0 : -4.5, 0]);
+    const iconY = useTransform(
+      effectiveScroll,
+      [0, 0.35],
+      [
+        isSwitcherOpen ? 0 : CANONICAL_NAV_GEOMETRY.ICON_Y_EXPANDED,
+        CANONICAL_NAV_GEOMETRY.ICON_Y_COMPACT,
+      ]
+    );
     const labelOpacity = useTransform(effectiveScroll, [0, 0.28], [1, 0]);
     const labelScale = useTransform(effectiveScroll, [0, 0.28], [1, 0.85]);
-    const labelY = useTransform(effectiveScroll, [0, 0.28], [0, 2]);
+    const labelY = useTransform(effectiveScroll, [0, 0.28], [0, 3]);
 
     return (
       <motion.button
@@ -152,7 +164,7 @@ const NavigationItem = React.memo(
         title={item.label}
         data-nav-item-index={index}
         whileTap={{ scale: 0.96 }}
-        transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+        transition={CANONICAL_NAV_MOTION.pressSpring}
         style={{
           flex: 1,
           height: '100%',
@@ -187,8 +199,12 @@ const NavigationItem = React.memo(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: isSwitcherOpen ? 32 : 24,
-              height: isSwitcherOpen ? 32 : 24,
+              width: isSwitcherOpen
+                ? 32
+                : CANONICAL_NAV_GEOMETRY.ICON_CONTAINER_SIZE,
+              height: isSwitcherOpen
+                ? 32
+                : CANONICAL_NAV_GEOMETRY.ICON_CONTAINER_SIZE,
               flexShrink: 0,
               y: iconY,
             }}
@@ -197,7 +213,11 @@ const NavigationItem = React.memo(
               <AnimatedNavigationIcon
                 itemKey={item.key}
                 iconName={item.icon as string}
-                size={isSwitcherOpen ? 22 : 22}
+                size={
+                  isSwitcherOpen
+                    ? CANONICAL_NAV_GEOMETRY.SWITCHER_ICON_SIZE
+                    : CANONICAL_NAV_GEOMETRY.ICON_GLYPH_SIZE
+                }
                 color={iconColor}
                 isActive={isActive}
                 animationEpoch={animationEpoch}
@@ -206,7 +226,11 @@ const NavigationItem = React.memo(
               <AnimatedNavigationIcon
                 itemKey={item.key}
                 iconNode={item.icon}
-                size={isSwitcherOpen ? 22 : 22}
+                size={
+                  isSwitcherOpen
+                    ? CANONICAL_NAV_GEOMETRY.SWITCHER_ICON_SIZE
+                    : CANONICAL_NAV_GEOMETRY.ICON_GLYPH_SIZE
+                }
                 color={iconColor}
                 isActive={isActive}
                 animationEpoch={animationEpoch}
@@ -218,7 +242,7 @@ const NavigationItem = React.memo(
             <motion.span
               style={{
                 position: 'absolute',
-                bottom: '5px',
+                bottom: `${CANONICAL_NAV_GEOMETRY.LABEL_BOTTOM_OFFSET}px`,
                 left: 0,
                 right: 0,
                 fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
@@ -283,11 +307,17 @@ export function SharedNavigationBar({
   const setProfileMenuOpen = useBottomNavigationStore((s) => s.setProfileMenuOpen);
 
   const [isScrubbing, setIsScrubbing] = useState(false);
-  const isScrubbingRef = useRef(false);
-  const scrubbingIndexRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const hasDragInitiatedRef = useRef(false);
+  const lastDragEndedAtRef = useRef(0);
+  const lastHoveredIndexRef = useRef(0);
+  const [dragHoveredIndex, setDragHoveredIndex] = useState<number | null>(null);
   const navigationEpochRef = useRef(0);
   const [navigationEpoch, setNavigationEpoch] = useState(0);
   const pointerUpHandledAtRef = useRef(0);
+  const startXRef = useRef(0);
+  const initialPillXRef = useRef(0);
+  const rectLeftRef = useRef(0);
 
   // Close profile menu on hardware back press
   useBackHandler(
@@ -392,15 +422,15 @@ export function SharedNavigationBar({
 
 
   // Canonical Navigation Geometry (Restored taller proportions)
-  const NAV_BAR_HEIGHT = 58;
-  const NAV_BAR_VERTICAL_PADDING = 5;
-  const NAV_BAR_INNER_HEIGHT = NAV_BAR_HEIGHT - NAV_BAR_VERTICAL_PADDING * 2; // 48px
-  const NAV_HIGHLIGHT_HEIGHT = 48;
-  const NAV_HIGHLIGHT_RADIUS = 9999;
-  const SATELLITE_SIZE = NAV_BAR_HEIGHT; // 58px (strictly equal to NAV_BAR_HEIGHT, matching vertical center)
-  const DOCK_GAP = 8;
-  const SATELLITE_SLOT_TOTAL = SATELLITE_SIZE + DOCK_GAP; // 66px
-  const SCREEN_PADDING_HORIZONTAL = 16;
+  const NAV_BAR_HEIGHT = CANONICAL_NAV_GEOMETRY.NAV_BAR_HEIGHT;
+  const NAV_BAR_VERTICAL_PADDING = CANONICAL_NAV_GEOMETRY.NAV_BAR_VERTICAL_PADDING;
+  const NAV_BAR_INNER_HEIGHT = CANONICAL_NAV_GEOMETRY.NAV_BAR_INNER_HEIGHT; // 48px
+  const NAV_HIGHLIGHT_HEIGHT = CANONICAL_NAV_GEOMETRY.NAV_HIGHLIGHT_HEIGHT;
+  const NAV_HIGHLIGHT_RADIUS = CANONICAL_NAV_GEOMETRY.NAV_HIGHLIGHT_RADIUS;
+  const SATELLITE_SIZE = CANONICAL_NAV_GEOMETRY.SATELLITE_SIZE; // 58px (strictly equal to NAV_BAR_HEIGHT, matching vertical center)
+  const DOCK_GAP = CANONICAL_NAV_GEOMETRY.DOCK_GAP;
+  const SATELLITE_SLOT_TOTAL = CANONICAL_NAV_GEOMETRY.SATELLITE_SLOT_TOTAL; // 66px
+  const SCREEN_PADDING_HORIZONTAL = CANONICAL_NAV_GEOMETRY.SCREEN_PADDING_HORIZONTAL;
 
   const showAiButton = isHub;
   const hasRightBubble = showSwitcherButton || showAiButton;
@@ -420,7 +450,7 @@ export function SharedNavigationBar({
       : Math.min(maxAvailableWidth, 380)
     : Math.max(220, maxDockWidth);
 
-  const paddingX = 4;
+  const paddingX = CANONICAL_NAV_GEOMETRY.PADDING_X;
   const usableWidth = barWidth - paddingX * 2;
   const itemWidth = usableWidth / totalSlots;
 
@@ -451,33 +481,33 @@ export function SharedNavigationBar({
 
   // ─────────────────────────────────────────────────────────────────────────────
   // UNIFIED MOTION GRAPH ROOT ENGINE
-  // All navigation movements, pill, profile, scale derive continuously from this graph.
+  // All navigation movements (tap, drag, release, scroll, collapse) derive continuously from this graph.
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Root MotionValues
+  // Root MotionValues: single target MotionValue for highlight position
   const targetPillX = activeIndex * itemWidth + centerOffset;
-  const pillXRaw = useMotionValue(targetPillX);
-  const dragPillX = useMotionValue(0);
+  const targetPillXVal = useMotionValue(targetPillX);
   const scrollOffsetRaw = useMotionValue(getNavScrollOffset());
   const profileOpenRaw = useMotionValue(isProfileMenuOpen ? 1 : 0);
 
-  // Synchronized Apple-grade critically damped spring physics for active tab glide (zeta = 0.96 - 1.0)
+  // Synchronized Apple-grade critically damped spring physics for active tab glide (zeta ~ 0.96)
+  // Single continuous spring driver for TAP, DRAG, RELEASE, INTERRUPT, and SETTLE
   const pillXSpring = useSpring(
-    pillXRaw,
+    targetPillXVal,
     prefersReduced
-      ? { stiffness: 4000, damping: 200, mass: 0.001 }
-      : { stiffness: 280, damping: 32, mass: 1.0 }
+      ? CANONICAL_NAV_MOTION.reducedMotionSpring
+      : CANONICAL_NAV_MOTION.highlightSpring
   );
 
-  const scrollOffsetSpring = useSpring(scrollOffsetRaw, { stiffness: 380, damping: 32, mass: 0.7 });
-  const profileOpenSpring = useSpring(profileOpenRaw, { stiffness: 420, damping: 28, mass: 0.8 });
+  const scrollOffsetSpring = useSpring(scrollOffsetRaw, CANONICAL_NAV_MOTION.scrollSpring);
+  const profileOpenSpring = useSpring(profileOpenRaw, CANONICAL_NAV_MOTION.profileSpring);
 
-  // Update root raw MotionValues continuously on state changes
+  // Reconcile root target MotionValue continuously on state changes when not dragging
   useEffect(() => {
-    if (!isScrubbingRef.current) {
-      pillXRaw.set(activeIndex * itemWidth + centerOffset);
+    if (!isDraggingRef.current) {
+      targetPillXVal.set(activeIndex * itemWidth + centerOffset);
     }
-  }, [activeIndex, itemWidth, centerOffset, pillXRaw]);
+  }, [activeIndex, itemWidth, centerOffset, targetPillXVal]);
 
   // Connect scroll listener directly without causing React component re-renders
   useEffect(() => {
@@ -524,58 +554,64 @@ export function SharedNavigationBar({
   const switcherScale = satelliteScale;
   const switcherPointerEvents = satellitePointerEvents;
 
-  // Derived continuous pill movement:
-  // When scrubbing: directly follows finger via dragPillX.
-  // When idle or tab-switching: follows pillXSpring (critically damped, zero bounce).
-  const animatedPillX = useTransform([pillXSpring, dragPillX], ([springX, dragVal]) => {
-    if (isScrubbingRef.current) {
-      return dragVal as number;
-    }
-    return springX as number;
-  });
-
   // Derived continuous profile menu transformations
   const profileCardOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
   const profileCardY = useTransform(profileOpenSpring, [0, 1], [16, 0]);
   const profileCardScale = useTransform(profileOpenSpring, [0, 1], [0.94, 1]);
   const profileBackdropOpacity = useTransform(profileOpenSpring, [0, 1], [0, 1]);
 
-  const startXRef = useRef(0);
-  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isEffectiveHidden || e.button !== 0) return;
+    const rect = innerWrapperRef.current?.getBoundingClientRect();
+    rectLeftRef.current = rect ? rect.left : e.currentTarget.getBoundingClientRect().left;
     startXRef.current = e.clientX;
-    isScrubbingRef.current = false;
-    scrubbingIndexRef.current = activeIndex;
+    initialPillXRef.current = pillXSpring.get();
+    isDraggingRef.current = false;
+    hasDragInitiatedRef.current = false;
+    lastHoveredIndexRef.current = activeIndex;
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isEffectiveHidden) return;
-    const dragDistance = Math.abs(e.clientX - startXRef.current);
-    if (!isScrubbingRef.current && dragDistance > 4) {
-      isScrubbingRef.current = true;
+    const deltaX = e.clientX - startXRef.current;
+
+    if (!hasDragInitiatedRef.current && Math.abs(deltaX) > CANONICAL_NAV_GEOMETRY.DRAG_THRESHOLD_PX) {
+      hasDragInitiatedRef.current = true;
+      isDraggingRef.current = true;
       setIsScrubbing(true);
+      useBottomNavigationStore.getState().setMotionState('Dragging');
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
-      } catch (err) {}
+      } catch (_) {}
     }
 
-    if (!isScrubbingRef.current) return;
+    if (!isDraggingRef.current) return;
 
-    const rect =
-      innerWrapperRef.current?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-    const relativeX = e.clientX - rect.left;
+    const rawTargetX = initialPillXRef.current + deltaX;
+    const maxTargetX = usableWidth - pillWidthVal;
 
-    // Direct 1:1 positioning of pill center with touch position
-    const targetX = relativeX - pillWidthVal / 2;
-    const clampedX = Math.max(0, Math.min(usableWidth - pillWidthVal, targetX));
-    dragPillX.set(clampedX);
+    // Apply subtle physical edge resistance if pulled beyond dock bounds
+    let clampedTargetX = rawTargetX;
+    if (rawTargetX < 0) {
+      clampedTargetX = rawTargetX * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE;
+    } else if (rawTargetX > maxTargetX) {
+      clampedTargetX = maxTargetX + (rawTargetX - maxTargetX) * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE;
+    }
 
-    const hoveredIndex = Math.max(0, Math.min(N - 1, Math.floor((relativeX / usableWidth) * N)));
-    if (hoveredIndex !== scrubbingIndexRef.current) {
-      scrubbingIndexRef.current = hoveredIndex;
-      pillXRaw.set(hoveredIndex * itemWidth + centerOffset);
+    // Drive the canonical spring continuously with physical mass & damping
+    targetPillXVal.set(clampedTargetX);
+
+    // Identify tab slot under highlight center for haptic feedback & preview illumination
+    const currentVisualX = pillXSpring.get();
+    const currentCenter = currentVisualX + pillWidthVal / 2;
+    const hoveredSlot = Math.max(
+      0,
+      Math.min(N - 1, Math.round((currentCenter - centerOffset - pillWidthVal / 2) / itemWidth))
+    );
+
+    if (hoveredSlot !== lastHoveredIndexRef.current) {
+      lastHoveredIndexRef.current = hoveredSlot;
+      setDragHoveredIndex(hoveredSlot);
       if (
         typeof window !== 'undefined' &&
         window.navigator &&
@@ -583,32 +619,47 @@ export function SharedNavigationBar({
       ) {
         try {
           window.navigator.vibrate(5);
-        } catch (err) {}
+        } catch (_) {}
       }
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
-
-    useBottomNavigationStore.getState().setMotionState('Idle');
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (err) {}
+      } catch (_) {}
     }
 
-    if (isScrubbingRef.current) {
-      isScrubbingRef.current = false;
+    useBottomNavigationStore.getState().setMotionState('Idle');
+
+    if (hasDragInitiatedRef.current) {
+      hasDragInitiatedRef.current = false;
+      isDraggingRef.current = false;
       setIsScrubbing(false);
+      setDragHoveredIndex(null);
+      lastDragEndedAtRef.current = performance.now();
 
-      const finalIndex = scrubbingIndexRef.current;
-      const targetItem = currentItems[finalIndex];
+      const currentVisualX = pillXSpring.get();
+      const currentVelocity = pillXSpring.getVelocity();
 
-      pillXSpring.jump(dragPillX.get());
-      pillXRaw.set(finalIndex * itemWidth + centerOffset);
+      // Canonical destination resolution (momentum flick or nearest slot)
+      const destIndex = resolveDragDestination(
+        currentVisualX,
+        currentVelocity,
+        pillWidthVal,
+        itemWidth,
+        centerOffset,
+        N
+      );
 
-      if (targetItem && finalIndex !== activeIndex) {
+      // ALWAYS resolve highlight to valid tab slot — mathematically impossible to remain between tabs
+      const finalTargetX = destIndex * itemWidth + centerOffset;
+      targetPillXVal.set(finalTargetX);
+
+      // Commit navigation to canonical store
+      const targetItem = currentItems[destIndex];
+      if (targetItem && destIndex !== activeIndex) {
         pointerUpHandledAtRef.current = performance.now();
         navigationEpochRef.current += 1;
         setNavigationEpoch(navigationEpochRef.current);
@@ -618,17 +669,24 @@ export function SharedNavigationBar({
   };
 
   const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
-    useBottomNavigationStore.getState().setMotionState('Idle');
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (err) {}
+      } catch (_) {}
     }
 
-    isScrubbingRef.current = false;
-    setIsScrubbing(false);
-    pillXRaw.set(activeIndex * itemWidth + centerOffset);
+    useBottomNavigationStore.getState().setMotionState('Idle');
+
+    if (hasDragInitiatedRef.current) {
+      hasDragInitiatedRef.current = false;
+      isDraggingRef.current = false;
+      setIsScrubbing(false);
+      setDragHoveredIndex(null);
+      lastDragEndedAtRef.current = performance.now();
+
+      // Resolve safely to current canonical active tab
+      targetPillXVal.set(activeIndex * itemWidth + centerOffset);
+    }
   };
 
   const lastProfileToggleTimeRef = useRef(0);
@@ -933,12 +991,7 @@ export function SharedNavigationBar({
                   transition={
                     prefersReduced
                       ? { duration: 0 }
-                      : {
-                          type: 'spring',
-                          stiffness: 280,
-                          damping: 32,
-                          mass: 1.0,
-                        }
+                      : CANONICAL_NAV_MOTION.highlightSpring
                   }
                   style={{
                     position: 'absolute',
@@ -946,7 +999,7 @@ export function SharedNavigationBar({
                     height: NAV_HIGHLIGHT_HEIGHT,
                     borderRadius: NAV_HIGHLIGHT_RADIUS,
                     left: 0,
-                    x: animatedPillX,
+                    x: pillXSpring,
                     background: 'var(--surface-glass-lens-bg)',
                     border: 'var(--surface-glass-lens-border)',
                     boxShadow: 'none',
@@ -1021,16 +1074,21 @@ export function SharedNavigationBar({
                               index={index}
                               onPointerDown={() => {
                                 if (isEffectiveHidden) return;
-                                pillXRaw.set(index * itemWidth + centerOffset);
+                                targetPillXVal.set(index * itemWidth + centerOffset);
                               }}
                               onClick={() => {
                                 if (isEffectiveHidden) return;
-                                pillXRaw.set(index * itemWidth + centerOffset);
+                                if (performance.now() - lastDragEndedAtRef.current < 200) return;
+                                targetPillXVal.set(index * itemWidth + centerOffset);
                                 navigationEpochRef.current += 1;
                                 setNavigationEpoch(navigationEpochRef.current);
                                 item.onClick();
                               }}
-                              isActive={isActive}
+                              isActive={
+                                isScrubbing && dragHoveredIndex !== null
+                                  ? index === dragHoveredIndex
+                                  : isActive
+                              }
                               isLight={isLight}
                               isSwitcherOpen={true}
                               totalSlots={totalSlots}
@@ -1120,16 +1178,21 @@ export function SharedNavigationBar({
                                 index={index}
                                 onPointerDown={() => {
                                   if (isEffectiveHidden) return;
-                                  pillXRaw.set(index * itemWidth + centerOffset);
+                                  targetPillXVal.set(index * itemWidth + centerOffset);
                                 }}
                                 onClick={() => {
                                   if (isEffectiveHidden) return;
-                                  pillXRaw.set(index * itemWidth + centerOffset);
+                                  if (performance.now() - lastDragEndedAtRef.current < 200) return;
+                                  targetPillXVal.set(index * itemWidth + centerOffset);
                                   navigationEpochRef.current += 1;
                                   setNavigationEpoch(navigationEpochRef.current);
                                   item.onClick();
                                 }}
-                                isActive={item.isActive}
+                                isActive={
+                                  isScrubbing && dragHoveredIndex !== null
+                                    ? index === dragHoveredIndex
+                                    : item.isActive
+                                }
                                 isLight={isLight}
                                 isSwitcherOpen={false}
                                 totalSlots={totalSlots}
