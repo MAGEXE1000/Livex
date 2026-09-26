@@ -537,10 +537,8 @@ const HubGreetingsHeader = React.memo(function HubGreetingsHeader({
           {subtitle}
         </p>
       </section>
-      <motion.div
-        whileHover={canHover && !prefersReduced ? { scale: 1.05 } : undefined}
-        whileTap={prefersReduced ? undefined : { scale: 0.94 }}
-        transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 25 }}
+      <div
+        className="active:scale-[0.94] md:hover:scale-[1.05] transition-transform duration-200"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -551,7 +549,7 @@ const HubGreetingsHeader = React.memo(function HubGreetingsHeader({
         }}
       >
         <StudioLogo size={32} />
-      </motion.div>
+      </div>
     </div>
   );
 });
@@ -650,13 +648,11 @@ const HubModuleCards = React.memo(function HubModuleCards({
         className="w-full"
       >
         {modules.map(({ app, Logo, name, desc, color, active }) => (
-          <motion.button
+          <button
             key={app}
             data-app={app}
             onClick={(e) => onLaunchApp(app, e.currentTarget)}
-            whileTap={prefersReduced ? undefined : { scale: 0.975 }}
-            whileHover={canHover && !prefersReduced ? { scale: 1.015, y: -1 } : undefined}
-            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
+            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -681,7 +677,6 @@ const HubModuleCards = React.memo(function HubModuleCards({
               boxShadow: 'var(--shadow-surface-raised)',
               overflow: 'hidden',
             }}
-            className="sc-module-card group"
           >
             <div
               style={{
@@ -795,7 +790,7 @@ const HubModuleCards = React.memo(function HubModuleCards({
                 }}
               />
             </div>
-          </motion.button>
+          </button>
         ))}
       </div>
     </section>
@@ -1409,9 +1404,9 @@ export default function LivexHub() {
                             {lang === 'es' ? 'Acciones Fijadas' : 'Pinned Actions'}
                           </h3>
                           {isEditMode ? (
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
+                            <button
                               onClick={() => setIsEditMode(false)}
+                              className="active:scale-[0.92] transition-transform duration-200"
                               style={{
                                 background: accent.from,
                                 border: 'none',
@@ -1433,7 +1428,7 @@ export default function LivexHub() {
                                 size={13}
                               />
                               {lang === 'es' ? 'Listo' : 'Done'}
-                            </motion.button>
+                            </button>
                           ) : (
                             <MorphingActionSurface
                               isOpen={shortcutPickerOpen}
@@ -1445,9 +1440,10 @@ export default function LivexHub() {
                               subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
                               accentColor={accent.from}
                               customTrigger={({ open, surfaceId, triggerProps }) => (
-                                <motion.button
+                                <button
                                   {...triggerProps}
                                   onClick={open}
+                                  className="active:scale-[0.95] transition-transform duration-200"
                                   style={{
                                     background: 'rgba(255, 255, 255, 0.05)',
                                     border: '1px solid rgba(255, 255, 255, 0.10)',
@@ -1468,7 +1464,7 @@ export default function LivexHub() {
                                     size={13}
                                   />
                                   {lang === 'es' ? 'Fijar' : 'Pin'}
-                                </motion.button>
+                                </button>
                               )}
                             >
                               {({ close }) => (
@@ -2078,10 +2074,8 @@ export default function LivexHub() {
                                 }}
                                 onClick={() => setShortcutPickerOpen(true)}
                               >
-                                <motion.div
-                                  whileTap={prefersReduced ? undefined : { scale: 0.9 }}
-                                  whileHover={canHover && !prefersReduced ? { scale: 1.06, y: -2 } : undefined}
-                                  transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 24 }}
+                                <div
+                                  className="active:scale-[0.9] md:hover:scale-[1.06] md:hover:-translate-y-[2px] transition-transform duration-200"
                                   style={{
                                     width: 'clamp(50px, 6.2vh, 58px)',
                                     height: 'clamp(50px, 6.2vh, 58px)',
@@ -2101,7 +2095,7 @@ export default function LivexHub() {
                                       opacity: 0.7,
                                     }}
                                   />
-                                </motion.div>
+                                </div>
                                 <span
                                   style={{
                                     fontSize: '11px',

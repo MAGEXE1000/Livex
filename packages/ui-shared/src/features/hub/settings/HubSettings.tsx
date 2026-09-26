@@ -4347,16 +4347,6 @@ export function HubSettings({
             'developer',
             'notifications',
           ]}
-          preMountViews={[
-            'main',
-            'general',
-            'updater',
-            'appearance',
-            'language',
-            'privacy',
-            'about',
-            'profile',
-          ]}
         >
           {(pageId) => {
             if (pageId === 'developer') {
