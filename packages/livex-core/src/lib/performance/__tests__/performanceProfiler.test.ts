@@ -105,4 +105,23 @@ describe('PerformanceProfiler Diagnostics Suite', () => {
     expect(jsonString).not.toContain('token');
     expect(jsonString).not.toContain('secret');
   });
+
+  it('supplies complete telemetry fields matching performance report requirements', () => {
+    profiler.recordReactCommit('LivexHub', 'mount', 45.2);
+    profiler.recordNavigation('hub', 'chordex:library', 'forward', 84.5);
+
+    const snapshot = profiler.exportDiagnosticSnapshot();
+    const metrics = profiler.getMetrics();
+    const warnings = profiler.getWarnings(metrics);
+
+    expect(snapshot.fps).toBeDefined();
+    expect(snapshot.javascript).toBeDefined();
+    expect(snapshot.react).toBeDefined();
+    expect(snapshot.startup).toBeDefined();
+    expect(snapshot.navigation).toBeDefined();
+    expect(snapshot.memory).toBeDefined();
+    expect(snapshot.network).toBeDefined();
+    expect(snapshot.animation).toBeDefined();
+    expect(warnings).toBeInstanceOf(Array);
+  });
 });

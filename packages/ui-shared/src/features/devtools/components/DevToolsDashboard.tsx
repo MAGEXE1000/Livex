@@ -1903,29 +1903,184 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
 
   const buildPerformanceReport = () => {
     const profiler = PerformanceProfiler.getInstance();
+    const snapshot = profiler.exportDiagnosticSnapshot();
     const metrics = perfMetrics || profiler.getMetrics();
+    const score = profiler.getScore(metrics);
     const warnings = profiler.getWarnings(metrics);
 
-    let text = `========================\nPerformance Diagnostics\n========================\n`;
-    text += `Average FPS: ${metrics.averageFps}\n`;
-    text += `1% Low FPS: ${metrics.low1PercentFps}\n`;
-    text += `JS Thread Avg Delay: ${metrics.jsThreadAverage}ms (Peak: ${metrics.jsThreadPeak}ms)\n`;
-    text += `UI Thread Paint: ${metrics.uiThreadAverage}ms (Peak: ${metrics.uiThreadPeak}ms)\n`;
-    text += `Active Component Renders:\n`;
-    if (perf.size > 0) {
-      perf.forEach((v, k) => {
-        text += ` - ${k}: ${v.renders} renders, ${v.mounts} mounts\n`;
+    const hasMemoryAPI =
+      typeof window !== 'undefined' && Boolean((window.performance as any)?.memory);
+    const mem = hasMemoryAPI ? (window.performance as any).memory : null;
+
+    let text = `====================================================\n`;
+    text += `Performance Diagnostics\n`;
+    text += `====================================================\n\n`;
+
+    // [Session / App]
+    text += `[Session / App]\n`;
+    text += `Timestamp: ${snapshot.timestamp || new Date().toISOString()}\n`;
+    text += `App Version: v${snapshot.appVersion || APP_VERSION}\n`;
+    text += `Native Version: ${Capacitor.isNativePlatform() ? NATIVE_VERSION : 'Web Portal'}\n`;
+    text += `Active Module: ${currentApp || 'hub'}\n`;
+    text += `Active Theme: ${settings?.theme || 'dark'}\n`;
+    text += `Health Score: ${score} / 100 (${score >= 90 ? 'Optimal' : score >= 70 ? 'Moderate Load' : 'Jank Detected'})\n\n`;
+
+    // [Runtime]
+    text += `[Runtime]\n`;
+    text += `Platform: ${snapshot.runtime?.platform || (typeof navigator !== 'undefined' ? navigator.platform : 'unknown')}\n`;
+    text += `User Agent: ${snapshot.runtime?.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown')}\n`;
+    text += `GPU Renderer: ${snapshot.runtime?.gpuRenderer || metrics.gpuRenderer || 'Unknown'}\n`;
+    text += `Refresh Rate: ${snapshot.runtime?.refreshRate || metrics.refreshRate || 60} Hz\n`;
+    if (typeof window !== 'undefined') {
+      text += `Screen: ${window.screen.width}x${window.screen.height} (${window.devicePixelRatio}x DPR)\n`;
+      text += `Viewport: ${window.innerWidth}x${window.innerHeight}\n`;
+    }
+    text += `\n`;
+
+    // [Frame Performance]
+    text += `[Frame Performance]\n`;
+    text += `Current FPS: ${snapshot.fps?.currentFps ?? metrics.currentFps ?? 0}\n`;
+    text += `Average FPS: ${snapshot.fps?.averageFps ?? metrics.averageFps ?? 0}\n`;
+    text += `1% Low FPS: ${snapshot.fps?.low1PercentFps ?? metrics.low1PercentFps ?? 0}\n`;
+    text += `5% Low FPS: ${snapshot.fps?.low5PercentFps ?? metrics.low5PercentFps ?? 0}\n`;
+    text += `Worst Frame Time: ${(snapshot.fps?.worstFrameTime ?? metrics.worstFrameTime ?? 0).toFixed(1)} ms\n`;
+    text += `Average Frame Time: ${(snapshot.fps?.avgFrameTime ?? metrics.avgFrameTime ?? 0).toFixed(1)} ms\n`;
+    text += `Dropped Frames: ${snapshot.fps?.droppedFrames ?? metrics.droppedFrames ?? 0}\n`;
+    text += `Janky Frames (>50ms): ${snapshot.fps?.jankyFrames ?? metrics.jankyFrames ?? 0}\n`;
+    text += `Frames Exceeding 60 Hz (>16.6ms): ${snapshot.fps?.framesExceeding60Hz ?? metrics.framesExceeding60Hz ?? 0}\n`;
+    text += `Frames Exceeding 90 Hz (>11.1ms): ${snapshot.fps?.framesExceeding90Hz ?? metrics.framesExceeding90Hz ?? 0}\n`;
+    text += `Frames Exceeding 120 Hz (>8.3ms): ${snapshot.fps?.framesExceeding120Hz ?? metrics.framesExceeding120Hz ?? 0}\n\n`;
+
+    // [JavaScript]
+    text += `[JavaScript]\n`;
+    text += `Event Loop Avg Delay: ${(snapshot.javascript?.avgDelay ?? metrics.eventLoopDelay ?? 0).toFixed(1)} ms (Peak: ${(snapshot.javascript?.peakDelay ?? metrics.jsThreadPeak ?? 0).toFixed(1)} ms)\n`;
+    text += `Total Blocking Time: ${(snapshot.javascript?.totalBlockingTime ?? metrics.mainThreadBlockingTotal ?? 0).toFixed(1)} ms\n`;
+    text += `Long Task Count: ${snapshot.javascript?.longTaskCount ?? metrics.longTaskCount ?? 0} (Longest: ${(snapshot.javascript?.longestTask ?? metrics.longestBlockingTask ?? 0).toFixed(1)} ms)\n`;
+    text += `UI Thread Paint Avg: ${(metrics.uiThreadAverage ?? 0).toFixed(1)} ms (Peak: ${(metrics.uiThreadPeak ?? 0).toFixed(1)} ms)\n`;
+    text += `Recent Long Tasks:\n`;
+    const longTasks = snapshot.javascript?.recentLongTasks || metrics.recentLongTasks || [];
+    if (longTasks.length > 0) {
+      longTasks.forEach((t) => {
+        const timeStr = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : 'Recent';
+        text += ` - [${timeStr}] ${(t.duration ?? 0).toFixed(1)} ms | Category: ${t.category || 'unknown'} | Source: ${t.source || 'unspecified'}\n`;
       });
     } else {
       text += ` - None recorded\n`;
     }
-    if (warnings.length > 0) {
-      text += `\nActive Warnings:\n`;
-      warnings.forEach((w) => {
-        text += ` - [${w.severity}] ${w.title}: ${w.description}\n`;
-      });
+    text += `\n`;
+
+    // [React]
+    text += `[React]\n`;
+    text += `Commit Count: ${snapshot.react?.commitCount ?? metrics.reactCommitCount ?? 0}\n`;
+    text += `Avg Commit Duration: ${(snapshot.react?.avgCommitDuration ?? metrics.reactAvgCommitDuration ?? 0).toFixed(1)} ms\n`;
+    const slowestCommit = snapshot.react?.slowestCommit || metrics.reactSlowestCommit;
+    if (slowestCommit) {
+      text += `Slowest Commit: ${slowestCommit.duration.toFixed(1)} ms in <${slowestCommit.componentId} /> (${slowestCommit.phase})\n`;
+    } else {
+      text += `Slowest Commit: None recorded\n`;
     }
-    return compressReportText(text);
+    const highFreq = snapshot.react?.highFrequencyComponents || metrics.highFrequencyComponents || [];
+    text += `High Frequency Components: ${highFreq.length > 0 ? highFreq.join(', ') : 'None'}\n`;
+    text += `Recent Expensive Commits:\n`;
+    const expCommits = snapshot.react?.recentExpensiveCommits || metrics.recentExpensiveCommits || [];
+    if (expCommits.length > 0) {
+      expCommits.forEach((c) => {
+        const timeStr = c.timestamp ? new Date(c.timestamp).toLocaleTimeString() : 'Recent';
+        text += ` - [${timeStr}] <${c.componentId} /> ${(c.duration ?? 0).toFixed(1)} ms (${c.phase})\n`;
+      });
+    } else {
+      text += ` - None recorded\n`;
+    }
+    text += `Component Renders & Mounts:\n`;
+    const compProfiles = snapshot.react?.componentRenders || metrics.componentRenderProfiles || [];
+    if (compProfiles.length > 0) {
+      compProfiles.forEach((r) => {
+        const avgStr = r.avgDuration !== undefined ? `, avg ${r.avgDuration.toFixed(1)} ms` : '';
+        text += ` - <${r.name} />: ${r.renders} renders, ${r.mounts} mounts${avgStr}\n`;
+      });
+    } else if (perf.size > 0) {
+      perf.forEach((v, k) => {
+        text += ` - <${k} />: ${v.renders} renders, ${v.mounts} mounts, last ${v.lastRenderTime} ms\n`;
+      });
+    } else {
+      text += ` - None recorded\n`;
+    }
+    text += `\n`;
+
+    // [Startup]
+    text += `[Startup]\n`;
+    const coldStart = snapshot.startup?.coldStartupDuration ?? metrics.coldStartupDuration ?? 0;
+    text += `Cold Startup Duration: ${coldStart > 0 ? `${coldStart.toFixed(1)} ms` : 'Unavailable'}\n`;
+    const fcp = snapshot.startup?.firstContentful ?? metrics.firstContentfulTime ?? 0;
+    text += `First Contentful Paint: ${fcp > 0 ? `${fcp.toFixed(1)} ms` : 'Unavailable'}\n`;
+    const fti = snapshot.startup?.firstInteractive ?? metrics.firstInteractiveTime ?? 0;
+    text += `First Interactive: ${fti > 0 ? `${fti.toFixed(1)} ms` : 'Unavailable'}\n`;
+    text += `Navigation Readiness: ${snapshot.startup?.navigationReadiness ? 'Ready' : 'Pending'}\n`;
+    text += `Startup Phases:\n`;
+    const phases = snapshot.startup?.phases || {};
+    const phaseKeys = Object.keys(phases);
+    if (phaseKeys.length > 0) {
+      phaseKeys.forEach((k) => {
+        text += ` - ${k}: ${(phases[k] ?? 0).toFixed(1)} ms\n`;
+      });
+    } else {
+      text += ` - None recorded\n`;
+    }
+    text += `\n`;
+
+    // [Navigation]
+    text += `[Navigation]\n`;
+    const avgNav = snapshot.navigation?.avgNavigationDuration ?? metrics.avgNavigationDuration ?? 0;
+    text += `Avg Navigation Latency: ${avgNav > 0 ? `${avgNav.toFixed(1)} ms` : '0.0 ms'}\n`;
+    text += `Recent Transitions:\n`;
+    const navs = snapshot.navigation?.recentNavigations || metrics.recentNavigations || [];
+    if (navs.length > 0) {
+      navs.forEach((n) => {
+        const timeStr = n.timestamp ? new Date(n.timestamp).toLocaleTimeString() : 'Recent';
+        text += ` - [${timeStr}] ${n.fromRoute} -> ${n.toRoute}: ${(n.durationMs ?? 0).toFixed(1)} ms\n`;
+      });
+    } else {
+      text += ` - None recorded\n`;
+    }
+    text += `\n`;
+
+    // [Memory]
+    text += `[Memory]\n`;
+    text += `Used JS Heap: ${snapshot.memory?.usedHeap || metrics.usedHeap || 'Unavailable'}\n`;
+    text += `Total Heap: ${snapshot.memory?.totalHeap || metrics.heapSize || 'Unavailable'}\n`;
+    text += `Heap Limit: ${snapshot.memory?.heapLimit || (mem ? `${Math.round(mem.jsHeapSizeLimit / (1024 * 1024))} MB` : 'N/A')}\n`;
+    text += `Heap Growth Rate: ${snapshot.memory?.heapGrowthRate || metrics.heapGrowth || '0.0 KB/s'}\n`;
+    text += `Data Source: ${snapshot.memory?.hasMemoryAPI || hasMemoryAPI ? 'window.performance.memory (Chromium API)' : 'Unavailable in WebView sandbox'}\n\n`;
+
+    // [Network]
+    text += `[Network]\n`;
+    text += `Active Requests: ${snapshot.network?.activeRequests ?? metrics.activeRequestsCount ?? 0}\n`;
+    text += `Total Requests: ${snapshot.network?.totalRequests ?? 0}\n`;
+    text += `Slow Requests: ${snapshot.network?.slowRequests ?? 0}\n`;
+    text += `Firestore Listeners: ${snapshot.network?.firestoreListeners ?? metrics.firestoreListeners ?? 0}\n`;
+    text += `Firestore Writes: ${snapshot.network?.firestoreWrites ?? metrics.firestoreWrites ?? 0}\n\n`;
+
+    // [Animation]
+    text += `[Animation]\n`;
+    text += `Active Transitions Count: ${snapshot.animation?.activeAnimationCount ?? metrics.activeTransitionsCount ?? 0}\n`;
+    text += `Transitions Active: ${(snapshot.animation?.isTransitionActive ?? (metrics.activeTransitionsCount > 0)) ? 'Yes' : 'No'}\n\n`;
+
+    // [Warnings / Bottlenecks]
+    text += `[Warnings / Bottlenecks]\n`;
+    if (warnings.length > 0) {
+      warnings.forEach((w) => {
+        text += ` - [${w.severity.toUpperCase()}] ${w.title}\n`;
+        text += `   • Subsystem: ${w.affectedSubsystem || 'General'}\n`;
+        text += `   • Measured: ${w.measured || w.actualValue || 'N/A'} (Expected: ${w.expected || w.threshold || 'N/A'})\n`;
+        text += `   • Description: ${w.description}\n`;
+        text += `   • Possible Cause: ${w.possibleCause || 'N/A'}\n`;
+        text += `   • Suggested Fix: ${w.suggestedInvestigation || 'N/A'}\n`;
+      });
+    } else {
+      text += `No active warnings.\n`;
+    }
+
+    return compressReportText(text, 1000);
   };
 
   const buildNetworkReport = () => {
