@@ -1821,108 +1821,53 @@ function _clearAllChains(): void {
  *   roomSize = 0.75  →  feedback = roomSize × 0.28 + 0.7 = 0.91
  *   damping  = 0.32  →  damp1    = damping  × 0.4       = 0.128
  */
+// F-01: Freeverb IR is computed off the main thread via a Web Worker.
+// The convolver starts with a null buffer (silent wet path) and hot-swaps
+// in the IR once the worker resolves — imperceptible because reverb onset
+// is naturally delayed anyway.
 let _irBuffer: AudioBuffer | null = null;
-function getIR(ctx: AudioContext): AudioBuffer {
-  if (_irBuffer && _irBuffer.sampleRate === ctx.sampleRate) return _irBuffer;
+let _irPromise: Promise<AudioBuffer> | null = null;
 
-  const sr = ctx.sampleRate;
-
-  // ── Freeverb constants (Jezar at Dreampoint, public domain) ────────────────
-  const FIXED_GAIN = 0.015;
-  const STEREO_SPREAD = 23;
-  const ROOM_SIZE = 0.75; // 0–1: room size (0.7–0.9 for realistic rooms)
-  const DAMPING = 0.32; // 0–1: HF damping in comb feedback path
-
-  // Delay line lengths at 44100 Hz (Jezar's original tuning)
-  const COMB_TUNING = [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617] as const;
-  const AP_TUNING = [556, 441, 341, 225] as const;
-
-  // Scale delay lengths to actual sample rate
-  const scaleFactor = sr / 44100;
-  const combLen = COMB_TUNING.map((n) => Math.round(n * scaleFactor));
-  const apLen = AP_TUNING.map((n) => Math.round(n * scaleFactor));
-
-  // Derived parameters
-  const feedback = ROOM_SIZE * 0.28 + 0.7; // 0.70–0.98
-  const damp1 = DAMPING * 0.4; // LPF coefficient (in feedback path)
-  const damp2 = 1 - damp1; // complementary coefficient
-
-  // ── Filter state ────────────────────────────────────────────────────────────
-  type CombState = { buf: Float32Array; idx: number; lpStore: number };
-  type APState = { buf: Float32Array; idx: number };
-
-  const mkComb = (n: number): CombState => ({ buf: new Float32Array(n), idx: 0, lpStore: 0 });
-  const mkAP = (n: number): APState => ({ buf: new Float32Array(n), idx: 0 });
-
-  // L channel uses standard lengths; R adds STEREO_SPREAD for decorrelation
-  const combsL = combLen.map((n) => mkComb(n));
-  const combsR = combLen.map((n) => mkComb(n + STEREO_SPREAD));
-  const apsL = apLen.map((n) => mkAP(n));
-  const apsR = apLen.map((n) => mkAP(n + STEREO_SPREAD));
-
-  // ── Process one sample through a Schroeder comb filter ─────────────────────
-  // Transfer function: H(z) = z^{-N} / (1 - g·(1 - d)·z^{-1} - g·d·z^{-N})
-  // The LPF in the loop (lpStore) is the key to Freeverb's warm decay character.
-  const processComb = (c: CombState, inp: number): number => {
-    const out = c.buf[c.idx];
-    c.lpStore = out * damp2 + c.lpStore * damp1; // 1-pole LP in feedback
-    c.buf[c.idx] = inp + c.lpStore * feedback;
-    c.idx = (c.idx + 1) % c.buf.length;
-    return out;
-  };
-
-  // ── Process one sample through a Schroeder all-pass filter ─────────────────
-  // Transfer function: H(z) = (-g + z^{-N}) / (1 - g·z^{-N}), g = 0.5
-  // All-pass filters don't change frequency content but scatter energy in time,
-  // adding diffusion and preventing flutter echoes.
-  const processAP = (ap: APState, inp: number): number => {
-    const bufOut = ap.buf[ap.idx];
-    const out = -inp + bufOut;
-    ap.buf[ap.idx] = inp + bufOut * 0.5; // g = 0.5 (Jezar's fixed value)
-    ap.idx = (ap.idx + 1) % ap.buf.length;
-    return out;
-  };
-
-  // ── Generate the impulse response ─────────────────────────────────────────
-  const irLen = Math.floor(sr * 2.2);
-  const dataL = new Float32Array(irLen);
-  const dataR = new Float32Array(irLen);
-
-  // Pre-delay of 14 ms (gives sense of room distance before reverb bloom)
-  const predelayLen = Math.floor(sr * 0.014);
-
-  for (let n = 0; n < irLen; n++) {
-    // Single impulse at n=predelay (with Freeverb's fixed input gain scaling)
-    const input = n === predelayLen ? FIXED_GAIN : 0;
-
-    // 8 comb filters run in parallel, outputs are summed
-    let outL = 0,
-      outR = 0;
-    for (const c of combsL) outL += processComb(c, input);
-    for (const c of combsR) outR += processComb(c, input);
-
-    // 4 all-pass filters run in series for diffusion
-    for (const ap of apsL) outL = processAP(ap, outL);
-    for (const ap of apsR) outR = processAP(ap, outR);
-
-    dataL[n] = outL;
-    dataR[n] = outR;
+function getIR(ctx: AudioContext): Promise<AudioBuffer> {
+  // Cache hit — different AudioContext objects may have different sampleRates,
+  // so validate sampleRate to prevent stale IR reuse across context recreations.
+  if (_irBuffer && _irBuffer.sampleRate === ctx.sampleRate) {
+    return Promise.resolve(_irBuffer);
   }
+  // Deduplicate concurrent callers — only one worker runs at a time.
+  if (_irPromise) return _irPromise;
 
-  // Normalise peak to –6 dBFS so the convolver doesn't clip
-  let peak = 0;
-  for (let i = 0; i < irLen; i++) peak = Math.max(peak, Math.abs(dataL[i]), Math.abs(dataR[i]));
-  const norm = peak > 0 ? 0.5 / peak : 1;
-  for (let i = 0; i < irLen; i++) {
-    dataL[i] *= norm;
-    dataR[i] *= norm;
-  }
+  _irPromise = (async () => {
+    const worker = new Worker(
+      new URL('./freeverbWorker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    try {
+      const { dataL, dataR } = await new Promise<{
+        dataL: Float32Array;
+        dataR: Float32Array;
+      }>((resolve, reject) => {
+        worker.onmessage = (e: MessageEvent<{ dataL: Float32Array; dataR: Float32Array }>) =>
+          resolve(e.data);
+        worker.onerror = (e) => reject(new Error(e.message));
+        worker.postMessage({ sampleRate: ctx.sampleRate });
+      });
 
-  const buf = ctx.createBuffer(2, irLen, sr);
-  buf.copyToChannel(dataL, 0);
-  buf.copyToChannel(dataR, 1);
-  _irBuffer = buf;
-  return buf;
+      // AudioBuffer cannot cross thread boundary — reconstruct on main thread.
+      const irLen = dataL.length;
+      const buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+      buf.copyToChannel(dataL, 0);
+      buf.copyToChannel(dataR, 1);
+      _irBuffer = buf;
+      return buf;
+    } finally {
+      worker.terminate();
+      // Clear the in-flight promise so a sampleRate change can re-trigger.
+      _irPromise = null;
+    }
+  })();
+
+  return _irPromise;
 }
 
 /**
@@ -2074,7 +2019,13 @@ function buildFXChain(
   wetGain.gain.value = Math.sin(angle) * 0.45;
 
   const conv = ctx.createConvolver();
-  conv.buffer = getIR(ctx);
+  // F-01: IR is computed off the main thread (see freeverbWorker.ts).
+  // The convolver starts with a null buffer (silent wet path) and the IR
+  // hot-swaps in once the worker resolves — imperceptible because reverb
+  // onset is naturally delayed by the pre-delay of 14 ms plus convolution ramp.
+  void getIR(ctx).then((ir) => {
+    conv.buffer = ir;
+  });
 
   // ── Wire: EQ → sat → comp → postGain → limiter → [plugins] → dry/wet → dest ─
   low.connect(lowMid);
