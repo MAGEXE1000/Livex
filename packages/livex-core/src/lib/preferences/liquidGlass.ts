@@ -382,9 +382,19 @@ function createShader(host: HTMLElement): Shader {
   };
 
   ro.observe(host);
-  // Initial render — synchronous so first paint already shows the lens.
-  const r0 = host.getBoundingClientRect();
-  regenerateMap(shader, Math.round(r0.width) || 200, Math.round(r0.height) || 60);
+  // Defer the initial map generation by one animation frame to avoid a
+  // synchronous pixel-loop long task (≈32 000 fragment() calls) on mount.
+  // The displacement-map cache makes repeat mounts at the same size free;
+  // a single-frame delay is imperceptible and keeps the mount path clean.
+  // (The ResizeObserver path is already RAF-deferred — this aligns them.)
+  // Falls back to synchronous execution in environments that lack rAF (tests).
+  const scheduleInitialMap = typeof requestAnimationFrame === 'function'
+    ? (fn: () => void) => requestAnimationFrame(fn)
+    : (fn: () => void) => fn();
+  scheduleInitialMap(() => {
+    const r0 = host.getBoundingClientRect();
+    regenerateMap(shader, Math.round(r0.width) || 200, Math.round(r0.height) || 60);
+  });
 
   // Apply the combined backdrop-filter.
   // url() displacement works in Safari; Chrome applies the standard filter fns.

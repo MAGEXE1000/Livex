@@ -3,7 +3,6 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import App from './App';
 import {
   tolgee,
-  seedAudioAssets,
   NATIVE_VERSION,
   initDevToolsFramework,
   NavigationDispatcher,
@@ -87,13 +86,7 @@ if (import.meta.env.DEV) {
   initDevToolsFramework();
 }
 
-// Defer non-critical background initialization by 8 seconds to keep critical frames clear
-setTimeout(() => {
-  // Removed ensureNotificationPermission
 
-  // Kick off the drum-sample seed in the background.
-  void seedAudioAssets();
-}, 8000);
 
 const UpdateIndicator = lazy(
   () => import('@workspace/ui-shared/src/features/updater/components/UpdateIndicator')

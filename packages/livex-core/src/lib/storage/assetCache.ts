@@ -125,10 +125,10 @@ async function doSeed(): Promise<void> {
   // Already seeded in a prior launch?
   try {
     await Filesystem.stat({ directory: Directory.Data, path: SEED_MARKER });
-    // Marker exists — populate the URL cache from the manifest so
-    // drumAssetUrl is fast.
-    const manifest = await loadManifest();
-    if (manifest) await populateUrlCache(manifest.files);
+    // Marker exists — already seeded in a prior launch. Skip populateUrlCache
+    // to avoid an N×Filesystem.getUri() bridge-call storm at startup.
+    // drumAssetUrl() handles lazy per-file URI resolution on first audio
+    // request, so pre-warming the cache here is unnecessary.
     _seeded = true;
     return;
   } catch {

@@ -84,10 +84,16 @@ export default function App() {
 
     if (typeof window !== 'undefined') {
       if ('requestIdleCallback' in window) {
-        const handle = (window as any).requestIdleCallback(preloadModules, { timeout: 3000 });
+        // No timeout — only fire when the main thread is genuinely idle.
+        // A forced deadline (previously 3000 ms) caused a guaranteed long task
+        // during startup on Android when idle time never arrived in time.
+        // StartupCoordinator Phase 6 already triggers __preloadUIModules, so
+        // sub-app bundles will still be warm before users navigate to them.
+        const handle = (window as any).requestIdleCallback(preloadModules);
         return () => (window as any).cancelIdleCallback(handle);
       } else {
-        const timer = setTimeout(preloadModules, 1200);
+        // Non-rIC fallback: delay long enough to clear the startup critical path.
+        const timer = setTimeout(preloadModules, 5000);
         return () => clearTimeout(timer);
       }
     }
