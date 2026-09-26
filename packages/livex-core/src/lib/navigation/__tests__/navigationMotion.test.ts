@@ -156,4 +156,55 @@ describe('Canonical Bottom Navigation Motion & Geometry System', () => {
       expect(resolveDragDestination(50, 200, 40, 80, 20, 1)).toBe(0);
     });
   });
+
+  describe('4. Pill Boundary Containment & Geometry Invariants', () => {
+    it('enforces exact vertical matching between highlight and inner container to eliminate clipping', () => {
+      // Highlight height MUST strictly equal inner container height for 0px vertical bleed
+      expect(CANONICAL_NAV_GEOMETRY.NAV_HIGHLIGHT_HEIGHT).toBe(
+        CANONICAL_NAV_GEOMETRY.NAV_BAR_INNER_HEIGHT
+      );
+      expect(CANONICAL_NAV_GEOMETRY.NAV_HIGHLIGHT_HEIGHT).toBe(48);
+    });
+
+    it('enforces symmetrical clearance inside outer dock capsule', () => {
+      const outerHeight = CANONICAL_NAV_GEOMETRY.NAV_BAR_HEIGHT; // 58px
+      const innerHeight = CANONICAL_NAV_GEOMETRY.NAV_BAR_INNER_HEIGHT; // 48px
+      const borderPerEdge = CANONICAL_NAV_GEOMETRY.DOCK_BORDER_PX; // 1px
+      const totalBorder = borderPerEdge * 2; // 2px
+
+      // Available vertical margin inside dock borders: (58 - 2 - 48) / 2 = 4px padding
+      const computedPadding = (outerHeight - totalBorder - innerHeight) / 2;
+      expect(computedPadding).toBe(4);
+
+      // Distance from outermost dock perimeter to highlight: 1px border + 4px padding = 5px
+      const totalClearance = borderPerEdge + computedPadding;
+      expect(totalClearance).toBe(5);
+      expect(totalClearance).toBe(CANONICAL_NAV_GEOMETRY.NAV_BAR_VERTICAL_PADDING);
+    });
+
+    it('verifies positive resting margin from left and right capsule caps', () => {
+      const barWidth = 380;
+      const paddingX = CANONICAL_NAV_GEOMETRY.PADDING_X;
+      const dockBorderX = CANONICAL_NAV_GEOMETRY.DOCK_BORDER_PX * 2;
+      const usableWidth = barWidth - paddingX * 2 - dockBorderX; // 370px
+      const totalSlots = 5;
+      const itemWidth = usableWidth / totalSlots; // 74px
+      const pillWidth = Math.max(32, Math.round(itemWidth - 6)); // 68px
+      const centerOffset = Math.round((itemWidth - pillWidth) / 2); // 3px
+
+      // Tab 0 left resting position inside inner container
+      const tab0Left = centerOffset;
+      expect(tab0Left).toBe(3);
+      expect(tab0Left).toBeGreaterThan(0); // 3px breathing room from left cap!
+
+      // Tab N-1 right resting position inside inner container
+      const lastTabLeft = (totalSlots - 1) * itemWidth + centerOffset; // 299px
+      const lastTabRight = lastTabLeft + pillWidth; // 367px
+      const rightClearance = usableWidth - lastTabRight; // 370 - 367 = 3px
+      expect(rightClearance).toBe(3);
+      expect(rightClearance).toBeGreaterThan(0); // 3px breathing room from right cap!
+      expect(tab0Left).toBe(rightClearance); // 100% symmetric resting insets!
+    });
+  });
 });
+

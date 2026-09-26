@@ -451,7 +451,8 @@ export function SharedNavigationBar({
     : Math.max(220, maxDockWidth);
 
   const paddingX = CANONICAL_NAV_GEOMETRY.PADDING_X;
-  const usableWidth = barWidth - paddingX * 2;
+  const dockBorderX = (CANONICAL_NAV_GEOMETRY as any).DOCK_BORDER_PX ? (CANONICAL_NAV_GEOMETRY as any).DOCK_BORDER_PX * 2 : 2;
+  const usableWidth = Math.max(100, barWidth - paddingX * 2 - dockBorderX);
   const itemWidth = usableWidth / totalSlots;
 
   const activeIndex = useMemo(() => {
@@ -588,14 +589,25 @@ export function SharedNavigationBar({
     if (!isDraggingRef.current) return;
 
     const rawTargetX = initialPillXRef.current + deltaX;
-    const maxTargetX = usableWidth - pillWidthVal;
+    const maxTargetX = Math.max(0, usableWidth - pillWidthVal);
+    const minTargetX = 0;
+    const restingMinX = centerOffset;
+    const restingMaxX = (N - 1) * itemWidth + centerOffset;
 
-    // Apply subtle physical edge resistance if pulled beyond dock bounds
+    // Apply subtle physical edge resistance while strictly bounding highlight inside capsule
     let clampedTargetX = rawTargetX;
-    if (rawTargetX < 0) {
-      clampedTargetX = rawTargetX * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE;
-    } else if (rawTargetX > maxTargetX) {
-      clampedTargetX = maxTargetX + (rawTargetX - maxTargetX) * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE;
+    if (rawTargetX < restingMinX) {
+      clampedTargetX = Math.max(
+        minTargetX,
+        restingMinX + (rawTargetX - restingMinX) * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE
+      );
+    } else if (rawTargetX > restingMaxX) {
+      clampedTargetX = Math.min(
+        maxTargetX,
+        restingMaxX + (rawTargetX - restingMaxX) * CANONICAL_NAV_GEOMETRY.EDGE_RESISTANCE
+      );
+    } else {
+      clampedTargetX = Math.max(minTargetX, Math.min(maxTargetX, rawTargetX));
     }
 
     // Drive the canonical spring continuously with physical mass & damping
@@ -938,11 +950,13 @@ export function SharedNavigationBar({
                 mass: 0.7,
               }}
               style={{
-                contain: 'layout style',
+                contain: 'layout style paint',
+                overflow: 'hidden',
+                borderRadius: '9999px',
+                clipPath: 'inset(0 round 9999px)',
                 pointerEvents: isEffectiveHidden ? 'none' : 'auto',
                 maxWidth: '100%',
                 height: `${NAV_BAR_HEIGHT}px`,
-                borderRadius: '9999px',
                 border: 'var(--surface-topbar-border)',
                 background: 'var(--surface-topbar-bg)',
                 boxShadow: isLight
@@ -955,14 +969,15 @@ export function SharedNavigationBar({
                 justifyContent: 'space-around',
                 paddingLeft: paddingX,
                 paddingRight: paddingX,
-                paddingTop: `${NAV_BAR_VERTICAL_PADDING}px`,
-                paddingBottom: `${NAV_BAR_VERTICAL_PADDING}px`,
+                paddingTop: '4px',
+                paddingBottom: '4px',
                 position: 'relative',
                 touchAction: 'none',
                 userSelect: 'none',
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
+                boxSizing: 'border-box',
               }}
             >
               <div
@@ -974,13 +989,15 @@ export function SharedNavigationBar({
                 style={{
                   display: 'flex',
                   width: '100%',
-                  height: '100%',
+                  height: `${NAV_BAR_INNER_HEIGHT}px`,
                   alignItems: 'center',
                   position: 'relative',
                   touchAction: 'none',
-                  // overflow:visible ensures active highlight borders, geometry and corners are never clipped
-                  overflow: 'visible',
+                  overflow: 'hidden',
                   borderRadius: '9999px',
+                  clipPath: 'inset(0 round 9999px)',
+                  isolation: 'isolate',
+                  boxSizing: 'border-box',
                 }}
               >
                 {/* Active lens pill — clean, flat minimal highlight with Apple-grade fluid glide */}
@@ -1006,6 +1023,7 @@ export function SharedNavigationBar({
                     pointerEvents: 'none',
                     zIndex: 0,
                     willChange: 'transform',
+                    boxSizing: 'border-box',
                   }}
                 />
 

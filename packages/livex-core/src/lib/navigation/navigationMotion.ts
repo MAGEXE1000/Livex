@@ -45,6 +45,8 @@ export const CANONICAL_NAV_GEOMETRY = {
   SCREEN_PADDING_HORIZONTAL: 16,
   /** Horizontal padding inside dock */
   PADDING_X: 4,
+  /** Outer dock border thickness per edge */
+  DOCK_BORDER_PX: 1,
   /** Icon container box dimensions */
   ICON_CONTAINER_SIZE: 24,
   /** Icon glyph size in expanded mode */
