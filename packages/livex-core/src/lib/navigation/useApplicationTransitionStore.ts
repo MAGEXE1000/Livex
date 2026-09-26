@@ -52,44 +52,55 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
       MotionProfiler.startAppSwitch(get().launchingApp || 'idle', targetApp);
     } catch (_) {}
 
-    // In the canonical unified transition architecture, application transitions are driven
-    // directly by SharedNavigationContainer via compositor GPU properties.
-    // Maintain store state at IDLE to avoid blocking overlays or bottom nav bar stutter.
+    // When returning to Hub, no app-entry entrance animation is displayed
+    if (targetApp === 'hub') {
+      const existing = (window as any).__transitionWatchdog;
+      if (existing) {
+        clearTimeout(existing);
+        (window as any).__transitionWatchdog = null;
+      }
+      set({
+        state: 'IDLE',
+        launchingApp: null,
+        sourceRect: sourceRect ?? null,
+        appPreloaded: true,
+        logoFormed: true,
+      });
+      return true;
+    }
+
+    // If already launching the requested target app, do not restart
+    if (get().launchingApp === targetApp) {
+      return true;
+    }
+
+    const existing = (window as any).__transitionWatchdog;
+    if (existing) {
+      clearTimeout(existing);
+      (window as any).__transitionWatchdog = null;
+    }
+
+    (window as any).__transitionWatchdog = setTimeout(() => {
+      get().completeTransition();
+    }, 3000);
+
     set({
-      state: 'IDLE',
-      launchingApp: null,
+      state: 'PREPARING',
+      launchingApp: targetApp,
       sourceRect: sourceRect ?? null,
-      appPreloaded: true,
-      logoFormed: true,
+      appPreloaded: false,
+      logoFormed: false,
     });
 
     return true;
   },
 
   setAppPreloaded: (preloaded) => {
-    const { state, logoFormed } = get();
-    if (state === 'IDLE' || state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE') return;
-
     set({ appPreloaded: preloaded });
-
-    if (preloaded && logoFormed && (state === 'PREPARING' || state === 'LOGO_FORMATION' || state === 'FORMATION_COMPLETE')) {
-      get().startZoom();
-    }
   },
 
   setLogoFormed: (formed) => {
-    const { state, appPreloaded } = get();
-    if (state === 'IDLE' || state === 'ZOOM_TRANSITION' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE') return;
-
     set({ logoFormed: formed });
-
-    if (formed) {
-      if (appPreloaded && (state === 'PREPARING' || state === 'LOGO_FORMATION' || state === 'FORMATION_COMPLETE')) {
-        get().startZoom();
-      } else if (state === 'PREPARING' || state === 'LOGO_FORMATION') {
-        set({ state: 'FORMATION_COMPLETE' });
-      }
-    }
   },
 
   startZoom: () => {
@@ -105,8 +116,6 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
   },
 
   completeTransition: () => {
-    const { state } = get();
-    if (state === 'IDLE' || state === 'OVERLAY_DISMISS' || state === 'INTERACTION_ENABLE') return;
     const existing = (window as any).__transitionWatchdog;
     if (existing) {
       clearTimeout(existing);

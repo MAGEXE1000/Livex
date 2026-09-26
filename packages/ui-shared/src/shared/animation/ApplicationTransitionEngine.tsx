@@ -605,9 +605,9 @@ export function ApplicationTransitionEngine({
 
   const isHub = appKey === 'hub';
 
-  // Strict theme adherence & zero theme flash
-  const bgColor = isAmoled ? '#000000' : isLight ? '#ffffff' : 'var(--app-bg, #0b0d13)';
-  const baseColor = isLight ? '#0f172a' : '#ffffff';
+  // Strict theme adherence & zero theme flash via canonical tokens
+  const bgColor = 'var(--app-bg)';
+  const baseColor = 'var(--c-text-primary)';
   const accentColor = APP_ACCENT_COLORS[appKey] || '#3b82f6';
 
   // Atomic completion handler
@@ -643,6 +643,15 @@ export function ApplicationTransitionEngine({
     };
   }, [preloaded, isHub, prefersReduced]);
 
+  // Dismiss safety fallback
+  useEffect(() => {
+    if (!isDismissing) return undefined;
+    const dismissTimer = setTimeout(() => {
+      handleTransitionEnd();
+    }, 400);
+    return () => clearTimeout(dismissTimer);
+  }, [isDismissing, handleTransitionEnd]);
+
   // Safety watchdog timer (1200ms)
   useEffect(() => {
     if (isHub) {
@@ -662,6 +671,16 @@ export function ApplicationTransitionEngine({
 
   const duration = prefersReduced ? 0.14 : 0.22;
   const fluidEase: [number, number, number, number] = [0.2, 0, 0, 1]; // Apple-grade fluid curve
+
+  const APP_NAMES: Record<AppKey, string> = {
+    hub: 'Livex Hub',
+    chordex: 'Chordex',
+    drumex: 'Drumex',
+    stagex: 'Stagex',
+    groovex: 'Groovex',
+    vocalex: 'Vocalex',
+    devtools: 'DevTools',
+  };
 
   const renderAnimatedLogo = () => {
     const props = { baseColor, accentColor, prefersReduced, size: 104 };
@@ -707,7 +726,7 @@ export function ApplicationTransitionEngine({
         willChange: 'opacity',
       }}
     >
-      {/* Centered Animated App Identity */}
+      {/* Centered Animated App Identity Lockup */}
       <motion.div
         initial={{ opacity: 0, scale: prefersReduced ? 1 : 0.88 }}
         animate={
@@ -726,13 +745,35 @@ export function ApplicationTransitionEngine({
         }
         style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: 16,
           pointerEvents: 'none',
           willChange: 'transform, opacity',
         }}
       >
         {renderAnimatedLogo()}
+        <motion.span
+          initial={{ opacity: 0, y: prefersReduced ? 0 : 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: prefersReduced ? 0 : 0.12,
+            duration: prefersReduced ? 0 : 0.24,
+            ease: 'easeOut',
+          }}
+          style={{
+            fontSize: '19px',
+            fontWeight: 700,
+            color: baseColor,
+            fontFamily:
+              'var(--type-section-font, var(--studio-font-display, "Inter Tight", -apple-system, BlinkMacSystemFont, sans-serif))',
+            letterSpacing: '-0.025em',
+            lineHeight: 1.2,
+          }}
+        >
+          {APP_NAMES[appKey] || appKey}
+        </motion.span>
       </motion.div>
     </motion.div>
   );
