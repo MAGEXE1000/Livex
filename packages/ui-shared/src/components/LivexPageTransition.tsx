@@ -1,28 +1,29 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { CANONICAL_CONTENT_TRANSITION } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../hooks/useAppReducedMotion';
 
 export const UNIFIED_NAV_TRANSITION = {
   initial: {
     opacity: 0,
-    y: 6,
-    scale: 0.995,
+    y: CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.2,
-      ease: [0.22, 1, 0.36, 1] as const, // Apple/Linear smooth ease-out curve
+      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    y: -4,
-    scale: 0.995,
+    y: -CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
     transition: {
-      duration: 0.15,
+      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   },
@@ -31,22 +32,22 @@ export const UNIFIED_NAV_TRANSITION = {
 export const FADE_THROUGH_TRANSITION = {
   initial: {
     opacity: 0,
-    scale: 0.98,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.22,
-      ease: [0.2, 0, 0, 1] as const,
+      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    scale: 1.01,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
     transition: {
-      duration: 0.15,
-      ease: [0.4, 0, 1, 1] as const,
+      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };
@@ -54,22 +55,51 @@ export const FADE_THROUGH_TRANSITION = {
 export const SLIDE_TRANSITION = {
   initial: {
     opacity: 0,
-    x: 16,
+    x: CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     x: 0,
+    scale: 1,
     transition: {
-      duration: 0.22,
+      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    x: -16,
+    x: -CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
     transition: {
-      duration: 0.16,
-      ease: [0.32, 0, 0.67, 0] as const,
+      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+  },
+};
+
+export const SECTION_DRILLDOWN_TRANSITION = {
+  initial: {
+    opacity: 0,
+    y: CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX,
+    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
+    transition: {
+      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };
@@ -78,37 +108,6 @@ export const REDUCED_NAV_TRANSITION = {
   initial: { opacity: 1 },
   animate: { opacity: 1, transition: { duration: 0 } },
   exit: { opacity: 1, transition: { duration: 0 } },
-};
-
-/**
- * SECTION_DRILLDOWN_TRANSITION — High-end physical section entrance
- * Uses quintic deceleration, subtle 3D depth scaling (0.965 -> 1.0), and clip-path card expansion
- * for opening standalone sections (Appearance, About, Settings subsections, etc.).
- */
-export const SECTION_DRILLDOWN_TRANSITION = {
-  initial: {
-    opacity: 0,
-    y: 16,
-    scale: 0.98,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.26,
-      ease: [0.16, 1, 0.3, 1] as const,
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: 8,
-    scale: 0.99,
-    transition: {
-      duration: 0.16,
-      ease: [0.32, 0, 0.67, 0] as const,
-    },
-  },
 };
 
 export interface LivexPageTransitionProps {

@@ -31,7 +31,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion } from 'motion/react';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
-import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Capacitor } from '@capacitor/core';
 import SuccessLottie from '../../../shared/lottie/SuccessLottie';
@@ -6752,10 +6751,15 @@ export default function SongsPanel() {
       <div
         style={{ flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
       >
-        <StudioPageTransition pageKey={songsMobileView} variant="drilldown">
-          {songsMobileView === 'editor' ? (
-            renderEditor()
-          ) : (
+        <SharedNavigationContainer
+          activeView={songsMobileView}
+          viewOrder={['list', 'editor']}
+          variant="drilldown"
+        >
+          {(view) =>
+            view === 'editor' ? (
+              renderEditor()
+            ) : (
             <div
               style={{
                 display: 'flex',
@@ -7111,7 +7115,7 @@ export default function SongsPanel() {
               </aside>
             </div>
           )}
-        </StudioPageTransition>
+        </SharedNavigationContainer>
       </div>
     </div>
   );

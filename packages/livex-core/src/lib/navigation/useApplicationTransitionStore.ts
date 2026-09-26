@@ -44,56 +44,24 @@ export const useApplicationTransitionStore = create<ApplicationTransitionState>(
   sourceRect: null,
 
   requestTransition: (targetApp, sourceRect) => {
-    let { state, launchingApp } = get();
-    
     // Clear bottom navigation switcher state immediately during transition preparation
     const navStore = useBottomNavigationStore.getState();
     navStore.setSwitcherOpen(false);
 
-    if (state !== 'IDLE') {
-      if (launchingApp === targetApp) {
-        return true;
-      }
-      get().reset();
-      state = 'IDLE';
-    }
-
-    const existing = (window as any).__transitionWatchdog;
-    if (existing) {
-      clearTimeout(existing);
-      (window as any).__transitionWatchdog = null;
-    }
-    
-    (window as any).__transitionWatchdog = setTimeout(() => {
-      get().reset();
-    }, 4500);
-
-    set({
-      state: 'PREPARING',
-      launchingApp: targetApp,
-      sourceRect: sourceRect ?? null,
-      appPreloaded: targetApp === 'hub',
-      logoFormed: targetApp === 'hub',
-    });
-
     try {
-      MotionProfiler.startAppSwitch(launchingApp || 'idle', targetApp);
+      MotionProfiler.startAppSwitch(get().launchingApp || 'idle', targetApp);
     } catch (_) {}
 
-    if (targetApp === 'hub') {
-      get().startZoom();
-    } else {
-      // Immediate advance to LOGO_FORMATION on next microtask without artificial delay
-      queueMicrotask(() => {
-        const current = get();
-        if (current.state === 'PREPARING') {
-          set({ state: 'LOGO_FORMATION' });
-          if (current.appPreloaded && current.logoFormed) {
-            get().startZoom();
-          }
-        }
-      });
-    }
+    // In the canonical unified transition architecture, application transitions are driven
+    // directly by SharedNavigationContainer via compositor GPU properties.
+    // Maintain store state at IDLE to avoid blocking overlays or bottom nav bar stutter.
+    set({
+      state: 'IDLE',
+      launchingApp: null,
+      sourceRect: sourceRect ?? null,
+      appPreloaded: true,
+      logoFormed: true,
+    });
 
     return true;
   },

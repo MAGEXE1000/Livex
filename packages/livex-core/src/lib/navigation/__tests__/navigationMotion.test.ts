@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   CANONICAL_NAV_GEOMETRY,
   CANONICAL_NAV_MOTION,
+  CANONICAL_CONTENT_TRANSITION,
   resolveDragDestination,
 } from '../navigationMotion';
 
@@ -204,6 +205,54 @@ describe('Canonical Bottom Navigation Motion & Geometry System', () => {
       expect(rightClearance).toBe(3);
       expect(rightClearance).toBeGreaterThan(0); // 3px breathing room from right cap!
       expect(tab0Left).toBe(rightClearance); // 100% symmetric resting insets!
+    });
+  });
+
+  describe('5. Canonical Global Content Transition System', () => {
+    it('enforces fast, non-blocking timing under the 250ms responsiveness budget', () => {
+      expect(CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS).toBe(200);
+      expect(CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS).toBe(150);
+      expect(CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS).toBeLessThanOrEqual(250);
+      // Outgoing pane finishes before incoming finishes to prevent double-exposure muddiness
+      expect(CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS).toBeLessThan(
+        CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS
+      );
+    });
+
+    it('enforces subtle spatial displacements to prevent visual motion sickness', () => {
+      expect(CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX).toBe(14);
+      expect(CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX).toBe(10);
+      expect(CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX).toBe(8);
+      expect(CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX).toBe(6);
+
+      // Displacements should be subtle micro-motions (< 24px)
+      expect(CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX).toBeLessThan(24);
+      expect(CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX).toBeLessThan(16);
+      expect(CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX).toBeLessThan(
+        CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX
+      );
+      expect(CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX).toBeLessThan(
+        CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX
+      );
+    });
+
+    it('enforces micro-scale depth cues (>= 0.99) to keep content anchored', () => {
+      expect(CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING).toBe(0.992);
+      expect(CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING).toBe(0.995);
+      expect(CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING).toBeGreaterThanOrEqual(0.98);
+      expect(CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING).toBeLessThan(1.0);
+      expect(CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING).toBeGreaterThan(
+        CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING
+      );
+    });
+
+    it('enforces instantaneous 0ms transition for reduced motion preferences', () => {
+      expect(CANONICAL_CONTENT_TRANSITION.REDUCED_DURATION_MS).toBe(0);
+    });
+
+    it('uses Apple-grade cubic-bezier fluid easing curves', () => {
+      expect(CANONICAL_CONTENT_TRANSITION.ENTER_EASING).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
+      expect(CANONICAL_CONTENT_TRANSITION.EXIT_EASING).toBe('cubic-bezier(0.22, 1, 0.36, 1)');
     });
   });
 });

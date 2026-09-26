@@ -63,6 +63,7 @@ import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/anim
 import { Toaster } from '../../components/ui/sonner';
 
 const ALL_PANELS = ['songs', 'library', 'practice', 'preferences'] as const;
+const CANONICAL_APP_ORDER = ['hub', 'chordex', 'drumex', 'stagex', 'groovex', 'vocalex', 'devtools'] as const;
 
 export interface SharedAppShellProps {
   isAndroid?: boolean;
@@ -154,7 +155,7 @@ function DrumexDynamicSkeleton() {
   return <DrumSongsSkeleton />;
 }
 
-const SubAppWrapper = memo(function SubAppWrapper({
+function SubAppRenderer({
   app,
   activePanel,
   onReady,
@@ -165,188 +166,127 @@ const SubAppWrapper = memo(function SubAppWrapper({
   onReady: (app: AppKey) => void;
   subApps: SharedAppShellProps['subApps'];
 }) {
-  const [visitedApps, setVisitedApps] = useState<Set<AppKey>>(() => new Set(app && app !== 'hub' ? [app] : []));
-  if (app && app !== 'hub' && !visitedApps.has(app)) {
-    const next = new Set(visitedApps);
-    next.add(app);
-    setVisitedApps(next);
-  }
-
-  return (
-    <>
-      {visitedApps.has('devtools') && subApps.devtools && (
-        <div
-          style={{
-            display: app === 'devtools' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="devtools">
-            <ErrorBoundary moduleName="DevTools">
-              <Suspense fallback={<DeferredSkeleton><DevToolsSkeleton /></DeferredSkeleton>}>
-                <AppReadyNotifier app="devtools" onReady={onReady} />
-                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                  {subApps.devtools}
-                </div>
-              </Suspense>
-            </ErrorBoundary>
-          </SubAppScaffold>
-        </div>
-      )}
-
-      {visitedApps.has('groovex') && subApps.groovex && (
-        <div
-          style={{
-            display: app === 'groovex' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="groovex">
-            <ErrorBoundary moduleName="Groovex">
-              <Suspense fallback={<DeferredSkeleton><GroovexAppSkeleton /></DeferredSkeleton>}>
-                <AppReadyNotifier app="groovex" onReady={onReady} />
-                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                  {subApps.groovex}
-                </div>
-              </Suspense>
-            </ErrorBoundary>
-          </SubAppScaffold>
-        </div>
-      )}
-
-      {visitedApps.has('vocalex') && subApps.vocalex && (
-        <div
-          style={{
-            display: app === 'vocalex' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="vocalex">
-            <ErrorBoundary moduleName="Vocalex">
-              <Suspense fallback={<DeferredSkeleton><VocalexTakesSkeleton /></DeferredSkeleton>}>
-                <AppReadyNotifier app="vocalex" onReady={onReady} />
-                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                  {subApps.vocalex}
-                </div>
-              </Suspense>
-            </ErrorBoundary>
-          </SubAppScaffold>
-        </div>
-      )}
-
-      {visitedApps.has('stagex') && subApps.stagex && (
-        <div
-          style={{
-            display: app === 'stagex' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="stagex">
-            <ErrorBoundary moduleName="Stagex">
-              <Suspense fallback={<DeferredSkeleton><StagexPanelSkeleton /></DeferredSkeleton>}>
-                <AppReadyNotifier app="stagex" onReady={onReady} />
-                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                  {subApps.stagex}
-                </div>
-              </Suspense>
-            </ErrorBoundary>
-          </SubAppScaffold>
-        </div>
-      )}
-
-      {visitedApps.has('drumex') && subApps.drumex && (
-        <div
-          style={{
-            display: app === 'drumex' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="drumex">
-            <ErrorBoundary moduleName="Drumex">
-              <Suspense fallback={<DeferredSkeleton><DrumexDynamicSkeleton /></DeferredSkeleton>}>
-                <AppReadyNotifier app="drumex" onReady={onReady} />
-                <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                  {subApps.drumex}
-                </div>
-              </Suspense>
-            </ErrorBoundary>
-          </SubAppScaffold>
-        </div>
-      )}
-
-      {visitedApps.has('chordex') && subApps.chordex && (
-        <div
-          style={{
-            display: app === 'chordex' ? 'flex' : 'none',
-            flexDirection: 'column',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <SubAppScaffold appKey="chordex">
+  switch (app) {
+    case 'devtools':
+      return subApps.devtools ? (
+        <SubAppScaffold appKey="devtools">
+          <ErrorBoundary moduleName="DevTools">
+            <Suspense fallback={<DeferredSkeleton><DevToolsSkeleton /></DeferredSkeleton>}>
+              <AppReadyNotifier app="devtools" onReady={onReady} />
+              <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                {subApps.devtools}
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        </SubAppScaffold>
+      ) : null;
+    case 'groovex':
+      return subApps.groovex ? (
+        <SubAppScaffold appKey="groovex">
+          <ErrorBoundary moduleName="Groovex">
+            <Suspense fallback={<DeferredSkeleton><GroovexAppSkeleton /></DeferredSkeleton>}>
+              <AppReadyNotifier app="groovex" onReady={onReady} />
+              <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                {subApps.groovex}
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        </SubAppScaffold>
+      ) : null;
+    case 'vocalex':
+      return subApps.vocalex ? (
+        <SubAppScaffold appKey="vocalex">
+          <ErrorBoundary moduleName="Vocalex">
+            <Suspense fallback={<DeferredSkeleton><VocalexTakesSkeleton /></DeferredSkeleton>}>
+              <AppReadyNotifier app="vocalex" onReady={onReady} />
+              <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                {subApps.vocalex}
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        </SubAppScaffold>
+      ) : null;
+    case 'stagex':
+      return subApps.stagex ? (
+        <SubAppScaffold appKey="stagex">
+          <ErrorBoundary moduleName="Stagex">
+            <Suspense fallback={<DeferredSkeleton><StagexPanelSkeleton /></DeferredSkeleton>}>
+              <AppReadyNotifier app="stagex" onReady={onReady} />
+              <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                {subApps.stagex}
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        </SubAppScaffold>
+      ) : null;
+    case 'drumex':
+      return subApps.drumex ? (
+        <SubAppScaffold appKey="drumex">
+          <ErrorBoundary moduleName="Drumex">
+            <Suspense fallback={<DeferredSkeleton><DrumexDynamicSkeleton /></DeferredSkeleton>}>
+              <AppReadyNotifier app="drumex" onReady={onReady} />
+              <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                {subApps.drumex}
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        </SubAppScaffold>
+      ) : null;
+    case 'chordex':
+      return subApps.chordex ? (
+        <SubAppScaffold appKey="chordex">
+          <div
+            className="flex flex-col w-full overflow-hidden select-none"
+            style={{ position: 'relative', height: '100%' }}
+          >
             <div
-              className="flex flex-col w-full overflow-hidden select-none"
-              style={{ position: 'relative', height: '100%' }}
+              style={{
+                display: 'flex',
+                flexDirection: subApps.chordex.sidebar ? 'row' : 'column',
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+              }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: subApps.chordex.sidebar ? 'row' : 'column',
-                  flex: 1,
-                  width: '100%',
-                  height: '100%',
-                  overflow: 'hidden',
-                }}
-              >
-                {subApps.chordex.sidebar}
-                <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
-                  <ErrorBoundary moduleName="Chordex">
-                    <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
-                      {(panel) => {
-                        const fallback =
-                          panel === 'songs' ? (
-                            <ChordexSongsSkeleton />
-                          ) : panel === 'library' ? (
-                            <ChordexLibrarySkeleton />
-                          ) : panel === 'preferences' ? (
-                            <ChordexPreferencesSkeleton />
-                          ) : (
-                            <ChordexPracticeSkeleton />
-                          );
-                        return (
-                          <Suspense fallback={<DeferredSkeleton>{fallback}</DeferredSkeleton>}>
-                            <AppReadyNotifier app="chordex" onReady={onReady} />
-                            <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
-                              {panel === 'songs' && subApps.chordex?.songs}
-                              {panel === 'practice' && subApps.chordex?.practice}
-                              {panel === 'library' && subApps.chordex?.library}
-                              {panel === 'preferences' && subApps.chordex?.preferences}
-                            </div>
-                          </Suspense>
+              {subApps.chordex.sidebar}
+              <div className="flex-1 overflow-hidden relative" style={{ contain: 'strict' }}>
+                <ErrorBoundary moduleName="Chordex">
+                  <SharedNavigationContainer activeView={activePanel} viewOrder={ALL_PANELS}>
+                    {(panel) => {
+                      const fallback =
+                        panel === 'songs' ? (
+                          <ChordexSongsSkeleton />
+                        ) : panel === 'library' ? (
+                          <ChordexLibrarySkeleton />
+                        ) : panel === 'preferences' ? (
+                          <ChordexPreferencesSkeleton />
+                        ) : (
+                          <ChordexPracticeSkeleton />
                         );
-                      }}
-                    </SharedNavigationContainer>
-                  </ErrorBoundary>
-                </div>
+                      return (
+                        <Suspense fallback={<DeferredSkeleton>{fallback}</DeferredSkeleton>}>
+                          <AppReadyNotifier app="chordex" onReady={onReady} />
+                          <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
+                            {panel === 'songs' && subApps.chordex?.songs}
+                            {panel === 'practice' && subApps.chordex?.practice}
+                            {panel === 'library' && subApps.chordex?.library}
+                            {panel === 'preferences' && subApps.chordex?.preferences}
+                          </div>
+                        </Suspense>
+                      );
+                    }}
+                  </SharedNavigationContainer>
+                </ErrorBoundary>
               </div>
             </div>
-          </SubAppScaffold>
-        </div>
-      )}
-      <Toaster />
-    </>
-  );
-});
+          </div>
+        </SubAppScaffold>
+      ) : null;
+    default:
+      return null;
+  }
+}
 
 export function SharedAppShell({
   isAndroid,
@@ -497,79 +437,63 @@ export function SharedAppShell({
     >
       <ErrorBoundary moduleName="RootApp">
         <Suspense fallback={null}>
-          <div
-            className="app-main-layout"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              height: '100%',
-              overflow: 'hidden',
-              pointerEvents: isSubAppActive ? 'none' : 'auto',
-              opacity: isSubAppActive && !transitionActive ? 0 : 1,
-              visibility: isSubAppActive && !transitionActive ? 'hidden' : 'visible',
-              transition: 'opacity 240ms cubic-bezier(0.16, 1, 0.3, 1), visibility 240ms',
-            }}
+          <SharedNavigationContainer
+            activeView={appMode}
+            viewOrder={CANONICAL_APP_ORDER}
+            className="w-full h-full"
           >
-            {renderSidebar?.()}
-            {showHub && (
-              <Suspense fallback={<DeferredSkeleton><StudioHubSkeleton /></DeferredSkeleton>}>
+            {(currentAppKey) => {
+              if (currentAppKey === 'hub') {
+                return (
+                  <div
+                    className="app-main-layout"
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {renderSidebar?.()}
+                    {showHub && (
+                      <Suspense fallback={<DeferredSkeleton><StudioHubSkeleton /></DeferredSkeleton>}>
+                        <div
+                          key={hubRenderKey}
+                          style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                          {hubElement}
+                        </div>
+                      </Suspense>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
                 <div
-                  key={hubRenderKey}
-                  style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
+                  className="sc-subapp-wrapper"
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'hidden',
+                    background: 'var(--app-bg)',
+                  }}
                 >
-                  {hubElement}
+                  <SubAppRenderer
+                    app={currentAppKey as AppKey}
+                    activePanel={activePanel}
+                    onReady={handleAppPreloaded}
+                    subApps={subApps}
+                  />
                 </div>
-              </Suspense>
-            )}
-          </div>
-
-          <AnimatePresence>
-            {isSubAppActive && stableKey !== 'hub' && (
-              <motion.div
-                key="sc-subapp-container"
-                className="sc-subapp-wrapper"
-                initial={isWebDesktop ? { opacity: 0.98 } : { opacity: 1, scale: 1 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={isWebDesktop ? { opacity: 0 } : { opacity: 0, pointerEvents: 'none' as any }}
-                transition={
-                  isWebDesktop
-                    ? { duration: 0.12, ease: 'easeOut' }
-                    : { duration: 0.24 * speedScale, ease: [0.16, 1, 0.3, 1] }
-                }
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  zIndex: 2,
-                  background: 'var(--app-bg)',
-                  pointerEvents: isSubAppActive && (isWebDesktop || !splashVisible) ? 'auto' : 'none',
-                }}
-              >
-                <SubAppWrapper
-                  app={stableKey as AppKey}
-                  activePanel={activePanel}
-                  onReady={handleAppPreloaded}
-                  subApps={subApps}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {!isWebDesktop && launchingApp && (
-              <ApplicationTransitionEngine
-                appKey={launchingApp}
-                preloaded={appPreloaded}
-                onComplete={() => {}}
-                isLight={isTransitionLight}
-                isAmoled={isTransitionAmoled}
-                sourceRect={sourceRect}
-              />
-            )}
-          </AnimatePresence>
+              );
+            }}
+          </SharedNavigationContainer>
           {renderBottomNav?.()}
         </Suspense>
       </ErrorBoundary>
+      <Toaster />
       {renderLaunchOverlay?.()}
       {InspectorRouteTracer && developerMode && isInspectorEnabled && showRouteTracer && (
         <Suspense fallback={null}>

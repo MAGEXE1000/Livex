@@ -160,3 +160,44 @@ export function resolveDragDestination(
   const rawIndex = Math.round((projectedCenter - centerOffset - pillWidth / 2) / itemWidth);
   return Math.max(0, Math.min(totalSlots - 1, rawIndex));
 }
+
+/**
+ * Canonical Content Transition Configuration
+ *
+ * Single authoritative source of truth for all screen, section, tab, and app content transitions
+ * across the entire Livex ecosystem (Hub, Chordex, Drumex, Stagex, Groovex, Vocalex, Settings).
+ *
+ * Enforces:
+ * - Pure GPU compositor properties (transform: translate3d and opacity only)
+ * - Zero layout recalculation or reflow (contain: strict)
+ * - Apple-grade fluid quintic deceleration curve
+ * - Fast, responsive 200ms entry / 150ms exit timing to eliminate double-exposure muddiness
+ * - Direction-aware subtle spatial displacement (14px horizontal, 8px elevation)
+ * - Micro-scale depth cue (0.992 -> 1.0)
+ * - Instantaneous / zero-motion fallback under prefers-reduced-motion
+ */
+export const CANONICAL_CONTENT_TRANSITION = {
+  /** Entry duration in ms */
+  ENTER_DURATION_MS: 200,
+  /** Exit duration in ms (clears stage before entry settles) */
+  EXIT_DURATION_MS: 150,
+  /** Apple-grade fluid decelerate easing */
+  ENTER_EASING: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  /** Smooth exit easing */
+  EXIT_EASING: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  /** Horizontal displacement in px for sequential tab/section navigation */
+  HORIZONTAL_OFFSET_PX: 14,
+  /** Horizontal exit displacement in px */
+  HORIZONTAL_EXIT_OFFSET_PX: 10,
+  /** Vertical displacement in px for hierarchical / app transitions */
+  VERTICAL_OFFSET_PX: 8,
+  /** Vertical exit displacement in px */
+  VERTICAL_EXIT_OFFSET_PX: 6,
+  /** Entry initial scale */
+  SCALE_INCOMING: 0.992,
+  /** Exit target scale */
+  SCALE_OUTGOING: 0.995,
+  /** Reduced motion duration in ms */
+  REDUCED_DURATION_MS: 0,
+} as const;
+
