@@ -1,13 +1,10 @@
-# Version 4.6.52
+# Version 4.6.53
 
 Release Date: 2026-09-26
 
-### Improved
-- Freeverb IR Web Worker Offloading: Offloaded Freeverb impulse response generation (~1.16M floating-point calculations) to a background Web Worker, eliminating the main-thread freeze on first drum playback with reverb.
-- HouseKit Concurrency Cap: Implemented concurrency-capped worker queue for HouseKit audio asset loading, reducing simultaneous `decodeAudioData` operations from ~140 to 6 to eliminate memory pressure and audio thread starvation.
-- Audio Clock Sentinel Gate Cleanup: Replaced JavaScript `setTimeout` timers in audio note gate envelopes with audio-clock-accurate `AudioBufferSourceNode` sentinel callbacks, eliminating main-thread timer jitter and graph node accumulation.
-- DOM MutationObserver Header Detection: Replaced aggressive 50ms interval polling in navigation scroll observer with `MutationObserver`, completely eliminating idle CPU cycles when DOM elements are mounting.
-- Audio Hot-Loop Optimization: Hoisted Zustand store reads out of the per-step audio sequencer tick loop, eliminating repetitive allocations and state queries during playback.
-- Sync Engine Debounce & Auto-Backup Guards: Added empty-patch dirty check to `setStatus()`, debounced device registration to 5 minutes, and guarded auto-backup checks to eliminate redundant background sync work.
-- Theme Engine Redundant Write Elimination: Removed duplicate pre-dirty-check native storage write in theme manager.
-- Console Telemetry Silencing: Wrapped verbose navigation scroll and startup coordinator log calls in `DEV` environment guards, eliminating serialization and bridge overhead in production.
+### Fixed
+- Stagex Controls Interactivity: Resolved a stacking-context collision where an invisible `SharedNavigationContainer` overlay pane at `z-index: 2` blocked all touch/click pointer events to the stage canvas at `z-index: 1`. Elevated Stage canvas viewport to `z-index: 10`, disabled pointer events on empty sub-navigation containers, and eliminated ghost panes for views returning null.
+- Restored All Stage Controls: Restored complete interactivity to all 11 Stage controls (Stage "+", eye/visibility mode, PDF export, scene "+" and scene switcher in `#sc-scenes-bar`, layers popup, ruler/measure, cloud collaboration, undo/redo history drawer, focus/reset view, clear stage trash, and portrait/landscape rotation).
+- Performance Diagnostics Layout: Fixed character-by-character vertical text splitting on narrow mobile Android screens by restructuring the Top Banner Row to a vertical flex column and replacing aggressive `wordBreak: break-word` with `overflowWrap: break-word, wordBreak: normal`.
+- Compact Diagnostics Presentation: Rebalanced 6 core telemetry cards into an ergonomic 2-column mobile grid, compacted actionable performance warning badges, and implemented single-line ellipsis truncation on long tasks, routes, and component profiler metrics.
+- Hub Navigation Performance: Eliminated 220ms synchronous navigation transition blocking task by removing eager sub-page pre-mounting in Hub Settings, and replaced layout projection reflows with GPU-accelerated CSS transforms on hub cards.
