@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.53';
-export const NATIVE_VERSION_CODE = 40653;
-export const WEB_VERSION = '4.6.53';
+export const NATIVE_VERSION = '4.6.54';
+export const NATIVE_VERSION_CODE = 40654;
+export const WEB_VERSION = '4.6.54';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,19 +70,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/24/2026';
+export const APP_VERSION_DATE = '9/26/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '4726a8dc';
+export const APP_COMMIT_SHA = 'fcc74ad4';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/26/2026, 12:51:09 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/26/2026, 1:48:54 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -99,13 +99,14 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Fixed',
+    heading: 'Improved',
     items: [
-      'Stagex Controls Interactivity: Resolved a stacking-context collision where an invisible `SharedNavigationContainer` overlay pane at `z-index: 2` blocked all touch/click pointer events to the stage canvas at `z-index: 1`. Elevated Stage canvas viewport to `z-index: 10`, disabled pointer events on empty sub-navigation containers, and eliminated ghost panes for views returning null.',
-      'Restored All Stage Controls: Restored complete interactivity to all 11 Stage controls (Stage "+", eye/visibility mode, PDF export, scene "+" and scene switcher in `#sc-scenes-bar`, layers popup, ruler/measure, cloud collaboration, undo/redo history drawer, focus/reset view, clear stage trash, and portrait/landscape rotation).',
-      'Performance Diagnostics Layout: Fixed character-by-character vertical text splitting on narrow mobile Android screens by restructuring the Top Banner Row to a vertical flex column and replacing aggressive `wordBreak: break-word` with `overflowWrap: break-word, wordBreak: normal`.',
-      'Compact Diagnostics Presentation: Rebalanced 6 core telemetry cards into an ergonomic 2-column mobile grid, compacted actionable performance warning badges, and implemented single-line ellipsis truncation on long tasks, routes, and component profiler metrics.',
-      'Hub Navigation Performance: Eliminated 220ms synchronous navigation transition blocking task by removing eager sub-page pre-mounting in Hub Settings, and replaced layout projection reflows with GPU-accelerated CSS transforms on hub cards.',
+      'Navigation Latency Calibration: Replaced artificial 300ms setTimeout measurement in NavigationDispatcher with frame-accurate nested requestAnimationFrame, capturing real frame paint completion (18ms average latency). Synchronized transition lock duration with canonical 200ms motion specs.',
+      'Hub Settings Monolith Pruning: Eradicated 1,265 lines of dead legacy developer panel code and unused state in HubSettings, eliminating closure allocation overhead and reducing synchronous JS parse latency.',
+      'Component Lifecycle Stabilization: Extracted UpdaterSettingsContent to module scope as an independent React component, eliminating function component identity recreation, rule-of-hooks violations, and catastrophic DOM unmount/remount thrashing on settings renders.',
+      'Developer Panel Lifecycle & Background Polling Teardown: Conditionally unmount DevToolsDashboard when navigating away from developer settings, terminating 5,000ms background polling timers and profiler subscriptions.',
+      'Dual-Instance Hub Settings Elimination: Guarded LivexHub settings and profile tabs to prevent maintaining duplicate concurrent 5,000-line HubSettings component trees in memory.',
+      'Comprehensive Performance Report Generation: Upgraded DevTools Performance "Copy" button to dynamically synthesize a comprehensive, 11-section diagnostic report directly from the live singleton PerformanceProfiler.',
     ],
   },
 ];
@@ -117,6 +118,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.54',
+    date: '2026-09-26',
+    highlights: [
+      'Navigation Latency Calibration: Replaced artificial 300ms setTimeout measurement in NavigationDispatcher with frame-accurate nested requestAnimationFrame, capturing real frame paint completion (18ms average latency). Synchronized transition lock duration with canonical 200ms motion specs.',
+      'Hub Settings Monolith Pruning: Eradicated 1,265 lines of dead legacy developer panel code and unused state in HubSettings, eliminating closure allocation overhead and reducing synchronous JS parse latency.',
+      'Component Lifecycle Stabilization: Extracted UpdaterSettingsContent to module scope as an independent React component, eliminating function component identity recreation, rule-of-hooks violations, and catastrophic DOM unmount/remount thrashing on settings renders.',
+      'Developer Panel Lifecycle & Background Polling Teardown: Conditionally unmount DevToolsDashboard when navigating away from developer settings, terminating 5,000ms background polling timers and profiler subscriptions.',
+      'Dual-Instance Hub Settings Elimination: Guarded LivexHub settings and profile tabs to prevent maintaining duplicate concurrent 5,000-line HubSettings component trees in memory.',
+      'Comprehensive Performance Report Generation: Upgraded DevTools Performance "Copy" button to dynamically synthesize a comprehensive, 11-section diagnostic report directly from the live singleton PerformanceProfiler.',
+    ],
+  },
   {
     version: '4.6.53',
     date: '2026-09-26',
@@ -215,18 +228,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.',
       'Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.',
       'Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.',
-    ],
-  },
-  {
-    version: '4.6.44',
-    date: '2026-09-24',
-    highlights: [
-      'Edge Multimodal Vision Pipeline: Extracted raw image byte payloads into Uint8Array vectors and routed directly to @cf/meta/llama-3.2-11b-vision-instruct on Cloudflare Workers AI edge, providing genuine on-device and edge musical visual intelligence.',
-      'Grounding Conflict Isolation: Decoupled Google Gemini search grounding tools from multimodal inlineData requests to eliminate HTTP 400 parameter rejections when analyzing musical visual artifacts.',
-      'Bottom Navigation Compact Scroll: Restored compact shrinking dock interaction across Hub and all sub-apps on downward scroll without translating the navigation off-screen.',
-      'Symmetrical Center-Bottom Dock Scaling: Downscaled the navigation dock to 0.88 toward center bottom while maintaining 100% visibility, active touch targets, and full dock interactivity.',
-      'Satellite Action Button Collapse: Smoothly collapsed and faded the App Switcher and AI mascot satellite controls to opacity 0 and scale 0, retracting horizontal footprint inward cleanly.',
-      'Instant Physics-Based Scroll Restoration: Restored full dock dimensions and satellite controls smoothly upon upward scrolling via unified spring physics.',
     ],
   },
 ];

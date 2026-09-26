@@ -1,10 +1,11 @@
-# Version 4.6.53
+# Version 4.6.54
 
 Release Date: 2026-09-26
 
-### Fixed
-- Stagex Controls Interactivity: Resolved a stacking-context collision where an invisible `SharedNavigationContainer` overlay pane at `z-index: 2` blocked all touch/click pointer events to the stage canvas at `z-index: 1`. Elevated Stage canvas viewport to `z-index: 10`, disabled pointer events on empty sub-navigation containers, and eliminated ghost panes for views returning null.
-- Restored All Stage Controls: Restored complete interactivity to all 11 Stage controls (Stage "+", eye/visibility mode, PDF export, scene "+" and scene switcher in `#sc-scenes-bar`, layers popup, ruler/measure, cloud collaboration, undo/redo history drawer, focus/reset view, clear stage trash, and portrait/landscape rotation).
-- Performance Diagnostics Layout: Fixed character-by-character vertical text splitting on narrow mobile Android screens by restructuring the Top Banner Row to a vertical flex column and replacing aggressive `wordBreak: break-word` with `overflowWrap: break-word, wordBreak: normal`.
-- Compact Diagnostics Presentation: Rebalanced 6 core telemetry cards into an ergonomic 2-column mobile grid, compacted actionable performance warning badges, and implemented single-line ellipsis truncation on long tasks, routes, and component profiler metrics.
-- Hub Navigation Performance: Eliminated 220ms synchronous navigation transition blocking task by removing eager sub-page pre-mounting in Hub Settings, and replaced layout projection reflows with GPU-accelerated CSS transforms on hub cards.
+### Improved
+- Navigation Latency Calibration: Replaced artificial 300ms setTimeout measurement in NavigationDispatcher with frame-accurate nested requestAnimationFrame, capturing real frame paint completion (18ms average latency). Synchronized transition lock duration with canonical 200ms motion specs.
+- Hub Settings Monolith Pruning: Eradicated 1,265 lines of dead legacy developer panel code and unused state in HubSettings, eliminating closure allocation overhead and reducing synchronous JS parse latency.
+- Component Lifecycle Stabilization: Extracted UpdaterSettingsContent to module scope as an independent React component, eliminating function component identity recreation, rule-of-hooks violations, and catastrophic DOM unmount/remount thrashing on settings renders.
+- Developer Panel Lifecycle & Background Polling Teardown: Conditionally unmount DevToolsDashboard when navigating away from developer settings, terminating 5,000ms background polling timers and profiler subscriptions.
+- Dual-Instance Hub Settings Elimination: Guarded LivexHub settings and profile tabs to prevent maintaining duplicate concurrent 5,000-line HubSettings component trees in memory.
+- Comprehensive Performance Report Generation: Upgraded DevTools Performance "Copy" button to dynamically synthesize a comprehensive, 11-section diagnostic report directly from the live singleton PerformanceProfiler.
