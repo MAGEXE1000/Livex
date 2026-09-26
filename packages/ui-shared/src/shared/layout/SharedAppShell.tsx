@@ -42,7 +42,6 @@ import {
 import {
   StudioHubSkeleton,
   GroovexAppSkeleton,
-  StagexPanelSkeleton,
   DrumEditorSkeleton,
   DrumSongsSkeleton,
   DrumMetronomeSkeleton,
@@ -211,7 +210,7 @@ function SubAppRenderer({
       return subApps.stagex ? (
         <SubAppScaffold appKey="stagex">
           <ErrorBoundary moduleName="Stagex">
-            <Suspense fallback={<DeferredSkeleton><StagexPanelSkeleton /></DeferredSkeleton>}>
+            <Suspense fallback={null}>
               <AppReadyNotifier app="stagex" onReady={onReady} />
               <div className="app-content-reveal" style={{ width: '100%', height: '100%' }}>
                 {subApps.stagex}

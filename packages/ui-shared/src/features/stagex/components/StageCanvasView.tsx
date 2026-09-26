@@ -31,7 +31,6 @@ import {
   injectAccentVars,
 } from '../services/StageBridgeService';
 import { useStagexStore } from '../state/useStagexStore';
-import SmartLoading from '../../../shared/loading/SmartLoading';
 import { resolveAccent } from '@workspace/livex-core';
 
 export interface StageCanvasViewProps {
@@ -1101,15 +1100,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
             className="w-full h-full border-none block relative z-0"
             style={{ width: '100%', height: '100%', background: 'transparent' }}
           />
-
-          {iframeLoading && (
-            <div
-              className="absolute inset-0 z-10 flex items-center justify-center"
-              style={{ background: stageBg }}
-            >
-              <SmartLoading app="stagex" />
-            </div>
-          )}
         </div>
 
         {/* Desktop Collapsible Right Sidebar (Elements & Specs) */}
