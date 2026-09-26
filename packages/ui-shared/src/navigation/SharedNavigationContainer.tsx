@@ -267,6 +267,8 @@ export function SharedNavigationContainer({
       {Array.from(visitedViews).map((viewId) => {
         const isCurrent = viewId === activeView;
         const isExiting = viewId === exitingView;
+        const content = children(viewId);
+        if (content == null) return null;
 
         if (!isCurrent && !isExiting) {
           return (
@@ -286,7 +288,7 @@ export function SharedNavigationContainer({
                 contain: 'strict',
               }}
             >
-              {children(viewId)}
+              {content}
             </div>
           );
         }
@@ -316,7 +318,7 @@ export function SharedNavigationContainer({
               willChange: isTransitioning || isExiting ? 'transform, opacity' : 'auto',
             }}
           >
-            {children(viewId)}
+            {content}
           </div>
         );
       })}

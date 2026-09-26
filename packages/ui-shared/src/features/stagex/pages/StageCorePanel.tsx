@@ -196,50 +196,60 @@ export default function StagexPanel() {
         <div className="flex-1 flex flex-col h-full overflow-hidden relative">
           {/* Canonical SharedNavigationContainer with StudioPageTransition */}
           <div className="flex-1 overflow-hidden relative w-full h-full">
-            <SharedNavigationContainer activeView={curView} viewOrder={VIEW_ORDER} variant="tab">
-              {(viewId) => (
-                <div className="w-full h-full relative overflow-hidden">
-                  {/* Setup Native View */}
-                  {viewId === 'Setup' && (
-                    <div className="w-full h-full">
-                      <StageSetupContainer
-                        initialSubView={
-                          ['rider', 'setlist', 'gear', 'members'].includes(
-                            (currentRoute.subView || currentRoute.page || '').toLowerCase()
-                          )
-                            ? ((
-                                currentRoute.subView ||
-                                currentRoute.page ||
-                                ''
-                              ).toLowerCase() as StagexSubView)
-                            : undefined
-                        }
-                        onBackToStage={() => navigate('Editor')}
-                        isLight={isLight}
-                        isAmoled={isAmoled}
-                      />
-                    </div>
-                  )}
+            <SharedNavigationContainer
+              activeView={curView}
+              viewOrder={VIEW_ORDER}
+              variant="tab"
+              style={{
+                pointerEvents: curView === 'Editor' ? 'none' : 'auto',
+              }}
+            >
+              {(viewId) => {
+                if (viewId === 'Editor') return null;
+                return (
+                  <div className="w-full h-full relative overflow-hidden">
+                    {/* Setup Native View */}
+                    {viewId === 'Setup' && (
+                      <div className="w-full h-full">
+                        <StageSetupContainer
+                          initialSubView={
+                            ['rider', 'setlist', 'gear', 'members'].includes(
+                              (currentRoute.subView || currentRoute.page || '').toLowerCase()
+                            )
+                              ? ((
+                                  currentRoute.subView ||
+                                  currentRoute.page ||
+                                  ''
+                                ).toLowerCase() as StagexSubView)
+                              : undefined
+                          }
+                          onBackToStage={() => navigate('Editor')}
+                          isLight={isLight}
+                          isAmoled={isAmoled}
+                        />
+                      </div>
+                    )}
 
-                  {/* Preferences Native View */}
-                  {viewId === 'Preferences' && (
-                    <div className="w-full h-full">
-                      <StagePreferencesView isLight={isLight} isAmoled={isAmoled} />
-                    </div>
-                  )}
+                    {/* Preferences Native View */}
+                    {viewId === 'Preferences' && (
+                      <div className="w-full h-full">
+                        <StagePreferencesView isLight={isLight} isAmoled={isAmoled} />
+                      </div>
+                    )}
 
-                  {/* Export / Production Document Native View */}
-                  {viewId === 'Export' && (
-                    <div className="w-full h-full">
-                      <StageExportPdfView
-                        onBack={() => navigate('Editor')}
-                        isLight={isLight}
-                        isAmoled={isAmoled}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                    {/* Export / Production Document Native View */}
+                    {viewId === 'Export' && (
+                      <div className="w-full h-full">
+                        <StageExportPdfView
+                          onBack={() => navigate('Editor')}
+                          isLight={isLight}
+                          isAmoled={isAmoled}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              }}
             </SharedNavigationContainer>
 
             {/* Persistent Canvas View: kept mounted with display: none when not in Editor to avoid reloads */}
@@ -266,7 +276,7 @@ export default function StagexPanel() {
               }}
               style={{
                 display: curView === 'Editor' ? 'flex' : 'none',
-                zIndex: curView === 'Editor' ? 1 : -1,
+                zIndex: curView === 'Editor' ? 10 : -1,
                 visibility: curView === 'Editor' ? 'visible' : 'hidden',
                 willChange: curView === 'Editor' ? 'transform, opacity' : 'auto',
               }}
