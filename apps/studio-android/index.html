@@ -259,12 +259,9 @@
             alreadyShown = isLocalDev || !!sessionStorage.getItem('livex-intro-shown') || !!sessionStorage.getItem('studio-intro-shown');
           } catch (e) {}
 
-          if (isApp && !alreadyShown && appMode === 'hub') {
-            document.documentElement.classList.add('app-route');
-            document.documentElement.classList.remove('landing-route');
-          } else {
-            document.documentElement.classList.add('landing-route');
-            document.documentElement.classList.remove('app-route');
+          document.documentElement.classList.add('app-route');
+          document.documentElement.classList.remove('landing-route');
+          if (!isApp || alreadyShown || appMode !== 'hub') {
             window.__introReturnedEarly = true;
             try {
               if (

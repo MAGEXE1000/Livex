@@ -661,8 +661,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
               display: 'flex',
               alignItems: 'center',
               width: '100%',
-              minHeight: 'clamp(56px, 7.8vh, 74px)',
-              padding: 'clamp(8px, 1.35vh, 14px) clamp(14px, 3.6vw, 18px)',
+              minHeight: 'clamp(50px, 7.6vh, 74px)',
+              padding: 'clamp(6px, 1.3vh, 14px) clamp(14px, 3.6vw, 18px)',
               background: isLight
                 ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
                 : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
@@ -1343,6 +1343,7 @@ export default function LivexHub() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       height: '100%',
                       maxHeight: '100%',
                       boxSizing: 'border-box',
@@ -1351,9 +1352,9 @@ export default function LivexHub() {
                       touchAction: 'pan-x',
                       padding: '0 clamp(12px, 3.5vw, 16px)',
                       paddingTop:
-                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(12px, 2.4vh, 28px))',
+                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(8px, 1.8vh, 24px))',
                       paddingBottom:
-                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + clamp(66px, 8.5vh, 84px))',
+                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + var(--nav-h, 58px) + clamp(8px, 1.6vh, 18px))',
                     }}
                   >
                     {/* Fixed Dashboard Contents Container */}
@@ -1363,8 +1364,9 @@ export default function LivexHub() {
                         maxWidth: 'var(--content-max-w, 460px)',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        gap: 'clamp(8px, 1.4vh, 16px)',
+                        justifyContent: 'center',
+                        gap: 'clamp(8px, 1.6vh, 18px)',
+                        margin: 'auto 0',
                       }}
                       className="w-full"
                     >
