@@ -88,9 +88,10 @@ export default function StagexPanel() {
 
   // Persist the active tab so cold-start resumes where the user left off
   useEffect(() => {
+    if (currentRoute.app !== 'stagex') return;
     useSessionStore.getState().setLastSession({ stagexView: curView });
     resetNav();
-  }, [curView]);
+  }, [curView, currentRoute.app]);
 
   // Theme & Appearance
   const settings = useSettingsStore(
@@ -135,8 +136,9 @@ export default function StagexPanel() {
   // Hide global navigation when live mode is active or when viewing Export
   useEffect(() => {
     if (isWebDesktop) return;
+    if (currentRoute.app !== 'stagex') return;
     setNavHidden(liveMode || curView === 'Export');
-  }, [liveMode, curView, isWebDesktop]);
+  }, [liveMode, curView, isWebDesktop, currentRoute.app]);
 
   // Register developer diagnostics provider
   const curViewRef = useRef(curView);
@@ -300,7 +302,7 @@ export default function StagexPanel() {
               }}
             >
               <StageCanvasView
-                isActive={curView === 'Editor'}
+                isActive={currentRoute.app === 'stagex' && curView === 'Editor'}
                 isLight={isLight}
                 isAmoled={isAmoled}
                 accentColor={settings.accentColor || 'blue'}

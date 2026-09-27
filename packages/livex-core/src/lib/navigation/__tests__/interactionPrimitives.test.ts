@@ -5,6 +5,7 @@ import { BackDispatcher } from '../BackDispatcher';
 describe('Canonical Interaction Primitives: Morph Menu & Accordion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    BackDispatcher.resetDebounce();
   });
 
   // ── 1. Motion Tokens & Parity with Transitions.dev References ─────────────

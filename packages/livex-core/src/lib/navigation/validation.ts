@@ -199,13 +199,24 @@ export function isNestedRoute(route: NavigationRoute | undefined): boolean {
     case 'stagex':
       // 'Editor' and 'Stage' are the two root pages for Stagex; everything else is a sub-page.
       return Boolean(route.page && route.page !== 'Editor' && route.page !== 'Stage');
+    case 'drumex':
+      return Boolean(
+        route.page === 'metronome' ||
+        route.page === 'editor' ||
+        route.tab === 'metronome' ||
+        route.subView === 'editor'
+      );
+    case 'groovex':
+      return Boolean(route.page === 'player' || route.tab === 'player');
+    case 'chordex':
+      return Boolean(route.page === 'chord');
+    case 'vocalex':
+      return Boolean(route.page === 'harmonizer' || route.page === 'pitch' || route.page === 'lab');
     case 'hub':
       // Hub uses tab-based nesting; 'home' is the root tab.
       return Boolean(route.tab && route.tab !== 'home');
     default:
-      // For all other internal apps (chordex, drumex, groovex, vocalex, devtools, etc.):
-      // any route with a page is a sub-page of that app — not the app landing root.
-      return Boolean(route.page);
+      return false;
   }
 }
 

@@ -270,8 +270,12 @@ export function BottomNavigationController() {
       const isFullscreen = !!document.fullscreenElement;
       const isLandscape = typeof window !== 'undefined' && window.innerWidth > window.innerHeight;
       const activeHistory = useNavigationStore.getState().history;
-      const freshCurrentApp = activeHistory[activeHistory.length - 1]?.app ?? 'hub';
-      const isStage = freshCurrentApp === 'stagex';
+      const currentRoute = activeHistory[activeHistory.length - 1];
+      const freshCurrentApp = currentRoute?.app ?? 'hub';
+      const freshCurrentPage = currentRoute?.page;
+      const isStageEditor =
+        freshCurrentApp === 'stagex' &&
+        (!freshCurrentPage || freshCurrentPage === 'Editor' || freshCurrentPage === 'stage');
 
       // Self-heal zombie registry entries if no dialog elements exist in DOM
       if (activeOverlaysRegistry.modals.size > 0 || activeOverlaysRegistry.sheets.size > 0) {
@@ -290,7 +294,7 @@ export function BottomNavigationController() {
         activeOverlaysRegistry.modals.size > 0 ||
         activeOverlaysRegistry.sheets.size > 0;
       setHasDOMHiddenIndicator(
-        isFullscreen || isModalOpen || (isStage && isLandscape)
+        isFullscreen || isModalOpen || (isStageEditor && isLandscape)
       );
     };
 

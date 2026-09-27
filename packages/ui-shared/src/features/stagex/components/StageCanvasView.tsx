@@ -177,7 +177,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         userExitedLandscapeRef.current = false;
       }
       const active = isWindowLandscape && !userExitedLandscapeRef.current;
-      if (active) {
+      if (active && isActive) {
         document.body.classList.add('is-landscape');
       } else {
         document.body.classList.remove('is-landscape');
@@ -211,7 +211,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
       window.removeEventListener('resize', handleOrientation);
     };
-  }, [isWebDesktop]);
+  }, [isActive, isWebDesktop]);
 
   // Listen for selection and specs events from the canvas engine
   useEffect(() => {
@@ -289,11 +289,24 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   // Ensure bottom navigation reflects landscape, inspection mode, element picker drawer, specs editor, and drag state
   useEffect(() => {
     if (isWebDesktop) return;
+    if (!isActive) {
+      setNavLocked(false);
+      setNavHidden(false);
+      useBottomNavigationStore.getState().setLocked(false);
+      useBottomNavigationStore.getState().setVisible(true);
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('is-landscape');
+      }
+      return;
+    }
     const shouldHide = isLandscape || liveMode || panelOpen || specsOpen || isCanvasDragging;
     setNavLocked(shouldHide);
     setNavHidden(shouldHide);
     useBottomNavigationStore.getState().setLocked(shouldHide);
-  }, [isLandscape, liveMode, panelOpen, specsOpen, isCanvasDragging, isWebDesktop]);
+    if (!shouldHide) {
+      useBottomNavigationStore.getState().setVisible(true);
+    }
+  }, [isActive, isLandscape, liveMode, panelOpen, specsOpen, isCanvasDragging, isWebDesktop]);
 
   // Clean up orientation lock and navigation state on unmount
   useEffect(() => {
@@ -304,6 +317,10 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       setNavLocked(false);
       setNavHidden(false);
       useBottomNavigationStore.getState().setLocked(false);
+      useBottomNavigationStore.getState().setVisible(true);
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('is-landscape');
+      }
     };
   }, [isWebDesktop]);
 
@@ -337,8 +354,36 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     }
   }, []);
 
+  const handleExitLandscape = useCallback(async () => {
+    if (isWebDesktop) return;
+    userExitedLandscapeRef.current = true;
+    setIsLandscape(false);
+    document.body.classList.remove('is-landscape');
+    if (panelOpen) setPanelOpen(false);
+    if (specsOpen) setSpecsOpen(false);
+    const shouldHide = liveMode;
+    setNavLocked(shouldHide);
+    setNavHidden(shouldHide);
+    useBottomNavigationStore.getState().setLocked(shouldHide);
+    if (!shouldHide) {
+      useBottomNavigationStore.getState().setVisible(true);
+    }
+    if (!isWebDesktop) {
+      try {
+        await lockOrientation('portrait');
+      } catch {}
+    }
+    callIframe('sc-landscape', { isLandscape: false });
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        { type: 'sc-landscape', isLandscape: false },
+        getStagexTargetOrigin()
+      );
+    }
+  }, [liveMode, panelOpen, specsOpen, callIframe, isWebDesktop]);
+
   // Dismiss Layers popup, Specs editor, bottom panel (drawer/history), or selection on Android hardware back button
-  // In landscape editing mode, intercept back events to safely consume them and prevent accidental exit
+  // In landscape editing mode, exit landscape mode gracefully when back is pressed
   useBackHandler(
     'overlay',
     () => {
@@ -361,12 +406,12 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         return true;
       }
       if (isLandscape) {
-        // Safe lock: In landscape editing mode, consume back event to prevent accidental exit
+        void handleExitLandscape();
         return true;
       }
       return false;
     },
-    [isActive, layersOpen, specsOpen, panelOpen, selectedElement, isLandscape, callIframe]
+    [isActive, layersOpen, specsOpen, panelOpen, selectedElement, isLandscape, handleExitLandscape, callIframe]
   );
 
   // Close Layers popup when clicking outside
@@ -528,31 +573,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     },
     [refreshHistoryState]
   );
-
-  const handleExitLandscape = useCallback(async () => {
-    if (isWebDesktop) return;
-    userExitedLandscapeRef.current = true;
-    setIsLandscape(false);
-    document.body.classList.remove('is-landscape');
-    if (panelOpen) setPanelOpen(false);
-    if (specsOpen) setSpecsOpen(false);
-    const shouldHide = liveMode;
-    setNavLocked(shouldHide);
-    setNavHidden(shouldHide);
-    useBottomNavigationStore.getState().setLocked(shouldHide);
-    if (!isWebDesktop) {
-      try {
-        await lockOrientation('portrait');
-      } catch {}
-    }
-    callIframe('sc-landscape', { isLandscape: false });
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        { type: 'sc-landscape', isLandscape: false },
-        getStagexTargetOrigin()
-      );
-    }
-  }, [liveMode, panelOpen, specsOpen, callIframe, isWebDesktop]);
 
   const handleToggleRotate = useCallback(async () => {
     if (isWebDesktop) return;
@@ -811,7 +831,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           className="absolute top-0 left-0 right-0 z-20 pointer-events-none flex items-center justify-end px-4 gap-2"
           style={{
             paddingTop: isLandscape
-              ? 'max(6px, env(safe-area-inset-top, 0px))'
+              ? 'max(8px, env(safe-area-inset-top, 0px))'
               : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
             paddingRight: isLandscape
               ? 'calc(max(16px, env(safe-area-inset-right, 0px)))'

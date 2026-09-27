@@ -64,6 +64,7 @@ export const useBottomNavigationStore = create<BottomNavigationStore>((set, get)
     if (isLocked) {
       set({
         isLocked: true,
+        visible: false,
         isSwitcherOpen: false,
         isProfileMenuOpen: false,
         isSearchOpen: false,
@@ -71,7 +72,7 @@ export const useBottomNavigationStore = create<BottomNavigationStore>((set, get)
       });
       get().logState('locked: true -> bottom nav interaction disabled');
     } else {
-      set({ isLocked: false, motionState: 'Visible' });
+      set({ isLocked: false, visible: true, motionState: 'Visible' });
       get().logState('locked: false -> bottom nav interaction restored');
     }
   },

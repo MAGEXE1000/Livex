@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigationStore } from './useNavigationStore';
 import { useApplicationTransitionStore } from './useApplicationTransitionStore';
+import { useBottomNavigationStore } from './useBottomNavigationStore';
 
 let _lastRouteChangeTime = 0;
 let _lastInteractionTime = 0;
 
-// â”€â”€â”€ navHidden â€” programmatic full-hide (preset editor, modals, etc.) â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── navHidden — programmatic full-hide (preset editor, modals, etc.) ────────
 let _hidden = false;
 let _locked = false;
 const _listeners = new Set<(h: boolean) => void>();
@@ -31,6 +32,9 @@ export function setNavLocked(locked: boolean) {
     if (typeof window !== 'undefined') {
       document.documentElement.setAttribute('data-nav-locked', 'true');
     }
+    try {
+      useBottomNavigationStore.getState().setLocked(true);
+    } catch {}
     setNavHidden(true);
   } else {
     clearAutoShow();
@@ -44,6 +48,10 @@ export function setNavLocked(locked: boolean) {
         document.documentElement.removeAttribute('data-nav-hidden');
       }
     }
+    try {
+      useBottomNavigationStore.getState().setLocked(false);
+      useBottomNavigationStore.getState().setVisible(true);
+    } catch {}
   }
   onStateChanged();
 }
@@ -95,9 +103,14 @@ export function resetNav() {
     _collapsedListeners.forEach((fn) => fn(false));
   }
   if (typeof window !== 'undefined') {
+    document.documentElement.removeAttribute('data-nav-locked');
     document.documentElement.removeAttribute('data-nav-collapsed');
     document.documentElement.removeAttribute('data-nav-hidden');
   }
+  try {
+    useBottomNavigationStore.getState().setLocked(false);
+    useBottomNavigationStore.getState().setVisible(true);
+  } catch {}
   onStateChanged();
 }
 
