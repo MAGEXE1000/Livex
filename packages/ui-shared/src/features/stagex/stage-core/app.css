@@ -4582,13 +4582,14 @@ body.is-landscape #presets-panel {
     bottom: 0 !important;
   }
 
-  /* ── Tighter padding; right side leaves room for the FAB ── */
+  /* ── Symmetrical padding; center stage canvas in viewport ── */
   #stage-viewport {
     padding-top: calc(max(4px, env(safe-area-inset-top))) !important;
-    padding-left: calc(max(6px, env(safe-area-inset-left))) !important;
+    padding-left: calc(max(16px, env(safe-area-inset-left))) !important;
     padding-bottom: calc(max(4px, env(safe-area-inset-bottom))) !important;
-    padding-right: calc(max(64px, env(safe-area-inset-right))) !important;
+    padding-right: calc(max(16px, env(safe-area-inset-right))) !important;
     justify-content: center !important;
+    align-items: center !important;
   }
 
   /* ── Plot canvas & scenes bar: deterministic landscape maximization preserving scene selector ── */
@@ -4597,7 +4598,7 @@ body.is-landscape #presets-panel {
     margin-bottom: 0 !important;
     max-width: min(
       1200px,
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
     ) !important;
   }
@@ -4605,7 +4606,7 @@ body.is-landscape #presets-panel {
   #sc-scenes-bar {
     max-width: min(
       1200px,
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
     ) !important;
     margin-top: 0 !important;
@@ -5070,9 +5071,9 @@ html[data-theme='light'] #sc-cp-alpha-track {
 @media screen and (orientation: landscape) {
   #stage-viewport {
     padding-top: calc(max(4px, env(safe-area-inset-top, 0px))) !important;
-    padding-left: calc(max(6px, env(safe-area-inset-left, 0px))) !important;
+    padding-left: calc(max(16px, env(safe-area-inset-left, 0px))) !important;
     padding-bottom: calc(max(4px, env(safe-area-inset-bottom, 0px))) !important;
-    padding-right: calc(max(64px, env(safe-area-inset-right, 0px))) !important;
+    padding-right: calc(max(16px, env(safe-area-inset-right, 0px))) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -5082,7 +5083,7 @@ html[data-theme='light'] #sc-cp-alpha-track {
   #sc-scenes-bar {
     max-width: min(
       1200px,
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
     ) !important;
     padding-bottom: 2px !important;
@@ -5097,7 +5098,7 @@ html[data-theme='light'] #sc-cp-alpha-track {
     width: 100% !important;
     max-width: min(
       1200px,
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
     ) !important;
     height: auto !important;
@@ -5107,12 +5108,12 @@ html[data-theme='light'] #sc-cp-alpha-track {
     aspect-ratio: 1 / 1 !important;
     width: min(
       calc(100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       900px
     ) !important;
     height: min(
       calc(100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
-      calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
       900px
     ) !important;
   }
@@ -5121,9 +5122,9 @@ html[data-theme='light'] #sc-cp-alpha-track {
 body.is-landscape #stage-viewport,
 html.is-landscape #stage-viewport {
   padding-top: calc(max(4px, env(safe-area-inset-top, 0px))) !important;
-  padding-left: calc(max(6px, env(safe-area-inset-left, 0px))) !important;
+  padding-left: calc(max(16px, env(safe-area-inset-left, 0px))) !important;
   padding-bottom: calc(max(4px, env(safe-area-inset-bottom, 0px))) !important;
-  padding-right: calc(max(64px, env(safe-area-inset-right, 0px))) !important;
+  padding-right: calc(max(16px, env(safe-area-inset-right, 0px))) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -5134,7 +5135,7 @@ body.is-landscape #sc-scenes-bar,
 html.is-landscape #sc-scenes-bar {
   max-width: min(
     1200px,
-    calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+    calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
     calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
   ) !important;
   padding-bottom: 2px !important;
@@ -5150,7 +5151,7 @@ html.is-landscape #stage-canvas {
   width: 100% !important;
   max-width: min(
     1200px,
-    calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+    calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
     calc((100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9)
   ) !important;
   height: auto !important;
@@ -5160,12 +5161,12 @@ html.is-landscape [data-stage-shape='square'] #stage-canvas {
   aspect-ratio: 1 / 1 !important;
   width: min(
     calc(100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
-    calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+    calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
     900px
   ) !important;
   height: min(
     calc(100vh - 46px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
-    calc(100vw - 76px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+    calc(100vw - 140px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
     900px
   ) !important;
 }

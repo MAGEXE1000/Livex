@@ -807,7 +807,12 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         <div
           className="absolute top-0 left-0 right-0 z-20 pointer-events-none flex items-center justify-end px-4 gap-2"
           style={{
-            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
+            paddingTop: isLandscape
+              ? 'max(6px, env(safe-area-inset-top, 0px))'
+              : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
+            paddingRight: isLandscape
+              ? 'calc(max(16px, env(safe-area-inset-right, 0px)))'
+              : undefined,
           }}
         >
           {/* TopBar Container (Pill + Morphing Layers Popup) */}
@@ -843,25 +848,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                   layers
                 </span>
               </button>
-
-              {/* Exit Landscape Button (Active in landscape mode) */}
-              {isLandscape && (
-                <button
-                  type="button"
-                  data-testid="stagex-exit-landscape-btn"
-                  onClick={handleExitLandscape}
-                  title={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
-                  aria-label={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold active:scale-95 transition-all shadow-md flex-shrink-0 cursor-pointer"
-                  style={{
-                    background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
-                    color: 'var(--studio-accent-contrast, #ffffff)',
-                  }}
-                >
-                  <span className="material-symbols-outlined text-[15px]">screen_rotation</span>
-                  <span className="whitespace-nowrap">{currentLang === 'es' ? 'Salir' : 'Exit'}</span>
-                </button>
-              )}
 
               {/* 1. Ruler */}
               <button
@@ -1141,70 +1127,85 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       {/* Mobile Floating Action Controls */}
       {!isWebDesktop && (
         <>
-          {/* Normal Mode Controls: Rotate & Add FAB (hidden in liveMode, when specs is open) */}
-          {!liveMode && !specsOpen && (
-            <>
-              {/* Rotation Toggle - hidden when panel is open */}
-              {!panelOpen && (
+          {isLandscape ? (
+            /* Landscape Mode: Vertically Centered Control Group on Right Side */
+            <div
+              className="absolute z-20 flex flex-col items-center gap-3 pointer-events-auto"
+              style={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
+              }}
+            >
+              {/* 1. Rotation Toggle (Top of Group) */}
+              {!liveMode && !specsOpen && !panelOpen && (
                 <button
                   data-testid="stagex-rotate-btn"
                   onClick={handleToggleRotate}
-                  className="absolute rounded-full z-20 flex items-center justify-center p-0 cursor-pointer transition-all active:scale-95"
+                  className="rounded-full flex items-center justify-center p-0 cursor-pointer transition-all active:scale-95"
                   style={{
-                    bottom: 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 196px)',
-                    right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
                     width: 44,
                     height: 44,
-                    background: isLandscape
+                    background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
+                    border: '1px solid var(--c-accent-to, var(--studio-accent, #007aff))',
+                    color: 'var(--studio-accent-contrast, #ffffff)',
+                    boxShadow: 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))',
+                    backdropFilter: 'var(--surface-float-blur)',
+                    WebkitBackdropFilter: 'var(--surface-float-blur)',
+                  }}
+                  aria-label={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
+                  title={currentLang === 'es' ? 'Salir de Modo Horizontal' : 'Exit Landscape'}
+                >
+                  <span className="material-symbols-outlined text-[22px]">sync</span>
+                </button>
+              )}
+
+              {/* 2. Live Mode Toggle (Eye) (Middle of Group) */}
+              {!panelOpen && !specsOpen && (
+                <button
+                  data-testid="stagex-eye-btn"
+                  onClick={handleToggleEye}
+                  className="rounded-full flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: liveMode
                       ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
                       : isAmoled
                         ? 'rgba(10, 10, 12, 0.88)'
                         : isLight
                           ? 'rgba(255, 255, 255, 0.85)'
                           : 'rgba(20, 20, 26, 0.80)',
-                    border: isLandscape
+                    border: liveMode
                       ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
                       : isAmoled
                         ? '1px solid rgba(255, 255, 255, 0.12)'
                         : isLight
                           ? '1px solid rgba(0, 0, 0, 0.08)'
                           : '1px solid rgba(255, 255, 255, 0.10)',
-                    color: isLandscape ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
-                    boxShadow: isLandscape
+                    color: liveMode ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
+                    boxShadow: liveMode
                       ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))'
                       : '0 4px 16px rgba(0, 0, 0, 0.35)',
                     backdropFilter: 'var(--surface-float-blur)',
                     WebkitBackdropFilter: 'var(--surface-float-blur)',
                   }}
-                  aria-label={
-                    isLandscape
-                      ? currentLang === 'es'
-                        ? 'Salir de Modo Horizontal'
-                        : 'Exit Landscape'
-                      : 'Switch to Landscape'
-                  }
-                  title={
-                    isLandscape
-                      ? currentLang === 'es'
-                        ? 'Salir de Modo Horizontal'
-                        : 'Exit Landscape'
-                      : 'Switch to Landscape'
-                  }
+                  aria-label={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
+                  title={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
                 >
-                  <span className="material-symbols-outlined text-[22px]">sync</span>
+                  <span className="material-symbols-outlined text-[22px]">
+                    {liveMode ? 'visibility_off' : 'visibility'}
+                  </span>
                 </button>
               )}
 
-              {/* Add Element FAB - strictly hidden when panel is open */}
-              {!panelOpen && (
+              {/* 3. Add Element FAB (Bottom of Group) */}
+              {!liveMode && !specsOpen && !panelOpen && (
                 <button
                   data-testid="stagex-fab-add"
                   onClick={handleToggleElements}
-                  className="absolute rounded-full flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
+                  className="rounded-full flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
                   style={{
-                    zIndex: 20,
-                    bottom: 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 84px)',
-                    right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
                     width: 44,
                     height: 44,
                     background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
@@ -1218,50 +1219,115 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                   <span className="material-symbols-outlined text-[24px]">add</span>
                 </button>
               )}
-            </>
-          )}
+            </div>
+          ) : (
+            /* Portrait Mode: Disparate Bottom Offsets (Preserved) */
+            <>
+              {/* Normal Mode Controls: Rotate & Add FAB (hidden in liveMode, when specs is open) */}
+              {!liveMode && !specsOpen && (
+                <>
+                  {/* Rotation Toggle - hidden when panel is open */}
+                  {!panelOpen && (
+                    <button
+                      data-testid="stagex-rotate-btn"
+                      onClick={handleToggleRotate}
+                      className="absolute rounded-full z-20 flex items-center justify-center p-0 cursor-pointer transition-all active:scale-95"
+                      style={{
+                        bottom: 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 196px)',
+                        right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
+                        width: 44,
+                        height: 44,
+                        background: isAmoled
+                          ? 'rgba(10, 10, 12, 0.88)'
+                          : isLight
+                            ? 'rgba(255, 255, 255, 0.85)'
+                            : 'rgba(20, 20, 26, 0.80)',
+                        border: isAmoled
+                          ? '1px solid rgba(255, 255, 255, 0.12)'
+                          : isLight
+                            ? '1px solid rgba(0, 0, 0, 0.08)'
+                            : '1px solid rgba(255, 255, 255, 0.10)',
+                        color: isLight ? '#09090b' : '#ffffff',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+                        backdropFilter: 'var(--surface-float-blur)',
+                        WebkitBackdropFilter: 'var(--surface-float-blur)',
+                      }}
+                      aria-label="Switch to Landscape"
+                      title="Switch to Landscape"
+                    >
+                      <span className="material-symbols-outlined text-[22px]">sync</span>
+                    </button>
+                  )}
 
-          {/* Live Mode Toggle (Eye) - Hidden when drawer is open or specs is open */}
-          {!panelOpen && !specsOpen && (
-            <button
-              data-testid="stagex-eye-btn"
-              onClick={handleToggleEye}
-              className="absolute rounded-full z-20 flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
-              style={{
-                bottom: liveMode
-                  ? 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 24px)'
-                  : 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 140px)',
-                right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
-                width: 44,
-                height: 44,
-                background: liveMode
-                  ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
-                  : isAmoled
-                    ? 'rgba(10, 10, 12, 0.88)'
-                    : isLight
-                      ? 'rgba(255, 255, 255, 0.85)'
-                      : 'rgba(20, 20, 26, 0.80)',
-                border: liveMode
-                  ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
-                  : isAmoled
-                    ? '1px solid rgba(255, 255, 255, 0.12)'
-                    : isLight
-                      ? '1px solid rgba(0, 0, 0, 0.08)'
-                      : '1px solid rgba(255, 255, 255, 0.10)',
-                color: liveMode ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
-                boxShadow: liveMode
-                  ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))'
-                  : '0 4px 16px rgba(0, 0, 0, 0.35)',
-                backdropFilter: 'var(--surface-float-blur)',
-                WebkitBackdropFilter: 'var(--surface-float-blur)',
-              }}
-              aria-label={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
-              title={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
-            >
-              <span className="material-symbols-outlined text-[22px]">
-                {liveMode ? 'visibility_off' : 'visibility'}
-              </span>
-            </button>
+                  {/* Add Element FAB - strictly hidden when panel is open */}
+                  {!panelOpen && (
+                    <button
+                      data-testid="stagex-fab-add"
+                      onClick={handleToggleElements}
+                      className="absolute rounded-full flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
+                      style={{
+                        zIndex: 20,
+                        bottom: 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 84px)',
+                        right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
+                        width: 44,
+                        height: 44,
+                        background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
+                        border: 'none',
+                        color: 'var(--studio-accent-contrast, #ffffff)',
+                        boxShadow: 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))',
+                      }}
+                      aria-label={currentLang === 'es' ? 'Añadir Elemento' : 'Add Element'}
+                      title={currentLang === 'es' ? 'Añadir Elemento' : 'Add Element'}
+                    >
+                      <span className="material-symbols-outlined text-[24px]">add</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Live Mode Toggle (Eye) - Hidden when drawer is open or specs is open */}
+              {!panelOpen && !specsOpen && (
+                <button
+                  data-testid="stagex-eye-btn"
+                  onClick={handleToggleEye}
+                  className="absolute rounded-full z-20 flex items-center justify-center p-0 cursor-pointer active:scale-95 transition-all"
+                  style={{
+                    bottom: liveMode
+                      ? 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 24px)'
+                      : 'calc(max(14px, env(safe-area-inset-bottom, 0px)) + 140px)',
+                    right: 'calc(max(16px, env(safe-area-inset-right, 0px)))',
+                    width: 44,
+                    height: 44,
+                    background: liveMode
+                      ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
+                      : isAmoled
+                        ? 'rgba(10, 10, 12, 0.88)'
+                        : isLight
+                          ? 'rgba(255, 255, 255, 0.85)'
+                          : 'rgba(20, 20, 26, 0.80)',
+                    border: liveMode
+                      ? '1px solid var(--c-accent-to, var(--studio-accent, #007aff))'
+                      : isAmoled
+                        ? '1px solid rgba(255, 255, 255, 0.12)'
+                        : isLight
+                          ? '1px solid rgba(0, 0, 0, 0.08)'
+                          : '1px solid rgba(255, 255, 255, 0.10)',
+                    color: liveMode ? 'var(--studio-accent-contrast, #ffffff)' : isLight ? '#09090b' : '#ffffff',
+                    boxShadow: liveMode
+                      ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 4px 14px rgba(0, 122, 255, 0.45)))'
+                      : '0 4px 16px rgba(0, 0, 0, 0.35)',
+                    backdropFilter: 'var(--surface-float-blur)',
+                    WebkitBackdropFilter: 'var(--surface-float-blur)',
+                  }}
+                  aria-label={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
+                  title={liveMode ? 'Exit Inspection Mode' : 'Enter Inspection Mode'}
+                >
+                  <span className="material-symbols-outlined text-[22px]">
+                    {liveMode ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              )}
+            </>
           )}
         </>
       )}
