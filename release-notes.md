@@ -1,10 +1,12 @@
-# Version 4.6.57
+# Version 4.6.58
 
 Release Date: 2026-09-27
 
 ### Added
-- Redesigned Stitch Live Experience: Full production integration of 3 specialized live presentation interfaces across Chordex: Mode 1 (Chords Live with ambient glows and audio synthesis), Mode 2 (Lyrics Live with Quick Actions HUD, auto-scroll speed controls, and karaoke word sync), and Mode 3 (Hybrid Lyrics + Chords with Hero Stage Chord card, timing pulse BAR/BEAT counter, and Apple Music lyric bloom).
+- Distraction-Free Continuous Lyric Composer: Integrated SongLyricsComposer with continuous free-writing canvas, natural line break behavior, optional floating section shortcuts, and real-time word and line count telemetry without musical metadata clutter.
+- Dedicated Song Live Preparation View: Introduced SongLivePreparationView with teleprompter typography formatting (A- / A+ font size, line spacing adjustments), view mode toggle (lyrics only vs chords + lyrics), and section vocal role configuration.
 
 ### Improved
-- Canonical Live Header Integration: SharedFloatingHeader adopted as the universal 58px glass capsule header with live pulsing status indicator, dynamic section/BPM subtitles, and hardware back button priority.
-- Android Back Navigation Containment: Fixed sub-app back navigation containment across all internal apps, resolved bottom nav disappearance upon rotation, and refined landscape toolbar alignment.
+- Global Bottom Navigation Persistence & Recovery: Robust lifecycle management and self-healing state machine ensuring the canonical bottom navigation bar is reliably preserved and recovered across all route transitions, tab switches, and internal app navigation.
+- LiveMode Teleprompter Section Guarding: Prevented empty pill badge artifacts from rendering on continuous songs with unnamed sections.
+- Continuous Lyrics Document Round-Trip: Built robust continuous text conversion with blank line buffering and section header suppression for unnamed sections, ensuring 100% roundtrip data fidelity.

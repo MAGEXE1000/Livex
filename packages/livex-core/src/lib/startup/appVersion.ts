@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.57';
-export const NATIVE_VERSION_CODE = 40657;
-export const WEB_VERSION = '4.6.57';
+export const NATIVE_VERSION = '4.6.58';
+export const NATIVE_VERSION_CODE = 40658;
+export const WEB_VERSION = '4.6.58';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/27/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '6a9c5247';
+export const APP_COMMIT_SHA = 'a8af9804';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/27/2026, 4:39:28 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/27/2026, 1:34:47 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,14 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Redesigned Stitch Live Experience: Full production integration of 3 specialized live presentation interfaces across Chordex: Mode 1 (Chords Live with ambient glows and audio synthesis), Mode 2 (Lyrics Live with Quick Actions HUD, auto-scroll speed controls, and karaoke word sync), and Mode 3 (Hybrid Lyrics + Chords with Hero Stage Chord card, timing pulse BAR/BEAT counter, and Apple Music lyric bloom).',
+      'Distraction-Free Continuous Lyric Composer: Integrated SongLyricsComposer with continuous free-writing canvas, natural line break behavior, optional floating section shortcuts, and real-time word and line count telemetry without musical metadata clutter.',
+      'Dedicated Song Live Preparation View: Introduced SongLivePreparationView with teleprompter typography formatting (A- / A+ font size, line spacing adjustments), view mode toggle (lyrics only vs chords + lyrics), and section vocal role configuration.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Canonical Live Header Integration: SharedFloatingHeader adopted as the universal 58px glass capsule header with live pulsing status indicator, dynamic section/BPM subtitles, and hardware back button priority.',
-      'Android Back Navigation Containment: Fixed sub-app back navigation containment across all internal apps, resolved bottom nav disappearance upon rotation, and refined landscape toolbar alignment.',
+      'Global Bottom Navigation Persistence & Recovery: Robust lifecycle management and self-healing state machine ensuring the canonical bottom navigation bar is reliably preserved and recovered across all route transitions, tab switches, and internal app navigation.',
+      'LiveMode Teleprompter Section Guarding: Prevented empty pill badge artifacts from rendering on continuous songs with unnamed sections.',
+      'Continuous Lyrics Document Round-Trip: Built robust continuous text conversion with blank line buffering and section header suppression for unnamed sections, ensuring 100% roundtrip data fidelity.',
     ],
   },
 ];
@@ -120,6 +122,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.58',
+    date: '2026-09-27',
+    highlights: [
+      'Distraction-Free Continuous Lyric Composer: Integrated SongLyricsComposer with continuous free-writing canvas, natural line break behavior, optional floating section shortcuts, and real-time word and line count telemetry without musical metadata clutter.',
+      'Dedicated Song Live Preparation View: Introduced SongLivePreparationView with teleprompter typography formatting (A- / A+ font size, line spacing adjustments), view mode toggle (lyrics only vs chords + lyrics), and section vocal role configuration.',
+      'Global Bottom Navigation Persistence & Recovery: Robust lifecycle management and self-healing state machine ensuring the canonical bottom navigation bar is reliably preserved and recovered across all route transitions, tab switches, and internal app navigation.',
+      'LiveMode Teleprompter Section Guarding: Prevented empty pill badge artifacts from rendering on continuous songs with unnamed sections.',
+      'Continuous Lyrics Document Round-Trip: Built robust continuous text conversion with blank line buffering and section header suppression for unnamed sections, ensuring 100% roundtrip data fidelity.',
+    ],
+  },
   {
     version: '4.6.57',
     date: '2026-09-27',
@@ -216,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Apple-Grade Fluid Spring Physics: Replaced high-stiffness, low-mass snapping with critically damped fluid spring physics (`stiffness: 280, damping: 32, mass: 1.0`), delivering a subtle sense of physical inertia, controlled momentum, and smooth glide without cheap bounce or overshoot.',
       '0ms Press Response & Full Interruption: Added `onPointerDown` tap listeners to initiate highlight motion the instant the finger touches the screen, and removed redundant 100ms throttle guards so rapid tab sequences retarget velocity seamlessly.',
       'Balanced Optical Vertical Centering: Aligned icon (22px) and label (10.5px) in an optically centered flex hierarchy with balanced negative space above and below.',
-    ],
-  },
-  {
-    version: '4.6.48',
-    date: '2026-09-25',
-    highlights: [
-      '120 Hz Playback Frame Pacing: Decoupled Chordex SongPracticeView playback timer loop from React re-renders using direct DOM property updates for the slider and time label, updating React state only on chord, line, or lyric segment transitions to reduce render load by ~99.5%.',
-      'Sequencer Layout Thrashing Elimination: Cached scroll container viewport dimensions via ResizeObserver in Drumex DrumEditor and decoupled DOM geometry reads from style writes in onStep to prevent forced synchronous reflows on every drum step.',
-      'Navigation Store Subscription Isolation: Narrowed navigation subscriptions to primitive selectors across SongsPanel, LivexHub, and useLibraryState, preventing background re-renders during unrelated app navigation.',
-      'Smooth Search Query Deferral: Integrated React.useDeferredValue for song preset filtering to ensure instant 120 FPS keyboard response during typing.',
-      'Vocalex Audio Playback Throttling: Capped waveform progress updates in TakeDetailView and LabPanel to ~40 FPS during playback to eliminate sub-millisecond render storms.',
-      'Unused Imports & Deprecated References: Removed unused SongCardGrid import and consolidated 24 discrete Zustand action subscriptions into unified shallow selectors.',
     ],
   },
 ];
