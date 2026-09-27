@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { SongLyricsDocument } from '../../types/lyrics';
 
 export interface SongSection {
   id: string;
@@ -15,6 +16,7 @@ export interface SongPreset {
   notes: string;
   chords: string[];
   sections?: SongSection[];
+  lyrics?: SongLyricsDocument;
   createdAt: number;
   updatedAt: number;
 }
@@ -61,6 +63,11 @@ export interface SongSliceActions {
   convertToSections: (presetId: string) => void;
   deduplicatePresetChords: (presetId: string) => void;
   deduplicateAllPresets: () => void;
+  setSongLyrics: (presetId: string, lyrics: SongLyricsDocument | undefined) => void;
+  updateSongLyrics: (
+    presetId: string,
+    updater: (prev: SongLyricsDocument | undefined) => SongLyricsDocument | undefined
+  ) => void;
 }
 
 export type SongSlice = SongSliceState & SongSliceActions;
@@ -378,5 +385,23 @@ export const createSongSlice: StateCreator<
 
       return { presets: nextPresets };
     });
+  },
+
+  setSongLyrics: (presetId, lyrics) => {
+    set((state: any) => ({
+      presets: state.presets.map((p: SongPreset) =>
+        p.id === presetId ? { ...p, lyrics, updatedAt: Date.now() } : p
+      ),
+    }));
+  },
+
+  updateSongLyrics: (presetId, updater) => {
+    set((state: any) => ({
+      presets: state.presets.map((p: SongPreset) => {
+        if (p.id !== presetId) return p;
+        const nextLyrics = updater(p.lyrics);
+        return { ...p, lyrics: nextLyrics, updatedAt: Date.now() };
+      }),
+    }));
   },
 });

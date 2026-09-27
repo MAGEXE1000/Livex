@@ -3,6 +3,7 @@ import { SongEditorForm, PresetFormContent, FormData } from '../components/SongE
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { SongLyricsEditor } from '../components/lyrics/SongLyricsEditor';
 import {
   getAllChords,
   getChordById,
@@ -16,6 +17,8 @@ import {
   type SongPreset,
   type SongSection,
   type CustomChord,
+  type SongLyricsDocument,
+  createEmptyLyricsDocument,
   transposeChordId,
   transposeKeyString,
   formatOffset,
@@ -74,6 +77,7 @@ export interface ExportConfig {
   includeBPM: boolean;
   includeKey: boolean;
   includeNotes: boolean;
+  includeLyrics?: boolean;
   chordDisplay: 'name' | 'diagram' | 'both';
   orientation: 'portrait' | 'landscape';
   paperSize: 'a4' | 'letter';
@@ -89,6 +93,7 @@ const DEFAULT_EXPORT_CONFIG: ExportConfig = {
   includeBPM: true,
   includeKey: true,
   includeNotes: true,
+  includeLyrics: true,
   chordDisplay: 'both',
   orientation: 'portrait',
   paperSize: 'a4',
@@ -466,6 +471,40 @@ async function exportPresetToPDF(
   const pip = elegant
     ? `<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${accentColor};margin-right:7px;flex-shrink:0;"></span>`
     : '';
+
+  const lyricsHtml =
+    cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0
+      ? `
+      <div class="lyrics-section" style="margin-top:24px;border-top:1px solid ${divider};padding-top:16px;">
+        <div class="section-label" style="margin-bottom:12px;">${pip}LETRAS Y ROLES VOCALES</div>
+        ${preset.lyrics.sections
+          .map(
+            (sec) => `
+          <div style="margin-bottom:14px;break-inside:avoid;">
+            <div style="font-size:11px;font-weight:800;color:${accentColor};margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+              <span>${sec.name}</span>
+              ${sec.vocalRole ? `<span style="font-size:9px;padding:2px 8px;border-radius:9999px;background:${sec.vocalRole.color}22;color:${sec.vocalRole.color};border:1px solid ${sec.vocalRole.color}44;">${sec.vocalRole.label}</span>` : ''}
+            </div>
+            ${sec.lines
+              .map((line) => {
+                const isBold = line.format?.bold;
+                const lineColor = line.format?.color || preset.lyrics?.formatting?.defaultColor || text;
+                const chordPlacements =
+                  line.chords && line.chords.length > 0
+                    ? `<div style="font-family:monospace;font-size:11px;font-weight:700;color:#0284c7;margin-bottom:2px;">${line.chords.map((c) => `[${c.chord}]`).join(' ')}</div>`
+                    : '';
+                return `
+                <div style="margin-bottom:4px;">
+                  ${chordPlacements}
+                  <div style="font-size:12px;color:${lineColor};font-weight:${isBold ? '700' : '400'};line-height:1.4;">${line.text || '&nbsp;'}</div>
+                </div>`;
+              })
+              .join('')}
+          </div>`
+          )
+          .join('')}
+      </div>`
+      : '';
   const chordCount = `${entries.length} acorde${entries.length !== 1 ? 's' : ''}`;
 
   /* ── Instrument badge helper ── */
@@ -626,6 +665,7 @@ body{
   <div class="section-label">${chordCount}</div>
 </div>
 ${chordContent}
+${lyricsHtml}
 <div class="doc-footer">
   <span class="footer-txt">Chordex</span>
   <span class="footer-txt">${new Date().getFullYear()}</span>
@@ -1045,6 +1085,47 @@ ${chordContent}
           colIdx = 0;
           cy += CARD_H + CARD_GAP;
         }
+      }
+    }
+
+    // Draw Lyrics if enabled and present
+    if (cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0) {
+      if (colIdx > 0) {
+        cy += CARD_H + CARD_GAP;
+        colIdx = 0;
+      }
+      cy += 6;
+      pageBreakIfNeeded(15);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...hexRgb(C_ACCENT));
+      doc.text('LETRAS', ML, cy);
+      cy += 6;
+
+      for (const sec of preset.lyrics.sections) {
+        pageBreakIfNeeded(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...hexRgb(C_TEXT));
+        doc.text(sec.vocalRole ? `${sec.name} (${sec.vocalRole.label})` : sec.name, ML, cy);
+        cy += 4.5;
+
+        for (const line of sec.lines) {
+          pageBreakIfNeeded(10);
+          if (line.chords && line.chords.length > 0) {
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(7.5);
+            doc.setTextColor(...hexRgb(C_ACCENT));
+            doc.text(line.chords.map((c) => `[${c.chord}]`).join('  '), ML, cy);
+            cy += 3.5;
+          }
+          doc.setFont('helvetica', line.format?.bold ? 'bold' : 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...hexRgb(C_TEXT));
+          doc.text(line.text || ' ', ML, cy);
+          cy += 4.5;
+        }
+        cy += 2;
       }
     }
 
@@ -1754,6 +1835,37 @@ function PaperPreview({
         ))}
       </div>
 
+      {/* Lyrics Preview if enabled and present */}
+      {cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0 && (
+        <div style={{ marginTop: '12px', borderTop: `1px solid ${divider}`, paddingTop: '8px' }}>
+          <p style={{ fontSize: '7px', fontWeight: 800, color: accentC, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>
+            Lyrics & Vocal Roles
+          </p>
+          {preset.lyrics.sections.map((sec) => (
+            <div key={sec.id} style={{ marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '6.5px', fontWeight: 700, color: text }}>{sec.name}</span>
+                {sec.vocalRole && (
+                  <span style={{ fontSize: '5px', padding: '1px 4px', borderRadius: '4px', background: `${sec.vocalRole.color}22`, color: sec.vocalRole.color }}>
+                    {sec.vocalRole.label}
+                  </span>
+                )}
+              </div>
+              {sec.lines.slice(0, 4).map((line) => (
+                <p key={line.id} style={{ fontSize: '5.5px', color: line.format?.color || text, fontWeight: line.format?.bold ? 700 : 400, margin: '1px 0' }}>
+                  {line.chords && line.chords.length > 0 && (
+                    <span style={{ color: '#0284c7', fontFamily: 'monospace', marginRight: '4px' }}>
+                      {line.chords.map((c) => `[${c.chord}]`).join('')}
+                    </span>
+                  )}
+                  {line.text}
+                </p>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Footer */}
       <div
         style={{
@@ -2306,6 +2418,45 @@ function ExportModal({
               </span>
               Diagrams
             </button>
+
+            {/* Lyrics chip */}
+            {preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0 && (
+              <button
+                onClick={() => update('includeLyrics', cfg.includeLyrics === false ? true : false)}
+                className="btn-smooth"
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '10px',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background:
+                    cfg.includeLyrics !== false ? `${accent.from}20` : 'rgba(255,255,255,0.04)',
+                  color: cfg.includeLyrics !== false ? accent.from : '#6e6e80',
+                  border:
+                    cfg.includeLyrics !== false
+                      ? `1px solid ${accent.from}2e`
+                      : '1px solid rgba(255,255,255,0.04)',
+                  transition: 'all 160ms ease',
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{
+                    fontSize: '13px',
+                    fontVariationSettings: cfg.includeLyrics !== false ? "'FILL' 1" : "'FILL' 0",
+                  }}
+                >
+                  lyrics
+                </span>
+                Lyrics
+              </button>
+            )}
           </div>
 
           <div
@@ -2446,6 +2597,8 @@ export interface ChordexJsonFile {
   key: string;
   notes: string;
   chords: { name: string; position: number }[];
+  sections?: SongSection[];
+  lyrics?: SongLyricsDocument;
 }
 
 async function exportPresetToJSON(
@@ -2466,6 +2619,8 @@ async function exportPresetToJSON(
       name: idToName.get(id) ?? id,
       position: i + 1,
     })),
+    sections: preset.sections,
+    lyrics: preset.lyrics,
   };
   const content = JSON.stringify(file, null, 2);
   const fileName = `${preset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
@@ -2573,6 +2728,8 @@ interface ParsedImport {
   chords: string[]; // resolved chord IDs
   rawCount: number; // total entries in file
   unresolvedCount: number;
+  sections?: SongSection[];
+  lyrics?: SongLyricsDocument;
 }
 
 export interface ImportSongContentProps {
@@ -2685,6 +2842,8 @@ export function ImportSongContent({
             chords: resolvedIds,
             rawCount: raw.chords.length,
             unresolvedCount,
+            sections: Array.isArray(raw.sections) ? raw.sections : undefined,
+            lyrics: raw.lyrics && typeof raw.lyrics === 'object' ? raw.lyrics : undefined,
           };
 
           setParsed(result);
@@ -2736,6 +2895,8 @@ export function ImportSongContent({
         key: parsed.key,
         notes: parsed.notes,
         chords: parsed.chords,
+        sections: parsed.sections,
+        lyrics: parsed.lyrics,
       },
       replaceId ?? undefined
     );
@@ -3928,6 +4089,8 @@ export default function SongsPanel() {
     convertToSections,
     clearPendingImport,
     deduplicateAllPresets,
+    setSongLyrics,
+    updateSongLyrics,
   } = useChordStore(
     useShallow((s) => ({
       setActivePreset: s.setActivePreset,
@@ -3954,6 +4117,8 @@ export default function SongsPanel() {
       convertToSections: s.convertToSections,
       clearPendingImport: s.clearPendingImport,
       deduplicateAllPresets: s.deduplicateAllPresets,
+      setSongLyrics: s.setSongLyrics,
+      updateSongLyrics: s.updateSongLyrics,
     }))
   );
   const accent = useMemo(() => resolveAccent(settings.accentColor), [settings.accentColor]);
@@ -3999,10 +4164,12 @@ export default function SongsPanel() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionName, setEditingSectionName] = useState('');
 
-  // Section picker sheet
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [customSectionName, setCustomSectionName] = useState('');
   const [customSectionMode, setCustomSectionMode] = useState(false);
+
+  // Editor view mode: 'chords' | 'lyrics' | 'both'
+  const [editorViewMode, setEditorViewMode] = useState<'chords' | 'lyrics' | 'both'>('chords');
 
 
   // Section drag-to-reorder
@@ -4184,6 +4351,22 @@ export default function SongsPanel() {
   useScrollHide(listScrollRef);
 
   const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
+
+  const hasLyrics = useMemo(() => {
+    return Boolean(
+      activePreset?.lyrics?.sections &&
+        activePreset.lyrics.sections.length > 0 &&
+        activePreset.lyrics.sections.some((s) => s.lines.length > 0)
+    );
+  }, [activePreset?.lyrics]);
+
+  const allSongChordNames = useMemo(() => {
+    if (!activePreset) return [];
+    const chordSet = new Set<string>();
+    (activePreset.chords || []).forEach((c) => chordSet.add(c));
+    (activePreset.sections || []).forEach((s) => (s.chords || []).forEach((c) => chordSet.add(c)));
+    return Array.from(chordSet);
+  }, [activePreset]);
 
   // Drag & drop
   const { localChords, dragIdx, dragDeltaY, dragNodeRef, instanceKeys, onDragStart } = useDragReorder({
@@ -4675,6 +4858,63 @@ export default function SongsPanel() {
                 />
               </section>
               {/* END: SongMetadataToolbar */}
+
+              {/* View Mode Selector / Add Lyrics (Mobile) */}
+              <div className="w-full flex items-center justify-between gap-2 px-0.5 pt-0.5">
+                {hasLyrics ? (
+                  <div
+                    className="flex items-center p-0.5 rounded-full border shadow-xs"
+                    style={{
+                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                    }}
+                    data-purpose="view-mode-selector"
+                  >
+                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
+                      const isActive = editorViewMode === mode;
+                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`view-mode-${mode}`}
+                          onClick={() => setEditorViewMode(mode)}
+                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
+                          style={{
+                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
+                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
+                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                          }}
+                        >
+                          {labels[mode]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="add-lyrics-btn"
+                    onClick={() => {
+                      if (!activePreset.lyrics) {
+                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
+                      }
+                      setEditorViewMode('lyrics');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                      color: 'var(--c-text-secondary, #6B7280)',
+                    }}
+                  >
+                    <span className="material-symbols-rounded text-sm" style={{ color: 'var(--c-accent-from, #2563EB)' }}>
+                      lyrics
+                    </span>
+                    <span>+ Add Lyrics</span>
+                  </button>
+                )}
+              </div>
             </div>
           </>
         ) : (
@@ -4885,6 +5125,58 @@ export default function SongsPanel() {
                     {activePreset.bpm} BPM
                   </span>
                 )}
+                {hasLyrics ? (
+                  <div
+                    className="flex items-center p-0.5 rounded-full border shadow-xs"
+                    style={{
+                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                    }}
+                  >
+                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
+                      const isActive = editorViewMode === mode;
+                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`desktop-view-mode-${mode}`}
+                          onClick={() => setEditorViewMode(mode)}
+                          className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+                          style={{
+                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
+                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
+                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                          }}
+                        >
+                          {labels[mode]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="desktop-add-lyrics-btn"
+                    onClick={() => {
+                      if (!activePreset.lyrics) {
+                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
+                      }
+                      setEditorViewMode('lyrics');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                      color: 'var(--c-text-secondary, #6B7280)',
+                    }}
+                  >
+                    <span className="material-symbols-rounded text-sm" style={{ color: 'var(--c-accent-from, #2563EB)' }}>
+                      lyrics
+                    </span>
+                    <span>+ Add Lyrics</span>
+                  </button>
+                )}
               </div>
 
               <TransposeControls
@@ -4910,7 +5202,31 @@ export default function SongsPanel() {
           const hasSections = !!(activePreset.sections && activePreset.sections.length > 0);
           const isEmptyProgression = totalChordsCount === 0;
 
-          if (!isWebDesktop && isEmptyProgression) {
+          if (editorViewMode === 'lyrics') {
+            return (
+              <div
+                ref={editorScrollRef}
+                className="flex-1 overflow-y-auto no-scrollbar"
+                style={{
+                  padding:
+                    '0 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                  position: 'relative',
+                }}
+                data-purpose="editor-lyrics-area"
+              >
+                <SongLyricsEditor
+                  lyrics={activePreset.lyrics}
+                  onChange={(nextLyrics) => {
+                    setSongLyrics(activePreset.id, nextLyrics);
+                  }}
+                  availableChords={allSongChordNames}
+                  accent={accent}
+                />
+              </div>
+            );
+          }
+
+          if (!isWebDesktop && isEmptyProgression && editorViewMode !== 'both') {
             return (
               <main
                 className="flex-1 flex flex-col items-center justify-center px-4 -mt-8"
@@ -5035,6 +5351,30 @@ export default function SongsPanel() {
                       layers
                     </span>
                     <span>Add Section</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!activePreset.lyrics) {
+                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
+                      }
+                      setEditorViewMode('lyrics');
+                    }}
+                    data-purpose="empty-add-lyrics-btn"
+                    className="inline-flex items-center gap-1.5 border text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                      color: 'var(--c-text-primary, #111827)',
+                    }}
+                    type="button"
+                  >
+                    <span
+                      className="material-symbols-rounded text-[18px]"
+                      style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                    >
+                      lyrics
+                    </span>
+                    <span>Lyrics</span>
                   </button>
                 </div>
               </main>
@@ -5690,12 +6030,43 @@ export default function SongsPanel() {
                   </div>
                 </>
               )}
+
+              {/* In 'both' mode: Render SongLyricsEditor below the chords */}
+              {editorViewMode === 'both' && (
+                <div
+                  className="mt-6 pt-6 border-t"
+                  style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className="material-symbols-rounded text-lg"
+                      style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                    >
+                      lyrics
+                    </span>
+                    <h3
+                      className="text-sm font-bold tracking-tight"
+                      style={{ color: 'var(--c-text-primary)' }}
+                    >
+                      Lyrics & Vocal Roles
+                    </h3>
+                  </div>
+                  <SongLyricsEditor
+                    lyrics={activePreset.lyrics}
+                    onChange={(nextLyrics) => {
+                      setSongLyrics(activePreset.id, nextLyrics);
+                    }}
+                    availableChords={allSongChordNames}
+                    accent={accent}
+                  />
+                </div>
+              )}
             </div>
           );
         })()}
 
         {/* Floating Action Buttons Area (Mobile) */}
-        {!isWebDesktop && (
+        {!isWebDesktop && editorViewMode !== 'lyrics' && (
           <div
             className="fixed right-5 flex flex-col items-end gap-2.5 z-40 pointer-events-none"
             style={{
@@ -5839,7 +6210,7 @@ export default function SongsPanel() {
         )}
 
         {/* Desktop Bottom Action Strip */}
-        {isWebDesktop && (
+        {isWebDesktop && editorViewMode !== 'lyrics' && (
           <div
             style={{
               position: 'absolute',

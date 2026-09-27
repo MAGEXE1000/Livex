@@ -131,3 +131,7 @@ export * from './lib/assistant/assistantApiClient';
 export * from './lib/assistant/appContextRegistry';
 export * from './lib/assistant/actionDispatcher';
 export * from './lib/assistant/actionExtractor';
+
+// Structured Lyrics & Song Workspace
+export * from './types/lyrics';
+export * from './lib/lyrics/lyricsParser';
