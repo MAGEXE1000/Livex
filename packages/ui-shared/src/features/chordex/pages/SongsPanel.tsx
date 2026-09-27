@@ -4,7 +4,7 @@ import { SongEditorForm, PresetFormContent, FormData } from '../components/SongE
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog } from '../../../shared/design-system/dialogs';
-import { SongLyricsEditor } from '../components/lyrics/SongLyricsEditor';
+import { SongLyricsEditor, SongLyricsComposer, SongLivePreparationView } from '../components/lyrics';
 import {
   getAllChords,
   getChordById,
@@ -4145,6 +4145,50 @@ export default function SongsPanel() {
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showLyricsComposer, setShowLyricsComposer] = useState(false);
+  const [composerSongId, setComposerSongId] = useState<string | null>(null);
+
+  const composerSongPreset = useMemo(
+    () => (composerSongId ? presets.find((p) => p.id === composerSongId) : undefined),
+    [composerSongId, presets]
+  );
+
+  const handleStartNewSongComposer = useCallback(() => {
+    setComposerSongId(null);
+    setShowLyricsComposer(true);
+  }, []);
+
+  const handleEditLyricsComposer = useCallback((presetId: string) => {
+    setComposerSongId(presetId);
+    setShowLyricsComposer(true);
+  }, []);
+
+  const handleSaveComposer = useCallback(
+    ({ title, lyrics }: { title: string; lyrics: SongLyricsDocument }) => {
+      if (composerSongId) {
+        setSongLyrics(composerSongId, lyrics);
+        updatePreset(composerSongId, { name: title });
+        setShowLyricsComposer(false);
+      } else {
+        const newPreset = {
+          name: title,
+          artist: '',
+          bpm: 120,
+          key: 'C',
+          notes: '',
+          chords: [],
+          sections: [],
+          lyrics,
+        };
+        const newId = createPreset(newPreset);
+        setShowLyricsComposer(false);
+        setActivePreset(newId);
+        setEditorViewMode('lyrics');
+      }
+    },
+    [composerSongId, setSongLyrics, updatePreset, createPreset, setActivePreset]
+  );
+
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = React.useDeferredValue(searchQuery);
   const filteredPresets = useMemo(() => {
@@ -4287,6 +4331,10 @@ export default function SongsPanel() {
     'nested',
     () => {
       if (!isSongsActive) return false;
+      if (showLyricsComposer) {
+        setShowLyricsComposer(false);
+        return true;
+      }
       if (showSectionPicker) {
         setShowSectionPicker(false);
         return true;
@@ -4345,6 +4393,7 @@ export default function SongsPanel() {
       editorViewMode,
       setActivePreset,
       clearPendingImport,
+      showLyricsComposer,
     ]
   );
 
@@ -4770,6 +4819,17 @@ export default function SongsPanel() {
                     ) : null;
                   })()}
                   <button
+                    aria-label="Edit lyrics"
+                    data-purpose="edit-lyrics-btn"
+                    onClick={() => handleEditLyricsComposer(activePreset.id)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                    type="button"
+                    title="Edit lyrics in composer"
+                  >
+                    <span className="material-symbols-rounded text-[20px]">edit_note</span>
+                  </button>
+                  <button
                     aria-label="Edit song details"
                     data-purpose="edit-song-details-btn"
                     onClick={() => {
@@ -5060,6 +5120,14 @@ export default function SongsPanel() {
                 <Button
                   variant="secondary"
                   size="icon"
+                  onClick={() => handleEditLyricsComposer(activePreset.id)}
+                  title="Edit lyrics in composer"
+                  style={{ borderRadius: '50%', width: 34, height: 34 }}
+                  icon="edit_note"
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
                   onClick={() => {
                     setEditingId(activePreset.id);
                     setShowForm(true);
@@ -5229,21 +5297,28 @@ export default function SongsPanel() {
             return (
               <div
                 ref={editorScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
                 style={{
                   padding:
-                    '0 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                    '0 0 calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
                   position: 'relative',
                 }}
                 data-purpose="editor-lyrics-area"
               >
-                <SongLyricsEditor
-                  lyrics={activePreset.lyrics}
-                  onChange={(nextLyrics) => {
+                <SongLivePreparationView
+                  preset={activePreset}
+                  accent={accent}
+                  transposeOffset={transposeOffset}
+                  preferFlats={preferFlats}
+                  onEditLyrics={() => handleEditLyricsComposer(activePreset.id)}
+                  onLaunchLive={() => setShowLive(true)}
+                  onUpdateLyrics={(nextLyrics) => {
                     setSongLyrics(activePreset.id, nextLyrics);
                   }}
-                  availableChords={allSongChordNames}
-                  accent={accent}
+                  onEditDetails={() => {
+                    setEditingId(activePreset.id);
+                    setShowForm(true);
+                  }}
                 />
               </div>
             );
@@ -6152,6 +6227,7 @@ export default function SongsPanel() {
           setEditingId={setEditingId}
           setShowForm={setShowForm}
           setShowImport={setShowImport}
+          onNewSong={handleStartNewSongComposer}
           accent={accent}
           t={t}
         />
@@ -6404,31 +6480,20 @@ export default function SongsPanel() {
                           button to create your first progression
                         </p>
                         <div className="flex items-center gap-2.5 mt-6">
-                          <MorphingActionSurface
-                            placement="center"
-                            maxWidth={400}
-                            title={t.songs.newSong}
-                            subtitle="Create a new chord progression"
-                            accentColor={accent.from}
-                            customTrigger={({ triggerProps }) => (
-                              <motion.button
-                                {...triggerProps}
-                                type="button"
-                                className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5"
-                                style={{
-                                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                                  boxShadow:
-                                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
-                                }}
-                                data-purpose="empty-create-song-btn"
-                              >
-                                <span className="material-symbols-rounded text-base">add</span>
-                                <span>Create Song</span>
-                              </motion.button>
-                            )}
+                          <motion.button
+                            type="button"
+                            onClick={handleStartNewSongComposer}
+                            className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+                            style={{
+                              backgroundColor: 'var(--c-accent-from, #2563EB)',
+                              boxShadow:
+                                '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                            }}
+                            data-purpose="empty-create-song-btn"
                           >
-                            {renderCreateSongForm}
-                          </MorphingActionSurface>
+                            <span className="material-symbols-rounded text-base">add</span>
+                            <span>Create Song</span>
+                          </motion.button>
 
                           <MorphingActionSurface
                             placement="center"
@@ -6620,39 +6685,38 @@ export default function SongsPanel() {
                 </MorphingActionSurface>
 
                 {/* Primary FAB: Create Song */}
-                <MorphingActionSurface
-                  placement="center"
-                  maxWidth={400}
-                  title={t.songs.newSong}
-                  subtitle="Create a new chord progression"
-                  accentColor={accent.from}
-                  customTrigger={({ triggerProps }) => (
-                    <motion.button
-                      {...triggerProps}
-                      type="button"
-                      data-testid="new-preset-btn"
-                      aria-label="Create new progression"
-                      title="Create new progression"
-                      className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        backgroundColor: 'var(--c-accent-from, #2563EB)',
-                        boxShadow:
-                          '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-                      }}
-                    >
-                      <span className="material-symbols-rounded text-2xl font-bold">add</span>
-                    </motion.button>
-                  )}
+                <motion.button
+                  type="button"
+                  data-testid="new-preset-btn"
+                  aria-label="Create new progression"
+                  title="Create new progression"
+                  onClick={handleStartNewSongComposer}
+                  className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    backgroundColor: 'var(--c-accent-from, #2563EB)',
+                    boxShadow:
+                      '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                  }}
                 >
-                  {renderCreateSongForm}
-                </MorphingActionSurface>
+                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                </motion.button>
               </aside>
             </div>
           )}
         </SharedNavigationContainer>
       </div>
+
+      {showLyricsComposer && (
+        <SongLyricsComposer
+          initialTitle={composerSongPreset?.name || ''}
+          initialLyrics={composerSongPreset?.lyrics}
+          onSave={handleSaveComposer}
+          onClose={() => setShowLyricsComposer(false)}
+          accent={accent}
+        />
+      )}
     </div>
   );
 }

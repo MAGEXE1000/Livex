@@ -5,6 +5,8 @@ import {
   isChordLine,
   extractChordsFromLine,
   createEmptyLyricsDocument,
+  continuousTextToLyricsDocument,
+  lyricsDocumentToContinuousText,
 } from '../lyricsParser';
 import type { SongLyricsDocument } from '../../../types/lyrics';
 
@@ -185,4 +187,53 @@ Line three without section
     expect(updatedColor1).toBe('#f59e0b'); // Line override preserved!
     expect(updatedColor2).toBe('#94a3b8'); // Line inherits new document color!
   });
+
+  describe('Continuous Text Document Round-trip & Invariants', () => {
+    it('round-trips pure continuous lyrics without inserting section headers', () => {
+      const originalLyrics = `First line of lyrics
+Second line of lyrics
+Third line with feeling
+
+Chorus without header line 1
+Chorus without header line 2`;
+
+      const doc = continuousTextToLyricsDocument(originalLyrics);
+      expect(doc.sections.length).toBeGreaterThan(0);
+      expect(doc.sections[0].name).toBe('');
+
+      const serialized = lyricsDocumentToContinuousText(doc, false);
+      expect(serialized).toBe(originalLyrics);
+    });
+
+    it('preserves existing formatting and default vocal role across continuous text updates', () => {
+      const initialDoc: SongLyricsDocument = {
+        version: 1,
+        formatting: {
+          fontSize: 24,
+          lineSpacing: 1.8,
+          defaultColor: '#a855f7',
+        },
+        defaultVocalRole: {
+          type: 'lead',
+          label: 'Lead Singer',
+        },
+        sections: [],
+      };
+
+      const updatedText = `Line A\nLine B\nLine C`;
+      const doc = continuousTextToLyricsDocument(updatedText, initialDoc);
+
+      expect(doc.formatting?.fontSize).toBe(24);
+      expect(doc.formatting?.lineSpacing).toBe(1.8);
+      expect(doc.formatting?.defaultColor).toBe('#a855f7');
+      expect(doc.defaultVocalRole?.label).toBe('Lead Singer');
+      expect(doc.sections[0].lines).toHaveLength(3);
+    });
+
+    it('returns empty string when serializing undefined or empty document', () => {
+      expect(lyricsDocumentToContinuousText(undefined)).toBe('');
+      expect(lyricsDocumentToContinuousText(createEmptyLyricsDocument())).toBe('');
+    });
+  });
 });
+

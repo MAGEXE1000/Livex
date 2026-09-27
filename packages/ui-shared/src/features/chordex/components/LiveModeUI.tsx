@@ -1136,7 +1136,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               }}
             >
               {/* Section Header if first line of section */}
-              {item.isFirstLineOfSection && (
+              {item.isFirstLineOfSection && (Boolean(item.sectionName && item.sectionName.trim().length > 0) || Boolean(item.sectionVocalRole)) && (
                 <div
                   style={{
                     display: 'flex',
@@ -1146,22 +1146,24 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                     marginBottom: '10px',
                   }}
                 >
-                  <span
-                    style={{
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 800,
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      padding: '3px 10px',
-                      borderRadius: '9999px',
-                      background: `${accent.from}24`,
-                      border: `1px solid ${accent.from}44`,
-                      color: accent.from,
-                    }}
-                  >
-                    {item.sectionName}
-                  </span>
+                  {Boolean(item.sectionName && item.sectionName.trim().length > 0) && (
+                    <span
+                      style={{
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 800,
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        background: `${accent.from}24`,
+                        border: `1px solid ${accent.from}44`,
+                        color: accent.from,
+                      }}
+                    >
+                      {item.sectionName}
+                    </span>
+                  )}
 
                   {item.sectionVocalRole && (
                     <span

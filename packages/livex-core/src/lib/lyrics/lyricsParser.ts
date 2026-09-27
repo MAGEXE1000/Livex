@@ -175,6 +175,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
 
   let currentSection: SongLyricSection | null = null;
   let pendingChordLine: string | null = null;
+  let pendingBlankLines = 0;
 
   function ensureCurrentSection(name = '', type: StandardLyricSectionType = 'custom'): SongLyricSection {
     if (!currentSection) {
@@ -189,6 +190,18 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     return currentSection;
   }
 
+  function flushPendingBlankLines(): void {
+    if (pendingBlankLines > 0 && currentSection && currentSection.lines.length > 0) {
+      for (let b = 0; b < pendingBlankLines; b++) {
+        currentSection.lines.push({
+          id: generateLyricId('line'),
+          text: '',
+        });
+      }
+    }
+    pendingBlankLines = 0;
+  }
+
   for (let idx = 0; idx < lines.length; idx++) {
     const rawLine = lines[idx];
     const trimmed = rawLine.trim();
@@ -197,6 +210,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     if (!trimmed) {
       // If we had a pending chord line, push it as a standalone line before blank
       if (pendingChordLine) {
+        flushPendingBlankLines();
         const sec = ensureCurrentSection();
         sec.lines.push({
           id: generateLyricId('line'),
@@ -205,6 +219,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
         });
         pendingChordLine = null;
       }
+      pendingBlankLines++;
       continue;
     }
 
@@ -223,6 +238,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     if (rawHeaderContent) {
       // If there was a pending chord line, flush it
       if (pendingChordLine) {
+        flushPendingBlankLines();
         const sec = ensureCurrentSection();
         sec.lines.push({
           id: generateLyricId('line'),
@@ -231,6 +247,9 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
         });
         pendingChordLine = null;
       }
+
+      // Discard blank lines that preceded this section header
+      pendingBlankLines = 0;
 
       const { cleanName, vocalRole } = parseVocalRoleFromHeader(rawHeaderContent);
       const secType = detectSectionType(cleanName);
@@ -250,6 +269,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     if (trimmed.includes('[') && trimmed.includes(']')) {
       const { text, chords } = parseChordProLine(rawLine);
       if (chords.length > 0) {
+        flushPendingBlankLines();
         const sec = ensureCurrentSection();
         sec.lines.push({
           id: generateLyricId('line'),
@@ -265,6 +285,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     if (isChordLine(rawLine)) {
       if (pendingChordLine) {
         // Two consecutive chord lines - flush the previous one as chords without lyrics
+        flushPendingBlankLines();
         const sec = ensureCurrentSection();
         sec.lines.push({
           id: generateLyricId('line'),
@@ -277,6 +298,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     }
 
     // 5. Regular Lyric Line
+    flushPendingBlankLines();
     const sec = ensureCurrentSection();
     const chords = pendingChordLine ? extractChordsFromLine(pendingChordLine) : undefined;
     pendingChordLine = null;
@@ -331,13 +353,18 @@ export function lyricsDocumentToPlainText(
   const output: string[] = [];
 
   for (const section of doc.sections) {
-    // Section Header with Vocal Role if present
-    let header = `[${section.name || 'Section'}`;
-    if (section.vocalRole?.label) {
-      header += ` — ${section.vocalRole.label}`;
+    // Section Header with Vocal Role if present (only if named or has vocal role)
+    const hasHeader = Boolean(
+      (section.name && section.name.trim().length > 0) || section.vocalRole?.label
+    );
+    if (hasHeader) {
+      let header = `[${section.name || 'Section'}`;
+      if (section.vocalRole?.label) {
+        header += ` — ${section.vocalRole.label}`;
+      }
+      header += ']';
+      output.push(header);
     }
-    header += ']';
-    output.push(header);
 
     for (const line of section.lines) {
       if (includeChords && line.chords && line.chords.length > 0) {
@@ -363,10 +390,42 @@ export function lyricsDocumentToPlainText(
       }
     }
 
-    output.push(''); // Blank line after section
+    if (hasHeader || doc.sections.length > 1) {
+      output.push(''); // Blank line after section if there are multiple sections or named header
+    }
   }
 
   return output.join('\n').trim();
+}
+
+/**
+ * Convert a continuous text document to a structured SongLyricsDocument
+ */
+export function continuousTextToLyricsDocument(
+  text: string,
+  existingDoc?: SongLyricsDocument
+): SongLyricsDocument {
+  const parsed = parsePastedLyrics(text);
+  if (existingDoc) {
+    if (existingDoc.formatting) {
+      parsed.formatting = { ...existingDoc.formatting };
+    }
+    if (existingDoc.defaultVocalRole) {
+      parsed.defaultVocalRole = { ...existingDoc.defaultVocalRole };
+    }
+  }
+  return parsed;
+}
+
+/**
+ * Convert a SongLyricsDocument to continuous text for the authoring editor
+ */
+export function lyricsDocumentToContinuousText(
+  doc?: SongLyricsDocument,
+  includeChords = false
+): string {
+  if (!doc) return '';
+  return lyricsDocumentToPlainText(doc, includeChords);
 }
 
 /**
