@@ -180,6 +180,15 @@ export function isTransitionLocked(): boolean {
 /**
  * Determines whether a route is an internal nested sub-view / modal / sheet
  * within an application rather than a primary landing / root screen.
+ *
+ * Universal rule: for any non-hub internal app, the presence of a `page`
+ * field means the route is a sub-page (nested), not the app root.
+ * This eliminates the need for hardcoded per-app page whitelists and ensures
+ * that new pages are automatically protected by intra-app containment in pop().
+ *
+ * Exceptions:
+ *  - stagex: 'Editor' and 'Stage' are the two canonical root/landing pages.
+ *  - hub: uses tab-based nesting (any tab other than 'home').
  */
 export function isNestedRoute(route: NavigationRoute | undefined): boolean {
   if (!route) return false;
@@ -188,19 +197,15 @@ export function isNestedRoute(route: NavigationRoute | undefined): boolean {
 
   switch (route.app) {
     case 'stagex':
+      // 'Editor' and 'Stage' are the two root pages for Stagex; everything else is a sub-page.
       return Boolean(route.page && route.page !== 'Editor' && route.page !== 'Stage');
-    case 'drumex':
-      return route.page === 'metronome';
-    case 'groovex':
-      return route.page === 'player';
-    case 'chordex':
-      return route.page === 'chord';
-    case 'vocalex':
-      return route.page === 'harmonizer' || route.page === 'pitch';
     case 'hub':
+      // Hub uses tab-based nesting; 'home' is the root tab.
       return Boolean(route.tab && route.tab !== 'home');
     default:
-      return false;
+      // For all other internal apps (chordex, drumex, groovex, vocalex, devtools, etc.):
+      // any route with a page is a sub-page of that app — not the app landing root.
+      return Boolean(route.page);
   }
 }
 

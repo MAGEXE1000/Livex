@@ -2247,10 +2247,6 @@ export default function DrumEditor() {
         NavigationDispatcher.pop();
         return true;
       }
-      if (NavigationDispatcher.canGoBack()) {
-        NavigationDispatcher.pop();
-        return true;
-      }
       return false;
     },
     [

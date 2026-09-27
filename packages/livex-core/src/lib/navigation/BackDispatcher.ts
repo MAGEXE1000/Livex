@@ -92,7 +92,6 @@ export class BackDispatcher {
    */
   public static register(priority: BackPriority, fn: () => boolean): () => void {
     this.initialize();
-    this.resetDebounce();
     const id = Math.random().toString(36).substring(2, 9);
     useNavigationStore.getState().registerHandler(id, priority, fn);
 
