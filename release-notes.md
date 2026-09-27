@@ -1,9 +1,8 @@
-# Version 4.6.59
+# Version 4.6.60
 
 Release Date: 2026-09-27
 
-### Improved
-- Android Back Navigation Containment (Option A1): Enforced strict intra-app domain containment across all sub-apps (Chordex, Drumex, StageX, Groovex, Vocalex) on system back gesture and edge swipe.
-- Chordex Filter & Search Back Interception: Back gesture now clears active search queries in SongsPanel and resets chord/category filters in LibraryPanel before unwinding, preventing premature fallthrough to Hub.
-- Sub-App Coordinator Back Handlers: Integrated coordinator panel handlers in StageCorePanel, DrumEditor, GroovexApp, and VocalexApp to cleanly unwind sub-views to root without crossing app boundaries.
-- Hub Shell & Settings Navigation: Maintained Settings root navigation popping to Hub Home tab, allowing native application backgrounding only from the Hub Home tab.
+### Fixed
+- Hub Profile Back-Navigation Canonical Restoration: Resolved the navigation regression where entering Profile from the Hub broke Android hardware back and predictive swipe-back gesture unwinding.
+- De-coupled Sheet and Domain Priority: Removed artificial root-level back interception in AccountCard, ensuring active sheets (Avatar Picker, Account Details, Danger Zone) cleanly close without altering route history, while Profile root delegates to canonical BackDispatcher pop.
+- Elimination of Forward Push on Back: Corrected goBack in HubSettings and pageProps to cleanly pop the navigation history stack rather than pushing duplicate Home routes, eliminating navigation ping-pong loops and preserving cross-app domain containment.
