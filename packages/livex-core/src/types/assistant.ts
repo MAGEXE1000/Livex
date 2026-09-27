@@ -29,6 +29,121 @@ export interface AssistantAttachment {
   dataUrl?: string;
 }
 
+export interface StagexSongSummary {
+  id: string;
+  title: string;
+  artist?: string;
+  key?: string;
+  bpm?: number;
+  duration: string;
+  energy?: number;
+  notes?: string;
+}
+
+export interface StagexPresetSummary {
+  id: string;
+  name: string;
+  songCount: number;
+  isDefault?: boolean;
+}
+
+export interface StagexElementSummary {
+  id: string;
+  name: string;
+  type: string;
+  x: number;
+  y: number;
+  label?: string;
+  color?: string;
+}
+
+export interface StagexSceneSummary {
+  id: string;
+  name: string;
+  elementCount: number;
+  elements?: StagexElementSummary[];
+}
+
+export interface StagexContextSnapshot {
+  setlists: StagexPresetSummary[];
+  activePresetId?: string;
+  activePresetName?: string;
+  activeSongs?: StagexSongSummary[];
+  scenes?: StagexSceneSummary[];
+  activeScene?: StagexSceneSummary;
+  performerCount?: number;
+  gearCount?: number;
+}
+
+export interface DrumexContextSnapshot {
+  activePatternId?: string;
+  activePatternName?: string;
+  bpm?: number;
+  timeSignature?: string;
+  swing?: number;
+  measuresCount?: number;
+  activeKit?: string;
+  activeInstruments?: string[];
+  patternsCount?: number;
+  patternPreview?: {
+    kick?: boolean[];
+    snare?: boolean[];
+    hihat?: boolean[];
+  };
+}
+
+export interface GroovexContextSnapshot {
+  currentSongId?: string | null;
+  currentSongTitle?: string;
+  currentSongArtist?: string;
+  stemVolumes?: Record<string, number>;
+  stemMutes?: Record<string, boolean>;
+  recentSongsCount?: number;
+}
+
+export interface VocalexContextSnapshot {
+  exerciseCategories?: string[];
+  recentTakesCount?: number;
+  activeRoutine?: string;
+}
+
+export interface HubContextSnapshot {
+  pinnedModules?: string[];
+  recentApps?: string[];
+}
+
+export interface SettingsContextSnapshot {
+  language?: string;
+  theme?: string;
+  amoledMode?: boolean;
+  accentColor?: string;
+  instrument?: string;
+}
+
+export type AssistantActionType =
+  | 'stagex:reorder_setlist'
+  | 'stagex:arrange_stage'
+  | 'stagex:create_preset'
+  | 'drumex:create_pattern'
+  | 'chordex:import_progression'
+  | 'groovex:configure_stems'
+  | 'vocalex:start_exercise';
+
+export interface AssistantActionPayload {
+  id: string;
+  app: 'stagex' | 'drumex' | 'chordex' | 'groovex' | 'vocalex' | 'hub' | 'settings';
+  actionType: AssistantActionType;
+  title: string;
+  description: string;
+  actionLabel: string;
+  requiresConfirmation?: boolean;
+  params: Record<string, any>;
+  preview?: {
+    type: 'list_diff' | 'stage_plot' | 'drum_grid' | 'chord_diagrams' | 'stem_faders' | 'exercise_steps';
+    data: any;
+  };
+}
+
 export interface MusicalContextSnapshot {
   activeApp: 'hub' | 'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex' | 'devtools';
   currentSongTitle?: string;
@@ -37,6 +152,12 @@ export interface MusicalContextSnapshot {
   activeProgression?: string[];
   instrument?: string;
   tuning?: string;
+  stagex?: StagexContextSnapshot;
+  drumex?: DrumexContextSnapshot;
+  groovex?: GroovexContextSnapshot;
+  vocalex?: VocalexContextSnapshot;
+  hub?: HubContextSnapshot;
+  settings?: SettingsContextSnapshot;
 }
 
 import type { GuitarChordData } from '../data/chords';
@@ -106,13 +227,14 @@ export interface PracticeRoutineRecommendation {
 
 export interface StructuredRecommendation {
   id: string;
-  type: 'chord_progression' | 'tone_recipe' | 'drum_groove' | 'practice_routine' | 'app_deep_link';
+  type: 'chord_progression' | 'tone_recipe' | 'drum_groove' | 'practice_routine' | 'app_deep_link' | 'assistant_action';
   title: string;
   data:
     | ChordProgressionRecommendation
     | ToneRecipeRecommendation
     | DrumGrooveRecommendation
     | PracticeRoutineRecommendation
+    | AssistantActionPayload
     | Record<string, unknown>;
   actionLabel?: string;
   actionPayload?: {
@@ -120,6 +242,7 @@ export interface StructuredRecommendation {
     action: string;
     params: Record<string, unknown>;
   };
+  action?: AssistantActionPayload;
 }
 
 export interface GroundingSource {

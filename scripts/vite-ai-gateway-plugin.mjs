@@ -80,7 +80,46 @@ Core Directives:
      * Sheet Music / Lead Sheets: Transcribe the key signature, time signature, melody line, harmonic symbols, and rhythm.
      * Chord Charts / Tabs: Parse chord symbols accurately and provide harmonic analysis (Roman numerals, functional harmony).
      * Pedalboards / Amps / Audio Gear: Identify pedal brands/models, control dial settings, serial signal order, and recommend tone adjustments.
-     * DAW / Drum Pattern Screenshots: Read grid step positions, velocity levels, BPM, time signature, and groove subdivision.`;
+     * DAW / Drum Pattern Screenshots: Read grid step positions, velocity levels, BPM, time signature, and groove subdivision.
+
+7. Livex Ecosystem Context Awareness & Action Execution:
+   - You are embedded directly inside the Livex application suite. You receive an Active Musical Context Snapshot containing real structured data from the user's active session across:
+     * Hub: pinned modules and navigation session.
+     * Chordex: active song, key, chords, progressions, instrument, and tuning.
+     * Drumex: active pattern, BPM, time signature, kit, active instruments, and measures.
+     * Stagex: setlists, presets, repertoire songs (with keys, BPM, duration, energy), stage plot scenes & element layout, band members, and gear rider.
+     * Groovex: current song, stems, stem volumes, and mute/solo states.
+     * Vocalex: warmup & exercise categories, routines, and takes.
+     * Settings: UI language, theme, amoled mode, and default instrument.
+
+   - Multi-Preset Ambiguity Handling:
+     * When the user asks to analyze, reorder, evaluate, or optimize their repertoire or setlist, inspect the Stagex context (`stagex.setlists`).
+     * If MULTIPLE presets exist (`setlists.length > 1`) and the user did NOT specify which preset they are referring to in their query, DO NOT guess or pick one arbitrarily!
+     * Ask a direct clarifying question asking which preset they want you to analyze, listing the available preset names. Example:
+       "You have 3 presets: Festival, Acoustic Set, Club Gig. Which one do you want me to analyze?"
+     * Once the user specifies the preset (or if only 1 preset exists, or the user named the preset in their prompt), analyze the actual songs in that preset:
+       1) Song sequence and emotional arc.
+       2) Harmonic key flow and modulations between adjacent songs (e.g. circle of fifths, relative minor/major, smooth transitions vs abrupt shocks).
+       3) Tempos and BPM pacing.
+       4) Dynamic energy arc (building excitement, valleys for ballad/acoustic, climactic finale).
+       5) Vocal / singer stamina and fatigue management.
+       6) Transitions and segue opportunities between songs.
+     * Propose an optimized song order with musical reasoning, and include a structured action block `stagex:reorder_setlist`.
+
+   - Structured Action Blocks:
+     When you propose a concrete modification or creation that Livex can execute directly (reordering a setlist, arranging a stage plot, creating a drum pattern, importing a chord progression, configuring practice stems, or starting a vocal warmup), include a structured action code block with language `livex-action` at the very end of your response:
+
+     ```livex-action
+     {
+       "type": "stagex:reorder_setlist" | "stagex:arrange_stage" | "stagex:create_preset" | "drumex:create_pattern" | "chordex:import_progression" | "groovex:configure_stems" | "vocalex:start_exercise",
+       "app": "stagex" | "drumex" | "chordex" | "groovex" | "vocalex",
+       "title": "Concise Action Title",
+       "description": "Short explanation of what will be applied",
+       "actionLabel": "Button Label (e.g. Apply suggested order / Create in Drumex / Apply arrangement / Apply practice setup / Start warmup)",
+       "requiresConfirmation": true | false,
+       "params": { ... }
+     }
+     ```;
 
 /**
  * Extracts structured chord progression or tone recipe from model text if present.
@@ -90,7 +129,54 @@ function extractStructuredRecommendation(text, prompt) {
 
   const combinedContext = `${prompt || ''}\n${text}`;
 
-  // 1. Detect Explicit JSON or code block
+  // 1. Detect Explicit Livex Action Block
+  const livexActionMatch = text.match(/```(?:livex-action|json)?\s*([\s\S]*?)\s*```/);
+  if (livexActionMatch) {
+    try {
+      const parsed = JSON.parse(livexActionMatch[1]);
+      const actionType = parsed.type || parsed.actionType;
+      if (
+        actionType &&
+        typeof actionType === 'string' &&
+        (actionType.startsWith('stagex:') ||
+          actionType.startsWith('drumex:') ||
+          actionType.startsWith('chordex:') ||
+          actionType.startsWith('groovex:') ||
+          actionType.startsWith('vocalex:'))
+      ) {
+        const app = parsed.app || actionType.split(':')[0];
+        const actionPayload = {
+          id: `act-${Date.now()}`,
+          app,
+          actionType,
+          title: parsed.title || 'Livex Action',
+          description: parsed.description || '',
+          actionLabel: parsed.actionLabel || 'Apply',
+          requiresConfirmation:
+            parsed.requiresConfirmation !== undefined
+              ? Boolean(parsed.requiresConfirmation)
+              : actionType.startsWith('stagex:'),
+          params: parsed.params || {},
+          preview: parsed.preview,
+        };
+        return {
+          id: `rec-action-${Date.now()}`,
+          type: 'assistant_action',
+          title: actionPayload.title,
+          actionLabel: actionPayload.actionLabel,
+          data: actionPayload,
+          action: actionPayload,
+          actionPayload: {
+            app: actionPayload.app,
+            action: actionPayload.actionType,
+            params: actionPayload.params,
+          },
+        };
+      }
+    } catch {}
+  }
+
+  // 2. Detect Explicit JSON or chord-progression code block
   const jsonBlockMatch = text.match(/```(?:chord-progression|json)?\s*([\s\S]*?)\s*```/);
   if (jsonBlockMatch) {
     try {
@@ -372,6 +458,197 @@ function extractStructuredRecommendation(text, prompt) {
           { name: 'Modulation / Chorus', type: 'modulation', settings: { Depth: '5.0', Rate: '4.5' } },
           { name: 'Analog / Tape Delay', type: 'delay', settings: { Time: '380ms', Feedback: '4.0' } },
         ],
+      },
+    };
+  }
+
+  // 3. Detect Setlist Reorder Proposal
+  const isSetlistReorder =
+    /(?:suggested (?:setlist|repertoire|order)|orden sugerid[ao]|reordenar repertorio|repertoire order)/i.test(text) &&
+    /(?:1\.\s+([^\n-]+))/i.test(text);
+  if (isSetlistReorder) {
+    const songMatches = [...text.matchAll(/(?:^|\n)\s*(\d+)\.\s+([^\n|–—\-]+?)(?:[–—\-|\s]+([A-G][b#]?(?:m|maj)?[^\n|–—\-]*))?(?:[–—\-|\s]+(\d{2,3}\s*bpm))?/gi)];
+    if (songMatches.length >= 2) {
+      const songs = songMatches.map((m, idx) => ({
+        id: `song-${idx + 1}`,
+        title: m[2].trim(),
+        key: m[3]?.trim(),
+        bpm: m[4] ? parseInt(m[4], 10) : undefined,
+      }));
+      const actionPayload = {
+        id: `act-${Date.now()}`,
+        app: 'stagex',
+        actionType: 'stagex:reorder_setlist',
+        title: 'Optimized Repertoire Order',
+        description: 'Reorders songs to optimize harmonic key flow, tempo dynamics, and singer stamina.',
+        actionLabel: 'Apply suggested order',
+        requiresConfirmation: true,
+        params: {
+          songs,
+          songIds: songs.map((s) => s.title),
+        },
+      };
+      return {
+        id: `rec-setlist-${Date.now()}`,
+        type: 'assistant_action',
+        title: 'Optimized Repertoire Order',
+        actionLabel: 'Apply suggested order',
+        data: actionPayload,
+        action: actionPayload,
+        actionPayload: {
+          app: 'stagex',
+          action: 'stagex:reorder_setlist',
+          params: actionPayload.params,
+        },
+      };
+    }
+  }
+
+  // 4. Detect Stage Plot Arrangement
+  const isStageArrangement =
+    /(?:stage (?:plot|arrangement|layout)|disposici[oó]n del escenario|organizar el escenario)/i.test(text) &&
+    /(?:drums?|bater[ií]a|bass|bajo|guitar|lead vocal|voz)/i.test(text);
+  if (isStageArrangement && /center|front|back|left|right|centro|atr[aá]s|delante/i.test(text)) {
+    const elements = [
+      { name: 'Drums', x: 50, y: 20, label: 'Drums (Center Back)' },
+      { name: 'Bass', x: 25, y: 40, label: 'Bass (Stage Left)' },
+      { name: 'Electric Guitar', x: 75, y: 40, label: 'Guitar (Stage Right)' },
+      { name: 'Keyboard / Keys', x: 20, y: 65, label: 'Keys' },
+      { name: 'Lead Vocal', x: 50, y: 75, label: 'Lead Vocal (Center Front)' },
+    ];
+    const actionPayload = {
+      id: `act-${Date.now()}`,
+      app: 'stagex',
+      actionType: 'stagex:arrange_stage',
+      title: 'Optimized Stage Arrangement',
+      description: 'Arranges 5-piece band layout for balanced acoustic projection, sightlines, and monitoring.',
+      actionLabel: 'Apply arrangement',
+      requiresConfirmation: true,
+      params: { elements },
+    };
+    return {
+      id: `rec-stage-${Date.now()}`,
+      type: 'assistant_action',
+      title: 'Optimized Stage Arrangement',
+      actionLabel: 'Apply arrangement',
+      data: actionPayload,
+      action: actionPayload,
+      actionPayload: {
+        app: 'stagex',
+        action: 'stagex:arrange_stage',
+        params: actionPayload.params,
+      },
+    };
+  }
+
+  // 5. Detect Drum Groove Pattern Creation
+  const isDrumPattern =
+    /(?:drum beat|drum groove|patr[oó]n de bater[ií]a|rock beat|energetic rock beat|syncopated snare)/i.test(combinedContext) &&
+    /(?:kick|bombo|snare|caja|hi-hat|hihat)/i.test(text);
+  if (isDrumPattern) {
+    const tempoMatch = combinedContext.match(/(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*(?:bpm|BPM)/i);
+    const bpm = tempoMatch ? parseInt(tempoMatch[1] || tempoMatch[2], 10) : 124;
+    const actionPayload = {
+      id: `act-${Date.now()}`,
+      app: 'drumex',
+      actionType: 'drumex:create_pattern',
+      title: 'Syncopated Rock Beat',
+      description: `High-energy rock drum groove at ${bpm} BPM with syncopated snare placements.`,
+      actionLabel: 'Create in Drumex',
+      requiresConfirmation: false,
+      params: {
+        name: 'Syncopated Rock Beat',
+        bpm,
+        timeSignature: '4/4',
+        patternPreview: {
+          kick: [true, false, false, false, false, false, true, false, false, true, false, false, false, false, false, false],
+          snare: [false, false, false, false, true, false, false, false, false, false, true, false, true, false, false, false],
+          hihat: [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+        },
+      },
+    };
+    return {
+      id: `rec-drum-${Date.now()}`,
+      type: 'assistant_action',
+      title: actionPayload.title,
+      actionLabel: actionPayload.actionLabel,
+      data: actionPayload,
+      action: actionPayload,
+      actionPayload: {
+        app: 'drumex',
+        action: 'drumex:create_pattern',
+        params: actionPayload.params,
+      },
+    };
+  }
+
+  // 6. Detect Groovex Stem Practice Configuration
+  const isGroovexSetup =
+    /(?:groovex|practice.*solo|practicar.*solo|stem|stems|mute lead guitar|silenciar guitarra)/i.test(combinedContext) &&
+    /(?:mute|solo|volume|volumen|stems?)/i.test(text);
+  if (isGroovexSetup) {
+    const actionPayload = {
+      id: `act-${Date.now()}`,
+      app: 'groovex',
+      actionType: 'groovex:configure_stems',
+      title: 'Solo Practice Stem Setup',
+      description: 'Mutes lead guitar and boosts rhythm section so you can practice your lead line.',
+      actionLabel: 'Apply practice setup',
+      requiresConfirmation: false,
+      params: {
+        stems: [
+          { name: 'Lead Guitar', isMuted: true, volume: 0 },
+          { name: 'Rhythm Guitar', isMuted: false, volume: 0.9 },
+          { name: 'Bass', isMuted: false, volume: 0.95 },
+          { name: 'Drums', isMuted: false, volume: 1.0 },
+        ],
+      },
+    };
+    return {
+      id: `rec-groovex-${Date.now()}`,
+      type: 'assistant_action',
+      title: actionPayload.title,
+      actionLabel: actionPayload.actionLabel,
+      data: actionPayload,
+      action: actionPayload,
+      actionPayload: {
+        app: 'groovex',
+        action: 'groovex:configure_stems',
+        params: actionPayload.params,
+      },
+    };
+  }
+
+  // 7. Detect Vocalex Warmup Routine
+  const isVocalWarmup =
+    /(?:warm\s*up|calentamiento|vocalex|sirens|lip trills|arpeggios|warmup)/i.test(combinedContext) &&
+    /(?:vocal|voice|voz|warmup|singing|cantar)/i.test(combinedContext);
+  if (isVocalWarmup && /(?:routine|rutina|minutes?|minutos?|ejercicio)/i.test(text)) {
+    const actionPayload = {
+      id: `act-${Date.now()}`,
+      app: 'vocalex',
+      actionType: 'vocalex:start_exercise',
+      title: 'Pre-Show Vocal Warmup Routine',
+      description: '10-minute dynamic routine: Lip Trills, Sirens, and 5-Tone Major Arpeggios.',
+      actionLabel: 'Start Warmup',
+      requiresConfirmation: false,
+      params: {
+        routine: 'Pre-Show Warmup',
+        durationMinutes: 10,
+        category: 'warmup',
+      },
+    };
+    return {
+      id: `rec-vocal-${Date.now()}`,
+      type: 'assistant_action',
+      title: actionPayload.title,
+      actionLabel: actionPayload.actionLabel,
+      data: actionPayload,
+      action: actionPayload,
+      actionPayload: {
+        app: 'vocalex',
+        action: 'vocalex:start_exercise',
+        params: actionPayload.params,
       },
     };
   }

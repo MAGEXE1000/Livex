@@ -107,3 +107,13 @@ export * from './components/motion';
 export { MorphingModal, type MorphingModalProps } from './components/motion/morphing-modal';
 export { useAppReducedMotion } from './hooks/useAppReducedMotion';
 export * from './features/assistant';
+
+// Cross-App Assistant Providers Registration
+export * from './features/stagex/services/stagexAssistantProvider';
+export * from './features/groovex/services/groovexAssistantProvider';
+
+import { registerStagexAssistantProvider } from './features/stagex/services/stagexAssistantProvider';
+import { registerGroovexAssistantProvider } from './features/groovex/services/groovexAssistantProvider';
+
+registerStagexAssistantProvider();
+registerGroovexAssistantProvider();

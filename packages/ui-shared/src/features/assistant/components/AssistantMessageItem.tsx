@@ -10,6 +10,7 @@ import { LivexAssistantMascot } from './LivexAssistantMascot';
 import { ChordProgressionCard } from './cards/ChordProgressionCard';
 import { ToneRecipeCard } from './cards/ToneRecipeCard';
 import { DrumGrooveCard } from './cards/DrumGrooveCard';
+import { AssistantActionCard } from './cards/AssistantActionCard';
 import {
   Copy,
   Check,
@@ -469,6 +470,17 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
         {message.recommendations && message.recommendations.length > 0 && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {message.recommendations.map((rec) => {
+              if (rec.type === 'assistant_action' || rec.action) {
+                const actionPayload = (rec.action || rec.data) as any;
+                return (
+                  <AssistantActionCard
+                    key={rec.id}
+                    action={actionPayload}
+                    isLight={isLight}
+                    isAmoled={isAmoled}
+                  />
+                );
+              }
               if (rec.type === 'chord_progression') {
                 return (
                   <ChordProgressionCard

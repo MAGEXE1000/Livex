@@ -9,6 +9,7 @@ import {
 } from '../types/assistant';
 import { getMusicalContextSnapshot } from '../lib/assistant/contextAggregator';
 import { streamChatCompletion } from '../lib/assistant/assistantApiClient';
+import { extractClientRecommendations } from '../lib/assistant/actionExtractor';
 import { useSettingsStore } from './useSettingsStore';
 
 export const ASSISTANT_QUICK_PROMPTS: AssistantQuickPrompt[] = [
@@ -468,6 +469,15 @@ export const useAssistantStore = create<AssistantStoreState>()(
 
                 onComplete: () => {
                   if (signal.aborted) return;
+
+                  // Fallback: extract any structured actions/recommendations if not yet received via SSE
+                  const currentMsg = get().messages.find((m) => m.id === assistantMsgId);
+                  if (currentMsg && (!currentMsg.recommendations || currentMsg.recommendations.length === 0)) {
+                    const fallbackRecs = extractClientRecommendations(currentMsg.content, effectivePrompt);
+                    for (const r of fallbackRecs) {
+                      get().addRecommendation(assistantMsgId, r);
+                    }
+                  }
 
                   set((state) => ({
                     status: 'idle',

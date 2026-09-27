@@ -7,4 +7,5 @@ export * from './components/AgentChatPill';
 export { default as ChordProgressionCard } from './components/cards/ChordProgressionCard';
 export { default as ToneRecipeCard } from './components/cards/ToneRecipeCard';
 export { default as DrumGrooveCard } from './components/cards/DrumGrooveCard';
+export { AssistantActionCard } from './components/cards/AssistantActionCard';
 export { default as AssistantChatView } from './pages/AssistantChatView';

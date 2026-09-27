@@ -128,3 +128,6 @@ export * from './types/assistant';
 export * from './store/useAssistantStore';
 export * from './lib/assistant/contextAggregator';
 export * from './lib/assistant/assistantApiClient';
+export * from './lib/assistant/appContextRegistry';
+export * from './lib/assistant/actionDispatcher';
+export * from './lib/assistant/actionExtractor';
