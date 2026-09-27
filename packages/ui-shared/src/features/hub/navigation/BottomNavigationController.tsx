@@ -82,6 +82,18 @@ export function BottomNavigationController() {
     [isProfileMenuOpen, setProfileMenuOpen]
   );
 
+  useBackHandler(
+    'overlay',
+    () => {
+      if (isSwitcherOpen) {
+        setIsSwitcherOpen(false);
+        return true;
+      }
+      return false;
+    },
+    [isSwitcherOpen, setIsSwitcherOpen]
+  );
+
   const currentRoute = useNavigationStore((s) => s.history[s.history.length - 1]);
   const routeKey = `${currentRoute?.app || 'hub'}:${currentRoute?.page || 'main'}:${currentRoute?.tab || ''}`;
   const prevRouteKeyRef = useRef(routeKey);

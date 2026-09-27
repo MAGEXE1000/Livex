@@ -208,4 +208,150 @@ describe('Android Back-Navigation System & Invariant Suite', () => {
       expect(NavigationDispatcher.currentRoute().page).toBe('songs');
     });
   });
+
+  describe('5. Internal App Boundary Invariant (Back Never Navigates Directly to Hub)', () => {
+    const internalApps: Array<'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex'> = [
+      'chordex',
+      'drumex',
+      'stagex',
+      'groovex',
+      'vocalex',
+    ];
+
+    internalApps.forEach((appKey) => {
+      it(`consumes back action at the root of ${appKey} and never navigates to hub`, () => {
+        NavigationDispatcher.openApp(appKey);
+        const initialRoute = NavigationDispatcher.currentRoute();
+        expect(initialRoute.app).toBe(appKey);
+
+        // At root of internal app, canGoBack() MUST be false
+        expect(NavigationDispatcher.canGoBack()).toBe(false);
+
+        // Invoking back event at root:
+        // Must return true (consumed) so native Android does not exit and does not escape to Hub
+        const handled = BackDispatcher.handleBackEvent();
+        expect(handled).toBe(true);
+
+        // State remains strictly inside the internal app domain
+        const routeAfterBack = NavigationDispatcher.currentRoute();
+        expect(routeAfterBack.app).toBe(appKey);
+        expect(routeAfterBack.app).not.toBe('hub');
+      });
+    });
+
+    it('returns false at Hub root allowing native exitApp', () => {
+      NavigationDispatcher.openApp('hub');
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'home' });
+      expect(NavigationDispatcher.canGoBack()).toBe(false);
+
+      const handled = BackDispatcher.handleBackEvent();
+      // At Hub root, back is not consumed so Capacitor App can exit cleanly
+      expect(handled).toBe(false);
+    });
+  });
+
+  describe('6. App Domain Isolation via openApp() (No Cross-App Stacking)', () => {
+    it('isolates navigation history stack when switching between apps', () => {
+      // Step 1: Open Hub
+      NavigationDispatcher.openApp('hub');
+      expect(useNavigationStore.getState().history).toHaveLength(1);
+      expect(useNavigationStore.getState().history[0]).toMatchObject({ app: 'hub', tab: 'home' });
+
+      // Step 2: Open Chordex
+      NavigationDispatcher.openApp('chordex');
+      const histChordex = useNavigationStore.getState().history;
+      expect(histChordex).toHaveLength(2);
+      expect(histChordex[0]).toMatchObject({ app: 'hub', tab: 'home' });
+      expect(histChordex[1]).toMatchObject({ app: 'chordex', page: 'library' });
+
+      // Step 3: Switch to Drumex via App Switcher
+      NavigationDispatcher.openApp('drumex');
+      // History must NOT contain chordex routes
+      const histDrumex = useNavigationStore.getState().history;
+      expect(histDrumex).toHaveLength(2);
+      expect(histDrumex[0]).toMatchObject({ app: 'hub', tab: 'home' });
+      expect(histDrumex[1]).toMatchObject({ app: 'drumex', page: 'beats' });
+
+      // Step 4: Switch to Stagex
+      NavigationDispatcher.openApp('stagex');
+      const histStagex = useNavigationStore.getState().history;
+      expect(histStagex).toHaveLength(2);
+      expect(histStagex[0]).toMatchObject({ app: 'hub', tab: 'home' });
+      expect(histStagex[1]).toMatchObject({ app: 'stagex', page: 'Editor' });
+
+      // Step 5: Close app to Hub
+      NavigationDispatcher.closeApp();
+      const histHub = useNavigationStore.getState().history;
+      expect(histHub).toHaveLength(1);
+      expect(histHub[0]).toMatchObject({ app: 'hub', tab: 'home' });
+    });
+  });
+
+  describe('7. Unwinding Handlers and Overlay Dismissal (App Switcher & Modals)', () => {
+    it('closes App Switcher or overlays on back before changing underlying page route', () => {
+      NavigationDispatcher.openApp('chordex');
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+
+      let switcherOpen = true;
+      // Simulate App Switcher registered with 'overlay' priority
+      const unregister = BackDispatcher.register('overlay', () => {
+        if (switcherOpen) {
+          switcherOpen = false;
+          return true;
+        }
+        return false;
+      });
+
+      // User presses back while switcher is open
+      const handled = BackDispatcher.handleBackEvent();
+      expect(handled).toBe(true);
+      expect(switcherOpen).toBe(false);
+      // Underlying app route is unaffected
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+
+      unregister();
+    });
+
+    it('unwinds hierarchical state within an internal app step-by-step', () => {
+      NavigationDispatcher.openApp('chordex');
+
+      // State simulation: Song -> Lyrics mode
+      let activePreset: string | null = 'song-123';
+      let editorViewMode: 'chords' | 'lyrics' = 'lyrics';
+
+      const unregister = BackDispatcher.register('panel', () => {
+        if (editorViewMode !== 'chords') {
+          editorViewMode = 'chords';
+          return true;
+        }
+        if (activePreset) {
+          activePreset = null;
+          return true;
+        }
+        return false;
+      });
+
+      // 1st back: from lyrics mode to chords mode
+      BackDispatcher.resetDebounce();
+      const firstBack = BackDispatcher.handleBackEvent();
+      expect(firstBack).toBe(true);
+      expect(editorViewMode).toBe('chords');
+      expect(activePreset).toBe('song-123');
+
+      // 2nd back: from chords mode to songs list
+      BackDispatcher.resetDebounce();
+      const secondBack = BackDispatcher.handleBackEvent();
+      expect(secondBack).toBe(true);
+      expect(activePreset).toBe(null);
+
+      // 3rd back: at songs list root (handler returns false, falls back to domain containment)
+      BackDispatcher.resetDebounce();
+      const thirdBack = BackDispatcher.handleBackEvent();
+      expect(thirdBack).toBe(true); // Consumed by domain containment at Chordex root
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+
+      unregister();
+    });
+  });
 });
+

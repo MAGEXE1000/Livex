@@ -35,7 +35,10 @@ export class BackDispatcher {
       if (isNative) {
         import('@capacitor/app').then(({ App: CapApp }) => {
           CapApp.addListener('backButton', () => {
-            this.handleBackEvent();
+            const handled = this.handleBackEvent();
+            if (!handled) {
+              CapApp.exitApp();
+            }
           });
         }).catch(() => {});
       }
@@ -137,11 +140,20 @@ export class BackDispatcher {
       }
     }
 
-    // Default fallback: pop navigation history
+    // Default fallback: pop navigation history within current domain
+    const currentApp = NavigationDispatcher.currentApp();
     if (NavigationDispatcher.canGoBack()) {
       NavigationDispatcher.pop();
       return true;
     }
+
+    // Critical Contract: If user is inside an internal app (chordex, drumex, stagex, groovex, vocalex),
+    // Android back / swipe-back MUST NEVER escape to Hub and MUST NEVER exit the application.
+    // It remains safely contained at that app's root, consuming the back action.
+    if (currentApp !== 'hub') {
+      return true;
+    }
+
     return false;
   }
 }

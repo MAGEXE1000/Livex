@@ -332,6 +332,19 @@ export function SharedNavigationBar({
     [isProfileMenuOpen, setProfileMenuOpen]
   );
 
+  // Close App Switcher on hardware back press
+  useBackHandler(
+    'overlay',
+    () => {
+      if (isSwitcherOpen) {
+        setIsSwitcherOpen(false);
+        return true;
+      }
+      return false;
+    },
+    [isSwitcherOpen, setIsSwitcherOpen]
+  );
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).__navMetrics = (window as any).__navMetrics || {
@@ -353,7 +366,7 @@ export function SharedNavigationBar({
 
   const handleAppSwitch = (appKey: string) => {
     if (isEffectiveHidden) return;
-    NavigationDispatcher.push({ app: appKey as any });
+    NavigationDispatcher.openApp(appKey as any);
     setIsSwitcherOpen(false);
   };
 

@@ -4322,6 +4322,10 @@ export default function SongsPanel() {
         return true;
       }
       if (activePresetId) {
+        if (editorViewMode !== 'chords') {
+          setEditorViewMode('chords');
+          return true;
+        }
         setActivePreset(null);
         return true;
       }
@@ -4338,6 +4342,7 @@ export default function SongsPanel() {
       showImport,
       showDeleteId,
       activePresetId,
+      editorViewMode,
       setActivePreset,
       clearPendingImport,
     ]

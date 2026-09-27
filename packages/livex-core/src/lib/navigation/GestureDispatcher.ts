@@ -1,5 +1,5 @@
 import { useNavigationStore } from '../../store/useNavigationStore.js';
-import { NavigationDispatcher } from './NavigationDispatcher.js';
+import { BackDispatcher } from './BackDispatcher.js';
 
 export class GestureDispatcher {
   /**
@@ -36,11 +36,8 @@ export class GestureDispatcher {
     const timestamp = new Date().toISOString();
     useNavigationStore.getState().setGestureState('committed', 1);
 
-    // Execute navigation pop
-    if (NavigationDispatcher.canGoBack()) {
-      NavigationDispatcher.pop();
-    } else {
-    }
+    // Unify gesture swipe-back with hardware back button: delegate to canonical BackDispatcher
+    BackDispatcher.handleBackEvent();
 
     setTimeout(() => {
       useNavigationStore.getState().setGestureState('idle', 0);

@@ -203,11 +203,11 @@ export function isNestedRoute(route: NavigationRoute | undefined): boolean {
       return Boolean(
         route.page === 'metronome' ||
         route.page === 'editor' ||
-        route.tab === 'metronome' ||
+        (route.tab as string) === 'metronome' ||
         route.subView === 'editor'
       );
     case 'groovex':
-      return Boolean(route.page === 'player' || route.tab === 'player');
+      return Boolean(route.page === 'player' || (route.tab as string) === 'player');
     case 'chordex':
       return Boolean(route.page === 'chord');
     case 'vocalex':

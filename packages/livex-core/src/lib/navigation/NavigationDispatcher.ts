@@ -77,26 +77,26 @@ export class NavigationDispatcher {
     const poppedRoute = store.history[store.history.length - 1];
     const prevRoute = store.history[store.history.length - 2];
 
-    // Intra-app protection: If poppedRoute is a nested route in an internal app,
-    // and there is no prior route from the same app in history (e.g. entered via direct Hub action),
-    // step backward within the same app rather than unexpectedly escaping to Hub.
-    if (
-      poppedRoute &&
-      poppedRoute.app !== 'hub' &&
-      isNestedRoute(poppedRoute) &&
-      (!prevRoute || prevRoute.app !== poppedRoute.app)
-    ) {
-      if (poppedRoute.subView) {
-        // Step back from subsection to parent section within the app (e.g. Stagex Setup Rider -> Stagex Setup Hub)
-        this.replace({
-          app: poppedRoute.app,
-          page: poppedRoute.page,
-        });
-        return;
-      } else {
-        // Step back from nested page to canonical root screen within the app (e.g. Drumex Metronome -> Drumex Beats)
-        const rootRoute = NavigationCoordinator.resolveDefaultRoute({ app: poppedRoute.app });
-        this.replace(rootRoute);
+    // Intra-app protection & boundary containment:
+    // If poppedRoute is in an internal app (not 'hub'):
+    if (poppedRoute && poppedRoute.app !== 'hub') {
+      // If there is no previous route from the same app in history:
+      if (!prevRoute || prevRoute.app !== poppedRoute.app) {
+        if (poppedRoute.subView) {
+          // Step back from subsection to parent section within the app (e.g. Stagex Setup Rider -> Stagex Setup Hub)
+          this.replace({
+            app: poppedRoute.app,
+            page: poppedRoute.page,
+          });
+          return;
+        }
+        if (isNestedRoute(poppedRoute)) {
+          // Step back from nested page to canonical root screen within the app (e.g. Drumex Metronome -> Drumex Beats)
+          const rootRoute = NavigationCoordinator.resolveDefaultRoute({ app: poppedRoute.app });
+          this.replace(rootRoute);
+          return;
+        }
+        // At root screen of internal app: NEVER pop across app boundary to Hub or other apps!
         return;
       }
     }
@@ -186,10 +186,24 @@ export class NavigationDispatcher {
   }
 
   /**
-   * Checks if back navigation is permitted (stack history contains more than root).
+   * Checks if back navigation is permitted within the current navigation domain.
    */
   public static canGoBack(): boolean {
     const store = useNavigationStore.getState();
+    const current = store.history[store.history.length - 1];
+    if (!current) return false;
+
+    if (current.app !== 'hub') {
+      const prev = store.history[store.history.length - 2];
+      // Can unwind if previous route belongs to the same internal app
+      if (prev && prev.app === current.app) {
+        return true;
+      }
+      // Or if current route is a nested sub-page/sub-view (which steps back within this app)
+      return Boolean(current.subView || isNestedRoute(current));
+    }
+
+    // On Hub: can pop if not already at Hub root
     return !isRootRouteOnly(store.history);
   }
 
@@ -212,11 +226,16 @@ export class NavigationDispatcher {
 
   
   /**
-   * Opens an application by name.
+   * Opens an application by name, establishing its clean navigation domain.
    */
   public static openApp(appKey: NavigationRoute['app']): void {
     if (this.currentApp() === appKey) return;
-    this.push({ app: appKey });
+    if (appKey === 'hub') {
+      this.reset([{ app: 'hub', tab: 'home' }]);
+    } else {
+      const rootRoute = NavigationCoordinator.resolveDefaultRoute({ app: appKey });
+      this.reset([{ app: 'hub', tab: 'home' }, rootRoute]);
+    }
   }
 
   /**

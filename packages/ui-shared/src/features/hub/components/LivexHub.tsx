@@ -1189,8 +1189,7 @@ export default function LivexHub() {
 
     (window as any).studioTransitionActive = true;
     setZooming(true);
-
-    NavigationDispatcher.push({ app: appMode });
+    NavigationDispatcher.openApp(appMode);
 
     // Clear any pending launch timers
     launchTimers.current.forEach(clearTimeout);
