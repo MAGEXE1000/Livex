@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useT, useSettingsStore, authRepository, type AuthUser, isFirebaseConfigured, userRepository, useIsWebDesktop } from '@workspace/livex-core';
 
 import { Button, StatefulButton } from '../../../../shared/design-system/StudioDesignSystem';
-import { SyncAnimations } from '../AccountCard';
+import { SyncAnimations } from './authUiPrims';
 
 function prettyErr(e: unknown, lang: string): string {
   const code = (e as { code?: string })?.code ?? '';

@@ -175,7 +175,7 @@ export function formatHour(h: number): string {
   return `${h - 12} pm`;
 }
 
-import { SettingsSectionLabel, SettingsNavRow } from '../HubSettings';
+import { SettingsSectionLabel, SettingsNavRow } from '../components/SettingsRows';
 
 
 export function HelpContent(props: any) {

@@ -7,7 +7,7 @@ import {
   DownloadIconSVG,
   TrashIconSVG,
   SettingRowUI,
-} from '../AccountCard';
+} from './authUiPrims';
 import { StatefulButton } from '../../../../shared/design-system/StudioDesignSystem';
 import { Toggle } from '../../../../shared/settings/SettingControls';
 import { useChordStore } from '@workspace/livex-core';

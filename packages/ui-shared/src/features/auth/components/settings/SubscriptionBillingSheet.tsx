@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { type AuthUser } from '@workspace/livex-core';
-import { ProfileMorphModal } from '../AccountCard';
+import { ProfileMorphModal } from './authUiPrims';
 
 const StudioPricingSection = lazy(() => import('../StudioPricingSection'));
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { type AuthUser } from '@workspace/livex-core';
-import { ProfileMorphModal } from '../AccountCard';
+import { ProfileMorphModal } from './authUiPrims';
 
 export interface SecurityLoginSheetProps {
   sheet: string | null;

@@ -1,7 +1,7 @@
 import React from 'react';
 import StudioAuthCard from '../StudioAuthCard';
 import { authRepository } from '@workspace/livex-core';
-import { prettyErr } from '../AccountCard';
+import { prettyErr } from './authUiPrims';
 import { useT } from '@workspace/livex-core';
 
 type AccountSignInFlowProps = {

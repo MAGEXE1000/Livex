@@ -1,6 +1,6 @@
 import React from 'react';
 import { type AuthUser, type AvatarIcon } from '@workspace/livex-core';
-import { ProfileMorphModal } from '../AccountCard';
+import { ProfileMorphModal } from './authUiPrims';
 
 export interface PersonalInformationSheetProps {
   sheet: string | null;

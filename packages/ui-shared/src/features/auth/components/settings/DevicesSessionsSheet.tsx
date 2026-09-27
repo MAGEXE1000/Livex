@@ -13,7 +13,7 @@ import {
   CLOUD_SYNC_FEATURE_ENABLED,
   AccountDeviceRow,
   codeBreakStyle,
-} from '../AccountCard';
+} from './authUiPrims';
 
 export interface DevicesSessionsSheetProps {
   sheet: string | null;
