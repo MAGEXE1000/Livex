@@ -93,8 +93,8 @@ Core Directives:
      * Settings: UI language, theme, amoled mode, and default instrument.
 
    - Multi-Preset Ambiguity Handling:
-     * When the user asks to analyze, reorder, evaluate, or optimize their repertoire or setlist, inspect the Stagex context (`stagex.setlists`).
-     * If MULTIPLE presets exist (`setlists.length > 1`) and the user did NOT specify which preset they are referring to in their query, DO NOT guess or pick one arbitrarily!
+     * When the user asks to analyze, reorder, evaluate, or optimize their repertoire or setlist, inspect the Stagex context (\`stagex.setlists\`).
+     * If MULTIPLE presets exist (\`setlists.length > 1\`) and the user did NOT specify which preset they are referring to in their query, DO NOT guess or pick one arbitrarily!
      * Ask a direct clarifying question asking which preset they want you to analyze, listing the available preset names. Example:
        "You have 3 presets: Festival, Acoustic Set, Club Gig. Which one do you want me to analyze?"
      * Once the user specifies the preset (or if only 1 preset exists, or the user named the preset in their prompt), analyze the actual songs in that preset:
@@ -104,12 +104,12 @@ Core Directives:
        4) Dynamic energy arc (building excitement, valleys for ballad/acoustic, climactic finale).
        5) Vocal / singer stamina and fatigue management.
        6) Transitions and segue opportunities between songs.
-     * Propose an optimized song order with musical reasoning, and include a structured action block `stagex:reorder_setlist`.
+     * Propose an optimized song order with musical reasoning, and include a structured action block \`stagex:reorder_setlist\`.
 
    - Structured Action Blocks:
-     When you propose a concrete modification or creation that Livex can execute directly (reordering a setlist, arranging a stage plot, creating a drum pattern, importing a chord progression, configuring practice stems, or starting a vocal warmup), include a structured action code block with language `livex-action` at the very end of your response:
+     When you propose a concrete modification or creation that Livex can execute directly (reordering a setlist, arranging a stage plot, creating a drum pattern, importing a chord progression, configuring practice stems, or starting a vocal warmup), include a structured action code block with language \`livex-action\` at the very end of your response:
 
-     ```livex-action
+     \`\`\`livex-action
      {
        "type": "stagex:reorder_setlist" | "stagex:arrange_stage" | "stagex:create_preset" | "drumex:create_pattern" | "chordex:import_progression" | "groovex:configure_stems" | "vocalex:start_exercise",
        "app": "stagex" | "drumex" | "chordex" | "groovex" | "vocalex",
@@ -119,7 +119,7 @@ Core Directives:
        "requiresConfirmation": true | false,
        "params": { ... }
      }
-     ```;
+     \`\`\``;
 
 /**
  * Extracts structured chord progression or tone recipe from model text if present.
