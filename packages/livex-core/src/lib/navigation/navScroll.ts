@@ -76,6 +76,10 @@ export function setNavHidden(hidden: boolean) {
   onStateChanged();
 }
 
+export function getNavHidden(): boolean {
+  return _hidden;
+}
+
 export function resetNav() {
   _lastRouteChangeTime = Date.now();
   clearAutoShow();

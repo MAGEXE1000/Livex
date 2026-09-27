@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 
-import { useScrollHide, SpringPresets, useSettingsStore, useShallow } from '@workspace/livex-core';
+import { useScrollHide, SpringPresets, useSettingsStore, useShallow, BackDispatcher } from '@workspace/livex-core';
 import { ProgressiveBlur } from '../design-system/ProgressiveBlur';
 import { LivexLogo, StudioLogo } from '../../features/chordex/icons/ChordexLogo';
 import { LivexHeader, StudioHeader } from './LivexHeader';
@@ -257,6 +257,14 @@ export function SharedFloatingHeader({
     expandedLeftInset: onBack && !hideBack ? 56 : 20,
   });
 
+  const handleBackClick = React.useCallback(() => {
+    if (onBack) {
+      onBack();
+    } else {
+      BackDispatcher.handleBackEvent();
+    }
+  }, [onBack]);
+
   return (
     <div
       style={{
@@ -331,7 +339,7 @@ export function SharedFloatingHeader({
           <motion.button
             type="button"
             data-testid={backBtnTestId || 'shared-floating-header-back-btn'}
-            onClick={onBack}
+            onClick={handleBackClick}
             aria-label="Go back"
             whileTap={prefersReduced ? undefined : { scale: 0.92 }}
             whileHover={canHover && !prefersReduced ? { scale: 1.04 } : undefined}

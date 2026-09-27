@@ -9,6 +9,7 @@ import {
   resolveAccent,
   useShallow,
   NavigationDispatcher,
+  useBackHandler,
 } from '@workspace/livex-core';
 import {
   Toggle,
@@ -47,6 +48,18 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
   useOverscrollSpring({ scrollContainerRef: scrollRef });
+
+  useBackHandler(
+    'nested',
+    () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    },
+    [onBack]
+  );
 
   const t = useT();
   const tr = t as any;

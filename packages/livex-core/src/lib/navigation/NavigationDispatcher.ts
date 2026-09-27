@@ -12,8 +12,10 @@ import {
   isRouteEqual,
   detectRecursion,
   isRootRouteOnly,
+  isNestedRoute,
 } from './validation.js';
 import { CANONICAL_CONTENT_TRANSITION } from './navigationMotion.js';
+import { resetNav } from './navScroll.js';
 
 export class NavigationDispatcher {
   private static transitionTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -44,6 +46,7 @@ export class NavigationDispatcher {
 
     const newHistory = [...store.history, nextRoute];
     store.setHistory(newHistory);
+    resetNav();
   }
 
   /**
@@ -59,6 +62,7 @@ export class NavigationDispatcher {
 
     const newHistory = [...store.history.slice(0, -1), nextRoute];
     store.setHistory(newHistory);
+    resetNav();
   }
 
   /**
@@ -72,6 +76,31 @@ export class NavigationDispatcher {
 
     const poppedRoute = store.history[store.history.length - 1];
     const prevRoute = store.history[store.history.length - 2];
+
+    // Intra-app protection: If poppedRoute is a nested route in an internal app,
+    // and there is no prior route from the same app in history (e.g. entered via direct Hub action),
+    // step backward within the same app rather than unexpectedly escaping to Hub.
+    if (
+      poppedRoute &&
+      poppedRoute.app !== 'hub' &&
+      isNestedRoute(poppedRoute) &&
+      (!prevRoute || prevRoute.app !== poppedRoute.app)
+    ) {
+      if (poppedRoute.subView) {
+        // Step back from subsection to parent section within the app (e.g. Stagex Setup Rider -> Stagex Setup Hub)
+        this.replace({
+          app: poppedRoute.app,
+          page: poppedRoute.page,
+        });
+        return;
+      } else {
+        // Step back from nested page to canonical root screen within the app (e.g. Drumex Metronome -> Drumex Beats)
+        const rootRoute = NavigationCoordinator.resolveDefaultRoute({ app: poppedRoute.app });
+        this.replace(rootRoute);
+        return;
+      }
+    }
+
     let tType: TransitionType = 'backward';
     if (poppedRoute.type === 'modal') tType = 'modal';
     else if (poppedRoute.type === 'sheet') tType = 'sheet';
@@ -82,6 +111,7 @@ export class NavigationDispatcher {
 
     const newHistory = store.history.slice(0, -1);
     store.setHistory(newHistory);
+    resetNav();
   }
 
   /**
@@ -106,6 +136,7 @@ export class NavigationDispatcher {
 
     const newHistory = store.history.slice(0, index + 1);
     store.setHistory(newHistory);
+    resetNav();
   }
 
   /**
@@ -127,6 +158,7 @@ export class NavigationDispatcher {
     this.recordNavTiming(current, target, 'replace');
     this.lockTransition('replace');
     store.setHistory(validatedStack);
+    resetNav();
   }
 
   private static recordNavTiming(

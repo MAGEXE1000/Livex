@@ -126,11 +126,7 @@ export default function GroovexPlayer() {
   const song = useMemo(() => SONG_CATALOG.find((s) => s.id === activeSongId), [activeSongId]);
 
   const handleBack = useCallback(() => {
-    if (NavigationDispatcher.canGoBack()) {
-      NavigationDispatcher.pop();
-    } else {
-      NavigationDispatcher.push({ app: 'groovex', page: 'library' });
-    }
+    NavigationDispatcher.pop();
   }, []);
 
   const engineRef = useRef<AudioEngine | null>(null);

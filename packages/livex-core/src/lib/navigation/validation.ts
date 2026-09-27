@@ -178,14 +178,45 @@ export function isTransitionLocked(): boolean {
 }
 
 /**
+ * Determines whether a route is an internal nested sub-view / modal / sheet
+ * within an application rather than a primary landing / root screen.
+ */
+export function isNestedRoute(route: NavigationRoute | undefined): boolean {
+  if (!route) return false;
+  if (route.subView) return true;
+  if (route.type === 'modal' || route.type === 'sheet' || route.type === 'overlay') return true;
+
+  switch (route.app) {
+    case 'stagex':
+      return Boolean(route.page && route.page !== 'Editor' && route.page !== 'Stage');
+    case 'drumex':
+      return route.page === 'metronome';
+    case 'groovex':
+      return route.page === 'player';
+    case 'chordex':
+      return route.page === 'chord';
+    case 'vocalex':
+      return route.page === 'harmonizer' || route.page === 'pitch';
+    case 'hub':
+      return Boolean(route.tab && route.tab !== 'home');
+    default:
+      return false;
+  }
+}
+
+/**
  * Prevents popping when only the root route exists.
+ * If the current route is a nested sub-view/screen, it is not considered root-only.
  */
 export function isRootRouteOnly(history: NavigationHistory): boolean {
   if (history.length === 0) return true;
-  const currentApp = history[history.length - 1].app;
+  const current = history[history.length - 1];
+  if (isNestedRoute(current)) {
+    return false;
+  }
   let count = 0;
   for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].app === currentApp) {
+    if (history[i].app === current.app) {
       count++;
     } else {
       break;

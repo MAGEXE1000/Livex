@@ -52,14 +52,16 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
 
     if (sv === 'hub') {
       const current = useNavigationStore.getState().history.slice(-1)[0];
-      if (current && (current.subView || current.page !== 'Setup')) {
+      if (current && current.subView) {
+        NavigationDispatcher.pop();
+      } else if (current && current.page !== 'Setup') {
         NavigationDispatcher.replace({
           app: 'stagex',
           page: 'Setup',
         });
       }
     } else {
-      NavigationDispatcher.replace({
+      NavigationDispatcher.push({
         app: 'stagex',
         page: 'Setup',
         subView: sv,

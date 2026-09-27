@@ -124,7 +124,7 @@ export const SaxophonePracticePanel: React.FC = () => {
     >
       <SharedFloatingHeader
         title="Saxophone Practice"
-        onBack={() => NavigationDispatcher.pop()}
+        hideBack={true}
         scrollContainerRef={saxScrollRef}
       />
 

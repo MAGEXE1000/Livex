@@ -4137,13 +4137,7 @@ export default function DrumEditor() {
                       <MetronomePanel
                         isAmoled={isAmoled}
                         onScroll={drumScrollHide}
-                        onBack={() => {
-                          if (NavigationDispatcher.canGoBack()) {
-                            NavigationDispatcher.pop();
-                          } else {
-                            NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
-                          }
-                        }}
+                        onBack={() => NavigationDispatcher.pop()}
                       />
                     );
                   case 'songs-list':

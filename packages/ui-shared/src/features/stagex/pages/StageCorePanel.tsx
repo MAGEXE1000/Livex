@@ -174,9 +174,9 @@ export default function StagexPanel() {
     if (prev && prev.app === 'stagex' && (prev.page === 'Editor' || !prev.page)) {
       NavigationDispatcher.pop();
     } else {
-      navigate('Editor');
+      NavigationDispatcher.replace({ app: 'stagex', page: 'Editor' });
     }
-  }, [navigate]);
+  }, []);
 
   return (
     <div
@@ -246,7 +246,11 @@ export default function StagexPanel() {
                     {/* Preferences Native View */}
                     {viewId === 'Preferences' && (
                       <div className="w-full h-full">
-                        <StagePreferencesView isLight={isLight} isAmoled={isAmoled} />
+                        <StagePreferencesView
+                          isLight={isLight}
+                          isAmoled={isAmoled}
+                          onBack={handleBackToStage}
+                        />
                       </div>
                     )}
 

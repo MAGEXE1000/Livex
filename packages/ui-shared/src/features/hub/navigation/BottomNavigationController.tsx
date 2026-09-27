@@ -19,6 +19,7 @@ import {
   useShallow,
   useChordStore,
   useAssistantStore,
+  resetNav,
 } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../../assistant/components/LivexAssistantMascot';
 import { SharedNavigationBar } from './SharedNavigationBar';
@@ -90,6 +91,7 @@ export function BottomNavigationController() {
     if (prevRouteKeyRef.current !== routeKey) {
       prevRouteKeyRef.current = routeKey;
       setProfileMenuOpen(false);
+      resetNav();
     }
   }, [routeKey, setProfileMenuOpen]);
 
@@ -270,6 +272,19 @@ export function BottomNavigationController() {
       const freshCurrentApp = activeHistory[activeHistory.length - 1]?.app ?? 'hub';
       const isStage = freshCurrentApp === 'stagex';
 
+      // Self-heal zombie registry entries if no dialog elements exist in DOM
+      if (activeOverlaysRegistry.modals.size > 0 || activeOverlaysRegistry.sheets.size > 0) {
+        const hasVisibleDialogInDom = Boolean(
+          document.querySelector(
+            '[role="dialog"], [data-dialog], [data-radix-portal], .dialog-backdrop, .modal-backdrop, .sheet-backdrop'
+          )
+        );
+        if (!hasVisibleDialogInDom) {
+          activeOverlaysRegistry.modals.clear();
+          activeOverlaysRegistry.sheets.clear();
+        }
+      }
+
       const isModalOpen =
         activeOverlaysRegistry.modals.size > 0 ||
         activeOverlaysRegistry.sheets.size > 0;
@@ -289,7 +304,7 @@ export function BottomNavigationController() {
       document.removeEventListener('fullscreenchange', updateOverlayIndicator);
       window.removeEventListener('resize', updateOverlayIndicator);
     };
-  }, []);
+  }, [routeKey]);
 
   const lastAppRef = useRef<string | null>(null);
 
@@ -421,11 +436,20 @@ export function BottomNavigationController() {
   const activeChordPresetId = useChordStore((s) => s.activePresetId);
   const isChordexSong =
     currentApp === 'chordex' &&
-    (activeTab === 'songs' || activePage === 'songs' || currentRoute?.page === 'songs') &&
-    (Boolean(activeChordPresetId) ||
+    Boolean(
       (currentRoute as any)?.subView === 'editor' ||
       (currentRoute as any)?.subView === 'song' ||
-      (currentRoute as any)?.subView === 'form');
+      (currentRoute as any)?.subView === 'form' ||
+      ((activeTab === 'songs' || activePage === 'songs') && activeChordPresetId && (currentRoute as any)?.subView)
+    );
+
+  useEffect(() => {
+    if (currentApp !== 'chordex') {
+      if (useChordStore.getState().activePresetId) {
+        useChordStore.getState().setActivePreset(null);
+      }
+    }
+  }, [currentApp]);
   const isGroovexSong =
     currentApp === 'groovex' &&
     (activeTab === 'player' ||

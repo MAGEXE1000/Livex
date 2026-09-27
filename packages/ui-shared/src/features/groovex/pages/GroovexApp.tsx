@@ -106,11 +106,7 @@ export default function GroovexApp() {
   }
 
   function handleBack() {
-    if (NavigationDispatcher.canGoBack()) {
-      NavigationDispatcher.pop();
-    } else {
-      NavigationDispatcher.push({ app: 'groovex', page: 'library' });
-    }
+    NavigationDispatcher.pop();
   }
 
   useBackHandler('panel', () => {
