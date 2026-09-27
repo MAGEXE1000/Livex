@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useBackHandler, useT } from '@workspace/livex-core';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  useBackHandler,
+  useT,
+  useNavigationStore,
+  NavigationDispatcher,
+} from '@workspace/livex-core';
 import { StudioPageTransition } from '../../../../components/StudioPageTransition';
 import { StageSetupHub } from './StageSetupHub';
 import { StageRiderView } from './StageRiderView';
@@ -9,6 +14,7 @@ import { StageMembersView } from './StageMembersView';
 import { useStagexStore, type StagexSubView } from '../../state/useStagexStore';
 
 export interface StageSetupContainerProps {
+  isActive?: boolean;
   initialSubView?: StagexSubView | 'hub';
   onBackToStage?: () => void;
   isLight?: boolean;
@@ -16,6 +22,7 @@ export interface StageSetupContainerProps {
 }
 
 export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
+  isActive = true,
   initialSubView = 'hub',
   onBackToStage,
   isLight = false,
@@ -23,8 +30,6 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
 }) => {
   const storeSubView = useStagexStore((s) => s.setupSubView);
   const setStoreSubView = useStagexStore((s) => s.setSetupSubView);
-  const fromToolbarPdf = useStagexStore((s) => s.fromToolbarPdf);
-  const setFromToolbarPdf = useStagexStore((s) => s.setFromToolbarPdf);
 
   const [activeSubView, setActiveSubView] = useState<StagexSubView | 'hub'>(
     storeSubView || initialSubView
@@ -41,26 +46,52 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
     }
   }, [storeSubView, initialSubView]);
 
-  const handleSubViewChange = (sv: StagexSubView | 'hub') => {
+  const handleSubViewChange = useCallback((sv: StagexSubView | 'hub') => {
     setActiveSubView(sv);
     setStoreSubView(sv);
-  };
 
-  const handleBackFromRider = () => {
+    if (sv === 'hub') {
+      const current = useNavigationStore.getState().history.slice(-1)[0];
+      if (current && (current.subView || current.page !== 'Setup')) {
+        NavigationDispatcher.replace({
+          app: 'stagex',
+          page: 'Setup',
+        });
+      }
+    } else {
+      NavigationDispatcher.replace({
+        app: 'stagex',
+        page: 'Setup',
+        subView: sv,
+      });
+    }
+  }, [setStoreSubView]);
+
+  const handleBackFromSubsection = useCallback(() => {
     handleSubViewChange('hub');
-  };
+  }, [handleSubViewChange]);
 
   // Handle hardware / system back navigation
   useBackHandler(
     'nested',
     () => {
+      if (!isActive) return false;
+
+      // 1. If inside a Setup subsection (rider, setlist, gear, members), back returns to Setup Hub
       if (activeSubView !== 'hub') {
-        handleSubViewChange('hub');
+        handleBackFromSubsection();
         return true;
       }
+
+      // 2. If on Setup Hub, back returns to Stage
+      if (onBackToStage) {
+        onBackToStage();
+        return true;
+      }
+
       return false;
     },
-    [activeSubView]
+    [isActive, activeSubView, handleBackFromSubsection, onBackToStage]
   );
 
   const subViewTitles: Record<StagexSubView | 'hub', string> = {
@@ -103,14 +134,18 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
 
           {activeSubView === 'rider' && (
             <div className="w-full h-full">
-              <StageRiderView onBack={handleBackFromRider} isLight={isLight} isAmoled={isAmoled} />
+              <StageRiderView
+                onBack={handleBackFromSubsection}
+                isLight={isLight}
+                isAmoled={isAmoled}
+              />
             </div>
           )}
 
           {activeSubView === 'setlist' && (
             <div className="w-full h-full">
               <StageSetlistView
-                onBack={() => handleSubViewChange('hub')}
+                onBack={handleBackFromSubsection}
                 isLight={isLight}
                 isAmoled={isAmoled}
               />
@@ -120,7 +155,7 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
           {activeSubView === 'gear' && (
             <div className="w-full h-full">
               <StageGearView
-                onBack={() => handleSubViewChange('hub')}
+                onBack={handleBackFromSubsection}
                 isLight={isLight}
                 isAmoled={isAmoled}
               />
@@ -130,7 +165,7 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
           {activeSubView === 'members' && (
             <div className="w-full h-full">
               <StageMembersView
-                onBack={() => handleSubViewChange('hub')}
+                onBack={handleBackFromSubsection}
                 isLight={isLight}
                 isAmoled={isAmoled}
               />

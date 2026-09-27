@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStagexStore, type GearItem } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT, useShallow } from '@workspace/livex-core';
+import { useSettingsStore, useT, useShallow, useBackHandler } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 
@@ -113,6 +113,19 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
   const [model, setModel] = useState('');
   const [qty, setQty] = useState('1');
   const [notes, setNotes] = useState('');
+
+  // Dismiss add gear drawer on back gesture
+  useBackHandler(
+    'modal',
+    () => {
+      if (isAdding) {
+        setIsAdding(false);
+        return true;
+      }
+      return false;
+    },
+    [isAdding]
+  );
 
   const totalUnits = useMemo(() => {
     return gear.reduce((acc, g) => acc + (g.qty || 1), 0);

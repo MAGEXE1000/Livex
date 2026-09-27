@@ -23,6 +23,7 @@ import { SectionVisibilityContent } from './SectionVisibilityPopover';
 import { SaveFilenameModal } from './SaveFilenameModal';
 
 export interface StageExportPdfViewProps {
+  isActive?: boolean;
   onBack: () => void;
   isLight?: boolean;
   isAmoled?: boolean;
@@ -46,6 +47,7 @@ if (
 }
 
 export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
+  isActive = true,
   onBack,
   isLight = false,
   isAmoled = false,
@@ -105,6 +107,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   useBackHandler(
     'nested',
     () => {
+      if (!isActive) return false;
       if (isSaveModalOpen) {
         setIsSaveModalOpen(false);
         return true;
@@ -120,7 +123,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
       onBack();
       return true;
     },
-    [onBack, isSaveModalOpen, isSectionsPopoverOpen, isExportMenuOpen]
+    [isActive, onBack, isSaveModalOpen, isSectionsPopoverOpen, isExportMenuOpen]
   );
 
   // Compute canonical document data projection

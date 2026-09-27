@@ -100,6 +100,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
   useBackHandler(
     'overlay',
     () => {
+      if (!isOpen) return false;
       if (activePicker) {
         setActivePicker(null);
         return true;
@@ -110,7 +111,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
       }
       return false;
     },
-    [activePicker, showDeleteConfirm]
+    [isOpen, activePicker, showDeleteConfirm]
   );
 
   // Icon preview helper

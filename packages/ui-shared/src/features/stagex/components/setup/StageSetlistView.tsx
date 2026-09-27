@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStagexStore, type SetlistSong, type SetlistPreset } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT, useShallow } from '@workspace/livex-core';
+import { useSettingsStore, useT, useShallow, useBackHandler } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 interface StageSetlistViewProps {
@@ -642,6 +642,23 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   const [bpm, setBpm] = useState('');
   const [duration, setDuration] = useState('3:30');
   const [energy, setEnergy] = useState('75');
+
+  // Dismiss preset modal or add song drawer on back gesture
+  useBackHandler(
+    'modal',
+    () => {
+      if (isPresetModalOpen) {
+        setIsPresetModalOpen(false);
+        return true;
+      }
+      if (isAdding) {
+        setIsAdding(false);
+        return true;
+      }
+      return false;
+    },
+    [isPresetModalOpen, isAdding]
+  );
 
   const [sortBy, setSortBy] = useState<'default' | 'title' | 'bpm' | 'key'>('default');
   const [showSections, setShowSections] = useState(false);

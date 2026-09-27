@@ -166,6 +166,18 @@ export default function StagexPanel() {
     });
   }, []);
 
+  const handleBackToStage = useCallback(() => {
+    useStagexStore.getState().setSetupSubView('hub');
+    const store = useNavigationStore.getState();
+    const history = store.history;
+    const prev = history[history.length - 2];
+    if (prev && prev.app === 'stagex' && (prev.page === 'Editor' || !prev.page)) {
+      NavigationDispatcher.pop();
+    } else {
+      navigate('Editor');
+    }
+  }, [navigate]);
+
   return (
     <div
       className="stagex-root w-full h-full flex flex-col relative overflow-hidden"
@@ -212,6 +224,7 @@ export default function StagexPanel() {
                     {viewId === 'Setup' && (
                       <div className="w-full h-full">
                         <StageSetupContainer
+                          isActive={curView === 'Setup'}
                           initialSubView={
                             ['rider', 'setlist', 'gear', 'members'].includes(
                               (currentRoute.subView || currentRoute.page || '').toLowerCase()
@@ -223,7 +236,7 @@ export default function StagexPanel() {
                                 ).toLowerCase() as StagexSubView)
                               : undefined
                           }
-                          onBackToStage={() => navigate('Editor')}
+                          onBackToStage={handleBackToStage}
                           isLight={isLight}
                           isAmoled={isAmoled}
                         />
@@ -241,6 +254,7 @@ export default function StagexPanel() {
                     {viewId === 'Export' && (
                       <div className="w-full h-full">
                         <StageExportPdfView
+                          isActive={curView === 'Export'}
                           onBack={() => navigate('Editor')}
                           isLight={isLight}
                           isAmoled={isAmoled}
@@ -282,6 +296,7 @@ export default function StagexPanel() {
               }}
             >
               <StageCanvasView
+                isActive={curView === 'Editor'}
                 isLight={isLight}
                 isAmoled={isAmoled}
                 accentColor={settings.accentColor || 'blue'}

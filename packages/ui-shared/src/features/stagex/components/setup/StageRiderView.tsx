@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore, type RiderNeed } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { StageSetupEmptyState } from './StageSetupEmptyState';
-import { useSettingsStore, useT, EasingPresets } from '@workspace/livex-core';
+import { useSettingsStore, useT, EasingPresets, useBackHandler } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 
@@ -237,6 +237,19 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newType, setNewType] = useState<RiderNeed['type']>('foh');
   const [newValue, setNewValue] = useState('');
+
+  // Dismiss add requirement drawer on back gesture
+  useBackHandler(
+    'modal',
+    () => {
+      if (isAdding) {
+        setIsAdding(false);
+        return true;
+      }
+      return false;
+    },
+    [isAdding]
+  );
 
   // Per-card custom input text state
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({});

@@ -34,6 +34,7 @@ import { useStagexStore } from '../state/useStagexStore';
 import { resolveAccent } from '@workspace/livex-core';
 
 export interface StageCanvasViewProps {
+  isActive?: boolean;
   isLight: boolean;
   isAmoled: boolean;
   accentColor: string;
@@ -58,6 +59,7 @@ export const getStagexTargetOrigin = (): string => {
 };
 
 export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
+  isActive = true,
   isLight,
   isAmoled,
   accentColor,
@@ -340,6 +342,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   useBackHandler(
     'overlay',
     () => {
+      if (!isActive) return false;
       if (layersOpen) {
         setLayersOpen(false);
         return true;
@@ -363,7 +366,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
       return false;
     },
-    [layersOpen, specsOpen, panelOpen, selectedElement, isLandscape, callIframe]
+    [isActive, layersOpen, specsOpen, panelOpen, selectedElement, isLandscape, callIframe]
   );
 
   // Close Layers popup when clicking outside
