@@ -2,9 +2,10 @@ import React from 'react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
-import { type LiveModeState } from './useLiveModeState';
-import { useSettingsStore } from '@workspace/livex-core';
+import { type LiveModeState, type LiveDisplayMode } from './useLiveModeState';
+import { useSettingsStore, getChordById } from '@workspace/livex-core';
 
+/* ── HEADER ─────────────────────────────────────────────────── */
 export function LiveModeHeader({ state }: { state: LiveModeState }) {
   const {
     preset,
@@ -15,7 +16,26 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     setShowSettings,
     bpmOverride,
     handleClose,
+    displayMode,
+    isTeleprompterMode,
   } = state;
+
+  const modeBadgeText = (() => {
+    switch (displayMode) {
+      case 'chords_both':
+      case 'chords_diagram':
+      case 'chords_name':
+        return 'CHORDS';
+      case 'lyrics_only':
+        return 'LYRICS';
+      case 'lyrics_chord_diagram':
+        return 'LYRICS + DIAGRAMS';
+      case 'lyrics_chord_name':
+      default:
+        return 'CHORDS + LYRICS';
+    }
+  })();
+
   return (
     <div
       style={{
@@ -26,6 +46,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         paddingTop: 'max(16px, env(safe-area-inset-top))',
         flexShrink: 0,
         pointerEvents: 'none',
+        zIndex: 5,
       }}
     >
       <Button
@@ -47,18 +68,35 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         icon="close"
       />
 
-      <div style={{ textAlign: 'center' }}>
-        <p
-          style={{
-            color: 'var(--c-text-primary)',
-            fontFamily: 'var(--studio-font-body)',
-            fontWeight: 800,
-            fontSize: '15px',
-          }}
-        >
-          {preset.name}
-        </p>
-        <p style={{ color: 'var(--c-text-secondary)', fontFamily: 'Inter', fontSize: '12px' }}>
+      <div style={{ textAlign: 'center', pointerEvents: 'all' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <p
+            style={{
+              color: 'var(--c-text-primary)',
+              fontFamily: 'var(--studio-font-body)',
+              fontWeight: 800,
+              fontSize: '15px',
+            }}
+          >
+            {preset.name}
+          </p>
+          <span
+            style={{
+              fontFamily: 'var(--studio-font-body)',
+              fontSize: '9px',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              padding: '1.5px 6px',
+              borderRadius: '9999px',
+              background: `${accent.from}22`,
+              border: `1px solid ${accent.from}44`,
+              color: accent.from,
+            }}
+          >
+            {modeBadgeText}
+          </span>
+        </div>
+        <p style={{ color: 'var(--c-text-secondary)', fontFamily: 'Inter', fontSize: '12px', marginTop: '1px' }}>
           {preset.artist && `${preset.artist} · `}
           {preset.key && `${preset.key} · `}
           <span style={{ color: accent.from }}>{bpmOverride} BPM</span>
@@ -73,6 +111,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             e.stopPropagation();
             setShowSettings((s) => !s);
           }}
+          data-testid="live-settings"
           style={{
             width: '40px',
             height: '40px',
@@ -118,15 +157,290 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           >
             {autoPlay ? 'pause' : 'play_arrow'}
           </span>
-          Auto
+          {isTeleprompterMode ? 'Auto' : 'Auto'}
         </Button>
       </div>
     </div>
   );
 }
 
+/* ── TELEPROMPTER VIEW (Lyrics & Hybrid) ─────────────────────── */
+function TeleprompterView({ state }: { state: LiveModeState }) {
+  const {
+    teleprompterLines,
+    currentLineIdx,
+    displayMode,
+    accent,
+    handleLineClick,
+    teleprompterFontSize,
+    teleprompterContainerRef,
+    preset,
+  } = state;
+
+  const docFormatting = preset.lyrics?.formatting;
+  const docColor = docFormatting?.defaultColor;
+  const docChordColor = docFormatting?.defaultChordColor || '#38bdf8';
+
+  const fontSizes = {
+    normal: { text: '18px', chord: '13px', lineGap: '16px' },
+    large: { text: '22px', chord: '15px', lineGap: '20px' },
+    huge: { text: '28px', chord: '17px', lineGap: '26px' },
+  }[teleprompterFontSize] || { text: '18px', chord: '13px', lineGap: '16px' };
+
+  if (teleprompterLines.length === 0) {
+    return (
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--c-text-secondary)',
+          fontFamily: 'var(--studio-font-body)',
+        }}
+      >
+        <p>No lyrics added to this song.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={teleprompterContainerRef}
+      data-testid="teleprompter-container"
+      style={{
+        flex: 1,
+        width: '100%',
+        maxWidth: '820px',
+        margin: '0 auto',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '24px 20px 140px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: fontSizes.lineGap,
+        scrollBehavior: 'smooth',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
+      {teleprompterLines.map((item, idx) => {
+        const isActive = idx === currentLineIdx;
+        const isPast = idx < currentLineIdx;
+        const isBold = Boolean(item.line.format?.bold);
+        const resolvedColor =
+          item.line.format?.color || docColor || 'var(--c-text-primary, #ffffff)';
+
+        return (
+          <div
+            key={item.id}
+            id={`live-line-${idx}`}
+            data-testid={`teleprompter-line-${idx}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLineClick(idx);
+            }}
+            style={{
+              position: 'relative',
+              borderRadius: '16px',
+              padding: '12px 18px',
+              background: isActive
+                ? `color-mix(in srgb, ${accent.from} 15%, rgba(255,255,255,0.03))`
+                : 'transparent',
+              borderLeft: isActive
+                ? `4px solid ${accent.from}`
+                : '4px solid transparent',
+              boxShadow: isActive
+                ? `0 0 24px ${accent.from}22, inset 0 0 12px ${accent.from}11`
+                : 'none',
+              opacity: isActive ? 1 : isPast ? 0.38 : 0.85,
+              transition:
+                'background 250ms ease, opacity 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
+              cursor: 'pointer',
+            }}
+          >
+            {/* Section Header if first line of section */}
+            {item.isFirstLineOfSection && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '10px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    background: `${accent.from}28`,
+                    border: `1px solid ${accent.from}44`,
+                    color: accent.from,
+                  }}
+                >
+                  {item.sectionName}
+                </span>
+
+                {item.sectionVocalRole && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 700,
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      background: `${item.sectionVocalRole.color || '#3b82f6'}22`,
+                      border: `1px solid ${item.sectionVocalRole.color || '#3b82f6'}44`,
+                      color: item.sectionVocalRole.color || '#3b82f6',
+                    }}
+                  >
+                    {item.sectionVocalRole.label || item.sectionVocalRole.type}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Line vocal role badge (if line-specific and not section-first) */}
+            {item.line.vocalRole && !item.isFirstLineOfSection && (
+              <div style={{ marginBottom: '6px' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '9.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    padding: '2px 7px',
+                    borderRadius: '9999px',
+                    background: `${item.line.vocalRole.color || '#3b82f6'}22`,
+                    border: `1px solid ${item.line.vocalRole.color || '#3b82f6'}44`,
+                    color: item.line.vocalRole.color || '#3b82f6',
+                  }}
+                >
+                  {item.line.vocalRole.label || item.line.vocalRole.type}
+                </span>
+              </div>
+            )}
+
+            {/* Line Chords + Lyrics Content */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'flex-end',
+                lineHeight: 1.35,
+              }}
+            >
+              {displayMode === 'lyrics_only' ? (
+                /* Lyrics Only */
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-body)',
+                    fontSize: fontSizes.text,
+                    fontWeight: isBold ? 800 : 500,
+                    color: resolvedColor,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {item.line.text || '\u00A0'}
+                </span>
+              ) : (
+                /* Chords + Lyrics (lyrics_chord_name or lyrics_chord_diagram) */
+                item.chunks.map((chunk, cIdx) => {
+                  const chordData =
+                    displayMode === 'lyrics_chord_diagram' && chunk.chord
+                      ? getChordById(chunk.chord)
+                      : null;
+
+                  return (
+                    <div
+                      key={cIdx}
+                      style={{
+                        display: 'inline-flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        verticalAlign: 'bottom',
+                      }}
+                    >
+                      {/* Diagram or Chord Name */}
+                      <div
+                        style={{
+                          minHeight: displayMode === 'lyrics_chord_diagram' ? '54px' : '22px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'flex-end',
+                          paddingBottom: '2px',
+                        }}
+                      >
+                        {displayMode === 'lyrics_chord_diagram' && chordData?.guitar && (
+                          <div
+                            style={{
+                              transform: 'scale(0.65)',
+                              transformOrigin: 'bottom left',
+                              marginBottom: '-16px',
+                              marginRight: '-14px',
+                            }}
+                          >
+                            <MiniLiveDiagram
+                              data={chordData.guitar}
+                              accentFrom={accent.from}
+                              width={50}
+                              height={60}
+                            />
+                          </div>
+                        )}
+                        <span
+                          style={{
+                            fontFamily: 'var(--studio-font-mono, monospace)',
+                            fontWeight: 800,
+                            fontSize: fontSizes.chord,
+                            color: chunk.chord
+                              ? isActive
+                                ? accent.from
+                                : docChordColor
+                              : 'transparent',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {chunk.chord || '\u00A0'}
+                        </span>
+                      </div>
+
+                      {/* Syllable text */}
+                      <span
+                        style={{
+                          fontFamily: 'var(--studio-font-body)',
+                          fontSize: fontSizes.text,
+                          fontWeight: isBold ? 800 : 500,
+                          color: resolvedColor,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {chunk.text}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── VISUALIZER DISPATCHER ───────────────────────────────────── */
 export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
   const {
+    isTeleprompterMode,
     showContext,
     prevChord,
     nextChord,
@@ -139,6 +453,11 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
   } = state;
   const liveModeAnimations = useSettingsStore((s) => s.settings.liveModeAnimations);
 
+  if (isTeleprompterMode) {
+    return <TeleprompterView state={state} />;
+  }
+
+  // ── Pure Chords Performer Visualizer ──
   return (
     <div
       style={{
@@ -227,7 +546,7 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
         </div>
       )}
 
-      {/* ── Active chord ── */}
+      {/* Active chord */}
       <div
         style={{
           display: 'flex',
@@ -324,9 +643,82 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
   );
 }
 
+/* ── PROGRESS INDICATOR ──────────────────────────────────────── */
 export function LiveModeProgress({ state }: { state: LiveModeState }) {
-  const { total, chords, currentIdx, accent, autoPlay, msPerChord, setDirection, setCurrentIdx } =
-    state;
+  const {
+    total,
+    chords,
+    currentIdx,
+    accent,
+    autoPlay,
+    msPerChord,
+    setDirection,
+    setCurrentIdx,
+    isTeleprompterMode,
+    currentLineIdx,
+    totalLines,
+    teleprompterLines,
+  } = state;
+
+  if (isTeleprompterMode) {
+    if (totalLines === 0) return null;
+    const currentItem = teleprompterLines[currentLineIdx];
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '84px',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          zIndex: 5,
+        }}
+      >
+        <div
+          style={{
+            padding: '5px 16px',
+            borderRadius: '9999px',
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}
+        >
+          <span
+            style={{
+              color: accent.from,
+              fontFamily: 'var(--studio-font-body)',
+              fontWeight: 800,
+              fontSize: '11px',
+            }}
+          >
+            Line {currentLineIdx + 1} of {totalLines}
+          </span>
+          {currentItem?.sectionName && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px' }}>•</span>
+              <span
+                style={{
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 600,
+                  fontSize: '11px',
+                }}
+              >
+                {currentItem.sectionName}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Pure Chords progression dots
   return (
     <div
       style={{
@@ -338,6 +730,7 @@ export function LiveModeProgress({ state }: { state: LiveModeState }) {
         gap: '5px',
         alignItems: 'center',
         pointerEvents: 'none',
+        zIndex: 5,
       }}
     >
       {total <= 16 ? (
@@ -405,8 +798,13 @@ export function LiveModeProgress({ state }: { state: LiveModeState }) {
   );
 }
 
+/* ── CONTROLS BAR ────────────────────────────────────────────── */
 export function LiveModeControls({ state }: { state: LiveModeState }) {
-  const { goPrev, goNext, currentIdx, accent } = state;
+  const { goPrev, goNext, currentIdx, currentLineIdx, isTeleprompterMode, totalLines, accent } =
+    state;
+  const isAtStart = isTeleprompterMode ? currentLineIdx === 0 : currentIdx === 0;
+  const isAtEnd = isTeleprompterMode ? currentLineIdx >= totalLines - 1 : false;
+
   return (
     <div
       style={{
@@ -417,6 +815,7 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
         paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
         flexShrink: 0,
         pointerEvents: 'none',
+        zIndex: 5,
       }}
     >
       <Button
@@ -427,14 +826,14 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
           goPrev();
         }}
         data-testid="live-prev"
-        disabled={currentIdx === 0}
+        disabled={isAtStart}
         style={{
           width: '48px',
           height: '48px',
           borderRadius: '50%',
           background: 'rgba(255,255,255,0.06)',
           borderColor: 'rgba(255,255,255,0.1)',
-          opacity: currentIdx === 0 ? 0.25 : 1,
+          opacity: isAtStart ? 0.25 : 1,
           pointerEvents: 'all',
         }}
         icon="arrow-left"
@@ -448,12 +847,14 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
           goNext();
         }}
         data-testid="live-next"
+        disabled={isAtEnd}
         style={{
           width: '48px',
           height: '48px',
           borderRadius: '50%',
           background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
           boxShadow: `0 4px 20px ${accent.to}55`,
+          opacity: isAtEnd ? 0.25 : 1,
           pointerEvents: 'all',
         }}
         icon="arrow-right"
@@ -462,19 +863,50 @@ export function LiveModeControls({ state }: { state: LiveModeState }) {
   );
 }
 
+/* ── SETTINGS SHEET ──────────────────────────────────────────── */
 export function LiveModeSettings({ state }: { state: LiveModeState }) {
   const {
     setShowSettings,
-    visualStyle,
-    setVisualStyle,
+    displayMode,
+    setDisplayMode,
     bpmOverride,
     setBpmOverride,
     beatsPerChord,
     setBeatsPerChord,
+    beatsPerLine,
+    setBeatsPerLine,
     showContext,
     setShowContext,
+    teleprompterFontSize,
+    setTeleprompterFontSize,
+    hasChords,
+    hasLyrics,
+    isTeleprompterMode,
     accent,
   } = state;
+
+  const CHORD_OPTIONS: { value: LiveDisplayMode; label: string; icon: string }[] = [
+    { value: 'chords_both', label: 'Diagram + Name', icon: 'tune' },
+    { value: 'chords_diagram', label: 'Diagram Only', icon: 'grid_on' },
+    { value: 'chords_name', label: 'Name Only', icon: 'title' },
+  ];
+
+  const LYRIC_OPTIONS: {
+    value: LiveDisplayMode;
+    label: string;
+    icon: string;
+    requiresChords?: boolean;
+  }[] = [
+    { value: 'lyrics_chord_name', label: 'Lyrics + Chords', icon: 'music_note', requiresChords: true },
+    {
+      value: 'lyrics_chord_diagram',
+      label: 'Lyrics + Diagrams',
+      icon: 'auto_stories',
+      requiresChords: true,
+    },
+    { value: 'lyrics_only', label: 'Lyrics Only', icon: 'description' },
+  ];
+
   return (
     <>
       <div
@@ -485,8 +917,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(6px)',
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)',
           zIndex: 10,
         }}
       />
@@ -498,42 +930,59 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           bottom: 0,
           left: 0,
           right: 0,
-          background: '#111',
+          background: '#111114',
+          borderTop: '1px solid rgba(255,255,255,0.12)',
           borderRadius: '1.5rem 1.5rem 0 0',
           zIndex: 11,
-          animation: 'sheet-up 400ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          animation: 'sheet-up 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
           paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
+          maxHeight: '85vh',
+          overflowY: 'auto',
         }}
       >
+        {/* Drag handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
           <div
             style={{
               width: '36px',
               height: '4px',
               borderRadius: '9999px',
-              background: 'rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.2)',
             }}
           />
         </div>
 
+        {/* Title row */}
         <div
           style={{
-            padding: '4px 20px 6px',
+            padding: '4px 20px 8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <p
-            style={{
-              color: 'var(--c-text-primary)',
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 800,
-              fontSize: '18px',
-            }}
-          >
-            Live Options
-          </p>
+          <div>
+            <p
+              style={{
+                color: 'var(--c-text-primary)',
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 800,
+                fontSize: '18px',
+              }}
+            >
+              Live Options
+            </p>
+            <p
+              style={{
+                color: 'var(--c-text-secondary)',
+                fontFamily: 'Inter',
+                fontSize: '12px',
+                marginTop: '1px',
+              }}
+            >
+              Intelligent musician presentation
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -545,78 +994,205 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
 
         <div
           style={{
-            padding: '4px 20px 0',
+            padding: '8px 20px 16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '18px',
+            gap: '20px',
           }}
         >
+          {/* ── 1. PRESENTATION MODE: CHORDS FOCUS ───────────────── */}
           <div>
-            <p
+            <div
               style={{
-                color: 'var(--c-text-secondary)',
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 700,
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em',
-                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '8px',
               }}
             >
-              Visual
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-              {(
-                [
-                  { value: 'both', label: 'Diagram + Name', icon: 'tune' },
-                  { value: 'diagram', label: 'Diagram Only', icon: 'grid_on' },
-                  { value: 'name', label: 'Name Only', icon: 'title' },
-                ] as { value: any; label: string; icon: string }[]
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setVisualStyle(opt.value)}
-                  className="btn-smooth"
+              <p
+                style={{
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 700,
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                }}
+              >
+                Chords Focus
+              </p>
+              {!hasChords && (
+                <span
                   style={{
-                    padding: '10px 6px',
-                    borderRadius: '0.875rem',
-                    background:
-                      visualStyle === opt.value ? `${accent.from}22` : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${visualStyle === opt.value ? accent.from + '55' : 'transparent'}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'background 200ms ease, border-color 200ms ease',
+                    color: '#f87171',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    fontFamily: 'var(--studio-font-body)',
                   }}
                 >
-                  <span
-                    className="material-symbols-outlined"
+                  No chords in song
+                </span>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '8px',
+                opacity: hasChords ? 1 : 0.35,
+                pointerEvents: hasChords ? 'all' : 'none',
+              }}
+            >
+              {CHORD_OPTIONS.map((opt) => {
+                const isSelected = displayMode === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setDisplayMode(opt.value)}
+                    data-testid={`mode-option-${opt.value}`}
+                    className="btn-smooth"
                     style={{
-                      fontSize: '20px',
-                      color: visualStyle === opt.value ? accent.from : '#acabaa',
-                      fontVariationSettings: visualStyle === opt.value ? "'FILL' 1" : "'FILL' 0",
+                      padding: '12px 6px',
+                      borderRadius: '1rem',
+                      background: isSelected ? `${accent.from}22` : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${isSelected ? accent.from + '66' : 'rgba(255,255,255,0.08)'}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'background 200ms ease, border-color 200ms ease',
                     }}
                   >
-                    {opt.icon}
-                  </span>
-                  <p
-                    style={{
-                      color: visualStyle === opt.value ? '#e7e5e4' : '#6b6b6b',
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 700,
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {opt.label}
-                  </p>
-                </button>
-              ))}
+                    <span
+                      className="material-symbols-outlined"
+                      style={{
+                        fontSize: '20px',
+                        color: isSelected ? accent.from : '#acabaa',
+                        fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    >
+                      {opt.icon}
+                    </span>
+                    <p
+                      style={{
+                        color: isSelected ? '#ffffff' : '#888888',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '10.5px',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {opt.label}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+          {/* ── 2. PRESENTATION MODE: LYRICS & TELEPROMPTER FOCUS ─── */}
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '8px',
+              }}
+            >
+              <p
+                style={{
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 700,
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                }}
+              >
+                Lyrics & Teleprompter Focus
+              </p>
+              {!hasLyrics && (
+                <span
+                  style={{
+                    color: '#f87171',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    fontFamily: 'var(--studio-font-body)',
+                  }}
+                >
+                  No lyrics in song
+                </span>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '8px',
+                opacity: hasLyrics ? 1 : 0.35,
+                pointerEvents: hasLyrics ? 'all' : 'none',
+              }}
+            >
+              {LYRIC_OPTIONS.map((opt) => {
+                const isSelected = displayMode === opt.value;
+                const isOptionDisabled = Boolean(opt.requiresChords && !hasChords);
+
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setDisplayMode(opt.value)}
+                    data-testid={`mode-option-${opt.value}`}
+                    disabled={isOptionDisabled}
+                    className="btn-smooth"
+                    style={{
+                      padding: '12px 6px',
+                      borderRadius: '1rem',
+                      background: isSelected ? `${accent.from}22` : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${isSelected ? accent.from + '66' : 'rgba(255,255,255,0.08)'}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: isOptionDisabled ? 'not-allowed' : 'pointer',
+                      opacity: isOptionDisabled ? 0.35 : 1,
+                      transition: 'background 200ms ease, border-color 200ms ease',
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{
+                        fontSize: '20px',
+                        color: isSelected ? accent.from : '#acabaa',
+                        fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    >
+                      {opt.icon}
+                    </span>
+                    <p
+                      style={{
+                        color: isSelected ? '#ffffff' : '#888888',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '10.5px',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {opt.label}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── 3. SPEED & TEMPO ─────────────────────────────────── */}
           <div>
             <div
               style={{
@@ -631,9 +1207,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   color: 'var(--c-text-secondary)',
                   fontFamily: 'var(--studio-font-body)',
                   fontWeight: 700,
-                  fontSize: '10px',
+                  fontSize: '10.5px',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.2em',
+                  letterSpacing: '0.15em',
                 }}
               >
                 Speed
@@ -662,12 +1238,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: 'none',
+                  color: 'var(--c-text-primary)',
+                  cursor: 'pointer',
                 }}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-primary)', fontSize: '20px' }}
-                >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
                   remove
                 </span>
               </button>
@@ -692,115 +1268,194 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  border: 'none',
+                  color: 'var(--c-text-primary)',
+                  cursor: 'pointer',
                 }}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-primary)', fontSize: '20px' }}
-                >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
                   add
                 </span>
               </button>
             </div>
           </div>
 
+          {/* ── 4. PACING (BEATS PER CHORD OR LINE) ──────────────── */}
           <div>
             <p
               style={{
                 color: 'var(--c-text-secondary)',
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 700,
-                fontSize: '10px',
+                fontSize: '10.5px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.2em',
+                letterSpacing: '0.15em',
                 marginBottom: '10px',
               }}
             >
-              Beats Per Chord
+              {isTeleprompterMode ? 'Beats Per Line (Auto-Scroll)' : 'Beats Per Chord'}
             </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {([1, 2, 4, 8] as any[]).map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setBeatsPerChord(b)}
-                  className="btn-smooth"
-                  style={{
-                    flex: 1,
-                    padding: '10px 4px',
-                    borderRadius: '0.75rem',
-                    background:
-                      beatsPerChord === b
-                        ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                        : 'rgba(255,255,255,0.06)',
-                    color: beatsPerChord === b ? '#fff' : '#acabaa',
-                    fontFamily: 'var(--studio-font-body)',
-                    fontWeight: 800,
-                    fontSize: '14px',
-                    border: 'none',
-                    boxShadow: beatsPerChord === b ? `0 2px 12px ${accent.to}44` : 'none',
-                    transition: 'background 200ms ease',
-                  }}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
+            {isTeleprompterMode ? (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[2, 4, 8, 16].map((b) => (
+                  <button
+                    key={b}
+                    onClick={() => setBeatsPerLine(b)}
+                    className="btn-smooth"
+                    style={{
+                      flex: 1,
+                      padding: '10px 4px',
+                      borderRadius: '0.75rem',
+                      background:
+                        beatsPerLine === b
+                          ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                          : 'rgba(255,255,255,0.06)',
+                      color: beatsPerLine === b ? '#fff' : '#acabaa',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      border: 'none',
+                      boxShadow: beatsPerLine === b ? `0 2px 12px ${accent.to}44` : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[1, 2, 4, 8].map((b) => (
+                  <button
+                    key={b}
+                    onClick={() => setBeatsPerChord(b as any)}
+                    className="btn-smooth"
+                    style={{
+                      flex: 1,
+                      padding: '10px 4px',
+                      borderRadius: '0.75rem',
+                      background:
+                        beatsPerChord === b
+                          ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                          : 'rgba(255,255,255,0.06)',
+                      color: beatsPerChord === b ? '#fff' : '#acabaa',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 800,
+                      fontSize: '14px',
+                      border: 'none',
+                      boxShadow: beatsPerChord === b ? `0 2px 12px ${accent.to}44` : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* ── 5. VIEW OPTIONS ──────────────────────────────────── */}
+          {isTeleprompterMode ? (
             <div>
               <p
                 style={{
-                  color: 'var(--c-text-primary)',
+                  color: 'var(--c-text-secondary)',
                   fontFamily: 'var(--studio-font-body)',
                   fontWeight: 700,
-                  fontSize: '14px',
+                  fontSize: '10.5px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  marginBottom: '10px',
                 }}
               >
-                Surrounding Chords
+                Teleprompter Font Size
               </p>
-              <p
-                style={{
-                  color: '#6b6b6b',
-                  fontFamily: 'Inter',
-                  fontSize: '12px',
-                  marginTop: '2px',
-                }}
-              >
-                Show prev / next at the sides
-              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {(['normal', 'large', 'huge'] as const).map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setTeleprompterFontSize(size)}
+                    className="btn-smooth"
+                    style={{
+                      flex: 1,
+                      padding: '10px 6px',
+                      borderRadius: '0.75rem',
+                      background:
+                        teleprompterFontSize === size
+                          ? `${accent.from}22`
+                          : 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${teleprompterFontSize === size ? accent.from + '66' : 'transparent'}`,
+                      color: teleprompterFontSize === size ? '#ffffff' : '#acabaa',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      textTransform: 'capitalize',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-            <button
-              onClick={() => setShowContext((c: boolean) => !c)}
-              className="btn-smooth"
-              style={{
-                width: '48px',
-                height: '28px',
-                borderRadius: '9999px',
-                background: showContext
-                  ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                  : 'rgba(255,255,255,0.1)',
-                position: 'relative',
-                flexShrink: 0,
-                transition: 'background 300ms ease',
-                boxShadow: showContext ? `0 2px 10px ${accent.to}44` : 'none',
-              }}
-            >
-              <div
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-primary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                  }}
+                >
+                  Surrounding Chords
+                </p>
+                <p
+                  style={{
+                    color: '#6b6b6b',
+                    fontFamily: 'Inter',
+                    fontSize: '12px',
+                    marginTop: '2px',
+                  }}
+                >
+                  Show prev / next at the sides
+                </p>
+              </div>
+              <button
+                onClick={() => setShowContext((c: boolean) => !c)}
+                className="btn-smooth"
                 style={{
-                  position: 'absolute',
-                  top: '3px',
-                  left: showContext ? '23px' : '3px',
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '50%',
-                  background: '#fff',
-                  transition: 'left 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                  width: '48px',
+                  height: '28px',
+                  borderRadius: '9999px',
+                  background: showContext
+                    ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                    : 'rgba(255,255,255,0.1)',
+                  position: 'relative',
+                  flexShrink: 0,
+                  transition: 'background 300ms ease',
+                  boxShadow: showContext ? `0 2px 10px ${accent.to}44` : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
-              />
-            </button>
-          </div>
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '3px',
+                    left: showContext ? '23px' : '3px',
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    background: '#fff',
+                    transition: 'left 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                  }}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

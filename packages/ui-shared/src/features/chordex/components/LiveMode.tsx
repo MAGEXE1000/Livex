@@ -18,7 +18,7 @@ interface LiveModeProps {
 export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveModeProps) {
   const state = useLiveModeState(preset, onClose, transposeOffset);
 
-  if (state.total === 0) {
+  if (!state.hasLiveContent) {
     return (
       <div
         style={{
@@ -40,7 +40,7 @@ export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveM
             fontSize: '18px',
           }}
         >
-          No chords in this preset
+          No chords or lyrics in this song
         </p>
         <button
           onClick={state.handleClose}

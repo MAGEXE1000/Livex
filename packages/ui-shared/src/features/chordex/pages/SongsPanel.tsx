@@ -4731,10 +4731,15 @@ export default function SongsPanel() {
               toolbarActions={
                 <div className="flex items-center gap-1">
                   {(() => {
-                    const hasChords =
+                    const hasLiveContent =
                       activePreset.chords.length > 0 ||
-                      (activePreset.sections ?? []).some((s) => s.chords.length > 0);
-                    return hasChords ? (
+                      (activePreset.sections ?? []).some((s) => s.chords.length > 0) ||
+                      Boolean(
+                        activePreset.lyrics?.sections?.some((s) =>
+                          s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
+                        )
+                      );
+                    return hasLiveContent ? (
                       <button
                         aria-label="Live Mode"
                         onClick={() => setShowLive(true)}
@@ -4970,10 +4975,15 @@ export default function SongsPanel() {
               </div>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                 {(() => {
-                  const hasChords =
+                  const hasLiveContent =
                     activePreset.chords.length > 0 ||
-                    (activePreset.sections ?? []).some((s) => s.chords.length > 0);
-                  return hasChords ? (
+                    (activePreset.sections ?? []).some((s) => s.chords.length > 0) ||
+                    Boolean(
+                      activePreset.lyrics?.sections?.some((s) =>
+                        s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
+                      )
+                    );
+                  return hasLiveContent ? (
                     <Button
                       variant="primary"
                       onClick={() => setShowLive(true)}

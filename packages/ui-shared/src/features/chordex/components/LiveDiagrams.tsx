@@ -2,7 +2,7 @@ import React from 'react';
 import { type GuitarChordData } from '@workspace/livex-core';
 
 /* ── Full-size chord diagram ───────────────────────────────── */
-export function LiveDiagram({
+export const LiveDiagram = React.memo(function LiveDiagram({
   data,
   accentFrom,
   accentTo,
@@ -166,18 +166,26 @@ export function LiveDiagram({
       })}
     </svg>
   );
-}
+});
 
 /* ── Mini diagram for context chords ──────────────────────── */
-export function MiniLiveDiagram({
+export const MiniLiveDiagram = React.memo(function MiniLiveDiagram({
   data,
   accentFrom,
+  width,
+  height,
+  style,
+  className,
 }: {
   data: GuitarChordData;
   accentFrom: string;
+  width?: number;
+  height?: number;
+  style?: React.CSSProperties;
+  className?: string;
 }) {
-  const W = 72,
-    H = 82;
+  const W = width ?? 72,
+    H = height ?? 82;
   const numS = 6,
     numF = 4;
   const pL = 10,
@@ -194,7 +202,13 @@ export function MiniLiveDiagram({
   const showNut = minF <= 1;
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+    <svg
+      width={W}
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      className={className}
+      style={{ display: 'block', ...style }}
+    >
       {showNut && (
         <rect
           x={pL - 0.5}
@@ -262,4 +276,4 @@ export function MiniLiveDiagram({
       })}
     </svg>
   );
-}
+});
