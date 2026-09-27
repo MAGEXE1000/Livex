@@ -1,16 +1,576 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useStagexStore } from '../../state/useStagexStore';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
+import { useStagexStore, type SetlistSong, type SetlistPreset } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { useSettingsStore, useT, useShallow } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
-
 
 interface StageSetlistViewProps {
   onBack: () => void;
   isLight?: boolean;
   isAmoled?: boolean;
 }
+
+interface SetlistSongCardProps {
+  song: SetlistSong;
+  idx: number;
+  isSortActive: boolean;
+  isSpanish: boolean;
+  textPrimary: string;
+  textSecondary: string;
+  innerBg: string;
+  innerBorder: string;
+  onRemove: () => void;
+}
+
+const SetlistSongCard: React.FC<SetlistSongCardProps> = ({
+  song,
+  idx,
+  isSortActive,
+  isSpanish,
+  textPrimary,
+  textSecondary,
+  innerBg,
+  innerBorder,
+  onRemove,
+}) => {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      key={song.id}
+      value={song}
+      dragListener={false}
+      dragControls={dragControls}
+      style={{
+        backgroundColor: innerBg,
+        borderColor: innerBorder,
+        userSelect: 'none',
+      }}
+      whileDrag={{
+        scale: 1.02,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+        backgroundColor: 'var(--app-surface-bright, var(--app-surface))',
+        cursor: 'grabbing',
+        zIndex: 20,
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className="flex items-center justify-between p-3.5 rounded-2xl border transition-colors duration-150 relative"
+      data-testid={`setlist-song-${song.id}`}
+    >
+      <div className="flex items-center gap-2 min-w-0 pr-2">
+        {/* Direct Drag Grip Handle */}
+        <div
+          onPointerDown={(e) => {
+            if (isSortActive) return;
+            dragControls.start(e);
+          }}
+          style={{
+            touchAction: 'none',
+            cursor: isSortActive ? 'default' : 'grab',
+          }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center -ml-1 text-zinc-400 hover:text-zinc-200 active:cursor-grabbing shrink-0 transition-colors"
+          title={
+            isSortActive
+              ? isSpanish
+                ? 'Reordenamiento bloqueado en modo filtro'
+                : 'Reordering disabled while sorted'
+              : isSpanish
+                ? 'Arrastra para reordenar'
+                : 'Drag to reorder'
+          }
+          aria-label={isSpanish ? 'Arrastra para reordenar' : 'Drag to reorder'}
+          data-testid={`drag-handle-${song.id}`}
+        >
+          <svg className="w-4 h-4 opacity-50 hover:opacity-100" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5" />
+            <circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" />
+            <circle cx="15" cy="18" r="1.5" />
+          </svg>
+        </div>
+
+        <span
+          className="text-xs font-mono font-bold w-5 text-right shrink-0"
+          style={{ color: textSecondary }}
+        >
+          {idx + 1}
+        </span>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs font-bold truncate" style={{ color: textPrimary }}>
+              {song.title}
+            </p>
+            {song.key && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[9.5px] font-bold"
+                style={{
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                  color: '#c084fc',
+                }}
+              >
+                {song.key}
+              </span>
+            )}
+            {song.bpm && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[9.5px] font-bold"
+                style={{
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                }}
+              >
+                {song.bpm} BPM
+              </span>
+            )}
+          </div>
+          {song.artist && (
+            <p className="text-[11px] truncate mt-0.5" style={{ color: textSecondary }}>
+              {song.artist}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-[11px] font-mono mr-1" style={{ color: textSecondary }}>
+          {song.duration}
+        </span>
+
+        {/* Delete Song */}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer opacity-60 hover:opacity-100 active:scale-95"
+          style={{ color: textSecondary }}
+          title={isSpanish ? 'Eliminar canción' : 'Delete Song'}
+          data-testid={`btn-delete-song-${song.id}`}
+        >
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+        </button>
+      </div>
+    </Reorder.Item>
+  );
+};
+
+interface SetlistPresetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  presets: SetlistPreset[];
+  activePresetId: string;
+  onSelectPreset: (id: string) => void;
+  onCreatePreset: (name: string, initialSongs?: SetlistSong[]) => void;
+  onRenamePreset: (id: string, newName: string) => void;
+  onDeletePreset: (id: string) => void;
+  onDuplicatePreset: (id: string) => void;
+  currentSongs: SetlistSong[];
+  isSpanish: boolean;
+  isLight: boolean;
+  cardBg: string;
+  cardBorder: string;
+  innerBg: string;
+  innerBorder: string;
+  textPrimary: string;
+  textSecondary: string;
+}
+
+const SetlistPresetModal: React.FC<SetlistPresetModalProps> = ({
+  isOpen,
+  onClose,
+  presets,
+  activePresetId,
+  onSelectPreset,
+  onCreatePreset,
+  onRenamePreset,
+  onDeletePreset,
+  onDuplicatePreset,
+  currentSongs,
+  isSpanish,
+  isLight,
+  cardBg,
+  cardBorder,
+  innerBg,
+  innerBorder,
+  textPrimary,
+  textSecondary,
+}) => {
+  const [newPresetName, setNewPresetName] = useState('');
+  const [copyCurrentSongs, setCopyCurrentSongs] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const suggestions = isSpanish
+    ? ['Show Principal', 'Acústico', 'Festival', 'Ensayo', 'Encore']
+    : ['Main Show', 'Acoustic', 'Festival', 'Practice', 'Encore'];
+
+  const handleStartRename = (preset: SetlistPreset) => {
+    setEditingId(preset.id);
+    setEditingName(preset.name);
+  };
+
+  const handleSaveRename = (id: string) => {
+    if (editingName.trim()) {
+      onRenamePreset(id, editingName.trim());
+    }
+    setEditingId(null);
+    setEditingName('');
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPresetName.trim()) return;
+    const initialSongs = copyCurrentSongs ? [...currentSongs] : [];
+    onCreatePreset(newPresetName.trim(), initialSongs);
+    setNewPresetName('');
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      data-testid="modal-preset-manager"
+    >
+      <div
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl p-6 border shadow-2xl flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200"
+        style={{
+          backgroundColor: cardBg,
+          borderColor: cardBorder,
+          color: textPrimary,
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-2xl flex items-center justify-center"
+              style={{
+                backgroundColor: innerBg,
+                border: innerBorder,
+              }}
+            >
+              <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold" style={{ fontFamily: 'var(--studio-font-display)' }}>
+                {isSpanish ? 'Repertorios de Setlist' : 'Setlist Presets'}
+              </h3>
+              <p className="text-[11px]" style={{ color: textSecondary }}>
+                {isSpanish
+                  ? 'Gestiona repertorios independientes para cada tipo de show'
+                  : 'Manage independent setlists for each show format'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 active:scale-95"
+            style={{ backgroundColor: innerBg, color: textSecondary }}
+            data-testid="btn-close-preset-modal"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Existing Presets List */}
+        <div className="space-y-2">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider block" style={{ color: textSecondary }}>
+            {isSpanish ? 'Repertorios Guardados' : 'Saved Presets'} ({presets.length})
+          </span>
+
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            {presets.map((preset) => {
+              const isActive = preset.id === activePresetId;
+              const isEditing = editingId === preset.id;
+              const isDeleting = deleteConfirmId === preset.id;
+
+              return (
+                <div
+                  key={preset.id}
+                  className="flex items-center justify-between p-3 rounded-2xl border transition-all"
+                  style={{
+                    backgroundColor: isActive ? 'var(--app-surface-bright, var(--app-surface-low))' : innerBg,
+                    borderColor: isActive ? 'var(--c-text-primary)' : innerBorder,
+                    boxShadow: isActive ? '0 0 0 1px var(--c-text-primary)' : 'none',
+                  }}
+                  data-testid={`preset-item-${preset.id}`}
+                >
+                  {isEditing ? (
+                    <div className="flex items-center gap-2 w-full">
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveRename(preset.id);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-xl text-xs border focus:outline-none"
+                        style={{
+                          backgroundColor: cardBg,
+                          borderColor: innerBorder,
+                          color: textPrimary,
+                        }}
+                        data-testid="input-rename-preset"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveRename(preset.id)}
+                        className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+                        title={isSpanish ? 'Guardar' : 'Save'}
+                        data-testid="btn-save-rename-preset"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-500/10 cursor-pointer"
+                        title={isSpanish ? 'Cancelar' : 'Cancel'}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : isDeleting ? (
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-xs text-rose-400 font-semibold truncate pr-2">
+                        {isSpanish ? `¿Eliminar "${preset.name}"?` : `Delete "${preset.name}"?`}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeletePreset(preset.id);
+                            setDeleteConfirmId(null);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500 text-white cursor-pointer active:scale-95"
+                          data-testid="btn-confirm-delete-preset"
+                        >
+                          {isSpanish ? 'Sí, eliminar' : 'Yes, delete'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer"
+                          style={{ borderColor: innerBorder, color: textSecondary }}
+                        >
+                          {isSpanish ? 'Cancelar' : 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onSelectPreset(preset.id)}
+                        className="flex items-center gap-2.5 min-w-0 text-left flex-1 cursor-pointer"
+                        data-testid={`btn-select-preset-${preset.id}`}
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border"
+                          style={{
+                            borderColor: isActive ? 'var(--c-text-primary)' : 'var(--c-border)',
+                            backgroundColor: isActive ? 'var(--c-text-primary)' : 'transparent',
+                            color: isActive ? 'var(--app-bg)' : 'transparent',
+                          }}
+                        >
+                          {isActive && (
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold truncate" style={{ color: textPrimary }}>
+                            {preset.name}
+                          </p>
+                          <p className="text-[10.5px]" style={{ color: textSecondary }}>
+                            {preset.songs?.length || 0}{' '}
+                            {isSpanish
+                              ? (preset.songs?.length === 1 ? 'canción' : 'canciones')
+                              : (preset.songs?.length === 1 ? 'song' : 'songs')}
+                          </p>
+                        </div>
+                      </button>
+
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {/* Rename */}
+                        <button
+                          type="button"
+                          onClick={() => handleStartRename(preset)}
+                          className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-100 opacity-60"
+                          style={{ color: textSecondary }}
+                          title={isSpanish ? 'Renombrar' : 'Rename'}
+                          data-testid={`btn-rename-preset-${preset.id}`}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                        </button>
+
+                        {/* Duplicate */}
+                        <button
+                          type="button"
+                          onClick={() => onDuplicatePreset(preset.id)}
+                          className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-100 opacity-60"
+                          style={{ color: textSecondary }}
+                          title={isSpanish ? 'Duplicar' : 'Duplicate'}
+                          data-testid={`btn-duplicate-preset-${preset.id}`}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(preset.id)}
+                          disabled={presets.length <= 1}
+                          className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-100 opacity-60 disabled:opacity-20"
+                          style={{ color: textSecondary }}
+                          title={
+                            presets.length <= 1
+                              ? isSpanish
+                                ? 'Se requiere al menos un repertorio'
+                                : 'At least one preset required'
+                              : isSpanish
+                                ? 'Eliminar'
+                                : 'Delete'
+                          }
+                          data-testid={`btn-delete-preset-${preset.id}`}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Create New Preset Section */}
+        <form onSubmit={handleCreate} className="space-y-3 pt-2 border-t" style={{ borderColor: innerBorder }}>
+          <span className="text-[10.5px] font-bold uppercase tracking-wider block" style={{ color: textSecondary }}>
+            {isSpanish ? 'Crear Nuevo Repertorio' : 'Create New Preset'}
+          </span>
+
+          {/* Quick Suggestions Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {suggestions.map((sug) => (
+              <button
+                key={sug}
+                type="button"
+                onClick={() => setNewPresetName(sug)}
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border cursor-pointer hover:opacity-100 opacity-70 active:scale-95"
+                style={{
+                  backgroundColor: innerBg,
+                  borderColor: innerBorder,
+                  color: textPrimary,
+                }}
+              >
+                + {sug}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder={isSpanish ? 'p.ej. Gira Festivales 2026' : 'e.g. Festival Tour 2026'}
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl text-xs border focus:outline-none"
+              style={{
+                backgroundColor: innerBg,
+                borderColor: innerBorder,
+                color: textPrimary,
+              }}
+              data-testid="input-new-preset-name"
+            />
+
+            <button
+              type="submit"
+              disabled={!newPresetName.trim()}
+              className="px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-sm active:scale-95 shrink-0"
+              style={{
+                backgroundColor: 'var(--c-text-primary)',
+                color: 'var(--app-bg)',
+              }}
+              data-testid="btn-create-preset-submit"
+            >
+              {isSpanish ? 'Crear' : 'Create'}
+            </button>
+          </div>
+
+          {currentSongs.length > 0 && (
+            <label className="flex items-center gap-2 cursor-pointer pt-0.5">
+              <input
+                type="checkbox"
+                checked={copyCurrentSongs}
+                onChange={(e) => setCopyCurrentSongs(e.target.checked)}
+                className="rounded accent-purple-500 w-3.5 h-3.5"
+                data-testid="checkbox-copy-songs"
+              />
+              <span className="text-[11px]" style={{ color: textSecondary }}>
+                {isSpanish
+                  ? `Copiar las ${currentSongs.length} canciones actuales al nuevo repertorio`
+                  : `Copy current ${currentSongs.length} songs to the new preset`}
+              </span>
+            </label>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   onBack,
@@ -28,12 +588,34 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
     }))
   );
   const isSpanish = (settings.language ?? 'en') === 'es';
-  const { setlist, addSong, removeSong, reorderSongs, preferences } = useStagexStore(
+  const {
+    setlist,
+    setlistPresets,
+    activePresetId,
+    selectPreset,
+    createPreset,
+    renamePreset,
+    deletePreset,
+    duplicatePreset,
+    addSong,
+    removeSong,
+    reorderSongs,
+    setSetlistSongs,
+    preferences,
+  } = useStagexStore(
     useShallow((s) => ({
       setlist: s.setlist,
+      setlistPresets: s.setlistPresets,
+      activePresetId: s.activePresetId,
+      selectPreset: s.selectPreset,
+      createPreset: s.createPreset,
+      renamePreset: s.renamePreset,
+      deletePreset: s.deletePreset,
+      duplicatePreset: s.duplicatePreset,
       addSong: s.addSong,
       removeSong: s.removeSong,
       reorderSongs: s.reorderSongs,
+      setSetlistSongs: s.setSetlistSongs,
       preferences: s.preferences,
     }))
   );
@@ -46,6 +628,12 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
       : !isLight && Boolean(settings.amoledMode || activeVis?.amoledMode || preferences?.amoled);
 
   const prefersReducedMotion = useAppReducedMotion();
+
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+  const activePreset = useMemo(
+    () => setlistPresets.find((p) => p.id === activePresetId) || setlistPresets[0],
+    [setlistPresets, activePresetId]
+  );
 
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -188,49 +776,79 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
       isLight={isLight}
       isAmoled={isAmoled}
       toolbarActions={
-        <button
-          type="button"
-          onClick={() => setIsAdding((prev) => !prev)}
-          className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--c-text-primary)',
-            color: 'var(--app-bg)',
-          }}
-          title={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
-          aria-label={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
-          data-testid="btn-toggle-add-track"
-        >
-          <svg
-            className="w-5 h-5 transition-transform duration-200"
-            style={{ transform: isAdding ? 'rotate(45deg)' : 'rotate(0deg)' }}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-2">
+          {/* Preset Selector Pill */}
+          <button
+            type="button"
+            onClick={() => setIsPresetModalOpen(true)}
+            className="h-9 px-3 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 border"
+            style={{
+              backgroundColor: innerBg,
+              borderColor: innerBorder,
+              color: textPrimary,
+            }}
+            title={isSpanish ? 'Gestionar repertorios' : 'Manage setlist presets'}
+            aria-label={isSpanish ? 'Gestionar repertorios' : 'Manage setlist presets'}
+            data-testid="btn-preset-selector"
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+            <svg className="w-3.5 h-3.5 opacity-70 shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+            <span className="text-xs font-bold max-w-[95px] sm:max-w-[140px] truncate">
+              {activePreset?.name || (isSpanish ? 'Show Principal' : 'Main Show')}
+            </span>
+            <svg className="w-3 h-3 opacity-50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {/* Add Track Button */}
+          <button
+            type="button"
+            onClick={() => setIsAdding((prev) => !prev)}
+            className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--c-text-primary)',
+              color: 'var(--app-bg)',
+            }}
+            title={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
+            aria-label={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
+            data-testid="btn-toggle-add-track"
+          >
+            <svg
+              className="w-5 h-5 transition-transform duration-200"
+              style={{ transform: isAdding ? 'rotate(45deg)' : 'rotate(0deg)' }}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
       }
     >
       <div className="space-y-3.5 pb-8">
         {/* ── 1. CURRENT ARRANGEMENT SUBHEADER (STITCH PARITY) ────────── */}
         <section
-          className="flex items-center justify-between px-1 pt-1"
+          className="flex flex-col gap-2.5 px-1 pt-1"
           data-testid="arrangement-header"
         >
-          <div>
-            <h2
-              className="font-extrabold text-[22px] tracking-tight leading-none"
-              style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
-            >
-              {setlistTr?.currentArrangement ||
-                (isSpanish ? 'Repertorio Actual' : 'Current Arrangement')}
-            </h2>
-          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2
+                className="font-extrabold text-[22px] tracking-tight leading-none"
+                style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
+              >
+                {activePreset?.name || setlistTr?.currentArrangement || (isSpanish ? 'Repertorio Actual' : 'Current Arrangement')}
+              </h2>
+            </div>
 
           <div className="flex items-center space-x-2">
             {/* Sort / Filter Button */}
@@ -303,7 +921,60 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
               </span>
             </button>
           </div>
-        </section>
+        </div>
+
+        {/* Preset Fast Tabs for Instant 1-Tap Switching */}
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {setlistPresets.map((preset) => {
+            const isSelected = preset.id === activePresetId;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => selectPreset(preset.id)}
+                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer active:scale-95"
+                style={{
+                  backgroundColor: isSelected ? 'var(--c-text-primary)' : innerBg,
+                  color: isSelected ? 'var(--app-bg)' : textSecondary,
+                  border: isSelected ? 'none' : `1px solid var(--c-border)`,
+                  boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+                }}
+                data-testid={`preset-tab-${preset.id}`}
+              >
+                <span>{preset.name}</span>
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full font-mono"
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : 'var(--c-border)',
+                    color: isSelected ? 'var(--app-bg)' : textSecondary,
+                  }}
+                >
+                  {preset.songs?.length || 0}
+                </span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setIsPresetModalOpen(true)}
+            className="px-2.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer opacity-70 hover:opacity-100 border"
+            style={{
+              backgroundColor: innerBg,
+              borderColor: innerBorder,
+              color: textSecondary,
+            }}
+            title={isSpanish ? 'Gestionar Repertorios' : 'Manage Presets'}
+            data-testid="btn-manage-presets"
+          >
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>{isSpanish ? 'Gestionar' : 'Manage'}</span>
+          </button>
+        </div>
+      </section>
 
         {/* ── 2. INLINE ADD TRACK FORM ─────────────────────────────────── */}
         <AnimatePresence>
@@ -566,143 +1237,33 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
               </div>
             )}
 
-            <AnimatePresence mode="popLayout">
+            <Reorder.Group
+              axis="y"
+              values={displayList}
+              onReorder={(newOrder) => {
+                if (sortBy !== 'default') {
+                  setSortBy('default');
+                }
+                setSetlistSongs(newOrder);
+              }}
+              className="flex flex-col gap-2.5"
+              style={{ listStyle: 'none', padding: 0, margin: 0 }}
+            >
               {displayList.map((song, idx) => (
-                <motion.div
+                <SetlistSongCard
                   key={song.id}
-                  layout={!prefersReducedMotion}
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-between p-3.5 rounded-2xl border transition-colors duration-150"
-                  style={{
-                    backgroundColor: innerBg,
-                    borderColor: innerBorder,
-                  }}
-                  data-testid={`setlist-song-${song.id}`}
-                >
-                  <div className="flex items-center gap-3 min-w-0 pr-2">
-                    <span
-                      className="text-xs font-mono font-bold w-5 text-right shrink-0"
-                      style={{ color: textSecondary }}
-                    >
-                      {idx + 1}
-                    </span>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-xs font-bold truncate" style={{ color: textPrimary }}>
-                          {song.title}
-                        </p>
-                        {song.key && (
-                          <span
-                            className="px-1.5 py-0.5 rounded text-[9.5px] font-bold"
-                            style={{
-                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                              color: '#c084fc',
-                            }}
-                          >
-                            {song.key}
-                          </span>
-                        )}
-                        {song.bpm && (
-                          <span
-                            className="px-1.5 py-0.5 rounded text-[9.5px] font-bold"
-                            style={{
-                              backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                              color: '#38bdf8',
-                            }}
-                          >
-                            {song.bpm} BPM
-                          </span>
-                        )}
-                      </div>
-                      {song.artist && (
-                        <p className="text-[11px] truncate mt-0.5" style={{ color: textSecondary }}>
-                          {song.artist}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[11px] font-mono mr-1" style={{ color: textSecondary }}>
-                      {song.duration}
-                    </span>
-
-                    {/* Reorder Up */}
-                    <button
-                      type="button"
-                      onClick={() => reorderSongs(idx, idx - 1)}
-                      disabled={idx === 0 || sortBy !== 'default'}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-20 cursor-pointer"
-                      style={{ color: textSecondary }}
-                      title="Move Up"
-                      data-testid={`btn-move-up-${song.id}`}
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 15l-6-6-6 6" />
-                      </svg>
-                    </button>
-
-                    {/* Reorder Down */}
-                    <button
-                      type="button"
-                      onClick={() => reorderSongs(idx, idx + 1)}
-                      disabled={idx === setlist.length - 1 || sortBy !== 'default'}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-20 cursor-pointer"
-                      style={{ color: textSecondary }}
-                      title="Move Down"
-                      data-testid={`btn-move-down-${song.id}`}
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </button>
-
-                    {/* Delete Song */}
-                    <button
-                      type="button"
-                      onClick={() => removeSong(song.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer opacity-60 hover:opacity-100"
-                      style={{ color: textSecondary }}
-                      title="Delete Song"
-                      data-testid={`btn-delete-song-${song.id}`}
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </motion.div>
+                  song={song}
+                  idx={idx}
+                  isSortActive={sortBy !== 'default'}
+                  isSpanish={isSpanish}
+                  textPrimary={textPrimary}
+                  textSecondary={textSecondary}
+                  innerBg={innerBg}
+                  innerBorder={innerBorder}
+                  onRemove={() => removeSong(song.id)}
+                />
               ))}
-            </AnimatePresence>
+            </Reorder.Group>
           </div>
         )}
 
@@ -859,6 +1420,33 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
           </div>
         </section>
       </div>
+
+      <SetlistPresetModal
+        isOpen={isPresetModalOpen}
+        onClose={() => setIsPresetModalOpen(false)}
+        presets={setlistPresets}
+        activePresetId={activePresetId}
+        onSelectPreset={(id) => {
+          selectPreset(id);
+          setIsPresetModalOpen(false);
+        }}
+        onCreatePreset={(name, initialSongs) => {
+          createPreset(name, initialSongs);
+          setIsPresetModalOpen(false);
+        }}
+        onRenamePreset={renamePreset}
+        onDeletePreset={deletePreset}
+        onDuplicatePreset={duplicatePreset}
+        currentSongs={setlist}
+        isSpanish={isSpanish}
+        isLight={isLight}
+        cardBg={cardBg}
+        cardBorder={cardBorder}
+        innerBg={innerBg}
+        innerBorder={innerBorder}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+      />
     </StageSetupDetailLayout>
   );
 };

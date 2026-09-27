@@ -43,6 +43,14 @@ export interface SetlistSong {
   energy?: number; // 1 - 100
 }
 
+export interface SetlistPreset {
+  id: string;
+  name: string;
+  songs: SetlistSong[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SetlistSegment {
   id: string;
   name: string;
@@ -108,13 +116,21 @@ interface StagexStoreState {
   removeRiderNeed: (id: string) => void;
   updateRiderConfig: (config: Partial<RiderConfig>) => void;
 
-  // Setlist
+  // Setlist Presets & Active Setlist
+  setlistPresets: SetlistPreset[];
+  activePresetId: string;
   setlist: SetlistSong[];
   segments: SetlistSegment[];
+  selectPreset: (presetId: string) => void;
+  createPreset: (name: string, initialSongs?: SetlistSong[]) => string;
+  renamePreset: (presetId: string, newName: string) => void;
+  deletePreset: (presetId: string) => boolean;
+  duplicatePreset: (presetId: string) => string;
   addSong: (song: Omit<SetlistSong, 'id'>) => void;
   updateSong: (id: string, updates: Partial<SetlistSong>) => void;
   removeSong: (id: string) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
+  setSetlistSongs: (songs: SetlistSong[]) => void;
   addSegment: (segment: Omit<SetlistSegment, 'id'>) => void;
   removeSegment: (id: string) => void;
 
@@ -259,8 +275,49 @@ function writeSettingsStorage(updates: Partial<StagexPreferences>) {
   }
 }
 
+function initSetlistPresets(proj: Record<string, any>): {
+  presets: SetlistPreset[];
+  activePresetId: string;
+  activeSongs: SetlistSong[];
+} {
+  const existingPresets =
+    Array.isArray(proj.setlistPresets) && proj.setlistPresets.length > 0
+      ? (proj.setlistPresets as SetlistPreset[])
+      : null;
+
+  if (existingPresets) {
+    const activeId =
+      typeof proj.activePresetId === 'string' && existingPresets.some((p) => p.id === proj.activePresetId)
+        ? proj.activePresetId
+        : existingPresets[0].id;
+    const activePreset = existingPresets.find((p) => p.id === activeId) || existingPresets[0];
+    return {
+      presets: existingPresets,
+      activePresetId: activeId,
+      activeSongs: Array.isArray(activePreset.songs) ? activePreset.songs : [],
+    };
+  }
+
+  // Seamless zero-loss migration: migrate existing proj.setlist into first preset
+  const defaultSongs: SetlistSong[] = Array.isArray(proj.setlist) ? proj.setlist : [];
+  const defaultPreset: SetlistPreset = {
+    id: 'preset_default',
+    name: 'Main Show',
+    songs: defaultSongs,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    presets: [defaultPreset],
+    activePresetId: 'preset_default',
+    activeSongs: defaultSongs,
+  };
+}
+
 const initialProj = readProjectStorage();
 const initialSettings = readSettingsStorage();
+const initialSetlistData = initSetlistPresets(initialProj);
 
 export const useStagexStore = create<StagexStoreState>((set, get) => ({
   setupSubView: 'hub',
@@ -309,40 +366,173 @@ export const useStagexStore = create<StagexStoreState>((set, get) => ({
     writeProjectStorage({ riderConfig: updated });
   },
 
-  // Setlist
-  setlist: initialProj.setlist || [],
+  // Setlist Presets & Active Setlist
+  setlistPresets: initialSetlistData.presets,
+  activePresetId: initialSetlistData.activePresetId,
+  setlist: initialSetlistData.activeSongs,
   segments: initialProj.segments || [],
+
+  selectPreset: (presetId) => {
+    const target = get().setlistPresets.find((p) => p.id === presetId);
+    if (!target) return;
+    set({ activePresetId: target.id, setlist: target.songs || [] });
+    writeProjectStorage({
+      activePresetId: target.id,
+      setlist: target.songs || [],
+    });
+  },
+
+  createPreset: (name, initialSongs = []) => {
+    const id = 'preset_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const newPreset: SetlistPreset = {
+      id,
+      name: name.trim() || 'New Preset',
+      songs: initialSongs,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updatedPresets = [...get().setlistPresets, newPreset];
+    set({
+      setlistPresets: updatedPresets,
+      activePresetId: id,
+      setlist: initialSongs,
+    });
+    writeProjectStorage({
+      setlistPresets: updatedPresets,
+      activePresetId: id,
+      setlist: initialSongs,
+    });
+    return id;
+  },
+
+  renamePreset: (presetId, newName) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === presetId ? { ...p, name: trimmed, updatedAt: new Date().toISOString() } : p
+    );
+    set({ setlistPresets: updatedPresets });
+    writeProjectStorage({ setlistPresets: updatedPresets });
+  },
+
+  deletePreset: (presetId) => {
+    const { setlistPresets, activePresetId } = get();
+    if (setlistPresets.length <= 1) return false;
+    const remaining = setlistPresets.filter((p) => p.id !== presetId);
+    if (activePresetId === presetId) {
+      const nextPreset = remaining[0];
+      set({
+        setlistPresets: remaining,
+        activePresetId: nextPreset.id,
+        setlist: nextPreset.songs || [],
+      });
+      writeProjectStorage({
+        setlistPresets: remaining,
+        activePresetId: nextPreset.id,
+        setlist: nextPreset.songs || [],
+      });
+    } else {
+      set({ setlistPresets: remaining });
+      writeProjectStorage({ setlistPresets: remaining });
+    }
+    return true;
+  },
+
+  duplicatePreset: (presetId) => {
+    const target = get().setlistPresets.find((p) => p.id === presetId);
+    if (!target) return '';
+    const id = 'preset_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const clonedSongs: SetlistSong[] = (target.songs || []).map((s) => ({
+      ...s,
+      id: 'sl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    }));
+    const newPreset: SetlistPreset = {
+      id,
+      name: `${target.name} (Copy)`,
+      songs: clonedSongs,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updatedPresets = [...get().setlistPresets, newPreset];
+    set({
+      setlistPresets: updatedPresets,
+      activePresetId: id,
+      setlist: clonedSongs,
+    });
+    writeProjectStorage({
+      setlistPresets: updatedPresets,
+      activePresetId: id,
+      setlist: clonedSongs,
+    });
+    return id;
+  },
+
   addSong: (song) => {
     const id = 'sl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-    const updated = [...get().setlist, { ...song, id }];
-    set({ setlist: updated });
-    writeProjectStorage({ setlist: updated });
+    const updatedSongs = [...get().setlist, { ...song, id }];
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === get().activePresetId
+        ? { ...p, songs: updatedSongs, updatedAt: new Date().toISOString() }
+        : p
+    );
+    set({ setlist: updatedSongs, setlistPresets: updatedPresets });
+    writeProjectStorage({ setlist: updatedSongs, setlistPresets: updatedPresets });
   },
+
   updateSong: (id, updates) => {
-    const updated = get().setlist.map((s) => (s.id === id ? { ...s, ...updates } : s));
-    set({ setlist: updated });
-    writeProjectStorage({ setlist: updated });
+    const updatedSongs = get().setlist.map((s) => (s.id === id ? { ...s, ...updates } : s));
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === get().activePresetId
+        ? { ...p, songs: updatedSongs, updatedAt: new Date().toISOString() }
+        : p
+    );
+    set({ setlist: updatedSongs, setlistPresets: updatedPresets });
+    writeProjectStorage({ setlist: updatedSongs, setlistPresets: updatedPresets });
   },
+
   removeSong: (id) => {
-    const updated = get().setlist.filter((s) => s.id !== id);
-    set({ setlist: updated });
-    writeProjectStorage({ setlist: updated });
+    const updatedSongs = get().setlist.filter((s) => s.id !== id);
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === get().activePresetId
+        ? { ...p, songs: updatedSongs, updatedAt: new Date().toISOString() }
+        : p
+    );
+    set({ setlist: updatedSongs, setlistPresets: updatedPresets });
+    writeProjectStorage({ setlist: updatedSongs, setlistPresets: updatedPresets });
   },
+
   reorderSongs: (fromIndex, toIndex) => {
     const current = [...get().setlist];
     if (fromIndex < 0 || fromIndex >= current.length || toIndex < 0 || toIndex >= current.length)
       return;
     const [moved] = current.splice(fromIndex, 1);
     current.splice(toIndex, 0, moved);
-    set({ setlist: current });
-    writeProjectStorage({ setlist: current });
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === get().activePresetId
+        ? { ...p, songs: current, updatedAt: new Date().toISOString() }
+        : p
+    );
+    set({ setlist: current, setlistPresets: updatedPresets });
+    writeProjectStorage({ setlist: current, setlistPresets: updatedPresets });
   },
+
+  setSetlistSongs: (songs) => {
+    const updatedPresets = get().setlistPresets.map((p) =>
+      p.id === get().activePresetId
+        ? { ...p, songs, updatedAt: new Date().toISOString() }
+        : p
+    );
+    set({ setlist: songs, setlistPresets: updatedPresets });
+    writeProjectStorage({ setlist: songs, setlistPresets: updatedPresets });
+  },
+
   addSegment: (segment) => {
     const id = 'seg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     const updated = [...get().segments, { ...segment, id }];
     set({ segments: updated });
     writeProjectStorage({ segments: updated });
   },
+
   removeSegment: (id) => {
     const updated = get().segments.filter((s) => s.id !== id);
     set({ segments: updated });
@@ -408,6 +598,7 @@ export const useStagexStore = create<StagexStoreState>((set, get) => ({
         ? proj.scenes[proj.currentSceneIdx]
         : undefined;
     const elements = (currentScene && currentScene.elements) || proj.elements || [];
+    const setlistData = initSetlistPresets(proj);
     set({
       projectName: proj.name || proj.projectName || 'Main Stage',
       elements,
@@ -417,7 +608,9 @@ export const useStagexStore = create<StagexStoreState>((set, get) => ({
       riderChannels: proj.riderChannels || [],
       riderMixes: proj.riderMixes || [],
       riderConfig: proj.riderConfig || {},
-      setlist: proj.setlist || [],
+      setlistPresets: setlistData.presets,
+      activePresetId: setlistData.activePresetId,
+      setlist: setlistData.activeSongs,
       segments: proj.segments || [],
       gear: proj.gear || [],
       members: proj.members || [],
