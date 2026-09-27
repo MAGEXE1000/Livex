@@ -186,7 +186,6 @@ export function Profile(props: any) {
       perApp: state.settings.perApp,
       language: state.settings.language,
       developerMode: state.settings.developerMode,
-      swipeBackBehavior: state.settings.swipeBackBehavior,
       hapticFeedback: state.settings.hapticFeedback,
       highRefreshRate: state.settings.highRefreshRate,
       lowLatencyMode: state.settings.lowLatencyMode,

@@ -186,7 +186,6 @@ export function GeneralContent(props: any) {
       perApp: state.settings.perApp,
       language: state.settings.language,
       developerMode: state.settings.developerMode,
-      swipeBackBehavior: state.settings.swipeBackBehavior,
       hapticFeedback: state.settings.hapticFeedback,
       highRefreshRate: state.settings.highRefreshRate,
       lowLatencyMode: state.settings.lowLatencyMode,
@@ -292,24 +291,6 @@ export function GeneralContent(props: any) {
             <Toggle
               value={preferences.rememberLastAppSection}
               onChange={(v) => setPreference('rememberLastAppSection', v)}
-              accentFrom={accent.from}
-              accentTo={accent.to}
-            />
-          </SettingRow>
-
-          <SettingRow
-            label={(sSets as any).swipeBack || 'Swipe Back'}
-            desc={
-              (sSets as any).swipeBackDesc || 'Allow swiping from edge to return to previous screen'
-            }
-          >
-            <Toggle
-              value={settings.swipeBackBehavior === 'exit-to-hub'}
-              onChange={(v) =>
-                settingsController.updateSettings({
-                  swipeBackBehavior: v ? 'exit-to-hub' : 'manual-only',
-                })
-              }
               accentFrom={accent.from}
               accentTo={accent.to}
             />

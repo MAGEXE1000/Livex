@@ -73,7 +73,6 @@ export interface AppSettings {
   assistantLearning: boolean;
   restoreLastSession: boolean;
   autoHideSidebarInApps: boolean;
-  swipeBackBehavior: 'exit-to-hub' | 'manual-only';
   perApp: Record<AppKey, PerAppVisuals>;
   dynamicLightStart: number;
   dynamicLightEnd: number;
@@ -162,7 +161,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   assistantLearning: true,
   restoreLastSession: false,
   autoHideSidebarInApps: true,
-  swipeBackBehavior: 'exit-to-hub',
   dynamicLightStart: 7,
   dynamicLightEnd: 20,
   privacyAnalytics: false,
