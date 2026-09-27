@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { SongLibraryList } from '../components/SongLibraryList';
-import { SongEditorForm, PresetFormContent, FormData } from '../components/SongEditorForm';
+import { SongEditorForm, FormData } from '../components/SongEditorForm';
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog } from '../../../shared/design-system/dialogs';
@@ -4153,10 +4153,26 @@ export default function SongsPanel() {
     [composerSongId, presets]
   );
 
-  const handleStartNewSongComposer = useCallback(() => {
+  const handleCreateNewSong = useCallback(() => {
+    setEditingId(null);
+    setShowForm(false);
+    setShowLyricsComposer(false);
     setComposerSongId(null);
-    setShowLyricsComposer(true);
-  }, []);
+    setSearchQuery('');
+
+    const newId = createPreset({
+      name: t.songs.newSong || 'New Song',
+      artist: '',
+      bpm: 120,
+      key: 'C',
+      notes: '',
+      chords: [],
+      sections: [],
+    });
+
+    setActivePreset(newId);
+    setEditorViewMode('chords');
+  }, [createPreset, setActivePreset, t.songs.newSong]);
 
   const handleEditLyricsComposer = useCallback((presetId: string) => {
     setComposerSongId(presetId);
@@ -4169,6 +4185,7 @@ export default function SongsPanel() {
         setSongLyrics(composerSongId, lyrics);
         updatePreset(composerSongId, { name: title });
         setShowLyricsComposer(false);
+        setComposerSongId(null);
       } else {
         const newPreset = {
           name: title,
@@ -4182,6 +4199,7 @@ export default function SongsPanel() {
         };
         const newId = createPreset(newPreset);
         setShowLyricsComposer(false);
+        setComposerSongId(null);
         setActivePreset(newId);
         setEditorViewMode('lyrics');
       }
@@ -4560,26 +4578,6 @@ export default function SongsPanel() {
     setEditingId(null);
   };
 
-  const renderCreateSongForm = useCallback(
-    ({ close }: { close?: () => void } = {}) => (
-      <PresetFormContent
-        accent={accent}
-        initial={editingFormData}
-        isEditing={Boolean(editingId)}
-        onSave={(formData) => {
-          handleFormSave(formData);
-          close?.();
-        }}
-        onCancel={() => {
-          clearPendingImport();
-          close?.();
-        }}
-        showFooterButtons={true}
-      />
-    ),
-    [accent, editingFormData, editingId, handleFormSave, clearPendingImport]
-  );
-
   const renderImportSongForm = useCallback(
     ({ close }: { close?: () => void } = {}) => (
       <div style={{ padding: '8px 14px 14px 14px' }}>
@@ -4793,7 +4791,13 @@ export default function SongsPanel() {
           <>
             <SharedFloatingHeader
               title={activePreset.name || 'Song Editor'}
-              onBack={() => setActivePreset(null)}
+              onBack={() => {
+                if (editorViewMode !== 'chords') {
+                  setEditorViewMode('chords');
+                } else {
+                  setActivePreset(null);
+                }
+              }}
               backBtnTestId="editor-back-btn"
               toolbarActions={
                 <div className="flex items-center gap-1">
@@ -4823,17 +4827,19 @@ export default function SongsPanel() {
                       </button>
                     ) : null;
                   })()}
-                  <button
-                    aria-label="Edit lyrics"
-                    data-purpose="edit-lyrics-btn"
-                    onClick={() => handleEditLyricsComposer(activePreset.id)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                    type="button"
-                    title="Edit lyrics in composer"
-                  >
-                    <span className="material-symbols-rounded text-[20px]">edit_note</span>
-                  </button>
+                  {(hasLyrics || editorViewMode === 'lyrics') ? (
+                    <button
+                      aria-label="Edit lyrics"
+                      data-purpose="edit-lyrics-btn"
+                      onClick={() => handleEditLyricsComposer(activePreset.id)}
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                      type="button"
+                      title="Edit lyrics in composer"
+                    >
+                      <span className="material-symbols-rounded text-[20px]">edit_note</span>
+                    </button>
+                  ) : null}
                   <button
                     aria-label="Edit song details"
                     data-purpose="edit-song-details-btn"
@@ -5122,14 +5128,16 @@ export default function SongsPanel() {
                   style={{ borderRadius: '50%', width: 34, height: 34 }}
                   icon="picture_as_pdf"
                 />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => handleEditLyricsComposer(activePreset.id)}
-                  title="Edit lyrics in composer"
-                  style={{ borderRadius: '50%', width: 34, height: 34 }}
-                  icon="edit_note"
-                />
+                {(hasLyrics || editorViewMode === 'lyrics') && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => handleEditLyricsComposer(activePreset.id)}
+                    title="Edit lyrics in composer"
+                    style={{ borderRadius: '50%', width: 34, height: 34 }}
+                    icon="edit_note"
+                  />
+                )}
                 <Button
                   variant="secondary"
                   size="icon"
@@ -6232,7 +6240,7 @@ export default function SongsPanel() {
           setEditingId={setEditingId}
           setShowForm={setShowForm}
           setShowImport={setShowImport}
-          onNewSong={handleStartNewSongComposer}
+          onNewSong={handleCreateNewSong}
           accent={accent}
           t={t}
         />
@@ -6487,7 +6495,7 @@ export default function SongsPanel() {
                         <div className="flex items-center gap-2.5 mt-6">
                           <motion.button
                             type="button"
-                            onClick={handleStartNewSongComposer}
+                            onClick={handleCreateNewSong}
                             className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
                             style={{
                               backgroundColor: 'var(--c-accent-from, #2563EB)',
@@ -6695,7 +6703,7 @@ export default function SongsPanel() {
                   data-testid="new-preset-btn"
                   aria-label="Create new progression"
                   title="Create new progression"
-                  onClick={handleStartNewSongComposer}
+                  onClick={handleCreateNewSong}
                   className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
                   style={{
                     width: '52px',
@@ -6718,7 +6726,10 @@ export default function SongsPanel() {
           initialTitle={composerSongPreset?.name || ''}
           initialLyrics={composerSongPreset?.lyrics}
           onSave={handleSaveComposer}
-          onClose={() => setShowLyricsComposer(false)}
+          onClose={() => {
+            setShowLyricsComposer(false);
+            setComposerSongId(null);
+          }}
           accent={accent}
         />
       )}

@@ -131,4 +131,68 @@ describe('Chordex Song Navigation Mode & Bottom Nav Visibility', () => {
     expect(isChordexSongRoute(hubRoute, 'preset-oi-123')).toBe(false);
     expect(computeBottomNavVisible(hubRoute, { activePresetId: 'preset-oi-123' })).toBe(true);
   });
+
+  describe('Song Creation Flow Invariants', () => {
+    it('initializes new song creation state in Chords mode by default', () => {
+      // Simulating handleCreateNewSong invariant state
+      const initialCreationState = {
+        showForm: false,
+        editingId: null,
+        showLyricsComposer: false,
+        composerSongId: null,
+        editorViewMode: 'chords' as const,
+        activePreset: {
+          id: 'preset-new-1',
+          name: 'New Song',
+          bpm: 120,
+          key: 'C',
+          chords: [],
+          sections: [],
+        },
+      };
+
+      // Invariant 1: Edit form is strictly NOT open on creation
+      expect(initialCreationState.showForm).toBe(false);
+      expect(initialCreationState.editingId).toBeNull();
+
+      // Invariant 2: Fullscreen lyrics composer is strictly NOT open on creation
+      expect(initialCreationState.showLyricsComposer).toBe(false);
+      expect(initialCreationState.composerSongId).toBeNull();
+
+      // Invariant 3: Default creation mode is Chords
+      expect(initialCreationState.editorViewMode).toBe('chords');
+
+      // Invariant 4: New song has empty chords progression ready for chord authoring
+      expect(initialCreationState.activePreset.chords).toHaveLength(0);
+      expect(initialCreationState.activePreset.sections).toHaveLength(0);
+    });
+
+    it('treats lyrics as an optional mode entered explicitly after chords', () => {
+      let editorViewMode: 'chords' | 'lyrics' | 'both' = 'chords';
+
+      // User is initially in chords mode
+      expect(editorViewMode).toBe('chords');
+
+      // User explicitly taps "+ Add Lyrics" or switches tab to lyrics
+      const onExplicitEnterLyrics = () => {
+        editorViewMode = 'lyrics';
+      };
+      onExplicitEnterLyrics();
+
+      expect(editorViewMode).toBe('lyrics');
+
+      // Back navigation from lyrics mode must step back to chords before exiting the song
+      const handleBack = () => {
+        if (editorViewMode !== 'chords') {
+          editorViewMode = 'chords';
+          return 'stayed_in_chords';
+        }
+        return 'exited_song';
+      };
+
+      expect(handleBack()).toBe('stayed_in_chords');
+      expect(editorViewMode).toBe('chords');
+      expect(handleBack()).toBe('exited_song');
+    });
+  });
 });

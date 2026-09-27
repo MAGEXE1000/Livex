@@ -9,7 +9,7 @@ interface Props {
   setEditingId: (id: string | null) => void;
   setShowForm: (show: boolean) => void;
   setShowImport: (show: boolean) => void;
-  onNewSong?: () => void;
+  onNewSong: () => void;
   accent: { from: string; to: string; mid?: string };
   t: any;
 }
@@ -83,12 +83,7 @@ export function SongLibraryList({
                   type="button"
                   onClick={() => {
                     close();
-                    if (onNewSong) {
-                      onNewSong();
-                    } else {
-                      setEditingId(null);
-                      setShowForm(true);
-                    }
+                    onNewSong();
                   }}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
