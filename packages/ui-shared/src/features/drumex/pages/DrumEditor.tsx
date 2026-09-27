@@ -1,4 +1,4 @@
-﻿import { Dialog } from '../../../shared/design-system/dialogs';
+import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -141,6 +141,7 @@ import DrumPrefsPanel from './DrumPrefsPanel';
 import { KitTab } from '../components/panels/KitTab';
 import { MixerTab } from '../components/panels/MixerTab';
 import { FXTab } from '../components/panels/FXTab';
+import { useDrumGridDrag } from '../components/useDrumGridDrag';
 
 import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
@@ -1365,19 +1366,6 @@ export default function DrumEditor() {
     (visibleInsts.length > 0 ? (visibleInsts.length - 1) * rowGap : 0);
   const FULL_SYS_H = SYSTEM_H + SYS_SEP;
 
-  const spmRef = useRef(spm);
-  spmRef.current = spm;
-  const mprRef = useRef(measuresPerRow);
-  mprRef.current = measuresPerRow;
-  const stepWRef = useRef(STEP_W);
-  stepWRef.current = STEP_W;
-  const measureWRef = useRef(MEASURE_W);
-  measureWRef.current = MEASURE_W;
-  const sysHRef = useRef(FULL_SYS_H);
-  sysHRef.current = FULL_SYS_H;
-  const allInstsRef = useRef(visibleInsts);
-  allInstsRef.current = visibleInsts;
-  const activeDragInst = useRef<DrumInstrument | null>(null);
   const totalStepsRef = useRef(spm * pattern.measures.length);
   totalStepsRef.current = spm * pattern.measures.length;
   const secPerStepRef = useRef(0);
@@ -1408,10 +1396,20 @@ export default function DrumEditor() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollDimsRef = useRef({ width: 0, height: 0 });
   const playheadRef = useRef<HTMLDivElement>(null);
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const isDragging = useRef(false);
-  const dragFilled = useRef(new Set<string>());
   const countInTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Geometry refs — used by playhead effect and ruler scrub (hook has its own copies for drag)
+  const spmRef = useRef(spm);
+  spmRef.current = spm;
+  const mprRef = useRef(measuresPerRow);
+  mprRef.current = measuresPerRow;
+  const stepWRef = useRef(STEP_W);
+  stepWRef.current = STEP_W;
+  const measureWRef = useRef(MEASURE_W);
+  measureWRef.current = MEASURE_W;
+  const sysHRef = useRef(FULL_SYS_H);
+  sysHRef.current = FULL_SYS_H;
+  const allInstsRef = useRef(visibleInsts);
+  allInstsRef.current = visibleInsts;
 
   // Cache scroll container dimensions to eliminate synchronous layout reflows during playback
   useEffect(() => {
@@ -2107,60 +2105,6 @@ export default function DrumEditor() {
   }, [pattern, updatePattern, pushUndo]);
 
   // ΓöÇΓöÇ Cell tap / drag ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-  // Resolve which grid cell a pointer event falls on; returns null if outside grid
-  const resolveCell = (clientX: number, clientY: number, instOverride?: DrumInstrument | null) => {
-    const el = scrollRef.current;
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
-    const cx = clientX - rect.left - LABEL_W + el.scrollLeft;
-    const cy = clientY - rect.top + el.scrollTop;
-    if (cx < 0) return null;
-    const sysIdx = Math.floor(cy / sysHRef.current);
-    const measureInRow = Math.floor(cx / measureWRef.current);
-    const { patterns: pts, activePatternId: actId } = useDrumStore.getState();
-    const curPat = pts.find((p) => p.id === actId);
-    if (!curPat) return null;
-    if (
-      sysIdx * mprRef.current + measureInRow < 0 ||
-      sysIdx * mprRef.current + measureInRow >= curPat.measures.length
-    )
-      return null;
-    const mIdx = sysIdx * mprRef.current + measureInRow;
-
-    // snapToGrid=false ΓåÆ quantize to beat rather than subdivision step
-    let stepInM = Math.floor((cx % measureWRef.current) / stepWRef.current);
-    if (!useDrumStore.getState().drumPrefs.snapToGrid) {
-      const spBeat = spmRef.current / 4;
-      stepInM = Math.floor(stepInM / spBeat) * spBeat;
-    }
-    if (stepInM < 0 || stepInM >= spmRef.current) return null;
-
-    const vis = allInstsRef.current;
-    let inst: DrumInstrument;
-    let instIdx: number;
-
-    if (instOverride) {
-      inst = instOverride;
-      instIdx = vis.indexOf(inst);
-    } else {
-      const yInSys = (cy % sysHRef.current) - RULER_H;
-      if (yInSys < 0) return null;
-      instIdx = -1;
-      for (let i = 0; i < vis.length; i++) {
-        const top = i * (ROW_H + rowGap);
-        const bottom = top + ROW_H;
-        if (yInSys >= top && yInSys <= bottom) {
-          instIdx = i;
-          break;
-        }
-      }
-      if (instIdx === -1) return null;
-      inst = vis[instIdx];
-    }
-
-    if (instIdx < 0 || instIdx >= vis.length) return null;
-    return { inst, m: curPat.measures[mIdx], stepInM, mIdx, instIdx };
-  };
 
   const applyHitToCell = useCallback(
     (inst: DrumInstrument, m: DrumMeasure, stepInM: number, patternId: string, preview = true) => {
@@ -2212,85 +2156,22 @@ export default function DrumEditor() {
     ]
   );
 
-  const cancelPointer = () => {
-    pointerStart.current = null;
-    activeDragInst.current = null;
-    isDragging.current = false;
-    dragFilled.current.clear();
-  };
+  const { handlePointerDown, handlePointerMove, handlePointerUp, cancelPointer } = useDrumGridDrag({
+    scrollRef,
+    spm,
+    measuresPerRow,
+    visibleInsts,
+    rowGap,
+    openBarMenu,
+    setOpenBarMenu,
+    pushUndo,
+    applyHitToCell,
+    setFocusedInst,
+    MEASURE_W,
+    STEP_W,
+    FULL_SYS_H,
+  });
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (openBarMenu) setOpenBarMenu(null);
-    pointerStart.current = { x: e.clientX, y: e.clientY };
-    isDragging.current = false;
-    dragFilled.current.clear();
-
-    const cell = resolveCell(e.clientX, e.clientY);
-    if (cell) {
-      activeDragInst.current = cell.inst;
-    } else {
-      activeDragInst.current = null;
-    }
-
-    // Capture the pointer so move/up fire even if finger leaves the element
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {}
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!useDrumStore.getState().drumPrefs.dragToFill) return;
-    if (!pointerStart.current) return;
-    const s = pointerStart.current;
-    const dist = Math.hypot(e.clientX - s.x, e.clientY - s.y);
-    if (dist < 8) return; // minimum drag threshold
-    if (!isDragging.current) {
-      isDragging.current = true;
-      pushUndo();
-    }
-    const cell = resolveCell(e.clientX, e.clientY, activeDragInst.current);
-    if (!cell) return;
-    const key = `${cell.inst}:${cell.mIdx}:${cell.stepInM}`;
-    if (dragFilled.current.has(key)) return; // already filled in this drag
-    dragFilled.current.add(key);
-    // When dragging, only add notes (don't remove), so use simpleToggleHit-style
-    const { patterns: pts, activePatternId: actId } = useDrumStore.getState();
-    const curPat = pts.find((p) => p.id === actId);
-    if (!curPat) return;
-    const existing = cell.m.hits[cell.inst]?.find((h) => h.step === cell.stepInM);
-    if (!existing) {
-      simpleToggleHit(curPat.id, cell.m.id, cell.inst, cell.stepInM);
-      if (drumScheduler.isPlaying)
-        drumScheduler.updatePattern(
-          useDrumStore.getState().patterns.find((p) => p.id === curPat.id)!
-        );
-    }
-    setFocusedInst(cell.inst);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    const s = pointerStart.current;
-    if (!s) return;
-    pointerStart.current = null;
-    const instLock = activeDragInst.current;
-    activeDragInst.current = null;
-    // If this was a drag-to-fill event, just clean up
-    if (isDragging.current) {
-      isDragging.current = false;
-      dragFilled.current.clear();
-      return;
-    }
-    if (Math.abs(e.clientX - s.x) > 12 || Math.abs(e.clientY - s.y) > 12) return;
-    const cell = resolveCell(e.clientX, e.clientY, instLock);
-    if (!cell) return;
-    const { activePatternId: actId } = useDrumStore.getState();
-    if (!actId) return;
-    pushUndo();
-    applyHitToCell(cell.inst, cell.m, cell.stepInM, actId);
-    setFocusedInst(cell.inst);
-  };
-
-  // ΓöÇΓöÇ Back ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleBack = () => {
     if (inEditor) {
       if (drumScheduler.isPlaying) {
