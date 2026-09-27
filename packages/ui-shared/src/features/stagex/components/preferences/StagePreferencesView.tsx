@@ -299,6 +299,32 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
 
             <SettingRow
               label={
+                isSpanish
+                  ? 'Nombres en plano de producción'
+                  : 'Production stage plan element names'
+              }
+              desc={
+                isSpanish
+                  ? 'Muestra u oculta los nombres de elementos en el documento de producción y PDF.'
+                  : 'Show or hide element names on the production document stage plan and PDF.'
+              }
+            >
+              <Toggle
+                testId="toggle-pref-production-element-names"
+                ariaLabel={
+                  isSpanish
+                    ? 'Nombres en plano de producción'
+                    : 'Production stage plan element names'
+                }
+                value={preferences.productionShowElementNames !== false}
+                onChange={(val) => updatePreferences({ productionShowElementNames: val })}
+                accentFrom={acc.from}
+                accentTo={acc.to}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={
                 tr.stagex?.stageGuides ||
                 (isSpanish ? 'Guías y zona segura' : 'Stage Guides & Safe Area')
               }

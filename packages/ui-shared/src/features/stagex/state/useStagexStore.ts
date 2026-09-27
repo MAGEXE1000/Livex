@@ -96,6 +96,7 @@ export interface StagexPreferences {
   stageBalanceVisible?: boolean;
   audioCoverageVisible?: boolean;
   stageGuidesVisible?: boolean;
+  productionShowElementNames?: boolean;
 }
 
 export type StagexSubView = 'hub' | 'rider' | 'setlist' | 'gear' | 'members';
@@ -184,6 +185,7 @@ const DEFAULT_PREFERENCES: StagexPreferences = {
   autoWire: false,
   audioCoverageVisible: true,
   stageGuidesVisible: true,
+  productionShowElementNames: true,
 };
 
 function readProjectStorage(): Record<string, any> {

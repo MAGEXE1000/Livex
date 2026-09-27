@@ -93,6 +93,9 @@ export interface ProductionDocumentData {
   totalMembers: number;
   assignedMembersCount: number;
   unassignedMembersCount: number;
+
+  // Preferences projection
+  showElementNames?: boolean;
 }
 
 /**
@@ -405,5 +408,7 @@ export function projectProductionDocumentData(
     totalMembers: members.length,
     assignedMembersCount,
     unassignedMembersCount,
+
+    showElementNames: store.preferences?.productionShowElementNames !== false,
   };
 }

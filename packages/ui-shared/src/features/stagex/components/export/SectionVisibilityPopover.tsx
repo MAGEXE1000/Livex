@@ -14,6 +14,8 @@ export interface SectionVisibilityPopoverProps {
   onSelectAll: () => void;
   onReset: () => void;
   data: ProductionDocumentData;
+  showElementNames?: boolean;
+  onToggleShowElementNames?: (val: boolean) => void;
   isLight?: boolean;
   isAmoled?: boolean;
 }
@@ -216,6 +218,8 @@ export interface SectionVisibilityContentProps {
   onSelectAll: () => void;
   onReset: () => void;
   data: ProductionDocumentData;
+  showElementNames?: boolean;
+  onToggleShowElementNames?: (val: boolean) => void;
   isLight?: boolean;
   isAmoled?: boolean;
 }
@@ -226,6 +230,8 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
   onSelectAll,
   onReset,
   data,
+  showElementNames = true,
+  onToggleShowElementNames,
   isLight = false,
   isAmoled = false,
 }) => {
@@ -380,6 +386,89 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
           );
         })}
       </div>
+
+      {/* Stage Plan Options: Show element names */}
+      {onToggleShowElementNames && (
+        <div
+          className="px-3 py-2.5 border-t flex items-center justify-between gap-3"
+          style={{
+            borderColor: borderCol,
+            backgroundColor: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
+          }}
+        >
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div
+              className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+              style={{
+                backgroundColor: showElementNames
+                  ? isLight
+                    ? 'rgba(37, 99, 235, 0.08)'
+                    : 'rgba(37, 99, 235, 0.15)'
+                  : isLight
+                    ? 'rgba(0, 0, 0, 0.04)'
+                    : 'rgba(255, 255, 255, 0.04)',
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={showElementNames ? '#2563eb' : textDim}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 7V4h16v3" />
+                <path d="M9 20h6" />
+                <path d="M12 4v16" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div
+                className="text-[12px] font-bold truncate leading-snug"
+                style={{
+                  color: textPrimary,
+                  fontFamily: 'var(--studio-font-display)',
+                }}
+              >
+                {isSpanish ? 'Mostrar nombres de elementos' : 'Show element names'}
+              </div>
+              <div
+                className="text-[9.5px] font-medium truncate leading-none mt-0.5"
+                style={{ color: textDim }}
+              >
+                {isSpanish
+                  ? 'Visible en el plano de escenario'
+                  : 'Visible on the stage plan'}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showElementNames}
+            aria-label={isSpanish ? 'Mostrar nombres de elementos' : 'Show element names'}
+            data-testid="toggle-show-element-names"
+            onClick={() => onToggleShowElementNames(!showElementNames)}
+            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+            style={{
+              backgroundColor: showElementNames
+                ? '#2563eb'
+                : isLight
+                  ? 'rgba(0, 0, 0, 0.18)'
+                  : 'rgba(255, 255, 255, 0.2)',
+            }}
+          >
+            <span
+              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out mt-[3px] ${
+                showElementNames ? 'translate-x-[18px]' : 'translate-x-[3px]'
+              }`}
+            />
+          </button>
+        </div>
+      )}
 
       {/* Footer Helper Note */}
       <div

@@ -15,6 +15,7 @@ export interface GeneratePdfOptions {
   sections?: ProductionDocumentSectionsConfig;
   theme?: PdfThemeMode;
   lang?: 'en' | 'es';
+  showElementNames?: boolean;
 }
 
 export interface GeneratePdfResult {
@@ -238,6 +239,12 @@ export async function generateProductionDocumentPdf(
   };
 
   const activeSectionsCount = Object.values(sections).filter(Boolean).length;
+  const showElementNames =
+    options.showElementNames !== undefined
+      ? options.showElementNames
+      : data.showElementNames !== undefined
+        ? data.showElementNames
+        : true;
 
   // ═══════════════════════════════════════════════════════════════════
   // 1. PRE-LOAD ELEMENT GRAPHICAL ASSETS (WITH CENTER ROTATION)
@@ -649,17 +656,19 @@ export async function generateProductionDocumentPdf(
         doc.text(chNum, badgeX + badgeW / 2, badgeY + 2.05, { align: 'center' });
 
         // Label below element - Natural Live-Production Spanish & Density-adapted
-        const rawLabel = localizeElementName(
-          el.label || el.name,
-          el.type,
-          isEs ? 'es' : 'en'
-        ).toUpperCase();
-        const labelStr = rawLabel.length > 15 ? `${rawLabel.slice(0, 14)}…` : rawLabel;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(4.8);
-        doc.setTextColor(T.textPrimary[0], T.textPrimary[1], T.textPrimary[2]);
-        const labelY = Math.min(plotY + plotBoxH - 1.8, elY + iconSize / 2 + 2.8);
-        doc.text(labelStr, elX, labelY, { align: 'center' });
+        if (showElementNames) {
+          const rawLabel = localizeElementName(
+            el.label || el.name,
+            el.type,
+            isEs ? 'es' : 'en'
+          ).toUpperCase();
+          const labelStr = rawLabel.length > 15 ? `${rawLabel.slice(0, 14)}…` : rawLabel;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(4.8);
+          doc.setTextColor(T.textPrimary[0], T.textPrimary[1], T.textPrimary[2]);
+          const labelY = Math.min(plotY + plotBoxH - 1.8, elY + iconSize / 2 + 2.8);
+          doc.text(labelStr, elX, labelY, { align: 'center' });
+        }
       });
     }
 

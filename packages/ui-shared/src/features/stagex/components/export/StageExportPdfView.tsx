@@ -185,6 +185,13 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   // Active PDF theme mode
   const pdfTheme: 'light' | 'dark' | 'amoled' = isAmoled ? 'amoled' : isLight ? 'light' : 'dark';
 
+  // Preference for showing element names in production document stage plan
+  const showElementNames = store.preferences?.productionShowElementNames !== false;
+
+  const handleToggleShowElementNames = useCallback((val: boolean) => {
+    useStagexStore.getState().updatePreferences({ productionShowElementNames: val });
+  }, []);
+
   // PDF Export Execution: Share Document
   const handleShareDocument = useCallback(async () => {
     setIsExportMenuOpen(false);
@@ -196,6 +203,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
         sections: sectionsConfig,
         theme: pdfTheme,
         lang: isSpanish ? 'es' : 'en',
+        showElementNames,
       });
     } catch (err) {
       console.error('Failed to share production document PDF:', err);
@@ -207,7 +215,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
     } finally {
       setIsExportBusy(false);
     }
-  }, [data, defaultPdfFileName, sectionsConfig, pdfTheme, isSpanish]);
+  }, [data, defaultPdfFileName, sectionsConfig, pdfTheme, isSpanish, showElementNames]);
 
   // PDF Export Execution: Save to Downloads
   const handleSaveToDownloads = useCallback(
@@ -220,6 +228,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
           sections: sectionsConfig,
           theme: pdfTheme,
           lang: isSpanish ? 'es' : 'en',
+          showElementNames,
         });
         setIsSaveModalOpen(false);
         toast.success(
@@ -365,6 +374,8 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                 onSelectAll={handleSelectAllSections}
                 onReset={handleResetSections}
                 data={data}
+                showElementNames={showElementNames}
+                onToggleShowElementNames={handleToggleShowElementNames}
                 isLight={isLight}
                 isAmoled={isAmoled}
               />
@@ -869,15 +880,17 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                           </div>
 
                           {/* Standardized Canonical Label */}
-                          <span
-                            className="absolute top-[calc(100%+2px)] left-1/2 -translate-x-1/2 text-[9.5px] font-bold uppercase tracking-[0.05em] text-center truncate max-w-[85px] leading-tight select-none whitespace-nowrap"
-                            style={{
-                              fontFamily: 'var(--studio-font-display)',
-                              color: 'var(--c-text-primary)',
-                            }}
-                          >
-                            {labelText}
-                          </span>
+                          {showElementNames && (
+                            <span
+                              className="absolute top-[calc(100%+2px)] left-1/2 -translate-x-1/2 text-[9.5px] font-bold uppercase tracking-[0.05em] text-center truncate max-w-[85px] leading-tight select-none whitespace-nowrap"
+                              style={{
+                                fontFamily: 'var(--studio-font-display)',
+                                color: 'var(--c-text-primary)',
+                              }}
+                            >
+                              {labelText}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
