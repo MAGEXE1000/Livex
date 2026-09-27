@@ -9,7 +9,6 @@ import {
   VOCAL_ROLE_PRESETS,
   LYRIC_SECTION_TYPES,
   generateLyricId,
-  transposeKeyString,
   getCombinedVocalRoles,
 } from '@workspace/livex-core';
 import { toast } from 'sonner';
@@ -140,19 +139,14 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     );
   }, [sections, preset.chords, preset.sections]);
 
-  const activeKey =
-    transposeOffset === 0
-      ? preset.key || 'C'
-      : transposeKeyString(preset.key || 'C', transposeOffset, preferFlats);
-
   return (
     <div
       className="flex-1 flex flex-col relative w-full h-full overflow-hidden"
       data-purpose="song-live-preparation-view"
     >
-      {/* ── Top Preparation & Performance Banner ── */}
+      {/* ── Top Preparation Banner ── */}
       <div
-        className="flex-none px-4 py-3 border-b flex flex-col gap-2.5 z-20"
+        className="flex-none px-4 py-2.5 border-b flex flex-col gap-2.5 z-20"
         style={{
           backgroundColor: 'var(--surface-header-bg, rgba(17, 18, 26, 0.95))',
           backdropFilter: 'blur(20px)',
@@ -160,82 +154,39 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         }}
       >
         <div className="flex items-center justify-between gap-3">
-          {/* Key and BPM Badges */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={onEditDetails}
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              title="Click to edit key"
-            >
-              <span className="text-[11px] font-normal" style={{ color: 'var(--c-text-muted, #8A92A6)' }}>
-                #
-              </span>
-              <span className="font-bold tracking-wide">{activeKey}</span>
-            </button>
+          {/* Quick Action: Edit Lyrics */}
+          <button
+            type="button"
+            onClick={onEditLyrics}
+            data-testid="prep-edit-lyrics-btn"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-xs"
+            style={{
+              backgroundColor: 'var(--surface-card-bg, #ffffff)',
+              borderColor: 'var(--c-border, #E3E6EB)',
+              color: 'var(--c-text-primary, #111827)',
+            }}
+          >
+            <span className="material-symbols-rounded text-sm">edit_note</span>
+            <span>Edit Lyrics</span>
+          </button>
 
-            {preset.bpm > 0 && (
-              <button
-                type="button"
-                onClick={onEditDetails}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-primary, #111827)',
-                }}
-                title="Click to edit tempo"
-              >
-                <span className="material-symbols-rounded text-sm" style={{ color: 'var(--c-text-muted, #8A92A6)' }}>
-                  speed
-                </span>
-                <span className="font-bold">{preset.bpm}</span>
-                <span className="text-[10px] font-medium" style={{ color: 'var(--c-text-muted, #8A92A6)' }}>
-                  BPM
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* Quick Actions: Edit Lyrics & Teleprompter Settings */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowSettings((prev) => !prev)}
-              aria-label="Teleprompter Display Settings"
-              title="Teleprompter Display Settings"
-              className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-              style={{
-                backgroundColor: showSettings
-                  ? 'var(--surface-container-high, rgba(255, 255, 255, 0.12))'
-                  : 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
-                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
-                color: showSettings ? accent.from : 'var(--c-text-secondary)',
-              }}
-            >
-              <span className="material-symbols-rounded text-base">text_fields</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onEditLyrics}
-              data-testid="prep-edit-lyrics-btn"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-xs"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-            >
-              <span className="material-symbols-rounded text-sm">edit_note</span>
-              <span>Edit Lyrics</span>
-            </button>
-          </div>
+          {/* Quick Action: Teleprompter Display Settings */}
+          <button
+            type="button"
+            onClick={() => setShowSettings((prev) => !prev)}
+            aria-label="Teleprompter Display Settings"
+            title="Teleprompter Display Settings"
+            className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            style={{
+              backgroundColor: showSettings
+                ? 'var(--surface-container-high, rgba(255, 255, 255, 0.12))'
+                : 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
+              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+              color: showSettings ? accent.from : 'var(--c-text-secondary)',
+            }}
+          >
+            <span className="material-symbols-rounded text-base">text_fields</span>
+          </button>
         </div>
 
         {/* ── Collapsible Teleprompter Format Settings ── */}
@@ -322,24 +273,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
           )}
         </AnimatePresence>
 
-        {/* ── Primary Action Bar: Start Live Performance ── */}
-        {hasContent && (
-          <button
-            type="button"
-            onClick={onLaunchLive}
-            data-testid="prep-start-live-btn"
-            className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
-            style={{
-              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-              boxShadow: `0 4px 14px ${accent.to}44`,
-            }}
-          >
-            <span className="material-symbols-rounded text-lg">play_circle</span>
-            <span className="tracking-wide uppercase font-extrabold text-[11px]">
-              Start Live Performance
-            </span>
-          </button>
-        )}
       </div>
 
       {/* ── Prepared Document Scroll Area ── */}

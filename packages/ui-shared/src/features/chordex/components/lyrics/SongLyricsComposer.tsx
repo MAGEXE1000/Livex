@@ -200,17 +200,39 @@ export const SongLyricsComposer: React.FC<SongLyricsComposerProps> = ({
 
       {/* ── Continuous Writing Body ── */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
+        <style>{`
+          @keyframes lyric-caret-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.15; }
+          }
+          .lyrics-composer-textarea {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            caret-color: ${accent.from || '#2563EB'} !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+          .lyrics-composer-textarea:focus {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+        `}</style>
         <textarea
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Write or paste lyrics here..."
-          className="w-full flex-1 p-4 sm:p-6 bg-transparent border-none outline-none resize-none leading-relaxed text-base sm:text-lg placeholder:text-neutral-600 no-scrollbar"
+          className="lyrics-composer-textarea w-full flex-1 p-4 sm:p-6 bg-transparent border-none outline-none resize-none leading-relaxed text-base sm:text-lg placeholder:text-neutral-600 no-scrollbar"
           style={{
             fontFamily: 'var(--font-body, system-ui, sans-serif)',
             fontSize: '17px',
             lineHeight: 1.65,
             color: 'var(--c-text-primary, #ffffff)',
+            caretColor: accent.from || '#2563EB',
+            outline: 'none',
+            border: 'none',
+            boxShadow: 'none',
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
           }}
           autoCapitalize="sentences"

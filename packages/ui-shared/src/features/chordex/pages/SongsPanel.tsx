@@ -4810,7 +4810,32 @@ export default function SongsPanel() {
                           s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
                         )
                       );
-                    return hasLiveContent ? (
+                    if (!hasLiveContent) return null;
+
+                    if (editorViewMode === 'lyrics') {
+                      return (
+                        <button
+                          aria-label="Live Mode"
+                          onClick={() => setShowLive(true)}
+                          data-testid="enter-live-mode"
+                          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.16)',
+                            backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#FFFFFF',
+                          }}
+                          type="button"
+                          title="Start live lyrics"
+                        >
+                          <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
+                            play_arrow
+                          </span>
+                        </button>
+                      );
+                    }
+
+                    return (
                       <button
                         aria-label="Live Mode"
                         onClick={() => setShowLive(true)}
@@ -4825,21 +4850,8 @@ export default function SongsPanel() {
                         <span className="material-symbols-rounded text-sm">play_circle</span>
                         <span>Live</span>
                       </button>
-                    ) : null;
+                    );
                   })()}
-                  {(hasLyrics || editorViewMode === 'lyrics') ? (
-                    <button
-                      aria-label="Edit lyrics"
-                      data-purpose="edit-lyrics-btn"
-                      onClick={() => handleEditLyricsComposer(activePreset.id)}
-                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                      type="button"
-                      title="Edit lyrics in composer"
-                    >
-                      <span className="material-symbols-rounded text-[20px]">edit_note</span>
-                    </button>
-                  ) : null}
                   <button
                     aria-label="Edit song details"
                     data-purpose="edit-song-details-btn"
@@ -4864,43 +4876,15 @@ export default function SongsPanel() {
                 background: 'var(--app-bg)',
               }}
             >
-              {/* BEGIN: SongMetadataToolbar */}
-              <section
-                aria-label="Song Controls and Tuning"
-                className="w-full flex items-center justify-between gap-2 px-0.5"
-                data-purpose="song-toolbar"
-              >
-                {/* Left: Key & BPM */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(activePreset.id);
-                      setShowForm(true);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 border shadow-sm text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-primary, #111827)',
-                    }}
-                    data-purpose="key-badge"
-                    title="Click to edit key"
-                  >
-                    <span
-                      className="text-[11px] font-normal"
-                      style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                    >
-                      #
-                    </span>
-                    <span className="font-bold tracking-wide">
-                      {transposeOffset === 0
-                        ? activePreset.key || 'C'
-                        : transposeKeyString(activePreset.key || 'C', transposeOffset, preferFlats)}
-                    </span>
-                  </button>
-
-                  {activePreset.bpm > 0 && (
+              {/* BEGIN: SongMetadataToolbar (Hidden in Lyrics mode) */}
+              {editorViewMode !== 'lyrics' && (
+                <section
+                  aria-label="Song Controls and Tuning"
+                  className="w-full flex items-center justify-between gap-2 px-0.5"
+                  data-purpose="song-toolbar"
+                >
+                  {/* Left: Key & BPM */}
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -4913,39 +4897,69 @@ export default function SongsPanel() {
                         borderColor: 'var(--c-border, #E3E6EB)',
                         color: 'var(--c-text-primary, #111827)',
                       }}
-                      data-purpose="bpm-badge"
-                      title="Click to edit tempo"
+                      data-purpose="key-badge"
+                      title="Click to edit key"
                     >
                       <span
-                        className="material-symbols-rounded text-sm"
+                        className="text-[11px] font-normal"
                         style={{ color: 'var(--c-text-muted, #8A92A6)' }}
                       >
-                        speed
+                        #
                       </span>
-                      <span className="font-bold">{activePreset.bpm}</span>
-                      <span
-                        className="text-[10px] font-medium"
-                        style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                      >
-                        BPM
+                      <span className="font-bold tracking-wide">
+                        {transposeOffset === 0
+                          ? activePreset.key || 'C'
+                          : transposeKeyString(activePreset.key || 'C', transposeOffset, preferFlats)}
                       </span>
                     </button>
-                  )}
-                </div>
 
-                {/* Right: Transposition Controls */}
-                <TransposeControls
-                  variant="mobile"
-                  activePresetId={activePreset.id}
-                  transposeOffset={transposeOffset}
-                  setTranspose={setTranspose}
-                  resetTranspose={resetTranspose}
-                  preferFlats={preferFlats}
-                  formatOffset={formatOffset}
-                  accent={accent}
-                  t={t}
-                />
-              </section>
+                    {activePreset.bpm > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(activePreset.id);
+                          setShowForm(true);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 border shadow-sm text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                          borderColor: 'var(--c-border, #E3E6EB)',
+                          color: 'var(--c-text-primary, #111827)',
+                        }}
+                        data-purpose="bpm-badge"
+                        title="Click to edit tempo"
+                      >
+                        <span
+                          className="material-symbols-rounded text-sm"
+                          style={{ color: 'var(--c-text-muted, #8A92A6)' }}
+                        >
+                          speed
+                        </span>
+                        <span className="font-bold">{activePreset.bpm}</span>
+                        <span
+                          className="text-[10px] font-medium"
+                          style={{ color: 'var(--c-text-muted, #8A92A6)' }}
+                        >
+                          BPM
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Right: Transposition Controls */}
+                  <TransposeControls
+                    variant="mobile"
+                    activePresetId={activePreset.id}
+                    transposeOffset={transposeOffset}
+                    setTranspose={setTranspose}
+                    resetTranspose={resetTranspose}
+                    preferFlats={preferFlats}
+                    formatOffset={formatOffset}
+                    accent={accent}
+                    t={t}
+                  />
+                </section>
+              )}
               {/* END: SongMetadataToolbar */}
 
               {/* View Mode Selector / Add Lyrics (Mobile) */}
@@ -5067,7 +5081,30 @@ export default function SongsPanel() {
                         s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
                       )
                     );
-                  return hasLiveContent ? (
+                  if (!hasLiveContent) return null;
+
+                  if (editorViewMode === 'lyrics') {
+                    return (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => setShowLive(true)}
+                        data-testid="enter-live-mode"
+                        title={t.songs.liveMode}
+                        style={{
+                          borderRadius: '50%',
+                          width: 34,
+                          height: 34,
+                          backgroundColor: 'var(--c-surface-high, #1e1e1e)',
+                          color: '#FFFFFF',
+                          borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
+                        }}
+                        icon="play_arrow"
+                      />
+                    );
+                  }
+
+                  return (
                     <Button
                       variant="primary"
                       onClick={() => setShowLive(true)}
@@ -5082,7 +5119,7 @@ export default function SongsPanel() {
                     >
                       {t.songs.liveMode}
                     </Button>
-                  ) : null;
+                  );
                 })()}
                 <MorphMenu
                   anchor="top-right"
@@ -5128,7 +5165,7 @@ export default function SongsPanel() {
                   style={{ borderRadius: '50%', width: 34, height: 34 }}
                   icon="picture_as_pdf"
                 />
-                {(hasLyrics || editorViewMode === 'lyrics') && (
+                {hasLyrics && editorViewMode !== 'lyrics' && (
                   <Button
                     variant="secondary"
                     size="icon"
@@ -5169,7 +5206,7 @@ export default function SongsPanel() {
               }}
             >
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                {activePreset.key && (
+                {editorViewMode !== 'lyrics' && activePreset.key && (
                   <span
                     style={{
                       padding: '3px 10px 3px 8px',
@@ -5213,7 +5250,7 @@ export default function SongsPanel() {
                     )}
                   </span>
                 )}
-                {activePreset.bpm > 0 && (
+                {editorViewMode !== 'lyrics' && activePreset.bpm > 0 && (
                   <span
                     style={{
                       padding: '3px 10px',
@@ -5283,7 +5320,8 @@ export default function SongsPanel() {
                 )}
               </div>
 
-              <TransposeControls
+              {editorViewMode !== 'lyrics' && (
+                <TransposeControls
                   variant="desktop"
                   activePresetId={activePreset.id}
                   transposeOffset={transposeOffset}
@@ -5294,6 +5332,7 @@ export default function SongsPanel() {
                   accent={accent}
                   t={t}
                 />
+              )}
             </div>
           </header>
         )}

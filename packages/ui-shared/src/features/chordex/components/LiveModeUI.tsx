@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
 import { SharedFloatingHeader } from '../../../shared/layout/LivexLayoutSystem';
 import { Button } from '../../../shared/design-system/buttons';
@@ -169,12 +169,12 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     if (isLyricsMode) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: accent.from, fontWeight: 700 }}>
-            {preset.key || 'C Maj'}
-          </span>
-          <span style={{ opacity: 0.4 }}>•</span>
-          <span>{bpmOverride} BPM</span>
-          <span style={{ opacity: 0.4 }}>•</span>
+          {preset.artist ? (
+            <>
+              <span style={{ opacity: 0.7 }}>{preset.artist}</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+            </>
+          ) : null}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
             <span
               style={{
@@ -185,7 +185,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                 boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
               }}
             />
-            {currentSectionName}
+            {currentSectionName || 'Lyrics'}
           </span>
         </span>
       );
@@ -230,11 +230,11 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         onBack={handleClose}
         alwaysShowGlass
         toolbarActions={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {isLyricsMode && (
+          !isLyricsMode ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <motion.button
                 type="button"
-                onClick={() => setShowQuickActions((q) => !q)}
+                onClick={() => setShowSettings((s) => !s)}
                 whileTap={{ scale: 0.92 }}
                 style={{
                   width: 38,
@@ -243,41 +243,19 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: showQuickActions ? `${accent.from}28` : 'transparent',
+                  background: showSettings ? `${accent.from}28` : 'transparent',
                   border: 'none',
-                  color: showQuickActions ? accent.from : 'var(--c-text-primary)',
+                  color: showSettings ? accent.from : 'var(--c-text-primary)',
                   cursor: 'pointer',
                 }}
-                title="Quick Controls"
+                title="Song Live Options"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                  tune
+                  settings
                 </span>
               </motion.button>
-            )}
-            <motion.button
-              type="button"
-              onClick={() => setShowSettings((s) => !s)}
-              whileTap={{ scale: 0.92 }}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: showSettings ? `${accent.from}28` : 'transparent',
-                border: 'none',
-                color: showSettings ? accent.from : 'var(--c-text-primary)',
-                cursor: 'pointer',
-              }}
-              title="Song Live Options"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                settings
-              </span>
-            </motion.button>
-          </div>
+            </div>
+          ) : null
         }
       />
     </>
@@ -918,170 +896,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         overflow: 'hidden',
       }}
     >
-      {/* Quick Controls HUD Bar */}
-      {showQuickActions && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 'calc(env(safe-area-inset-top, 0px) + 70px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 45,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 14px',
-            borderRadius: '9999px',
-            background: 'var(--surface-topbar-bg)',
-            border: 'var(--surface-topbar-border)',
-            backdropFilter: 'var(--surface-topbar-backdrop)',
-            WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-            boxShadow: 'var(--surface-topbar-shadow)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={cyclePlaybackSpeed}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '3px 8px',
-              borderRadius: '9999px',
-              fontSize: '11px',
-              fontWeight: 800,
-              color: accent.from,
-              background: `${accent.from}22`,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            title="Auto-scroll Speed"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-              speed
-            </span>
-            <span>{playbackSpeed}x</span>
-          </button>
-
-          <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
-
-          <button
-            type="button"
-            onClick={goToPrevSection}
-            style={{
-              padding: '4px',
-              borderRadius: '50%',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--c-text-primary)',
-              cursor: 'pointer',
-            }}
-            title="Previous Section"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              fast_rewind
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={goToNextSection}
-            style={{
-              padding: '4px',
-              borderRadius: '50%',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--c-text-primary)',
-              cursor: 'pointer',
-            }}
-            title="Next Section"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              fast_forward
-            </span>
-          </button>
-
-          <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                if (teleprompterFontSize === 'huge') setTeleprompterFontSize('large');
-                else if (teleprompterFontSize === 'large') setTeleprompterFontSize('normal');
-              }}
-              style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--c-text-primary)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              title="Decrease text size"
-            >
-              A-
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (teleprompterFontSize === 'normal') setTeleprompterFontSize('large');
-                else if (teleprompterFontSize === 'large') setTeleprompterFontSize('huge');
-              }}
-              style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--c-text-primary)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              title="Increase text size"
-            >
-              A+
-            </button>
-            {compatibleModes.includes('lyrics_chord_name') && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (displayMode === 'lyrics_only') setDisplayMode('lyrics_chord_name');
-                  else setDisplayMode('lyrics_only');
-                }}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: displayMode === 'lyrics_chord_name' ? accent.from : 'var(--c-text-secondary)',
-                  background: displayMode === 'lyrics_chord_name' ? `${accent.from}22` : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Toggle Chords above Lyrics"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                  grid_view
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Main Teleprompter Canvas */}
       <div
         ref={teleprompterContainerRef}
@@ -1093,7 +907,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: '90px 24px 130px',
+          padding: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px) 24px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
           display: 'flex',
           flexDirection: 'column',
           gap: fontSizes.lineGap,
@@ -1282,6 +1096,176 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           );
         })}
       </div>
+
+      {/* Preferences / Quick Controls HUD Bar (Anchored directly above Bottom Transport Dock) */}
+      <AnimatePresence>
+        {showQuickActions && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            style={{
+              position: 'fixed',
+              bottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 58px)',
+              left: '50%',
+              x: '-50%',
+              zIndex: 48,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              background: 'var(--surface-topbar-bg)',
+              border: 'var(--surface-topbar-border)',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              boxShadow: 'var(--surface-topbar-shadow)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={cyclePlaybackSpeed}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 800,
+                color: accent.from,
+                background: `${accent.from}22`,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+              title="Auto-scroll Speed"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                speed
+              </span>
+              <span>{playbackSpeed}x</span>
+            </button>
+
+            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+            <button
+              type="button"
+              onClick={goToPrevSection}
+              style={{
+                padding: '4px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+              }}
+              title="Previous Section"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                fast_rewind
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={goToNextSection}
+              style={{
+                padding: '4px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+              }}
+              title="Next Section"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                fast_forward
+              </span>
+            </button>
+
+            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (teleprompterFontSize === 'huge') setTeleprompterFontSize('large');
+                  else if (teleprompterFontSize === 'large') setTeleprompterFontSize('normal');
+                }}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--c-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Decrease text size"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (teleprompterFontSize === 'normal') setTeleprompterFontSize('large');
+                  else if (teleprompterFontSize === 'large') setTeleprompterFontSize('huge');
+                }}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--c-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Increase text size"
+              >
+                A+
+              </button>
+              {compatibleModes.includes('lyrics_chord_name') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (displayMode === 'lyrics_only') setDisplayMode('lyrics_chord_name');
+                    else setDisplayMode('lyrics_only');
+                  }}
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: displayMode === 'lyrics_chord_name' ? accent.from : 'var(--c-text-secondary)',
+                    background: displayMode === 'lyrics_chord_name' ? `${accent.from}22` : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  title="Toggle Chords above Lyrics"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                    grid_view
+                  </span>
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Bottom Transport Dock */}
       <nav
@@ -1857,47 +1841,69 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           setShowSettings(false);
         }}
         style={{
-          position: 'absolute',
+          position: isTeleprompterMode ? 'fixed' : 'absolute',
           inset: 0,
           background: 'rgba(0,0,0,0.65)',
           backdropFilter: 'blur(8px)',
-          zIndex: 10,
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: isTeleprompterMode ? 55 : 10,
         }}
       />
 
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: '#111114',
-          borderTop: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '1.5rem 1.5rem 0 0',
-          zIndex: 11,
-          animation: 'sheet-up 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
-          paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
-          maxHeight: '85vh',
-          overflowY: 'auto',
-        }}
+        style={
+          isTeleprompterMode
+            ? {
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 'calc(100% - 32px)',
+                maxWidth: '460px',
+                maxHeight: '82vh',
+                background: '#131318',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '24px',
+                zIndex: 60,
+                boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
+                overflowY: 'auto',
+                paddingBottom: '20px',
+              }
+            : {
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: '#111114',
+                borderTop: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '1.5rem 1.5rem 0 0',
+                zIndex: 11,
+                animation: 'sheet-up 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+              }
+        }
       >
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div
-            style={{
-              width: '36px',
-              height: '4px',
-              borderRadius: '9999px',
-              background: 'rgba(255,255,255,0.2)',
-            }}
-          />
-        </div>
+        {/* Drag handle (Bottom sheet mode only) */}
+        {!isTeleprompterMode && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '4px',
+                borderRadius: '9999px',
+                background: 'rgba(255,255,255,0.2)',
+              }}
+            />
+          </div>
+        )}
 
         {/* Title row */}
         <div
           style={{
-            padding: '4px 20px 8px',
+            padding: isTeleprompterMode ? '18px 20px 8px' : '4px 20px 8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1912,7 +1918,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 fontSize: '18px',
               }}
             >
-              Live Options
+              {isTeleprompterMode ? 'Lyrics Live Settings' : 'Live Options'}
             </p>
             <p
               style={{
@@ -1922,7 +1928,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 marginTop: '1px',
               }}
             >
-              Intelligent musician presentation
+              {isTeleprompterMode ? 'Pacing, typography, and display options' : 'Intelligent musician presentation'}
             </p>
           </div>
           <Button
