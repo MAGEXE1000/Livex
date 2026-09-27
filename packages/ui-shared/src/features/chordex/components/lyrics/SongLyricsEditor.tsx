@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,10 @@ import {
   getCombinedVocalRoles,
   saveCustomVocalRole,
   deleteCustomVocalRole,
+  applyFormatToSpans,
+  toggleBoldOnSelection,
+  setColorOnSelection,
+  getLineSpans,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 
@@ -55,6 +59,14 @@ const CUSTOM_ROLE_COLORS = [
   '#a855f7', // Violet
 ];
 
+interface ActiveSelection {
+  sectionId: string;
+  lineId: string;
+  start: number;
+  end: number;
+  text: string;
+}
+
 export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   lyrics,
   onChange,
@@ -63,10 +75,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   isLight = false,
   isAmoled = false,
 }) => {
-  // If lyrics is undefined, we initialize on demand
+  // If lyrics is undefined, we initialize as an empty document without sections
   const currentDoc: SongLyricsDocument = useMemo(() => {
-    return lyrics && lyrics.sections ? lyrics : createEmptyLyricsDocument();
+    return lyrics && Array.isArray(lyrics.sections) ? lyrics : createEmptyLyricsDocument();
   }, [lyrics]);
+
+  // Undo / Redo history stacks
+  const historyRef = useRef<SongLyricsDocument[]>([]);
+  const futureRef = useRef<SongLyricsDocument[]>([]);
+
+  // Active line selection state for toolbar operations
+  const [activeSelection, setActiveSelection] = useState<ActiveSelection | null>(null);
+  const activeSelectionRef = useRef<ActiveSelection | null>(null);
+  activeSelectionRef.current = activeSelection;
 
   // Dialog & popover states
   const [showPasteModal, setShowPasteModal] = useState(false);
@@ -76,20 +97,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [renameSectionTarget, setRenameSectionTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const [activeChordPopover, setActiveChordPopover] = useState<{
+  // Chord Popover
+  const [showChordPicker, setShowChordPicker] = useState(false);
+  const [chordPickerTarget, setChordPickerTarget] = useState<{
     sectionId: string;
     lineId: string;
-    chordId?: string;
     offset: number;
   } | null>(null);
 
-  // Quick Colors Popover for a line
-  const [colorPickerLine, setColorPickerLine] = useState<{
-    sectionId: string;
-    lineId: string;
-  } | null>(null);
+  // Color Palette Popover
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
-  // Role Picker for section
+  // Role Picker
   const [rolePickerTarget, setRolePickerTarget] = useState<{
     sectionId: string;
     lineId?: string;
@@ -108,15 +127,45 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // Document-wide colors & formatting
   const documentColor = currentDoc.formatting?.defaultColor;
 
-  // ── DOCUMENT MUTATION HELPERS ────────────────────────────────────────
+  // ── DOCUMENT MUTATION HELPERS WITH HISTORY ──────────────────────────
 
   const updateDoc = useCallback(
     (updater: (prev: SongLyricsDocument) => SongLyricsDocument) => {
       const next = updater(currentDoc);
+      historyRef.current.push(currentDoc);
+      if (historyRef.current.length > 50) historyRef.current.shift();
+      futureRef.current = [];
       onChange(next);
     },
     [currentDoc, onChange]
   );
+
+  const handleUndo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+    const previous = historyRef.current.pop()!;
+    futureRef.current.push(currentDoc);
+    onChange(previous);
+  }, [currentDoc, onChange]);
+
+  const handleRedo = useCallback(() => {
+    if (futureRef.current.length === 0) return;
+    const next = futureRef.current.pop()!;
+    historyRef.current.push(currentDoc);
+    onChange(next);
+  }, [currentDoc, onChange]);
+
+  // ── DOCUMENT CONTENT INSPECTION ─────────────────────────────────────
+
+  const totalLines = useMemo(() => {
+    return currentDoc.sections.reduce((acc, s) => acc + s.lines.length, 0);
+  }, [currentDoc.sections]);
+
+  const isLyricsEmpty = useMemo(() => {
+    if (currentDoc.sections.length === 0) return true;
+    return currentDoc.sections.every((s) => s.lines.every((l) => l.text.trim().length === 0));
+  }, [currentDoc.sections]);
+
+  // ── FREEFORM LINE MUTATIONS ─────────────────────────────────────────
 
   const handleUpdateLineText = useCallback(
     (sectionId: string, lineId: string, newText: string) => {
@@ -126,119 +175,61 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           sec.id === sectionId
             ? {
                 ...sec,
-                lines: sec.lines.map((l) => (l.id === lineId ? { ...l, text: newText } : l)),
-              }
-            : sec
-        ),
-      }));
-    },
-    [updateDoc]
-  );
-
-  const handleToggleLineBold = useCallback(
-    (sectionId: string, lineId: string) => {
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) =>
-          sec.id === sectionId
-            ? {
-                ...sec,
                 lines: sec.lines.map((l) => {
                   if (l.id !== lineId) return l;
-                  const currentBold = Boolean(l.format?.bold);
+                  // If line had spans, update or reset spans to match new text
                   return {
                     ...l,
-                    format: {
-                      ...l.format,
-                      bold: !currentBold,
-                    },
+                    text: newText,
+                    spans: l.spans ? [{ text: newText }] : undefined,
                   };
                 }),
               }
             : sec
         ),
       }));
-    },
-    [updateDoc]
-  );
-
-  const handleSetLineColor = useCallback(
-    (sectionId: string, lineId: string, color: string) => {
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) =>
-          sec.id === sectionId
-            ? {
-                ...sec,
-                lines: sec.lines.map((l) => {
-                  if (l.id !== lineId) return l;
-                  return {
-                    ...l,
-                    format: {
-                      ...l.format,
-                      color: color || undefined,
-                    },
-                  };
-                }),
-              }
-            : sec
-        ),
-      }));
-      setColorPickerLine(null);
-    },
-    [updateDoc]
-  );
-
-  const handleSetDocumentColor = useCallback(
-    (color: string) => {
-      updateDoc((doc) => ({
-        ...doc,
-        formatting: {
-          ...doc.formatting,
-          defaultColor: color || undefined,
-        },
-      }));
-    },
-    [updateDoc]
-  );
-
-  const handleSetSectionVocalRole = useCallback(
-    (sectionId: string, role: { type: StandardVocalRole; label: string; color: string } | null) => {
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) =>
-          sec.id === sectionId
-            ? {
-                ...sec,
-                vocalRole: role ? { type: role.type, label: role.label, color: role.color } : undefined,
-              }
-            : sec
-        ),
-      }));
-      setRolePickerTarget(null);
     },
     [updateDoc]
   );
 
   const handleAddLine = useCallback(
-    (sectionId: string, afterIndex?: number) => {
-      const newLine: SongLyricLine = {
-        id: generateLyricId('line'),
-        text: '',
-      };
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) => {
-          if (sec.id !== sectionId) return sec;
+    (sectionId?: string, afterLineIdx?: number) => {
+      updateDoc((doc) => {
+        // If document has no sections, create a transparent unsectioned section
+        let targetSecId = sectionId;
+        let sections = [...doc.sections];
+
+        if (sections.length === 0) {
+          const newSec: SongLyricSection = {
+            id: generateLyricId('sec'),
+            type: 'custom',
+            name: '', // Empty name = freeform, no section banner
+            lines: [],
+          };
+          sections = [newSec];
+          targetSecId = newSec.id;
+        } else if (!targetSecId) {
+          targetSecId = sections[sections.length - 1].id;
+        }
+
+        const newLine: SongLyricLine = {
+          id: generateLyricId('line'),
+          text: '',
+        };
+
+        const updatedSections = sections.map((sec) => {
+          if (sec.id !== targetSecId) return sec;
           const lines = [...sec.lines];
-          if (typeof afterIndex === 'number' && afterIndex >= 0) {
-            lines.splice(afterIndex + 1, 0, newLine);
+          if (afterLineIdx !== undefined && afterLineIdx >= 0) {
+            lines.splice(afterLineIdx + 1, 0, newLine);
           } else {
             lines.push(newLine);
           }
           return { ...sec, lines };
-        }),
-      }));
+        });
+
+        return { ...doc, sections: updatedSections };
+      });
     },
     [updateDoc]
   );
@@ -247,96 +238,125 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     (sectionId: string, lineId: string) => {
       updateDoc((doc) => ({
         ...doc,
+        sections: doc.sections.map((sec) =>
+          sec.id === sectionId
+            ? {
+                ...sec,
+                lines: sec.lines.filter((l) => l.id !== lineId),
+              }
+            : sec
+        ),
+      }));
+    },
+    [updateDoc]
+  );
+
+  // ── INLINE FORMATTING (BOLD & COLOR) ────────────────────────────────
+
+  const handleFormatBold = useCallback(() => {
+    const sel = activeSelectionRef.current;
+    if (!sel) {
+      toast.info('Click or select text in a line first');
+      return;
+    }
+
+    updateDoc((doc) => ({
+      ...doc,
+      sections: doc.sections.map((sec) => {
+        if (sec.id !== sel.sectionId) return sec;
+        return {
+          ...sec,
+          lines: sec.lines.map((l) => {
+            if (l.id !== sel.lineId) return l;
+
+            // If a specific range is selected, format only that range
+            if (sel.start !== sel.end) {
+              const nextSpans = toggleBoldOnSelection(l.spans, l.text, sel.start, sel.end);
+              return { ...l, spans: nextSpans };
+            }
+
+            // Otherwise toggle line-level bold
+            const currentBold = Boolean(l.format?.bold);
+            return {
+              ...l,
+              format: { ...l.format, bold: !currentBold },
+            };
+          }),
+        };
+      }),
+    }));
+  }, [updateDoc]);
+
+  const handleFormatColor = useCallback(
+    (color: string) => {
+      const sel = activeSelectionRef.current;
+      if (!sel) {
+        // Document-wide color change
+        updateDoc((doc) => ({
+          ...doc,
+          formatting: { ...doc.formatting, defaultColor: color || undefined },
+        }));
+        setShowColorPicker(false);
+        return;
+      }
+
+      updateDoc((doc) => ({
+        ...doc,
         sections: doc.sections.map((sec) => {
-          if (sec.id !== sectionId) return sec;
-          const lines = sec.lines.filter((l) => l.id !== lineId);
+          if (sec.id !== sel.sectionId) return sec;
           return {
             ...sec,
-            lines: lines.length > 0 ? lines : [{ id: generateLyricId('line'), text: '' }],
+            lines: sec.lines.map((l) => {
+              if (l.id !== sel.lineId) return l;
+
+              // If a specific range is selected, format only that range
+              if (sel.start !== sel.end) {
+                const nextSpans = setColorOnSelection(l.spans, l.text, sel.start, sel.end, color);
+                return { ...l, spans: nextSpans };
+              }
+
+              // Otherwise set line-level color
+              return {
+                ...l,
+                format: { ...l.format, color: color || undefined },
+              };
+            }),
           };
         }),
       }));
-    },
-    [updateDoc]
-  );
-
-  const handleAddSection = useCallback(
-    (type: StandardLyricSectionType, customName?: string) => {
-      const typeDef = LYRIC_SECTION_TYPES.find((t) => t.type === type);
-      const name = customName?.trim() || typeDef?.defaultName || 'Section';
-      const newSec: SongLyricSection = {
-        id: generateLyricId('sec'),
-        type,
-        name,
-        lines: [
-          {
-            id: generateLyricId('line'),
-            text: '',
-          },
-        ],
-      };
-      updateDoc((doc) => ({
-        ...doc,
-        sections: [...doc.sections, newSec],
-      }));
-      setShowAddSectionModal(false);
-    },
-    [updateDoc]
-  );
-
-  const handleRenameSection = useCallback(
-    (sectionId: string, newName: string) => {
-      const trimmed = newName.trim();
-      if (!trimmed) return;
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) => (sec.id === sectionId ? { ...sec, name: trimmed } : sec)),
-      }));
-      setRenameSectionTarget(null);
-      toast.success('Section renamed');
-    },
-    [updateDoc]
-  );
-
-  const handleDuplicateSection = useCallback(
-    (sectionId: string) => {
-      updateDoc((doc) => {
-        const sec = doc.sections.find((s) => s.id === sectionId);
-        if (!sec) return doc;
-        const duplicated: SongLyricSection = {
-          ...sec,
-          id: generateLyricId('sec'),
-          name: `${sec.name} (Copy)`,
-          lines: sec.lines.map((l) => ({
-            ...l,
-            id: generateLyricId('line'),
-            chords: l.chords ? l.chords.map((c) => ({ ...c, id: generateLyricId('chord') })) : undefined,
-          })),
-        };
-        const index = doc.sections.findIndex((s) => s.id === sectionId);
-        const sections = [...doc.sections];
-        sections.splice(index + 1, 0, duplicated);
-        return { ...doc, sections };
-      });
-      toast.success('Section duplicated');
-    },
-    [updateDoc]
-  );
-
-  const handleDeleteSection = useCallback(
-    (sectionId: string) => {
-      updateDoc((doc) => {
-        const sections = doc.sections.filter((s) => s.id !== sectionId);
-        return {
-          ...doc,
-          sections: sections.length > 0 ? sections : createEmptyLyricsDocument().sections,
-        };
-      });
+      setShowColorPicker(false);
     },
     [updateDoc]
   );
 
   // ── CHORD PLACEMENT HELPERS ──────────────────────────────────────────
+
+  const handleOpenChordPicker = useCallback(() => {
+    const sel = activeSelectionRef.current;
+    if (!sel) {
+      // If there are lines, pick the first line
+      const firstSec = currentDoc.sections[0];
+      const firstLine = firstSec?.lines[0];
+      if (firstSec && firstLine) {
+        setChordPickerTarget({
+          sectionId: firstSec.id,
+          lineId: firstLine.id,
+          offset: firstLine.text.length,
+        });
+        setShowChordPicker(true);
+      } else {
+        toast.info('Type a lyric line first to attach chords');
+      }
+      return;
+    }
+
+    setChordPickerTarget({
+      sectionId: sel.sectionId,
+      lineId: sel.lineId,
+      offset: sel.start,
+    });
+    setShowChordPicker(true);
+  }, [currentDoc.sections]);
 
   const handleAddChordToLine = useCallback(
     (sectionId: string, lineId: string, chord: string, offset: number) => {
@@ -354,14 +374,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 chord,
                 offset: Math.max(0, offset),
               });
-              // Sort chords by offset
               chords.sort((a, b) => a.offset - b.offset);
               return { ...line, chords };
             }),
           };
         }),
       }));
-      setActiveChordPopover(null);
+      setShowChordPicker(false);
+      setChordPickerTarget(null);
     },
     [updateDoc]
   );
@@ -382,10 +402,91 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           };
         }),
       }));
-      setActiveChordPopover(null);
     },
     [updateDoc]
   );
+
+  // ── SECTION MANAGEMENT ───────────────────────────────────────────────
+
+  const handleCreateSection = useCallback(
+    (name: string, type: StandardLyricSectionType = 'custom') => {
+      updateDoc((doc) => {
+        const newSec: SongLyricSection = {
+          id: generateLyricId('sec'),
+          type,
+          name: name.trim(),
+          lines: [{ id: generateLyricId('line'), text: '' }],
+        };
+        return {
+          ...doc,
+          sections: [...doc.sections, newSec],
+        };
+      });
+      setShowAddSectionModal(false);
+      toast.success(`Added ${name} section`);
+    },
+    [updateDoc]
+  );
+
+  const handleRenameSection = useCallback(
+    (sectionId: string, newName: string) => {
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((sec) =>
+          sec.id === sectionId ? { ...sec, name: newName.trim() } : sec
+        ),
+      }));
+      setRenameSectionTarget(null);
+    },
+    [updateDoc]
+  );
+
+  const handleDeleteSection = useCallback(
+    (sectionId: string) => {
+      updateDoc((doc) => {
+        const sections = doc.sections.filter((s) => s.id !== sectionId);
+        return { ...doc, sections };
+      });
+    },
+    [updateDoc]
+  );
+
+  // ── VOCAL ROLE ASSIGNMENT ────────────────────────────────────────────
+
+  const handleAssignRole = useCallback(
+    (role: VocalRoleAnnotation | undefined) => {
+      if (!rolePickerTarget) return;
+
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((sec) => {
+          if (sec.id !== rolePickerTarget.sectionId) return sec;
+
+          if (rolePickerTarget.lineId) {
+            return {
+              ...sec,
+              lines: sec.lines.map((l) =>
+                l.id === rolePickerTarget.lineId ? { ...l, vocalRole: role } : l
+              ),
+            };
+          }
+
+          return { ...sec, vocalRole: role };
+        }),
+      }));
+      setRolePickerTarget(null);
+    },
+    [rolePickerTarget, updateDoc]
+  );
+
+  const handleCreateCustomRole = useCallback(() => {
+    if (!newRoleName.trim()) return;
+    saveCustomVocalRole({ label: newRoleName.trim(), color: newRoleColor });
+    setCustomRolesVersion((v) => v + 1);
+    setNewRoleName('');
+    setShowNewRoleForm(false);
+    toast.success(`Role "${newRoleName.trim()}" created`);
+  }, [newRoleName, newRoleColor]);
 
   // ── CLIPBOARD INTEGRATION ────────────────────────────────────────────
 
@@ -396,14 +497,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         if (text && text.trim()) {
           const parsed = parsePastedLyrics(text);
           onChange(parsed);
-          toast.success('Lyrics pasted and structured successfully!');
+          toast.success('Lyrics pasted successfully!');
           return;
         }
       }
     } catch (err) {
       console.warn('System clipboard read failed, opening paste dialog:', err);
     }
-    // Fallback: open paste modal
     setPasteModalText('');
     setShowPasteModal(true);
   }, [onChange]);
@@ -427,7 +527,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
       if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(plainText);
-        toast.success('Lyrics and chords copied to clipboard!');
+        toast.success('Lyrics copied to clipboard!');
       } else {
         const el = document.createElement('textarea');
         el.value = plainText;
@@ -443,7 +543,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     }
   }, [currentDoc]);
 
-  // Combined chords list for quick selection
+  // Combined chords list
   const chordOptions = useMemo(() => {
     const list = new Set<string>();
     availableChords.forEach((c) => list.add(c));
@@ -453,341 +553,379 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     return Array.from(list);
   }, [availableChords]);
 
-  // Check if document has no written lyrics
-  const isLyricsEmpty = useMemo(() => {
-    if (!currentDoc.sections || currentDoc.sections.length === 0) return true;
-    return currentDoc.sections.every(
-      (sec) =>
-        !sec.lines ||
-        sec.lines.length === 0 ||
-        sec.lines.every((l) => !l.text.trim() && (!l.chords || l.chords.length === 0))
-    );
-  }, [currentDoc]);
-
-  // Total lines count
-  const totalLinesCount = useMemo(() => {
-    return (currentDoc.sections || []).reduce((acc, sec) => acc + (sec.lines?.length || 0), 0);
-  }, [currentDoc.sections]);
-
   return (
     <div
-      data-testid="song-lyrics-editor"
-      className="w-full flex flex-col gap-3 py-1"
+      data-testid="song-lyrics-editor-workspace"
+      className="flex flex-col w-full h-full min-h-0 relative select-text"
       style={{
-        color: documentColor || 'var(--c-text-primary, #ffffff)',
+        color: 'var(--c-text-primary, #ffffff)',
+        fontFamily: 'var(--studio-font-body, var(--font-body))',
       }}
     >
-      {/* ── STREAMLINED ACTIONS STRIP ───────────────────────────────── */}
-      <div
-        className="flex items-center justify-between flex-wrap gap-2 px-1 py-1.5 border-b"
-        style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
+      {/* ── 1. DEDICATED LYRICS EDITING TOOLBAR ───────────────────────── */}
+      <header
+        className="sticky top-0 z-30 flex items-center justify-between gap-1.5 px-3 py-2 rounded-2xl border backdrop-blur-xl shadow-lg mb-4"
+        style={{
+          backgroundColor: isLight
+            ? 'rgba(255, 255, 255, 0.88)'
+            : isAmoled
+              ? 'rgba(0, 0, 0, 0.92)'
+              : 'rgba(18, 18, 22, 0.88)',
+          borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
+        }}
+        data-purpose="lyrics-editing-toolbar"
       >
-        {/* Left: Summary pill & Quick tools */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className="text-[11px] font-semibold px-2.5 py-1 rounded-full border tracking-wide select-none"
+        {/* Left: Formatting tools */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+          {/* Bold Button */}
+          <button
+            type="button"
+            data-testid="toolbar-bold-btn"
+            onClick={handleFormatBold}
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-all active:scale-90 cursor-pointer border"
             style={{
-              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
+              color: 'var(--c-text-primary, #ffffff)',
+            }}
+            title="Bold selected text (or line)"
+          >
+            B
+          </button>
+
+          {/* Color Palette Button */}
+          <button
+            type="button"
+            data-testid="toolbar-color-btn"
+            onClick={() => setShowColorPicker((v) => !v)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer border relative"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
+              color: documentColor || accent.from,
+            }}
+            title="Text Color"
+          >
+            <span className="material-symbols-rounded text-base">palette</span>
+          </button>
+
+          {/* Attach Chord Button */}
+          <button
+            type="button"
+            data-testid="toolbar-chord-btn"
+            onClick={handleOpenChordPicker}
+            className="h-8 px-2.5 rounded-lg flex items-center gap-1 text-xs font-bold transition-all active:scale-90 cursor-pointer border"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
+              color: accent.from,
+            }}
+            title="Attach chord at cursor/selection"
+          >
+            <span className="material-symbols-rounded text-sm">music_note</span>
+            <span className="hidden sm:inline">+ Chord</span>
+          </button>
+
+          {/* Vocal Role Button */}
+          <button
+            type="button"
+            data-testid="toolbar-role-btn"
+            onClick={() => {
+              const sel = activeSelectionRef.current;
+              if (sel) {
+                setRolePickerTarget({ sectionId: sel.sectionId, lineId: sel.lineId });
+              } else if (currentDoc.sections.length > 0) {
+                setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
+              } else {
+                toast.info('Type a lyric line first to assign roles');
+              }
+            }}
+            className="h-8 px-2.5 rounded-lg flex items-center gap-1 text-xs font-bold transition-all active:scale-90 cursor-pointer border"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
               borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
               color: 'var(--c-text-secondary, #94a3b8)',
             }}
+            title="Assign vocal performer role"
           >
-            {currentDoc.sections.length} {currentDoc.sections.length === 1 ? 'section' : 'sections'} • {totalLinesCount} {totalLinesCount === 1 ? 'line' : 'lines'}
-          </span>
-
-          {/* Paste Lyrics Button */}
-          <button
-            type="button"
-            data-testid="paste-lyrics-btn"
-            onClick={handlePasteLyricsFromClipboard}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-xs transition-all active:scale-95 cursor-pointer"
-            style={{
-              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-              color: 'var(--c-text-primary, #ffffff)',
-            }}
-            title="Paste lyrics from clipboard"
-          >
-            <span className="material-symbols-rounded text-sm" style={{ color: accent.from }}>
-              content_paste
-            </span>
-            <span>Paste</span>
-          </button>
-
-          {/* Copy Lyrics Button */}
-          <button
-            type="button"
-            data-testid="copy-lyrics-btn"
-            onClick={handleCopyLyricsToClipboard}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border shadow-xs transition-all active:scale-95 cursor-pointer"
-            style={{
-              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-              color: 'var(--c-text-secondary, #94a3b8)',
-            }}
-            title="Copy lyrics to clipboard"
-          >
-            <span className="material-symbols-rounded text-sm">content_copy</span>
-            <span>Copy</span>
+            <span className="material-symbols-rounded text-sm">mic</span>
+            <span className="hidden sm:inline">Role</span>
           </button>
 
           {/* Add Section Button */}
           <button
             type="button"
-            data-testid="add-section-btn"
+            data-testid="toolbar-add-section-btn"
             onClick={() => setShowAddSectionModal(true)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="h-8 px-2.5 rounded-lg flex items-center gap-1 text-xs font-bold transition-all active:scale-90 cursor-pointer border"
             style={{
-              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
               color: 'var(--c-text-primary, #ffffff)',
             }}
-            title="Add section to lyrics"
+            title="Add section container"
           >
-            <span className="material-symbols-rounded text-sm">add</span>
-            <span>Section</span>
+            <span className="material-symbols-rounded text-sm">layers</span>
+            <span className="hidden sm:inline">+ Section</span>
           </button>
         </div>
 
-        {/* Right: Color & Options */}
-        <div className="flex items-center gap-1.5">
-          {/* Document Formatting Button */}
+        {/* Right: History & Clipboard */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Undo */}
           <button
             type="button"
-            data-testid="doc-formatting-btn"
-            onClick={() => setShowFormattingModal(true)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-xs transition-all active:scale-95 cursor-pointer"
+            data-testid="toolbar-undo-btn"
+            onClick={handleUndo}
+            disabled={historyRef.current.length === 0}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer border disabled:opacity-30 disabled:pointer-events-none"
             style={{
               backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-              color: documentColor || 'var(--c-text-secondary, #94a3b8)',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+              color: 'var(--c-text-secondary, #94a3b8)',
             }}
-            title="Choose lyrics text color"
+            title="Undo"
           >
-            <span className="material-symbols-rounded text-sm">palette</span>
-            <span>Color</span>
+            <span className="material-symbols-rounded text-base">undo</span>
           </button>
 
-          {/* Clear Lyrics Button */}
+          {/* Redo */}
           <button
             type="button"
-            data-testid="remove-lyrics-btn"
+            data-testid="toolbar-redo-btn"
+            onClick={handleRedo}
+            disabled={futureRef.current.length === 0}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer border disabled:opacity-30 disabled:pointer-events-none"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+              color: 'var(--c-text-secondary, #94a3b8)',
+            }}
+            title="Redo"
+          >
+            <span className="material-symbols-rounded text-base">redo</span>
+          </button>
+
+          {/* Copy */}
+          <button
+            type="button"
+            data-testid="toolbar-copy-btn"
+            onClick={handleCopyLyricsToClipboard}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer border"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+              color: 'var(--c-text-secondary, #94a3b8)',
+            }}
+            title="Copy lyrics & chords"
+          >
+            <span className="material-symbols-rounded text-base">content_copy</span>
+          </button>
+
+          {/* Paste */}
+          <button
+            type="button"
+            data-testid="toolbar-paste-btn"
+            onClick={handlePasteLyricsFromClipboard}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer border"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+              color: accent.from,
+            }}
+            title="Paste lyrics"
+          >
+            <span className="material-symbols-rounded text-base">content_paste</span>
+          </button>
+
+          {/* Clear */}
+          <button
+            type="button"
+            data-testid="toolbar-clear-btn"
             onClick={() => setShowClearConfirm(true)}
-            className="p-1 rounded-full text-gray-400 hover:text-rose-400 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer text-gray-400 hover:text-rose-400"
             title="Clear lyrics"
           >
             <span className="material-symbols-rounded text-base">delete</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── EMPTY STATE BANNER (SUBTLE, WHEN NO LYRICS YET) ─────────── */}
-      {isLyricsEmpty && (
-        <div
-          className="flex flex-col items-center justify-center p-4 my-1 rounded-2xl border text-center transition-all"
-          style={{
-            backgroundColor: isLight ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)',
-            borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
-          }}
-        >
-          <div
-            className="flex items-center justify-center w-10 h-10 rounded-full mb-2"
+      {/* ── POPUP: COLOR PALETTE DROPDOWN ────────────────────────────── */}
+      <AnimatePresence>
+        {showColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.95 }}
+            className="absolute top-14 left-4 z-40 p-3 rounded-2xl border shadow-2xl backdrop-blur-2xl flex flex-col gap-2"
             style={{
-              backgroundColor: `color-mix(in srgb, ${accent.from} 15%, transparent)`,
-              color: accent.from,
+              backgroundColor: isAmoled ? '#000000' : 'var(--surface-card-bg, #111115)',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.15))',
+              minWidth: '220px',
             }}
           >
-            <span className="material-symbols-rounded text-xl">lyrics</span>
-          </div>
-          <h4
-            className="text-xs font-bold uppercase tracking-wider mb-1"
-            style={{ color: 'var(--c-text-primary, #ffffff)' }}
-          >
-            Lyrics Workspace Ready
-          </h4>
-          <p
-            className="text-[11px] max-w-[280px] leading-relaxed mb-3"
-            style={{ color: 'var(--c-text-secondary, #94a3b8)' }}
-          >
-            Type lyrics into the section below, or tap Paste to import formatted lyrics and chords automatically.
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handlePasteLyricsFromClipboard}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-xs cursor-pointer active:scale-95 transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-              }}
-            >
-              <span className="material-symbols-rounded text-sm">content_paste</span>
-              <span>Paste Lyrics</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAddSectionModal(true)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-xs cursor-pointer active:scale-95 transition-all"
-              style={{
-                backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                color: 'var(--c-text-secondary, #94a3b8)',
-              }}
-            >
-              <span className="material-symbols-rounded text-sm">add</span>
-              <span>Add Section</span>
-            </button>
-          </div>
-        </div>
-      )}
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+              Text Color
+            </p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {COLOR_PALETTE.map((c) => (
+                <button
+                  key={c.label}
+                  type="button"
+                  onClick={() => handleFormatColor(c.value)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border transition-transform active:scale-90 cursor-pointer"
+                  style={{
+                    backgroundColor: c.value || 'transparent',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                  }}
+                  title={c.label}
+                >
+                  {!c.value && (
+                    <span className="material-symbols-rounded text-xs text-gray-400">block</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* ── SECTIONS LIST ───────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3">
+      {/* ── 2. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
+      <main
+        className="flex-1 flex flex-col gap-4 pb-24 outline-none"
+        data-purpose="teleprompter-writing-canvas"
+      >
+        {/* If completely empty: Show pristine writing invitation without forced sections */}
+        {isLyricsEmpty && (
+          <div
+            onClick={() => handleAddLine()}
+            className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all cursor-text text-center my-4 group hover:border-blue-500/40"
+            style={{
+              backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+            }}
+          >
+            <span
+              className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full mb-3 border"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderColor: 'rgba(255,255,255,0.08)',
+                color: 'var(--c-text-muted, #8A92A6)',
+              }}
+            >
+              [empty document]
+            </span>
+            <p className="text-base font-semibold text-gray-400 group-hover:text-gray-200 transition-colors">
+              Type or paste lyrics...
+            </p>
+            <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
+              Start writing freely. Sections, vocal roles, and chords are completely optional.
+            </p>
+          </div>
+        )}
+
+        {/* Render sections & lines */}
         {currentDoc.sections.map((section, secIdx) => {
+          const hasSectionHeader = Boolean(section.name && section.name.trim().length > 0);
           const sectionColor = section.vocalRole?.color || accent.from;
 
           return (
-            <div
+            <section
               key={section.id || secIdx}
               data-testid={`lyric-section-${secIdx}`}
-              className="rounded-2xl border p-3 flex flex-col gap-2.5 transition-all shadow-xs"
-              style={{
-                backgroundColor: isLight
-                  ? '#ffffff'
-                  : isAmoled
-                    ? '#050505'
-                    : 'var(--surface-card-bg, #111115)',
-                borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
-              }}
+              className="flex flex-col gap-2 relative group/sec"
             >
-              {/* Section Header Row */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/5">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  {/* Color bar indicator */}
-                  <span
-                    className="w-1.5 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: sectionColor }}
-                  />
+              {/* Optional Section Header Strip (Only if section has a name) */}
+              {hasSectionHeader && (
+                <div className="flex items-center justify-between gap-2 pt-3 pb-1 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-1.5 h-3.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: sectionColor }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
+                      className="text-xs font-black uppercase tracking-wider hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1.5"
+                      style={{ color: sectionColor }}
+                      title="Click to rename section"
+                    >
+                      <span>{section.name}</span>
+                      <span className="material-symbols-rounded text-xs opacity-40">edit</span>
+                    </button>
 
-                  {/* Section Title (clickable to rename) */}
-                  <button
-                    type="button"
-                    onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
-                    className="text-xs font-extrabold uppercase tracking-wider truncate hover:opacity-80 transition-opacity text-left cursor-pointer flex items-center gap-1.5"
-                    style={{
-                      fontFamily: 'var(--font-headline)',
-                      color: sectionColor,
-                    }}
-                    title="Click to rename section"
-                  >
-                    <span>{section.name || 'Section'}</span>
-                    <span className="material-symbols-rounded text-[13px] opacity-40">edit</span>
-                  </button>
+                    {/* Vocal Role Badge */}
+                    <button
+                      type="button"
+                      onClick={() => setRolePickerTarget({ sectionId: section.id })}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95"
+                      style={{
+                        backgroundColor: section.vocalRole
+                          ? `${section.vocalRole.color || '#3b82f6'}22`
+                          : 'rgba(255,255,255,0.04)',
+                        borderColor: section.vocalRole
+                          ? `${section.vocalRole.color || '#3b82f6'}44`
+                          : 'rgba(255,255,255,0.08)',
+                        color: section.vocalRole?.color || 'var(--c-text-muted, #94a3b8)',
+                      }}
+                      title="Assign Vocal Performer Role to Section"
+                    >
+                      <span className="material-symbols-rounded text-[11px]">mic</span>
+                      <span>{section.vocalRole?.label || '+ Role'}</span>
+                    </button>
+                  </div>
 
-                  {/* Vocal Role Badge */}
-                  <button
-                    type="button"
-                    data-testid={`vocal-role-btn-${section.id}`}
-                    onClick={() => setRolePickerTarget({ sectionId: section.id })}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer active:scale-95"
-                    style={{
-                      backgroundColor: section.vocalRole
-                        ? `${section.vocalRole.color || '#3b82f6'}22`
-                        : 'rgba(255,255,255,0.04)',
-                      borderColor: section.vocalRole
-                        ? `${section.vocalRole.color || '#3b82f6'}55`
-                        : 'rgba(255,255,255,0.1)',
-                      color: section.vocalRole?.color || 'var(--c-text-muted, #94a3b8)',
-                    }}
-                    title="Assign Vocal Performer Role"
-                  >
-                    <span className="material-symbols-rounded text-[11px]">mic</span>
-                    <span>{section.vocalRole?.label || '+ Role'}</span>
-                  </button>
-                </div>
-
-                {/* Section Controls */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleAddLine(section.id)}
-                    className="p-1 rounded-md text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    title="Add line"
-                  >
-                    <span className="material-symbols-rounded text-base">add</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDuplicateSection(section.id)}
-                    className="p-1 rounded-md text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    title="Duplicate section"
-                  >
-                    <span className="material-symbols-rounded text-base">content_copy</span>
-                  </button>
+                  {/* Section Delete button */}
                   <button
                     type="button"
                     onClick={() => handleDeleteSection(section.id)}
-                    className="p-1 rounded-md text-xs text-gray-400 hover:text-rose-400 transition-colors cursor-pointer"
-                    title="Delete section"
+                    className="opacity-0 group-hover/sec:opacity-100 text-gray-500 hover:text-rose-400 transition-opacity p-1 rounded-md"
+                    title="Delete section container"
                   >
-                    <span className="material-symbols-rounded text-base">close</span>
+                    <span className="material-symbols-rounded text-sm">close</span>
                   </button>
                 </div>
-              </div>
+              )}
 
-              {/* Section Lines */}
-              <div className="flex flex-col gap-1.5">
+              {/* Freeform Script Lines in Section */}
+              <div className="flex flex-col gap-1">
                 {section.lines.map((line, lineIdx) => {
                   const resolvedColor =
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
-                  const isBold = Boolean(line.format?.bold);
+                  const isLineBold = Boolean(line.format?.bold);
                   const hasChords = Boolean(line.chords && line.chords.length > 0);
 
                   return (
                     <div
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
-                      className="group relative flex flex-col gap-0.5 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-white/10 transition-colors"
-                      style={{
-                        backgroundColor: isLight ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)',
-                      }}
+                      className="group/line relative flex flex-col py-1 px-2 rounded-xl transition-colors hover:bg-white/[0.02]"
                     >
-                      {/* 1. Placed Chords Row above lyrics (only show when chords exist or on focus/hover) */}
+                      {/* Attached Chords Row directly above lyrics */}
                       {hasChords && (
-                        <div className="flex items-center gap-1.5 min-h-[22px] flex-wrap font-mono text-xs font-bold select-none mb-0.5">
+                        <div className="flex items-center gap-2 min-h-[22px] flex-wrap font-mono text-xs font-black select-none mb-0.5">
                           {line.chords!.map((chord) => (
                             <span
                               key={chord.id}
                               data-testid={`placed-chord-${chord.chord}`}
-                              onClick={() =>
-                                handleRemoveChordFromLine(section.id, line.id, chord.id)
-                              }
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-rose-500/20 hover:text-rose-400 transition-colors cursor-pointer text-[11px]"
+                              onClick={() => handleRemoveChordFromLine(section.id, line.id, chord.id)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold border transition-all cursor-pointer active:scale-95"
+                              style={{
+                                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                borderColor: 'rgba(56, 189, 248, 0.35)',
+                                color: '#38bdf8',
+                              }}
                               title="Click to remove chord"
                             >
                               <span>{chord.chord}</span>
                               <span className="text-[9px] opacity-60">×</span>
                             </span>
                           ))}
-
-                          {/* Add Chord to line button */}
-                          <button
-                            type="button"
-                            data-testid={`add-chord-to-line-${lineIdx}`}
-                            onClick={() =>
-                              setActiveChordPopover({
-                                sectionId: section.id,
-                                lineId: line.id,
-                                offset: line.text.length,
-                              })
-                            }
-                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-[10px] font-sans px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-all text-gray-300 cursor-pointer ml-auto"
-                          >
-                            + Chord
-                          </button>
                         </div>
                       )}
 
-                      {/* 2. Lyric Line Text Input */}
+                      {/* Line Writing Surface */}
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
@@ -795,8 +933,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           onChange={(e) =>
                             handleUpdateLineText(section.id, line.id, e.target.value)
                           }
+                          onSelect={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            setActiveSelection({
+                              sectionId: section.id,
+                              lineId: line.id,
+                              start: target.selectionStart ?? 0,
+                              end: target.selectionEnd ?? 0,
+                              text: line.text,
+                            });
+                          }}
+                          onFocus={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            setActiveSelection({
+                              sectionId: section.id,
+                              lineId: line.id,
+                              start: target.selectionStart ?? 0,
+                              end: target.selectionEnd ?? 0,
+                              text: line.text,
+                            });
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
+                              e.preventDefault();
                               handleAddLine(section.id, lineIdx);
                             } else if (
                               e.key === 'Backspace' &&
@@ -807,662 +966,344 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               handleDeleteLine(section.id, line.id);
                             }
                           }}
-                          placeholder="Type or paste lyrics..."
-                          className="flex-1 bg-transparent border-0 outline-none text-sm leading-relaxed"
+                          placeholder={isLyricsEmpty ? 'Type or paste lyrics...' : ''}
+                          className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide"
                           style={{
                             color: resolvedColor,
-                            fontWeight: isBold ? 700 : 400,
-                            fontFamily: 'var(--studio-font-body)',
+                            fontWeight: isLineBold ? 800 : 500,
+                            fontFamily: 'inherit',
                           }}
                         />
 
-                        {/* Line Quick Actions */}
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                          {/* Attach chord button if none placed yet */}
-                          {!hasChords && (
-                            <button
-                              type="button"
-                              data-testid={`add-chord-to-line-${lineIdx}`}
-                              onClick={() =>
-                                setActiveChordPopover({
-                                  sectionId: section.id,
-                                  lineId: line.id,
-                                  offset: line.text.length,
-                                })
-                              }
-                              className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-all text-gray-300 cursor-pointer"
-                              title="Attach chord above this line"
-                            >
-                              + Chord
-                            </button>
-                          )}
-
-                          {/* Bold Toggle */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleLineBold(section.id, line.id)}
-                            className={`p-1 rounded text-xs transition-colors cursor-pointer ${
-                              isBold ? 'bg-blue-500/30 text-blue-400' : 'text-gray-400 hover:text-white'
-                            }`}
-                            title="Toggle Bold"
+                        {/* Line Vocal Role badge (if present) */}
+                        {line.vocalRole && (
+                          <span
+                            className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0"
+                            style={{
+                              backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
+                              borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
+                              color: line.vocalRole.color || '#3b82f6',
+                            }}
                           >
-                            <span className="font-bold text-xs">B</span>
-                          </button>
-
-                          {/* Line Color Picker Button */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setColorPickerLine({ sectionId: section.id, lineId: line.id })
-                            }
-                            className="p-1 rounded text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
-                            title="Line Color"
-                          >
-                            <span
-                              className="w-3 h-3 rounded-full inline-block border border-white/40"
-                              style={{ backgroundColor: line.format?.color || 'transparent' }}
-                            />
-                          </button>
-
-                          {/* Delete Line Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLine(section.id, line.id)}
-                            className="p-1 rounded text-xs text-gray-400 hover:text-rose-400 transition-colors cursor-pointer"
-                            title="Delete Line"
-                          >
-                            <span className="material-symbols-rounded text-sm">remove</span>
-                          </button>
-                        </div>
+                            {line.vocalRole.label || line.vocalRole.type}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-
-              {/* Add line below section button */}
-              <button
-                type="button"
-                onClick={() => handleAddLine(section.id)}
-                className="w-full py-1 text-center text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer border border-dashed border-white/10 hover:border-white/20 rounded-xl"
-              >
-                + Add line to {section.name}
-              </button>
-            </div>
+            </section>
           );
         })}
-      </div>
 
-      {/* ── MODAL: PASTE LYRICS ─────────────────────────────────────── */}
-      {showPasteModal && (
-        <Dialog
-          open={true}
-          onClose={() => setShowPasteModal(false)}
-          title="Paste Song Lyrics"
+        {/* ── 3. BOTTOM ACTIONS: CLEAN + ADD SECTION CONTROL ──────────── */}
+        <div
+          className="flex flex-col items-center justify-center pt-6 pb-12 gap-3"
+          data-purpose="lyrics-bottom-actions"
         >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-400">
-              Paste your lyrics below. Chords, sections like [Verse] or [Chorus], and vocal roles
-              will be recognized and structured automatically.
-            </p>
-            <textarea
-              autoFocus
-              value={pasteModalText}
-              onChange={(e) => setPasteModalText(e.target.value)}
-              rows={8}
-              placeholder="[Verse 1]&#10;When I look into your eyes...&#10;&#10;[Chorus]&#10;Don't you cry tonight..."
-              className="w-full p-3 rounded-xl border outline-none text-xs font-mono leading-relaxed"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #111115)',
-                borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                color: 'var(--c-text-primary, #ffffff)',
-                resize: 'none',
-              }}
-            />
-            <div className="flex gap-2 justify-end mt-2">
+          <button
+            type="button"
+            data-testid="bottom-add-section-btn"
+            onClick={() => setShowAddSectionModal(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border shadow-sm text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
+            style={{
+              backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
+              color: 'var(--c-text-primary, #ffffff)',
+            }}
+          >
+            <span className="material-symbols-rounded text-base" style={{ color: accent.from }}>
+              layers
+            </span>
+            <span>+ Add Section</span>
+          </button>
+        </div>
+      </main>
+
+      {/* ── DIALOG: ATTACH CHORD POPOVER ─────────────────────────────── */}
+      <Dialog
+        open={showChordPicker}
+        onClose={() => setShowChordPicker(false)}
+        title="Attach Chord"
+      >
+        <div className="flex flex-col gap-3 py-1">
+          <p className="text-xs text-gray-400">
+            Select a chord to place directly above this lyric position:
+          </p>
+          <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto pr-1">
+            {chordOptions.map((chord) => (
               <button
+                key={chord}
                 type="button"
-                onClick={() => setShowPasteModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleApplyPasteModal}
-                disabled={!pasteModalText.trim()}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm disabled:opacity-40 cursor-pointer"
-                style={{
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                }}
-              >
-                Insert Structured Lyrics
-              </button>
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: ADD SECTION ──────────────────────────────────────── */}
-      {showAddSectionModal && (
-        <Dialog
-          open={true}
-          onClose={() => setShowAddSectionModal(false)}
-          title="Add Song Section"
-        >
-          <div className="flex flex-col gap-2 p-1">
-            <p className="text-xs text-gray-400 mb-2">Choose the type of section to append:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {LYRIC_SECTION_TYPES.map((secType) => (
-                <button
-                  key={secType.type}
-                  type="button"
-                  data-testid={`pick-section-type-${secType.type}`}
-                  onClick={() => handleAddSection(secType.type, secType.defaultName)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold hover:border-blue-500 transition-colors cursor-pointer"
-                  style={{
-                    backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                    borderColor: 'var(--c-border, rgba(255,255,255,0.1))',
-                    color: 'var(--c-text-primary, #ffffff)',
-                  }}
-                >
-                  <span className="material-symbols-rounded text-sm text-blue-400">layers</span>
-                  <span>{secType.defaultName}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: RENAME SECTION ────────────────────────────────────── */}
-      {renameSectionTarget && (
-        <Dialog
-          open={true}
-          onClose={() => setRenameSectionTarget(null)}
-          title="Rename Section"
-        >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-400">Enter a descriptive title for this section:</p>
-            <input
-              type="text"
-              autoFocus
-              value={renameSectionTarget.name}
-              onChange={(e) =>
-                setRenameSectionTarget({ ...renameSectionTarget, name: e.target.value })
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleRenameSection(renameSectionTarget.id, renameSectionTarget.name);
-                }
-              }}
-              placeholder="e.g. Verse 1, Chorus, Acoustic Outro"
-              className="w-full p-2.5 rounded-xl border text-xs font-semibold outline-none"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #111115)',
-                borderColor: 'var(--c-border, rgba(255,255,255,0.15))',
-                color: 'var(--c-text-primary, #ffffff)',
-              }}
-            />
-            <div className="flex justify-end gap-2 mt-2">
-              <button
-                type="button"
-                onClick={() => setRenameSectionTarget(null)}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRenameSection(renameSectionTarget.id, renameSectionTarget.name)}
-                disabled={!renameSectionTarget.name.trim()}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold text-white cursor-pointer disabled:opacity-40"
-                style={{
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                }}
-              >
-                Save Name
-              </button>
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: DOCUMENT COLOR / FORMATTING ───────────────────────── */}
-      {showFormattingModal && (
-        <Dialog
-          open={true}
-          onClose={() => setShowFormattingModal(false)}
-          title="Lyrics Document Color"
-        >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-400">
-              Select document-wide lyric text color. Lines with individual color overrides will
-              retain their styling.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {COLOR_PALETTE.map((col) => {
-                const isSelected = (documentColor || '') === col.value;
-                return (
-                  <button
-                    key={col.label}
-                    type="button"
-                    onClick={() => {
-                      handleSetDocumentColor(col.value);
-                      setShowFormattingModal(false);
-                    }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                      isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <span
-                      className="w-4 h-4 rounded-full border border-white/20"
-                      style={{ backgroundColor: col.value || 'var(--c-text-primary)' }}
-                    />
-                    <span>{col.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: LINE COLOR PICKER ─────────────────────────────────── */}
-      {colorPickerLine && (
-        <Dialog
-          open={true}
-          onClose={() => setColorPickerLine(null)}
-          title="Line Text Color"
-        >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-400">Choose a custom color for this specific line:</p>
-            <div className="grid grid-cols-3 gap-2">
-              {COLOR_PALETTE.map((col) => (
-                <button
-                  key={col.label}
-                  type="button"
-                  onClick={() =>
-                    handleSetLineColor(
-                      colorPickerLine.sectionId,
-                      colorPickerLine.lineId,
-                      col.value
-                    )
+                onClick={() => {
+                  if (chordPickerTarget) {
+                    handleAddChordToLine(
+                      chordPickerTarget.sectionId,
+                      chordPickerTarget.lineId,
+                      chord,
+                      chordPickerTarget.offset
+                    );
                   }
-                  className="flex items-center gap-2 p-2 rounded-xl border border-white/10 hover:border-blue-500 text-xs font-bold transition-all cursor-pointer"
-                >
-                  <span
-                    className="w-4 h-4 rounded-full border border-white/20"
-                    style={{ backgroundColor: col.value || 'var(--c-text-primary)' }}
-                  />
-                  <span>{col.label}</span>
-                </button>
-              ))}
-            </div>
+                }}
+                className="py-2 px-3 rounded-xl border font-mono font-bold text-sm text-center transition-all active:scale-95 cursor-pointer hover:border-blue-500/50"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                }}
+              >
+                {chord}
+              </button>
+            ))}
           </div>
-        </Dialog>
-      )}
+        </div>
+      </Dialog>
 
-      {/* ── MODAL: SCALABLE VOCAL ROLE PICKER ─────────────────────────── */}
-      {rolePickerTarget && (
-        <Dialog
-          open={true}
-          onClose={() => {
-            setRolePickerTarget(null);
-            setShowNewRoleForm(false);
-            setNewRoleName('');
-          }}
-          title="Assign Vocal Performer Role"
-        >
-          <div className="flex flex-col gap-3 p-1 max-h-[75vh] overflow-y-auto">
-            {/* Current Role Banner */}
-            {(() => {
-              const currentSection = currentDoc.sections.find(
-                (s) => s.id === rolePickerTarget.sectionId
-              );
-              const currentRole = currentSection?.vocalRole;
+      {/* ── DIALOG: ADD SECTION ──────────────────────────────────────── */}
+      <Dialog
+        open={showAddSectionModal}
+        onClose={() => setShowAddSectionModal(false)}
+        title="Add Section"
+      >
+        <div className="flex flex-col gap-3 py-1">
+          <p className="text-xs text-gray-400">
+            Choose a section type to organize your lyrics:
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { type: 'verse' as const, label: 'Verse' },
+              { type: 'chorus' as const, label: 'Chorus' },
+              { type: 'bridge' as const, label: 'Bridge' },
+              { type: 'pre-chorus' as const, label: 'Pre-Chorus' },
+              { type: 'intro' as const, label: 'Intro' },
+              { type: 'outro' as const, label: 'Outro' },
+              { type: 'solo' as const, label: 'Solo' },
+              { type: 'custom' as const, label: 'Custom...' },
+            ].map((sec) => (
+              <button
+                key={sec.type}
+                type="button"
+                onClick={() => {
+                  if (sec.type === 'custom') {
+                    const customName = window.prompt('Enter custom section name:');
+                    if (customName && customName.trim()) {
+                      handleCreateSection(customName.trim(), 'custom');
+                    }
+                  } else {
+                    handleCreateSection(sec.label, sec.type);
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl border text-xs font-bold text-left transition-all active:scale-95 cursor-pointer flex items-center gap-2 hover:border-blue-500/50"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                }}
+              >
+                <span className="material-symbols-rounded text-sm" style={{ color: accent.from }}>
+                  layers
+                </span>
+                <span>{sec.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Dialog>
 
-              return currentRole ? (
-                <div
-                  className="flex items-center justify-between p-2.5 rounded-xl border"
+      {/* ── DIALOG: VOCAL ROLES PICKER ───────────────────────────────── */}
+      <Dialog
+        open={Boolean(rolePickerTarget)}
+        onClose={() => setRolePickerTarget(null)}
+        title="Assign Vocal Performer Role"
+      >
+        <div className="flex flex-col gap-3 py-1">
+          <p className="text-xs text-gray-400">Select which performer should sing this part:</p>
+
+          {/* Canonical 5 default roles */}
+          <div className="flex flex-col gap-1.5">
+            {defaultVocalRoles.map((role) => (
+              <button
+                key={role.type}
+                type="button"
+                onClick={() => handleAssignRole(role)}
+                className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: role.color }}
+                  />
+                  <span>{role.label || role.type}</span>
+                </div>
+                <span className="text-[10px] uppercase opacity-50 font-mono">Default</span>
+              </button>
+            ))}
+          </div>
+
+          {/* User-defined custom roles */}
+          {customVocalRoles.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
+                Custom Roles
+              </p>
+              {customVocalRoles.map((role) => (
+                <button
+                  key={role.label}
+                  type="button"
+                  onClick={() => handleAssignRole(role)}
+                  className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
                   style={{
-                    backgroundColor: `${currentRole.color || '#3b82f6'}15`,
-                    borderColor: `${currentRole.color || '#3b82f6'}35`,
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    borderColor: 'rgba(255,255,255,0.1)',
                   }}
                 >
                   <div className="flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: currentRole.color || '#3b82f6' }}
+                      style={{ backgroundColor: role.color }}
                     />
-                    <span className="text-xs font-bold text-white">
-                      Current: {currentRole.label}
-                    </span>
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">
-                      ({currentRole.type})
-                    </span>
+                    <span>{role.label}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSetSectionVocalRole(rolePickerTarget.sectionId, null)}
-                    className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                </div>
-              ) : null;
-            })()}
-
-            {/* Standard Roles Group */}
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 block">
-                Standard Roles
-              </span>
-              <div className="flex flex-col gap-1.5">
-                {defaultVocalRoles.map((preset) => {
-                  const currentSection = currentDoc.sections.find(
-                    (s) => s.id === rolePickerTarget.sectionId
-                  );
-                  const isSelected =
-                    currentSection?.vocalRole?.type === preset.type &&
-                    currentSection?.vocalRole?.label?.toLowerCase() === preset.label.toLowerCase();
-
-                  return (
-                    <button
-                      key={preset.type}
-                      type="button"
-                      data-testid={`pick-vocal-role-${preset.type}`}
-                      onClick={() =>
-                        handleSetSectionVocalRole(rolePickerTarget.sectionId, preset)
-                      }
-                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-500/15'
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      style={{
-                        backgroundColor: isSelected
-                          ? undefined
-                          : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: preset.color }}
-                        />
-                        <span className="text-white">{preset.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider">
-                          {preset.type}
-                        </span>
-                        {isSelected && (
-                          <span className="material-symbols-rounded text-sm text-blue-400">
-                            check
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Custom Roles Group */}
-            {customVocalRoles.length > 0 && (
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 block">
-                  Custom Roles
-                </span>
-                <div className="flex flex-col gap-1.5">
-                  {customVocalRoles
-                    .filter((custom): custom is typeof custom & { label: string } => Boolean(custom.label))
-                    .map((custom) => {
-                      const label = custom.label;
-                      const currentSection = currentDoc.sections.find(
-                        (s) => s.id === rolePickerTarget.sectionId
-                      );
-                      const isSelected =
-                        currentSection?.vocalRole?.label?.toLowerCase() ===
-                        label.toLowerCase();
-
-                      return (
-                        <div
-                          key={label}
-                          className={`flex items-center justify-between p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-500/15'
-                              : 'border-white/10 hover:border-white/20'
-                          }`}
-                          style={{
-                            backgroundColor: isSelected
-                              ? undefined
-                              : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleSetSectionVocalRole(rolePickerTarget.sectionId, custom as any)
-                            }
-                            className="flex items-center gap-2 flex-1 cursor-pointer"
-                          >
-                            <span
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: custom.color || '#ec4899' }}
-                            />
-                            <span className="text-white">{label}</span>
-                            {isSelected && (
-                              <span className="material-symbols-rounded text-sm text-blue-400 ml-auto">
-                                check
-                              </span>
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteCustomVocalRole(label);
-                              setCustomRolesVersion((v) => v + 1);
-                              toast.success(`Removed custom role "${label}"`);
-                            }}
-                            className="p-1 rounded text-gray-400 hover:text-rose-400 transition-colors cursor-pointer ml-2"
-                            title="Delete custom role"
-                          >
-                            <span className="material-symbols-rounded text-sm">delete</span>
-                          </button>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-
-            {/* Create Custom Role Inline Form */}
-            <div className="border-t border-white/10 pt-3">
-              {!showNewRoleForm ? (
-                <button
-                  type="button"
-                  onClick={() => setShowNewRoleForm(true)}
-                  className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-white/40 text-xs font-bold flex items-center justify-center gap-1.5 text-gray-300 hover:text-white transition-all cursor-pointer"
-                >
-                  <span className="material-symbols-rounded text-sm">add_circle</span>
-                  <span>Create Custom Role</span>
-                </button>
-              ) : (
-                <div
-                  className="p-3 rounded-xl border flex flex-col gap-2.5"
-                  style={{
-                    backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.03))',
-                    borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">New Vocal Role</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowNewRoleForm(false)}
-                      className="text-gray-400 hover:text-white text-xs cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
-                    placeholder="Role name (e.g. Tenor, Guest, John)"
-                    className="w-full p-2 rounded-lg border text-xs font-semibold outline-none"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #111115)',
-                      borderColor: 'var(--c-border, rgba(255,255,255,0.15))',
-                      color: 'var(--c-text-primary, #ffffff)',
-                    }}
-                  />
-
-                  <div>
-                    <span className="text-[10px] text-gray-400 block mb-1">Pick Color:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {CUSTOM_ROLE_COLORS.map((col) => (
-                        <button
-                          key={col}
-                          type="button"
-                          onClick={() => setNewRoleColor(col)}
-                          className={`w-5 h-5 rounded-full border transition-all cursor-pointer ${
-                            newRoleColor === col ? 'scale-125 border-white shadow-xs' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: col }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const trimmed = newRoleName.trim();
-                      if (!trimmed) {
-                        toast.error('Please enter a role name');
-                        return;
-                      }
-                      saveCustomVocalRole({ label: trimmed, color: newRoleColor });
-                      setCustomRolesVersion((v) => v + 1);
-                      if (rolePickerTarget) {
-                        handleSetSectionVocalRole(rolePickerTarget.sectionId, {
-                          type: 'custom',
-                          label: trimmed,
-                          color: newRoleColor,
-                        });
-                      }
-                      setNewRoleName('');
-                      setShowNewRoleForm(false);
-                      toast.success(`Custom role "${trimmed}" created & assigned`);
-                    }}
-                    disabled={!newRoleName.trim()}
-                    className="w-full py-1.5 rounded-lg text-xs font-bold text-white cursor-pointer disabled:opacity-40 transition-all shadow-xs mt-1"
-                    style={{
-                      background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                    }}
-                  >
-                    Save & Assign Role
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Clear Role Action */}
-            <div className="border-t border-white/10 pt-2 flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => handleSetSectionVocalRole(rolePickerTarget.sectionId, null)}
-                className="text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
-              >
-                Clear section vocal role
-              </button>
-              <button
-                type="button"
-                onClick={() => setRolePickerTarget(null)}
-                className="px-3 py-1 rounded-lg text-xs font-semibold text-gray-300 hover:bg-white/5 cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: ADD / ATTACH CHORD TO LINE ────────────────────────── */}
-      {activeChordPopover && (
-        <Dialog
-          open={true}
-          onClose={() => setActiveChordPopover(null)}
-          title="Place Chord on Line"
-        >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-400">Select a chord to position above this lyric line:</p>
-            <div className="grid grid-cols-4 gap-2 max-h-[220px] overflow-y-auto p-1">
-              {chordOptions.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  data-testid={`select-chord-${c}`}
-                  onClick={() =>
-                    handleAddChordToLine(
-                      activeChordPopover.sectionId,
-                      activeChordPopover.lineId,
-                      c,
-                      activeChordPopover.offset
-                    )
-                  }
-                  className="p-2 rounded-xl border border-white/10 hover:border-blue-500 text-center font-mono font-bold text-sm bg-white/5 hover:bg-blue-500/20 text-white transition-colors cursor-pointer"
-                >
-                  {c}
+                  <span className="text-[10px] uppercase opacity-50 font-mono">Custom</span>
                 </button>
               ))}
             </div>
-          </div>
-        </Dialog>
-      )}
+          )}
 
-      {/* ── MODAL: CONFIRM CLEAR LYRICS ──────────────────────────────── */}
-      {showClearConfirm && (
-        <Dialog
-          open={true}
-          onClose={() => setShowClearConfirm(false)}
-          title="Clear Song Lyrics"
-        >
-          <div className="flex flex-col gap-3 p-1">
-            <p className="text-xs text-gray-300">
-              Are you sure you want to remove all lyrics from this song? Existing chords and
-              song metadata will remain completely intact.
-            </p>
-            <div className="flex gap-2 justify-end mt-2">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                data-testid="confirm-clear-lyrics-btn"
-                onClick={() => {
-                  onChange(undefined);
-                  setShowClearConfirm(false);
-                  toast.success('Lyrics removed from song');
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white cursor-pointer"
-              >
-                Remove Lyrics
-              </button>
+          {/* Add Custom Role Button */}
+          {!showNewRoleForm ? (
+            <button
+              type="button"
+              onClick={() => setShowNewRoleForm(true)}
+              className="mt-2 py-2 px-3 rounded-xl border border-dashed text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              + Create Custom Role (e.g. Duet, Alto, Guest)
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2 p-3 rounded-xl border border-white/10 bg-white/5 mt-2">
+              <input
+                type="text"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                placeholder="Role name (e.g. Duet, Guest, Tenor)"
+                className="p-2 rounded-lg bg-black/40 border border-white/10 text-xs outline-none"
+              />
+              <div className="flex items-center gap-1.5">
+                {CUSTOM_ROLE_COLORS.map((col) => (
+                  <button
+                    key={col}
+                    type="button"
+                    onClick={() => setNewRoleColor(col)}
+                    className="w-5 h-5 rounded-full border transition-transform"
+                    style={{
+                      backgroundColor: col,
+                      borderColor: newRoleColor === col ? '#ffffff' : 'transparent',
+                      transform: newRoleColor === col ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={handleCreateCustomRole}
+                  disabled={!newRoleName.trim()}
+                  className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 disabled:opacity-40"
+                >
+                  Save Role
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewRoleForm(false)}
+                  className="py-1.5 px-3 rounded-lg text-xs text-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Remove Role */}
+          <button
+            type="button"
+            onClick={() => handleAssignRole(undefined)}
+            className="mt-1 text-xs text-gray-400 hover:text-rose-400 text-center py-1 transition-colors"
+          >
+            Clear Assigned Role
+          </button>
+        </div>
+      </Dialog>
+
+      {/* ── DIALOG: PASTE MODAL FALLBACK ─────────────────────────────── */}
+      <Dialog
+        open={showPasteModal}
+        onClose={() => setShowPasteModal(false)}
+        title="Paste Lyrics & Chords"
+      >
+        <div className="flex flex-col gap-3 py-1">
+          <textarea
+            value={pasteModalText}
+            onChange={(e) => setPasteModalText(e.target.value)}
+            rows={8}
+            placeholder="Paste your lyrics here..."
+            className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-xs font-mono outline-none resize-none leading-relaxed"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleApplyPasteModal}
+              disabled={!pasteModalText.trim()}
+              className="flex-1 py-2 rounded-xl text-xs font-bold text-white shadow-sm disabled:opacity-40"
+              style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
+            >
+              Apply Lyrics
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPasteModal(false)}
+              className="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400"
+            >
+              Cancel
+            </button>
           </div>
-        </Dialog>
-      )}
+        </div>
+      </Dialog>
+
+      {/* ── DIALOG: CLEAR CONFIRM ────────────────────────────────────── */}
+      <Dialog
+        open={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear Lyrics"
+      >
+        <div className="flex flex-col gap-3 py-1">
+          <p className="text-xs text-gray-300">
+            Are you sure you want to remove all lyrics from this song?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onChange(undefined);
+                setShowClearConfirm(false);
+                toast.success('Lyrics cleared');
+              }}
+              className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-rose-600"
+            >
+              Clear All Lyrics
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(false)}
+              className="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

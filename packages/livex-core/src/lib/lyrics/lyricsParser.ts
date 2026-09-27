@@ -176,7 +176,7 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
   let currentSection: SongLyricSection | null = null;
   let pendingChordLine: string | null = null;
 
-  function ensureCurrentSection(name = 'Verse', type: StandardLyricSectionType = 'verse'): SongLyricSection {
+  function ensureCurrentSection(name = '', type: StandardLyricSectionType = 'custom'): SongLyricSection {
     if (!currentSection) {
       currentSection = {
         id: generateLyricId('sec'),
@@ -375,18 +375,6 @@ export function lyricsDocumentToPlainText(
 export function createEmptyLyricsDocument(): SongLyricsDocument {
   return {
     version: 1,
-    sections: [
-      {
-        id: generateLyricId('sec'),
-        type: 'verse',
-        name: 'Verse 1',
-        lines: [
-          {
-            id: generateLyricId('line'),
-            text: '',
-          },
-        ],
-      },
-    ],
+    sections: [],
   };
 }

@@ -4358,7 +4358,7 @@ export default function SongsPanel() {
     return Boolean(
       activePreset?.lyrics?.sections &&
         activePreset.lyrics.sections.length > 0 &&
-        activePreset.lyrics.sections.some((s) => s.lines.length > 0)
+        activePreset.lyrics.sections.some((s) => s.lines.some((l) => l.text.trim().length > 0))
     );
   }, [activePreset?.lyrics]);
 
@@ -4868,7 +4868,7 @@ export default function SongsPanel() {
 
               {/* View Mode Selector / Add Lyrics (Mobile) */}
               <div className="w-full flex items-center justify-between gap-2 px-0.5 pt-0.5">
-                {hasLyrics ? (
+                {(hasLyrics || editorViewMode !== 'chords') ? (
                   <div
                     className="flex items-center p-0.5 rounded-full border shadow-xs"
                     style={{
@@ -5137,7 +5137,7 @@ export default function SongsPanel() {
                     {activePreset.bpm} BPM
                   </span>
                 )}
-                {hasLyrics ? (
+                {(hasLyrics || editorViewMode !== 'chords') ? (
                   <div
                     className="flex items-center p-0.5 rounded-full border shadow-xs"
                     style={{
@@ -5972,365 +5972,127 @@ export default function SongsPanel() {
           );
         })()}
 
-        {/* Compact, Coherent Bottom Creation / Action Dock (Mobile) */}
-        {!isWebDesktop && (
+        {/* ── UNIFIED COMPACT MORPHING "+" ACTION CONTROL ── */}
+        {editorViewMode !== 'lyrics' && (
           <div
-            className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center justify-center pointer-events-auto"
+            className="fixed z-40 pointer-events-auto"
             style={{
-              bottom:
-                'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
-              maxWidth: 'calc(100vw - 32px)',
+              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+              right: '24px',
             }}
-            data-purpose="creation-action-dock"
+            data-purpose="song-creation-action-menu"
           >
-            <div
-              className="flex items-center gap-1.5 p-1.5 rounded-full border shadow-2xl backdrop-blur-xl"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #111115)',
-                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
-                boxShadow: '0 8px 30px -4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
-              }}
-            >
-              {/* 1. CHORD ACTION */}
-              {activePreset?.sections && activePreset.sections.length > 0 ? (
-                <MorphingActionSurface
-                  placement="anchor"
-                  compact
-                  maxWidth={260}
-                  title="Add chord to…"
-                  accentColor={accent.from}
-                  customTrigger={({ triggerProps }) => (
-                    <motion.button
-                      {...triggerProps}
-                      aria-label="Add Chord"
-                      data-testid="add-chord-btn"
-                      className="h-9 px-3.5 rounded-full text-white shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer active:scale-95 transition-all"
-                      style={{
-                        background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                      }}
-                      type="button"
-                    >
-                      <span className="material-symbols-rounded text-[17px]">music_note</span>
-                      <span>+ Chord</span>
-                    </motion.button>
-                  )}
-                  rows={activePreset.sections.map((section) => ({
-                    id: section.id,
-                    label: section.name,
-                    icon: 'layers',
-                    sublabel: `${(section.chords || []).length} chords`,
-                    onPress: () => {
-                      setPickerSectionId(section.id);
-                      setShowPicker(true);
-                    },
-                  }))}
-                />
-              ) : (
-                <button
-                  aria-label="Add Chord"
-                  data-testid="add-chord-btn"
-                  onClick={() => {
-                    setPickerSectionId(null);
-                    setShowPicker(true);
-                  }}
-                  className="h-9 px-3.5 rounded-full text-white shadow-xs flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all cursor-pointer"
+            <MorphingActionSurface
+              placement="anchor"
+              compact
+              maxWidth={240}
+              title="Add to Song"
+              accentColor={accent.from}
+              customTrigger={({ triggerProps }) => (
+                <motion.button
+                  {...triggerProps}
+                  aria-label="Add Action"
+                  data-testid="song-add-actions-btn"
+                  className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
                   style={{
                     background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                    boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
                   }}
                   type="button"
                 >
-                  <span className="material-symbols-rounded text-[17px]">music_note</span>
-                  <span>+ Chord</span>
-                </button>
+                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                </motion.button>
               )}
-
-              {/* 2. SECTION ACTION */}
-              <MorphingActionSurface
-                isOpen={showSectionPicker}
-                onOpenChange={setShowSectionPicker}
-                placement="anchor"
-                compact
-                maxWidth={240}
-                title={t.songs.addSection}
-                accentColor={accent.from}
-                customTrigger={({ triggerProps }) => (
-                  <motion.button
-                    {...triggerProps}
-                    aria-label="Add Section"
-                    data-testid="add-section-btn"
-                    onClick={() => {
-                      setCustomSectionName('');
-                      setCustomSectionMode(false);
-                      triggerProps.onClick();
-                    }}
-                    className="h-9 px-3 rounded-full border shadow-xs flex items-center gap-1.5 text-xs font-semibold cursor-pointer active:scale-95 transition-all"
-                    style={{
-                      backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
-                      borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                      color: 'var(--c-text-primary, #ffffff)',
-                    }}
-                    type="button"
-                  >
-                    <span
-                      className="material-symbols-rounded text-[17px]"
-                      style={{ color: 'var(--c-text-secondary, #94a3b8)' }}
-                    >
-                      layers
-                    </span>
-                    <span>Section</span>
-                  </motion.button>
-                )}
-                rows={[
-                  ...[
-                    'Verse',
-                    'Chorus',
-                    'Bridge',
-                    'Pre-Chorus',
-                    'Intro',
-                    'Outro',
-                    'Interlude',
-                    'Solo',
-                    'Hook',
-                  ].map((name) => ({
-                    id: name.toLowerCase(),
-                    label: name,
-                    icon: 'layers',
-                    onPress: () => {
-                      if (!activePreset) return;
-                      if (editorViewMode === 'lyrics') {
-                        const currentLyrics = activePreset.lyrics ?? createEmptyLyricsDocument();
-                        const newSec = {
-                          id: generateLyricId('sec'),
-                          type: 'custom' as const,
-                          name,
-                          lines: [{ id: generateLyricId('line'), text: '' }],
-                        };
-                        setSongLyrics(activePreset.id, {
-                          ...currentLyrics,
-                          sections: [...currentLyrics.sections, newSec],
-                        });
-                        toast.success(`Added ${name} section to lyrics`);
-                      } else {
-                        const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                        else addSection(activePreset.id, name);
-                      }
-                    },
-                  })),
-                  {
-                    id: 'custom',
-                    label: 'Custom...',
-                    icon: 'edit',
-                    onPress: () => {
-                      if (!activePreset) return;
-                      const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
-                      if (name && name.trim()) {
-                        if (editorViewMode === 'lyrics') {
-                          const currentLyrics = activePreset.lyrics ?? createEmptyLyricsDocument();
-                          const newSec = {
-                            id: generateLyricId('sec'),
-                            type: 'custom' as const,
-                            name: name.trim(),
-                            lines: [{ id: generateLyricId('line'), text: '' }],
-                          };
-                          setSongLyrics(activePreset.id, {
-                            ...currentLyrics,
-                            sections: [...currentLyrics.sections, newSec],
-                          });
-                          toast.success(`Added ${name.trim()} section to lyrics`);
-                        } else {
-                          const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                          if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                          else addSection(activePreset.id, name.trim());
-                        }
-                      }
-                    },
+              rows={[
+                {
+                  id: 'action-chord',
+                  label: 'Chord',
+                  icon: 'music_note',
+                  sublabel: 'Add chord to progression',
+                  onPress: () => {
+                    if (activePreset?.sections && activePreset.sections.length > 0) {
+                      setPickerSectionId(activePreset.sections[0].id);
+                    } else {
+                      setPickerSectionId(null);
+                    }
+                    setShowPicker(true);
                   },
-                ]}
-              />
-
-              {/* 3. LYRICS ACTION */}
-              <button
-                type="button"
-                data-testid="dock-lyrics-btn"
-                aria-label="Toggle Lyrics View"
-                onClick={() => {
-                  if (editorViewMode === 'lyrics') {
-                    setEditorViewMode('chords');
-                  } else {
+                },
+                {
+                  id: 'action-section',
+                  label: 'Section',
+                  icon: 'layers',
+                  sublabel: 'Verse, Chorus, Bridge...',
+                  onPress: () => {
+                    setShowSectionPicker(true);
+                  },
+                },
+                {
+                  id: 'action-lyrics',
+                  label: 'Lyrics',
+                  icon: 'lyrics',
+                  sublabel: 'Open lyrics workspace',
+                  onPress: () => {
                     if (!activePreset?.lyrics) {
                       setSongLyrics(activePreset!.id, createEmptyLyricsDocument());
                     }
                     setEditorViewMode('lyrics');
-                  }
-                }}
-                className="h-9 px-3 rounded-full border shadow-xs flex items-center gap-1.5 text-xs font-semibold cursor-pointer active:scale-95 transition-all"
-                style={
-                  editorViewMode === 'lyrics'
-                    ? {
-                        backgroundColor: `color-mix(in srgb, ${accent.from} 20%, transparent)`,
-                        borderColor: `color-mix(in srgb, ${accent.from} 50%, transparent)`,
-                        color: accent.from,
-                      }
-                    : {
-                        backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
-                        borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                        color: 'var(--c-text-primary, #ffffff)',
-                      }
-                }
-              >
-                <span
-                  className="material-symbols-rounded text-[17px]"
-                  style={{
-                    color:
-                      editorViewMode === 'lyrics'
-                        ? accent.from
-                        : 'var(--c-text-secondary, #94a3b8)',
-                  }}
-                >
-                  lyrics
-                </span>
-                <span>Lyrics</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Desktop Bottom Action Strip */}
-        {isWebDesktop && editorViewMode !== 'lyrics' && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 30,
-              padding: '10px 16px',
-              display: 'flex',
-              gap: '8px',
-            }}
-          >
-            <MorphingActionSurface
-              isOpen={showSectionPicker}
-              onOpenChange={setShowSectionPicker}
-              placement="anchor"
-              compact
-              maxWidth={240}
-              title={t.songs.addSection}
-              accentColor={accent.from}
-              customTrigger={({ open, surfaceId }) => (
-                <motion.div layoutId={surfaceId} style={{ flex: 1 }}>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setCustomSectionName('');
-                      setCustomSectionMode(false);
-                      open();
-                    }}
-                    data-testid="add-section-btn"
-                    style={{
-                      width: '100%',
-                      borderRadius: '9999px',
-                      background: 'var(--app-surface-high)',
-                      color: 'var(--c-text-secondary)',
-                    }}
-                    icon="layers"
-                  >
-                    {t.songs.addSection}
-                  </Button>
-                </motion.div>
-              )}
-              rows={[
-                ...[
-                  'Verse',
-                  'Chorus',
-                  'Bridge',
-                  'Pre-Chorus',
-                  'Intro',
-                  'Outro',
-                  'Interlude',
-                  'Solo',
-                  'Hook',
-                ].map((name) => ({
-                  id: name.toLowerCase(),
-                  label: name,
-                  icon: 'layers',
-                  onPress: () => {
-                    if (!activePreset) return;
-                    const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                    if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                    else addSection(activePreset.id, name);
-                  },
-                })),
-                {
-                  id: 'custom',
-                  label: 'Custom...',
-                  icon: 'edit',
-                  onPress: () => {
-                    if (!activePreset) return;
-                    const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
-                    if (name && name.trim()) {
-                      const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                      if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                      else addSection(activePreset.id, name.trim());
-                    }
                   },
                 },
               ]}
             />
-            {activePreset?.sections && activePreset.sections.length > 0 ? (
-              <MorphingActionSurface
-                placement="anchor"
-                compact
-                maxWidth={260}
-                title="Add chord to…"
-                accentColor={accent.from}
-                customTrigger={({ open, surfaceId }) => (
-                  <motion.div layoutId={surfaceId} style={{ flex: 1 }}>
-                    <Button
-                      variant="primary"
-                      onClick={open}
-                      data-testid="add-chord-btn"
-                      style={{
-                        width: '100%',
-                        borderRadius: '9999px',
-                      }}
-                      icon="music_note"
-                    >
-                      {t.songs.addChord || 'Add Chord'}
-                    </Button>
-                  </motion.div>
-                )}
-                rows={activePreset.sections.map((section) => ({
-                  id: section.id,
-                  label: section.name,
-                  icon: 'layers',
-                  sublabel: `${(section.chords || []).length} chords`,
-                  onPress: () => {
-                    setPickerSectionId(section.id);
-                    setShowPicker(true);
-                  },
-                }))}
-              />
-            ) : (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setPickerSectionId(null);
-                  setShowPicker(true);
-                }}
-                data-testid="add-chord-btn"
-                style={{
-                  flex: 1,
-                  borderRadius: '9999px',
-                }}
-                icon="music_note"
-              >
-                {t.songs.addChord || 'Add Chord'}
-              </Button>
-            )}
           </div>
         )}
+
+        {/* Morphing Section Picker (Triggered from + Menu) */}
+        <MorphingActionSurface
+          isOpen={showSectionPicker}
+          onOpenChange={setShowSectionPicker}
+          placement="anchor"
+          compact
+          maxWidth={240}
+          title={t.songs.addSection}
+          accentColor={accent.from}
+          rows={[
+            ...[
+              'Verse',
+              'Chorus',
+              'Bridge',
+              'Pre-Chorus',
+              'Intro',
+              'Outro',
+              'Interlude',
+              'Solo',
+              'Hook',
+            ].map((name) => ({
+              id: name.toLowerCase(),
+              label: name,
+              icon: 'layers',
+              onPress: () => {
+                if (!activePreset) return;
+                const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                else addSection(activePreset.id, name);
+                setShowSectionPicker(false);
+              },
+            })),
+            {
+              id: 'custom',
+              label: 'Custom...',
+              icon: 'edit',
+              onPress: () => {
+                if (!activePreset) return;
+                const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
+                if (name && name.trim()) {
+                  const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                  if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                  else addSection(activePreset.id, name.trim());
+                }
+                setShowSectionPicker(false);
+              },
+            },
+          ]}
+        />
 
         {showForm && (
           <SongEditorForm

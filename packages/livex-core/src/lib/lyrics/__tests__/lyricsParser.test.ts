@@ -102,7 +102,7 @@ And give me a sigh
     expect(v.lines[0].chords![1].offset).toBe(22); // 'times of trouble' position
   });
 
-  it('handles continuous lyrics without section headers', () => {
+  it('handles continuous lyrics without section headers without forcing a section name', () => {
     const rawText = `
 Line one without section
 Line two without section
@@ -110,8 +110,15 @@ Line three without section
 `;
     const doc = parsePastedLyrics(rawText);
     expect(doc.sections).toHaveLength(1);
+    expect(doc.sections[0].name).toBe('');
     expect(doc.sections[0].lines).toHaveLength(3);
     expect(doc.sections[0].lines[0].text).toBe('Line one without section');
+  });
+
+  it('creates an empty document with 0 sections by default', () => {
+    const doc = createEmptyLyricsDocument();
+    expect(doc.version).toBe(1);
+    expect(doc.sections).toEqual([]);
   });
 
   it('serializes SongLyricsDocument back to plain text for clipboard copy', () => {

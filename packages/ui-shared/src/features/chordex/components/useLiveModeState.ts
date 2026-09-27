@@ -26,10 +26,15 @@ export type LiveDisplayMode =
 
 export type BeatsPerChord = 1 | 2 | 4 | 8;
 export type TeleprompterFontSize = 'normal' | 'large' | 'huge';
+export type TeleprompterFontFamily = 'studio' | 'sans' | 'serif' | 'mono';
+export type TeleprompterLineHeight = 'compact' | 'normal' | 'relaxed';
+export type TeleprompterAlignment = 'left' | 'center';
 
 export interface TeleprompterLineChunk {
   chord?: string;
   text: string;
+  startOffset: number;
+  endOffset: number;
 }
 
 export interface TeleprompterLineItem {
@@ -81,6 +86,14 @@ export interface LiveModeState {
   handleLineClick: (globalIndex: number) => void;
   teleprompterFontSize: TeleprompterFontSize;
   setTeleprompterFontSize: (size: TeleprompterFontSize) => void;
+  teleprompterFontFamily: TeleprompterFontFamily;
+  setTeleprompterFontFamily: (font: TeleprompterFontFamily) => void;
+  teleprompterLineHeight: TeleprompterLineHeight;
+  setTeleprompterLineHeight: (lh: TeleprompterLineHeight) => void;
+  teleprompterAlignment: TeleprompterAlignment;
+  setTeleprompterAlignment: (align: TeleprompterAlignment) => void;
+  teleprompterMirror: boolean;
+  setTeleprompterMirror: (v: boolean | ((prev: boolean) => boolean)) => void;
   teleprompterContainerRef: React.RefObject<HTMLDivElement | null>;
   isTeleprompterMode: boolean;
 
@@ -120,8 +133,16 @@ export function splitLineIntoChunks(
   text: string,
   chords?: LyricChordPlacement[]
 ): TeleprompterLineChunk[] {
+  const safeText = text || '';
   if (!chords || chords.length === 0) {
-    return [{ chord: undefined, text: text || '\u00A0' }];
+    return [
+      {
+        chord: undefined,
+        text: safeText || '\u00A0',
+        startOffset: 0,
+        endOffset: safeText.length,
+      },
+    ];
   }
 
   const sorted = [...chords].sort((a, b) => a.offset - b.offset);
@@ -130,21 +151,35 @@ export function splitLineIntoChunks(
   if (sorted[0].offset > 0) {
     chunks.push({
       chord: undefined,
-      text: text.slice(0, sorted[0].offset),
+      text: safeText.slice(0, sorted[0].offset),
+      startOffset: 0,
+      endOffset: sorted[0].offset,
     });
   }
 
   for (let i = 0; i < sorted.length; i++) {
     const cur = sorted[i];
-    const nextOffset = i + 1 < sorted.length ? sorted[i + 1].offset : text.length;
-    const chunkText = text.slice(cur.offset, Math.max(cur.offset, nextOffset));
+    const nextOffset = i + 1 < sorted.length ? sorted[i + 1].offset : safeText.length;
+    const end = Math.max(cur.offset, nextOffset);
+    const chunkText = safeText.slice(cur.offset, end);
     chunks.push({
       chord: cur.chord,
       text: chunkText.length > 0 ? chunkText : '\u00A0',
+      startOffset: cur.offset,
+      endOffset: end,
     });
   }
 
-  return chunks.length > 0 ? chunks : [{ chord: undefined, text: text || '\u00A0' }];
+  return chunks.length > 0
+    ? chunks
+    : [
+        {
+          chord: undefined,
+          text: safeText || '\u00A0',
+          startOffset: 0,
+          endOffset: safeText.length,
+        },
+      ];
 }
 
 export function useLiveModeState(
@@ -173,7 +208,93 @@ export function useLiveModeState(
 
   const [beatsPerChord, setBeatsPerChord] = useState<BeatsPerChord>(4);
   const [beatsPerLine, setBeatsPerLine] = useState<number>(4);
-  const [teleprompterFontSize, setTeleprompterFontSize] = useState<TeleprompterFontSize>('normal');
+
+  // Teleprompter presentation states with local storage persistence
+  const [teleprompterFontSize, setTeleprompterFontSizeState] = useState<TeleprompterFontSize>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_font_size');
+      if (saved === 'normal' || saved === 'large' || saved === 'huge') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'normal';
+  });
+
+  const setTeleprompterFontSize = useCallback((size: TeleprompterFontSize) => {
+    setTeleprompterFontSizeState(size);
+    try {
+      localStorage.setItem('chordex_teleprompter_font_size', size);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterFontFamily, setTeleprompterFontFamilyState] = useState<TeleprompterFontFamily>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_font_family');
+      if (saved === 'studio' || saved === 'sans' || saved === 'serif' || saved === 'mono') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'studio';
+  });
+
+  const setTeleprompterFontFamily = useCallback((font: TeleprompterFontFamily) => {
+    setTeleprompterFontFamilyState(font);
+    try {
+      localStorage.setItem('chordex_teleprompter_font_family', font);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterLineHeight, setTeleprompterLineHeightState] = useState<TeleprompterLineHeight>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_line_height');
+      if (saved === 'compact' || saved === 'normal' || saved === 'relaxed') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'normal';
+  });
+
+  const setTeleprompterLineHeight = useCallback((lh: TeleprompterLineHeight) => {
+    setTeleprompterLineHeightState(lh);
+    try {
+      localStorage.setItem('chordex_teleprompter_line_height', lh);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterAlignment, setTeleprompterAlignmentState] = useState<TeleprompterAlignment>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_alignment');
+      if (saved === 'left' || saved === 'center') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'left';
+  });
+
+  const setTeleprompterAlignment = useCallback((align: TeleprompterAlignment) => {
+    setTeleprompterAlignmentState(align);
+    try {
+      localStorage.setItem('chordex_teleprompter_alignment', align);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterMirror, setTeleprompterMirrorState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chordex_teleprompter_mirror') === 'true';
+    } catch (_) {}
+    return false;
+  });
+
+  const setTeleprompterMirror = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    setTeleprompterMirrorState((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      try {
+        localStorage.setItem('chordex_teleprompter_mirror', String(next));
+      } catch (_) {}
+      return next;
+    });
+  }, []);
+
   const [showContext, setShowContext] = useState(true);
   const [bpmOverride, setBpmOverride] = useState(preset.bpm || 120);
 
@@ -552,6 +673,14 @@ export function useLiveModeState(
     handleLineClick,
     teleprompterFontSize,
     setTeleprompterFontSize,
+    teleprompterFontFamily,
+    setTeleprompterFontFamily,
+    teleprompterLineHeight,
+    setTeleprompterLineHeight,
+    teleprompterAlignment,
+    setTeleprompterAlignment,
+    teleprompterMirror,
+    setTeleprompterMirror,
     teleprompterContainerRef,
     isTeleprompterMode,
     autoPlay,

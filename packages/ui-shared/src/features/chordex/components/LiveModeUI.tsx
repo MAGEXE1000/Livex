@@ -2,8 +2,15 @@ import React from 'react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
-import { type LiveModeState, type LiveDisplayMode } from './useLiveModeState';
-import { useSettingsStore, getChordById } from '@workspace/livex-core';
+import {
+  type LiveModeState,
+  type LiveDisplayMode,
+  type TeleprompterFontFamily,
+  type TeleprompterLineHeight,
+  type TeleprompterAlignment,
+  type TeleprompterLineChunk,
+} from './useLiveModeState';
+import { useSettingsStore, getChordById, type LyricTextSpan } from '@workspace/livex-core';
 
 /* ── HEADER ─────────────────────────────────────────────────── */
 export function LiveModeHeader({ state }: { state: LiveModeState }) {
@@ -165,6 +172,36 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
 }
 
 /* ── TELEPROMPTER VIEW (Lyrics & Hybrid) ─────────────────────── */
+function getSubSpansForRange(
+  spans: LyricTextSpan[],
+  start: number,
+  end: number,
+  fallbackText: string
+): LyricTextSpan[] {
+  if (start >= end) return [{ text: fallbackText }];
+  const result: LyricTextSpan[] = [];
+  let currentOffset = 0;
+  for (const span of spans) {
+    const spanLen = span.text.length;
+    const spanEnd = currentOffset + spanLen;
+    if (spanEnd > start && currentOffset < end) {
+      const overlapStart = Math.max(currentOffset, start);
+      const overlapEnd = Math.min(spanEnd, end);
+      const sliceStart = overlapStart - currentOffset;
+      const sliceEnd = overlapEnd - currentOffset;
+      const subText = span.text.slice(sliceStart, sliceEnd);
+      if (subText.length > 0) {
+        result.push({
+          text: subText,
+          format: span.format,
+        });
+      }
+    }
+    currentOffset = spanEnd;
+  }
+  return result.length > 0 ? result : [{ text: fallbackText }];
+}
+
 function TeleprompterView({ state }: { state: LiveModeState }) {
   const {
     teleprompterLines,
@@ -173,6 +210,10 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
     accent,
     handleLineClick,
     teleprompterFontSize,
+    teleprompterFontFamily,
+    teleprompterLineHeight,
+    teleprompterAlignment,
+    teleprompterMirror,
     teleprompterContainerRef,
     preset,
   } = state;
@@ -187,6 +228,34 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
     huge: { text: '28px', chord: '17px', lineGap: '26px' },
   }[teleprompterFontSize] || { text: '18px', chord: '13px', lineGap: '16px' };
 
+  const resolvedFontFamily = (() => {
+    switch (teleprompterFontFamily) {
+      case 'sans':
+        return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      case 'serif':
+        return 'Georgia, Cambria, "Times New Roman", Times, serif';
+      case 'mono':
+        return 'var(--studio-font-mono, "SF Mono", Consolas, monospace)';
+      case 'studio':
+      default:
+        return 'var(--studio-font-body, system-ui, sans-serif)';
+    }
+  })();
+
+  const resolvedLineHeight = (() => {
+    switch (teleprompterLineHeight) {
+      case 'compact':
+        return 1.25;
+      case 'relaxed':
+        return 1.95;
+      case 'normal':
+      default:
+        return 1.55;
+    }
+  })();
+
+  const isCentered = teleprompterAlignment === 'center';
+
   if (teleprompterLines.length === 0) {
     return (
       <div
@@ -197,7 +266,7 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'var(--c-text-secondary)',
-          fontFamily: 'var(--studio-font-body)',
+          fontFamily: resolvedFontFamily,
         }}
       >
         <p>No lyrics added to this song.</p>
@@ -222,6 +291,7 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
         gap: fontSizes.lineGap,
         scrollBehavior: 'smooth',
         WebkitOverflowScrolling: 'touch',
+        transform: teleprompterMirror ? 'scaleX(-1)' : 'none',
       }}
     >
       {teleprompterLines.map((item, idx) => {
@@ -230,6 +300,7 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
         const isBold = Boolean(item.line.format?.bold);
         const resolvedColor =
           item.line.format?.color || docColor || 'var(--c-text-primary, #ffffff)';
+        const hasSectionPill = Boolean(item.sectionName && item.sectionName.trim().length > 0);
 
         return (
           <div
@@ -257,34 +328,38 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
               transition:
                 'background 250ms ease, opacity 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
               cursor: 'pointer',
+              textAlign: isCentered ? 'center' : 'left',
             }}
           >
-            {/* Section Header if first line of section */}
-            {item.isFirstLineOfSection && (
+            {/* Section Header if first line of section AND section has a name or role */}
+            {item.isFirstLineOfSection && (hasSectionPill || item.sectionVocalRole) && (
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: isCentered ? 'center' : 'flex-start',
                   gap: '8px',
                   marginBottom: '10px',
                 }}
               >
-                <span
-                  style={{
-                    fontFamily: 'var(--studio-font-body)',
-                    fontWeight: 800,
-                    fontSize: '11px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.12em',
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    background: `${accent.from}28`,
-                    border: `1px solid ${accent.from}44`,
-                    color: accent.from,
-                  }}
-                >
-                  {item.sectionName}
-                </span>
+                {hasSectionPill && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 800,
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: `${accent.from}28`,
+                      border: `1px solid ${accent.from}44`,
+                      color: accent.from,
+                    }}
+                  >
+                    {item.sectionName}
+                  </span>
+                )}
 
                 {item.sectionVocalRole && (
                   <span
@@ -309,7 +384,13 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
 
             {/* Line vocal role badge (if line-specific and not section-first) */}
             {item.line.vocalRole && !item.isFirstLineOfSection && (
-              <div style={{ marginBottom: '6px' }}>
+              <div
+                style={{
+                  marginBottom: '6px',
+                  display: 'flex',
+                  justifyContent: isCentered ? 'center' : 'flex-start',
+                }}
+              >
                 <span
                   style={{
                     fontFamily: 'var(--studio-font-body)',
@@ -335,22 +416,61 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                 display: 'flex',
                 flexWrap: 'wrap',
                 alignItems: 'flex-end',
-                lineHeight: 1.35,
+                justifyContent: isCentered ? 'center' : 'flex-start',
+                lineHeight: resolvedLineHeight,
               }}
             >
               {displayMode === 'lyrics_only' ? (
-                /* Lyrics Only */
-                <span
-                  style={{
-                    fontFamily: 'var(--studio-font-body)',
-                    fontSize: fontSizes.text,
-                    fontWeight: isBold ? 800 : 500,
-                    color: resolvedColor,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {item.line.text || '\u00A0'}
-                </span>
+                /* Lyrics Only with fine-grained span formatting support */
+                item.line.spans && item.line.spans.length > 0 ? (
+                  <span
+                    style={{
+                      fontFamily: resolvedFontFamily,
+                      fontSize: fontSizes.text,
+                      lineHeight: resolvedLineHeight,
+                      textAlign: isCentered ? 'center' : 'left',
+                      whiteSpace: 'pre-wrap',
+                      display: 'inline-block',
+                      width: '100%',
+                    }}
+                  >
+                    {item.line.spans.map((span, sIdx) => {
+                      const spanBold = span.format?.bold ?? isBold;
+                      const spanItalic = Boolean(span.format?.italic);
+                      const spanUnderline = Boolean(span.format?.underline);
+                      const spanColor = span.format?.color || resolvedColor;
+                      return (
+                        <span
+                          key={sIdx}
+                          style={{
+                            fontWeight: spanBold ? 800 : 500,
+                            fontStyle: spanItalic ? 'italic' : 'normal',
+                            textDecoration: spanUnderline ? 'underline' : 'none',
+                            color: spanColor,
+                          }}
+                        >
+                          {span.text}
+                        </span>
+                      );
+                    })}
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontFamily: resolvedFontFamily,
+                      fontSize: fontSizes.text,
+                      fontWeight: isBold ? 800 : 500,
+                      color: resolvedColor,
+                      lineHeight: resolvedLineHeight,
+                      textAlign: isCentered ? 'center' : 'left',
+                      whiteSpace: 'pre-wrap',
+                      display: 'inline-block',
+                      width: '100%',
+                    }}
+                  >
+                    {item.line.text || '\u00A0'}
+                  </span>
+                )
               ) : (
                 /* Chords + Lyrics (lyrics_chord_name or lyrics_chord_diagram) */
                 item.chunks.map((chunk, cIdx) => {
@@ -359,13 +479,23 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                       ? getChordById(chunk.chord)
                       : null;
 
+                  const subSpans =
+                    item.line.spans && item.line.spans.length > 0
+                      ? getSubSpansForRange(
+                          item.line.spans,
+                          chunk.startOffset,
+                          chunk.endOffset,
+                          chunk.text
+                        )
+                      : null;
+
                   return (
                     <div
                       key={cIdx}
                       style={{
                         display: 'inline-flex',
                         flexDirection: 'column',
-                        alignItems: 'flex-start',
+                        alignItems: isCentered ? 'center' : 'flex-start',
                         verticalAlign: 'bottom',
                       }}
                     >
@@ -376,6 +506,7 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'flex-end',
+                          alignItems: isCentered ? 'center' : 'flex-start',
                           paddingBottom: '2px',
                         }}
                       >
@@ -383,9 +514,9 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                           <div
                             style={{
                               transform: 'scale(0.65)',
-                              transformOrigin: 'bottom left',
+                              transformOrigin: isCentered ? 'bottom center' : 'bottom left',
                               marginBottom: '-16px',
-                              marginRight: '-14px',
+                              marginRight: isCentered ? '0' : '-14px',
                             }}
                           >
                             <MiniLiveDiagram
@@ -413,18 +544,50 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                         </span>
                       </div>
 
-                      {/* Syllable text */}
-                      <span
-                        style={{
-                          fontFamily: 'var(--studio-font-body)',
-                          fontSize: fontSizes.text,
-                          fontWeight: isBold ? 800 : 500,
-                          color: resolvedColor,
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {chunk.text}
-                      </span>
+                      {/* Syllable text with fine-grained formatting */}
+                      {subSpans ? (
+                        <span
+                          style={{
+                            fontFamily: resolvedFontFamily,
+                            fontSize: fontSizes.text,
+                            lineHeight: resolvedLineHeight,
+                            whiteSpace: 'pre-wrap',
+                          }}
+                        >
+                          {subSpans.map((s, sIdx) => {
+                            const spanBold = s.format?.bold ?? isBold;
+                            const spanItalic = Boolean(s.format?.italic);
+                            const spanUnderline = Boolean(s.format?.underline);
+                            const spanColor = s.format?.color || resolvedColor;
+                            return (
+                              <span
+                                key={sIdx}
+                                style={{
+                                  fontWeight: spanBold ? 800 : 500,
+                                  fontStyle: spanItalic ? 'italic' : 'normal',
+                                  textDecoration: spanUnderline ? 'underline' : 'none',
+                                  color: spanColor,
+                                }}
+                              >
+                                {s.text}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontFamily: resolvedFontFamily,
+                            fontSize: fontSizes.text,
+                            fontWeight: isBold ? 800 : 500,
+                            color: resolvedColor,
+                            lineHeight: resolvedLineHeight,
+                            whiteSpace: 'pre-wrap',
+                          }}
+                        >
+                          {chunk.text}
+                        </span>
+                      )}
                     </div>
                   );
                 })
@@ -879,6 +1042,14 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     setShowContext,
     teleprompterFontSize,
     setTeleprompterFontSize,
+    teleprompterFontFamily,
+    setTeleprompterFontFamily,
+    teleprompterLineHeight,
+    setTeleprompterLineHeight,
+    teleprompterAlignment,
+    setTeleprompterAlignment,
+    teleprompterMirror,
+    setTeleprompterMirror,
     hasChords,
     hasLyrics,
     isTeleprompterMode,
@@ -1354,48 +1525,250 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             )}
           </div>
 
-          {/* ── 5. VIEW OPTIONS ──────────────────────────────────── */}
+          {/* ── 5. VIEW & TELEPROMPTER OPTIONS ─────────────────────── */}
           {isTeleprompterMode ? (
-            <div>
-              <p
-                style={{
-                  color: 'var(--c-text-secondary)',
-                  fontFamily: 'var(--studio-font-body)',
-                  fontWeight: 700,
-                  fontSize: '10.5px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.15em',
-                  marginBottom: '10px',
-                }}
-              >
-                Teleprompter Font Size
-              </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {(['normal', 'large', 'huge'] as const).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setTeleprompterFontSize(size)}
-                    className="btn-smooth"
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Font Family */}
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Font Style
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {[
+                    { id: 'studio', label: 'Studio' },
+                    { id: 'sans', label: 'Sans' },
+                    { id: 'serif', label: 'Serif' },
+                    { id: 'mono', label: 'Mono' },
+                  ].map((font) => (
+                    <button
+                      key={font.id}
+                      onClick={() => setTeleprompterFontFamily(font.id as TeleprompterFontFamily)}
+                      className="btn-smooth"
+                      style={{
+                        padding: '10px 4px',
+                        borderRadius: '0.75rem',
+                        background:
+                          teleprompterFontFamily === font.id
+                            ? `${accent.from}22`
+                            : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${teleprompterFontFamily === font.id ? accent.from + '66' : 'transparent'}`,
+                        color: teleprompterFontFamily === font.id ? '#ffffff' : '#acabaa',
+                        fontFamily:
+                          font.id === 'mono'
+                            ? 'var(--studio-font-mono, monospace)'
+                            : font.id === 'serif'
+                              ? 'Georgia, serif'
+                              : 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '11.5px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {font.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Font Size */}
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Font Size
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['normal', 'large', 'huge'] as const).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setTeleprompterFontSize(size)}
+                      className="btn-smooth"
+                      style={{
+                        flex: 1,
+                        padding: '10px 6px',
+                        borderRadius: '0.75rem',
+                        background:
+                          teleprompterFontSize === size
+                            ? `${accent.from}22`
+                            : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${teleprompterFontSize === size ? accent.from + '66' : 'transparent'}`,
+                        color: teleprompterFontSize === size ? '#ffffff' : '#acabaa',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Line Spacing */}
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Line Spacing
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['compact', 'normal', 'relaxed'] as const).map((spacing) => (
+                    <button
+                      key={spacing}
+                      onClick={() => setTeleprompterLineHeight(spacing)}
+                      className="btn-smooth"
+                      style={{
+                        flex: 1,
+                        padding: '10px 6px',
+                        borderRadius: '0.75rem',
+                        background:
+                          teleprompterLineHeight === spacing
+                            ? `${accent.from}22`
+                            : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${teleprompterLineHeight === spacing ? accent.from + '66' : 'transparent'}`,
+                        color: teleprompterLineHeight === spacing ? '#ffffff' : '#acabaa',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {spacing}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alignment */}
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Alignment
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['left', 'center'] as const).map((align) => (
+                    <button
+                      key={align}
+                      onClick={() => setTeleprompterAlignment(align)}
+                      className="btn-smooth"
+                      style={{
+                        flex: 1,
+                        padding: '10px 6px',
+                        borderRadius: '0.75rem',
+                        background:
+                          teleprompterAlignment === align
+                            ? `${accent.from}22`
+                            : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${teleprompterAlignment === align ? accent.from + '66' : 'transparent'}`,
+                        color: teleprompterAlignment === align ? '#ffffff' : '#acabaa',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {align}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hardware Mirror Mode */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
+                <div>
+                  <p
                     style={{
-                      flex: 1,
-                      padding: '10px 6px',
-                      borderRadius: '0.75rem',
-                      background:
-                        teleprompterFontSize === size
-                          ? `${accent.from}22`
-                          : 'rgba(255,255,255,0.06)',
-                      border: `1px solid ${teleprompterFontSize === size ? accent.from + '66' : 'transparent'}`,
-                      color: teleprompterFontSize === size ? '#ffffff' : '#acabaa',
+                      color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-body)',
                       fontWeight: 700,
-                      fontSize: '12px',
-                      textTransform: 'capitalize',
-                      cursor: 'pointer',
+                      fontSize: '13px',
                     }}
                   >
-                    {size}
-                  </button>
-                ))}
+                    Hardware Mirror Mode
+                  </p>
+                  <p
+                    style={{
+                      color: '#6b6b6b',
+                      fontFamily: 'Inter',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    Horizontal flip for beam splitter glass
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTeleprompterMirror((m: boolean) => !m)}
+                  className="btn-smooth"
+                  style={{
+                    width: '48px',
+                    height: '28px',
+                    borderRadius: '9999px',
+                    background: teleprompterMirror
+                      ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                      : 'rgba(255,255,255,0.1)',
+                    position: 'relative',
+                    flexShrink: 0,
+                    transition: 'background 300ms ease',
+                    boxShadow: teleprompterMirror ? `0 2px 10px ${accent.to}44` : 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '3px',
+                      left: teleprompterMirror ? '23px' : '3px',
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      transition: 'left 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                </button>
               </div>
             </div>
           ) : (
