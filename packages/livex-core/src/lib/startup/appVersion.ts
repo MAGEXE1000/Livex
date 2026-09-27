@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.54';
-export const NATIVE_VERSION_CODE = 40654;
-export const WEB_VERSION = '4.6.54';
+export const NATIVE_VERSION = '4.6.55';
+export const NATIVE_VERSION_CODE = 40655;
+export const WEB_VERSION = '4.6.55';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -99,14 +99,20 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.',
+      'Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.',
+      'Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.',
+      'Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.',
+    ],
+  },
+  {
     heading: 'Improved',
     items: [
-      'Navigation Latency Calibration: Replaced artificial 300ms setTimeout measurement in NavigationDispatcher with frame-accurate nested requestAnimationFrame, capturing real frame paint completion (18ms average latency). Synchronized transition lock duration with canonical 200ms motion specs.',
-      'Hub Settings Monolith Pruning: Eradicated 1,265 lines of dead legacy developer panel code and unused state in HubSettings, eliminating closure allocation overhead and reducing synchronous JS parse latency.',
-      'Component Lifecycle Stabilization: Extracted UpdaterSettingsContent to module scope as an independent React component, eliminating function component identity recreation, rule-of-hooks violations, and catastrophic DOM unmount/remount thrashing on settings renders.',
-      'Developer Panel Lifecycle & Background Polling Teardown: Conditionally unmount DevToolsDashboard when navigating away from developer settings, terminating 5,000ms background polling timers and profiler subscriptions.',
-      'Dual-Instance Hub Settings Elimination: Guarded LivexHub settings and profile tabs to prevent maintaining duplicate concurrent 5,000-line HubSettings component trees in memory.',
-      'Comprehensive Performance Report Generation: Upgraded DevTools Performance "Copy" button to dynamically synthesize a comprehensive, 11-section diagnostic report directly from the live singleton PerformanceProfiler.',
+      'Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.',
+      'Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.',
+      'Interface & Navigation Performance: Restored branded entrance animations and eliminated navigation transition stutter across internal sub-apps.',
     ],
   },
 ];
@@ -118,6 +124,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.55',
+    date: '2026-09-26',
+    highlights: [
+      'Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.',
+      'Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.',
+      'Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.',
+      'Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.',
+      'Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.',
+      'Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.',
+    ],
+  },
   {
     version: '4.6.54',
     date: '2026-09-26',
@@ -218,16 +236,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.',
       'Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.',
       'Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.',
-    ],
-  },
-  {
-    version: '4.6.45',
-    date: '2026-09-24',
-    highlights: [
-      'Chordex New-Song Creation Integration: Connected the AI "Import to Chordex" workflow directly to the canonical song creation dialog (`PresetForm`), prefilling title, key, tempo, and notes while allowing user review before saving.',
-      'Canonical Chord Resolution: Integrated `extractCanonicalChordIds` to map generated chords and jazz extensions to canonical Chordex database IDs and automatic `CustomChord` voicings.',
-      'Empty Progression Section: Fixed chord lookup failure in `SongsPanel` by resolving canonical chord IDs and adding dual fallback lookups for chord names and transposed IDs.',
-      'Technical Song Titles: Eliminated system strings and auto-extracted technical titles in favor of concise, musically descriptive song titles.',
     ],
   },
 ];
