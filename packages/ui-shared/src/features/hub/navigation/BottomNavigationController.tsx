@@ -70,6 +70,7 @@ export function BottomNavigationController() {
   const storeVisible = useBottomNavigationStore((s) => s.visible);
   const isLocked = useBottomNavigationStore((s) => s.isLocked);
   const mascotState = useAssistantStore((s) => s.mascotState);
+  const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
 
   useBackHandler(
     'overlay',
@@ -106,7 +107,7 @@ export function BottomNavigationController() {
       setIsKeyboardFocused(false);
       resetNav();
     }
-  }, [routeKey, setProfileMenuOpen]);
+  }, [routeKey, setProfileMenuOpen, setIsKeyboardFocused]);
 
   const currentApp = currentRoute?.app ?? 'hub';
   const rawTab = currentRoute?.tab;
@@ -251,7 +252,6 @@ export function BottomNavigationController() {
   }, [transitionState, launchingApp, hidden, collapsed, setMotionState]);
 
   // Compute visibility reactively based on DOM focus and indicators
-  const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const checkKeyboard = () => {
