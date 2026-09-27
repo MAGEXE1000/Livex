@@ -135,3 +135,4 @@ export * from './lib/assistant/actionExtractor';
 // Structured Lyrics & Song Workspace
 export * from './types/lyrics';
 export * from './lib/lyrics/lyricsParser';
+export * from './lib/lyrics/vocalRoles';

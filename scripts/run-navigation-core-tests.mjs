@@ -6,7 +6,38 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 // Setup mock window/document and localStorage for Zustand persist middleware
+globalThis.document = {
+  visibilityState: 'visible',
+  querySelector: () => null,
+  querySelectorAll: () => [],
+  documentElement: {
+    style: {
+      setProperty: () => {},
+      removeProperty: () => {},
+      getPropertyValue: () => '',
+    },
+    classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => {} },
+    setAttribute: () => {},
+    getAttribute: () => null,
+    removeAttribute: () => {},
+  },
+  body: {
+    style: {
+      setProperty: () => {},
+      removeProperty: () => {},
+      getPropertyValue: () => '',
+    },
+    classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => {} },
+    setAttribute: () => {},
+    getAttribute: () => null,
+    removeAttribute: () => {},
+  },
+  addEventListener: () => {},
+  removeEventListener: () => {},
+};
+
 globalThis.window = {
+  document: globalThis.document,
   localStorage: {
     getItem: () => null,
     setItem: () => {},

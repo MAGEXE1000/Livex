@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { SongLibraryList } from '../components/SongLibraryList';
 import { SongEditorForm, PresetFormContent, FormData } from '../components/SongEditorForm';
 import { TransposeControls } from '../components/TransposeControls';
@@ -19,6 +20,7 @@ import {
   type CustomChord,
   type SongLyricsDocument,
   createEmptyLyricsDocument,
+  generateLyricId,
   transposeChordId,
   transposeKeyString,
   formatOffset,
@@ -5277,116 +5279,11 @@ export default function SongsPanel() {
                   No chords in this song yet.
                 </h2>
                 <p
-                  className="text-xs sm:text-sm text-center max-w-[260px] leading-relaxed mb-6 font-normal"
+                  className="text-xs sm:text-sm text-center max-w-[260px] leading-relaxed font-normal"
                   style={{ color: 'var(--c-text-secondary, #6B7280)' }}
                 >
-                  Add sections like Verse and Chorus, or insert chords directly to start building
-                  your progression.
+                  Add sections like Verse and Chorus, or insert chords directly using the action dock below.
                 </p>
-
-                {/* Primary Action Buttons */}
-                <div className="flex items-center gap-2.5">
-                  {activePreset?.sections && activePreset.sections.length > 0 ? (
-                    <MorphingActionSurface
-                      placement="anchor"
-                      compact
-                      maxWidth={260}
-                      title="Add chord to…"
-                      accentColor={accent.from}
-                      customTrigger={({ triggerProps }) => (
-                        <motion.button
-                          {...triggerProps}
-                          data-purpose="empty-add-chord-btn"
-                          className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer"
-                          style={{
-                            backgroundColor: 'var(--c-accent-from, #2563EB)',
-                            boxShadow:
-                              '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                          }}
-                          type="button"
-                        >
-                          <span className="material-symbols-rounded text-[18px]">music_note</span>
-                          <span>{t.songs.addChord}</span>
-                        </motion.button>
-                      )}
-                      rows={activePreset.sections.map((section) => ({
-                        id: section.id,
-                        label: section.name,
-                        icon: 'layers',
-                        sublabel: `${(section.chords || []).length} chords`,
-                        onPress: () => {
-                          setPickerSectionId(section.id);
-                          setShowPicker(true);
-                        },
-                      }))}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setPickerSectionId(null);
-                        setShowPicker(true);
-                      }}
-                      data-purpose="empty-add-chord-btn"
-                      className="inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2.5 rounded-full active:scale-95 transition-all cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--c-accent-from, #2563EB)',
-                        boxShadow:
-                          '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                      }}
-                      type="button"
-                    >
-                      <span className="material-symbols-rounded text-[18px]">music_note</span>
-                      <span>{t.songs.addChord}</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setCustomSectionName('');
-                      setCustomSectionMode(false);
-                      setShowSectionPicker(true);
-                    }}
-                    data-purpose="empty-add-section-btn"
-                    className="inline-flex items-center gap-1.5 border text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-primary, #111827)',
-                    }}
-                    type="button"
-                  >
-                    <span
-                      className="material-symbols-rounded text-[18px]"
-                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                    >
-                      layers
-                    </span>
-                    <span>Add Section</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!activePreset.lyrics) {
-                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
-                      }
-                      setEditorViewMode('lyrics');
-                    }}
-                    data-purpose="empty-add-lyrics-btn"
-                    className="inline-flex items-center gap-1.5 border text-xs font-semibold px-4 py-2.5 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-primary, #111827)',
-                    }}
-                    type="button"
-                  >
-                    <span
-                      className="material-symbols-rounded text-[18px]"
-                      style={{ color: 'var(--c-accent-from, #2563EB)' }}
-                    >
-                      lyrics
-                    </span>
-                    <span>Lyrics</span>
-                  </button>
-                </div>
               </main>
             );
           }
@@ -6075,17 +5972,79 @@ export default function SongsPanel() {
           );
         })()}
 
-        {/* Floating Action Buttons Area (Mobile) */}
-        {!isWebDesktop && editorViewMode !== 'lyrics' && (
+        {/* Compact, Coherent Bottom Creation / Action Dock (Mobile) */}
+        {!isWebDesktop && (
           <div
-            className="fixed right-5 flex flex-col items-end gap-2.5 z-40 pointer-events-none"
+            className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center justify-center pointer-events-auto"
             style={{
               bottom:
-                'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 24px)',
+                'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+              maxWidth: 'calc(100vw - 32px)',
             }}
-            data-purpose="fab-container"
+            data-purpose="creation-action-dock"
           >
-            <div className="flex flex-col items-end gap-2 pointer-events-auto">
+            <div
+              className="flex items-center gap-1.5 p-1.5 rounded-full border shadow-2xl backdrop-blur-xl"
+              style={{
+                backgroundColor: 'var(--surface-card-bg, #111115)',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
+                boxShadow: '0 8px 30px -4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+              }}
+            >
+              {/* 1. CHORD ACTION */}
+              {activePreset?.sections && activePreset.sections.length > 0 ? (
+                <MorphingActionSurface
+                  placement="anchor"
+                  compact
+                  maxWidth={260}
+                  title="Add chord to…"
+                  accentColor={accent.from}
+                  customTrigger={({ triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      aria-label="Add Chord"
+                      data-testid="add-chord-btn"
+                      className="h-9 px-3.5 rounded-full text-white shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer active:scale-95 transition-all"
+                      style={{
+                        background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                      }}
+                      type="button"
+                    >
+                      <span className="material-symbols-rounded text-[17px]">music_note</span>
+                      <span>+ Chord</span>
+                    </motion.button>
+                  )}
+                  rows={activePreset.sections.map((section) => ({
+                    id: section.id,
+                    label: section.name,
+                    icon: 'layers',
+                    sublabel: `${(section.chords || []).length} chords`,
+                    onPress: () => {
+                      setPickerSectionId(section.id);
+                      setShowPicker(true);
+                    },
+                  }))}
+                />
+              ) : (
+                <button
+                  aria-label="Add Chord"
+                  data-testid="add-chord-btn"
+                  onClick={() => {
+                    setPickerSectionId(null);
+                    setShowPicker(true);
+                  }}
+                  className="h-9 px-3.5 rounded-full text-white shadow-xs flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                  }}
+                  type="button"
+                >
+                  <span className="material-symbols-rounded text-[17px]">music_note</span>
+                  <span>+ Chord</span>
+                </button>
+              )}
+
+              {/* 2. SECTION ACTION */}
               <MorphingActionSurface
                 isOpen={showSectionPicker}
                 onOpenChange={setShowSectionPicker}
@@ -6104,17 +6063,17 @@ export default function SongsPanel() {
                       setCustomSectionMode(false);
                       triggerProps.onClick();
                     }}
-                    className="h-10 px-3.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                    className="h-9 px-3 rounded-full border shadow-xs flex items-center gap-1.5 text-xs font-semibold cursor-pointer active:scale-95 transition-all"
                     style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-primary, #111827)',
+                      backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+                      borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
+                      color: 'var(--c-text-primary, #ffffff)',
                     }}
                     type="button"
                   >
                     <span
-                      className="material-symbols-rounded text-[18px]"
-                      style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                      className="material-symbols-rounded text-[17px]"
+                      style={{ color: 'var(--c-text-secondary, #94a3b8)' }}
                     >
                       layers
                     </span>
@@ -6138,9 +6097,24 @@ export default function SongsPanel() {
                     icon: 'layers',
                     onPress: () => {
                       if (!activePreset) return;
-                      const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                      if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                      else addSection(activePreset.id, name);
+                      if (editorViewMode === 'lyrics') {
+                        const currentLyrics = activePreset.lyrics ?? createEmptyLyricsDocument();
+                        const newSec = {
+                          id: generateLyricId('sec'),
+                          type: 'custom' as const,
+                          name,
+                          lines: [{ id: generateLyricId('line'), text: '' }],
+                        };
+                        setSongLyrics(activePreset.id, {
+                          ...currentLyrics,
+                          sections: [...currentLyrics.sections, newSec],
+                        });
+                        toast.success(`Added ${name} section to lyrics`);
+                      } else {
+                        const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                        else addSection(activePreset.id, name);
+                      }
                     },
                   })),
                   {
@@ -6151,70 +6125,73 @@ export default function SongsPanel() {
                       if (!activePreset) return;
                       const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
                       if (name && name.trim()) {
-                        const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                        if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                        else addSection(activePreset.id, name.trim());
+                        if (editorViewMode === 'lyrics') {
+                          const currentLyrics = activePreset.lyrics ?? createEmptyLyricsDocument();
+                          const newSec = {
+                            id: generateLyricId('sec'),
+                            type: 'custom' as const,
+                            name: name.trim(),
+                            lines: [{ id: generateLyricId('line'), text: '' }],
+                          };
+                          setSongLyrics(activePreset.id, {
+                            ...currentLyrics,
+                            sections: [...currentLyrics.sections, newSec],
+                          });
+                          toast.success(`Added ${name.trim()} section to lyrics`);
+                        } else {
+                          const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+                          if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+                          else addSection(activePreset.id, name.trim());
+                        }
                       }
                     },
                   },
                 ]}
               />
 
-              {activePreset?.sections && activePreset.sections.length > 0 ? (
-                <MorphingActionSurface
-                  placement="anchor"
-                  compact
-                  maxWidth={260}
-                  title="Add chord to…"
-                  accentColor={accent.from}
-                  customTrigger={({ triggerProps }) => (
-                    <motion.button
-                      {...triggerProps}
-                      aria-label="Add Chord"
-                      data-testid="add-chord-btn"
-                      className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--c-accent-from, #2563EB)',
-                        boxShadow:
-                          '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                      }}
-                      type="button"
-                    >
-                      <span className="material-symbols-rounded text-[18px]">music_note</span>
-                      <span>+ Chord</span>
-                    </motion.button>
-                  )}
-                  rows={activePreset.sections.map((section) => ({
-                    id: section.id,
-                    label: section.name,
-                    icon: 'layers',
-                    sublabel: `${(section.chords || []).length} chords`,
-                    onPress: () => {
-                      setPickerSectionId(section.id);
-                      setShowPicker(true);
-                    },
-                  }))}
-                />
-              ) : (
-                <button
-                  aria-label="Add Chord"
-                  data-testid="add-chord-btn"
-                  onClick={() => {
-                    setPickerSectionId(null);
-                    setShowPicker(true);
-                  }}
-                  className="h-11 px-4 rounded-full text-white shadow-float flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all cursor-pointer"
+              {/* 3. LYRICS ACTION */}
+              <button
+                type="button"
+                data-testid="dock-lyrics-btn"
+                aria-label="Toggle Lyrics View"
+                onClick={() => {
+                  if (editorViewMode === 'lyrics') {
+                    setEditorViewMode('chords');
+                  } else {
+                    if (!activePreset?.lyrics) {
+                      setSongLyrics(activePreset!.id, createEmptyLyricsDocument());
+                    }
+                    setEditorViewMode('lyrics');
+                  }
+                }}
+                className="h-9 px-3 rounded-full border shadow-xs flex items-center gap-1.5 text-xs font-semibold cursor-pointer active:scale-95 transition-all"
+                style={
+                  editorViewMode === 'lyrics'
+                    ? {
+                        backgroundColor: `color-mix(in srgb, ${accent.from} 20%, transparent)`,
+                        borderColor: `color-mix(in srgb, ${accent.from} 50%, transparent)`,
+                        color: accent.from,
+                      }
+                    : {
+                        backgroundColor: 'var(--app-surface-low, rgba(255,255,255,0.06))',
+                        borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
+                        color: 'var(--c-text-primary, #ffffff)',
+                      }
+                }
+              >
+                <span
+                  className="material-symbols-rounded text-[17px]"
                   style={{
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
-                    boxShadow:
-                      '0 8px 24px -4px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                    color:
+                      editorViewMode === 'lyrics'
+                        ? accent.from
+                        : 'var(--c-text-secondary, #94a3b8)',
                   }}
-                  type="button"
                 >
-                  <span className="material-symbols-rounded text-[18px]">music_note</span>
-                  <span>+ Chord</span>
-                </button>
-              )}
+                  lyrics
+                </span>
+                <span>Lyrics</span>
+              </button>
             </div>
           </div>
         )}
