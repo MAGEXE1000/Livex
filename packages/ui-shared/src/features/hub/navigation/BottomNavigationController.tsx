@@ -23,7 +23,6 @@ import {
 } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../../assistant/components/LivexAssistantMascot';
 import { SharedNavigationBar } from './SharedNavigationBar';
-import { NavigationAnimationProvider } from './NavigationAnimationProvider';
 import { IconSongs, IconLibrary, IconSettings } from '../icons/NavIcons';
 import { motion, AnimatePresence } from 'motion/react';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
@@ -96,8 +95,10 @@ export function BottomNavigationController() {
   }, [routeKey, setProfileMenuOpen]);
 
   const currentApp = currentRoute?.app ?? 'hub';
-  const activeTab = currentRoute?.tab || currentRoute?.page || 'home';
-  const activePage = currentRoute?.page || 'main';
+  const rawTab = currentRoute?.tab;
+  const rawPage = currentRoute?.page;
+  const activeTab = rawTab || (currentApp === 'hub' ? 'home' : rawPage || '');
+  const activePage = rawPage || '';
 
   const t = useT() as any;
   const getTranslation = useCallback(
@@ -318,12 +319,16 @@ export function BottomNavigationController() {
     }
 
     if (currentApp === 'hub') {
+      const isProfile = rawTab === 'profile' || rawPage === 'profile';
+      const isSettings = rawTab === 'settings' || rawPage === 'settings';
+      const isHome = !isProfile && !isSettings && (rawTab === 'home' || rawPage === 'home' || (!rawTab && !rawPage));
+
       return [
         {
           key: 'profile',
           icon: profileIcon,
           label: getTranslation('profile'),
-          isActive: activeTab === 'profile' || activePage === 'profile',
+          isActive: isProfile,
           onClick: () => {
             NavigationDispatcher.push({ app: 'hub', page: 'profile', tab: 'profile' });
             setProfileMenuOpen(false);
@@ -333,10 +338,7 @@ export function BottomNavigationController() {
           key: 'home',
           icon: 'home',
           label: getTranslation('home'),
-          isActive:
-            (activeTab === 'home' || activePage === 'home') &&
-            activeTab !== 'profile' &&
-            activeTab !== 'settings',
+          isActive: isHome,
           onClick: () => {
             NavigationDispatcher.push({ app: 'hub', page: 'home', tab: 'home' });
             setProfileMenuOpen(false);
@@ -346,7 +348,7 @@ export function BottomNavigationController() {
           key: 'settings',
           icon: 'cog',
           label: getTranslation('settings'),
-          isActive: activeTab === 'settings' || activePage === 'settings' || activePage === 'main',
+          isActive: isSettings,
           onClick: () => {
             NavigationDispatcher.push({ app: 'hub', page: 'main', tab: 'settings' });
             setProfileMenuOpen(false);
@@ -385,18 +387,78 @@ export function BottomNavigationController() {
     const sections = APP_SECTIONS[currentApp] || [];
     return sections.map((sec) => {
       let isActive = activeTab === sec.id || activePage === sec.id;
-      if (currentApp === 'stagex' && sec.id === 'Editor') {
-        isActive = activeTab === 'Editor' || activePage === 'Editor' || activePage === 'Export';
+      if (currentApp === 'stagex') {
+        if (
+          sec.id === 'Editor' &&
+          (activeTab === 'Editor' || activePage === 'Editor' ||
+           activeTab === 'editor' || activePage === 'editor' ||
+           activeTab === 'stage' || activePage === 'stage' ||
+           activeTab === 'Stage' || activePage === 'Stage' ||
+           activePage === 'Export')
+        ) {
+          isActive = true;
+        } else if (
+          sec.id === 'Setup' &&
+          (activeTab === 'Setup' || activePage === 'Setup' || activeTab === 'setup' || activePage === 'setup')
+        ) {
+          isActive = true;
+        } else if (
+          sec.id === 'Preferences' &&
+          (activeTab === 'Preferences' || activePage === 'Preferences' ||
+           activeTab === 'preferences' || activePage === 'preferences' ||
+           activeTab === 'prefs' || activePage === 'prefs')
+        ) {
+          isActive = true;
+        }
       }
       if (currentApp === 'drumex') {
-        if (sec.id === 'beats' && (activeTab === 'songs' || activePage === 'songs'))
+        if (
+          sec.id === 'beats' &&
+          (activeTab === 'songs' || activePage === 'songs' || activeTab === 'beats' || activePage === 'beats')
+        ) {
           isActive = true;
-        if (sec.id === 'songs' && (activeTab === 'beats' || activePage === 'beats'))
+        } else if (
+          sec.id === 'patterns' &&
+          (activeTab === 'patterns' || activePage === 'patterns')
+        ) {
           isActive = true;
+        } else if (
+          sec.id === 'prefs' &&
+          (activeTab === 'prefs' || activePage === 'prefs' || activeTab === 'preferences' || activePage === 'preferences')
+        ) {
+          isActive = true;
+        }
       }
       if (currentApp === 'groovex') {
-        if (sec.id === 'library' && (activeTab === 'rhythms' || activePage === 'rhythms' || activePage === 'player'))
+        if (
+          sec.id === 'library' &&
+          (activeTab === 'rhythms' || activePage === 'rhythms' || activeTab === 'library' || activePage === 'library')
+        ) {
           isActive = true;
+        } else if (
+          sec.id === 'preferences' &&
+          (activeTab === 'preferences' || activePage === 'preferences' || activeTab === 'prefs' || activePage === 'prefs')
+        ) {
+          isActive = true;
+        }
+      }
+      if (currentApp === 'vocalex') {
+        if (
+          sec.id === 'coach' &&
+          (activeTab === 'coach' || activePage === 'coach')
+        ) {
+          isActive = true;
+        } else if (
+          sec.id === 'takes' &&
+          (activeTab === 'takes' || activePage === 'takes')
+        ) {
+          isActive = true;
+        } else if (
+          sec.id === 'preferences' &&
+          (activeTab === 'preferences' || activePage === 'preferences' || activeTab === 'prefs' || activePage === 'prefs')
+        ) {
+          isActive = true;
+        }
       }
       return {
         key: sec.id,
@@ -415,6 +477,8 @@ export function BottomNavigationController() {
     });
   }, [
     currentApp,
+    rawTab,
+    rawPage,
     activeTab,
     activePage,
     instrument,
@@ -474,23 +538,21 @@ export function BottomNavigationController() {
     !isAssistantScreen;
 
   return (
-    <NavigationAnimationProvider activeTab={activeTab} items={computedItems}>
-      <SharedNavigationBar
-        items={computedItems}
-        isLight={isLight}
-        visible={visible}
-        isLocked={isLocked}
-        collapsed={collapsed}
-        isSwitcherOpen={isSwitcherOpen}
-        setIsSwitcherOpen={setIsSwitcherOpen}
-        currentApp={currentApp}
-        activeTab={activeTab}
-        mascotState={mascotState}
-        onOpenProfile={() => toggleProfileMenu()}
-        user={user}
-        customPhoto={customPhoto}
-        profileIcon={profileIcon}
-      />
-    </NavigationAnimationProvider>
+    <SharedNavigationBar
+      items={computedItems}
+      isLight={isLight}
+      visible={visible}
+      isLocked={isLocked}
+      collapsed={collapsed}
+      isSwitcherOpen={isSwitcherOpen}
+      setIsSwitcherOpen={setIsSwitcherOpen}
+      currentApp={currentApp}
+      activeTab={activeTab}
+      mascotState={mascotState}
+      onOpenProfile={() => toggleProfileMenu()}
+      user={user}
+      customPhoto={customPhoto}
+      profileIcon={profileIcon}
+    />
   );
 }

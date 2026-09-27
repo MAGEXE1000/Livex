@@ -456,11 +456,12 @@ export function SharedNavigationBar({
   const itemWidth = usableWidth / totalSlots;
 
   const activeIndex = useMemo(() => {
-    const idx = currentItems.findIndex((item) => {
+    return currentItems.findIndex((item) => {
       return isSwitcherOpen ? item.key === currentApp : item.isActive;
     });
-    return idx >= 0 ? idx : 0;
   }, [currentItems, currentApp, isSwitcherOpen]);
+
+  const hasActiveItem = activeIndex >= 0;
 
   // Canonical selected-item highlight geometry:
   // Flat minimal highlight perfectly contained with uniform insets
@@ -486,7 +487,7 @@ export function SharedNavigationBar({
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Root MotionValues: single target MotionValue for highlight position
-  const targetPillX = activeIndex * itemWidth + centerOffset;
+  const targetPillX = hasActiveItem ? activeIndex * itemWidth + centerOffset : centerOffset;
   const targetPillXVal = useMotionValue(targetPillX);
   const scrollOffsetRaw = useMotionValue(getNavScrollOffset());
   const profileOpenRaw = useMotionValue(isProfileMenuOpen ? 1 : 0);
@@ -505,10 +506,10 @@ export function SharedNavigationBar({
 
   // Reconcile root target MotionValue continuously on state changes when not dragging
   useEffect(() => {
-    if (!isDraggingRef.current) {
+    if (!isDraggingRef.current && hasActiveItem) {
       targetPillXVal.set(activeIndex * itemWidth + centerOffset);
     }
-  }, [activeIndex, itemWidth, centerOffset, targetPillXVal]);
+  }, [activeIndex, hasActiveItem, itemWidth, centerOffset, targetPillXVal]);
 
   // Connect scroll listener directly without causing React component re-renders
   useEffect(() => {
@@ -569,7 +570,7 @@ export function SharedNavigationBar({
     initialPillXRef.current = pillXSpring.get();
     isDraggingRef.current = false;
     hasDragInitiatedRef.current = false;
-    lastHoveredIndexRef.current = activeIndex;
+    lastHoveredIndexRef.current = hasActiveItem ? activeIndex : 0;
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -697,7 +698,9 @@ export function SharedNavigationBar({
       lastDragEndedAtRef.current = performance.now();
 
       // Resolve safely to current canonical active tab
-      targetPillXVal.set(activeIndex * itemWidth + centerOffset);
+      if (hasActiveItem) {
+        targetPillXVal.set(activeIndex * itemWidth + centerOffset);
+      }
     }
   };
 
@@ -1002,6 +1005,7 @@ export function SharedNavigationBar({
                 <motion.div
                   animate={{
                     width: pillWidthVal,
+                    opacity: hasActiveItem ? 1 : 0,
                   }}
                   transition={
                     prefersReduced

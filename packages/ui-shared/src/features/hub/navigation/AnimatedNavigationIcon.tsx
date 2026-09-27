@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useAnimation } from 'motion/react';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { useNavigationAnimation } from './NavigationAnimationProvider';
 
@@ -217,10 +217,44 @@ const AnimatedNavigationIconComponent = React.forwardRef<any, AnimatedNavigation
       );
     }
 
-    // Squish-stretch keyframes for elastic bounce
-    const scaleX = isActive ? [1, 1.2, 0.92, 1.04, 1] : 1;
-    const scaleY = isActive ? [1, 0.8, 1.08, 0.96, 1] : 1;
-    const rotate = isActive ? [0, -6 * dirSign, 4 * dirSign, 0] : 0;
+    const controls = useAnimation();
+    const wasActiveRef = useRef(false);
+    const prevEpochRef = useRef(animationEpoch);
+
+    useEffect(() => {
+      const epochChanged = animationEpoch !== undefined && animationEpoch !== prevEpochRef.current;
+      prevEpochRef.current = animationEpoch;
+
+      if (isActive) {
+        if (!wasActiveRef.current || epochChanged) {
+          wasActiveRef.current = true;
+          controls.start({
+            opacity: 1,
+            scaleX: [1, 1.2, 0.92, 1.04, 1],
+            scaleY: [1, 0.8, 1.08, 0.96, 1],
+            rotate: [0, -6 * dirSign, 4 * dirSign, 0],
+            transition: {
+              duration: 0.38,
+              ease: [0.25, 1, 0.5, 1], // premium elastic curve
+            },
+          });
+        }
+      } else {
+        if (wasActiveRef.current) {
+          wasActiveRef.current = false;
+          controls.start({
+            opacity: 0.85,
+            scaleX: 1,
+            scaleY: 1,
+            rotate: 0,
+            transition: {
+              duration: 0.2,
+              ease: 'easeOut',
+            },
+          });
+        }
+      }
+    }, [isActive, animationEpoch, dirSign, controls]);
 
     const content = iconNode ? (
       <div
@@ -250,15 +284,12 @@ const AnimatedNavigationIconComponent = React.forwardRef<any, AnimatedNavigation
     return (
       <motion.div
         key={`nav-icon-${resolvedName}`}
-        animate={{
+        animate={controls}
+        initial={{
           opacity: isActive ? 1 : 0.85,
-          scaleX,
-          scaleY,
-          rotate,
-        }}
-        transition={{
-          duration: 0.38,
-          ease: [0.25, 1, 0.5, 1], // premium elastic curve
+          scaleX: 1,
+          scaleY: 1,
+          rotate: 0,
         }}
         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color }}
       >

@@ -520,7 +520,7 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const isSpinning = !isSnake && ((state as string) === 'loading' || name === 'loader-circle' || name === 'loader');
 
     const innerIconRef = useRef<any>(null);
-    const isAnimatingRef = useRef(false);
+    const wasActiveRef = useRef(false);
     const prevEpochRef = useRef(animationEpoch);
 
     const isMatched = !!localAnimatedIcons[normName];
@@ -528,22 +528,10 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     // Map imperative commands for backwards compatibility and parent controls
     useImperativeHandle(ref, () => ({
       startAnimation: () => {
-        if (innerIconRef.current && !isAnimatingRef.current) {
-          isAnimatingRef.current = true;
-          innerIconRef.current.startAnimation?.();
-          setTimeout(
-            () => {
-              isAnimatingRef.current = false;
-            },
-            name === 'settings' || name === 'cog' ? 1000 : 600
-          );
-        }
+        innerIconRef.current?.startAnimation?.();
       },
       stopAnimation: () => {
-        if (innerIconRef.current) {
-          innerIconRef.current.stopAnimation?.();
-          isAnimatingRef.current = false;
-        }
+        innerIconRef.current?.stopAnimation?.();
       },
     }));
 
@@ -551,28 +539,22 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     useEffect(() => {
       if (isSpinning) return;
       const isActiveState = state === 'active' || state === 'selected';
-      const epochChanged = animationEpoch !== prevEpochRef.current;
+      const epochChanged = animationEpoch !== undefined && animationEpoch !== prevEpochRef.current;
       prevEpochRef.current = animationEpoch;
 
       if (isActiveState) {
-        if (innerIconRef.current && (!isAnimatingRef.current || epochChanged)) {
-          isAnimatingRef.current = true;
-          innerIconRef.current.stopAnimation?.();
-          innerIconRef.current.startAnimation?.();
-          setTimeout(
-            () => {
-              isAnimatingRef.current = false;
-            },
-            name === 'settings' || name === 'cog' ? 1000 : 600
-          );
+        if (!wasActiveRef.current || epochChanged) {
+          wasActiveRef.current = true;
+          innerIconRef.current?.stopAnimation?.();
+          innerIconRef.current?.startAnimation?.();
         }
       } else {
-        if (innerIconRef.current) {
-          innerIconRef.current.stopAnimation?.();
-          isAnimatingRef.current = false;
+        if (wasActiveRef.current) {
+          wasActiveRef.current = false;
+          innerIconRef.current?.stopAnimation?.();
         }
       }
-    }, [state, name, animationEpoch, isSpinning]);
+    }, [state, animationEpoch, isSpinning]);
 
     // Hover configuration based on icon type (for static/unmatched icons only)
     const getIconSpecificHover = () => {
