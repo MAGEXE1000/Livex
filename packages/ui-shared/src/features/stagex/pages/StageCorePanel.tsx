@@ -13,6 +13,7 @@ import {
   setNavHidden,
   type AppKey,
   useShallow,
+  useBackHandler,
 } from '@workspace/livex-core';
 import { motion } from 'motion/react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
@@ -185,6 +186,20 @@ export default function StagexPanel() {
       NavigationDispatcher.replace({ app: 'stagex', page: 'Editor' });
     }
   }, []);
+
+  useBackHandler(
+    'panel',
+    () => {
+      if (NavigationDispatcher.currentApp() !== 'stagex') return false;
+      if (curView === 'Setup' || curView === 'Preferences') {
+        handleBackToStage();
+        return true;
+      }
+      // At Stage Editor root: consume gesture and stay put (Option A)
+      return true;
+    },
+    [curView, handleBackToStage]
+  );
 
   return (
     <div

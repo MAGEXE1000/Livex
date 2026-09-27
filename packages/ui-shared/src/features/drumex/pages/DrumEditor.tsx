@@ -2244,7 +2244,13 @@ export default function DrumEditor() {
           drumScheduler.stop();
           setPlaying(false);
         }
-        NavigationDispatcher.pop();
+        const store = useNavigationStore.getState();
+        const prev = store.history[store.history.length - 2];
+        if (prev && prev.app === 'drumex') {
+          NavigationDispatcher.pop();
+        } else {
+          NavigationDispatcher.replace({ app: 'drumex', page: 'beats' });
+        }
         return true;
       }
       return false;

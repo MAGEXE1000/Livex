@@ -248,6 +248,43 @@ describe('Android Back-Navigation System & Invariant Suite', () => {
       // At Hub root, back is not consumed so Capacitor App can exit cleanly
       expect(handled).toBe(false);
     });
+
+    it('returns to Hub Home when swiping back from Settings root list (Option A1)', () => {
+      // User is on Settings list in Hub shell
+      useNavigationStore.setState({
+        history: [
+          { app: 'hub', tab: 'home' },
+          { app: 'hub', tab: 'settings' },
+        ],
+      });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'settings' });
+      expect(NavigationDispatcher.canGoBack()).toBe(true);
+
+      const handled = BackDispatcher.handleBackEvent();
+      expect(handled).toBe(true);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'home' });
+
+      // Second back action on Hub Home returns false (allowing Android app exit)
+      BackDispatcher.resetDebounce();
+      const secondHandled = BackDispatcher.handleBackEvent();
+      expect(secondHandled).toBe(false);
+    });
+
+    it('returns to Settings list when swiping back from a nested Settings page', () => {
+      // User is on Appearance page in Settings
+      useNavigationStore.setState({
+        history: [
+          { app: 'hub', tab: 'home' },
+          { app: 'hub', tab: 'settings' },
+          { app: 'hub', tab: 'settings', page: 'appearance' },
+        ],
+      });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'settings', page: 'appearance' });
+
+      const handled = BackDispatcher.handleBackEvent();
+      expect(handled).toBe(true);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'settings' });
+    });
   });
 
   describe('6. App Domain Isolation via openApp() (No Cross-App Stacking)', () => {

@@ -4331,6 +4331,10 @@ export default function SongsPanel() {
     'nested',
     () => {
       if (!isSongsActive) return false;
+      if (searchQuery) {
+        setSearchQuery('');
+        return true;
+      }
       if (showLyricsComposer) {
         setShowLyricsComposer(false);
         return true;
@@ -4381,6 +4385,7 @@ export default function SongsPanel() {
     },
     [
       isSongsActive,
+      searchQuery,
       showSectionPicker,
       showCustomBuilder,
       showPicker,

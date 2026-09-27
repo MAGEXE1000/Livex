@@ -111,10 +111,17 @@ export default function GroovexApp() {
 
   useBackHandler('panel', () => {
     if (NavigationDispatcher.currentApp() !== 'groovex') return false;
-    // Pop back within Groovex for any sub-view (player, library, etc.).
-    // NavigationDispatcher.pop() intra-app protection ensures we never escape to Hub
-    // if the current entry is the only Groovex entry in the stack.
-    handleBack();
+    if (view === 'player' || view === 'preferences') {
+      const store = useNavigationStore.getState();
+      const prev = store.history[store.history.length - 2];
+      if (prev && prev.app === 'groovex') {
+        NavigationDispatcher.pop();
+      } else {
+        NavigationDispatcher.replace({ app: 'groovex', page: 'library' });
+      }
+      return true;
+    }
+    // At Groovex library root: consume gesture and stay put (Option A)
     return true;
   }, [view]);
 

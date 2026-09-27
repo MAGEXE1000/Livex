@@ -12,6 +12,7 @@ import {
   useSettingsStore,
   vocalexRepository,
   useSessionStore,
+  useBackHandler,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
@@ -88,6 +89,26 @@ export default function VocalexApp() {
     useSessionStore.getState().setLastSession({ vocalexTab: activeTab });
     resetNav();
   }, [activeTab]);
+
+  useBackHandler(
+    'panel',
+    () => {
+      if (NavigationDispatcher.currentApp() !== 'vocalex') return false;
+      if (activeTab === 'takes' || activeTab === 'preferences') {
+        const store = useNavigationStore.getState();
+        const prev = store.history[store.history.length - 2];
+        if (prev && prev.app === 'vocalex') {
+          NavigationDispatcher.pop();
+        } else {
+          NavigationDispatcher.replace({ app: 'vocalex', page: 'coach' });
+        }
+        return true;
+      }
+      // At Coach root: consume gesture and stay put (Option A)
+      return true;
+    },
+    [activeTab]
+  );
 
   const appKey = 'vocalex' as AppKey;
   const accent = resolveAccent(settings.accentColor);

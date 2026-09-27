@@ -207,11 +207,25 @@ export function isNestedRoute(route: NavigationRoute | undefined): boolean {
         route.subView === 'editor'
       );
     case 'groovex':
-      return Boolean(route.page === 'player' || (route.tab as string) === 'player');
+      return Boolean(
+        route.page === 'player' ||
+        route.page === 'preferences' ||
+        (route.tab as string) === 'player'
+      );
     case 'chordex':
-      return Boolean(route.page === 'chord');
+      return Boolean(
+        route.page === 'chord' ||
+        route.page === 'practice' ||
+        route.page === 'preferences'
+      );
     case 'vocalex':
-      return Boolean(route.page === 'harmonizer' || route.page === 'pitch' || route.page === 'lab');
+      return Boolean(
+        route.page === 'takes' ||
+        route.page === 'preferences' ||
+        route.page === 'harmonizer' ||
+        route.page === 'pitch' ||
+        route.page === 'lab'
+      );
     case 'hub':
       // Hub uses tab-based nesting; 'home' is the root tab.
       return Boolean(route.tab && route.tab !== 'home');

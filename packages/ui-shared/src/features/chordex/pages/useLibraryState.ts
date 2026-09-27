@@ -399,6 +399,10 @@ export function useLibraryState() {
         setSelectedRootFilter('ALL');
         return true;
       }
+      if (selectedRootFilter !== 'ALL') {
+        setSelectedRootFilter('ALL');
+        return true;
+      }
       if (query) {
         setQuery('');
         return true;
@@ -420,6 +424,8 @@ export function useLibraryState() {
       activeType,
       selectChord,
       setActiveType,
+      selectedRootFilter,
+      setSelectedRootFilter,
     ]
   );
 
