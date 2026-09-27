@@ -1,4 +1,4 @@
-import { Dialog } from '../../../shared/design-system/dialogs';
+﻿import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -138,6 +138,10 @@ import {
 } from '@workspace/livex-core';
 
 import DrumPrefsPanel from './DrumPrefsPanel';
+import { KitTab } from '../components/panels/KitTab';
+import { MixerTab } from '../components/panels/MixerTab';
+import { FXTab } from '../components/panels/FXTab';
+
 import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
@@ -148,7 +152,7 @@ import {
   SegmentedControl,
 } from '../../../shared/settings/SettingControls';
 
-// ── Layout ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Layout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const LABEL_W = 104;
 const ROW_H = 44;
 const RULER_H = 28;
@@ -156,7 +160,7 @@ const SYS_SEP = 10;
 const MIN_STEP = 16;
 
 // Core instruments always visible; extras are collapsible.
-// Order mirrors KIT_INSTRUMENTS display order: high → low pitch.
+// Order mirrors KIT_INSTRUMENTS display order: high ΓåÆ low pitch.
 const CORE_INSTS: DrumInstrument[] = ['hihat-closed', 'snare', 'kick', 'crash'];
 
 const getInstrumentColor = (inst: DrumInstrument, isLight: boolean, noteColor: string): string => {
@@ -186,7 +190,7 @@ const getInstrumentColor = (inst: DrumInstrument, isLight: boolean, noteColor: s
 // Staff lines within each row (fraction of ROW_H)
 const STAFF_YF = [0.29, 0.52, 0.75] as const;
 
-// Notehead vertical position within ROW_H — mirrors real notation positions
+// Notehead vertical position within ROW_H ΓÇö mirrors real notation positions
 const NOTE_YF: Record<DrumInstrument, number> = {
   crash: 0.12,
   'hihat-closed': 0.12,
@@ -225,26 +229,26 @@ const INST_LABEL: Record<DrumInstrument, string> = {
   ride: 'Ride',
 };
 const KIT_LABEL: Record<KitType, string> = {
-  ludwig: 'Acoustic • House Kit',
-  jazz: 'Acoustic • House Kit',
-  rock: 'Acoustic • House Kit',
-  vintage: 'Acoustic • House Kit',
-  studio: 'Acoustic • House Kit',
-  r8: 'Acoustic • House Kit',
-  linn: 'Acoustic • House Kit',
-  funk: 'Acoustic • House Kit',
-  cr78: 'Acoustic • House Kit',
-  tr808: 'Acoustic • House Kit',
-  techno: 'Acoustic • House Kit',
-  stark: 'Acoustic • House Kit',
-  rmm: 'Acoustic • House Kit',
-  chrome: 'Acoustic • House Kit',
-  house: 'Acoustic • House Kit',
+  ludwig: 'Acoustic ΓÇó House Kit',
+  jazz: 'Acoustic ΓÇó House Kit',
+  rock: 'Acoustic ΓÇó House Kit',
+  vintage: 'Acoustic ΓÇó House Kit',
+  studio: 'Acoustic ΓÇó House Kit',
+  r8: 'Acoustic ΓÇó House Kit',
+  linn: 'Acoustic ΓÇó House Kit',
+  funk: 'Acoustic ΓÇó House Kit',
+  cr78: 'Acoustic ΓÇó House Kit',
+  tr808: 'Acoustic ΓÇó House Kit',
+  techno: 'Acoustic ΓÇó House Kit',
+  stark: 'Acoustic ΓÇó House Kit',
+  rmm: 'Acoustic ΓÇó House Kit',
+  chrome: 'Acoustic ΓÇó House Kit',
+  house: 'Acoustic ΓÇó House Kit',
 };
 
-// ── Per-instrument character presets ─────────────────────────────────────────
+// ΓöÇΓöÇ Per-instrument character presets ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Each preset applies a curated combination of FX values in one tap.
-// Values use the same range as the sliders (0-1 for knobs, Â±12 for EQ dB).
+// Values use the same range as the sliders (0-1 for knobs, ├é┬▒12 for EQ dB).
 type FXPreset = { label: string; values: Partial<InstFX> };
 const INST_PRESETS: Partial<Record<DrumInstrument, FXPreset[]>> = {
   snare: [
@@ -327,14 +331,14 @@ const KIT_CATEGORIES: { id: string; kits: KitType[] }[] = [
   { id: 'ultrahd', kits: ['house'] },
 ];
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Tabs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type DrumTab = 'metronome' | 'songs' | 'patterns' | 'prefs';
 const TAB_ORDER: DrumTab[] = ['metronome', 'songs', 'patterns', 'prefs'];
 
 const DRUM_VIEWS = ['metronome', 'songs-list', 'songs-editor', 'patterns', 'prefs'] as const;
 type DrumView = (typeof DRUM_VIEWS)[number];
 
-// ── SVG note heads (memoized — rendered hundreds of times in the grid) ─────
+// ΓöÇΓöÇ SVG note heads (memoized ΓÇö rendered hundreds of times in the grid) ΓöÇΓöÇΓöÇΓöÇΓöÇ
 function IconDrumSongs({ active }: { active: boolean }) {
   const sw = active ? 2 : 1.6;
   const ao = active ? 0.13 : 0;
@@ -522,7 +526,7 @@ function IconPrefs({ active }: { active: boolean }) {
   );
 }
 
-// ── Bottom nav (Metronome / Songs / Patterns / Prefs) ──────────────────────
+// ΓöÇΓöÇ Bottom nav (Metronome / Songs / Patterns / Prefs) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function IconMetronome({ active }: { active: boolean }) {
   const sw = active ? 2 : 1.6;
   const ao = active ? 0.13 : 0;
@@ -578,7 +582,7 @@ function DrumNav({
   return null;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p
@@ -613,9 +617,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   );
 }
 
-// ── Export config ───────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Export config ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-// ── JSON export ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ JSON export ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function exportDrumSongJSON(
   patterns: DrumPattern[],
   song: DrumSong | null,
@@ -668,7 +672,7 @@ async function exportDrumSongJSON(
   URL.revokeObjectURL(url);
 }
 
-// ── PDF export ──────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ PDF export ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const HEX_TO_RGB = (hex: string): [number, number, number] => {
   const h = hex.replace('#', '');
   const n = parseInt(
@@ -848,7 +852,7 @@ export default function DrumEditor() {
   const kit = kitType ?? 'house';
   const ALL_INSTS = KIT_INSTRUMENTS[kit] ?? KIT_INSTRUMENTS.house;
 
-  // ── Theme — use per-app drums theme, fall back to global ─────────────────
+  // ΓöÇΓöÇ Theme ΓÇö use per-app drums theme, fall back to global ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const drumsVis = settings.perApp?.drumex ?? {
     theme: settings.theme ?? 'dark',
     amoledMode: settings.amoledMode ?? false,
@@ -869,7 +873,7 @@ export default function DrumEditor() {
     return false;
   })();
   const isAmoled = !isLight && Boolean(drumsVis.amoledMode || settings.amoledMode);
-  // SVG/canvas colors — CSS vars can't be used directly in SVG props
+  // SVG/canvas colors ΓÇö CSS vars can't be used directly in SVG props
   const noteColor = isLight ? '#111118' : '#ffffff';
   const staffColor = isLight ? 'rgba(9, 9, 11, 0.08)' : 'rgba(255, 255, 255, 0.05)';
   const barColor = isLight ? 'rgba(9, 9, 11, 0.25)' : 'rgba(255, 255, 255, 0.15)';
@@ -878,7 +882,7 @@ export default function DrumEditor() {
   const ROW_H = isWebDesktop ? 68 : 44;
   const rowGap = isWebDesktop ? 8 : 0;
 
-  // ── Landscape detection ──────────────────────────────────────────────────
+  // ΓöÇΓöÇ Landscape detection ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [isLandscape, setIsLandscape] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -905,7 +909,7 @@ export default function DrumEditor() {
     };
   }, []);
 
-  // ── State ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const activeTab = useNavigationStore((s) => {
     const lastRoute = s.history[s.history.length - 1];
     if (lastRoute?.app === 'drumex' && lastRoute.page) {
@@ -1190,25 +1194,9 @@ export default function DrumEditor() {
     }
     return list;
   }, [drumSongs, songSearch, songKitFilter, songSort]);
-  const [collapsedKitSections, setCollapsedKitSections] = useState<Record<string, boolean>>({
-    'drum-kit': false,
-    'kit-variant': false,
-    'mic-position': true,
-    'sound-character': true,
-    'advanced-kit-options': true,
-  });
-  const [collapsedMixerSections, setCollapsedMixerSections] = useState<Record<string, boolean>>({
-    master: false,
-    levels: false,
-    pan: true,
-    'room-send': true,
-  });
-  const [collapsedFxSections, setCollapsedFxSections] = useState<Record<string, boolean>>({
-    'global-fx': false,
-    'per-instrument-fx': false,
-    'reverb-room': true,
-    'humanize-groove-feel': true,
-  });
+  
+  
+  
   const handleSetTab = (newTab: DrumTab) => {
     NavigationDispatcher.push({ app: 'drumex', page: newTab === 'songs' ? 'beats' : newTab });
     setNavCollapsed(false);
@@ -1222,7 +1210,7 @@ export default function DrumEditor() {
   }, [activeTab]);
   const [humanizeFeedback, setHumanizeFeedback] = useState(false);
 
-  // ── Row visibility (persisted to localStorage) ───────────────────────────
+  // ΓöÇΓöÇ Row visibility (persisted to localStorage) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [showExtraRows, setShowExtraRows] = useState<boolean>(() => {
     try {
       const v = JSON.parse(localStorage.getItem('chordex-drum-ui') ?? '{}');
@@ -1232,21 +1220,21 @@ export default function DrumEditor() {
     }
   });
 
-  // ── Undo / Redo stacks ───────────────────────────────────────────────────
+  // ΓöÇΓöÇ Undo / Redo stacks ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   type HistoryEntry = { patterns: typeof patterns; activePatternId: string | null };
   const undoStack = useRef<HistoryEntry[]>([]);
   const redoStack = useRef<HistoryEntry[]>([]);
   const [historyCount, setHistoryCount] = useState(0);
 
-  // ── Bar copy/paste clipboard ──────────────────────────────────────────────
+  // ΓöÇΓöÇ Bar copy/paste clipboard ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [copiedMeasure, setCopiedMeasure] = useState<DrumMeasure | null>(null);
   const [openBarMenu, setOpenBarMenu] = useState<string | null>(null); // measureId
   const [flashBarId, setFlashBarId] = useState<string | null>(null); // brief highlight on paste
 
-  // ── Per-instrument FX state ────────────────────────────────────────────────
-  const [fxInst, setFxInst] = useState<DrumInstrument>('kick');
+  // ΓöÇΓöÇ Per-instrument FX state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  
 
-  // Sync instFX + instPlugins store → drumAudio module whenever they change
+  // Sync instFX + instPlugins store ΓåÆ drumAudio module whenever they change
   useEffect(() => {
     setInstFXMap(instFX);
   }, [instFX]);
@@ -1269,7 +1257,7 @@ export default function DrumEditor() {
     setHumanizeVelocity(drumPrefs.humanizeVelocity);
   }, [drumPrefs.humanizeVelocity]);
 
-  // ── Export modal + import modal + tuner modal ────────────────────────────
+  // ΓöÇΓöÇ Export modal + import modal + tuner modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportDrum, setShowImportDrum] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -1294,7 +1282,7 @@ export default function DrumEditor() {
     }
   }, []);
 
-  // ── Groove Library state ──────────────────────────────────────────────────
+  // ΓöÇΓöÇ Groove Library state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [grooveFilter, setGrooveFilter] = useState<GrooveTag>('');
   const [patRenameId, setPatRenameId] = useState<string | null>(null);
   const [patRenameName, setPatRenameName] = useState('');
@@ -1304,7 +1292,7 @@ export default function DrumEditor() {
   const [grooveRenameName, setGrooveRenameName] = useState('');
   const [grooveRenameTag, setGrooveRenameTag] = useState<GrooveTag>('');
 
-  // ── Container width ──────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Container width ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Use a stable callback ref so the observer re-attaches every time the
   // container div mounts (e.g. first open of the editor, or after a tab switch
   // remounts the content wrapper). A plain useEffect(fn,[]) misses mounts that
@@ -1348,7 +1336,7 @@ export default function DrumEditor() {
     _roRef.current = ro;
   }, []);
 
-  // ── Visible instruments ───────────────────────────────────────────────────
+  // ΓöÇΓöÇ Visible instruments ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const extraInsts = useMemo(() => ALL_INSTS.filter((i) => !CORE_INSTS.includes(i)), [ALL_INSTS]);
   const patternMuted = useMemo(
     () => new Set(pattern.mutedInstruments ?? []),
@@ -1358,10 +1346,10 @@ export default function DrumEditor() {
     return showExtraRows ? ALL_INSTS : ALL_INSTS.filter((i) => CORE_INSTS.includes(i));
   }, [ALL_INSTS, showExtraRows]);
 
-  // ── Layout ───────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Layout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const availableW = containerW - LABEL_W;
   // rawMpr: how many measures fit per row at the minimum step width.
-  // In landscape the screen is wider so rawMpr is naturally larger →
+  // In landscape the screen is wider so rawMpr is naturally larger ΓåÆ
   // more measures shown per row without stretching any of them.
   const rawMpr = Math.max(1, Math.floor(availableW / (spm * MIN_STEP)));
   const measuresPerRow = isLandscape ? pattern.measures.length : 1;
@@ -1395,7 +1383,7 @@ export default function DrumEditor() {
   const secPerStepRef = useRef(0);
   secPerStepRef.current = 60 / pattern.bpm / (pattern.subdivision / pattern.timeSignature[1]);
 
-  // ── System rows ──────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ System rows ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const systemRows = useMemo(() => {
     const rows: (typeof pattern.measures)[] = [];
     for (let i = 0; i < pattern.measures.length; i += measuresPerRow)
@@ -1403,7 +1391,7 @@ export default function DrumEditor() {
     return rows;
   }, [pattern.measures, measuresPerRow]);
 
-  // ── Smart loop range (clamped against current bar count) ─────────────────
+  // ΓöÇΓöÇ Smart loop range (clamped against current bar count) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Always derive a valid range; `loopActive` gates visual + audio behavior.
   const effectiveLoop = useMemo<LoopRange>(
     () => clampLoopRange(pattern.loopRange, pattern.measures.length),
@@ -1411,12 +1399,12 @@ export default function DrumEditor() {
   );
   const loopActive = effectiveLoop.enabled && pattern.measures.length > 0;
 
-  // ── Hit maps (step → { variation, velocity }) ────────────────────────────
+  // ΓöÇΓöÇ Hit maps (step ΓåÆ { variation, velocity }) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-  // ── Scroll-hide for bottom nav ────────────────────────────────────────────
+  // ΓöÇΓöÇ Scroll-hide for bottom nav ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const drumNavLastY = useRef(0);
 
-  // ── Refs ─────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Refs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollDimsRef = useRef({ width: 0, height: 0 });
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -1442,7 +1430,7 @@ export default function DrumEditor() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Lifecycle ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useEffect(() => {
     samplePool.onStatusChange = (s) => setSampleStatus(s);
     setSampleStatus(samplePool.status);
@@ -1480,7 +1468,7 @@ export default function DrumEditor() {
     if (playing) drumScheduler.updatePattern(pattern);
   }, [pattern, playing]);
 
-  // ── Scroll-hide: attach to grid scroll container ──────────────────────────
+  // ΓöÇΓöÇ Scroll-hide: attach to grid scroll container ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const drumScrollHide = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const y = e.currentTarget.scrollTop;
     if (y < 30) {
@@ -1494,7 +1482,7 @@ export default function DrumEditor() {
     drumNavLastY.current = y;
   }, []);
 
-  // ── Auto-save: persist patterns/kit into the loaded song whenever they change
+  // ΓöÇΓöÇ Auto-save: persist patterns/kit into the loaded song whenever they change
   useEffect(() => {
     if (!activeDrumSongId) return;
     const t = setTimeout(() => {
@@ -1508,13 +1496,13 @@ export default function DrumEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patterns, activePatternId, kitType, activeDrumSongId]);
 
-  // ── Playhead ─────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Playhead ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const endAdvTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drumPrefsRef = useRef(drumPrefs);
   useEffect(() => {
     drumPrefsRef.current = drumPrefs;
   }, [drumPrefs]);
-  // Low latency now lives globally (Studio Hub → Performance) and is wired in App.tsx.
+  // Low latency now lives globally (Studio Hub ΓåÆ Performance) and is wired in App.tsx.
 
   useEffect(() => {
     drumScheduler.onStep = (gs, mIdx, stepInM) => {
@@ -1582,7 +1570,7 @@ export default function DrumEditor() {
           el.scrollLeft = targetScrollLeft;
         }
       }
-      // ── Auto-expand ────────────────────────────────────────────────────────
+      // ΓöÇΓöÇ Auto-expand ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
       const totalSteps = drumScheduler.totalSteps;
       if (drumPrefsRef.current.autoExpandPattern && gs === totalSteps - 1) {
         const { patterns: pts, activePatternId: actId } = useDrumStore.getState();
@@ -1626,12 +1614,12 @@ export default function DrumEditor() {
     []
   );
 
-  // ── Master volume → audio engine ─────────────────────────────────────────
+  // ΓöÇΓöÇ Master volume ΓåÆ audio engine ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useEffect(() => {
     drumScheduler.setMasterVolume(masterVolume);
   }, [masterVolume]);
 
-  // ── Row visibility persistence ────────────────────────────────────────────
+  // ΓöÇΓöÇ Row visibility persistence ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useEffect(() => {
     try {
       const prev = JSON.parse(localStorage.getItem('chordex-drum-ui') ?? '{}');
@@ -1639,7 +1627,7 @@ export default function DrumEditor() {
     } catch {}
   }, [showExtraRows]);
 
-  // ── Undo / Redo helpers ────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Undo / Redo helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const pushUndo = useCallback(() => {
     const { patterns: pts, activePatternId: actId } = useDrumStore.getState();
     undoStack.current.push({ patterns: JSON.parse(JSON.stringify(pts)), activePatternId: actId });
@@ -1685,7 +1673,7 @@ export default function DrumEditor() {
     prevMeasureCount.current = currentCount;
   }, [pattern.measures.length]);
 
-  // ── Keyboard shortcuts (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z) ──────────────────
+  // ΓöÇΓöÇ Keyboard shortcuts (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
@@ -1701,7 +1689,7 @@ export default function DrumEditor() {
     return () => window.removeEventListener('keydown', handler);
   }, [handleUndo, handleRedo]);
 
-  // ── Metronome click ──────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Metronome click ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const playMetronomeClick = useCallback(
     (isBeat1: boolean, soundOverride?: string) => {
       const ctx = getAudioCtx();
@@ -1808,7 +1796,7 @@ export default function DrumEditor() {
     [drumPrefs.metronomeSound]
   );
 
-  // ── Play/stop ────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Play/stop ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const startPattern = useCallback(() => {
     setRandomVariations(useDrumStore.getState().drumPrefs.randomVariations);
     const sm = { ...KIT_DEFAULTS[kit].soundMap, ...soundMap };
@@ -1893,7 +1881,7 @@ export default function DrumEditor() {
     playMetronomeClick,
   ]);
 
-  // ── MediaSession integration for Drumex Beats ──────────────────────────────
+  // ΓöÇΓöÇ MediaSession integration for Drumex Beats ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handlePlayRef = useRef(handlePlay);
   handlePlayRef.current = handlePlay;
 
@@ -1906,7 +1894,7 @@ export default function DrumEditor() {
         getMetadata: () => ({
           title: pattern.name || 'Drum Beat',
           artist: KIT_DEFAULTS[kit]?.label || 'Drumex Studio',
-          album: `Drumex Beats · ${pattern.bpm} BPM`,
+          album: `Drumex Beats ┬╖ ${pattern.bpm} BPM`,
         }),
         getPlaybackState: () => ({
           state: playing ? 'playing' : 'paused',
@@ -1928,7 +1916,7 @@ export default function DrumEditor() {
       mediaSessionCoordinator.updateMetadata('drumex-beats', {
         title: pattern.name || 'Drum Beat',
         artist: KIT_DEFAULTS[kit]?.label || 'Drumex Studio',
-        album: `Drumex Beats · ${pattern.bpm} BPM`,
+        album: `Drumex Beats ┬╖ ${pattern.bpm} BPM`,
       });
 
       mediaSessionCoordinator.updatePlaybackState('drumex-beats', {
@@ -1947,7 +1935,7 @@ export default function DrumEditor() {
     };
   }, [playing, pattern, kit, activeTab]);
 
-  // ── Kit ──────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Kit ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleKitSelect = useCallback(
     (k: KitType) => {
       if (kitType === k) return;
@@ -1962,7 +1950,7 @@ export default function DrumEditor() {
     [setKitType, kitType, houseKitMic]
   );
 
-  // ── Groove Library ────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Groove Library ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const filteredGrooves = grooveFilter ? grooves.filter((g) => g.tag === grooveFilter) : grooves;
 
   const handleGroovePreview = useCallback(
@@ -2088,7 +2076,7 @@ export default function DrumEditor() {
     [pattern, updatePattern, activeDrumSongId]
   );
 
-  // ── BPM ──────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ BPM ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const adjustBpm = useCallback(
     (d: number) => {
       const bpm = Math.max(40, Math.min(280, pattern.bpm + d));
@@ -2097,7 +2085,7 @@ export default function DrumEditor() {
     [pattern.id, pattern.bpm, updatePattern]
   );
 
-  // ── Subdivision ──────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Subdivision ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const toggleSub = useCallback(() => {
     updatePattern(pattern.id, { subdivision: pattern.subdivision === 16 ? 8 : 16 });
     if (drumScheduler.isPlaying) {
@@ -2106,7 +2094,7 @@ export default function DrumEditor() {
     }
   }, [pattern, updatePattern]);
 
-  // ── Clear ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Clear ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleClear = useCallback(() => {
     if (drumScheduler.isPlaying) {
       drumScheduler.stop();
@@ -2118,7 +2106,7 @@ export default function DrumEditor() {
     updatePattern(pattern.id, { measures: clearedMeasures });
   }, [pattern, updatePattern, pushUndo]);
 
-  // ── Cell tap / drag ──────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Cell tap / drag ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Resolve which grid cell a pointer event falls on; returns null if outside grid
   const resolveCell = (clientX: number, clientY: number, instOverride?: DrumInstrument | null) => {
     const el = scrollRef.current;
@@ -2139,7 +2127,7 @@ export default function DrumEditor() {
       return null;
     const mIdx = sysIdx * mprRef.current + measureInRow;
 
-    // snapToGrid=false → quantize to beat rather than subdivision step
+    // snapToGrid=false ΓåÆ quantize to beat rather than subdivision step
     let stepInM = Math.floor((cx % measureWRef.current) / stepWRef.current);
     if (!useDrumStore.getState().drumPrefs.snapToGrid) {
       const spBeat = spmRef.current / 4;
@@ -2302,7 +2290,7 @@ export default function DrumEditor() {
     setFocusedInst(cell.inst);
   };
 
-  // ── Back ─────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Back ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleBack = () => {
     if (inEditor) {
       if (drumScheduler.isPlaying) {
@@ -2399,7 +2387,7 @@ export default function DrumEditor() {
     ]
   );
 
-  // ── Create Beat ───────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Create Beat ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleCreateBeat = useCallback(() => {
     if (!createName.trim()) return;
     const bpm = Math.max(40, Math.min(280, parseInt(createBpm, 10) || 120));
@@ -2428,7 +2416,7 @@ export default function DrumEditor() {
     houseKitMic,
   ]);
 
-  // ── Songs ─────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Songs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleOpenSaveForm = useCallback(() => {
     if (activeDrumSongId) {
       const song = drumSongs.find((s) => s.id === activeDrumSongId);
@@ -2545,7 +2533,7 @@ export default function DrumEditor() {
     [previewingSongId, kit, soundMap, volumeMap, activeInstruments, masterVolume, houseKitMic]
   );
 
-  // ── Humanize ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Humanize ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Applies subtle variation to note types across the active pattern,
   // producing a more human feel without drastically altering the groove.
   const handleHumanize = useCallback(() => {
@@ -2584,12 +2572,12 @@ export default function DrumEditor() {
     setTimeout(() => setHumanizeFeedback(false), 900);
   }, [pattern, updatePattern]);
 
-  // ── Convenience: active song ─────────────────────────────────────────────
+  // ΓöÇΓöÇ Convenience: active song ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const activeSong = activeDrumSongId
     ? (drumSongs.find((s) => s.id === activeDrumSongId) ?? null)
     : null;
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const inputSt: React.CSSProperties = {
     width: '100%',
     background: 'var(--app-surface-high)',
@@ -2616,7 +2604,7 @@ export default function DrumEditor() {
   const renderCreateBeatForm = useCallback(
     ({ close }: { close?: () => void } = {}) => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '10px 14px 14px 14px' }}>
-        {/* ── Beat info ── */}
+        {/* ΓöÇΓöÇ Beat info ΓöÇΓöÇ */}
         <div>
           <label style={labelSt}>Beat Title</label>
           <Input
@@ -2640,7 +2628,7 @@ export default function DrumEditor() {
           />
         </div>
 
-        {/* ── BPM ── */}
+        {/* ΓöÇΓöÇ BPM ΓöÇΓöÇ */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelSt}>BPM</label>
@@ -2686,7 +2674,7 @@ export default function DrumEditor() {
           </div>
         </div>
 
-        {/* ── Drum Kit Details ── */}
+        {/* ΓöÇΓöÇ Drum Kit Details ΓöÇΓöÇ */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelSt}>Drum Kit</label>
@@ -2722,14 +2710,14 @@ export default function DrumEditor() {
           </div>
         </div>
 
-        {/* ── Notes ── */}
+        {/* ΓöÇΓöÇ Notes ΓöÇΓöÇ */}
         <div>
           <label style={labelSt}>Notes</label>
           <textarea
             value={createNotes}
             onChange={(e) => setCreateNotes(e.target.value)}
             rows={2}
-            placeholder="Optional notes…"
+            placeholder="Optional notesΓÇª"
             style={
               {
                 ...inputSt,
@@ -2742,7 +2730,7 @@ export default function DrumEditor() {
           />
         </div>
 
-        {/* ── Actions ── */}
+        {/* ΓöÇΓöÇ Actions ΓöÇΓöÇ */}
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
           <Button
             onClick={() => {
@@ -2863,7 +2851,7 @@ export default function DrumEditor() {
         WebkitUserSelect: 'none',
       }}
     >
-      {/* ── Floating Pill Top Bar (Canonical Studio Language) ───────── */}
+      {/* ΓöÇΓöÇ Floating Pill Top Bar (Canonical Studio Language) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       {!isWebDesktop
         ? inEditor && (
             <header
@@ -2936,7 +2924,7 @@ export default function DrumEditor() {
                       </div>
                       {!isLandscape && (
                         <p className="text-[9px] text-slate-400 dark:text-zinc-500 font-medium tracking-wide truncate mt-0.5 max-w-[220px]">
-                          {KIT_LABEL[kit] ?? 'Acoustic • House Kit'} • {pattern.subdivision}th Master
+                          {KIT_LABEL[kit] ?? 'Acoustic ΓÇó House Kit'} ΓÇó {pattern.subdivision}th Master
                         </p>
                       )}
                     </div>
@@ -3318,7 +3306,7 @@ export default function DrumEditor() {
                       flexShrink: 0,
                     }}
                   >
-                    {playing ? '⏹' : '▶'}
+                    {playing ? 'ΓÅ╣' : 'Γû╢'}
                   </button>
 
                   <div
@@ -3410,7 +3398,7 @@ export default function DrumEditor() {
                         transition: 'all 150ms',
                         marginLeft: 4,
                       }}
-                      title="Afinador de Batería (Drum Tuner)"
+                      title="Afinador de Bater├¡a (Drum Tuner)"
                       aria-label="Drum Tuner"
                       data-testid="drum-editor-tuner-btn"
                     >
@@ -3774,7 +3762,7 @@ export default function DrumEditor() {
                                               fontSize: 9,
                                             }}
                                           >
-                                            ▶
+                                            Γû╢
                                           </button>
                                           {isSel && (
                                             <span
@@ -3784,7 +3772,7 @@ export default function DrumEditor() {
                                                 paddingRight: 4,
                                               }}
                                             >
-                                              ✓
+                                              Γ£ô
                                             </span>
                                           )}
                                         </div>
@@ -4060,7 +4048,7 @@ export default function DrumEditor() {
 
 
 
-      {/* ── Content ──────────────────────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Content ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <div
         style={{
           display: 'flex',
@@ -4173,7 +4161,7 @@ export default function DrumEditor() {
                         border: '1px solid var(--c-border)',
                         color: 'var(--c-text-secondary)',
                       }}
-                      title="Afinador de Batería"
+                      title="Afinador de Bater├¡a"
                     >
                       <span className="material-symbols-outlined text-[13px] text-emerald-400">tune</span>
                       <span>TUNER</span>
@@ -4223,7 +4211,7 @@ export default function DrumEditor() {
                         border: '1px solid var(--c-border)',
                         color: 'var(--c-text-secondary)',
                       }}
-                      title="Metrónomo"
+                      title="Metr├│nomo"
                     >
                       <span className="material-symbols-outlined text-[13px]">timer</span>
                       <span>METRONOME</span>
@@ -4238,7 +4226,7 @@ export default function DrumEditor() {
                         border: '1px solid var(--c-border)',
                         color: 'var(--c-text-secondary)',
                       }}
-                      title="Afinador de Batería"
+                      title="Afinador de Bater├¡a"
                     >
                       <span className="material-symbols-outlined text-[13px] text-emerald-400">tune</span>
                       <span>TUNER</span>
@@ -4259,7 +4247,7 @@ export default function DrumEditor() {
               flexDirection: 'column',
             }}
           >
-            {/* ═══ SONGS LIST (Songs tab, not in editor) ═══════════════════════ */}
+            {/* ΓòÉΓòÉΓòÉ SONGS LIST (Songs tab, not in editor) ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
             <SharedNavigationContainer activeView={currentView} viewOrder={DRUM_VIEWS}>
               {(viewId) => {
                 switch (viewId) {
@@ -4361,7 +4349,7 @@ export default function DrumEditor() {
                                   }`}
                                 >
                                   <option value="all">All Kits</option>
-                                  <option value="house">Acoustic — House Kit</option>
+                                  <option value="house">Acoustic ΓÇö House Kit</option>
                                 </select>
                               </div>
 
@@ -4583,7 +4571,7 @@ export default function DrumEditor() {
                                       </div>
                                     ) : (
                                       <div className="flex flex-col flex-1 relative">
-                                        {/* Menu button (Â·Â·Â·) */}
+                                        {/* Menu button (├é┬╖├é┬╖├é┬╖) */}
                                         <div className="absolute right-2 top-2 z-10">
                                           <button
                                             onClick={(e) => {
@@ -4799,7 +4787,7 @@ export default function DrumEditor() {
                             position: 'relative',
                           }}
                         >
-                          {/* ── Grid Toolbar ── */}
+                          {/* ΓöÇΓöÇ Grid Toolbar ΓöÇΓöÇ */}
                           <section
                             className="flex items-center justify-between px-3 sm:px-4 flex-shrink-0"
                             style={{
@@ -4902,7 +4890,7 @@ export default function DrumEditor() {
                             }}
                             className="no-scrollbar"
                           >
-                            {/* Playhead — extends into ruler, draggable handle at top */}
+                            {/* Playhead ΓÇö extends into ruler, draggable handle at top */}
                             <div
                               ref={playheadRef}
                               style={{
@@ -4926,7 +4914,7 @@ export default function DrumEditor() {
                                 transform: `translate(${LABEL_W}px, 0px)`,
                               }}
                             >
-                              {/* Draggable handle — downward triangle above the ruler */}
+                              {/* Draggable handle ΓÇö downward triangle above the ruler */}
                               <div
                                 onPointerDown={(e) => {
                                   e.stopPropagation();
@@ -5071,7 +5059,7 @@ export default function DrumEditor() {
                                                   zIndex: 15,
                                                 }}
                                               >
-                                                ▶
+                                                Γû╢
                                               </span>
                                             )}
                                             {loopActive && globalM === effectiveLoop.endBar && (
@@ -5089,7 +5077,7 @@ export default function DrumEditor() {
                                                   zIndex: 15,
                                                 }}
                                               >
-                                                ◀
+                                                ΓùÇ
                                               </span>
                                             )}
 
@@ -5104,7 +5092,7 @@ export default function DrumEditor() {
                                                   s % 4 === 0
                                                     ? globalM === 0
                                                       ? `${beatIdx}`
-                                                      : `${globalM + 1}•${beatIdx}`
+                                                      : `${globalM + 1}ΓÇó${beatIdx}`
                                                     : s % 4 === 1
                                                       ? 'e'
                                                       : s % 4 === 2
@@ -5115,7 +5103,7 @@ export default function DrumEditor() {
                                                   s % 2 === 0
                                                     ? globalM === 0
                                                       ? `${beatIdx}`
-                                                      : `${globalM + 1}•${beatIdx}`
+                                                      : `${globalM + 1}ΓÇó${beatIdx}`
                                                     : '&';
                                               }
                                               return (
@@ -5149,7 +5137,7 @@ export default function DrumEditor() {
                                               );
                                             })}
 
-                                            {/* ··· measure menu button */}
+                                            {/* ┬╖┬╖┬╖ measure menu button */}
                                             <button
                                               onPointerDown={(e) => e.stopPropagation()}
                                               onClick={(e) => {
@@ -5495,7 +5483,7 @@ export default function DrumEditor() {
                                                   color: 'var(--c-text-muted)',
                                                 }}
                                               >
-                                                {varList.join(' • ')}
+                                                {varList.join(' ΓÇó ')}
                                               </span>
                                             ) : (
                                               <span
@@ -5533,7 +5521,7 @@ export default function DrumEditor() {
                                 );
                               })}
                           </div>
-                          {/* ── Floating Transport Dock (Canonical Mobile Transport Capsule) ── */}
+                          {/* ΓöÇΓöÇ Floating Transport Dock (Canonical Mobile Transport Capsule) ΓöÇΓöÇ */}
                           <aside
                             aria-label="Drum sequencer transport controls"
                             className="fixed z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-2xl backdrop-blur-xl"
@@ -5865,7 +5853,7 @@ export default function DrumEditor() {
                                             lineHeight: 1,
                                           }}
                                         >
-                                          −
+                                          ΓêÆ
                                         </button>
                                         <span
                                           style={{
@@ -5909,7 +5897,7 @@ export default function DrumEditor() {
                                             padding: '0 2px',
                                           }}
                                         >
-                                          –
+                                          ΓÇô
                                         </span>
                                         <button
                                           onPointerDown={() => pushUndo()}
@@ -5929,7 +5917,7 @@ export default function DrumEditor() {
                                             lineHeight: 1,
                                           }}
                                         >
-                                          −
+                                          ΓêÆ
                                         </button>
                                         <span
                                           style={{
@@ -6467,1226 +6455,9 @@ export default function DrumEditor() {
                               className="no-scrollbar"
                             >
                               {/* KIT TAB */}
-                              {sideTab === 'kit' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                  <div
-                                    style={{
-                                      padding: '16px',
-                                      background: isLight
-                                        ? 'rgba(0, 0, 0, 0.03)'
-                                        : 'rgba(255, 255, 255, 0.03)',
-                                      border: isLight
-                                        ? '1px solid rgba(0, 0, 0, 0.08)'
-                                        : '1px solid rgba(255, 255, 255, 0.08)',
-                                      borderRadius: 12,
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        fontSize: 9.5,
-                                        fontWeight: 800,
-                                        color: 'var(--c-text-muted)',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em',
-                                      }}
-                                    >
-                                      Active Drum Kit
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: 13,
-                                        fontWeight: 800,
-                                        color: 'var(--c-text-primary)',
-                                      }}
-                                    >
-                                      Acoustic — House Kit
-                                    </span>
-                                    <p
-                                      style={{
-                                        margin: 0,
-                                        fontSize: 11,
-                                        color: 'var(--c-text-muted)',
-                                        lineHeight: 1.45,
-                                      }}
-                                    >
-                                      Premium multi-velocity studio kit featuring 5 velocity layers
-                                      and 7 round-robin variations per instrument for natural
-                                      acoustic expression.
-                                    </p>
-                                  </div>
-
-                                  {kitType === 'house' &&
-                                    renderCollapsibleSection(
-                                      'mic-position',
-                                      'Mic Position',
-                                      collapsedKitSections,
-                                      (id) =>
-                                        setCollapsedKitSections((prev) => ({
-                                          ...prev,
-                                          [id]: !prev[id],
-                                        })),
-                                      <div style={{ display: 'flex', gap: 6 }}>
-                                        {HOUSE_MICS.map((m) => {
-                                          const active = houseKitMic === m.id;
-                                          return (
-                                            <button
-                                              key={m.id}
-                                              className="btn-smooth"
-                                              onClick={() => {
-                                                storeSetHouseKitMic(m.id);
-                                                setHouseKitMic(m.id);
-                                              }}
-                                              style={{
-                                                flex: 1,
-                                                height: 28,
-                                                borderRadius: 8,
-                                                border: active
-                                                  ? `1.5px solid ${accent.from}66`
-                                                  : '1.5px solid rgba(255,255,255,0.1)',
-                                                background: active
-                                                  ? `${accent.from}1a`
-                                                  : 'rgba(255,255,255,0.03)',
-                                                color: active
-                                                  ? accent.from
-                                                  : 'var(--c-text-secondary)',
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                              }}
-                                            >
-                                              {m.label}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-
-                                  {kitType === 'house' &&
-                                    renderCollapsibleSection(
-                                      'sound-character',
-                                      'Sound Character',
-                                      collapsedKitSections,
-                                      (id) =>
-                                        setCollapsedKitSections((prev) => ({
-                                          ...prev,
-                                          [id]: !prev[id],
-                                        })),
-                                      <div
-                                        style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                      >
-                                        {(
-                                          [
-                                            'kick',
-                                            'snare',
-                                            'tom10',
-                                            'tom12',
-                                            'tom14',
-                                          ] as HouseInstName[]
-                                        ).map((hInst) => {
-                                          const locked = houseInstVelOverride[hInst];
-                                          return (
-                                            <div
-                                              key={hInst}
-                                              style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 4,
-                                              }}
-                                            >
-                                              <div
-                                                style={{ display: 'flex', alignItems: 'center' }}
-                                              >
-                                                <span
-                                                  style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                    color: 'var(--c-text-primary)',
-                                                    flex: 1,
-                                                  }}
-                                                >
-                                                  {HOUSE_INST_LABELS[hInst]}
-                                                </span>
-                                                {locked && (
-                                                  <button
-                                                    onClick={() =>
-                                                      storeSetInstVelOverride(hInst, undefined)
-                                                    }
-                                                    style={{
-                                                      fontSize: 9.5,
-                                                      fontWeight: 700,
-                                                      color: 'var(--c-text-muted)',
-                                                      background: 'none',
-                                                      border: 'none',
-                                                      cursor: 'pointer',
-                                                    }}
-                                                  >
-                                                    AUTO
-                                                  </button>
-                                                )}
-                                              </div>
-                                              <div
-                                                style={{
-                                                  display: 'flex',
-                                                  gap: 4,
-                                                  flexWrap: 'wrap',
-                                                }}
-                                              >
-                                                {HOUSE_VEL_CONFIGS[hInst].map((v) => {
-                                                  const active = locked === v.id;
-                                                  return (
-                                                    <button
-                                                      key={v.id}
-                                                      className="btn-smooth"
-                                                      onClick={() =>
-                                                        storeSetInstVelOverride(
-                                                          hInst,
-                                                          active ? undefined : v.id
-                                                        )
-                                                      }
-                                                      style={{
-                                                        height: 24,
-                                                        padding: '0 8px',
-                                                        borderRadius: 6,
-                                                        border: active
-                                                          ? `1.5px solid ${accent.from}66`
-                                                          : '1.5px solid rgba(255,255,255,0.1)',
-                                                        background: active
-                                                          ? `${accent.from}1a`
-                                                          : 'rgba(255,255,255,0.03)',
-                                                        color: active
-                                                          ? accent.from
-                                                          : 'var(--c-text-secondary)',
-                                                        fontSize: 10,
-                                                        fontWeight: 700,
-                                                        cursor: 'pointer',
-                                                      }}
-                                                    >
-                                                      {v.label}
-                                                    </button>
-                                                  );
-                                                })}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-
-                                  {kitType === 'house' &&
-                                    renderCollapsibleSection(
-                                      'advanced-kit-options',
-                                      'Advanced Kit Options',
-                                      collapsedKitSections,
-                                      (id) =>
-                                        setCollapsedKitSections((prev) => ({
-                                          ...prev,
-                                          [id]: !prev[id],
-                                        })),
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          gap: 12,
-                                        }}
-                                      >
-                                        <div>
-                                          <span
-                                            style={{
-                                              fontSize: 10.5,
-                                              fontWeight: 600,
-                                              color: 'var(--c-text-secondary)',
-                                              display: 'block',
-                                              marginBottom: 4,
-                                            }}
-                                          >
-                                            Crash Cymbal Model
-                                          </span>
-                                          <div
-                                            style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
-                                          >
-                                            {HOUSE_CRASH_MODELS.map((m) => {
-                                              const active = houseCrashModel === m.id;
-                                              return (
-                                                <button
-                                                  key={m.id}
-                                                  className="btn-smooth"
-                                                  onClick={() =>
-                                                    storeSetHouseCrashModel(m.id as HouseCrashModel)
-                                                  }
-                                                  title={m.desc}
-                                                  style={{
-                                                    height: 24,
-                                                    padding: '0 8px',
-                                                    borderRadius: 6,
-                                                    border: active
-                                                      ? `1.5px solid ${accent.from}66`
-                                                      : '1.5px solid rgba(255,255,255,0.1)',
-                                                    background: active
-                                                      ? `${accent.from}1a`
-                                                      : 'rgba(255,255,255,0.03)',
-                                                    color: active
-                                                      ? accent.from
-                                                      : 'var(--c-text-secondary)',
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer',
-                                                  }}
-                                                >
-                                                  {m.label}
-                                                </button>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-
-                                        <div>
-                                          <span
-                                            style={{
-                                              fontSize: 10.5,
-                                              fontWeight: 600,
-                                              color: 'var(--c-text-secondary)',
-                                              display: 'block',
-                                              marginBottom: 4,
-                                            }}
-                                          >
-                                            Cymbal Pack
-                                          </span>
-                                          <div
-                                            style={{
-                                              fontSize: 11,
-                                              fontWeight: 700,
-                                              color: 'var(--c-text-primary)',
-                                              padding: '2px 0',
-                                            }}
-                                          >
-                                            Sabian Pack (Hi-hat, crash, ride — bright, versatile)
-                                          </div>
-                                        </div>
-
-                                        <div
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            marginTop: 4,
-                                          }}
-                                        >
-                                          <span
-                                            style={{
-                                              flex: 1,
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                              color: 'var(--c-text-primary)',
-                                            }}
-                                          >
-                                            Random Variations
-                                          </span>
-                                          <button
-                                            onClick={() =>
-                                              updateDrumPrefs({
-                                                randomVariations: !drumPrefs.randomVariations,
-                                              })
-                                            }
-                                            style={{
-                                              width: 36,
-                                              height: 20,
-                                              borderRadius: 10,
-                                              background: drumPrefs.randomVariations
-                                                ? `linear-gradient(135deg,${accent.from},${accent.to})`
-                                                : 'rgba(255,255,255,0.15)',
-                                              border: 'none',
-                                              cursor: 'pointer',
-                                              position: 'relative',
-                                              transition: 'background 220ms',
-                                              flexShrink: 0,
-                                            }}
-                                          >
-                                            <span
-                                              style={{
-                                                position: 'absolute',
-                                                top: 2.5,
-                                                left: drumPrefs.randomVariations ? 18 : 2.5,
-                                                width: 15,
-                                                height: 15,
-                                                borderRadius: '50%',
-                                                background: '#fff',
-                                                transition:
-                                                  'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
-                                                display: 'block',
-                                              }}
-                                            />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-                                </div>
-                              )}
-
-                              {/* MIXER TAB */}
-                              {sideTab === 'mixer' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                  {renderCollapsibleSection(
-                                    'master',
-                                    'Master',
-                                    collapsedMixerSections,
-                                    (id) =>
-                                      setCollapsedMixerSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 6,
-                                        background: 'rgba(255,255,255,0.02)',
-                                        padding: 12,
-                                        borderRadius: 10,
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          justifyContent: 'space-between',
-                                          alignItems: 'center',
-                                        }}
-                                      >
-                                        <span
-                                          style={{ fontSize: 11, fontWeight: 700, color: 'white' }}
-                                        >
-                                          Master Volume
-                                        </span>
-                                        <span
-                                          style={{
-                                            fontSize: 11,
-                                            color: 'var(--c-text-muted)',
-                                            fontWeight: 700,
-                                          }}
-                                        >
-                                          {(masterVolume * 100).toFixed(1)}%
-                                        </span>
-                                      </div>
-                                      <ElasticSlider
-                                        min={0}
-                                        max={1}
-                                        step={0.005}
-                                        value={masterVolume}
-                                        onChange={setMasterVolume}
-                                        accentColor={accent.from}
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'levels',
-                                    'Levels',
-                                    collapsedMixerSections,
-                                    (id) =>
-                                      setCollapsedMixerSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-                                    >
-                                      {activeInstruments.map((inst) => {
-                                        const vol = volumeMap[inst] ?? 1;
-                                        const muted = patternMuted.has(inst);
-                                        const color = INSTRUMENT_COLOR[inst] ?? accent.from;
-                                        return (
-                                          <div
-                                            key={inst}
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 8,
-                                              padding: '4px 0',
-                                              opacity: muted ? 0.5 : 1,
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                width: 6,
-                                                height: 6,
-                                                borderRadius: '50%',
-                                                background: color,
-                                              }}
-                                            />
-                                            <span
-                                              style={{
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                color: 'var(--c-text-primary)',
-                                                flex: 1,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                              }}
-                                            >
-                                              {INST_LABEL[inst]}
-                                            </span>
-                                            <ElasticSlider
-                                              min={0}
-                                              max={1}
-                                              step={0.01}
-                                              value={vol}
-                                              onChange={(v) => setVolumeForInstrument(inst, v)}
-                                              accentColor={color}
-                                              style={{ width: 80 }}
-                                            />
-                                            <button
-                                              onClick={() => togglePatternMute(pattern.id, inst)}
-                                              style={{
-                                                width: 26,
-                                                height: 26,
-                                                borderRadius: 6,
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                background: muted
-                                                  ? 'rgba(255,255,255,0.05)'
-                                                  : `${color}18`,
-                                                color: muted ? 'var(--c-text-muted)' : color,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                              }}
-                                            >
-                                              <span
-                                                className="material-symbols-outlined"
-                                                style={{ fontSize: 14 }}
-                                              >
-                                                {muted ? 'volume_off' : 'volume_up'}
-                                              </span>
-                                            </button>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'pan',
-                                    'Pan',
-                                    collapsedMixerSections,
-                                    (id) =>
-                                      setCollapsedMixerSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                    >
-                                      <span
-                                        style={{
-                                          fontSize: 9.5,
-                                          color: 'var(--c-text-muted)',
-                                          fontStyle: 'italic',
-                                          marginBottom: 4,
-                                          display: 'block',
-                                        }}
-                                      >
-                                        Note: Stereo panning is simulated (Future Update)
-                                      </span>
-                                      {activeInstruments.map((inst) => {
-                                        const color = INSTRUMENT_COLOR[inst] ?? accent.from;
-                                        return (
-                                          <div
-                                            key={`pan-${inst}`}
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 8,
-                                              opacity: 0.5,
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                width: 6,
-                                                height: 6,
-                                                borderRadius: '50%',
-                                                background: color,
-                                              }}
-                                            />
-                                            <span
-                                              style={{
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                color: 'var(--c-text-primary)',
-                                                flex: 1,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                              }}
-                                            >
-                                              {INST_LABEL[inst]}
-                                            </span>
-                                            <div
-                                              style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                              }}
-                                            >
-                                              <span
-                                                style={{
-                                                  fontSize: 9,
-                                                  fontWeight: 700,
-                                                  color: 'var(--c-text-muted)',
-                                                }}
-                                              >
-                                                L
-                                              </span>
-                                              <input
-                                                type="range"
-                                                min="-50"
-                                                max="50"
-                                                defaultValue="0"
-                                                disabled
-                                                style={{
-                                                  width: 75,
-                                                  accentColor: color,
-                                                  cursor: 'not-allowed',
-                                                }}
-                                              />
-                                              <span
-                                                style={{
-                                                  fontSize: 9,
-                                                  fontWeight: 700,
-                                                  color: 'var(--c-text-muted)',
-                                                }}
-                                              >
-                                                R
-                                              </span>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'room-send',
-                                    'Room / Send',
-                                    collapsedMixerSections,
-                                    (id) =>
-                                      setCollapsedMixerSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-                                    >
-                                      {activeInstruments.map((inst) => {
-                                        const curFX = {
-                                          ...DEFAULT_INST_FX,
-                                          ...(instFX[inst] ?? {}),
-                                        };
-                                        const rev = curFX.reverb ?? 0;
-                                        const color = INSTRUMENT_COLOR[inst] ?? accent.from;
-                                        return (
-                                          <div
-                                            key={`rev-${inst}`}
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 8,
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                width: 6,
-                                                height: 6,
-                                                borderRadius: '50%',
-                                                background: color,
-                                              }}
-                                            />
-                                            <span
-                                              style={{
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                color: 'var(--c-text-primary)',
-                                                flex: 1,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                              }}
-                                            >
-                                              {INST_LABEL[inst]}
-                                            </span>
-                                            <ElasticSlider
-                                              min={0}
-                                              max={1}
-                                              step={0.01}
-                                              value={rev}
-                                              onChange={(v) =>
-                                                setInstFX(inst, { ...curFX, reverb: v })
-                                              }
-                                              accentColor={color}
-                                              style={{ width: 80 }}
-                                            />
-                                            <span
-                                              style={{
-                                                fontSize: 10,
-                                                fontWeight: 700,
-                                                color: 'var(--c-text-muted)',
-                                                width: 26,
-                                                textAlign: 'right',
-                                              }}
-                                            >
-                                              {Math.round(rev * 100)}%
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-
-                                  <button
-                                    onClick={() => {
-                                      setMasterVolume(1.0);
-                                      activeInstruments.forEach((inst) => {
-                                        setVolumeForInstrument(inst, 1.0);
-                                        if (patternMuted.has(inst)) {
-                                          togglePatternMute(pattern.id, inst);
-                                        }
-                                      });
-                                    }}
-                                    className="btn-smooth bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-full mt-2"
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px',
-                                      fontSize: '10px',
-                                      fontWeight: 800,
-                                      textTransform: 'uppercase',
-                                      letterSpacing: '0.08em',
-                                      padding: '8px 12px',
-                                      borderRadius: '8px',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    <span
-                                      className="material-symbols-outlined"
-                                      style={{ fontSize: '15px' }}
-                                    >
-                                      restart_alt
-                                    </span>
-                                    Reset Mix
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* FX TAB */}
-                              {sideTab === 'fx' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                  {renderCollapsibleSection(
-                                    'global-fx',
-                                    'Global FX',
-                                    collapsedFxSections,
-                                    (id) =>
-                                      setCollapsedFxSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-                                    >
-                                      <div>
-                                        <div
-                                          style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: 4,
-                                          }}
-                                        >
-                                          <span
-                                            style={{
-                                              fontSize: 11,
-                                              fontWeight: 700,
-                                              color: 'var(--c-text-primary)',
-                                            }}
-                                          >
-                                            Swing
-                                          </span>
-                                          <span
-                                            style={{
-                                              fontSize: 11,
-                                              fontWeight: 700,
-                                              color: accent.from,
-                                            }}
-                                          >
-                                            {pattern.swing ?? 0}%
-                                          </span>
-                                        </div>
-                                        <ElasticSlider
-                                          min={0}
-                                          max={100}
-                                          step={1}
-                                          value={pattern.swing ?? 0}
-                                          onChange={(v) => updatePattern(pattern.id, { swing: v })}
-                                          accentColor={accent.from}
-                                          style={{ width: '100%' }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'per-instrument-fx',
-                                    'Per-Instrument FX',
-                                    collapsedFxSections,
-                                    (id) =>
-                                      setCollapsedFxSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-                                    >
-                                      <div>
-                                        <label style={labelSt}>Instrument</label>
-                                        <select
-                                          value={fxInst}
-                                          onChange={(e) =>
-                                            setFxInst(e.target.value as DrumInstrument)
-                                          }
-                                          style={{
-                                            ...inputSt,
-                                            padding: '6px 10px',
-                                            fontSize: 13,
-                                            background: 'var(--app-surface-high)',
-                                          }}
-                                        >
-                                          {activeInstruments.map((inst) => (
-                                            <option key={inst} value={inst}>
-                                              {INST_LABEL[inst]}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      {INST_PRESETS[fxInst] && INST_PRESETS[fxInst]!.length > 0 && (
-                                        <div>
-                                          <span style={labelSt}>Character</span>
-                                          <div
-                                            style={{
-                                              display: 'flex',
-                                              gap: 6,
-                                              flexWrap: 'wrap',
-                                              marginTop: 4,
-                                            }}
-                                          >
-                                            {INST_PRESETS[fxInst]!.map((preset) => {
-                                              const curFX = {
-                                                ...DEFAULT_INST_FX,
-                                                ...(instFX[fxInst] ?? {}),
-                                              };
-                                              const active = Object.keys(preset.values).every(
-                                                (k) =>
-                                                  Math.abs(
-                                                    (curFX[k as keyof InstFX] ?? 0) -
-                                                      (preset.values[k as keyof InstFX] ?? 0)
-                                                  ) < 0.05
-                                              );
-                                              const color = INSTRUMENT_COLOR[fxInst] ?? accent.from;
-                                              return (
-                                                <button
-                                                  key={preset.label}
-                                                  onClick={() =>
-                                                    setInstFX(fxInst, {
-                                                      ...DEFAULT_INST_FX,
-                                                      ...preset.values,
-                                                    })
-                                                  }
-                                                  title={`Apply "${preset.label}" FX character to ${INST_LABEL[fxInst] || fxInst}`}
-                                                  className="btn-smooth"
-                                                  style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: 12,
-                                                    fontSize: 10.5,
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer',
-                                                    background: active
-                                                      ? color
-                                                      : 'rgba(255,255,255,0.03)',
-                                                    border: active
-                                                      ? `1.5px solid ${color}`
-                                                      : '1.5px solid rgba(255,255,255,0.08)',
-                                                    color: active
-                                                      ? '#fff'
-                                                      : 'var(--c-text-secondary)',
-                                                  }}
-                                                >
-                                                  {preset.label}
-                                                </button>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          gap: 10,
-                                        }}
-                                      >
-                                        {(() => {
-                                          const curFX = {
-                                            ...DEFAULT_INST_FX,
-                                            ...(instFX[fxInst] ?? {}),
-                                          };
-                                          const color = INSTRUMENT_COLOR[fxInst] ?? accent.from;
-                                          type SliderDef = {
-                                            key: keyof InstFX;
-                                            label: string;
-                                            min: number;
-                                            max: number;
-                                            step: number;
-                                          };
-                                          const sliders: SliderDef[] = [
-                                            {
-                                              key: 'compress',
-                                              label: 'Compress',
-                                              min: 0,
-                                              max: 1,
-                                              step: 0.01,
-                                            },
-                                            {
-                                              key: 'attack',
-                                              label: 'Attack',
-                                              min: 0,
-                                              max: 1,
-                                              step: 0.01,
-                                            },
-                                            {
-                                              key: 'gate',
-                                              label: 'Gate',
-                                              min: 0,
-                                              max: 1,
-                                              step: 0.01,
-                                            },
-                                            {
-                                              key: 'eqLow',
-                                              label: 'Low 80Hz',
-                                              min: -12,
-                                              max: 12,
-                                              step: 0.5,
-                                            },
-                                            {
-                                              key: 'eqLowMid',
-                                              label: 'Lo-Mid 350',
-                                              min: -12,
-                                              max: 12,
-                                              step: 0.5,
-                                            },
-                                            {
-                                              key: 'eqMid',
-                                              label: 'Mid 2kHz',
-                                              min: -12,
-                                              max: 12,
-                                              step: 0.5,
-                                            },
-                                            {
-                                              key: 'eqHigh',
-                                              label: 'High 10k',
-                                              min: -12,
-                                              max: 12,
-                                              step: 0.5,
-                                            },
-                                          ];
-                                          return sliders.map((s) => {
-                                            const val = curFX[s.key] ?? 0;
-                                            const isEQ = s.key.startsWith('eq');
-                                            const dispVal = isEQ
-                                              ? (val >= 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) +
-                                                'dB'
-                                              : `${Math.round(val * 100)}%`;
-                                            const active = val !== 0;
-                                            return (
-                                              <div
-                                                key={s.key}
-                                                style={{
-                                                  display: 'flex',
-                                                  flexDirection: 'column',
-                                                  gap: 4,
-                                                }}
-                                              >
-                                                <div
-                                                  style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                  }}
-                                                >
-                                                  <span
-                                                    style={{
-                                                      fontSize: 11,
-                                                      fontWeight: 700,
-                                                      color: active
-                                                        ? 'white'
-                                                        : 'var(--c-text-secondary)',
-                                                    }}
-                                                  >
-                                                    {s.label}
-                                                  </span>
-                                                  <span
-                                                    style={{
-                                                      fontSize: 11,
-                                                      fontWeight: 700,
-                                                      color: active ? color : 'var(--c-text-muted)',
-                                                    }}
-                                                  >
-                                                    {dispVal}
-                                                  </span>
-                                                </div>
-                                                <ElasticSlider
-                                                  min={s.min}
-                                                  max={s.max}
-                                                  step={s.step}
-                                                  value={val}
-                                                  onChange={(v) =>
-                                                    setInstFX(fxInst, { ...curFX, [s.key]: v })
-                                                  }
-                                                  accentColor={color}
-                                                  style={{ width: '100%' }}
-                                                />
-                                              </div>
-                                            );
-                                          });
-                                        })()}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'reverb-room',
-                                    'Reverb / Room',
-                                    collapsedFxSections,
-                                    (id) =>
-                                      setCollapsedFxSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div>
-                                      {(() => {
-                                        const curFX = {
-                                          ...DEFAULT_INST_FX,
-                                          ...(instFX[fxInst] ?? {}),
-                                        };
-                                        const color = INSTRUMENT_COLOR[fxInst] ?? accent.from;
-                                        const reverbVal = curFX.reverb ?? 0;
-                                        const saturateVal = curFX.saturate ?? 0;
-                                        return (
-                                          <div
-                                            style={{
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              gap: 10,
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 4,
-                                              }}
-                                            >
-                                              <div
-                                                style={{
-                                                  display: 'flex',
-                                                  justifyContent: 'space-between',
-                                                  alignItems: 'center',
-                                                }}
-                                              >
-                                                <span
-                                                  style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color:
-                                                      reverbVal > 0
-                                                        ? 'white'
-                                                        : 'var(--c-text-secondary)',
-                                                  }}
-                                                >
-                                                  Reverb Send
-                                                </span>
-                                                <span
-                                                  style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color:
-                                                      reverbVal > 0 ? color : 'var(--c-text-muted)',
-                                                  }}
-                                                >
-                                                  {Math.round(reverbVal * 100)}%
-                                                </span>
-                                              </div>
-                                              <ElasticSlider
-                                                min={0}
-                                                max={1}
-                                                step={0.01}
-                                                value={reverbVal}
-                                                onChange={(v) =>
-                                                  setInstFX(fxInst, { ...curFX, reverb: v })
-                                                }
-                                                accentColor={color}
-                                                style={{ width: '100%' }}
-                                              />
-                                            </div>
-                                            <div
-                                              style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 4,
-                                              }}
-                                            >
-                                              <div
-                                                style={{
-                                                  display: 'flex',
-                                                  justifyContent: 'space-between',
-                                                  alignItems: 'center',
-                                                }}
-                                              >
-                                                <span
-                                                  style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color:
-                                                      saturateVal > 0
-                                                        ? 'white'
-                                                        : 'var(--c-text-secondary)',
-                                                  }}
-                                                >
-                                                  Saturation
-                                                </span>
-                                                <span
-                                                  style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color:
-                                                      saturateVal > 0
-                                                        ? color
-                                                        : 'var(--c-text-muted)',
-                                                  }}
-                                                >
-                                                  {Math.round(saturateVal * 100)}%
-                                                </span>
-                                              </div>
-                                              <ElasticSlider
-                                                min={0}
-                                                max={1}
-                                                step={0.01}
-                                                value={saturateVal}
-                                                onChange={(v) =>
-                                                  setInstFX(fxInst, { ...curFX, saturate: v })
-                                                }
-                                                accentColor={color}
-                                                style={{ width: '100%' }}
-                                              />
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  )}
-
-                                  {renderCollapsibleSection(
-                                    'humanize-groove-feel',
-                                    'Humanize / Groove Feel',
-                                    collapsedFxSections,
-                                    (id) =>
-                                      setCollapsedFxSections((prev) => ({
-                                        ...prev,
-                                        [id]: !prev[id],
-                                      })),
-                                    <div
-                                      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span
-                                          style={{
-                                            flex: 1,
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            color: 'var(--c-text-primary)',
-                                          }}
-                                        >
-                                          Humanize Velocity
-                                        </span>
-                                        <button
-                                          onClick={() =>
-                                            updateDrumPrefs({
-                                              humanizeVelocity: !drumPrefs.humanizeVelocity,
-                                            })
-                                          }
-                                          style={{
-                                            width: 36,
-                                            height: 20,
-                                            borderRadius: 10,
-                                            background: drumPrefs.humanizeVelocity
-                                              ? `linear-gradient(135deg,${accent.from},${accent.to})`
-                                              : 'rgba(255,255,255,0.15)',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            position: 'relative',
-                                            transition: 'background 220ms',
-                                            flexShrink: 0,
-                                          }}
-                                        >
-                                          <span
-                                            style={{
-                                              position: 'absolute',
-                                              top: 2.5,
-                                              left: drumPrefs.humanizeVelocity ? 18 : 2.5,
-                                              width: 15,
-                                              height: 15,
-                                              borderRadius: '50%',
-                                              background: '#fff',
-                                              transition:
-                                                'left 200ms cubic-bezier(0.34,1.56,0.64,1)',
-                                              display: 'block',
-                                            }}
-                                          />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <button
-                                    onClick={() => setInstFX(fxInst, { ...DEFAULT_INST_FX })}
-                                    className="btn-smooth bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-full mt-2"
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px',
-                                      fontSize: '10px',
-                                      fontWeight: 800,
-                                      textTransform: 'uppercase',
-                                      letterSpacing: '0.08em',
-                                      padding: '8px 12px',
-                                      borderRadius: '8px',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    <span
-                                      className="material-symbols-outlined"
-                                      style={{ fontSize: '15px' }}
-                                    >
-                                      restart_alt
-                                    </span>
-                                    Reset {INST_LABEL[fxInst]} FX
-                                  </button>
-                                </div>
-                              )}
+                              {sideTab === 'kit' && <KitTab isLight={isLight} kitType={kitType} houseKitMic={houseKitMic} houseInstVelOverride={houseInstVelOverride} houseCrashModel={houseCrashModel} drumPrefs={drumPrefs} storeSetHouseKitMic={storeSetHouseKitMic} storeSetInstVelOverride={storeSetInstVelOverride} storeSetHouseCrashModel={storeSetHouseCrashModel} updateDrumPrefs={updateDrumPrefs} accent={accent} setHouseKitMic={setHouseKitMic} />}
+                              {sideTab === 'mixer' && <MixerTab pattern={pattern} isLight={isLight} activeInstruments={activeInstruments} masterVolume={masterVolume} setMasterVolume={setMasterVolume} volumeMap={volumeMap} patternMuted={patternMuted} setVolumeForInstrument={setVolumeForInstrument} togglePatternMute={togglePatternMute} accent={accent} INST_LABEL={INST_LABEL} instFX={instFX} setInstFX={setInstFX} />}
+                              {sideTab === 'fx' && <FXTab pattern={pattern} isLight={isLight} activeInstruments={activeInstruments} instFX={instFX} setInstFX={setInstFX} instPlugins={instPlugins} setInstPlugins={setInstPlugins} accent={accent} INST_LABEL={INST_LABEL} INST_PRESETS={INST_PRESETS} drumPrefs={drumPrefs} updateDrumPrefs={updateDrumPrefs} />}
                             </div>
                           </div>
                         )}
@@ -7752,7 +6523,7 @@ export default function DrumEditor() {
         </div>
       </div>
 
-      {/* ── Bottom nav ───────────────────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Bottom nav ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <DrumNav
         activeTab={activeTab}
         setTab={handleSetTab}
@@ -7762,7 +6533,7 @@ export default function DrumEditor() {
         hidden={isWebDesktop || inEditor || activeTab === 'metronome'}
       />
 
-      {/* ── Sound Character Dialog (House Kit) ─────────────────────────── */}
+      {/* ΓöÇΓöÇ Sound Character Dialog (House Kit) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       {kit === 'house' && showSoundCharacter && (
         <Dialog
           open={showSoundCharacter}
@@ -7839,7 +6610,7 @@ export default function DrumEditor() {
               );
             })}
 
-            {/* ── Crash Cymbal model selector ── */}
+            {/* ΓöÇΓöÇ Crash Cymbal model selector ΓöÇΓöÇ */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                 <span
@@ -7887,7 +6658,7 @@ export default function DrumEditor() {
               </div>
             </div>
 
-            {/* ── Cymbal Pack selector ── */}
+            {/* ΓöÇΓöÇ Cymbal Pack selector ΓöÇΓöÇ */}
             <div style={{ marginTop: 2 }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                 <span
@@ -7935,7 +6706,7 @@ export default function DrumEditor() {
               </div>
             </div>
 
-            {/* ── Random Variations toggle ── */}
+            {/* ΓöÇΓöÇ Random Variations toggle ΓöÇΓöÇ */}
             <div style={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
               <span
                 style={{
@@ -7983,7 +6754,7 @@ export default function DrumEditor() {
         </Dialog>
       )}
 
-      {/* ── Export modal (full-screen) ────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Export modal (full-screen) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       {showExportModal && (
         <DrumExportModal
           patterns={patterns}
@@ -7993,7 +6764,7 @@ export default function DrumEditor() {
         />
       )}
 
-      {/* ── Import modal ─────────────────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Import modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       {showImportDrum && (
         <DrumImportModal
           accent={accent}
@@ -8005,7 +6776,7 @@ export default function DrumEditor() {
         />
       )}
 
-      {/* ── Drum Tuner Modal (sheet) ───────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Drum Tuner Modal (sheet) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <MorphingActionSurface
         isOpen={showDrumTuner}
         placement="sheet"
