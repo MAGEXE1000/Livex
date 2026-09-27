@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
+import { SharedFloatingHeader } from '../../../shared/layout/LivexLayoutSystem';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import {
@@ -8,225 +10,887 @@ import {
   type TeleprompterFontFamily,
   type TeleprompterLineHeight,
   type TeleprompterAlignment,
-  type TeleprompterLineChunk,
+  type TeleprompterWord,
 } from './useLiveModeState';
-import { useSettingsStore, getChordById, type LyricTextSpan } from '@workspace/livex-core';
+import {
+  useSettingsStore,
+  getChordById,
+  type LyricTextSpan,
+  type GuitarChordData,
+} from '@workspace/livex-core';
 
-/* ── HEADER ─────────────────────────────────────────────────── */
+/* ── STYLES & KEYFRAMES INJECTION ────────────────────────────── */
+const liveModeStyles = `
+@keyframes live-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+@keyframes chord-bloom {
+  0% { transform: scale(0.85); opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+/* Discrete stage chord alignment styling (Stitch Section 2) */
+.chord-cell {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: top;
+  margin-right: 0.65rem;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.25s ease;
+}
+
+/* Chords typography */
+.chord-tag {
+  font-family: var(--studio-font-mono, monospace);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+  min-height: 1.25rem;
+  color: var(--c-text-secondary, #94a3b8);
+  transition: color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.karaoke-word {
+  display: inline-block;
+  color: var(--c-text-secondary, #94a3b8);
+  font-family: var(--studio-font-body, "Inter Tight", sans-serif);
+  letter-spacing: -0.015em;
+  transform-origin: left center;
+  transition: color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Active Word in Sung Focus (Apple Music lyric aesthetic) */
+.chord-cell.active .karaoke-word,
+.lyric-word.word-active {
+  color: var(--c-text-primary, #0f172a) !important;
+  font-weight: 800 !important;
+  transform: scale(1.06) translateY(-1px);
+  filter: drop-shadow(0 2px 10px rgba(37, 99, 235, 0.35));
+}
+
+/* Active Chord Highlight */
+.chord-cell.active .chord-tag {
+  color: var(--c-primary, #2563eb) !important;
+  font-weight: 800;
+  transform: translateY(-2px);
+}
+
+/* Passed words in current/prior context */
+.chord-cell.passed .karaoke-word,
+.lyric-word.word-past {
+  color: var(--c-text-primary, #334155);
+  font-weight: 600;
+  opacity: 0.95;
+}
+.chord-cell.passed .chord-tag {
+  color: var(--c-primary, #3b82f6);
+}
+
+/* Upcoming words */
+.lyric-word.word-upcoming {
+  color: var(--c-text-secondary, #94a3b8);
+  opacity: 0.55;
+  font-weight: 500;
+}
+
+/* Active line focus */
+.lyric-line.active-line {
+  opacity: 1 !important;
+  transform: scale(1.01);
+}
+
+.beat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--surface-topbar-border, rgba(255,255,255,0.2));
+  transition: all 0.2s ease;
+}
+
+.beat-dot.beat-dot-active {
+  background: var(--c-primary, #2563eb) !important;
+  transform: scale(1.35);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
+}
+`;
+
+/* ── CANONICAL TOP APP BAR ─────────────────────────────────────── */
 export function LiveModeHeader({ state }: { state: LiveModeState }) {
   const {
     preset,
     accent,
     autoPlay,
-    setAutoPlay,
-    showSettings,
-    setShowSettings,
     bpmOverride,
     handleClose,
     displayMode,
-    isTeleprompterMode,
+    currentSectionName,
+    activeHybridChord,
+    showSettings,
+    setShowSettings,
+    showQuickActions,
+    setShowQuickActions,
   } = state;
 
-  const modeBadgeText = (() => {
-    switch (displayMode) {
-      case 'chords_both':
-      case 'chords_diagram':
-      case 'chords_name':
-        return 'CHORDS';
-      case 'lyrics_only':
-        return 'LYRICS';
-      case 'lyrics_chord_diagram':
-        return 'LYRICS + DIAGRAMS';
-      case 'lyrics_chord_name':
-      default:
-        return 'CHORDS + LYRICS';
+  const isLyricsMode = displayMode === 'lyrics_only' || displayMode === 'lyrics_chord_name';
+  const isHybridMode = displayMode === 'lyrics_chord_diagram';
+
+  const subtitle = (() => {
+    if (isHybridMode) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: accent.from, fontWeight: 700 }}>
+            {activeHybridChord?.name || 'C'}
+          </span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>{bpmOverride} BPM</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: autoPlay ? '#22c55e' : accent.from,
+                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
+              }}
+            />
+            {currentSectionName}
+          </span>
+        </span>
+      );
     }
+    if (isLyricsMode) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: accent.from, fontWeight: 700 }}>
+            {preset.key || 'C Maj'}
+          </span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>{bpmOverride} BPM</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: autoPlay ? '#22c55e' : accent.from,
+                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
+              }}
+            />
+            {currentSectionName}
+          </span>
+        </span>
+      );
+    }
+    return `CHORDS • KEY ${preset.key || 'C'} • ${bpmOverride} BPM`;
   })();
+
+  const titleNode = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+      <span
+        style={{
+          width: '7px',
+          height: '7px',
+          borderRadius: '50%',
+          backgroundColor: autoPlay ? '#22c55e' : accent.from,
+          boxShadow: autoPlay ? '0 0 8px #22c55e' : `0 0 8px ${accent.from}`,
+          animation: autoPlay ? 'live-dot-pulse 1.5s infinite' : 'none',
+        }}
+      />
+      <span
+        style={{
+          fontSize: 'var(--type-title-size, 17px)',
+          fontWeight: 700,
+          color: 'var(--c-text-primary)',
+          fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {preset.name}
+      </span>
+    </div>
+  );
+
+  return (
+    <>
+      <style>{liveModeStyles}</style>
+      <SharedFloatingHeader
+        title={titleNode}
+        subtitle={subtitle}
+        onBack={handleClose}
+        alwaysShowGlass
+        toolbarActions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isLyricsMode && (
+              <motion.button
+                type="button"
+                onClick={() => setShowQuickActions((q) => !q)}
+                whileTap={{ scale: 0.92 }}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: showQuickActions ? `${accent.from}28` : 'transparent',
+                  border: 'none',
+                  color: showQuickActions ? accent.from : 'var(--c-text-primary)',
+                  cursor: 'pointer',
+                }}
+                title="Quick Controls"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  tune
+                </span>
+              </motion.button>
+            )}
+            <motion.button
+              type="button"
+              onClick={() => setShowSettings((s) => !s)}
+              whileTap={{ scale: 0.92 }}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: showSettings ? `${accent.from}28` : 'transparent',
+                border: 'none',
+                color: showSettings ? accent.from : 'var(--c-text-primary)',
+                cursor: 'pointer',
+              }}
+              title="Song Live Options"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                settings
+              </span>
+            </motion.button>
+          </div>
+        }
+      />
+    </>
+  );
+}
+
+/* ── HERO STAGE CHORD CARD (Stitch Section 3) ──────────────────── */
+export function StageChordCard({
+  chord,
+  accent,
+  onPlay,
+}: {
+  chord: any;
+  accent: { from: string; to: string };
+  onPlay?: () => void;
+}) {
+  if (!chord || !chord.guitar) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center p-4 rounded-3xl"
+        style={{
+          background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+          border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
+        }}
+      >
+        <span className="text-2xl font-bold font-display" style={{ color: accent.from }}>
+          {chord?.name || '—'}
+        </span>
+      </div>
+    );
+  }
+
+  const { frets, baseFret } = chord.guitar;
+  const allPositive = frets.filter((f: number) => f > 0);
+  const minActive = allPositive.length ? Math.min(...allPositive) : 1;
+  const minF = baseFret > 1 ? baseFret : Math.max(1, minActive);
+  const isNutOpen = minF <= 1;
+
+  const chordName = chord.name || '';
+  const rootMatch = chordName.match(/^([A-G][#b]?)(.*)$/);
+  const root = rootMatch ? rootMatch[1] : chordName;
+  const suffix = rootMatch ? rootMatch[2] : '';
+
+  const stringIndicators = frets.map((f: number) => {
+    if (f === -1) return { text: '✕', isMuted: true, isOpen: false };
+    if (f === 0) return { text: '○', isMuted: false, isOpen: true };
+    return { text: String(f), isMuted: false, isOpen: false };
+  });
+
+  const numFrets = 4;
+  const numStrings = 6;
 
   return (
     <div
+      onClick={onPlay}
+      className="relative flex flex-col items-center w-full max-w-xs mx-auto p-4 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '16px 20px',
-        paddingTop: 'max(16px, env(safe-area-inset-top))',
-        flexShrink: 0,
-        pointerEvents: 'none',
-        zIndex: 5,
+        background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+        border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
       }}
+      title="Tap to hear chord"
     >
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleClose();
-        }}
-        data-testid="live-close"
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.08)',
-          borderColor: 'rgba(255,255,255,0.12)',
-          pointerEvents: 'all',
-        }}
-        icon="close"
-      />
-
-      <div style={{ textAlign: 'center', pointerEvents: 'all' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-          <p
-            style={{
-              color: 'var(--c-text-primary)',
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 800,
-              fontSize: '15px',
-            }}
-          >
-            {preset.name}
-          </p>
+      {/* Chord Name Header */}
+      <div className="flex items-baseline gap-1 mb-2">
+        <span
+          className="text-4xl sm:text-5xl font-extrabold tracking-tight"
+          style={{
+            fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+            color: accent.from,
+          }}
+        >
+          {root}
+        </span>
+        {suffix && (
           <span
+            className="text-2xl sm:text-3xl font-bold opacity-80"
             style={{
-              fontFamily: 'var(--studio-font-body)',
-              fontSize: '9px',
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-              padding: '1.5px 6px',
-              borderRadius: '9999px',
-              background: `${accent.from}22`,
-              border: `1px solid ${accent.from}44`,
-              color: accent.from,
+              fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+              color: 'var(--c-text-primary)',
             }}
           >
-            {modeBadgeText}
+            {suffix}
           </span>
-        </div>
-        <p style={{ color: 'var(--c-text-secondary)', fontFamily: 'Inter', fontSize: '12px', marginTop: '1px' }}>
-          {preset.artist && `${preset.artist} · `}
-          {preset.key && `${preset.key} · `}
-          <span style={{ color: accent.from }}>{bpmOverride} BPM</span>
-        </p>
+        )}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', pointerEvents: 'all' }}>
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowSettings((s) => !s);
-          }}
-          data-testid="live-settings"
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: showSettings ? `${accent.from}33` : 'rgba(255,255,255,0.08)',
-            borderColor: showSettings ? accent.from + '55' : 'rgba(255,255,255,0.12)',
-          }}
-        >
+      {/* String Top Indicators */}
+      <div className="w-full flex justify-between px-2 mb-1">
+        {stringIndicators.map((ind: any, i: number) => (
           <span
-            className="material-symbols-outlined"
+            key={i}
+            className="w-6 text-center text-xs font-bold"
             style={{
-              color: showSettings ? accent.from : '#acabaa',
-              fontSize: '20px',
-              fontVariationSettings: showSettings ? "'FILL' 1" : "'FILL' 0",
+              color: ind.isMuted
+                ? '#ef4444'
+                : ind.isOpen
+                ? accent.from
+                : 'var(--c-text-secondary)',
+              fontWeight: ind.isOpen ? 800 : 700,
             }}
           >
-            tune
+            {ind.text}
           </span>
-        </Button>
-        <Button
-          variant={autoPlay ? 'primary' : 'secondary'}
-          onClick={(e) => {
-            e.stopPropagation();
-            setAutoPlay((a) => !a);
-          }}
-          data-testid="live-autoplay"
-          style={{
-            padding: '6px 14px',
-            borderRadius: '9999px',
-            background: autoPlay
-              ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-              : 'rgba(255,255,255,0.08)',
-            borderColor: autoPlay ? 'transparent' : 'rgba(255,255,255,0.12)',
-            color: autoPlay ? '#fff' : '#acabaa',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{
-              fontSize: '16px',
-              fontVariationSettings: autoPlay ? "'FILL' 1" : "'FILL' 0",
-            }}
-          >
-            {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
-          {isTeleprompterMode ? 'Auto' : 'Auto'}
-        </Button>
+        ))}
+      </div>
+
+      {/* Fretboard SVG / Matrix */}
+      <div className="relative w-full h-36 px-2">
+        {isNutOpen && (
+          <div
+            className="absolute top-0 left-2 right-2 h-1 rounded-sm"
+            style={{ background: 'var(--c-text-secondary, #94a3b8)', opacity: 0.8 }}
+          />
+        )}
+
+        {/* Horizontal fret wires */}
+        <div className="absolute inset-x-2 inset-y-0 flex flex-col justify-between pointer-events-none">
+          {Array.from({ length: numFrets + 1 }).map((_, fIdx) => (
+            <div
+              key={fIdx}
+              className="w-full h-px"
+              style={{ background: 'var(--surface-topbar-border, rgba(255,255,255,0.15))' }}
+            />
+          ))}
+        </div>
+
+        {/* Vertical string wires */}
+        <div className="absolute inset-x-2 inset-y-0 flex justify-between pointer-events-none px-3">
+          {Array.from({ length: numStrings }).map((_, sIdx) => (
+            <div
+              key={sIdx}
+              className="h-full"
+              style={{
+                background: 'var(--surface-topbar-border, rgba(255,255,255,0.2))',
+                width: sIdx === 0 || sIdx === 1 ? '1.5px' : '1px',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Dynamic Position Dots */}
+        <div className="absolute inset-x-2 inset-y-0 pointer-events-none px-3">
+          {frets.map((f: number, si: number) => {
+            if (f <= 0) return null;
+            const fp = f - minF;
+            if (fp < 0 || fp >= numFrets) return null;
+            const leftPct = (si / (numStrings - 1)) * 100;
+            const topPct = ((fp + 0.5) / numFrets) * 100;
+            const noteName =
+              chord.notes && chord.notes[si % chord.notes.length]
+                ? chord.notes[si % chord.notes.length]
+                : '';
+
+            return (
+              <div
+                key={si}
+                className="fret-dot absolute flex items-center justify-center rounded-full text-white text-[10px] font-bold shadow-md"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  left: `${leftPct}%`,
+                  top: `${topPct}%`,
+                  transform: 'translate(-50%, -50%)',
+                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                  boxShadow: `0 2px 10px ${accent.from}66`,
+                }}
+              >
+                {noteName}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Fret Position Numbering Side Label */}
+      <div className="w-full flex justify-between items-center px-2 pt-2 text-[11px] font-semibold opacity-60">
+        <span>{isNutOpen ? 'Nut (Open)' : `Fret ${minF}`}</span>
+        <span>{isNutOpen ? 'Fret 3' : `Fret ${minF + 3}`}</span>
       </div>
     </div>
   );
 }
 
-/* ── TELEPROMPTER VIEW (Lyrics & Hybrid) ─────────────────────── */
-function getSubSpansForRange(
-  spans: LyricTextSpan[],
-  start: number,
-  end: number,
-  fallbackText: string
-): LyricTextSpan[] {
-  if (start >= end) return [{ text: fallbackText }];
-  const result: LyricTextSpan[] = [];
-  let currentOffset = 0;
-  for (const span of spans) {
-    const spanLen = span.text.length;
-    const spanEnd = currentOffset + spanLen;
-    if (spanEnd > start && currentOffset < end) {
-      const overlapStart = Math.max(currentOffset, start);
-      const overlapEnd = Math.min(spanEnd, end);
-      const sliceStart = overlapStart - currentOffset;
-      const sliceEnd = overlapEnd - currentOffset;
-      const subText = span.text.slice(sliceStart, sliceEnd);
-      if (subText.length > 0) {
-        result.push({
-          text: subText,
-          format: span.format,
-        });
-      }
-    }
-    currentOffset = spanEnd;
-  }
-  return result.length > 0 ? result : [{ text: fallbackText }];
+/* ── MODE 1: CHORDS LIVE VIEW (Stitch Section 1) ───────────────── */
+export function ChordsLiveView({ state }: { state: LiveModeState }) {
+  const {
+    shownChord,
+    nextChord,
+    accent,
+    shownIdx,
+    sectionLabels,
+    chords,
+    currentIdx,
+    total,
+    autoPlay,
+    setAutoPlay,
+    goNext,
+    goPrev,
+    setDirection,
+    setCurrentIdx,
+    playChordSound,
+    chordStyle,
+  } = state;
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        padding: '80px 20px 100px',
+      }}
+    >
+      {/* Ambient background glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full blur-3xl"
+          style={{ background: `${accent.from}12` }}
+        />
+        <div
+          className="absolute bottom-10 left-1/4 w-[380px] h-[280px] rounded-full blur-2xl"
+          style={{ background: `${accent.to}18` }}
+        />
+      </div>
+
+      {/* Centered Chord Display */}
+      <div
+        style={{
+          zIndex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          maxWidth: '540px',
+          width: '100%',
+          ...chordStyle,
+        }}
+      >
+        {/* Section Label */}
+        {sectionLabels[shownIdx] && (
+          <span
+            style={{
+              padding: '3px 12px',
+              borderRadius: '9999px',
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: accent.from,
+              background: `${accent.from}22`,
+              border: `1px solid ${accent.from}44`,
+              marginBottom: '10px',
+            }}
+          >
+            {sectionLabels[shownIdx]}
+          </span>
+        )}
+
+        {/* Hero Chord Name */}
+        <h1
+          style={{
+            fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+            fontSize: 'clamp(56px, 12vw, 84px)',
+            fontWeight: 900,
+            lineHeight: 1,
+            letterSpacing: '-0.03em',
+            color: 'var(--c-text-primary)',
+            textShadow: `0 0 24px ${accent.from}33`,
+            margin: '0 0 10px 0',
+            textAlign: 'center',
+          }}
+        >
+          {shownChord ? shownChord.name.replace(/\s/g, '') : '—'}
+        </h1>
+
+        {/* Notes Breakdown Pills */}
+        {shownChord?.notes && shownChord.notes.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              flexWrap: 'wrap',
+              marginBottom: '20px',
+            }}
+          >
+            {shownChord.notes.map((n: string, i: number) => (
+              <React.Fragment key={i}>
+                <span
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    background: 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                    border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
+                    color: 'var(--c-text-primary)',
+                  }}
+                >
+                  {n}
+                </span>
+                {i < shownChord.notes.length - 1 && (
+                  <span style={{ color: 'var(--c-text-secondary)', opacity: 0.5, fontWeight: 'bold' }}>
+                    •
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Fretboard Area + Next Chord Cue */}
+        <div
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            maxWidth: '380px',
+            minHeight: '230px',
+          }}
+        >
+          {/* Position label on left */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '40px',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: 'var(--c-text-secondary)',
+              opacity: 0.7,
+            }}
+          >
+            {shownChord?.guitar?.baseFret && shownChord.guitar.baseFret > 1
+              ? `${shownChord.guitar.baseFret}fr`
+              : '1fr'}
+          </div>
+
+          {/* Main Diagram */}
+          <div
+            onClick={() => playChordSound(shownChord?.guitar)}
+            style={{ cursor: 'pointer', transition: 'transform 0.15s ease' }}
+            title="Tap to hear chord"
+          >
+            {shownChord?.guitar ? (
+              <LiveDiagram
+                data={shownChord.guitar}
+                accentFrom={accent.from}
+                accentTo={accent.to}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 200,
+                  height: 230,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--c-text-secondary)',
+                }}
+              >
+                No diagram
+              </div>
+            )}
+          </div>
+
+          {/* Next Chord Cue to the Right */}
+          {nextChord && (
+            <button
+              type="button"
+              onClick={goNext}
+              style={{
+                position: 'absolute',
+                right: '4px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '8px 6px',
+                borderRadius: '16px',
+                background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.08))',
+                cursor: 'pointer',
+              }}
+              title="Next Chord"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', color: accent.from }}>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800 }}>
+                  Next
+                </span>
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                  chevron_right
+                </span>
+              </div>
+              {nextChord.guitar && (
+                <div style={{ transform: 'scale(0.85)', margin: '-4px 0' }}>
+                  <MiniLiveDiagram
+                    data={nextChord.guitar}
+                    accentFrom={accent.from}
+                    width={56}
+                    height={64}
+                  />
+                </div>
+              )}
+              <span
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  color: accent.from,
+                  background: `${accent.from}22`,
+                  border: `1px solid ${accent.from}44`,
+                }}
+              >
+                {nextChord.name.replace(/\s/g, '')}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Carousel Pagination Dots */}
+        {total <= 16 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginTop: '20px',
+            }}
+          >
+            {chords.map((_, i) => {
+              const isActive = i === currentIdx;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setDirection(i > currentIdx ? 'forward' : 'backward');
+                    setCurrentIdx(i);
+                    playChordSound(getChordById(chords[i])?.guitar);
+                  }}
+                  style={{
+                    width: isActive ? '22px' : '7px',
+                    height: '7px',
+                    borderRadius: '9999px',
+                    background: isActive
+                      ? accent.from
+                      : 'var(--surface-topbar-border, rgba(255,255,255,0.2))',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    boxShadow: isActive ? `0 0 8px ${accent.from}88` : 'none',
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Symmetrical Bottom Transport Bar */}
+      <footer
+        style={{
+          position: 'fixed',
+          bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          padding: '8px 20px',
+          borderRadius: '9999px',
+          background: 'var(--surface-topbar-bg)',
+          border: 'var(--surface-topbar-border)',
+          backdropFilter: 'var(--surface-topbar-backdrop)',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+          boxShadow: 'var(--surface-topbar-shadow)',
+          width: 'min(92vw, 360px)',
+          boxSizing: 'border-box',
+        }}
+      >
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={currentIdx === 0}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            opacity: currentIdx === 0 ? 0.3 : 1,
+            cursor: currentIdx === 0 ? 'default' : 'pointer',
+          }}
+          title="Previous Chord"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+            skip_previous
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAutoPlay((a) => !a)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 20px',
+            borderRadius: '9999px',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: '14px',
+            border: 'none',
+            cursor: 'pointer',
+            background: autoPlay
+              ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            boxShadow: autoPlay
+              ? '0 4px 16px rgba(34, 197, 94, 0.4)'
+              : `0 4px 16px ${accent.from}55`,
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            {autoPlay ? 'pause' : 'play_arrow'}
+          </span>
+          <span>{autoPlay ? 'Pause' : 'Auto Play'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={currentIdx >= total - 1 && !autoPlay}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            opacity: currentIdx >= total - 1 && !autoPlay ? 0.3 : 1,
+            cursor: currentIdx >= total - 1 && !autoPlay ? 'default' : 'pointer',
+          }}
+          title="Next Chord"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+            skip_next
+          </span>
+        </button>
+      </footer>
+    </div>
+  );
 }
 
-function TeleprompterView({ state }: { state: LiveModeState }) {
+/* ── MODE 2: LYRICS LIVE VIEW (Stitch Section 2) ───────────────── */
+export function LyricsLiveView({ state }: { state: LiveModeState }) {
   const {
     teleprompterLines,
     currentLineIdx,
+    currentWordIdx,
     displayMode,
     accent,
     handleLineClick,
+    setCurrentWordIdx,
     teleprompterFontSize,
     teleprompterFontFamily,
     teleprompterLineHeight,
     teleprompterAlignment,
     teleprompterMirror,
     teleprompterContainerRef,
-    preset,
+    showQuickActions,
+    playbackSpeed,
+    cyclePlaybackSpeed,
+    goToPrevSection,
+    goToNextSection,
+    setTeleprompterFontSize,
+    setDisplayMode,
+    compatibleModes,
+    autoPlay,
+    setAutoPlay,
+    nextPhrase,
+    prevPhrase,
+    setShowSettings,
+    setShowQuickActions,
   } = state;
 
-  const docFormatting = preset.lyrics?.formatting;
-  const docColor = docFormatting?.defaultColor;
-  const docChordColor = docFormatting?.defaultChordColor || '#38bdf8';
-
   const fontSizes = {
-    normal: { text: '18px', chord: '13px', lineGap: '16px' },
-    large: { text: '22px', chord: '15px', lineGap: '20px' },
-    huge: { text: '28px', chord: '17px', lineGap: '26px' },
-  }[teleprompterFontSize] || { text: '18px', chord: '13px', lineGap: '16px' };
+    normal: { text: '22px', chord: '13px', lineGap: '20px' },
+    large: { text: '26px', chord: '15px', lineGap: '26px' },
+    huge: { text: '32px', chord: '17px', lineGap: '32px' },
+  }[teleprompterFontSize] || { text: '22px', chord: '13px', lineGap: '20px' };
 
   const resolvedFontFamily = (() => {
     switch (teleprompterFontFamily) {
@@ -242,107 +906,246 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
     }
   })();
 
-  const resolvedLineHeight = (() => {
-    switch (teleprompterLineHeight) {
-      case 'compact':
-        return 1.25;
-      case 'relaxed':
-        return 1.95;
-      case 'normal':
-      default:
-        return 1.55;
-    }
-  })();
-
   const isCentered = teleprompterAlignment === 'center';
-
-  if (teleprompterLines.length === 0) {
-    return (
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--c-text-secondary)',
-          fontFamily: resolvedFontFamily,
-        }}
-      >
-        <p>No lyrics added to this song.</p>
-      </div>
-    );
-  }
 
   return (
     <div
-      ref={teleprompterContainerRef}
-      data-testid="teleprompter-container"
       style={{
         flex: 1,
-        width: '100%',
-        maxWidth: '820px',
-        margin: '0 auto',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        padding: '24px 20px 140px',
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        gap: fontSizes.lineGap,
-        scrollBehavior: 'smooth',
-        WebkitOverflowScrolling: 'touch',
-        transform: teleprompterMirror ? 'scaleX(-1)' : 'none',
+        overflow: 'hidden',
       }}
     >
-      {teleprompterLines.map((item, idx) => {
-        const isActive = idx === currentLineIdx;
-        const isPast = idx < currentLineIdx;
-        const isBold = Boolean(item.line.format?.bold);
-        const resolvedColor =
-          item.line.format?.color || docColor || 'var(--c-text-primary, #ffffff)';
-        const hasSectionPill = Boolean(item.sectionName && item.sectionName.trim().length > 0);
-
-        return (
-          <div
-            key={item.id}
-            id={`live-line-${idx}`}
-            data-testid={`teleprompter-line-${idx}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleLineClick(idx);
-            }}
+      {/* Quick Controls HUD Bar */}
+      {showQuickActions && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 'calc(env(safe-area-inset-top, 0px) + 70px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 45,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            background: 'var(--surface-topbar-bg)',
+            border: 'var(--surface-topbar-border)',
+            backdropFilter: 'var(--surface-topbar-backdrop)',
+            WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+            boxShadow: 'var(--surface-topbar-shadow)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={cyclePlaybackSpeed}
             style={{
-              position: 'relative',
-              borderRadius: '16px',
-              padding: '12px 18px',
-              background: isActive
-                ? `color-mix(in srgb, ${accent.from} 15%, rgba(255,255,255,0.03))`
-                : 'transparent',
-              borderLeft: isActive
-                ? `4px solid ${accent.from}`
-                : '4px solid transparent',
-              boxShadow: isActive
-                ? `0 0 24px ${accent.from}22, inset 0 0 12px ${accent.from}11`
-                : 'none',
-              opacity: isActive ? 1 : isPast ? 0.38 : 0.85,
-              transition:
-                'background 250ms ease, opacity 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '3px 8px',
+              borderRadius: '9999px',
+              fontSize: '11px',
+              fontWeight: 800,
+              color: accent.from,
+              background: `${accent.from}22`,
+              border: 'none',
               cursor: 'pointer',
-              textAlign: isCentered ? 'center' : 'left',
             }}
+            title="Auto-scroll Speed"
           >
-            {/* Section Header if first line of section AND section has a name or role */}
-            {item.isFirstLineOfSection && (hasSectionPill || item.sectionVocalRole) && (
-              <div
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+              speed
+            </span>
+            <span>{playbackSpeed}x</span>
+          </button>
+
+          <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+          <button
+            type="button"
+            onClick={goToPrevSection}
+            style={{
+              padding: '4px',
+              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+            }}
+            title="Previous Section"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              fast_rewind
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={goToNextSection}
+            style={{
+              padding: '4px',
+              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+            }}
+            title="Next Section"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              fast_forward
+            </span>
+          </button>
+
+          <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (teleprompterFontSize === 'huge') setTeleprompterFontSize('large');
+                else if (teleprompterFontSize === 'large') setTeleprompterFontSize('normal');
+              }}
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--c-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+              title="Decrease text size"
+            >
+              A-
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (teleprompterFontSize === 'normal') setTeleprompterFontSize('large');
+                else if (teleprompterFontSize === 'large') setTeleprompterFontSize('huge');
+              }}
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--c-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+              title="Increase text size"
+            >
+              A+
+            </button>
+            {compatibleModes.includes('lyrics_chord_name') && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (displayMode === 'lyrics_only') setDisplayMode('lyrics_chord_name');
+                  else setDisplayMode('lyrics_only');
+                }}
                 style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: isCentered ? 'center' : 'flex-start',
-                  gap: '8px',
-                  marginBottom: '10px',
+                  justifyContent: 'center',
+                  color: displayMode === 'lyrics_chord_name' ? accent.from : 'var(--c-text-secondary)',
+                  background: displayMode === 'lyrics_chord_name' ? `${accent.from}22` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
+                title="Toggle Chords above Lyrics"
               >
-                {hasSectionPill && (
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                  grid_view
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Teleprompter Canvas */}
+      <div
+        ref={teleprompterContainerRef}
+        data-testid="teleprompter-container"
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: '780px',
+          margin: '0 auto',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '90px 24px 130px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: fontSizes.lineGap,
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch',
+          transform: teleprompterMirror ? 'scaleX(-1)' : 'none',
+          boxSizing: 'border-box',
+        }}
+      >
+        {teleprompterLines.map((item, idx) => {
+          const isActive = idx === currentLineIdx;
+          const isPast = idx < currentLineIdx;
+
+          return (
+            <div
+              key={item.id}
+              id={`live-line-${idx}`}
+              data-testid={`teleprompter-line-${idx}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLineClick(idx);
+              }}
+              className={`lyric-line ${isActive ? 'active-line' : ''}`}
+              style={{
+                position: 'relative',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                background: isActive
+                  ? `color-mix(in srgb, ${accent.from} 12%, rgba(255,255,255,0.03))`
+                  : 'transparent',
+                borderLeft: isActive ? `4px solid ${accent.from}` : '4px solid transparent',
+                boxShadow: isActive
+                  ? `0 0 24px ${accent.from}1a, inset 0 0 12px ${accent.from}0d`
+                  : 'none',
+                opacity: isActive ? 1 : isPast ? 0.42 : 0.75,
+                transition:
+                  'background 250ms ease, opacity 250ms ease, transform 250ms ease, border-color 250ms ease',
+                cursor: 'pointer',
+                textAlign: isCentered ? 'center' : 'left',
+              }}
+            >
+              {/* Section Header if first line of section */}
+              {item.isFirstLineOfSection && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCentered ? 'center' : 'flex-start',
+                    gap: '8px',
+                    marginBottom: '10px',
+                  }}
+                >
                   <span
                     style={{
                       fontFamily: 'var(--studio-font-body)',
@@ -352,678 +1155,644 @@ function TeleprompterView({ state }: { state: LiveModeState }) {
                       letterSpacing: '0.12em',
                       padding: '3px 10px',
                       borderRadius: '9999px',
-                      background: `${accent.from}28`,
+                      background: `${accent.from}24`,
                       border: `1px solid ${accent.from}44`,
                       color: accent.from,
                     }}
                   >
                     {item.sectionName}
                   </span>
-                )}
 
-                {item.sectionVocalRole && (
-                  <span
-                    style={{
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 700,
-                      fontSize: '10px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                      background: `${item.sectionVocalRole.color || '#3b82f6'}22`,
-                      border: `1px solid ${item.sectionVocalRole.color || '#3b82f6'}44`,
-                      color: item.sectionVocalRole.color || '#3b82f6',
-                    }}
-                  >
-                    {item.sectionVocalRole.label || item.sectionVocalRole.type}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Line vocal role badge (if line-specific and not section-first) */}
-            {item.line.vocalRole && !item.isFirstLineOfSection && (
-              <div
-                style={{
-                  marginBottom: '6px',
-                  display: 'flex',
-                  justifyContent: isCentered ? 'center' : 'flex-start',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--studio-font-body)',
-                    fontWeight: 700,
-                    fontSize: '9.5px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    padding: '2px 7px',
-                    borderRadius: '9999px',
-                    background: `${item.line.vocalRole.color || '#3b82f6'}22`,
-                    border: `1px solid ${item.line.vocalRole.color || '#3b82f6'}44`,
-                    color: item.line.vocalRole.color || '#3b82f6',
-                  }}
-                >
-                  {item.line.vocalRole.label || item.line.vocalRole.type}
-                </span>
-              </div>
-            )}
-
-            {/* Line Chords + Lyrics Content */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'flex-end',
-                justifyContent: isCentered ? 'center' : 'flex-start',
-                lineHeight: resolvedLineHeight,
-              }}
-            >
-              {displayMode === 'lyrics_only' ? (
-                /* Lyrics Only with fine-grained span formatting support */
-                item.line.spans && item.line.spans.length > 0 ? (
-                  <span
-                    style={{
-                      fontFamily: resolvedFontFamily,
-                      fontSize: fontSizes.text,
-                      lineHeight: resolvedLineHeight,
-                      textAlign: isCentered ? 'center' : 'left',
-                      whiteSpace: 'pre-wrap',
-                      display: 'inline-block',
-                      width: '100%',
-                    }}
-                  >
-                    {item.line.spans.map((span, sIdx) => {
-                      const spanBold = span.format?.bold ?? isBold;
-                      const spanItalic = Boolean(span.format?.italic);
-                      const spanUnderline = Boolean(span.format?.underline);
-                      const spanColor = span.format?.color || resolvedColor;
-                      return (
-                        <span
-                          key={sIdx}
-                          style={{
-                            fontWeight: spanBold ? 800 : 500,
-                            fontStyle: spanItalic ? 'italic' : 'normal',
-                            textDecoration: spanUnderline ? 'underline' : 'none',
-                            color: spanColor,
-                          }}
-                        >
-                          {span.text}
-                        </span>
-                      );
-                    })}
-                  </span>
-                ) : (
-                  <span
-                    style={{
-                      fontFamily: resolvedFontFamily,
-                      fontSize: fontSizes.text,
-                      fontWeight: isBold ? 800 : 500,
-                      color: resolvedColor,
-                      lineHeight: resolvedLineHeight,
-                      textAlign: isCentered ? 'center' : 'left',
-                      whiteSpace: 'pre-wrap',
-                      display: 'inline-block',
-                      width: '100%',
-                    }}
-                  >
-                    {item.line.text || '\u00A0'}
-                  </span>
-                )
-              ) : (
-                /* Chords + Lyrics (lyrics_chord_name or lyrics_chord_diagram) */
-                item.chunks.map((chunk, cIdx) => {
-                  const chordData =
-                    displayMode === 'lyrics_chord_diagram' && chunk.chord
-                      ? getChordById(chunk.chord)
-                      : null;
-
-                  const subSpans =
-                    item.line.spans && item.line.spans.length > 0
-                      ? getSubSpansForRange(
-                          item.line.spans,
-                          chunk.startOffset,
-                          chunk.endOffset,
-                          chunk.text
-                        )
-                      : null;
-
-                  return (
-                    <div
-                      key={cIdx}
+                  {item.sectionVocalRole && (
+                    <span
                       style={{
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '11px',
                         display: 'inline-flex',
-                        flexDirection: 'column',
-                        alignItems: isCentered ? 'center' : 'flex-start',
-                        verticalAlign: 'bottom',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '2px 9px',
+                        borderRadius: '9999px',
+                        background: 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                        border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
+                        color: 'var(--c-text-primary)',
                       }}
                     >
-                      {/* Diagram or Chord Name */}
-                      <div
+                      <span
                         style={{
-                          minHeight: displayMode === 'lyrics_chord_diagram' ? '54px' : '22px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'flex-end',
-                          alignItems: isCentered ? 'center' : 'flex-start',
-                          paddingBottom: '2px',
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: item.sectionVocalRole.color || accent.from,
+                        }}
+                      />
+                      {item.sectionVocalRole.label || item.sectionVocalRole.type}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Line Words & Chords */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'flex-end',
+                  justifyContent: isCentered ? 'center' : 'flex-start',
+                  lineHeight: 1.45,
+                }}
+              >
+                {displayMode === 'lyrics_chord_name' ? (
+                  item.words.map((w) => {
+                    const isWordActive = w.globalWordIdx === currentWordIdx;
+                    const isWordPassed = w.globalWordIdx < currentWordIdx;
+
+                    return (
+                      <div
+                        key={w.id}
+                        className={`chord-cell ${isWordActive ? 'active' : isWordPassed ? 'passed' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentWordIdx(w.globalWordIdx);
                         }}
                       >
-                        {displayMode === 'lyrics_chord_diagram' && chordData?.guitar && (
-                          <div
-                            style={{
-                              transform: 'scale(0.65)',
-                              transformOrigin: isCentered ? 'bottom center' : 'bottom left',
-                              marginBottom: '-16px',
-                              marginRight: isCentered ? '0' : '-14px',
-                            }}
-                          >
-                            <MiniLiveDiagram
-                              data={chordData.guitar}
-                              accentFrom={accent.from}
-                              width={50}
-                              height={60}
-                            />
-                          </div>
-                        )}
                         <span
+                          className="chord-tag"
                           style={{
-                            fontFamily: 'var(--studio-font-mono, monospace)',
-                            fontWeight: 800,
                             fontSize: fontSizes.chord,
-                            color: chunk.chord
-                              ? isActive
-                                ? accent.from
-                                : docChordColor
-                              : 'transparent',
-                            userSelect: 'none',
+                            color: isWordActive
+                              ? accent.from
+                              : isWordPassed
+                              ? `${accent.from}dd`
+                              : 'var(--c-text-secondary)',
                           }}
                         >
-                          {chunk.chord || '\u00A0'}
+                          {w.chord || '\u00A0'}
+                        </span>
+                        <span
+                          className="karaoke-word"
+                          style={{
+                            fontFamily: resolvedFontFamily,
+                            fontSize: fontSizes.text,
+                            fontWeight: isWordActive ? 800 : 600,
+                          }}
+                        >
+                          {w.text}&nbsp;
                         </span>
                       </div>
+                    );
+                  })
+                ) : (
+                  item.words.map((w) => {
+                    const isWordActive = w.globalWordIdx === currentWordIdx;
+                    const isWordPassed = w.globalWordIdx < currentWordIdx;
 
-                      {/* Syllable text with fine-grained formatting */}
-                      {subSpans ? (
-                        <span
-                          style={{
-                            fontFamily: resolvedFontFamily,
-                            fontSize: fontSizes.text,
-                            lineHeight: resolvedLineHeight,
-                            whiteSpace: 'pre-wrap',
-                          }}
-                        >
-                          {subSpans.map((s, sIdx) => {
-                            const spanBold = s.format?.bold ?? isBold;
-                            const spanItalic = Boolean(s.format?.italic);
-                            const spanUnderline = Boolean(s.format?.underline);
-                            const spanColor = s.format?.color || resolvedColor;
-                            return (
-                              <span
-                                key={sIdx}
-                                style={{
-                                  fontWeight: spanBold ? 800 : 500,
-                                  fontStyle: spanItalic ? 'italic' : 'normal',
-                                  textDecoration: spanUnderline ? 'underline' : 'none',
-                                  color: spanColor,
-                                }}
-                              >
-                                {s.text}
-                              </span>
-                            );
-                          })}
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            fontFamily: resolvedFontFamily,
-                            fontSize: fontSizes.text,
-                            fontWeight: isBold ? 800 : 500,
-                            color: resolvedColor,
-                            lineHeight: resolvedLineHeight,
-                            whiteSpace: 'pre-wrap',
-                          }}
-                        >
-                          {chunk.text}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })
-              )}
+                    return (
+                      <span
+                        key={w.id}
+                        className={`karaoke-word ${
+                          isWordActive ? 'active' : isWordPassed ? 'passed' : ''
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentWordIdx(w.globalWordIdx);
+                        }}
+                        style={{
+                          fontFamily: resolvedFontFamily,
+                          fontSize: fontSizes.text,
+                          fontWeight: isWordActive ? 800 : 600,
+                          color: isWordActive
+                            ? 'var(--c-text-primary)'
+                            : isWordPassed
+                            ? 'var(--c-text-primary)'
+                            : 'var(--c-text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {w.text}&nbsp;
+                      </span>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {/* Floating Bottom Transport Dock */}
+      <nav
+        style={{
+          position: 'fixed',
+          bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '6px 14px',
+          borderRadius: '9999px',
+          background: 'var(--surface-topbar-bg)',
+          border: 'var(--surface-topbar-border)',
+          backdropFilter: 'var(--surface-topbar-backdrop)',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+          boxShadow: 'var(--surface-topbar-shadow)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Song Settings"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            settings
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={prevPhrase}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Rewind Phrase"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+            fast_rewind
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAutoPlay((a) => !a)}
+          style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: `0 4px 16px ${accent.from}66`,
+          }}
+          title="Toggle Auto-Scroll"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '24px', fontWeight: 'bold' }}>
+            {autoPlay ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={nextPhrase}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Forward Phrase"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+            fast_forward
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowQuickActions((q) => !q)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showQuickActions ? `${accent.from}28` : 'transparent',
+            border: 'none',
+            color: showQuickActions ? accent.from : 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Toggle Quick Actions"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            tune
+          </span>
+        </button>
+      </nav>
     </div>
   );
 }
 
-/* ── VISUALIZER DISPATCHER ───────────────────────────────────── */
-export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
+/* ── MODE 3: HYBRID LIVE VIEW (Stitch Section 3: Lyrics + Chords) ── */
+export function HybridLiveView({ state }: { state: LiveModeState }) {
   const {
-    isTeleprompterMode,
-    showContext,
-    prevChord,
-    nextChord,
-    visualStyle,
+    activeHybridChord,
     accent,
-    shownIdx,
-    sectionLabels,
-    shownChord,
-    chordStyle,
+    currentBar,
+    currentBeat,
+    teleprompterLines,
+    currentLineIdx,
+    currentWordIdx,
+    setCurrentWordIdx,
+    nextPreviewChord,
+    nextPreviewLyrics,
+    autoPlay,
+    setAutoPlay,
+    nextPhrase,
+    prevPhrase,
+    stepWordForward,
+    stepWordBackward,
+    playChordSound,
   } = state;
-  const liveModeAnimations = useSettingsStore((s) => s.settings.liveModeAnimations);
 
-  if (isTeleprompterMode) {
-    return <TeleprompterView state={state} />;
-  }
+  const currentLine = teleprompterLines[currentLineIdx];
 
-  // ── Pure Chords Performer Visualizer ──
   return (
     <div
       style={{
         flex: 1,
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
+        justifyContent: 'space-between',
+        padding: '80px 20px 100px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Context: prev (left) */}
-      {showContext && prevChord && (
-        <div
-          style={{
-            position: 'absolute',
-            left: '8px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            opacity: 0.35,
-            pointerEvents: 'none',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ color: 'var(--c-text-secondary)', fontSize: '14px' }}
-          >
-            chevron_left
-          </span>
-          {(visualStyle === 'diagram' || visualStyle === 'both') && prevChord.guitar && (
-            <MiniLiveDiagram data={prevChord.guitar} accentFrom={accent.from} />
-          )}
-          <p
-            style={{
-              color: 'var(--c-text-secondary)',
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            {prevChord.name.replace(/s/g, '')}
-          </p>
-        </div>
-      )}
+      {/* Top Hero Stage Chord Card */}
+      <div style={{ width: '100%', maxWidth: '420px', zIndex: 1, marginTop: '8px' }}>
+        <StageChordCard
+          chord={activeHybridChord}
+          accent={accent}
+          onPlay={() => playChordSound(activeHybridChord?.guitar)}
+        />
+      </div>
 
-      {/* Context: next (right) */}
-      {showContext && nextChord && (
-        <div
-          style={{
-            position: 'absolute',
-            right: '8px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            opacity: 0.35,
-            pointerEvents: 'none',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ color: 'var(--c-text-secondary)', fontSize: '14px' }}
-          >
-            chevron_right
-          </span>
-          {(visualStyle === 'diagram' || visualStyle === 'both') && nextChord.guitar && (
-            <MiniLiveDiagram data={nextChord.guitar} accentFrom={accent.from} />
-          )}
-          <p
-            style={{
-              color: 'var(--c-text-secondary)',
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            {nextChord.name.replace(/s/g, '')}
-          </p>
-        </div>
-      )}
-
-      {/* Active chord */}
+      {/* Synchronized Stage Teleprompter */}
       <div
         style={{
+          width: '100%',
+          maxWidth: '560px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '10px',
-          willChange: 'transform, opacity, filter',
-          ...chordStyle,
+          textAlign: 'center',
+          margin: '20px 0',
+          zIndex: 1,
         }}
       >
-        {/* Section label */}
-        {sectionLabels[shownIdx] && (
-          <p
-            style={{
-              color: accent.from,
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 700,
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              opacity: 0.7,
-              marginBottom: '-2px',
-            }}
-          >
-            {sectionLabels[shownIdx]}
-          </p>
-        )}
-
-        {/* Full diagram */}
-        {(visualStyle === 'diagram' || visualStyle === 'both') && shownChord?.guitar && (
-          <div style={{ position: 'relative' }}>
-            <div
-              style={{
-                position: 'absolute',
-                inset: '-20px',
-                borderRadius: '50%',
-                background: `radial-gradient(circle, ${accent.from}1a 0%, transparent 70%)`,
-                pointerEvents: 'none',
-              }}
-            />
-            {liveModeAnimations && (
-              <div
-                key={`bloom-${shownIdx}`}
-                style={{
-                  position: 'absolute',
-                  inset: '-28px',
-                  borderRadius: '50%',
-                  background: `radial-gradient(circle, ${accent.from}40 0%, ${accent.to}18 50%, transparent 70%)`,
-                  pointerEvents: 'none',
-                  animation: 'chord-bloom 600ms cubic-bezier(0.22, 1, 0.36, 1) both',
-                }}
-              />
-            )}
-            <LiveDiagram data={shownChord.guitar} accentFrom={accent.from} accentTo={accent.to} />
-          </div>
-        )}
-
-        {/* Chord name + notes */}
-        {(visualStyle === 'name' || visualStyle === 'both') && (
-          <div style={{ textAlign: 'center' }}>
-            <p
-              style={{
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 900,
-                fontSize: visualStyle === 'name' ? '100px' : '48px',
-                lineHeight: 1,
-                letterSpacing: '-0.04em',
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                paddingBottom: '2px',
-              }}
-            >
-              {shownChord ? shownChord.name.replace(/\s/g, '') : '?'}
-            </p>
-            {shownChord && (
-              <p
-                style={{
-                  color: 'var(--c-text-secondary)',
-                  fontFamily: 'Inter',
-                  fontSize: '13px',
-                  marginTop: '4px',
-                  letterSpacing: '0.06em',
-                }}
-              >
-                {shownChord.notes.join('  ·  ')}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ── PROGRESS INDICATOR ──────────────────────────────────────── */
-export function LiveModeProgress({ state }: { state: LiveModeState }) {
-  const {
-    total,
-    chords,
-    currentIdx,
-    accent,
-    autoPlay,
-    msPerChord,
-    setDirection,
-    setCurrentIdx,
-    isTeleprompterMode,
-    currentLineIdx,
-    totalLines,
-    teleprompterLines,
-  } = state;
-
-  if (isTeleprompterMode) {
-    if (totalLines === 0) return null;
-    const currentItem = teleprompterLines[currentLineIdx];
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '84px',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-          zIndex: 5,
-        }}
-      >
+        {/* Timing Pulse & Bar Counter */}
         <div
           style={{
-            padding: '5px 16px',
-            borderRadius: '9999px',
-            background: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            gap: '10px',
+            marginBottom: '14px',
           }}
         >
           <span
             style={{
-              color: accent.from,
-              fontFamily: 'var(--studio-font-body)',
-              fontWeight: 800,
               fontSize: '11px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              color: 'var(--c-text-secondary)',
             }}
           >
-            Line {currentLineIdx + 1} of {totalLines}
+            BAR {currentBar} / BEAT {currentBeat + 1}
           </span>
-          {currentItem?.sectionName && (
-            <>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px' }}>•</span>
-              <span
-                style={{
-                  color: 'var(--c-text-secondary)',
-                  fontFamily: 'var(--studio-font-body)',
-                  fontWeight: 600,
-                  fontSize: '11px',
-                }}
-              >
-                {currentItem.sectionName}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Pure Chords progression dots
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: '84px',
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '5px',
-        alignItems: 'center',
-        pointerEvents: 'none',
-        zIndex: 5,
-      }}
-    >
-      {total <= 16 ? (
-        chords.map((_, i) => {
-          const isActive = i === currentIdx;
-          return isActive ? (
-            <div
-              key={`active-${currentIdx}`}
-              style={{
-                position: 'relative',
-                width: '32px',
-                height: '6px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.1)',
-                overflow: 'hidden',
-                pointerEvents: 'all',
-                flexShrink: 0,
-                transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {[0, 1, 2, 3].map((b) => (
               <div
-                key={`fill-${currentIdx}`}
+                key={b}
+                className={`beat-dot ${b === currentBeat ? 'beat-dot-active' : ''}`}
                 style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  width: '100%',
-                  background: `linear-gradient(90deg, ${accent.from}, ${accent.to})`,
-                  borderRadius: '9999px',
-                  transformOrigin: 'left center',
-                  animation: autoPlay ? `chord-countdown ${msPerChord}ms linear forwards` : 'none',
+                  background:
+                    b === currentBeat ? accent.from : 'var(--surface-topbar-border, rgba(255,255,255,0.2))',
                 }}
               />
-            </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hero Synced Lyric Line Container (Apple Music Bloom) */}
+        <div
+          style={{
+            minHeight: '4.5rem',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            lineHeight: 1.4,
+          }}
+        >
+          {currentLine?.words && currentLine.words.length > 0 ? (
+            currentLine.words.map((w) => {
+              const isWordActive = w.globalWordIdx === currentWordIdx;
+              const isWordPassed = w.globalWordIdx < currentWordIdx;
+
+              return (
+                <span
+                  key={w.id}
+                  onClick={() => setCurrentWordIdx(w.globalWordIdx)}
+                  className={`lyric-word ${
+                    isWordActive
+                      ? 'word-active'
+                      : isWordPassed
+                      ? 'word-past'
+                      : 'word-upcoming'
+                  }`}
+                  style={{
+                    fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                    fontSize: 'clamp(24px, 5.5vw, 36px)',
+                    fontWeight: isWordActive ? 800 : isWordPassed ? 600 : 500,
+                    color: isWordActive
+                      ? accent.from
+                      : isWordPassed
+                      ? 'var(--c-text-primary)'
+                      : 'var(--c-text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {w.text}
+                </span>
+              );
+            })
           ) : (
-            <button
-              key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                setDirection(i > currentIdx ? 'forward' : 'backward');
-                setCurrentIdx(i);
-              }}
+            <span
               style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                cursor: 'pointer',
-                pointerEvents: 'all',
-                flexShrink: 0,
-                padding: 0,
-                transition: 'background 200ms ease',
+                fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                fontSize: '28px',
+                fontWeight: 700,
+                color: 'var(--c-text-secondary)',
               }}
-            />
-          );
-        })
-      ) : (
-        <p style={{ color: 'var(--c-text-muted)', fontFamily: 'Inter', fontSize: '12px' }}>
-          {currentIdx + 1} / {total}
-        </p>
-      )}
+            >
+              {currentLine?.line.text || '...'}
+            </span>
+          )}
+        </div>
+
+        {/* Cue Next Line Preview Pill */}
+        {nextPreviewLyrics && (
+          <button
+            type="button"
+            onClick={nextPhrase}
+            style={{
+              marginTop: '20px',
+              padding: '6px 16px',
+              borderRadius: '9999px',
+              background: 'var(--surface-topbar-bg)',
+              border: 'var(--surface-topbar-border)',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              boxShadow: 'var(--surface-topbar-shadow)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: '18px', color: accent.from }}
+            >
+              fast_forward
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  color: 'var(--c-text-secondary)',
+                }}
+              >
+                Next
+              </span>
+              {nextPreviewChord && (
+                <span style={{ fontWeight: 800, color: accent.from }}>
+                  {nextPreviewChord.name}
+                </span>
+              )}
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span
+                style={{
+                  fontStyle: 'italic',
+                  color: 'var(--c-text-secondary)',
+                  maxWidth: '180px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                “{nextPreviewLyrics}”
+              </span>
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Bottom Floating Minimalist Stage Playback Controls */}
+      <footer
+        style={{
+          position: 'fixed',
+          bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '6px 14px',
+          borderRadius: '9999px',
+          background: 'var(--surface-topbar-bg)',
+          border: 'var(--surface-topbar-border)',
+          backdropFilter: 'var(--surface-topbar-backdrop)',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+          boxShadow: 'var(--surface-topbar-shadow)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={prevPhrase}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Previous Phrase"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+            skip_previous
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={stepWordBackward}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Step Backward"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+            fast_rewind
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAutoPlay((a) => !a)}
+          style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: `0 4px 16px ${accent.from}66`,
+          }}
+          title="Toggle Playback"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>
+            {autoPlay ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={stepWordForward}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Step Forward"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+            fast_forward
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={nextPhrase}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Next Phrase"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+            skip_next
+          </span>
+        </button>
+      </footer>
     </div>
   );
 }
 
-/* ── CONTROLS BAR ────────────────────────────────────────────── */
-export function LiveModeControls({ state }: { state: LiveModeState }) {
-  const { goPrev, goNext, currentIdx, currentLineIdx, isTeleprompterMode, totalLines, accent } =
-    state;
-  const isAtStart = isTeleprompterMode ? currentLineIdx === 0 : currentIdx === 0;
-  const isAtEnd = isTeleprompterMode ? currentLineIdx >= totalLines - 1 : false;
+/* ── BACKWARD COMPATIBILITY DISPATCHERS ───────────────────────── */
+export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
+  const isChordsOnly =
+    state.contentCategory === 'chords_only' ||
+    state.displayMode === 'chords_both' ||
+    state.displayMode === 'chords_diagram' ||
+    state.displayMode === 'chords_name';
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '8px 28px',
-        paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
-        flexShrink: 0,
-        pointerEvents: 'none',
-        zIndex: 5,
-      }}
-    >
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          goPrev();
-        }}
-        data-testid="live-prev"
-        disabled={isAtStart}
-        style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-          borderColor: 'rgba(255,255,255,0.1)',
-          opacity: isAtStart ? 0.25 : 1,
-          pointerEvents: 'all',
-        }}
-        icon="arrow-left"
-      />
-      <div style={{ width: '48px' }} />
-      <Button
-        variant="primary"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          goNext();
-        }}
-        data-testid="live-next"
-        disabled={isAtEnd}
-        style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
-          background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-          boxShadow: `0 4px 20px ${accent.to}55`,
-          opacity: isAtEnd ? 0.25 : 1,
-          pointerEvents: 'all',
-        }}
-        icon="arrow-right"
-      />
-    </div>
-  );
+  const isHybrid =
+    state.displayMode === 'lyrics_chord_diagram' ||
+    (state.contentCategory === 'hybrid' &&
+      state.displayMode !== 'lyrics_only' &&
+      state.displayMode !== 'lyrics_chord_name');
+
+  if (isChordsOnly) {
+    return <ChordsLiveView state={state} />;
+  }
+  if (isHybrid) {
+    return <HybridLiveView state={state} />;
+  }
+  return <LyricsLiveView state={state} />;
+}
+
+export function LiveModeProgress({ state: _ }: { state: LiveModeState }) {
+  return null;
+}
+
+export function LiveModeControls({ state: _ }: { state: LiveModeState }) {
+  return null;
 }
 
 /* ── SETTINGS SHEET ──────────────────────────────────────────── */

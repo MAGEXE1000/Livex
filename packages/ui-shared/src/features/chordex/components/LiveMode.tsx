@@ -3,9 +3,9 @@ import type { SongPreset } from '@workspace/livex-core';
 import { useLiveModeState } from './useLiveModeState';
 import {
   LiveModeHeader,
-  LiveModeVisualizer,
-  LiveModeProgress,
-  LiveModeControls,
+  ChordsLiveView,
+  LyricsLiveView,
+  HybridLiveView,
   LiveModeSettings,
 } from './LiveModeUI';
 
@@ -58,6 +58,18 @@ export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveM
     );
   }
 
+  const isChordsOnly =
+    state.contentCategory === 'chords_only' ||
+    state.displayMode === 'chords_both' ||
+    state.displayMode === 'chords_diagram' ||
+    state.displayMode === 'chords_name';
+
+  const isHybrid =
+    state.displayMode === 'lyrics_chord_diagram' ||
+    (state.contentCategory === 'hybrid' &&
+      state.displayMode !== 'lyrics_only' &&
+      state.displayMode !== 'lyrics_chord_name');
+
   return (
     <div
       style={{
@@ -68,14 +80,20 @@ export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveM
         display: 'flex',
         flexDirection: 'column',
         userSelect: 'none',
+        overflow: 'hidden',
         ...state.overlayAnim,
       }}
-      onClick={state.handleTap}
     >
       <LiveModeHeader state={state} />
-      <LiveModeVisualizer state={state} />
-      <LiveModeProgress state={state} />
-      <LiveModeControls state={state} />
+
+      {isChordsOnly ? (
+        <ChordsLiveView state={state} />
+      ) : isHybrid ? (
+        <HybridLiveView state={state} />
+      ) : (
+        <LyricsLiveView state={state} />
+      )}
+
       {state.showSettings && <LiveModeSettings state={state} />}
     </div>
   );

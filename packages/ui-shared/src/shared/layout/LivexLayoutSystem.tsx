@@ -172,7 +172,7 @@ export interface SettingsScaffoldProps {
 }
 
 export interface SharedFloatingHeaderProps {
-  title: string;
+  title: string | React.ReactNode;
   subtitle?: React.ReactNode;
   onBack?: () => void;
   hideBack?: boolean;
@@ -188,6 +188,7 @@ export interface SharedFloatingHeaderProps {
   enableMorph?: boolean;
   morphDistance?: number;
   startOffset?: number;
+  alwaysShowGlass?: boolean;
 }
 
 // ── Livex Liquid Glass SVG Filter (Displacement mapping via feTurbulence & feDisplacementMap) ──
@@ -212,6 +213,7 @@ export function SharedFloatingHeader({
   enableMorph = true,
   morphDistance = 86,
   startOffset = 14,
+  alwaysShowGlass = false,
 }: SharedFloatingHeaderProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -251,7 +253,7 @@ export function SharedFloatingHeader({
     progressiveBlurRef,
     morphDistance,
     startOffset,
-    enabled: morphActive,
+    enabled: morphActive && !alwaysShowGlass,
     isLight,
     isAmoled,
     expandedLeftInset: onBack && !hideBack ? 56 : 20,
@@ -328,8 +330,8 @@ export function SharedFloatingHeader({
             boxShadow: 'var(--surface-topbar-shadow)',
             overflow: 'hidden',
             pointerEvents: 'none',
-            opacity: 0,
-            visibility: 'hidden',
+            opacity: alwaysShowGlass ? 1 : 0,
+            visibility: alwaysShowGlass ? 'visible' : 'hidden',
             zIndex: 0,
           }}
         />
@@ -404,6 +406,7 @@ export function SharedFloatingHeader({
             top: 0,
             bottom: 0,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             paddingLeft: toolbarActions ? '76px' : (onBack && !hideBack ? '46px' : '16px'),
@@ -413,30 +416,53 @@ export function SharedFloatingHeader({
             willChange: 'transform',
           }}
         >
-          <span
-            data-testid={
-              titleTestId ||
-              (title === 'Production Document' || title === 'Production' || title === 'Producción'
-                ? 'production-document-title'
-                : undefined)
-            }
-            style={{
-              fontSize: 'var(--type-title-size, 19px)',
-              lineHeight: 'var(--type-title-lh, 26px)',
-              fontWeight: 700,
-              color: 'var(--c-text-primary)',
-              letterSpacing: 'var(--type-title-tracking, -0.4px)',
-              fontFamily:
-                'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              textAlign: 'center',
-              maxWidth: '100%',
-            }}
-          >
-            {title}
-          </span>
+          {typeof title === 'string' ? (
+            <span
+              data-testid={
+                titleTestId ||
+                (title === 'Production Document' || title === 'Production' || title === 'Producción'
+                  ? 'production-document-title'
+                  : undefined)
+              }
+              style={{
+                fontSize: 'var(--type-title-size, 19px)',
+                lineHeight: subtitle ? '20px' : 'var(--type-title-lh, 26px)',
+                fontWeight: 700,
+                color: 'var(--c-text-primary)',
+                letterSpacing: 'var(--type-title-tracking, -0.4px)',
+                fontFamily:
+                  'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'center',
+                maxWidth: '100%',
+              }}
+            >
+              {title}
+            </span>
+          ) : (
+            title
+          )}
+          {subtitle ? (
+            <div
+              style={{
+                fontSize: '11px',
+                lineHeight: '14px',
+                color: 'var(--c-text-secondary)',
+                letterSpacing: '0.04em',
+                fontWeight: 600,
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+                marginTop: '1px',
+              }}
+            >
+              {subtitle}
+            </div>
+          ) : null}
         </div>
 
         {/* Right Toolbar Actions Layer */}
