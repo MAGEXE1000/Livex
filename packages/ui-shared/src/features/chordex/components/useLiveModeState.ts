@@ -9,6 +9,7 @@ import {
   useShallow,
   playChord,
   useBackHandler,
+  useNavigationStore,
   type SongPreset,
   type GuitarChordData,
   type SongLyricLine,
@@ -562,14 +563,20 @@ export function useLiveModeState(
     []
   );
 
+  const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
   useEffect(() => {
+    if (currentApp !== 'chordex') {
+      setNavLocked(false);
+      setNavHidden(false);
+      return;
+    }
     setNavLocked(true);
     setNavHidden(true);
     return () => {
       setNavLocked(false);
       setNavHidden(false);
     };
-  }, []);
+  }, [currentApp]);
 
   useBackHandler(
     'modal',

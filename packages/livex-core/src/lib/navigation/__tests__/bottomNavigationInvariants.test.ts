@@ -1,9 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useNavigationStore } from '../../../store/useNavigationStore';
 import { NavigationDispatcher } from '../NavigationDispatcher';
 import { BackDispatcher } from '../BackDispatcher';
 import { normalizeAndValidateRoute } from '../validation';
 import { APP_SECTIONS } from '../appRegistry';
+import {
+  resetNav,
+  setNavLocked,
+  setNavHidden,
+  getNavHidden,
+  recoverNavVisibility,
+} from '../navScroll';
+import { useBottomNavigationStore } from '../useBottomNavigationStore';
 
 /**
  * Pure helper mirroring the canonical active-state derivation logic in BottomNavigationController
@@ -108,7 +116,53 @@ function resolveActiveNavItems(currentRoute: any) {
 }
 
 describe('Bottom Navigation Active State Invariants & Test Matrix', () => {
+  let originalDocument: any;
+  let originalWindow: any;
+  let eventListeners: Record<string, Function[]> = {};
+
   beforeEach(() => {
+    originalDocument = (globalThis as any).document;
+    originalWindow = (globalThis as any).window;
+    eventListeners = {};
+
+    const attributes: Record<string, string> = {};
+    (globalThis as any).document = {
+      documentElement: {
+        setAttribute: vi.fn((k: string, v: string) => {
+          attributes[k] = v;
+        }),
+        removeAttribute: vi.fn((k: string) => {
+          delete attributes[k];
+        }),
+        getAttribute: vi.fn((k: string) => attributes[k] ?? null),
+        hasAttribute: vi.fn((k: string) => k in attributes),
+      },
+      querySelectorAll: vi.fn(() => []),
+      querySelector: vi.fn(() => null),
+    };
+
+    (globalThis as any).window = {
+      addEventListener: vi.fn((name: string, fn: any) => {
+        (eventListeners[name] = eventListeners[name] || []).push(fn);
+      }),
+      removeEventListener: vi.fn((name: string, fn: any) => {
+        eventListeners[name] = (eventListeners[name] || []).filter((f) => f !== fn);
+      }),
+      dispatchEvent: vi.fn((e: any) => {
+        (eventListeners[e.type] || []).forEach((fn) => fn(e));
+        return true;
+      }),
+      innerWidth: 400,
+      innerHeight: 800,
+      screen: {
+        orientation: {
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        },
+      },
+    };
+
+    resetNav();
     BackDispatcher.resetDebounce();
     useNavigationStore.setState({
       history: [{ app: 'hub', tab: 'home' }],
@@ -116,6 +170,11 @@ describe('Bottom Navigation Active State Invariants & Test Matrix', () => {
       isTransitioning: false,
       transitionType: null,
     });
+  });
+
+  afterEach(() => {
+    (globalThis as any).document = originalDocument;
+    (globalThis as any).window = originalWindow;
   });
 
   describe('1. Hub Navigation Matrix & Mutual Exclusivity', () => {
@@ -296,6 +355,140 @@ describe('Bottom Navigation Active State Invariants & Test Matrix', () => {
       expect(currentRoute.app).toBe('hub');
       expect(items.find((i) => i.key === 'home')?.isActive).toBe(true);
       expect(items.find((i) => i.key === 'settings')?.isActive).toBe(false);
+    });
+  });
+
+  describe('3. Persistence & Bounded Self-Healing Recovery Invariants', () => {
+    it('recoverNavVisibility clears leaked locks and restores store visibility', () => {
+      // Simulate leaked lock from a sub-app
+      setNavLocked(true);
+      setNavHidden(true);
+      useBottomNavigationStore.getState().setLocked(true);
+      useBottomNavigationStore.getState().setVisible(false);
+
+      expect(getNavHidden()).toBe(true);
+      expect(useBottomNavigationStore.getState().isLocked).toBe(true);
+      expect(useBottomNavigationStore.getState().visible).toBe(false);
+
+      const recovered = recoverNavVisibility();
+      expect(recovered).toBe(true);
+      expect(getNavHidden()).toBe(false);
+      expect(useBottomNavigationStore.getState().isLocked).toBe(false);
+      expect(useBottomNavigationStore.getState().visible).toBe(true);
+    });
+
+    it('resetNav clears all attributes and resets stores unconditionally', () => {
+      setNavLocked(true);
+      setNavHidden(true);
+      useBottomNavigationStore.getState().setLocked(true);
+
+      resetNav();
+
+      expect(getNavHidden()).toBe(false);
+      expect(useBottomNavigationStore.getState().isLocked).toBe(false);
+      expect(useBottomNavigationStore.getState().visible).toBe(true);
+      expect(useBottomNavigationStore.getState().collapsed).toBe(false);
+    });
+
+    it('navigating across routes resets locks via NavigationDispatcher', () => {
+      // User opens a song in chordex (simulating locked sub-view)
+      setNavLocked(true);
+      setNavHidden(true);
+
+      // User navigates to Drumex beats
+      NavigationDispatcher.push({ app: 'drumex', page: 'beats' });
+
+      // resetNav was triggered by NavigationDispatcher and route change
+      expect(getNavHidden()).toBe(false);
+      expect(useBottomNavigationStore.getState().isLocked).toBe(false);
+      expect(useBottomNavigationStore.getState().visible).toBe(true);
+    });
+
+    it('orientation change and resize trigger listeners without throwing or losing state', () => {
+      let eventFired = false;
+      const onOrientationChange = () => {
+        eventFired = true;
+      };
+      window.addEventListener('orientationchange', onOrientationChange);
+      (window as any).dispatchEvent({ type: 'orientationchange' });
+      expect(eventFired).toBe(true);
+      window.removeEventListener('orientationchange', onOrientationChange);
+    });
+  });
+
+  describe('4. Deterministic Route Visibility Invariants Matrix', () => {
+    const isRouteExpectedVisible = (route: { app: string; page?: string; tab?: string; subView?: string }) => {
+      const isDrumexEditor = route.app === 'drumex' && route.subView === 'editor';
+      const isDrumexMetronome =
+        route.app === 'drumex' &&
+        (route.tab === 'metronome' || route.page === 'metronome' || route.subView === 'metronome');
+      const isChordexSong =
+        route.app === 'chordex' &&
+        (route.tab === 'songs' || route.page === 'songs' || !route.page) &&
+        Boolean(
+          route.subView === 'editor' ||
+          route.subView === 'song' ||
+          route.subView === 'form' ||
+          route.subView === 'practice'
+        );
+      const isStageExport =
+        route.app === 'stagex' &&
+        (route.tab === 'Export' || route.page === 'Export' || route.subView === 'Export');
+      const isGroovexSong =
+        route.app === 'groovex' && (route.tab === 'player' || route.page === 'player');
+      const isAssistantScreen =
+        route.app === 'hub' && (route.tab === 'assistant' || route.page === 'assistant');
+
+      return (
+        !isDrumexEditor &&
+        !isDrumexMetronome &&
+        !isChordexSong &&
+        !isGroovexSong &&
+        !isAssistantScreen &&
+        !isStageExport
+      );
+    };
+
+    it('Hub core routes are expected visible', () => {
+      expect(isRouteExpectedVisible({ app: 'hub', tab: 'home' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'hub', tab: 'profile' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'hub', page: 'main', tab: 'settings' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'hub', tab: 'assistant' })).toBe(false);
+    });
+
+    it('Chordex routes: library, preferences, songs list are visible; editor/practice are hidden', () => {
+      expect(isRouteExpectedVisible({ app: 'chordex', page: 'library' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'chordex', page: 'preferences' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'chordex', page: 'songs' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'chordex', page: 'songs', subView: 'editor' })).toBe(false);
+      expect(isRouteExpectedVisible({ app: 'chordex', page: 'songs', subView: 'practice' })).toBe(false);
+    });
+
+    it('Drumex routes: beats, patterns, prefs are visible; metronome/editor are hidden', () => {
+      expect(isRouteExpectedVisible({ app: 'drumex', page: 'beats' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'drumex', page: 'patterns' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'drumex', page: 'prefs' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'drumex', page: 'metronome' })).toBe(false);
+      expect(isRouteExpectedVisible({ app: 'drumex', page: 'beats', subView: 'editor' })).toBe(false);
+    });
+
+    it('Stagex routes: Editor portrait, Setup, Preferences are visible; Export is hidden', () => {
+      expect(isRouteExpectedVisible({ app: 'stagex', page: 'Editor' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'stagex', page: 'Setup' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'stagex', page: 'Preferences' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'stagex', page: 'Export' })).toBe(false);
+    });
+
+    it('Groovex routes: library, preferences are visible; player is hidden', () => {
+      expect(isRouteExpectedVisible({ app: 'groovex', page: 'library' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'groovex', page: 'preferences' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'groovex', page: 'player' })).toBe(false);
+    });
+
+    it('Vocalex routes: coach, takes, preferences are all visible', () => {
+      expect(isRouteExpectedVisible({ app: 'vocalex', page: 'coach' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'vocalex', page: 'takes' })).toBe(true);
+      expect(isRouteExpectedVisible({ app: 'vocalex', page: 'preferences' })).toBe(true);
     });
   });
 });

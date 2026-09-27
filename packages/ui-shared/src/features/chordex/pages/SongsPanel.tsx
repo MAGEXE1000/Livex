@@ -4052,7 +4052,7 @@ export default function SongsPanel() {
   const activePresetId = useChordStore(useShallow((s) => s.activePresetId));
   const isSongsActive = useNavigationStore((s) => {
     const top = s.history[s.history.length - 1];
-    return top?.app === 'chordex' && (top.page || 'library') === 'songs';
+    return top?.app === 'chordex' && (top.page === 'songs' || !top.page);
   });
   const settings = useSettingsStore(
     useShallow((s) => ({
@@ -4387,6 +4387,11 @@ export default function SongsPanel() {
 
   // Lock nav bar hidden in editor view or when any sheet/form is open
   useEffect(() => {
+    if (!isSongsActive) {
+      setNavLocked(false);
+      setNavHidden(false);
+      return;
+    }
     const anySheetOpen =
       showForm ||
       showPicker ||
@@ -4409,6 +4414,7 @@ export default function SongsPanel() {
       setNavHidden(false);
     };
   }, [
+    isSongsActive,
     showForm,
     showPicker,
     showDeleteId,

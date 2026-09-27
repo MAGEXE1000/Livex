@@ -126,13 +126,19 @@ export default function GroovexApp() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
 
+  const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+
   useEffect(() => {
     if (isWebDesktop) return;
+    if (currentApp !== 'groovex') {
+      setNavHidden(false);
+      return;
+    }
     setNavHidden(view === 'player');
     return () => {
       setNavHidden(false);
     };
-  }, [view, isWebDesktop]);
+  }, [view, isWebDesktop, currentApp]);
 
   return (
     <div

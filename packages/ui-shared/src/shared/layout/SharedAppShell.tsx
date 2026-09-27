@@ -492,8 +492,8 @@ export function SharedAppShell({
               );
             }}
           </SharedNavigationContainer>
-          {renderBottomNav?.()}
         </Suspense>
+        {renderBottomNav?.()}
       </ErrorBoundary>
       <Toaster />
       {renderLaunchOverlay?.()}

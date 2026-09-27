@@ -25,34 +25,35 @@ function emit(hidden: boolean) {
 }
 
 export function setNavLocked(locked: boolean) {
-  if (_locked === locked) return;
-  _locked = locked;
-  if (locked) {
-    clearAutoShow();
-    if (typeof window !== 'undefined') {
-      document.documentElement.setAttribute('data-nav-locked', 'true');
-    }
-    try {
-      useBottomNavigationStore.getState().setLocked(true);
-    } catch {}
-    setNavHidden(true);
-  } else {
+  if (!locked) {
+    _locked = false;
     clearAutoShow();
     if (typeof window !== 'undefined') {
       document.documentElement.removeAttribute('data-nav-locked');
     }
-    if (_hidden) {
-      _hidden = false;
-      emit(false);
-      if (typeof window !== 'undefined') {
-        document.documentElement.removeAttribute('data-nav-hidden');
-      }
+    _hidden = false;
+    emit(false);
+    if (typeof window !== 'undefined') {
+      document.documentElement.removeAttribute('data-nav-hidden');
     }
     try {
       useBottomNavigationStore.getState().setLocked(false);
       useBottomNavigationStore.getState().setVisible(true);
     } catch {}
+    onStateChanged();
+    return;
   }
+
+  if (_locked === locked) return;
+  _locked = locked;
+  clearAutoShow();
+  if (typeof window !== 'undefined') {
+    document.documentElement.setAttribute('data-nav-locked', 'true');
+  }
+  try {
+    useBottomNavigationStore.getState().setLocked(true);
+  } catch {}
+  setNavHidden(true);
   onStateChanged();
 }
 
@@ -94,14 +95,11 @@ export function resetNav() {
   _locked = false;
   _scrollOffset = 0;
   _scrollOffsetListeners.forEach((fn) => fn(0));
-  if (_hidden) {
-    _hidden = false;
-    emit(false);
-  }
-  if (_collapsed) {
-    _collapsed = false;
-    _collapsedListeners.forEach((fn) => fn(false));
-  }
+  _hidden = false;
+  emit(false);
+  _collapsed = false;
+  _collapsedListeners.forEach((fn) => fn(false));
+
   if (typeof window !== 'undefined') {
     document.documentElement.removeAttribute('data-nav-locked');
     document.documentElement.removeAttribute('data-nav-collapsed');
@@ -110,8 +108,56 @@ export function resetNav() {
   try {
     useBottomNavigationStore.getState().setLocked(false);
     useBottomNavigationStore.getState().setVisible(true);
+    useBottomNavigationStore.getState().setCollapsed(false);
   } catch {}
   onStateChanged();
+}
+
+/**
+ * Bounded self-healing recovery mechanism for bottom navbar visibility.
+ * Detects whether the navigation shell is stuck in an invalid hidden/locked state
+ * and automatically heals attributes, flags, and stores without polling loops.
+ */
+export function recoverNavVisibility(): boolean {
+  if (typeof window === 'undefined') return false;
+  let didHeal = false;
+
+  if (_locked || _hidden) {
+    _locked = false;
+    _hidden = false;
+    emit(false);
+    didHeal = true;
+  }
+
+  const docEl = document.documentElement;
+  if (
+    docEl.hasAttribute('data-nav-locked') ||
+    docEl.hasAttribute('data-nav-hidden') ||
+    docEl.hasAttribute('data-nav-collapsed')
+  ) {
+    docEl.removeAttribute('data-nav-locked');
+    docEl.removeAttribute('data-nav-hidden');
+    docEl.removeAttribute('data-nav-collapsed');
+    didHeal = true;
+  }
+
+  try {
+    const bStore = useBottomNavigationStore.getState();
+    if (bStore.isLocked || !bStore.visible) {
+      bStore.setLocked(false);
+      bStore.setVisible(true);
+      didHeal = true;
+    }
+  } catch {}
+
+  if (didHeal) {
+    resetNav();
+    if ((window as any).__navMetrics) {
+      (window as any).__navMetrics.recoveries = ((window as any).__navMetrics.recoveries || 0) + 1;
+    }
+  }
+
+  return didHeal;
 }
 
 export function useNavHidden(): boolean {
@@ -444,6 +490,13 @@ if (typeof window !== 'undefined') {
     window.addEventListener('orientationchange', () => {
       resetNav();
     });
+    if (typeof window !== 'undefined' && (window as any).screen?.orientation) {
+      try {
+        (window as any).screen.orientation.addEventListener('change', () => {
+          resetNav();
+        });
+      } catch (_) {}
+    }
 
     // Universal capture-phase scroll listener for global auto-hide across all screens and containers
     const _scrollTargetLastY = new WeakMap<EventTarget, number>();

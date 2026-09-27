@@ -20,6 +20,7 @@ import {
   type SongChart,
   type SongChartSection,
   useSettingsStore,
+  useNavigationStore,
   SpringPresets,
 } from '@workspace/livex-core';
 import ChordDiagram from '../diagrams/ChordDiagram';
@@ -201,15 +202,22 @@ function generateTextRepresentation(chart: NormalizedChordChart): string {
 export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
   const t = useT();
 
+  const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+
   // Hide bottom nav strictly inside Chordex Song Practice screen
   useEffect(() => {
+    if (currentApp !== 'chordex') {
+      setNavLocked(false);
+      setNavHidden(false);
+      return;
+    }
     setNavLocked(true);
     setNavHidden(true);
     return () => {
       setNavLocked(false);
       setNavHidden(false);
     };
-  }, []);
+  }, [currentApp]);
 
   // Exit practice mode on back button/swipe back gesture
   useBackHandler(

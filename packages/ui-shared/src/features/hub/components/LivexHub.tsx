@@ -896,7 +896,7 @@ export default function LivexHub() {
   };
 
   useEffect(() => {
-    if (!shortcutPickerOpen && !isEditMode) return;
+    if ((!shortcutPickerOpen && !isEditMode) || currentApp !== 'hub') return;
     const id = shortcutPickerOpen ? 'quick-actions-sheet' : 'quick-actions-reorder';
     activeOverlaysRegistry.register('sheet', id);
     setNavHidden(true);
@@ -904,7 +904,7 @@ export default function LivexHub() {
       activeOverlaysRegistry.unregister('sheet', id);
       setNavHidden(false);
     };
-  }, [shortcutPickerOpen, isEditMode]);
+  }, [shortcutPickerOpen, isEditMode, currentApp]);
 
   const activeRouteApp = currentApp;
 

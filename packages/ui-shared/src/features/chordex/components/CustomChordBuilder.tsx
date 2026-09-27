@@ -10,6 +10,7 @@ import {
   type GuitarChordData,
   useT,
   useSettingsStore,
+  useNavigationStore,
   detectChordName,
   chromaticToName,
   OPEN_NOTES,
@@ -1019,16 +1020,22 @@ export default function CustomChordBuilder({
     }
   }, [mode, instrument, defaultFret]);
 
+  const currentApp = useNavigationStore((s) => s.history[s.history.length - 1]?.app ?? 'hub');
+
   // Nav bar — hide while builder is open (only when not in morph surface)
   useEffect(() => {
-    if (inMorphSurface) return;
+    if (inMorphSurface || currentApp !== 'chordex') {
+      setNavLocked(false);
+      setNavHidden(false);
+      return;
+    }
     setNavLocked(true);
     setNavHidden(true);
     return () => {
       setNavLocked(false);
       setNavHidden(false);
     };
-  }, [inMorphSurface]);
+  }, [inMorphSurface, currentApp]);
 
   const handleClearNotes = useCallback(() => {
     if (instrument === 'piano') {

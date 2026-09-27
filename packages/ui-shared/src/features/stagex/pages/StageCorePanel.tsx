@@ -136,8 +136,14 @@ export default function StagexPanel() {
   // Hide global navigation when live mode is active or when viewing Export
   useEffect(() => {
     if (isWebDesktop) return;
-    if (currentRoute.app !== 'stagex') return;
+    if (currentRoute.app !== 'stagex') {
+      setNavHidden(false);
+      return;
+    }
     setNavHidden(liveMode || curView === 'Export');
+    return () => {
+      setNavHidden(false);
+    };
   }, [liveMode, curView, isWebDesktop, currentRoute.app]);
 
   // Register developer diagnostics provider

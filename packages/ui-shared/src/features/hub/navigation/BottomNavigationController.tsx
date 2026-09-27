@@ -20,6 +20,7 @@ import {
   useChordStore,
   useAssistantStore,
   resetNav,
+  recoverNavVisibility,
 } from '@workspace/livex-core';
 import { LivexAssistantMascot } from '../../assistant/components/LivexAssistantMascot';
 import { SharedNavigationBar } from './SharedNavigationBar';
@@ -102,6 +103,7 @@ export function BottomNavigationController() {
     if (prevRouteKeyRef.current !== routeKey) {
       prevRouteKeyRef.current = routeKey;
       setProfileMenuOpen(false);
+      setIsKeyboardFocused(false);
       resetNav();
     }
   }, [routeKey, setProfileMenuOpen]);
@@ -289,13 +291,19 @@ export function BottomNavigationController() {
         freshCurrentApp === 'stagex' &&
         (!freshCurrentPage || freshCurrentPage === 'Editor' || freshCurrentPage === 'stage');
 
-      // Self-heal zombie registry entries if no dialog elements exist in DOM
+      // Self-heal zombie registry entries if no dialog elements exist in active DOM
       if (activeOverlaysRegistry.modals.size > 0 || activeOverlaysRegistry.sheets.size > 0) {
-        const hasVisibleDialogInDom = Boolean(
-          document.querySelector(
-            '[role="dialog"], [data-dialog], [data-radix-portal], .dialog-backdrop, .modal-backdrop, .sheet-backdrop'
-          )
+        const dialogElements = document.querySelectorAll(
+          '[role="dialog"], [data-dialog], [data-radix-portal], .dialog-backdrop, .modal-backdrop, .sheet-backdrop'
         );
+        let hasVisibleDialogInDom = false;
+        for (let i = 0; i < dialogElements.length; i++) {
+          const el = dialogElements[i];
+          if (!el.closest('.shared-nav-pane-hidden, [data-pane-state="hidden"]')) {
+            hasVisibleDialogInDom = true;
+            break;
+          }
+        }
         if (!hasVisibleDialogInDom) {
           activeOverlaysRegistry.modals.clear();
           activeOverlaysRegistry.sheets.clear();
@@ -315,11 +323,19 @@ export function BottomNavigationController() {
     const unsubRegistry = activeOverlaysRegistry.subscribe(updateOverlayIndicator);
     document.addEventListener('fullscreenchange', updateOverlayIndicator);
     window.addEventListener('resize', updateOverlayIndicator, { passive: true });
+    window.addEventListener('orientationchange', updateOverlayIndicator, { passive: true });
+    if (typeof window !== 'undefined' && window.screen?.orientation) {
+      window.screen.orientation.addEventListener('change', updateOverlayIndicator);
+    }
 
     return () => {
       unsubRegistry();
       document.removeEventListener('fullscreenchange', updateOverlayIndicator);
       window.removeEventListener('resize', updateOverlayIndicator);
+      window.removeEventListener('orientationchange', updateOverlayIndicator);
+      if (typeof window !== 'undefined' && window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', updateOverlayIndicator);
+      }
     };
   }, [routeKey]);
 
@@ -516,11 +532,13 @@ export function BottomNavigationController() {
   const activeChordPresetId = useChordStore((s) => s.activePresetId);
   const isChordexSong =
     currentApp === 'chordex' &&
+    (activeTab === 'songs' || activePage === 'songs' || currentRoute?.page === 'songs' || !activePage) &&
     Boolean(
       (currentRoute as any)?.subView === 'editor' ||
       (currentRoute as any)?.subView === 'song' ||
       (currentRoute as any)?.subView === 'form' ||
-      ((activeTab === 'songs' || activePage === 'songs') && activeChordPresetId && (currentRoute as any)?.subView)
+      (currentRoute as any)?.subView === 'practice' ||
+      ((activeTab === 'songs' || activePage === 'songs') && activeChordPresetId)
     );
 
   useEffect(() => {
@@ -542,16 +560,37 @@ export function BottomNavigationController() {
       activePage === 'assistant' ||
       currentRoute?.page === 'assistant' ||
       (currentRoute as any)?.tab === 'assistant');
-  const visible =
-    !hidden &&
-    !isKeyboardFocused &&
-    !hasDOMHiddenIndicator &&
-    storeVisible &&
+  const isStageExport =
+    currentApp === 'stagex' &&
+    (activeTab === 'Export' ||
+      activePage === 'Export' ||
+      currentRoute?.page === 'Export' ||
+      (currentRoute as any)?.tab === 'Export' ||
+      (currentRoute as any)?.subView === 'Export');
+
+  const isExpectedVisible =
     !isDrumexEditor &&
     !isDrumexMetronome &&
     !isChordexSong &&
     !isGroovexSong &&
-    !isAssistantScreen;
+    !isAssistantScreen &&
+    !isStageExport;
+
+  const visible =
+    isExpectedVisible &&
+    !hidden &&
+    !isKeyboardFocused &&
+    !hasDOMHiddenIndicator &&
+    storeVisible;
+
+  // Bounded self-healing recovery: if route expects nav visible but system is stuck in locked/hidden state
+  useEffect(() => {
+    if (isExpectedVisible && !isKeyboardFocused && !hasDOMHiddenIndicator) {
+      if (hidden || isLocked || !storeVisible) {
+        recoverNavVisibility();
+      }
+    }
+  }, [routeKey, isExpectedVisible, isKeyboardFocused, hasDOMHiddenIndicator, hidden, isLocked, storeVisible]);
 
   return (
     <SharedNavigationBar

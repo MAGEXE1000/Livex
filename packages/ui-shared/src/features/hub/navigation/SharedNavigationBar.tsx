@@ -421,7 +421,17 @@ export function SharedNavigationBar({
     if (typeof window === 'undefined') return;
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    try {
+      (window as any).screen?.orientation?.addEventListener?.('change', handleResize);
+    } catch (_) {}
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      try {
+        (window as any).screen?.orientation?.removeEventListener?.('change', handleResize);
+      } catch (_) {}
+    };
   }, []);
 
   const innerWrapperRef = useRef<HTMLDivElement | null>(null);
@@ -732,7 +742,7 @@ export function SharedNavigationBar({
     return activeItem?.key || null;
   }, [items, switcherApps, isSwitcherOpen, currentApp]);
 
-  if (!visible) return null;
+  if (!currentItems || currentItems.length === 0) return null;
 
   return (
     <NavigationAnimationProvider activeTab={activeTabKey} items={currentItems}>
