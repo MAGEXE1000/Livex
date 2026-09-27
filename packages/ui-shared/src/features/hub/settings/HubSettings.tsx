@@ -914,17 +914,17 @@ export function HubSettings({
   };
 
   const goBack = () => {
-    if (tab === 'profile' && page === 'profile') {
-      NavigationDispatcher.push({ app: 'hub', tab: 'home' });
-      return;
-    }
     snapshotScroll(page);
     pendingRestoreRef.current = 'main';
     const store = useNavigationStore.getState();
     if (store.history.length > 1) {
       NavigationDispatcher.pop();
     } else {
-      NavigationDispatcher.replace({ app: 'hub', tab: 'settings', page: 'main' });
+      if (tab === 'profile') {
+        NavigationDispatcher.replace({ app: 'hub', tab: 'home' });
+      } else {
+        NavigationDispatcher.replace({ app: 'hub', tab: 'settings', page: 'main' });
+      }
     }
   };
 
@@ -1612,7 +1612,7 @@ export function HubSettings({
       handleLogoTap,
       navigate: (tab: any, params: any) => {}, 
       cardStyle,
-      goBack: () => setTab('home' as any)
+      goBack
     };
     switch (activePageId as any) {
       case 'general':

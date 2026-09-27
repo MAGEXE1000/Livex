@@ -1135,7 +1135,7 @@ export function AccountSettingsPage({
 }: {
   accent: { from: string; to: string; mid: string };
   cardStyle: React.CSSProperties;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   const tRoot = useT();
   const canHover = useHoverCapable();
@@ -1430,18 +1430,6 @@ export function AccountSettingsPage({
     [sheet, pickerOpen]
   );
 
-  // When no active sheets/pickers are open, swiping back exits the profile page back to settings tab
-  useBackHandler(
-    'nested',
-    () => {
-      if (sheet === 'none' && !pickerOpen) {
-        onBack();
-        return true;
-      }
-      return false;
-    },
-    [sheet, pickerOpen, onBack]
-  );
 
   if (!user || !isFirebaseConfigured) return null;
 

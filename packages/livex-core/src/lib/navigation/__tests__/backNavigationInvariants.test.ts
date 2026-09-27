@@ -390,5 +390,98 @@ describe('Android Back-Navigation System & Invariant Suite', () => {
       unregister();
     });
   });
+
+  describe('8. Hub Profile Navigation & Nested Sheet Invariants', () => {
+    it('returns to Hub Home when swiping back from Hub Profile root and exits app on subsequent back', () => {
+      // User navigates: Hub Home -> Profile
+      NavigationDispatcher.openApp('hub');
+      NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'profile' });
+      expect(NavigationDispatcher.canGoBack()).toBe(true);
+
+      // Back 1: Unwinds Profile to Hub Home
+      const firstHandled = BackDispatcher.handleBackEvent();
+      expect(firstHandled).toBe(true);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'home' });
+      expect(NavigationDispatcher.canGoBack()).toBe(false);
+
+      // Back 2: At Hub Home, back is not consumed so native Android can exitApp
+      BackDispatcher.resetDebounce();
+      const secondHandled = BackDispatcher.handleBackEvent();
+      expect(secondHandled).toBe(false);
+    });
+
+    it('unwinds active sheet in Profile before popping Profile route', () => {
+      // User is in Profile with a sheet/picker open
+      NavigationDispatcher.openApp('hub');
+      NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+
+      let sheetOpen = true;
+      const unregister = BackDispatcher.register('sheet', () => {
+        if (sheetOpen) {
+          sheetOpen = false;
+          return true;
+        }
+        return false;
+      });
+
+      // Back 1: closes the sheet, remains in Profile
+      const firstHandled = BackDispatcher.handleBackEvent();
+      expect(firstHandled).toBe(true);
+      expect(sheetOpen).toBe(false);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'profile' });
+
+      // Back 2: now that sheet is closed, pops Profile route to Hub Home
+      BackDispatcher.resetDebounce();
+      const secondHandled = BackDispatcher.handleBackEvent();
+      expect(secondHandled).toBe(true);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'home' });
+
+      unregister();
+    });
+
+    it('returns to Chordex when swiping back from Profile opened from Chordex', () => {
+      // User is in Chordex and opens Profile via TopBar or Collab dialog
+      NavigationDispatcher.openApp('chordex');
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+
+      NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'profile' });
+
+      // Back 1: pops Profile and returns to Chordex (NOT falling through to Hub Home!)
+      const handled = BackDispatcher.handleBackEvent();
+      expect(handled).toBe(true);
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+
+      // Back 2: At Chordex root, back is consumed by app boundary containment
+      BackDispatcher.resetDebounce();
+      const secondHandled = BackDispatcher.handleBackEvent();
+      expect(secondHandled).toBe(true);
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+    });
+
+    it('returns to nested Chordex screen when swiping back from Profile opened from Chord detail', () => {
+      NavigationDispatcher.openApp('chordex');
+      NavigationDispatcher.push({ app: 'chordex', page: 'chord', id: 'c-maj' });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'chordex', page: 'chord', id: 'c-maj' });
+
+      // Open Profile from chord detail screen
+      NavigationDispatcher.push({ app: 'hub', tab: 'profile' });
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'hub', tab: 'profile' });
+
+      // Back 1: pops Profile and returns to chord detail
+      const back1 = BackDispatcher.handleBackEvent();
+      expect(back1).toBe(true);
+      expect(NavigationDispatcher.currentRoute()).toEqual({ app: 'chordex', page: 'chord', id: 'c-maj' });
+
+      // Back 2: pops chord detail and returns to chordex root
+      BackDispatcher.resetDebounce();
+      const back2 = BackDispatcher.handleBackEvent();
+      expect(back2).toBe(true);
+      expect(NavigationDispatcher.currentRoute().app).toBe('chordex');
+      expect(NavigationDispatcher.currentRoute().page).not.toBe('chord');
+    });
+  });
 });
+
 
