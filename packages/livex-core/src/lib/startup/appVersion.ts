@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.55';
-export const NATIVE_VERSION_CODE = 40655;
-export const WEB_VERSION = '4.6.55';
+export const NATIVE_VERSION = '4.6.56';
+export const NATIVE_VERSION_CODE = 40656;
+export const WEB_VERSION = '4.6.56';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,19 +70,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/26/2026';
+export const APP_VERSION_DATE = '9/27/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'fcc74ad4';
+export const APP_COMMIT_SHA = '6761c227';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/26/2026, 1:48:54 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/27/2026, 1:53:57 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,18 +101,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.',
-      'Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.',
-      'Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.',
-      'Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.',
+      'Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.',
-      'Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.',
-      'Interface & Navigation Performance: Restored branded entrance animations and eliminated navigation transition stutter across internal sub-apps.',
+      'Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.',
+      'Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.',
     ],
   },
 ];
@@ -124,6 +120,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.56',
+    date: '2026-09-27',
+    highlights: [
+      'Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.',
+      'Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.',
+      'Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.',
+    ],
+  },
   {
     version: '4.6.55',
     date: '2026-09-26',
@@ -224,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Keep-Alive Tab Navigation Architecture: Integrated persistent component trees across Chordex, Drumex, Stagex, Groovex, and Vocalex to retain DOM state and scroll positions during tab switching.',
       'Fast-Path Loading Architecture: Implemented synchronous memory-first rendering that immediately renders cached data and avoids skeleton flicker, reserving skeletons strictly for slow asynchronous network fetches.',
       'Hub Module Logos: Removed rounded-square framing containers, artificial borders, backgrounds, and glows from module cards on the Home screen to display clean brand logos.',
-    ],
-  },
-  {
-    version: '4.6.46',
-    date: '2026-09-24',
-    highlights: [
-      'Accent Resolution Throughput: Memoized `resolveAccent` with bounded caching, reducing color math latency from 248ms to 7.8ms (31.7x speedup) and maintaining referential stability across component renders.',
-      'Chord Database Lookups: Replaced linear array scans in `getChordById` and `getChordByName` with O(1) hash maps, increasing lookup throughput by 44%.',
-      'Drumex Metronome Render Isolation: Decoupled beat and subdivision tick subscriptions from `MetronomePanel` root into isolated memoized `BeatCells` and `SubdivisionDots`, eliminating up to 960 full-tree re-renders per minute.',
-      'Drumex Beats List Memoization: Wrapped `BeatCard` and `BeatMiniTimeline` in `React.memo` and stabilized callback props, isolating song preview updates to the active card instead of re-rendering all 50+ cards.',
-      'Drumex Preferences Stability: Hoisted `PrefsSection` and `PrefsRow` outside component render function to eliminate DOM subtree unmount/remount churn.',
-      'Chordex Songs Card Stability: Memoized accent resolution in `SongsPanel` to preserve `PresetCard` memoization.',
     ],
   },
 ];

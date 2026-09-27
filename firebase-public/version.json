@@ -1,26 +1,22 @@
 {
   "platform": "web",
-  "version": "4.6.55",
-  "versionName": "4.6.55",
-  "versionCode": 40655,
-  "version_code": 40655,
-  "commit": "efedc351",
-  "releasedAt": "9/26/2026, 11:00:20 PM CST",
-  "buildTimestamp": "9/26/2026, 11:00:20 PM CST",
+  "version": "4.6.56",
+  "versionName": "4.6.56",
+  "versionCode": 40656,
+  "version_code": 40656,
+  "commit": "6761c227",
+  "releasedAt": "9/27/2026, 1:53:57 AM CST",
+  "buildTimestamp": "9/27/2026, 1:53:57 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.\n• Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.\n• Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.\n• Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.\n• Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.\n• Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.\n• Interface & Navigation Performance: Restored branded entrance animations and eliminated navigation transition stutter across internal sub-apps.",
-  "whatsNew": "• Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.\n• Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.\n• Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.\n• Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.\n• Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.\n• Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.\n• Interface & Navigation Performance: Restored branded entrance animations and eliminated navigation transition stutter across internal sub-apps.",
+  "changelog": "• Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.\n• Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.\n• Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.",
+  "whatsNew": "• Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.\n• Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.\n• Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.",
   "releaseNotes": {
     "added": [
-      "Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.",
-      "Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.",
-      "Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.",
-      "Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex."
+      "Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers."
     ],
     "improved": [
-      "Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.",
-      "Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.",
-      "Interface & Navigation Performance: Restored branded entrance animations and eliminated navigation transition stutter across internal sub-apps."
+      "Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.",
+      "Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops."
     ]
   },
   "mandatory": false
