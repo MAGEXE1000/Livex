@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
+import DetailFretboardDiagram from '../diagrams/DetailFretboardDiagram';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import {
@@ -487,27 +488,12 @@ export function StageChordCard({
     );
   }
 
-  const { frets, baseFret } = chord.guitar;
-  const allPositive = frets.filter((f: number) => f > 0);
-  const minActive = allPositive.length ? Math.min(...allPositive) : 1;
-  const minF = baseFret > 1 ? baseFret : Math.max(1, minActive);
-  const isNutOpen = minF <= 1;
-
-  const stringIndicators = frets.map((f: number) => {
-    if (f === -1) return { text: '✕', isMuted: true, isOpen: false };
-    if (f === 0) return { text: '○', isMuted: false, isOpen: true };
-    return { text: String(f), isMuted: false, isOpen: false };
-  });
-
-  const numFrets = 4;
-  const numStrings = 6;
-
   return (
     <div
       onClick={onPlay}
       data-testid="stage-chord-card"
       data-visual-style={visualStyle}
-      className="relative flex flex-col items-center w-full max-w-xs mx-auto p-4 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
+      className="relative flex flex-col items-center w-full max-w-[340px] sm:max-w-[360px] mx-auto p-4 sm:p-5 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
       style={{
         background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
         border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
@@ -519,19 +505,20 @@ export function StageChordCard({
     >
       {/* Chord Name Header (rendered in 'both' style, or compact in 'diagram' style) */}
       {visualStyle === 'both' ? (
-        <div className="flex items-baseline gap-1 mb-2">
+        <div className="flex items-baseline gap-1.5 mb-2.5">
           <span
-            className="text-4xl sm:text-5xl font-extrabold tracking-tight"
+            className="text-5xl sm:text-6xl font-black tracking-tight"
             style={{
               fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
               color: accent.from,
+              textShadow: `0 0 24px ${accent.from}33`,
             }}
           >
             {root}
           </span>
           {suffix && (
             <span
-              className="text-2xl sm:text-3xl font-bold opacity-80"
+              className="text-3xl sm:text-4xl font-bold opacity-85"
               style={{
                 fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                 color: 'var(--c-text-primary)',
@@ -543,11 +530,11 @@ export function StageChordCard({
         </div>
       ) : (
         <div
-          className="flex items-center gap-1 mb-2 px-2.5 py-0.5 rounded-full"
-          style={{ background: `${accent.from}1a` }}
+          className="flex items-center gap-1.5 mb-2.5 px-3 py-1 rounded-full"
+          style={{ background: `${accent.from}1a`, border: `1px solid ${accent.from}33` }}
         >
           <span
-            className="text-base font-extrabold tracking-tight"
+            className="text-lg font-black tracking-tight"
             style={{
               fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
               color: accent.from,
@@ -558,101 +545,16 @@ export function StageChordCard({
         </div>
       )}
 
-      {/* String Top Indicators */}
-      <div className="w-full flex justify-between px-2 mb-1">
-        {stringIndicators.map((ind: any, i: number) => (
-          <span
-            key={i}
-            className="w-6 text-center text-xs font-bold"
-            style={{
-              color: ind.isMuted
-                ? '#ef4444'
-                : ind.isOpen
-                ? accent.from
-                : 'var(--c-text-secondary)',
-              fontWeight: ind.isOpen ? 800 : 700,
-            }}
-          >
-            {ind.text}
-          </span>
-        ))}
-      </div>
-
-      {/* Fretboard SVG / Matrix */}
-      <div className="relative w-full h-36 px-2">
-        {isNutOpen && (
-          <div
-            className="absolute top-0 left-2 right-2 h-1 rounded-sm"
-            style={{ background: 'var(--c-text-secondary, #94a3b8)', opacity: 0.8 }}
-          />
-        )}
-
-        {/* Horizontal fret wires */}
-        <div className="absolute inset-x-2 inset-y-0 flex flex-col justify-between pointer-events-none">
-          {Array.from({ length: numFrets + 1 }).map((_, fIdx) => (
-            <div
-              key={fIdx}
-              className="w-full h-px"
-              style={{ background: 'var(--surface-topbar-border, rgba(255,255,255,0.15))' }}
-            />
-          ))}
-        </div>
-
-        {/* Vertical string wires */}
-        <div className="absolute inset-x-2 inset-y-0 flex justify-between pointer-events-none px-3">
-          {Array.from({ length: numStrings }).map((_, sIdx) => (
-            <div
-              key={sIdx}
-              className="h-full"
-              style={{
-                background: 'var(--surface-topbar-border, rgba(255,255,255,0.2))',
-                width: sIdx === 0 || sIdx === 1 ? '1.5px' : '1px',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Dynamic Position Dots */}
-        <div className="absolute inset-x-2 inset-y-0 pointer-events-none px-3">
-          {frets.map((f: number, si: number) => {
-            if (f <= 0) return null;
-            const fp = f - minF;
-            if (fp < 0 || fp >= numFrets) return null;
-            const leftPct = (si / (numStrings - 1)) * 100;
-            const topPct = ((fp + 0.5) / numFrets) * 100;
-            const noteName =
-              chord.notes && chord.notes[si % chord.notes.length]
-                ? chord.notes[si % chord.notes.length]
-                : '';
-
-            return (
-              <div
-                key={si}
-                className="fret-dot absolute flex items-center justify-center rounded-full text-white text-[10px] font-bold shadow-md"
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  left: `${leftPct}%`,
-                  top: `${topPct}%`,
-                  transform: 'translate(-50%, -50%)',
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                  boxShadow: `0 2px 10px ${accent.from}66`,
-                }}
-              >
-                {noteName}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Fret Position Numbering Side Label */}
-      <div className="w-full flex justify-between items-center px-2 pt-2 text-[11px] font-semibold opacity-60">
-        <span>{isNutOpen ? 'Nut (Open)' : `Fret ${minF}`}</span>
-        <span>{isNutOpen ? 'Fret 3' : `Fret ${minF + 3}`}</span>
-      </div>
+      {/* High Fidelity Clean Fretboard Diagram from Library */}
+      <DetailFretboardDiagram
+        chordData={chord.guitar}
+        maxWidth="100%"
+        accentColor={accent.from}
+        displayMode="notes"
+      />
     </div>
   );
+
 }
 
 /* ── MODE 1: CHORDS LIVE VIEW (Stitch Section 1) ───────────────── */
@@ -1849,23 +1751,13 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        padding: '12px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 96px)',
+        padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 96px)',
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
         boxSizing: 'border-box',
       }}
     >
-      {/* Top Hero Stage Chord Card */}
-      <div style={{ width: '100%', maxWidth: '420px', zIndex: 1, margin: '0 auto' }}>
-        <StageChordCard
-          chord={activeHybridChord}
-          accent={accent}
-          visualStyle={visualStyle}
-          onPlay={() => playChordSound(activeHybridChord?.guitar)}
-        />
-      </div>
-
-      {/* Synchronized Stage Teleprompter */}
+      {/* Centered Stage Presentation Wrapper */}
       <div
         style={{
           width: '100%',
@@ -1873,16 +1765,36 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          textAlign: 'center',
-          margin: '16px 0 12px',
+          margin: 'auto 0',
           zIndex: 1,
         }}
       >
-        {/* Timing Pulse & Bar Counter */}
+        {/* Top Hero Stage Chord Card */}
+        <div style={{ width: '100%', maxWidth: '380px', margin: '0 auto 16px' }}>
+          <StageChordCard
+            chord={activeHybridChord}
+            accent={accent}
+            visualStyle={visualStyle}
+            onPlay={() => playChordSound(activeHybridChord?.guitar)}
+          />
+        </div>
+
+        {/* Synchronized Stage Teleprompter */}
         <div
           style={{
+            width: '100%',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
+            textAlign: 'center',
+            margin: '0 auto',
+          }}
+        >
+          {/* Timing Pulse & Bar Counter */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
             gap: '10px',
             marginBottom: '14px',
           }}
@@ -2028,6 +1940,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             </div>
           </button>
         )}
+      </div>
       </div>
 
       {/* Preferences / Quick Controls HUD Bar */}
