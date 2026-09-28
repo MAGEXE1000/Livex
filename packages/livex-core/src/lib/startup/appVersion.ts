@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.60';
-export const NATIVE_VERSION_CODE = 40660;
-export const WEB_VERSION = '4.6.60';
+export const NATIVE_VERSION = '4.6.61';
+export const NATIVE_VERSION_CODE = 40661;
+export const WEB_VERSION = '4.6.61';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/27/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f3634cc1';
+export const APP_COMMIT_SHA = '5e936667';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/27/2026, 5:02:23 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/27/2026, 7:49:40 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,9 +101,10 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Fixed',
     items: [
-      'Hub Profile Back-Navigation Canonical Restoration: Resolved the navigation regression where entering Profile from the Hub broke Android hardware back and predictive swipe-back gesture unwinding.',
-      'De-coupled Sheet and Domain Priority: Removed artificial root-level back interception in AccountCard, ensuring active sheets (Avatar Picker, Account Details, Danger Zone) cleanly close without altering route history, while Profile root delegates to canonical BackDispatcher pop.',
-      'Elimination of Forward Push on Back: Corrected goBack in HubSettings and pageProps to cleanly pop the navigation history stack rather than pushing duplicate Home routes, eliminating navigation ping-pong loops and preserving cross-app domain containment.',
+      'Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).',
+      'Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.',
+      'Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.',
+      'Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.',
     ],
   },
 ];
@@ -115,6 +116,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.61',
+    date: '2026-09-27',
+    highlights: [
+      'Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).',
+      'Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.',
+      'Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.',
+      'Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.',
+    ],
+  },
   {
     version: '4.6.60',
     date: '2026-09-27',
@@ -208,17 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'DOM MutationObserver Header Detection: Replaced aggressive 50ms interval polling in navigation scroll observer with `MutationObserver`, completely eliminating idle CPU cycles when DOM elements are mounting.',
       'Audio Hot-Loop Optimization: Hoisted Zustand store reads out of the per-step audio sequencer tick loop, eliminating repetitive allocations and state queries during playback.',
       'Sync Engine Debounce & Auto-Backup Guards: Added empty-patch dirty check to `setStatus()`, debounced device registration to 5 minutes, and guarded auto-backup checks to eliminate redundant background sync work.',
-    ],
-  },
-  {
-    version: '4.6.51',
-    date: '2026-09-25',
-    highlights: [
-      'Unified Navigation Surface Material: Unified top navigation bars with the validated bottom navigation bar across Dark, AMOLED, and Light themes, eliminating fragmented overlays and aligning drop shadows to canonical navigation tokens.',
-      'Seamless Topbar Controls: Integrated back button and contextual action pills directly into the canonical header capsule without nested borders, card-in-card shadows, or milky specular glares.',
-      'Redesigned Changelog Presentation: Transformed in-app changelog view into high-hierarchy categorized cards with interactive filter chips, status indicators, and collapsible detail items.',
-      'Hub Vertical Composition: Rebalanced vertical layout and negative space across the Home screen for balanced optical ergonomics.',
-      'Navigation Containment & Transitions: Implemented strict pill geometry containment and fluid global section transitions.',
     ],
   },
 ];
