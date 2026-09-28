@@ -131,50 +131,36 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     handleClose,
     displayMode,
     currentSectionName,
-    activeHybridChord,
-    showSettings,
-    setShowSettings,
-    showQuickActions,
-    setShowQuickActions,
   } = state;
 
-  const isLyricsMode = displayMode === 'lyrics_only' || displayMode === 'lyrics_chord_name';
-  const isHybridMode = displayMode === 'lyrics_chord_diagram';
+  const isLyricsMode = displayMode === 'lyrics_only';
+  const isHybridMode =
+    displayMode === 'lyrics_chord_diagram' ||
+    displayMode === 'lyrics_chord_name';
 
   const subtitle = (() => {
     if (isHybridMode) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: accent.from, fontWeight: 700 }}>
-            {activeHybridChord?.name || 'C'}
-          </span>
+          <span style={{ color: accent.from, fontWeight: 700 }}>CHORDS + LYRICS</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>KEY {preset.key || 'C'}</span>
           <span style={{ opacity: 0.4 }}>•</span>
           <span>{bpmOverride} BPM</span>
-          <span style={{ opacity: 0.4 }}>•</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: autoPlay ? '#22c55e' : accent.from,
-                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
-              }}
-            />
-            {currentSectionName}
-          </span>
         </span>
       );
     }
     if (isLyricsMode) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
           {preset.artist ? (
             <>
-              <span style={{ opacity: 0.7 }}>{preset.artist}</span>
               <span style={{ opacity: 0.4 }}>•</span>
+              <span style={{ opacity: 0.7 }}>{preset.artist}</span>
             </>
           ) : null}
+          <span style={{ opacity: 0.4 }}>•</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
             <span
               style={{
@@ -229,34 +215,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         subtitle={subtitle}
         onBack={handleClose}
         alwaysShowGlass
-        toolbarActions={
-          !isLyricsMode ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <motion.button
-                type="button"
-                onClick={() => setShowSettings((s) => !s)}
-                whileTap={{ scale: 0.92 }}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: showSettings ? `${accent.from}28` : 'transparent',
-                  border: 'none',
-                  color: showSettings ? accent.from : 'var(--c-text-primary)',
-                  cursor: 'pointer',
-                }}
-                title="Song Live Options"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                  settings
-                </span>
-              </motion.button>
-            </div>
-          ) : null
-        }
+        backBtnTestId="live-mode-back-btn"
       />
     </>
   );
@@ -461,6 +420,13 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
     setCurrentIdx,
     playChordSound,
     chordStyle,
+    setShowSettings,
+    showQuickActions,
+    setShowQuickActions,
+    bpmOverride,
+    setBpmOverride,
+    displayMode,
+    setDisplayMode,
   } = state;
 
   return (
@@ -729,6 +695,137 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         )}
       </div>
 
+      {/* Preferences / Quick Controls HUD Bar */}
+      <AnimatePresence>
+        {showQuickActions && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            style={{
+              position: 'fixed',
+              bottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 58px)',
+              left: '50%',
+              x: '-50%',
+              zIndex: 48,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              background: 'var(--surface-topbar-bg)',
+              border: 'var(--surface-topbar-border)',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              boxShadow: 'var(--surface-topbar-shadow)',
+            }}
+          >
+            {/* BPM Adjuster */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setBpmOverride((b: number) => Math.max(30, b - 5))}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--c-text-secondary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Decrease BPM"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
+              </button>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: accent.from, minWidth: '48px', textAlign: 'center' }}>
+                {bpmOverride} BPM
+              </span>
+              <button
+                type="button"
+                onClick={() => setBpmOverride((b: number) => Math.min(260, b + 5))}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--c-text-secondary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Increase BPM"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
+              </button>
+            </div>
+
+            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+            {/* Display Style Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <button
+                type="button"
+                onClick={() => setDisplayMode('chords_both')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: displayMode === 'chords_both' ? accent.from : 'var(--c-text-secondary)',
+                  background: displayMode === 'chords_both' ? `${accent.from}22` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Both Diagram and Name"
+              >
+                Both
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode('chords_diagram')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: displayMode === 'chords_diagram' ? accent.from : 'var(--c-text-secondary)',
+                  background: displayMode === 'chords_diagram' ? `${accent.from}22` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Diagram Only"
+              >
+                Diagram
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode('chords_name')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: displayMode === 'chords_name' ? accent.from : 'var(--c-text-secondary)',
+                  background: displayMode === 'chords_name' ? `${accent.from}22` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Name Only"
+              >
+                Name
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Symmetrical Bottom Transport Bar */}
       <footer
         style={{
@@ -740,25 +837,47 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '16px',
-          padding: '8px 20px',
+          gap: '12px',
+          padding: '6px 14px',
           borderRadius: '9999px',
           background: 'var(--surface-topbar-bg)',
           border: 'var(--surface-topbar-border)',
           backdropFilter: 'var(--surface-topbar-backdrop)',
           WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
           boxShadow: 'var(--surface-topbar-shadow)',
-          width: 'min(92vw, 360px)',
           boxSizing: 'border-box',
         }}
       >
         <button
           type="button"
+          data-testid="chords-live-settings-btn"
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Song Settings"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            settings
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={goPrev}
           disabled={currentIdx === 0}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -783,7 +902,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '8px 20px',
+            padding: '8px 18px',
             borderRadius: '9999px',
             color: '#fff',
             fontWeight: 800,
@@ -801,7 +920,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
             {autoPlay ? 'pause' : 'play_arrow'}
           </span>
-          <span>{autoPlay ? 'Pause' : 'Auto Play'}</span>
+          <span>{autoPlay ? 'Pause' : 'Auto'}</span>
         </button>
 
         <button
@@ -809,8 +928,8 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
           onClick={goNext}
           disabled={currentIdx >= total - 1 && !autoPlay}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -825,6 +944,29 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         >
           <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
             skip_next
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="chords-live-preferences-btn"
+          onClick={() => setShowQuickActions((q) => !q)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showQuickActions ? `${accent.from}28` : 'transparent',
+            border: 'none',
+            color: showQuickActions ? accent.from : 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Toggle Quick Preferences"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            tune
           </span>
         </button>
       </footer>
@@ -1289,6 +1431,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
       >
         <button
           type="button"
+          data-testid="lyrics-live-settings-btn"
           onClick={() => setShowSettings(true)}
           style={{
             width: '38px',
@@ -1378,6 +1521,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
+          data-testid="lyrics-live-preferences-btn"
           onClick={() => setShowQuickActions((q) => !q)}
           style={{
             width: '38px',
@@ -1422,6 +1566,17 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
     stepWordForward,
     stepWordBackward,
     playChordSound,
+    setShowSettings,
+    showQuickActions,
+    setShowQuickActions,
+    cyclePlaybackSpeed,
+    playbackSpeed,
+    goToPrevSection,
+    goToNextSection,
+    teleprompterFontSize,
+    setTeleprompterFontSize,
+    displayMode,
+    setDisplayMode,
   } = state;
 
   const currentLine = teleprompterLines[currentLineIdx];
@@ -1615,6 +1770,174 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         )}
       </div>
 
+      {/* Preferences / Quick Controls HUD Bar */}
+      <AnimatePresence>
+        {showQuickActions && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            style={{
+              position: 'fixed',
+              bottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 58px)',
+              left: '50%',
+              x: '-50%',
+              zIndex: 48,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              background: 'var(--surface-topbar-bg)',
+              border: 'var(--surface-topbar-border)',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              boxShadow: 'var(--surface-topbar-shadow)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={cyclePlaybackSpeed}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: 800,
+                color: accent.from,
+                background: `${accent.from}22`,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+              title="Auto-scroll Speed"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                speed
+              </span>
+              <span>{playbackSpeed}x</span>
+            </button>
+
+            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+            <button
+              type="button"
+              onClick={goToPrevSection}
+              style={{
+                padding: '4px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+              }}
+              title="Previous Section"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                fast_rewind
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={goToNextSection}
+              style={{
+                padding: '4px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+              }}
+              title="Next Section"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                fast_forward
+              </span>
+            </button>
+
+            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (teleprompterFontSize === 'huge') setTeleprompterFontSize('large');
+                  else if (teleprompterFontSize === 'large') setTeleprompterFontSize('normal');
+                }}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--c-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Decrease text size"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (teleprompterFontSize === 'normal') setTeleprompterFontSize('large');
+                  else if (teleprompterFontSize === 'large') setTeleprompterFontSize('huge');
+                }}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--c-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Increase text size"
+              >
+                A+
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (displayMode === 'lyrics_chord_diagram') setDisplayMode('lyrics_chord_name');
+                  else setDisplayMode('lyrics_chord_diagram');
+                }}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: displayMode === 'lyrics_chord_diagram' ? accent.from : 'var(--c-text-secondary)',
+                  background: displayMode === 'lyrics_chord_diagram' ? `${accent.from}22` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Toggle Diagram / Chord name format"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                  auto_stories
+                </span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom Floating Minimalist Stage Playback Controls */}
       <footer
         style={{
@@ -1637,6 +1960,29 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
       >
         <button
           type="button"
+          data-testid="hybrid-live-settings-btn"
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Song Settings"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            settings
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={prevPhrase}
           style={{
             width: '38px',
@@ -1654,28 +2000,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         >
           <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
             skip_previous
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={stepWordBackward}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Step Backward"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-            fast_rewind
           </span>
         </button>
 
@@ -1704,28 +2028,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
-          onClick={stepWordForward}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Step Forward"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-            fast_forward
-          </span>
-        </button>
-
-        <button
-          type="button"
           onClick={nextPhrase}
           style={{
             width: '38px',
@@ -1745,6 +2047,29 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             skip_next
           </span>
         </button>
+
+        <button
+          type="button"
+          data-testid="hybrid-live-preferences-btn"
+          onClick={() => setShowQuickActions((q) => !q)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showQuickActions ? `${accent.from}28` : 'transparent',
+            border: 'none',
+            color: showQuickActions ? accent.from : 'var(--c-text-primary)',
+            cursor: 'pointer',
+          }}
+          title="Toggle Quick Preferences"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            tune
+          </span>
+        </button>
       </footer>
     </div>
   );
@@ -1760,9 +2085,7 @@ export function LiveModeVisualizer({ state }: { state: LiveModeState }) {
 
   const isHybrid =
     state.displayMode === 'lyrics_chord_diagram' ||
-    (state.contentCategory === 'hybrid' &&
-      state.displayMode !== 'lyrics_only' &&
-      state.displayMode !== 'lyrics_chord_name');
+    state.displayMode === 'lyrics_chord_name';
 
   if (isChordsOnly) {
     return <ChordsLiveView state={state} />;
@@ -1811,6 +2134,15 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     accent,
   } = state;
 
+  const isChordsActive =
+    displayMode === 'chords_both' ||
+    displayMode === 'chords_diagram' ||
+    displayMode === 'chords_name';
+  const isLyricsActive = displayMode === 'lyrics_only';
+  const isBothActive =
+    displayMode === 'lyrics_chord_diagram' ||
+    displayMode === 'lyrics_chord_name';
+
   const CHORD_OPTIONS: { value: LiveDisplayMode; label: string; icon: string }[] = [
     { value: 'chords_both', label: 'Diagram + Name', icon: 'tune' },
     { value: 'chords_diagram', label: 'Diagram Only', icon: 'grid_on' },
@@ -1841,69 +2173,38 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           setShowSettings(false);
         }}
         style={{
-          position: isTeleprompterMode ? 'fixed' : 'absolute',
+          position: 'fixed',
           inset: 0,
           background: 'rgba(0,0,0,0.65)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          zIndex: isTeleprompterMode ? 55 : 10,
+          zIndex: 55,
         }}
       />
 
       <div
         onClick={(e) => e.stopPropagation()}
-        style={
-          isTeleprompterMode
-            ? {
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: 'calc(100% - 32px)',
-                maxWidth: '460px',
-                maxHeight: '82vh',
-                background: '#131318',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '24px',
-                zIndex: 60,
-                boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
-                overflowY: 'auto',
-                paddingBottom: '20px',
-              }
-            : {
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                background: '#111114',
-                borderTop: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '1.5rem 1.5rem 0 0',
-                zIndex: 11,
-                animation: 'sheet-up 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
-                paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
-                maxHeight: '85vh',
-                overflowY: 'auto',
-              }
-        }
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'calc(100% - 32px)',
+          maxWidth: '460px',
+          maxHeight: '82vh',
+          background: '#131318',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: '24px',
+          zIndex: 60,
+          boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
+          overflowY: 'auto',
+          paddingBottom: '20px',
+        }}
       >
-        {/* Drag handle (Bottom sheet mode only) */}
-        {!isTeleprompterMode && (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '4px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.2)',
-              }}
-            />
-          </div>
-        )}
-
         {/* Title row */}
         <div
           style={{
-            padding: isTeleprompterMode ? '18px 20px 8px' : '4px 20px 8px',
+            padding: '18px 20px 8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1918,7 +2219,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 fontSize: '18px',
               }}
             >
-              {isTeleprompterMode ? 'Lyrics Live Settings' : 'Live Options'}
+              Song Live Settings
             </p>
             <p
               style={{
@@ -1928,7 +2229,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 marginTop: '1px',
               }}
             >
-              {isTeleprompterMode ? 'Pacing, typography, and display options' : 'Intelligent musician presentation'}
+              Display mode, pacing, and typography options
             </p>
           </div>
           <Button
@@ -1948,6 +2249,112 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             gap: '20px',
           }}
         >
+          {/* ── 0. TOP 3-MODE SELECTOR ───────────────────────── */}
+          <div>
+            <p
+              style={{
+                color: 'var(--c-text-secondary)',
+                fontFamily: 'var(--studio-font-body)',
+                fontWeight: 700,
+                fontSize: '10.5px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+                marginBottom: '8px',
+              }}
+            >
+              Live Experience
+            </p>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '6px',
+                padding: '4px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <button
+                type="button"
+                data-testid="live-settings-mode-chords"
+                onClick={() => setDisplayMode('chords_both')}
+                disabled={!hasChords}
+                style={{
+                  padding: '10px 4px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isChordsActive ? accent.from : 'transparent',
+                  color: isChordsActive ? '#ffffff' : hasChords ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  opacity: !hasChords ? 0.4 : 1,
+                  cursor: !hasChords ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  fontFamily: 'var(--studio-font-body)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  transition: 'background 200ms ease, color 200ms ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>music_note</span>
+                Chords
+              </button>
+              <button
+                type="button"
+                data-testid="live-settings-mode-lyrics"
+                onClick={() => setDisplayMode('lyrics_only')}
+                disabled={!hasLyrics}
+                style={{
+                  padding: '10px 4px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isLyricsActive ? accent.from : 'transparent',
+                  color: isLyricsActive ? '#ffffff' : hasLyrics ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  opacity: !hasLyrics ? 0.4 : 1,
+                  cursor: !hasLyrics ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  fontFamily: 'var(--studio-font-body)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  transition: 'background 200ms ease, color 200ms ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>description</span>
+                Lyrics
+              </button>
+              <button
+                type="button"
+                data-testid="live-settings-mode-both"
+                onClick={() => setDisplayMode('lyrics_chord_diagram')}
+                disabled={!hasChords || !hasLyrics}
+                style={{
+                  padding: '10px 4px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isBothActive ? accent.from : 'transparent',
+                  color: isBothActive ? '#ffffff' : (hasChords && hasLyrics) ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  opacity: (!hasChords || !hasLyrics) ? 0.4 : 1,
+                  cursor: (!hasChords || !hasLyrics) ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  fontFamily: 'var(--studio-font-body)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  transition: 'background 200ms ease, color 200ms ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>auto_stories</span>
+                Both
+              </button>
+            </div>
+          </div>
           {/* ── 1. PRESENTATION MODE: CHORDS FOCUS ───────────────── */}
           <div>
             <div

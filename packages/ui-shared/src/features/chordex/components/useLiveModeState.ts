@@ -279,7 +279,8 @@ export function splitLineIntoWords(
 export function useLiveModeState(
   preset: SongPreset,
   onClose: () => void,
-  transposeOffset: number = 0
+  transposeOffset: number = 0,
+  initialMode?: 'chords' | 'lyrics' | 'both'
 ): LiveModeState {
   const settings = useSettingsStore(
     useShallow((s) => ({
@@ -496,6 +497,16 @@ export function useLiveModeState(
   }, [contentCategory]);
 
   const getDefaultMode = useCallback((): LiveDisplayMode => {
+    if (initialMode === 'chords' && hasChords) {
+      return 'chords_both';
+    }
+    if (initialMode === 'lyrics' && hasLyrics) {
+      return 'lyrics_only';
+    }
+    if (initialMode === 'both' && (hasChords || hasLyrics)) {
+      return 'lyrics_chord_diagram';
+    }
+
     let saved: LiveDisplayMode | null = null;
     try {
       saved = localStorage.getItem('chordex_live_display_mode') as LiveDisplayMode;
@@ -506,18 +517,24 @@ export function useLiveModeState(
     }
     if (contentCategory === 'chords_only') return 'chords_both';
     if (contentCategory === 'lyrics_only') return 'lyrics_only';
-    if (contentCategory === 'hybrid') return 'lyrics_chord_name';
+    if (contentCategory === 'hybrid') return 'lyrics_chord_diagram';
     return 'chords_both';
-  }, [compatibleModes, contentCategory]);
+  }, [initialMode, hasChords, hasLyrics, compatibleModes, contentCategory]);
 
   const [displayMode, setDisplayModeState] = useState<LiveDisplayMode>(getDefaultMode);
 
-  // Sync mode if preset content changes
+  // Sync mode if initialMode changes
   useEffect(() => {
-    if (!compatibleModes.includes(displayMode) && compatibleModes.length > 0) {
+    if (initialMode === 'chords' && hasChords) {
+      setDisplayModeState('chords_both');
+    } else if (initialMode === 'lyrics' && hasLyrics) {
+      setDisplayModeState('lyrics_only');
+    } else if (initialMode === 'both' && (hasChords || hasLyrics)) {
+      setDisplayModeState('lyrics_chord_diagram');
+    } else if (!compatibleModes.includes(displayMode) && compatibleModes.length > 0) {
       setDisplayModeState(getDefaultMode());
     }
-  }, [compatibleModes, displayMode, getDefaultMode]);
+  }, [initialMode, hasChords, hasLyrics, compatibleModes, displayMode, getDefaultMode]);
 
   const setDisplayMode = useCallback((mode: LiveDisplayMode) => {
     setDisplayModeState(mode);

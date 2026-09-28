@@ -11,12 +11,18 @@ import {
 
 interface LiveModeProps {
   preset: SongPreset;
+  initialMode?: 'chords' | 'lyrics' | 'both';
   onClose: () => void;
   transposeOffset?: number;
 }
 
-export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveModeProps) {
-  const state = useLiveModeState(preset, onClose, transposeOffset);
+export default function LiveMode({
+  preset,
+  initialMode,
+  onClose,
+  transposeOffset = 0,
+}: LiveModeProps) {
+  const state = useLiveModeState(preset, onClose, transposeOffset, initialMode);
 
   if (!state.hasLiveContent) {
     return (
@@ -59,16 +65,13 @@ export default function LiveMode({ preset, onClose, transposeOffset = 0 }: LiveM
   }
 
   const isChordsOnly =
-    state.contentCategory === 'chords_only' ||
     state.displayMode === 'chords_both' ||
     state.displayMode === 'chords_diagram' ||
     state.displayMode === 'chords_name';
 
   const isHybrid =
     state.displayMode === 'lyrics_chord_diagram' ||
-    (state.contentCategory === 'hybrid' &&
-      state.displayMode !== 'lyrics_only' &&
-      state.displayMode !== 'lyrics_chord_name');
+    state.displayMode === 'lyrics_chord_name';
 
   return (
     <div

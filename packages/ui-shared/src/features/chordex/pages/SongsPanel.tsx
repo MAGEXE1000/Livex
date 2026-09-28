@@ -4760,6 +4760,7 @@ export default function SongsPanel() {
         {showLive && (
           <LiveMode
             preset={activePreset}
+            initialMode={editorViewMode}
             onClose={() => setShowLive(false)}
             transposeOffset={transposeOffset}
           />
