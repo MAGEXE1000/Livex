@@ -58,6 +58,7 @@ export * from './lib/devTools';
 export * from './lib/diagnostics/index';
 export * from './lib/devtools/developerInspectorStore';
 export * from './lib/lyricsService';
+export * from './lib/songTimingEngine';
 export * from './data/authorizedChords';
 export * from './lib/chordService';
 export * from './lib/chord/chordResolution';

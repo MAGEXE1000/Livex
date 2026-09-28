@@ -9,6 +9,8 @@ export interface FormData {
   bpm: string;
   key: string;
   notes: string;
+  durationMinutes?: string;
+  durationSeconds?: string;
 }
 const KEYS = [
   'C',
@@ -56,7 +58,7 @@ export function PresetFormContent({
 }: PresetFormContentProps) {
   const t = useT();
   const [form, setForm] = useState<FormData>(
-    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '' }
+    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '', durationMinutes: '', durationSeconds: '' }
   );
 
   useEffect(() => {
@@ -128,6 +130,113 @@ export function PresetFormContent({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Song Duration Control (Minutes : Seconds) */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <label style={labelStyle}>Song Duration</label>
+          {(form.durationMinutes || form.durationSeconds) && (
+            <button
+              type="button"
+              data-testid="clear-song-duration-btn"
+              onClick={() => setForm((f) => ({ ...f, durationMinutes: '', durationSeconds: '' }))}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--c-accent-from, #2563EB)',
+                fontFamily: 'var(--font-headline)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '0 4px',
+              }}
+            >
+              Auto (from BPM)
+            </button>
+          )}
+        </div>
+        <div
+          data-testid="song-duration-control"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              data-testid="song-duration-minutes"
+              value={form.durationMinutes ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const raw = e.target.value;
+                const val = raw === '' ? '' : Math.max(0, Math.min(59, parseInt(raw, 10) || 0)).toString();
+                setForm((f) => ({ ...f, durationMinutes: val }));
+              }}
+              style={{
+                ...selectStyle,
+                textAlign: 'center',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontWeight: 700,
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: '11px',
+                color: 'var(--c-text-muted, #8A92A6)',
+                pointerEvents: 'none',
+                fontWeight: 600,
+              }}
+            >
+              min
+            </span>
+          </div>
+          <span style={{ color: 'var(--c-text-muted, #8A92A6)', fontWeight: 800, fontSize: '16px' }}>:</span>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              data-testid="song-duration-seconds"
+              value={form.durationSeconds ?? ''}
+              placeholder="00"
+              onChange={(e) => {
+                const raw = e.target.value;
+                const val = raw === '' ? '' : Math.max(0, Math.min(59, parseInt(raw, 10) || 0)).toString();
+                setForm((f) => ({ ...f, durationSeconds: val }));
+              }}
+              style={{
+                ...selectStyle,
+                textAlign: 'center',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontWeight: 700,
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: '11px',
+                color: 'var(--c-text-muted, #8A92A6)',
+                pointerEvents: 'none',
+                fontWeight: 600,
+              }}
+            >
+              sec
+            </span>
+          </div>
         </div>
       </div>
       <div>

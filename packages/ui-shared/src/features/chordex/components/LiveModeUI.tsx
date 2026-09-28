@@ -16,6 +16,7 @@ import {
   getChordById,
   type LyricTextSpan,
   type GuitarChordData,
+  formatDurationMmSs,
 } from '@workspace/livex-core';
 
 /* ── STYLES & KEYFRAMES INJECTION ────────────────────────────── */
@@ -138,6 +139,32 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     displayMode === 'lyrics_chord_diagram' ||
     displayMode === 'lyrics_chord_name';
 
+  const isPaced = Boolean(state.timingSchedule?.isDurationPaced);
+  const durationText = isPaced
+    ? `${formatDurationMmSs(Math.round(state.elapsedMs / 1000))} / ${formatDurationMmSs(Math.round(state.timingSchedule.effectiveDurationMs / 1000))}`
+    : `${formatDurationMmSs(Math.round(state.timingSchedule.effectiveDurationMs / 1000))}`;
+
+  const durationBadge = (
+    <span
+      data-testid="live-header-duration"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px',
+        padding: isPaced ? '1px 5px' : '0',
+        borderRadius: '5px',
+        background: isPaced ? `${accent.from}22` : 'transparent',
+        color: isPaced ? accent.from : 'inherit',
+        fontWeight: isPaced ? 700 : 'inherit',
+      }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>
+        timer
+      </span>
+      {durationText}
+    </span>
+  );
+
   const subtitle = (() => {
     if (isHybridMode) {
       return (
@@ -147,6 +174,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <span>KEY {preset.key || 'C'}</span>
           <span style={{ opacity: 0.4 }}>•</span>
           <span>{bpmOverride} BPM</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          {durationBadge}
         </span>
       );
     }
@@ -156,6 +185,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
           <span style={{ opacity: 0.4 }}>•</span>
           <span>{bpmOverride} BPM</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          {durationBadge}
           {preset.artist ? (
             <>
               <span style={{ opacity: 0.4 }}>•</span>
@@ -178,7 +209,17 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         </span>
       );
     }
-    return `CHORDS • KEY ${preset.key || 'C'} • ${bpmOverride} BPM`;
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ color: accent.from, fontWeight: 700 }}>CHORDS</span>
+        <span style={{ opacity: 0.4 }}>•</span>
+        <span>KEY {preset.key || 'C'}</span>
+        <span style={{ opacity: 0.4 }}>•</span>
+        <span>{bpmOverride} BPM</span>
+        <span style={{ opacity: 0.4 }}>•</span>
+        {durationBadge}
+      </span>
+    );
   })();
 
   return (
@@ -2853,6 +2894,216 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* ── 4b. TARGET SONG DURATION (LIVE PACING) ───────────── */}
+          <div
+            data-testid="live-settings-duration-card"
+            style={{
+              padding: '14px',
+              borderRadius: '16px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: `1px solid ${state.timingSchedule?.isDurationPaced ? accent.from + '44' : 'rgba(255, 255, 255, 0.08)'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                  }}
+                >
+                  Target Song Duration
+                </p>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'Inter',
+                    marginTop: '2px',
+                  }}
+                >
+                  {state.timingSchedule?.isDurationPaced
+                    ? `Paced to finish in exact duration (effective tempo: ${state.timingSchedule.effectiveBpm} BPM)`
+                    : `Auto-calculated from BPM & chords (~${formatDurationMmSs(state.timingSchedule?.effectiveDurationMs / 1000)})`}
+                </p>
+              </div>
+              <span
+                data-testid="duration-status-badge"
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  fontFamily: 'var(--studio-font-body)',
+                  letterSpacing: '0.04em',
+                  background: state.timingSchedule?.isDurationPaced ? `${accent.from}22` : 'rgba(255, 255, 255, 0.06)',
+                  color: state.timingSchedule?.isDurationPaced ? accent.from : 'var(--c-text-secondary)',
+                  border: `1px solid ${state.timingSchedule?.isDurationPaced ? accent.from + '44' : 'rgba(255, 255, 255, 0.1)'}`,
+                }}
+              >
+                {state.timingSchedule?.isDurationPaced ? 'PACED' : 'AUTO'}
+              </span>
+            </div>
+
+            {/* Stepper + Display Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                aria-label="Decrease target duration"
+                data-testid="duration-decrease-btn"
+                onClick={() => {
+                  const current = state.targetDurationSeconds || Math.round(state.timingSchedule.effectiveDurationMs / 1000);
+                  const next = Math.max(30, current - 15);
+                  state.setTargetDurationSeconds(next);
+                }}
+                className="btn-smooth"
+                style={{
+                  width: '42px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                }}
+              >
+                -15s
+              </button>
+
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  padding: '6px 12px',
+                  borderRadius: '12px',
+                  border: `1px solid ${state.timingSchedule?.isDurationPaced ? accent.from + '66' : 'rgba(255, 255, 255, 0.15)'}`,
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{
+                    fontSize: '18px',
+                    color: state.timingSchedule?.isDurationPaced ? accent.from : 'rgba(255,255,255,0.7)',
+                  }}
+                >
+                  timer
+                </span>
+                <span
+                  data-testid="current-target-duration-text"
+                  style={{
+                    fontFamily: 'var(--studio-font-mono, monospace)',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    color: state.timingSchedule?.isDurationPaced ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {formatDurationMmSs(
+                    state.targetDurationSeconds || Math.round(state.timingSchedule.effectiveDurationMs / 1000)
+                  )}
+                </span>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginLeft: '2px' }}>
+                  {state.targetDurationSeconds ? 'fixed' : 'est'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Increase target duration"
+                data-testid="duration-increase-btn"
+                onClick={() => {
+                  const current = state.targetDurationSeconds || Math.round(state.timingSchedule.effectiveDurationMs / 1000);
+                  const next = Math.min(1800, current + 15);
+                  state.setTargetDurationSeconds(next);
+                }}
+                className="btn-smooth"
+                style={{
+                  width: '42px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                }}
+              >
+                +15s
+              </button>
+            </div>
+
+            {/* Quick presets row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+              {[
+                { label: 'Auto', sec: undefined },
+                { label: '2:30', sec: 150 },
+                { label: '3:00', sec: 180 },
+                { label: '4:00', sec: 240 },
+                { label: '5:00', sec: 300 },
+              ].map((p) => {
+                const isSelected =
+                  p.sec === undefined
+                    ? !state.targetDurationSeconds
+                    : state.targetDurationSeconds === p.sec;
+
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    data-testid={`duration-preset-${p.label.replace(':', '-')}`}
+                    onClick={() => state.setTargetDurationSeconds(p.sec)}
+                    className="btn-smooth"
+                    style={{
+                      padding: '8px 2px',
+                      borderRadius: '10px',
+                      background: isSelected
+                        ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                        : 'rgba(255, 255, 255, 0.06)',
+                      color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: isSelected ? `0 2px 10px ${accent.to}33` : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* ── 5. VIEW & TELEPROMPTER OPTIONS ─────────────────────── */}

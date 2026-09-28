@@ -34,6 +34,7 @@ import {
   logActivity,
   useNavigationStore,
   useSettingsStore,
+  formatDurationMmSs,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -3969,6 +3970,20 @@ const PresetCard = React.memo(
                   ? `${preset.sections.length} ${preset.sections.length === 1 ? 'Section' : 'Sections'}`
                   : t.songs.chordsLabel(preset.chords.length)}
               </span>
+              {preset.targetDurationSeconds && preset.targetDurationSeconds > 0 ? (
+                <span
+                  data-testid={`preset-duration-${preset.id}`}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold border inline-flex items-center gap-1"
+                  style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                    borderColor: 'rgba(59, 130, 246, 0.25)',
+                    color: '#2563eb',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
+                  {formatDurationMmSs(preset.targetDurationSeconds)}
+                </span>
+              ) : null}
             </div>
           </div>
           <span
@@ -4522,13 +4537,21 @@ export default function SongsPanel() {
 
 
   const editingPreset = editingId ? presets.find((p) => p.id === editingId) : null;
-  const editingFormData = editingPreset
+  const editingFormData: FormData | undefined = editingPreset
     ? {
         name: editingPreset.name,
         artist: editingPreset.artist,
         bpm: String(editingPreset.bpm),
         key: editingPreset.key,
         notes: editingPreset.notes,
+        durationMinutes:
+          editingPreset.targetDurationSeconds && editingPreset.targetDurationSeconds > 0
+            ? String(Math.floor(editingPreset.targetDurationSeconds / 60))
+            : '',
+        durationSeconds:
+          editingPreset.targetDurationSeconds && editingPreset.targetDurationSeconds > 0
+            ? String(editingPreset.targetDurationSeconds % 60)
+            : '',
       }
     : pendingImport
       ? {
@@ -4537,11 +4560,27 @@ export default function SongsPanel() {
           bpm: String(pendingImport.bpm || 120),
           key: pendingImport.key || 'C',
           notes: pendingImport.notes || '',
+          durationMinutes:
+            pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
+              ? String(Math.floor(pendingImport.targetDurationSeconds / 60))
+              : '',
+          durationSeconds:
+            pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
+              ? String(pendingImport.targetDurationSeconds % 60)
+              : '',
         }
       : undefined;
 
   const handleFormSave = (data: FormData) => {
     const bpm = parseInt(data.bpm) || 120;
+    const min = parseInt(data.durationMinutes || '', 10) || 0;
+    const sec = parseInt(data.durationSeconds || '', 10) || 0;
+    const hasDurationInput = Boolean(
+      (data.durationMinutes && data.durationMinutes.trim() !== '') ||
+      (data.durationSeconds && data.durationSeconds.trim() !== '')
+    );
+    const targetDurationSeconds = hasDurationInput && min * 60 + sec > 0 ? min * 60 + sec : undefined;
+
     if (editingId) {
       updatePreset(editingId, {
         name: data.name,
@@ -4549,6 +4588,7 @@ export default function SongsPanel() {
         bpm,
         key: data.key,
         notes: data.notes,
+        targetDurationSeconds,
       });
     } else {
       const chordsToImport = pendingImport?.chordIds || [];
@@ -4571,6 +4611,7 @@ export default function SongsPanel() {
         notes: data.notes,
         chords: chordsToImport,
         sections: sectionsToImport,
+        targetDurationSeconds,
       });
 
       clearPendingImport();
@@ -4844,6 +4885,21 @@ export default function SongsPanel() {
                     <span>{displayKey}</span>
                     <span className="opacity-40">•</span>
                     <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
+                    {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
+                      <>
+                        <span className="opacity-40">•</span>
+                        <span
+                          data-testid="editor-header-duration"
+                          className="inline-flex items-center gap-1 font-bold"
+                          style={{
+                            color: '#2563eb',
+                          }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
+                          {formatDurationMmSs(activePreset.targetDurationSeconds)}
+                        </span>
+                      </>
+                    ) : null}
                   </span>
                 )
               }

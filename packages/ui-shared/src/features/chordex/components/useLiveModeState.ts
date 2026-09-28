@@ -16,6 +16,10 @@ import {
   type SongLyricLine,
   type LyricChordPlacement,
   type VocalRoleAnnotation,
+  calculateSongTimingSchedule,
+  formatDurationMmSs,
+  parseDurationMmSs,
+  type SongTimingSchedule,
 } from '@workspace/livex-core';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
@@ -139,6 +143,13 @@ export interface LiveModeState {
   currentBar: number;
   msPerChord: number;
   msPerLine: number;
+
+  // Duration & Timing Engine
+  targetDurationSeconds?: number;
+  setTargetDurationSeconds: (sec: number | undefined | ((prev: number | undefined) => number | undefined)) => void;
+  timingSchedule: SongTimingSchedule;
+  elapsedMs: number;
+  setElapsedMs: (ms: number | ((prev: number) => number)) => void;
 
   // Navigation actions
   goNext: () => void;
@@ -429,6 +440,34 @@ export function useLiveModeState(
     [preset?.id]
   );
 
+  const [targetDurationSeconds, setTargetDurationSecondsState] = useState<number | undefined>(
+    preset.targetDurationSeconds
+  );
+
+  // Sync if preset.targetDurationSeconds changes externally
+  useEffect(() => {
+    setTargetDurationSecondsState(preset.targetDurationSeconds);
+  }, [preset.targetDurationSeconds]);
+
+  const setTargetDurationSeconds = useCallback(
+    (action: number | undefined | ((prev: number | undefined) => number | undefined)) => {
+      let nextDuration: number | undefined;
+      setTargetDurationSecondsState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextDuration = raw && raw > 0 ? Math.round(raw) : undefined;
+        return nextDuration;
+      });
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, { targetDurationSeconds: nextDuration });
+          } catch (_) {}
+        });
+      }
+    },
+    [preset?.id]
+  );
+
   const teleprompterContainerRef = useRef<HTMLDivElement | null>(null);
 
   // ── Chord Progression Data ──────────────────────────────────────
@@ -451,10 +490,21 @@ export function useLiveModeState(
   }, [preset.chords, preset.sections, transposeOffset]);
   const total = chords.length;
 
+  // ── Deterministic Musical Timing Schedule ────────────────────────
+  const timingSchedule = useMemo(() => {
+    return calculateSongTimingSchedule(preset, {
+      bpmOverride,
+      beatsPerChord,
+      beatsPerLine,
+      targetDurationOverride: targetDurationSeconds,
+    });
+  }, [preset, bpmOverride, beatsPerChord, beatsPerLine, targetDurationSeconds]);
+
   // ── Teleprompter Lines Data ─────────────────────────────────────
   const lineDurationMs = useMemo(() => {
-    return (60000 / (bpmOverride || 120)) * beatsPerLine;
-  }, [bpmOverride, beatsPerLine]);
+    const nominal = (60000 / (bpmOverride || 120)) * beatsPerLine;
+    return nominal * (timingSchedule.pacingFactor || 1);
+  }, [bpmOverride, beatsPerLine, timingSchedule.pacingFactor]);
 
   const teleprompterLines = useMemo<TeleprompterLineItem[]>(() => {
     const sections = preset.lyrics?.sections;
@@ -859,9 +909,41 @@ export function useLiveModeState(
   }, [currentLineIdx, isTeleprompterMode]);
 
   // ── Musical Timing Constants ─────────────────────────────────────
-  const beatDurationMs = (60000 / (bpmOverride || 120)) / (playbackSpeed || 1);
+  const pacingFactor = timingSchedule.pacingFactor || 1.0;
+  const beatDurationMs = ((60000 / (bpmOverride || 120)) * pacingFactor) / (playbackSpeed || 1);
   const msPerChord = beatDurationMs * beatsPerChord;
   const msPerLine = beatDurationMs * beatsPerLine;
+
+  // ── Monotonic Elapsed Performance Time Tracking ──────────────────
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  // Sync elapsed progress to start timestamp of active item on seek/jump
+  useEffect(() => {
+    if (isTeleprompterMode) {
+      const scheduledLine = timingSchedule.lines[currentLineIdx];
+      if (scheduledLine) {
+        setElapsedMs(scheduledLine.startTimeMs);
+      }
+    } else {
+      const scheduledChord = timingSchedule.chords[currentIdx];
+      if (scheduledChord) {
+        setElapsedMs(scheduledChord.startTimeMs);
+      }
+    }
+  }, [currentLineIdx, currentIdx, isTeleprompterMode, timingSchedule]);
+
+  // Periodic 1Hz elapsed clock during autoPlay (minimal render footprint)
+  useEffect(() => {
+    if (!autoPlay) return;
+    const interval = setInterval(() => {
+      setElapsedMs((prev) => {
+        const next = prev + 1000 * (playbackSpeed || 1);
+        const total = timingSchedule.effectiveDurationMs;
+        return next > total ? 0 : next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [autoPlay, playbackSpeed, timingSchedule.effectiveDurationMs]);
 
   // ── Precision Musical Beat Clock (Decoupled & Drift-Compensated) ──
   useEffect(() => {
@@ -896,7 +978,9 @@ export function useLiveModeState(
   // ── Precision Chords Auto-Play Timer (Drift-Compensated) ─────────
   useEffect(() => {
     if (isTeleprompterMode || !autoPlay || bpmOverride <= 0 || total === 0) return;
-    let expectedTime = performance.now() + msPerChord;
+    const scheduledChord = timingSchedule.chords[currentIdx];
+    const actualChordMs = (scheduledChord ? scheduledChord.durationMs : msPerChord) / (playbackSpeed || 1);
+    let expectedTime = performance.now() + actualChordMs;
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const tickChord = () => {
@@ -906,12 +990,12 @@ export function useLiveModeState(
       goNext();
       playChordSound();
 
-      expectedTime += msPerChord;
-      const nextDelay = Math.max(0, msPerChord - drift);
+      expectedTime += actualChordMs;
+      const nextDelay = Math.max(0, actualChordMs - drift);
       timerId = setTimeout(tickChord, nextDelay);
     };
 
-    timerId = setTimeout(tickChord, msPerChord);
+    timerId = setTimeout(tickChord, actualChordMs);
 
     return () => {
       if (timerId) clearTimeout(timerId);
@@ -922,6 +1006,8 @@ export function useLiveModeState(
     bpmOverride,
     playbackSpeed,
     msPerChord,
+    currentIdx,
+    timingSchedule.chords,
     total,
     goNext,
     playChordSound,
@@ -940,10 +1026,13 @@ export function useLiveModeState(
   useEffect(() => {
     if (!isTeleprompterMode || !autoPlay || bpmOverride <= 0 || totalLines === 0) return;
 
+    const scheduledLine = timingSchedule.lines[currentLineIdx];
+    const actualLineMs = (scheduledLine ? scheduledLine.durationMs : msPerLine) / (playbackSpeed || 1);
+
     const activeLine = teleprompterLines[currentLineIdx];
     const lineWords = activeLine?.words || [];
     const wordCount = Math.max(1, lineWords.length);
-    const wordDurationMs = msPerLine / wordCount;
+    const wordDurationMs = actualLineMs / wordCount;
 
     // Find current word's relative index in activeLine
     let localWordIdx = 0;
@@ -1004,6 +1093,7 @@ export function useLiveModeState(
     playbackSpeed,
     msPerLine,
     currentLineIdx,
+    timingSchedule.lines,
     seekToken,
     totalLines,
     teleprompterLines,
@@ -1209,6 +1299,11 @@ export function useLiveModeState(
     currentBar,
     msPerChord,
     msPerLine,
+    targetDurationSeconds,
+    setTargetDurationSeconds,
+    timingSchedule,
+    elapsedMs,
+    setElapsedMs,
     goNext,
     goPrev,
     stepWordForward,
