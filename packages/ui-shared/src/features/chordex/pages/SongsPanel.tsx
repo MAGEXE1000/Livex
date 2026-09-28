@@ -5326,7 +5326,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5337,7 +5337,7 @@ export default function SongsPanel() {
               >
                 {!isWebDesktop && (
                   <div
-                    className="w-full flex items-center justify-center pointer-events-auto mb-3"
+                    className="w-full flex items-center justify-center pointer-events-auto mb-2"
                     style={{ flexShrink: 0 }}
                   >
                     <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
@@ -5369,14 +5369,14 @@ export default function SongsPanel() {
                 ref={editorScrollRef}
                 className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
                 style={{
-                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingBottom:
                     'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                 }}
                 data-purpose="empty-chord-progression"
               >
                 <div
-                  className="w-full flex items-center justify-center pointer-events-auto mb-6"
+                  className="w-full flex items-center justify-center pointer-events-auto mb-2"
                   style={{ flexShrink: 0 }}
                 >
                   <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
@@ -5432,7 +5432,7 @@ export default function SongsPanel() {
               style={{
                 paddingTop: isWebDesktop
                   ? '16px'
-                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
@@ -5445,7 +5445,7 @@ export default function SongsPanel() {
             >
               {!isWebDesktop && (
                 <div
-                  className="w-full flex items-center justify-center pointer-events-auto mb-3"
+                  className="w-full flex items-center justify-center pointer-events-auto mb-2"
                   style={{ flexShrink: 0 }}
                 >
                   <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
@@ -5501,7 +5501,10 @@ export default function SongsPanel() {
               {hasSections ? (
                 /* ── Sections view ── */
                 <div
-                  style={{ paddingTop: '8px', paddingBottom: '16px' }}
+                  style={{
+                    paddingTop: '0px',
+                    paddingBottom: editorViewMode === 'both' ? '8px' : '16px',
+                  }}
                   onPointerMove={onSecDragMove}
                   onPointerUp={onSecDragEnd}
                   onPointerCancel={onSecDragEnd}
@@ -5886,8 +5889,8 @@ export default function SongsPanel() {
                 <>
                   <div
                     style={{
-                      paddingTop: '8px',
-                      paddingBottom: '24px',
+                      paddingTop: '0px',
+                      paddingBottom: editorViewMode === 'both' ? '8px' : '24px',
                       position: 'relative',
                       height: dragIdx !== null ? `${localChords.length * ITEM_H + 32}px` : 'auto',
                     }}
@@ -6093,7 +6096,7 @@ export default function SongsPanel() {
               {/* In 'both' mode: Render SongLyricsEditor below the chords with streamlined container */}
               {editorViewMode === 'both' && (
                 <div
-                  className="mt-4 pt-3 border-t flex-1 flex flex-col min-h-0"
+                  className="mt-2.5 pt-2 border-t flex-1 flex flex-col min-h-0"
                   style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
                 >
                   <SongLyricsEditor

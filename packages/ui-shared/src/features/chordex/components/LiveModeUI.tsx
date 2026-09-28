@@ -693,7 +693,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '20px 20px 100px',
+        padding: '12px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
       }}
     >
       {/* Ambient background glow */}
@@ -1305,7 +1305,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: '16px 24px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
+          padding: '10px 20px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 100px)',
           display: 'flex',
           flexDirection: 'column',
           gap: fontSizes.lineGap,
@@ -1848,15 +1848,15 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '20px 20px 100px',
+        justifyContent: 'flex-start',
+        padding: '12px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 96px)',
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
         boxSizing: 'border-box',
       }}
     >
       {/* Top Hero Stage Chord Card */}
-      <div style={{ width: '100%', maxWidth: '420px', zIndex: 1, marginTop: '8px' }}>
+      <div style={{ width: '100%', maxWidth: '420px', zIndex: 1, margin: '0 auto' }}>
         <StageChordCard
           chord={activeHybridChord}
           accent={accent}
@@ -1874,7 +1874,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          margin: '20px 0',
+          margin: '16px 0 12px',
           zIndex: 1,
         }}
       >
