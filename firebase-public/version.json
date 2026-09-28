@@ -1,21 +1,24 @@
 {
   "platform": "web",
-  "version": "4.6.61",
-  "versionName": "4.6.61",
-  "versionCode": 40661,
-  "version_code": 40661,
-  "commit": "5e936667",
-  "releasedAt": "9/27/2026, 7:49:40 PM CST",
-  "buildTimestamp": "9/27/2026, 7:49:40 PM CST",
+  "version": "4.6.62",
+  "versionName": "4.6.62",
+  "versionCode": 40662,
+  "version_code": 40662,
+  "commit": "f47e9ea8",
+  "releasedAt": "9/27/2026, 11:45:25 PM CST",
+  "buildTimestamp": "9/27/2026, 11:45:25 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).\n• Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.\n• Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.\n• Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.",
-  "whatsNew": "• Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).\n• Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.\n• Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.\n• Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.",
+  "changelog": "• Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.\n• Word Repositioning Actions: Direct navigation controls (\"← Prev Word\", \"Next Word →\") within the chord adjustment modal to shift chords across lyrics with instant visual preview.\n• Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.\n• Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.\n• View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.",
+  "whatsNew": "• Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.\n• Word Repositioning Actions: Direct navigation controls (\"← Prev Word\", \"Next Word →\") within the chord adjustment modal to shift chords across lyrics with instant visual preview.\n• Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.\n• Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.\n• View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.",
   "releaseNotes": {
+    "added": [
+      "Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.",
+      "Word Repositioning Actions: Direct navigation controls (\"← Prev Word\", \"Next Word →\") within the chord adjustment modal to shift chords across lyrics with instant visual preview."
+    ],
     "fixed": [
-      "Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).",
-      "Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.",
-      "Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.",
-      "Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency."
+      "Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.",
+      "Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.",
+      "View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations."
     ]
   },
   "mandatory": false

@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.61';
-export const NATIVE_VERSION_CODE = 40661;
-export const WEB_VERSION = '4.6.61';
+export const NATIVE_VERSION = '4.6.62';
+export const NATIVE_VERSION_CODE = 40662;
+export const WEB_VERSION = '4.6.62';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,19 +70,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/27/2026';
+export const APP_VERSION_DATE = '9/28/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '5e936667';
+export const APP_COMMIT_SHA = 'f47e9ea8';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/27/2026, 7:49:40 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/28/2026, 12:00:00 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -99,12 +99,18 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.',
+      'Word Repositioning Actions: Direct navigation controls ("← Prev Word", "Next Word →") within the chord adjustment modal to shift chords across lyrics with instant visual preview.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).',
-      'Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.',
-      'Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.',
-      'Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.',
+      'Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.',
+      'Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.',
+      'View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.',
     ],
   },
 ];
@@ -116,6 +122,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.62',
+    date: '2026-09-28',
+    highlights: [
+      'Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.',
+      'Word Repositioning Actions: Direct navigation controls ("← Prev Word", "Next Word →") within the chord adjustment modal to shift chords across lyrics with instant visual preview.',
+      'Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.',
+      'Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.',
+      'View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.',
+    ],
+  },
   {
     version: '4.6.61',
     date: '2026-09-27',
@@ -207,18 +224,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Performance Diagnostics Layout: Fixed character-by-character vertical text splitting on narrow mobile Android screens by restructuring the Top Banner Row to a vertical flex column and replacing aggressive `wordBreak: break-word` with `overflowWrap: break-word, wordBreak: normal`.',
       'Compact Diagnostics Presentation: Rebalanced 6 core telemetry cards into an ergonomic 2-column mobile grid, compacted actionable performance warning badges, and implemented single-line ellipsis truncation on long tasks, routes, and component profiler metrics.',
       'Hub Navigation Performance: Eliminated 220ms synchronous navigation transition blocking task by removing eager sub-page pre-mounting in Hub Settings, and replaced layout projection reflows with GPU-accelerated CSS transforms on hub cards.',
-    ],
-  },
-  {
-    version: '4.6.52',
-    date: '2026-09-26',
-    highlights: [
-      'Freeverb IR Web Worker Offloading: Offloaded Freeverb impulse response generation (~1.16M floating-point calculations) to a background Web Worker, eliminating the main-thread freeze on first drum playback with reverb.',
-      'HouseKit Concurrency Cap: Implemented concurrency-capped worker queue for HouseKit audio asset loading, reducing simultaneous `decodeAudioData` operations from ~140 to 6 to eliminate memory pressure and audio thread starvation.',
-      'Audio Clock Sentinel Gate Cleanup: Replaced JavaScript `setTimeout` timers in audio note gate envelopes with audio-clock-accurate `AudioBufferSourceNode` sentinel callbacks, eliminating main-thread timer jitter and graph node accumulation.',
-      'DOM MutationObserver Header Detection: Replaced aggressive 50ms interval polling in navigation scroll observer with `MutationObserver`, completely eliminating idle CPU cycles when DOM elements are mounting.',
-      'Audio Hot-Loop Optimization: Hoisted Zustand store reads out of the per-step audio sequencer tick loop, eliminating repetitive allocations and state queries during playback.',
-      'Sync Engine Debounce & Auto-Backup Guards: Added empty-patch dirty check to `setStatus()`, debounced device registration to 5 minutes, and guarded auto-backup checks to eliminate redundant background sync work.',
     ],
   },
 ];
