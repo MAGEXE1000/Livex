@@ -30,6 +30,7 @@ export interface PerformanceTimingItem {
   durationMs: number;
   startTimeMs: number;
   endTimeMs: number;
+  isFixedDuration?: boolean;
   data?: any;
 }
 
@@ -110,6 +111,7 @@ export function calculateSongTimingSchedule(
   const hasLyrics = lyricsSections.some((s) => s.lines && s.lines.length > 0);
 
   let runningNominalTotal = 0;
+  let totalFixedDurationMs = 0;
 
   if (hasLyrics) {
     // ── LYRICS & HYBRID TIMING CALCULATION ──
@@ -123,53 +125,87 @@ export function calculateSongTimingSchedule(
       const sectionLineIndices: number[] = [];
 
       secLines.forEach((line, lIdx) => {
-        const chordCount = (line.chords || []).length;
-        // Lines with more chords naturally carry more musical weight
-        const lineBeats = Math.max(beatsPerLine, chordCount * beatsPerChord);
-        const lineNominalMs = Math.round(lineBeats * beatDurationMs);
-        secNominalDuration += lineNominalMs;
+        const isFixed = line.type === 'interlude' || line.explicitDurationMs !== undefined;
+        let lineNominalMs = 0;
 
-        // Extract discrete words
-        const text = line.text || '';
-        const regex = /\S+/g;
-        let match: RegExpExecArray | null;
-        const lineWordMatches: { text: string; start: number; end: number }[] = [];
-        while ((match = regex.exec(text)) !== null) {
-          lineWordMatches.push({
-            text: match[0],
-            start: match.index,
-            end: match.index + match[0].length,
-          });
+        if (isFixed) {
+          lineNominalMs = Math.max(0, line.explicitDurationMs || 0);
+          totalFixedDurationMs += lineNominalMs;
+        } else {
+          const chordCount = (line.chords || []).length;
+          // Lines with more chords naturally carry more musical weight
+          const lineBeats = Math.max(beatsPerLine, chordCount * beatsPerChord);
+          lineNominalMs = Math.round(lineBeats * beatDurationMs);
         }
 
-        const wordCount = Math.max(1, lineWordMatches.length);
-        const wordNominalMs = lineNominalMs / wordCount;
+        secNominalDuration += lineNominalMs;
 
-        lineWordMatches.forEach((wm, wIdx) => {
-          const matchingChord =
-            line.chords?.find((c) => c.offset >= wm.start && c.offset < wm.end) ||
-            (wIdx === 0 ? line.chords?.find((c) => c.offset < wm.start) : undefined);
-
+        if (line.type === 'interlude') {
+          const text = line.text || '';
           words.push({
-            id: `word-${lineGlobalIdx}-${wIdx}`,
+            id: `word-${lineGlobalIdx}-0`,
             type: 'word',
             globalIndex: wordGlobalIdx++,
             sectionId: sec.id,
             sectionName: sec.name,
-            nominalDurationMs: wordNominalMs,
-            durationMs: wordNominalMs,
+            nominalDurationMs: lineNominalMs,
+            durationMs: lineNominalMs,
             startTimeMs: 0,
             endTimeMs: 0,
+            isFixedDuration: true,
             data: {
-              text: wm.text,
-              chord: matchingChord?.chord,
+              text,
+              chord: undefined,
               lineIdx: lineGlobalIdx,
-              wordIdxInLine: wIdx,
-              startOffset: wm.start,
-              endOffset: wm.end,
+              wordIdxInLine: 0,
+              startOffset: 0,
+              endOffset: text.length,
             },
           });
-        });
+        } else {
+          // Extract discrete words
+          const text = line.text || '';
+          const regex = /\S+/g;
+          let match: RegExpExecArray | null;
+          const lineWordMatches: { text: string; start: number; end: number }[] = [];
+          while ((match = regex.exec(text)) !== null) {
+            lineWordMatches.push({
+              text: match[0],
+              start: match.index,
+              end: match.index + match[0].length,
+            });
+          }
+
+          const wordCount = Math.max(1, lineWordMatches.length);
+          const wordNominalMs = lineNominalMs / wordCount;
+
+          lineWordMatches.forEach((wm, wIdx) => {
+            const matchingChord =
+              line.chords?.find((c) => c.offset >= wm.start && c.offset < wm.end) ||
+              (wIdx === 0 ? line.chords?.find((c) => c.offset < wm.start) : undefined);
+
+            words.push({
+              id: `word-${lineGlobalIdx}-${wIdx}`,
+              type: 'word',
+              globalIndex: wordGlobalIdx++,
+              sectionId: sec.id,
+              sectionName: sec.name,
+              nominalDurationMs: wordNominalMs,
+              durationMs: wordNominalMs,
+              startTimeMs: 0,
+              endTimeMs: 0,
+              isFixedDuration: isFixed,
+              data: {
+                text: wm.text,
+                chord: matchingChord?.chord,
+                lineIdx: lineGlobalIdx,
+                wordIdxInLine: wIdx,
+                startOffset: wm.start,
+                endOffset: wm.end,
+              },
+            });
+          });
+        }
 
         // Add chords placed on line
         (line.chords || []).forEach((c, cIdx) => {
@@ -184,6 +220,7 @@ export function calculateSongTimingSchedule(
             durationMs: chordNominalMs,
             startTimeMs: 0,
             endTimeMs: 0,
+            isFixedDuration: isFixed,
             data: { chord: c.chord, offset: c.offset, lineIdx: lineGlobalIdx },
           });
         });
@@ -198,6 +235,7 @@ export function calculateSongTimingSchedule(
           durationMs: lineNominalMs,
           startTimeMs: 0,
           endTimeMs: 0,
+          isFixedDuration: isFixed,
           data: { line, sectionType: sec.type, isFirstOfSection: lIdx === 0, isLastOfSection: lIdx === secLines.length - 1 },
         });
 
@@ -281,35 +319,64 @@ export function calculateSongTimingSchedule(
 
   // ── PACING SCALING FACTOR (lambda) ──
   const isDurationPaced = targetDurationMs > 0;
-  const pacingFactor = isDurationPaced ? targetDurationMs / totalNominalDurationMs : 1.0;
-  const effectiveDurationMs = isDurationPaced ? targetDurationMs : totalNominalDurationMs;
+  const scalableNominalMs = totalNominalDurationMs - totalFixedDurationMs;
+  const scalableTargetMs = targetDurationMs - totalFixedDurationMs;
+  const pacingFactor = (isDurationPaced && scalableNominalMs > 0) ? Math.max(0, scalableTargetMs) / scalableNominalMs : 1.0;
+  const effectiveDurationMs = isDurationPaced ? Math.max(totalFixedDurationMs, targetDurationMs) : totalNominalDurationMs;
   const effectiveBpm = Math.round((referenceBpm / pacingFactor) * 10) / 10;
 
   // ── MAP MONOTONIC START/END TIMESTAMPS ──
   const mapTimeline = (items: PerformanceTimingItem[], targetTotal: number) => {
     let cursor = 0;
+    let lastScalableIndex = -1;
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      const scaled = Math.round(it.nominalDurationMs * pacingFactor);
+      let scaled = it.nominalDurationMs;
+      if (!it.isFixedDuration && isDurationPaced) {
+         scaled = Math.round(it.nominalDurationMs * pacingFactor);
+         lastScalableIndex = i;
+      }
       it.durationMs = scaled;
       it.startTimeMs = cursor;
       cursor += scaled;
       it.endTimeMs = cursor;
     }
-    // Correct minor rounding delta on last item to guarantee exact total
-    if (items.length > 0) {
-      items[items.length - 1].endTimeMs = targetTotal;
-      items[items.length - 1].durationMs = Math.max(
-        1,
-        targetTotal - items[items.length - 1].startTimeMs
-      );
+    // Correct minor rounding delta on last scalable item to guarantee exact total
+    if (isDurationPaced && items.length > 0 && cursor !== targetTotal) {
+      const diff = targetTotal - cursor;
+      if (lastScalableIndex !== -1) {
+        const lastIt = items[lastScalableIndex];
+        lastIt.durationMs = Math.max(1, lastIt.durationMs + diff);
+        
+        cursor = lastIt.startTimeMs + lastIt.durationMs;
+        lastIt.endTimeMs = cursor;
+        for (let i = lastScalableIndex + 1; i < items.length; i++) {
+          const it = items[i];
+          it.startTimeMs = cursor;
+          cursor += it.durationMs;
+          it.endTimeMs = cursor;
+        }
+      }
     }
   };
 
-  mapTimeline(sections, effectiveDurationMs);
   mapTimeline(lines, effectiveDurationMs);
   mapTimeline(words, effectiveDurationMs);
   mapTimeline(chords, effectiveDurationMs);
+
+  // Recompute sections from lines/chords to ensure exact alignment with mixed fixed/scalable children
+  if (hasLyrics) {
+    sections.forEach(sec => {
+      const secLines = lines.filter(l => l.sectionId === sec.id);
+      if (secLines.length > 0) {
+        sec.startTimeMs = secLines[0].startTimeMs;
+        sec.endTimeMs = secLines[secLines.length - 1].endTimeMs;
+        sec.durationMs = sec.endTimeMs - sec.startTimeMs;
+      }
+    });
+  } else {
+    mapTimeline(sections, effectiveDurationMs);
+  }
 
   return {
     totalNominalDurationMs,

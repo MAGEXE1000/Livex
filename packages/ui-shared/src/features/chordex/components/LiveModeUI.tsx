@@ -1309,7 +1309,58 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 </div>
               )}
 
-              {/* Line Words & Chords */}
+              {/* Interlude Rendering */}
+              {item.line.type === 'interlude' ? (
+                <div
+                  className="w-full flex flex-col items-center justify-center p-6 rounded-2xl border"
+                  style={{
+                    backgroundColor: isActive
+                      ? `color-mix(in srgb, ${accent.from} 12%, rgba(255,255,255,0.03))`
+                      : 'var(--surface-container-low, rgba(255,255,255,0.02))',
+                    borderColor: isActive ? accent.from : 'var(--surface-topbar-border, rgba(255,255,255,0.08))',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <span
+                      className="material-symbols-rounded"
+                      style={{
+                        fontSize: '32px',
+                        color: isActive ? accent.from : 'var(--c-text-secondary)',
+                        animation: isActive ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+                      }}
+                    >
+                      hourglass_bottom
+                    </span>
+                    <div className="flex flex-col">
+                      <span
+                        style={{
+                          fontFamily: 'var(--studio-font-display)',
+                          fontSize: '28px',
+                          fontWeight: 800,
+                          color: isActive ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                          letterSpacing: '-0.02em',
+                        }}
+                      >
+                        {item.line.text || '(Solo)'}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--studio-font-mono)',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: isActive ? accent.from : 'var(--c-text-secondary)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {isActive && state.interludeRemainingSec !== null
+                          ? `${state.interludeRemainingSec}s remaining`
+                          : `${Math.round((item.line.explicitDurationMs || 0) / 1000)}s`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div
                 style={{
                   display: 'flex',
@@ -1392,6 +1443,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   })
                 )}
               </div>
+              )}
             </div>
           );
         })}
@@ -1836,7 +1888,45 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             lineHeight: 1.4,
           }}
         >
-          {currentLine?.words && currentLine.words.length > 0 ? (
+          {currentLine?.line.type === 'interlude' ? (
+            <div className="flex flex-col items-center justify-center py-4">
+              <span
+                className="material-symbols-rounded mb-2"
+                style={{
+                  fontSize: '40px',
+                  color: accent.from,
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                }}
+              >
+                hourglass_bottom
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                  fontSize: 'clamp(28px, 6vw, 42px)',
+                  fontWeight: 800,
+                  color: 'var(--c-text-primary)',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {currentLine.line.text || '(Solo)'}
+              </span>
+              <div className="mt-3 px-4 py-1.5 rounded-full" style={{ background: `${accent.from}1a`, border: `1px solid ${accent.from}33` }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    color: accent.from,
+                  }}
+                >
+                  {state.interludeRemainingSec !== null
+                    ? `${state.interludeRemainingSec}s remaining`
+                    : `${Math.round((currentLine.line.explicitDurationMs || 0) / 1000)}s`}
+                </span>
+              </div>
+            </div>
+          ) : currentLine?.words && currentLine.words.length > 0 ? (
             currentLine.words.map((w) => {
               const isWordActive = w.globalWordIdx === currentWordIdx;
               const isWordPassed = w.globalWordIdx < currentWordIdx;

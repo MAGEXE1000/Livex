@@ -47,12 +47,16 @@ export const VOCAL_ROLE_PRESETS: { type: StandardVocalRole; label: string; color
   { type: 'choir', label: 'Choir', color: '#f59e0b' },
 ];
 
+export type SongLyricLineType = 'lyric' | 'interlude';
+
 /**
  * A single line of lyrics with chord attachments, formatting, and annotations
  */
 export interface SongLyricLine {
   id: string; // Unique line ID
+  type?: SongLyricLineType;
   text: string; // Plain-text content of the line
+  explicitDurationMs?: number;
   chords?: LyricChordPlacement[]; // Chords placed at character offsets
   spans?: LyricTextSpan[]; // Optional rich formatted text spans
   format?: LyricSpanFormat; // Line-level formatting (e.g. color override, bold)

@@ -358,6 +358,56 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
+  const handleAddInterludeLine = useCallback(
+    (sectionId?: string, afterLineIdx?: number) => {
+      let createdLineId = '';
+      updateDoc((doc) => {
+        let targetSecId = sectionId;
+        let sections = [...doc.sections];
+
+        if (sections.length === 0) {
+          const newSec: SongLyricSection = {
+            id: generateLyricId('sec'),
+            type: 'custom',
+            name: '',
+            lines: [],
+          };
+          sections = [newSec];
+          targetSecId = newSec.id;
+        } else if (!targetSecId) {
+          targetSecId = sections[sections.length - 1].id;
+        }
+
+        const newLine: SongLyricLine = {
+          id: generateLyricId('line'),
+          type: 'interlude',
+          text: '(Solo)',
+          explicitDurationMs: 15000,
+        };
+        createdLineId = newLine.id;
+
+        const updatedSections = sections.map((sec) => {
+          if (sec.id !== targetSecId) return sec;
+          const lines = [...sec.lines];
+          if (afterLineIdx !== undefined && afterLineIdx >= 0) {
+            lines.splice(afterLineIdx + 1, 0, newLine);
+          } else {
+            lines.push(newLine);
+          }
+          return { ...sec, lines };
+        });
+
+        return { ...doc, sections: updatedSections };
+      });
+      // Do not focus the interlude as text by default, it uses a distinct UI
+      if (createdLineId) {
+        // Wait, for consistency we can clear editing line ID if we add an interlude
+        setEditingLineId(null);
+      }
+    },
+    [updateDoc]
+  );
+
   const handleDeleteLine = useCallback(
     (sectionId: string, lineId: string) => {
       updateDoc((doc) => ({
@@ -932,6 +982,126 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               {/* Freeform Script Lines in Section */}
               <div className="flex flex-col gap-1">
                 {section.lines.map((line, lineIdx) => {
+                  if (line.type === 'interlude') {
+                    const durSec = Math.round((line.explicitDurationMs || 0) / 1000);
+                    return (
+                      <div
+                        key={line.id || lineIdx}
+                        data-testid={`lyric-line-interlude-${section.id}-${lineIdx}`}
+                        className="group/line relative flex flex-col py-3 px-3.5 rounded-xl transition-all border my-1.5 shadow-xs"
+                        style={{
+                          backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.06)' : 'rgba(59, 130, 246, 0.10)',
+                          borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.22)' : 'rgba(59, 130, 246, 0.32)',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{
+                              backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.14)' : 'rgba(59, 130, 246, 0.22)',
+                              color: isEffectiveLight ? '#2563eb' : '#60a5fa',
+                            }}
+                          >
+                            <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
+                          </div>
+                          
+                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                            <input
+                              type="text"
+                              value={line.text}
+                              onChange={(e) => handleUpdateLineText(section.id, line.id, e.target.value)}
+                              placeholder="Event Label (e.g. Solo)"
+                              aria-label="Interlude event label"
+                              className="bg-transparent border-0 border-b outline-none text-sm font-bold pb-0.5 w-36 transition-colors"
+                              style={{
+                                color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
+                                borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
+                              }}
+                            />
+                            
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-xs font-bold uppercase tracking-wider"
+                                style={{ color: isEffectiveLight ? '#475569' : '#94a3b8' }}
+                              >
+                                Duration:
+                              </span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={600}
+                                value={durSec}
+                                aria-label="Interlude duration in seconds"
+                                onChange={(e) => {
+                                  const sec = parseInt(e.target.value, 10);
+                                  if (!isNaN(sec) && sec >= 0) {
+                                    updateDoc((doc) => ({
+                                      ...doc,
+                                      sections: doc.sections.map((s) =>
+                                        s.id === section.id
+                                          ? {
+                                              ...s,
+                                              lines: s.lines.map((l) =>
+                                                l.id === line.id
+                                                  ? { ...l, explicitDurationMs: Math.round(sec * 1000) }
+                                                  : l
+                                              ),
+                                            }
+                                          : s
+                                      ),
+                                    }));
+                                  }
+                                }}
+                                className="rounded-lg px-2.5 py-1 text-sm font-mono font-bold w-16 outline-none text-center shadow-xs transition-colors"
+                                style={{
+                                  backgroundColor: isEffectiveLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
+                                  border: isEffectiveLight ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.16)',
+                                  color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                                }}
+                              />
+                              <span
+                                className="text-xs font-mono font-semibold"
+                                style={{ color: isEffectiveLight ? '#64748b' : '#94a3b8' }}
+                              >
+                                sec
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="flex items-center justify-center px-2.5 py-1 rounded-lg border shadow-2xs"
+                              style={{
+                                backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.10)' : 'rgba(59, 130, 246, 0.18)',
+                                borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.35)',
+                              }}
+                            >
+                              <span
+                                className="text-xs font-black font-mono"
+                                style={{ color: isEffectiveLight ? '#1d4ed8' : '#93c5fd' }}
+                              >
+                                {durSec}s
+                              </span>
+                            </div>
+                            
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLine(section.id, line.id)}
+                              aria-label="Remove interlude event"
+                              className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                              style={{
+                                color: isEffectiveLight ? '#e11d48' : '#fb7185',
+                              }}
+                              title="Remove Interlude"
+                            >
+                              <span className="material-symbols-rounded text-lg">close</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const resolvedColor =
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
                   const isLineBold = Boolean(line.format?.bold);
@@ -1838,6 +2008,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     >
                       <span className="material-symbols-rounded text-base text-gray-400">add</span>
                       <span>+ Add Lyric Line</span>
+                    </button>
+
+                    {/* Add Interlude */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleAddInterludeLine();
+                        setActivePopover(null);
+                      }}
+                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                      style={{ color: 'var(--c-text-primary)' }}
+                    >
+                      <span className="material-symbols-rounded text-base text-gray-400">timer</span>
+                      <span>+ Add Timed Interlude</span>
                     </button>
 
                     {/* Copy Lyrics */}

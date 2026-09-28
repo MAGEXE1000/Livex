@@ -151,6 +151,7 @@ export interface LiveModeState {
   timingSchedule: SongTimingSchedule;
   elapsedMs: number;
   setElapsedMs: (ms: number | ((prev: number) => number)) => void;
+  interludeRemainingSec: number | null;
 
   // Navigation actions
   goNext: () => void;
@@ -242,9 +243,27 @@ export function splitLineIntoWords(
   chords: LyricChordPlacement[] | undefined,
   lineIdx: number,
   startGlobalIdx: number,
-  lineDurationMs: number = 2000
+  lineDurationMs: number = 2000,
+  lineType?: string
 ): TeleprompterWord[] {
   const safeText = text || '';
+
+  if (lineType === 'interlude') {
+    return [
+      {
+        id: `word-${lineIdx}-0`,
+        text: safeText,
+        chord: undefined,
+        globalWordIdx: startGlobalIdx,
+        lineIdx,
+        wordIdxInLine: 0,
+        startOffset: 0,
+        endOffset: safeText.length,
+        durationMs: lineDurationMs,
+      },
+    ];
+  }
+
   const regex = /\S+/g;
   let match: RegExpExecArray | null;
   const rawWords: { text: string; start: number; end: number }[] = [];
@@ -543,7 +562,8 @@ export function useLiveModeState(
           lineChords,
           globalIndex,
           runningWordGlobalIdx,
-          lineDurationMs
+          lineDurationMs,
+          line.type
         );
         runningWordGlobalIdx += words.length;
 
@@ -1048,9 +1068,13 @@ export function useLiveModeState(
     playChordSound,
   ]);
 
-  // ── Precision Lyrics & Both Teleprompter Auto-Play Timer ─────────
+  const [interludeRemainingSec, setInterludeRemainingSec] = useState<number | null>(null);
+
   const currentLineIdxRef = useRef(currentLineIdx);
   const currentWordIdxRef = useRef(currentWordIdx);
+  const wordRemainingMsRef = useRef<number>(0);
+  const wordStartTimestampRef = useRef<number>(0);
+
   useEffect(() => {
     currentLineIdxRef.current = currentLineIdx;
   }, [currentLineIdx]);
@@ -1059,7 +1083,21 @@ export function useLiveModeState(
   }, [currentWordIdx]);
 
   useEffect(() => {
-    if (!isTeleprompterMode || !autoPlay || bpmOverride <= 0 || totalLines === 0) return;
+    wordRemainingMsRef.current = 0;
+    wordStartTimestampRef.current = 0;
+  }, [seekToken]);
+
+  useEffect(() => {
+    if (!isTeleprompterMode || totalLines === 0) return;
+
+    if (!autoPlay || bpmOverride <= 0) {
+      if (wordStartTimestampRef.current > 0) {
+        const passed = performance.now() - wordStartTimestampRef.current;
+        wordRemainingMsRef.current = Math.max(0, (wordRemainingMsRef.current || 0) - passed);
+        wordStartTimestampRef.current = 0;
+      }
+      return;
+    }
 
     const scheduledLine = timingSchedule.lines[currentLineIdx];
     const actualLineMs = (scheduledLine ? scheduledLine.durationMs : msPerLine) / (playbackSpeed || 1);
@@ -1076,10 +1114,35 @@ export function useLiveModeState(
       localWordIdx = currentWord.wordIdxInLine;
     }
 
-    let expectedTime = performance.now() + wordDurationMs;
+    let currentWaitMs = wordDurationMs;
+    if (wordRemainingMsRef.current > 0) {
+      currentWaitMs = wordRemainingMsRef.current;
+    } else {
+      wordRemainingMsRef.current = wordDurationMs;
+    }
+
+    wordStartTimestampRef.current = performance.now();
+    let expectedTime = performance.now() + currentWaitMs;
     let timerId: ReturnType<typeof setTimeout> | null = null;
+    let interludeInterval: ReturnType<typeof setInterval> | null = null;
+
+    if (activeLine?.sectionType === 'interlude' || activeLine?.line?.type === 'interlude') {
+      const updateCountdown = () => {
+        if (!wordStartTimestampRef.current) return;
+        const passed = performance.now() - wordStartTimestampRef.current;
+        const remMs = Math.max(0, currentWaitMs - passed);
+        setInterludeRemainingSec(Math.ceil(remMs / 1000));
+      };
+      updateCountdown();
+      interludeInterval = setInterval(updateCountdown, 200);
+    } else {
+      setInterludeRemainingSec(null);
+    }
 
     const tickWord = () => {
+      wordRemainingMsRef.current = 0; // reset for next word
+      wordStartTimestampRef.current = performance.now();
+
       const now = performance.now();
       const drift = now - expectedTime;
 
@@ -1095,6 +1158,8 @@ export function useLiveModeState(
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
+        wordRemainingMsRef.current = wordDurationMs;
+        currentWaitMs = wordDurationMs;
         expectedTime += wordDurationMs;
         const nextDelay = Math.max(0, wordDurationMs - drift);
         timerId = setTimeout(tickWord, nextDelay);
@@ -1116,10 +1181,11 @@ export function useLiveModeState(
       }
     };
 
-    timerId = setTimeout(tickWord, wordDurationMs);
+    timerId = setTimeout(tickWord, currentWaitMs);
 
     return () => {
       if (timerId) clearTimeout(timerId);
+      if (interludeInterval) clearInterval(interludeInterval);
     };
   }, [
     isTeleprompterMode,
@@ -1359,6 +1425,7 @@ export function useLiveModeState(
     timingSchedule,
     elapsedMs,
     setElapsedMs,
+    interludeRemainingSec,
     goNext,
     goPrev,
     stepWordForward,
