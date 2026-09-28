@@ -5291,7 +5291,7 @@ export default function SongsPanel() {
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
-                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
+                    'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                   position: 'relative',
                 }}
                 data-purpose="editor-lyrics-area"
@@ -5373,13 +5373,15 @@ export default function SongsPanel() {
           return (
             <div
               ref={editorScrollRef}
-              className="flex-1 overflow-y-auto no-scrollbar"
+              className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0"
               style={{
                 paddingTop: isWebDesktop ? '16px' : '12px',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
-                  'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                  editorViewMode === 'both'
+                    ? 'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)'
+                    : 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
                 position: 'relative',
               }}
               data-purpose="editor-content-area"
@@ -6026,7 +6028,7 @@ export default function SongsPanel() {
               {/* In 'both' mode: Render SongLyricsEditor below the chords with streamlined container */}
               {editorViewMode === 'both' && (
                 <div
-                  className="mt-4 pt-3 border-t"
+                  className="mt-4 pt-3 border-t flex-1 flex flex-col min-h-0"
                   style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
                 >
                   <SongLyricsEditor

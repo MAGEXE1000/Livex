@@ -704,9 +704,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        className="flex-1 flex flex-col gap-4 outline-none"
+        className="flex-1 flex flex-col gap-4 outline-none min-h-full"
         style={{
-          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 96px)',
+          paddingBottom: '16px',
         }}
         data-purpose="teleprompter-writing-canvas"
       >
@@ -1055,7 +1055,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
         {/* ── 3. BOTTOM ACTIONS: CLEAN + ADD SECTION CONTROL ──────────── */}
         <div
-          className="flex flex-col items-center justify-center pt-6 pb-12 gap-3"
+          className="flex flex-col items-center justify-center pt-4 pb-2 gap-2"
           data-purpose="lyrics-bottom-actions"
         >
           <button
@@ -1526,7 +1526,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         style={{
           left: '50%',
           transform: 'translateX(-50%)',
-          bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+          bottom: 'max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px)))',
           backgroundColor: dockBg,
           borderColor: dockBorder,
           boxShadow: dockShadow,
