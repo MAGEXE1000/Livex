@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { SongPreset } from '@workspace/livex-core';
 import { useLiveModeState } from './useLiveModeState';
 import {
@@ -25,13 +26,13 @@ export default function LiveMode({
   const state = useLiveModeState(preset, onClose, transposeOffset, initialMode);
 
   if (!state.hasLiveContent) {
-    return (
+    const emptyNode = (
       <div
         style={{
           position: 'fixed',
           inset: 0,
           background: 'var(--c-background)',
-          zIndex: 200,
+          zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -62,6 +63,7 @@ export default function LiveMode({
         </button>
       </div>
     );
+    return typeof document !== 'undefined' ? createPortal(emptyNode, document.body) : emptyNode;
   }
 
   const isChordsOnly =
@@ -73,13 +75,13 @@ export default function LiveMode({
     state.displayMode === 'lyrics_chord_diagram' ||
     state.displayMode === 'lyrics_chord_name';
 
-  return (
+  const liveNode = (
     <div
       style={{
         position: 'fixed',
         inset: 0,
         background: 'var(--c-background)',
-        zIndex: 200,
+        zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
         userSelect: 'none',
@@ -100,4 +102,6 @@ export default function LiveMode({
       {state.showSettings && <LiveModeSettings state={state} />}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(liveNode, document.body) : liveNode;
 }

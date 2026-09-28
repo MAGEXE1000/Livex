@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   type SongPreset,
@@ -317,67 +318,71 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         </div>
       )}
 
-      {/* ── Fixed Floating [ + ] Action (Bottom Right) ── */}
-      <div
-        className="fixed z-40 pointer-events-auto"
-        style={{
-          bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-          right: '24px',
-        }}
-        data-purpose="lyrics-action-menu"
-      >
-        <MorphingActionSurface
-          placement="anchor"
-          compact
-          maxWidth={240}
-          title="Lyrics"
-          accentColor={accent.from}
-          customTrigger={({ triggerProps }) => (
-            <motion.button
-              {...triggerProps}
-              aria-label="Lyrics Actions"
-              data-testid="lyrics-action-btn"
-              className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
-              style={{
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
-              }}
-              type="button"
-            >
-              <span className="material-symbols-rounded text-2xl font-bold">add</span>
-            </motion.button>
-          )}
-          rows={[
-            {
-              id: 'action-edit',
-              label: 'Edit',
-              icon: 'edit',
-              sublabel: 'Open lyric composer',
-              onPress: () => {
-                onEditLyrics();
-              },
-            },
-            {
-              id: 'action-sections',
-              label: 'Sections',
-              icon: 'layers',
-              sublabel: 'Add song sections',
-              onPress: () => {
-                setShowSectionMorph(true);
-              },
-            },
-            {
-              id: 'action-text',
-              label: 'Text',
-              icon: 'text_fields',
-              sublabel: 'Typography & styling',
-              onPress: () => {
-                setShowTextMorph(true);
-              },
-            },
-          ]}
-        />
-      </div>
+      {/* ── Viewport-Anchored Floating [ + ] Action (Bottom Right) ── */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed z-40 pointer-events-auto"
+            style={{
+              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+              right: '24px',
+            }}
+            data-purpose="lyrics-action-menu"
+          >
+            <MorphingActionSurface
+              placement="anchor"
+              compact
+              maxWidth={240}
+              title="Lyrics"
+              accentColor={accent.from}
+              customTrigger={({ triggerProps }) => (
+                <motion.button
+                  {...triggerProps}
+                  aria-label="Lyrics Actions"
+                  data-testid="lyrics-action-btn"
+                  className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                    boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
+                  }}
+                  type="button"
+                >
+                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                </motion.button>
+              )}
+              rows={[
+                {
+                  id: 'action-edit',
+                  label: 'Edit',
+                  icon: 'edit',
+                  sublabel: 'Open lyric composer',
+                  onPress: () => {
+                    onEditLyrics();
+                  },
+                },
+                {
+                  id: 'action-sections',
+                  label: 'Sections',
+                  icon: 'layers',
+                  sublabel: 'Add song sections',
+                  onPress: () => {
+                    setShowSectionMorph(true);
+                  },
+                },
+                {
+                  id: 'action-text',
+                  label: 'Text',
+                  icon: 'text_fields',
+                  sublabel: 'Typography & styling',
+                  onPress: () => {
+                    setShowTextMorph(true);
+                  },
+                },
+              ]}
+            />
+          </div>,
+          document.body
+        )}
 
       {/* ── Morphing Section Picker (Triggered from + Menu) ── */}
       <MorphingActionSurface

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
-import { SharedFloatingHeader } from '../../../shared/layout/LivexLayoutSystem';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import {
@@ -131,6 +130,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     handleClose,
     displayMode,
     currentSectionName,
+    setShowSettings,
   } = state;
 
   const isLyricsMode = displayMode === 'lyrics_only';
@@ -181,44 +181,151 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     return `CHORDS • KEY ${preset.key || 'C'} • ${bpmOverride} BPM`;
   })();
 
-  const titleNode = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-      <span
-        style={{
-          width: '7px',
-          height: '7px',
-          borderRadius: '50%',
-          backgroundColor: autoPlay ? '#22c55e' : accent.from,
-          boxShadow: autoPlay ? '0 0 8px #22c55e' : `0 0 8px ${accent.from}`,
-          animation: autoPlay ? 'live-dot-pulse 1.5s infinite' : 'none',
-        }}
-      />
-      <span
-        style={{
-          fontSize: 'var(--type-title-size, 17px)',
-          fontWeight: 700,
-          color: 'var(--c-text-primary)',
-          fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {preset.name}
-      </span>
-    </div>
-  );
-
   return (
     <>
       <style>{liveModeStyles}</style>
-      <SharedFloatingHeader
-        title={titleNode}
-        subtitle={subtitle}
-        onBack={handleClose}
-        alwaysShowGlass
-        backBtnTestId="live-mode-back-btn"
-      />
+      <header
+        data-purpose="live-mode-topbar"
+        data-testid="live-mode-topbar"
+        style={{
+          width: '100%',
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 100,
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px)',
+          paddingBottom: '8px',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          minHeight: '56px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'var(--surface-topbar-bg, rgba(19, 19, 24, 0.85))',
+          backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+          borderBottom: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.08))',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Left: Back button */}
+        <button
+          type="button"
+          data-testid="live-mode-back-btn"
+          onClick={handleClose}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: 'var(--c-text-primary, #ffffff)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+          }}
+          title="Exit Live Mode"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            arrow_back
+          </span>
+        </button>
+
+        {/* Center: Song title & Live status subtitle */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: 0,
+            padding: '0 12px',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              maxWidth: '100%',
+            }}
+          >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: autoPlay ? '#22c55e' : accent.from,
+                boxShadow: autoPlay ? '0 0 8px #22c55e' : `0 0 8px ${accent.from}`,
+                animation: autoPlay ? 'live-dot-pulse 1.5s infinite' : 'none',
+                flexShrink: 0,
+              }}
+            />
+            <h1
+              data-testid="live-mode-title"
+              style={{
+                fontSize: '16px',
+                fontWeight: 700,
+                color: 'var(--c-text-primary, #ffffff)',
+                fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                margin: 0,
+                padding: 0,
+              }}
+            >
+              {preset.name}
+            </h1>
+          </div>
+          <div
+            data-testid="live-mode-subtitle"
+            style={{
+              fontSize: '11px',
+              color: 'var(--c-text-secondary, #94a3b8)',
+              fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+              marginTop: '2px',
+            }}
+          >
+            {subtitle}
+          </div>
+        </div>
+
+        {/* Right: Settings button */}
+        <button
+          type="button"
+          data-testid="live-topbar-settings-btn"
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: 'var(--c-text-primary, #ffffff)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+          }}
+          title="Song Live Settings"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            tune
+          </span>
+        </button>
+      </header>
     </>
   );
 }
@@ -441,7 +548,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '80px 20px 100px',
+        padding: '20px 20px 100px',
       }}
     >
       {/* Ambient background glow */}
@@ -1053,7 +1160,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px) 24px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
+          padding: '16px 24px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
           display: 'flex',
           flexDirection: 'column',
           gap: fontSizes.lineGap,
@@ -1595,7 +1702,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '80px 20px 100px',
+        padding: '20px 20px 100px',
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
         boxSizing: 'border-box',
@@ -2183,30 +2290,59 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           background: 'rgba(0,0,0,0.65)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          zIndex: 55,
+          zIndex: 90,
         }}
       />
 
       <div
         onClick={(e) => e.stopPropagation()}
+        data-testid="live-settings-sheet"
         style={{
           position: 'fixed',
-          top: '50%',
+          bottom: 0,
           left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'calc(100% - 32px)',
-          maxWidth: '460px',
-          maxHeight: '82vh',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: 'calc(100% - var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) - 68px)',
           background: '#131318',
-          border: '1px solid rgba(255,255,255,0.15)',
-          borderRadius: '24px',
-          zIndex: 60,
-          boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
-          overflowY: 'auto',
-          paddingBottom: '20px',
+          borderTop: '1px solid rgba(255,255,255,0.15)',
+          borderLeft: '1px solid rgba(255,255,255,0.1)',
+          borderRight: '1px solid rgba(255,255,255,0.1)',
+          borderTopLeftRadius: '28px',
+          borderTopRightRadius: '28px',
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          zIndex: 95,
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.85)',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
         }}
       >
-        {/* Title row */}
+        {/* Grabber handle */}
+        <div
+          style={{
+            width: '36px',
+            height: '4px',
+            borderRadius: '2px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            margin: '12px auto 2px',
+            flexShrink: 0,
+          }}
+        />
+
+        {/* Scrollable content container */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 24px)',
+          }}
+        >
+          {/* Title row */}
         <div
           style={{
             padding: '18px 20px 8px',
@@ -3025,6 +3161,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           )}
         </div>
       </div>
-    </>
-  );
+    </div>
+  </>
+);
 }
