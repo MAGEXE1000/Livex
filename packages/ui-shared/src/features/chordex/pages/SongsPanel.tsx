@@ -4413,6 +4413,7 @@ export default function SongsPanel() {
   // Scroll ref for nav-hide on Songs list (never attached to editor)
   const listScrollRef = useRef<HTMLDivElement>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
+  const lyricsScrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(listScrollRef);
 
   const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
@@ -4811,6 +4812,7 @@ export default function SongsPanel() {
         {!isWebDesktop ? (
           /* ── Mobile Top Header (Canonical SharedFloatingHeader) ── */
           <SharedFloatingHeader
+            key={editorViewMode}
             title={activePreset.name || 'Song Editor'}
             subtitle={
               editorViewMode === 'lyrics' ? (
@@ -4837,7 +4839,7 @@ export default function SongsPanel() {
               }
             }}
             backBtnTestId="editor-back-btn"
-            scrollContainerRef={editorScrollRef}
+            scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
             toolbarActions={
               <div className="flex items-center gap-1.5">
                 <motion.button
@@ -5212,15 +5214,52 @@ export default function SongsPanel() {
           if (editorViewMode === 'lyrics') {
             return (
               <div
-                ref={editorScrollRef}
+                ref={lyricsScrollRef}
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
                 style={{
-                  padding:
-                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px) 0 calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                  paddingTop:
+                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  paddingBottom:
+                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
                   position: 'relative',
                 }}
                 data-purpose="editor-lyrics-area"
               >
+                {/* View Mode Selector */}
+                <div className="w-full flex items-center justify-center pb-4 pt-1">
+                  <div
+                    className="flex items-center p-0.5 rounded-full border shadow-xs"
+                    style={{
+                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                    }}
+                    data-purpose="view-mode-selector"
+                  >
+                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
+                      const isActive = editorViewMode === mode;
+                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`view-mode-${mode}`}
+                          onClick={() => setEditorViewMode(mode)}
+                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
+                          style={{
+                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
+                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
+                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                          }}
+                        >
+                          {labels[mode]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <SongLivePreparationView
                   preset={activePreset}
                   accent={accent}

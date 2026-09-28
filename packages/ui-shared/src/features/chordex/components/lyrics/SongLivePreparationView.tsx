@@ -12,6 +12,7 @@ import {
   getCombinedVocalRoles,
 } from '@workspace/livex-core';
 import { toast } from 'sonner';
+import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
 
 export interface SongLivePreparationViewProps {
   preset: SongPreset;
@@ -51,8 +52,17 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     if (s === 'relaxed') return 1.9;
     return 1.6;
   });
-  const [showSettings, setShowSettings] = useState(false);
-  const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const [isBold, setIsBold] = useState<boolean>(() => Boolean(lyricsDoc?.formatting?.bold));
+  const [textColor, setTextColor] = useState<string>(() => {
+    const c = lyricsDoc?.formatting?.defaultColor;
+    if (!c || c === '#FFFFFF' || c === '#111827' || c === 'default') {
+      return 'default';
+    }
+    return c;
+  });
+
+  const [showSectionMorph, setShowSectionMorph] = useState(false);
+  const [showTextMorph, setShowTextMorph] = useState(false);
   const [selectedSectionForRole, setSelectedSectionForRole] = useState<string | null>(null);
 
   // Available vocal roles (presets + custom saved)
@@ -64,24 +74,40 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
 
   // Update document formatting settings
   const handleUpdateFormatting = useCallback(
-    (newFontSize: number, newLineSpacing: number) => {
-      setFontSize(newFontSize);
-      setLineSpacing(newLineSpacing);
+    (opts: {
+      fontSize?: number;
+      lineSpacing?: number;
+      bold?: boolean;
+      defaultColor?: string;
+    }) => {
+      const nextFontSize = opts.fontSize ?? fontSize;
+      const nextLineSpacing = opts.lineSpacing ?? lineSpacing;
+      const nextBold = opts.bold !== undefined ? opts.bold : isBold;
+      const nextColor = opts.defaultColor ?? textColor;
+
+      if (opts.fontSize !== undefined) setFontSize(opts.fontSize);
+      if (opts.lineSpacing !== undefined) setLineSpacing(opts.lineSpacing);
+      if (opts.bold !== undefined) setIsBold(opts.bold);
+      if (opts.defaultColor !== undefined) setTextColor(opts.defaultColor);
+
       if (!lyricsDoc) return;
       const fontSizeName: 'small' | 'medium' | 'large' =
-        newFontSize <= 16 ? 'small' : newFontSize >= 24 ? 'large' : 'medium';
+        nextFontSize <= 16 ? 'small' : nextFontSize >= 24 ? 'large' : 'medium';
       const lineSpacingName: 'compact' | 'normal' | 'relaxed' =
-        newLineSpacing <= 1.45 ? 'compact' : newLineSpacing >= 1.8 ? 'relaxed' : 'normal';
+        nextLineSpacing <= 1.45 ? 'compact' : nextLineSpacing >= 1.8 ? 'relaxed' : 'normal';
+
       onUpdateLyrics({
         ...lyricsDoc,
         formatting: {
           ...lyricsDoc.formatting,
           fontSize: fontSizeName,
           lineSpacing: lineSpacingName,
+          bold: nextBold,
+          defaultColor: nextColor,
         },
       });
     },
-    [lyricsDoc, onUpdateLyrics]
+    [fontSize, lineSpacing, isBold, textColor, lyricsDoc, onUpdateLyrics]
   );
 
   // Assign vocal role to a section
@@ -124,296 +150,475 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         ...lyricsDoc,
         sections: [...sections, newSection],
       });
-      setShowPlusMenu(false);
+      setShowSectionMorph(false);
       toast.success(`Added [${name}] section`);
     },
     [lyricsDoc, sections, onUpdateLyrics]
   );
 
-  // Check if there is any content to perform
-  const hasContent = useMemo(() => {
-    return (
-      sections.some((s) => s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))) ||
-      preset.chords.length > 0 ||
-      (preset.sections ?? []).some((s) => s.chords.length > 0)
+  const isEmpty =
+    sections.length === 0 ||
+    sections.every(
+      (s) => s.lines.length === 0 || s.lines.every((l) => !l.text.trim() && (!l.chords || l.chords.length === 0))
     );
-  }, [sections, preset.chords, preset.sections]);
+
+  const resolvedColor =
+    textColor && textColor !== 'default' ? textColor : 'var(--c-text-primary, #111827)';
 
   return (
     <div
-      className="flex-1 flex flex-col relative w-full h-full overflow-hidden"
+      className="w-full flex flex-col relative"
       data-purpose="song-live-preparation-view"
     >
-      {/* ── Top Preparation Banner ── */}
-      <div
-        className="flex-none px-4 py-2.5 border-b flex flex-col gap-2.5 z-20"
-        style={{
-          backgroundColor: 'var(--surface-header-bg, rgba(17, 18, 26, 0.95))',
-          backdropFilter: 'blur(20px)',
-          borderColor: 'var(--c-border, rgba(255, 255, 255, 0.08))',
-        }}
-      >
-        <div className="flex items-center justify-between gap-3">
-          {/* Quick Action: Edit Lyrics */}
-          <button
-            type="button"
-            onClick={onEditLyrics}
-            data-testid="prep-edit-lyrics-btn"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-xs"
+      {/* ── Document Content Area ── */}
+      {isEmpty ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border"
             style={{
               backgroundColor: 'var(--surface-card-bg, #ffffff)',
               borderColor: 'var(--c-border, #E3E6EB)',
+              color: accent.from,
+            }}
+          >
+            <span className="material-symbols-rounded text-3xl">edit_note</span>
+          </div>
+          <h3
+            className="text-base font-bold mb-1"
+            style={{
+              fontFamily: 'var(--font-headline)',
               color: 'var(--c-text-primary, #111827)',
             }}
           >
-            <span className="material-symbols-rounded text-sm">edit_note</span>
-            <span>Edit Lyrics</span>
-          </button>
-
-          {/* Quick Action: Teleprompter Display Settings */}
+            No Lyrics Composed
+          </h3>
+          <p
+            className="text-xs max-w-xs mb-6 leading-relaxed"
+            style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+          >
+            Write your lyrics in the distraction-free continuous composer, then return here to configure your live performance.
+          </p>
           <button
             type="button"
-            onClick={() => setShowSettings((prev) => !prev)}
-            aria-label="Teleprompter Display Settings"
-            title="Teleprompter Display Settings"
-            className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            onClick={onEditLyrics}
+            className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
             style={{
-              backgroundColor: showSettings
-                ? 'var(--surface-container-high, rgba(255, 255, 255, 0.12))'
-                : 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
-              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
-              color: showSettings ? accent.from : 'var(--c-text-secondary)',
+              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+              boxShadow: `0 3px 12px ${accent.to}44`,
             }}
           >
-            <span className="material-symbols-rounded text-base">text_fields</span>
+            <span className="material-symbols-rounded text-base">draw</span>
+            <span>Open Lyric Composer</span>
           </button>
         </div>
+      ) : (
+        <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full">
+          {sections.map((section, sIdx) => {
+            const hasName = Boolean(section.name && section.name.trim().length > 0);
+            const vocalRole = section.vocalRole;
 
-        {/* ── Collapsible Teleprompter Format Settings ── */}
-        <AnimatePresence>
-          {showSettings && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden pt-2 border-t flex flex-col gap-2.5"
-              style={{ borderColor: 'var(--c-border, rgba(255, 255, 255, 0.08))' }}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-                  View Mode
-                </span>
+            return (
+              <div key={section.id || `sec-${sIdx}`} className="flex flex-col">
+                {/* Section Badge with Vocal Role (Only if named or has vocal role) */}
+                {(hasName || vocalRole) && (
+                  <div className="flex items-center gap-2 mb-2.5 select-none">
+                    {hasName && (
+                      <span
+                        className="text-[11px] font-extrabold tracking-wider uppercase px-3 py-1 rounded-full border shadow-2xs"
+                        style={{
+                          backgroundColor: `${accent.from}14`,
+                          borderColor: `${accent.from}38`,
+                          color: accent.from,
+                          fontFamily: 'var(--font-headline, system-ui, sans-serif)',
+                        }}
+                      >
+                        {section.name}
+                      </span>
+                    )}
+
+                    {/* Vocal Role Chip (tap to change) */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSectionForRole(section.id)}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border shadow-2xs active:scale-95 transition-all cursor-pointer"
+                      style={{
+                        backgroundColor: vocalRole ? `${vocalRole.color}22` : 'var(--surface-container-low, rgba(0, 0, 0, 0.04))',
+                        borderColor: vocalRole ? `${vocalRole.color}55` : 'var(--c-border, #E3E6EB)',
+                        color: vocalRole ? vocalRole.color : 'var(--c-text-muted, #8A92A6)',
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: vocalRole?.color || 'currentColor' }}
+                      />
+                      <span>{vocalRole?.label || '+ Role'}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Section Lines */}
                 <div
-                  className="flex items-center p-0.5 rounded-full border shadow-xs"
+                  className="flex flex-col select-text"
                   style={{
-                    backgroundColor: 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
-                    borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+                    fontSize: `${fontSize}px`,
+                    lineHeight: lineSpacing,
+                    fontFamily: 'var(--font-body, system-ui, sans-serif)',
+                  }}
+                >
+                  {section.lines.map((line, lIdx) => {
+                    const showChords = displayMode === 'chords_lyrics' && line.chords && line.chords.length > 0;
+                    const isBlank = !line.text.trim() && (!line.chords || line.chords.length === 0);
+
+                    if (isBlank) {
+                      return <div key={line.id || `blank-${lIdx}`} className="h-4" />;
+                    }
+
+                    const lineTextColor = line.format?.color || resolvedColor;
+
+                    return (
+                      <div key={line.id || `line-${lIdx}`} className="flex flex-col py-0.5">
+                        {/* Chords placement above text */}
+                        {showChords && (
+                          <div
+                            className="font-mono text-xs font-bold select-none h-5 flex items-center gap-1.5"
+                            style={{ color: accent.from }}
+                          >
+                            {line.chords!.map((c, cIdx) => (
+                              <span
+                                key={c.id || `ch-${cIdx}`}
+                                className="px-1.5 py-0.5 rounded text-[11px] font-extrabold"
+                                style={{
+                                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
+                                  color: 'var(--c-accent-from, #2563EB)',
+                                }}
+                              >
+                                {c.chord}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Lyric Text */}
+                        <div
+                          style={{
+                            fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                            color: lineTextColor,
+                          }}
+                        >
+                          {line.text || '\u00A0'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Fixed Floating [ + ] Action (Bottom Right) ── */}
+      <div
+        className="fixed z-40 pointer-events-auto"
+        style={{
+          bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+          right: '24px',
+        }}
+        data-purpose="lyrics-action-menu"
+      >
+        <MorphingActionSurface
+          placement="anchor"
+          compact
+          maxWidth={240}
+          title="Lyrics"
+          accentColor={accent.from}
+          customTrigger={({ triggerProps }) => (
+            <motion.button
+              {...triggerProps}
+              aria-label="Lyrics Actions"
+              data-testid="lyrics-action-btn"
+              className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
+              style={{
+                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
+              }}
+              type="button"
+            >
+              <span className="material-symbols-rounded text-2xl font-bold">add</span>
+            </motion.button>
+          )}
+          rows={[
+            {
+              id: 'action-edit',
+              label: 'Edit',
+              icon: 'edit',
+              sublabel: 'Open lyric composer',
+              onPress: () => {
+                onEditLyrics();
+              },
+            },
+            {
+              id: 'action-sections',
+              label: 'Sections',
+              icon: 'layers',
+              sublabel: 'Add song sections',
+              onPress: () => {
+                setShowSectionMorph(true);
+              },
+            },
+            {
+              id: 'action-text',
+              label: 'Text',
+              icon: 'text_fields',
+              sublabel: 'Typography & styling',
+              onPress: () => {
+                setShowTextMorph(true);
+              },
+            },
+          ]}
+        />
+      </div>
+
+      {/* ── Morphing Section Picker (Triggered from + Menu) ── */}
+      <MorphingActionSurface
+        isOpen={showSectionMorph}
+        onOpenChange={setShowSectionMorph}
+        placement="anchor"
+        compact
+        maxWidth={240}
+        title="Add Section"
+        accentColor={accent.from}
+        rows={[
+          ...[
+            { name: 'Verse', type: 'verse' },
+            { name: 'Chorus', type: 'chorus' },
+            { name: 'Bridge', type: 'bridge' },
+            { name: 'Pre-Chorus', type: 'pre-chorus' },
+            { name: 'Intro', type: 'intro' },
+            { name: 'Outro', type: 'outro' },
+            { name: 'Solo', type: 'solo' },
+            { name: 'Interlude', type: 'interlude' },
+          ].map((sec) => ({
+            id: sec.name.toLowerCase(),
+            label: sec.name,
+            icon: 'layers',
+            onPress: () => {
+              handleAddSection(sec.name, sec.type);
+            },
+          })),
+          {
+            id: 'custom',
+            label: 'Custom...',
+            icon: 'edit',
+            onPress: () => {
+              const name = window.prompt('Section name:');
+              if (name && name.trim()) {
+                handleAddSection(name.trim(), 'custom');
+              }
+            },
+          },
+        ]}
+      />
+
+      {/* ── Morphing Text Formatting Surface ── */}
+      <MorphingActionSurface
+        isOpen={showTextMorph}
+        onOpenChange={setShowTextMorph}
+        placement="center"
+        maxWidth={340}
+        title="Text Presentation"
+        subtitle="Format lyrics display & teleprompter"
+        accentColor={accent.from}
+      >
+        {({ close }) => (
+          <div className="flex flex-col gap-4 py-1" data-purpose="lyrics-text-formatting-controls">
+            {/* View Mode */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>
+                View Mode
+              </span>
+              <div
+                className="flex items-center p-0.5 rounded-full border shadow-2xs"
+                style={{
+                  backgroundColor: 'var(--surface-container-low, rgba(0, 0, 0, 0.04))',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                }}
+              >
+                <button
+                  type="button"
+                  data-testid="text-mode-lyrics"
+                  onClick={() => setDisplayMode('lyrics')}
+                  className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: displayMode === 'lyrics' ? accent.from : 'transparent',
+                    color: displayMode === 'lyrics' ? '#ffffff' : 'var(--c-text-muted, #8A92A6)',
+                  }}
+                >
+                  Lyrics
+                </button>
+                <button
+                  type="button"
+                  data-testid="text-mode-chords-lyrics"
+                  onClick={() => setDisplayMode('chords_lyrics')}
+                  className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: displayMode === 'chords_lyrics' ? accent.from : 'transparent',
+                    color: displayMode === 'chords_lyrics' ? '#ffffff' : 'var(--c-text-muted, #8A92A6)',
+                  }}
+                >
+                  Chords + Lyrics
+                </button>
+              </div>
+            </div>
+
+            {/* Font Size & Bold Stepper */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>
+                Size & Weight
+              </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center border rounded-xl overflow-hidden shadow-2xs"
+                  style={{
+                    backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                    borderColor: 'var(--c-border, #E3E6EB)',
                   }}
                 >
                   <button
                     type="button"
-                    onClick={() => setDisplayMode('lyrics')}
-                    className="px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: displayMode === 'lyrics' ? accent.from : 'transparent',
-                      color: displayMode === 'lyrics' ? '#ffffff' : 'var(--c-text-muted)',
-                    }}
-                  >
-                    Lyrics only
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDisplayMode('chords_lyrics')}
-                    className="px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: displayMode === 'chords_lyrics' ? accent.from : 'transparent',
-                      color: displayMode === 'chords_lyrics' ? '#ffffff' : 'var(--c-text-muted)',
-                    }}
-                  >
-                    Chords + Lyrics
-                  </button>
-                </div>
-              </div>
-
-              {/* Font Size & Line Spacing */}
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-                  Font Size
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateFormatting(Math.max(14, fontSize - 2), lineSpacing)}
-                    className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold active:scale-95 cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg)',
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text-primary)',
-                    }}
+                    data-testid="text-size-decrease"
+                    onClick={() => handleUpdateFormatting({ fontSize: Math.max(14, fontSize - 2) })}
+                    className="w-8 h-8 flex items-center justify-center text-xs font-bold transition-all active:scale-90 cursor-pointer"
+                    style={{ color: 'var(--c-text-primary, #111827)' }}
+                    title="Decrease font size"
                   >
                     A-
                   </button>
-                  <span className="text-xs font-bold w-7 text-center">{fontSize}px</span>
+                  <span
+                    className="text-xs font-extrabold w-10 text-center select-none"
+                    style={{ color: accent.from }}
+                  >
+                    {fontSize}px
+                  </span>
                   <button
                     type="button"
-                    onClick={() => handleUpdateFormatting(Math.min(32, fontSize + 2), lineSpacing)}
-                    className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-bold active:scale-95 cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg)',
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text-primary)',
-                    }}
+                    data-testid="text-size-increase"
+                    onClick={() => handleUpdateFormatting({ fontSize: Math.min(32, fontSize + 2) })}
+                    className="w-8 h-8 flex items-center justify-center text-xs font-bold transition-all active:scale-90 cursor-pointer"
+                    style={{ color: 'var(--c-text-primary, #111827)' }}
+                    title="Increase font size"
                   >
                     A+
                   </button>
                 </div>
+
+                {/* Bold Toggle Button */}
+                <button
+                  type="button"
+                  data-testid="text-bold-toggle"
+                  onClick={() => handleUpdateFormatting({ bold: !isBold })}
+                  className="w-8 h-8 rounded-xl border flex items-center justify-center text-xs font-extrabold transition-all active:scale-90 cursor-pointer shadow-2xs"
+                  style={{
+                    backgroundColor: isBold ? `${accent.from}18` : 'var(--surface-card-bg, #ffffff)',
+                    borderColor: isBold ? accent.from : 'var(--c-border, #E3E6EB)',
+                    color: isBold ? accent.from : 'var(--c-text-secondary, #6B7280)',
+                  }}
+                  title="Toggle bold lyrics"
+                >
+                  B
+                </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-      </div>
-
-      {/* ── Prepared Document Scroll Area ── */}
-      <div
-        className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)',
-        }}
-        data-purpose="prepared-lyrics-scroll-container"
-      >
-        {sections.length === 0 || sections.every((s) => s.lines.length === 0 || s.lines.every((l) => !l.text.trim())) ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #1a1b24)',
-                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
-                color: accent.from,
-              }}
-            >
-              <span className="material-symbols-rounded text-3xl">edit_note</span>
             </div>
-            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text-primary)' }}>
-              No Lyrics Composed
-            </h3>
-            <p className="text-xs max-w-xs mb-6 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-              Write your lyrics in the distraction-free continuous composer, then return here to configure your live performance.
-            </p>
-            <button
-              type="button"
-              onClick={onEditLyrics}
-              className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
-              style={{
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                boxShadow: `0 3px 12px ${accent.to}44`,
-              }}
-            >
-              <span className="material-symbols-rounded text-base">draw</span>
-              <span>Open Lyric Composer</span>
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-            {sections.map((section, sIdx) => {
-              const hasName = Boolean(section.name && section.name.trim().length > 0);
-              const vocalRole = section.vocalRole;
 
-              return (
-                <div key={section.id || `sec-${sIdx}`} className="flex flex-col">
-                  {/* Section Badge with Vocal Role (Only if named or has vocal role) */}
-                  {(hasName || vocalRole) && (
-                    <div className="flex items-center gap-2 mb-2.5 select-none">
-                      {hasName && (
+            {/* Line Spacing */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>
+                Line Spacing
+              </span>
+              <div
+                className="flex items-center p-0.5 rounded-full border shadow-2xs"
+                style={{
+                  backgroundColor: 'var(--surface-container-low, rgba(0, 0, 0, 0.04))',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                }}
+              >
+                {[
+                  { label: 'Compact', val: 1.4 },
+                  { label: 'Normal', val: 1.6 },
+                  { label: 'Relaxed', val: 1.9 },
+                ].map((sp) => {
+                  const isActive = Math.abs(lineSpacing - sp.val) < 0.1;
+                  return (
+                    <button
+                      key={sp.label}
+                      type="button"
+                      data-testid={`spacing-${sp.label.toLowerCase()}`}
+                      onClick={() => handleUpdateFormatting({ lineSpacing: sp.val })}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer"
+                      style={{
+                        backgroundColor: isActive ? accent.from : 'transparent',
+                        color: isActive ? '#ffffff' : 'var(--c-text-muted, #8A92A6)',
+                      }}
+                    >
+                      {sp.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Color Palette */}
+            <div className="flex flex-col gap-2 pt-1 border-t" style={{ borderColor: 'var(--c-border, #E3E6EB)' }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>
+                  Text Color
+                </span>
+                <span className="text-[10px] uppercase font-bold text-neutral-400">
+                  {textColor === 'default' ? 'Theme Default' : textColor}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-1.5 py-1">
+                {[
+                  { name: 'Default', hex: 'default' },
+                  { name: 'Gold', hex: '#F59E0B' },
+                  { name: 'Sky', hex: '#0284C7' },
+                  { name: 'Emerald', hex: '#059669' },
+                  { name: 'Rose', hex: '#E11D48' },
+                  { name: 'Violet', hex: '#7C3AED' },
+                ].map((col) => {
+                  const isCurrent = textColor === col.hex;
+                  return (
+                    <button
+                      key={col.hex}
+                      type="button"
+                      data-testid={`color-${col.name.toLowerCase()}`}
+                      onClick={() => handleUpdateFormatting({ defaultColor: col.hex })}
+                      className="w-7 h-7 rounded-full transition-transform active:scale-90 flex items-center justify-center cursor-pointer"
+                      style={{
+                        backgroundColor: col.hex === 'default' ? 'var(--c-text-primary, #111827)' : col.hex,
+                        boxShadow: isCurrent
+                          ? `0 0 0 2px var(--surface-card-bg, #ffffff), 0 0 0 4px ${col.hex === 'default' ? 'var(--c-text-primary, #111827)' : col.hex}`
+                          : 'none',
+                        border: '1px solid rgba(0,0,0,0.12)',
+                      }}
+                      title={col.name}
+                    >
+                      {isCurrent && (
                         <span
-                          className="text-[11px] font-extrabold tracking-wider uppercase px-3 py-1 rounded-full border shadow-2xs"
-                          style={{
-                            backgroundColor: `${accent.from}18`,
-                            borderColor: `${accent.from}44`,
-                            color: accent.from,
-                            fontFamily: 'var(--font-headline, system-ui, sans-serif)',
-                          }}
+                          className="material-symbols-rounded text-sm"
+                          style={{ color: col.hex === 'default' ? 'var(--surface-card-bg, #ffffff)' : '#FFFFFF' }}
                         >
-                          {section.name}
+                          check
                         </span>
                       )}
-
-                      {/* Vocal Role Chip (tap to change) */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSectionForRole(section.id)}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border shadow-2xs active:scale-95 transition-all cursor-pointer"
-                        style={{
-                          backgroundColor: vocalRole ? `${vocalRole.color}22` : 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
-                          borderColor: vocalRole ? `${vocalRole.color}55` : 'var(--c-border, rgba(255, 255, 255, 0.1))',
-                          color: vocalRole ? vocalRole.color : 'var(--c-text-muted)',
-                        }}
-                      >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: vocalRole?.color || 'currentColor' }}
-                        />
-                        <span>{vocalRole?.label || '+ Role'}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Section Lines */}
-                  <div
-                    className="flex flex-col select-text"
-                    style={{
-                      fontSize: `${fontSize}px`,
-                      lineHeight: lineSpacing,
-                      fontFamily: 'var(--font-body, system-ui, sans-serif)',
-                    }}
-                  >
-                    {section.lines.map((line, lIdx) => {
-                      const showChords = displayMode === 'chords_lyrics' && line.chords && line.chords.length > 0;
-                      const isBlank = !line.text.trim() && (!line.chords || line.chords.length === 0);
-
-                      if (isBlank) {
-                        return <div key={line.id || `blank-${lIdx}`} className="h-4" />;
-                      }
-
-                      return (
-                        <div key={line.id || `line-${lIdx}`} className="flex flex-col py-0.5">
-                          {/* Chords placement above text */}
-                          {showChords && (
-                            <div
-                              className="font-mono text-xs font-bold select-none h-5 flex items-center"
-                              style={{ color: accent.from }}
-                            >
-                              {line.chords!.map((c, cIdx) => (
-                                <span
-                                  key={c.id || `ch-${cIdx}`}
-                                  className="mr-3 px-1 rounded bg-white/5"
-                                >
-                                  {c.chord}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Lyric Text */}
-                          <div
-                            style={{
-                              fontWeight: line.format?.bold ? 700 : 400,
-                              color: line.format?.color || lyricsDoc?.formatting?.defaultColor || 'var(--c-text-primary, #ffffff)',
-                            }}
-                          >
-                            {line.text || '\u00A0'}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
-      </div>
+      </MorphingActionSurface>
 
       {/* ── Vocal Role Picker Dialog ── */}
       <AnimatePresence>
@@ -432,8 +637,8 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
               exit={{ opacity: 0, scale: 0.95 }}
               className="relative w-full max-w-sm p-5 rounded-2xl border shadow-2xl flex flex-col gap-3 z-10"
               style={{
-                backgroundColor: 'var(--surface-dialog-bg, #1a1b23)',
-                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
+                backgroundColor: 'var(--surface-dialog-bg, #ffffff)',
+                borderColor: 'var(--c-border, #E3E6EB)',
               }}
             >
               <div className="flex items-center justify-between">
@@ -443,7 +648,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                 <button
                   type="button"
                   onClick={() => setSelectedSectionForRole(null)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-white"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-black cursor-pointer"
                 >
                   <span className="material-symbols-rounded text-lg">close</span>
                 </button>
@@ -455,7 +660,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                     key={role.label}
                     type="button"
                     onClick={() => handleSetSectionVocalRole(selectedSectionForRole, role)}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-colors active:scale-95 cursor-pointer hover:bg-white/10"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-colors active:scale-95 cursor-pointer hover:bg-neutral-100"
                     style={{ color: 'var(--c-text-primary)' }}
                   >
                     <div className="flex items-center gap-2">
@@ -471,7 +676,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                 <button
                   type="button"
                   onClick={() => handleSetSectionVocalRole(selectedSectionForRole, undefined)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 active:scale-95 transition-colors cursor-pointer mt-1"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-50 active:scale-95 transition-colors cursor-pointer mt-1"
                 >
                   <span className="material-symbols-rounded text-base">clear</span>
                   <span>Remove Role</span>
@@ -481,95 +686,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
           </div>
         )}
       </AnimatePresence>
-
-      {/* ── Minimal Floating [ + ] Action (Bottom Right) ── */}
-      <div
-        className="fixed right-4 z-40"
-        style={{
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
-        }}
-      >
-        <AnimatePresence>
-          {showPlusMenu && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.15 }}
-              className="absolute right-0 bottom-14 mb-2 p-1.5 rounded-2xl border shadow-xl flex flex-col gap-1 min-w-[160px]"
-              style={{
-                backgroundColor: 'var(--surface-dialog-bg, #1a1b23)',
-                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
-                backdropFilter: 'blur(24px)',
-              }}
-            >
-              <div
-                className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-              >
-                Add Section
-              </div>
-              {LYRIC_SECTION_TYPES.slice(0, 5).map((sec) => (
-                <button
-                  key={sec.type}
-                  type="button"
-                  onClick={() => handleAddSection(sec.defaultName, sec.type)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-left transition-colors active:scale-95 cursor-pointer hover:bg-white/10"
-                  style={{ color: 'var(--c-text-primary, #ffffff)' }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: accent.from }}
-                  />
-                  <span>{sec.defaultName}</span>
-                </button>
-              ))}
-
-              <div
-                className="my-1 border-t"
-                style={{ borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))' }}
-              />
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPlusMenu(false);
-                  onEditLyrics();
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-left text-blue-400 hover:bg-blue-500/10 active:scale-95 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-rounded text-sm">edit_note</span>
-                <span>Open in Composer</span>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <button
-          type="button"
-          onClick={() => setShowPlusMenu((prev) => !prev)}
-          aria-label="Add Section or Edit"
-          title="Add Section or Edit"
-          className="w-12 h-12 rounded-full border shadow-lg flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-          style={{
-            backgroundColor: 'var(--surface-card-bg, #1c1d27)',
-            borderColor: 'var(--c-border, rgba(255, 255, 255, 0.15))',
-            color: accent.from,
-            boxShadow: showPlusMenu
-              ? `0 4px 16px ${accent.from}44`
-              : '0 4px 12px rgba(0,0,0,0.3)',
-          }}
-        >
-          <span
-            className="material-symbols-rounded text-2xl transition-transform"
-            style={{
-              transform: showPlusMenu ? 'rotate(45deg)' : 'rotate(0deg)',
-            }}
-          >
-            add
-          </span>
-        </button>
-      </div>
     </div>
   );
 };

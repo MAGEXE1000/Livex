@@ -101,6 +101,7 @@ export interface SongLyricsFormatting {
   defaultChordColor?: string; // Document-wide chord text color
   fontSize?: 'small' | 'medium' | 'large';
   lineSpacing?: 'compact' | 'normal' | 'relaxed';
+  bold?: boolean;
 }
 
 /**

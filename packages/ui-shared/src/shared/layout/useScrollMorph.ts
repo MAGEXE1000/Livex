@@ -202,7 +202,10 @@ export function useScrollMorph({
     if (!headerEl) return;
 
     const findScrollElement = (): HTMLElement | null => {
-      if (scrollContainerRef?.current) {
+      if (
+        scrollContainerRef?.current &&
+        (typeof document === 'undefined' || document.contains(scrollContainerRef.current))
+      ) {
         return scrollContainerRef.current;
       }
       const parentEl = headerEl.parentElement;
