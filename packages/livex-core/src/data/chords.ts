@@ -1437,6 +1437,12 @@ function ensureChordDb(): Chord[] {
       const c = chordDatabase[i];
       _chordByIdMap.set(c.id, c);
       _chordByIdMap.set(c.id.toLowerCase(), c);
+      if (!_chordByIdMap.has(c.name)) {
+        _chordByIdMap.set(c.name, c);
+      }
+      if (!_chordByIdMap.has(c.name.toLowerCase())) {
+        _chordByIdMap.set(c.name.toLowerCase(), c);
+      }
       const cleanName = c.name.replace(/\s/g, '').toLowerCase();
       if (!_chordByNameCache.has(cleanName)) {
         _chordByNameCache.set(cleanName, c);
@@ -1453,7 +1459,12 @@ export function getAllChords(): Chord[] {
 export function getChordById(id: string): Chord | undefined {
   if (!id) return undefined;
   ensureChordDb();
-  return _chordByIdMap?.get(id) || _chordByIdMap?.get(id.toLowerCase());
+  return (
+    _chordByIdMap?.get(id) ||
+    _chordByIdMap?.get(id.toLowerCase()) ||
+    _chordByIdMap?.get(id.replace(/\s/g, '').toLowerCase()) ||
+    getChordByName(id)
+  );
 }
 
 export function searchChords(query: string): Chord[] {

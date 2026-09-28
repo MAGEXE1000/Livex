@@ -6,6 +6,7 @@ import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import {
   type LiveModeState,
   type LiveDisplayMode,
+  type VisualStyle,
   type TeleprompterFontFamily,
   type TeleprompterLineHeight,
   type TeleprompterAlignment,
@@ -375,24 +376,109 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
 export function StageChordCard({
   chord,
   accent,
+  visualStyle = 'both',
   onPlay,
 }: {
   chord: any;
   accent: { from: string; to: string };
+  visualStyle?: VisualStyle;
   onPlay?: () => void;
 }) {
-  if (!chord || !chord.guitar) {
+  if (!chord || !chord.name) {
     return (
       <div
-        className="flex flex-col items-center justify-center p-4 rounded-3xl"
+        data-testid="stage-chord-empty"
+        className="flex flex-col items-center justify-center w-full max-w-xs mx-auto py-5 px-4 rounded-3xl select-none"
+        style={{
+          background: 'var(--surface-container-low, rgba(255,255,255,0.03))',
+          border: '1px dashed var(--surface-topbar-border, rgba(255,255,255,0.12))',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+        }}
+      >
+        <span
+          className="material-symbols-outlined mb-1.5"
+          style={{ fontSize: '24px', opacity: 0.35, color: 'var(--c-text-secondary)' }}
+        >
+          music_off
+        </span>
+        <span
+          style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--c-text-secondary)',
+            opacity: 0.7,
+            fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
+          }}
+        >
+          No chord at this position
+        </span>
+      </div>
+    );
+  }
+
+  const chordName = chord.name || '';
+  const rootMatch = chordName.match(/^([A-G][#b]?)(.*)$/);
+  const root = rootMatch ? rootMatch[1] : chordName;
+  const suffix = rootMatch ? rootMatch[2] : '';
+
+  // If Name Only mode or chord has no guitar voicing: render clean hero typography with note badges
+  if (visualStyle === 'name' || !chord.guitar) {
+    return (
+      <div
+        onClick={onPlay}
+        data-testid="stage-chord-card"
+        data-visual-style="name"
+        className="relative flex flex-col items-center w-full max-w-xs mx-auto py-5 px-6 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
         style={{
           background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
           border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
         }}
+        title="Tap to hear chord"
       >
-        <span className="text-2xl font-bold font-display" style={{ color: accent.from }}>
-          {chord?.name || '—'}
-        </span>
+        <div className="flex items-baseline gap-1.5 mb-2">
+          <span
+            className="text-5xl sm:text-6xl font-extrabold tracking-tight"
+            style={{
+              fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+              color: accent.from,
+              textShadow: `0 0 24px ${accent.from}44`,
+            }}
+          >
+            {root}
+          </span>
+          {suffix && (
+            <span
+              className="text-3xl sm:text-4xl font-bold opacity-85"
+              style={{
+                fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                color: 'var(--c-text-primary)',
+              }}
+            >
+              {suffix}
+            </span>
+          )}
+        </div>
+        {chord.notes && chord.notes.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap justify-center mt-1">
+            {chord.notes.map((n: string, i: number) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'var(--c-text-secondary)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {n}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -402,11 +488,6 @@ export function StageChordCard({
   const minActive = allPositive.length ? Math.min(...allPositive) : 1;
   const minF = baseFret > 1 ? baseFret : Math.max(1, minActive);
   const isNutOpen = minF <= 1;
-
-  const chordName = chord.name || '';
-  const rootMatch = chordName.match(/^([A-G][#b]?)(.*)$/);
-  const root = rootMatch ? rootMatch[1] : chordName;
-  const suffix = rootMatch ? rootMatch[2] : '';
 
   const stringIndicators = frets.map((f: number) => {
     if (f === -1) return { text: '✕', isMuted: true, isOpen: false };
@@ -420,6 +501,8 @@ export function StageChordCard({
   return (
     <div
       onClick={onPlay}
+      data-testid="stage-chord-card"
+      data-visual-style={visualStyle}
       className="relative flex flex-col items-center w-full max-w-xs mx-auto p-4 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
       style={{
         background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
@@ -430,29 +513,46 @@ export function StageChordCard({
       }}
       title="Tap to hear chord"
     >
-      {/* Chord Name Header */}
-      <div className="flex items-baseline gap-1 mb-2">
-        <span
-          className="text-4xl sm:text-5xl font-extrabold tracking-tight"
-          style={{
-            fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-            color: accent.from,
-          }}
-        >
-          {root}
-        </span>
-        {suffix && (
+      {/* Chord Name Header (rendered in 'both' style, or compact in 'diagram' style) */}
+      {visualStyle === 'both' ? (
+        <div className="flex items-baseline gap-1 mb-2">
           <span
-            className="text-2xl sm:text-3xl font-bold opacity-80"
+            className="text-4xl sm:text-5xl font-extrabold tracking-tight"
             style={{
               fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-              color: 'var(--c-text-primary)',
+              color: accent.from,
             }}
           >
-            {suffix}
+            {root}
           </span>
-        )}
-      </div>
+          {suffix && (
+            <span
+              className="text-2xl sm:text-3xl font-bold opacity-80"
+              style={{
+                fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                color: 'var(--c-text-primary)',
+              }}
+            >
+              {suffix}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div
+          className="flex items-center gap-1 mb-2 px-2.5 py-0.5 rounded-full"
+          style={{ background: `${accent.from}1a` }}
+        >
+          <span
+            className="text-base font-extrabold tracking-tight"
+            style={{
+              fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+              color: accent.from,
+            }}
+          >
+            {chordName}
+          </span>
+        </div>
+      )}
 
       {/* String Top Indicators */}
       <div className="w-full flex justify-between px-2 mb-1">
@@ -1730,6 +1830,8 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
     setTeleprompterFontSize,
     displayMode,
     setDisplayMode,
+    visualStyle,
+    setVisualStyle,
   } = state;
 
   const currentLine = teleprompterLines[currentLineIdx];
@@ -1754,6 +1856,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         <StageChordCard
           chord={activeHybridChord}
           accent={accent}
+          visualStyle={visualStyle}
           onPlay={() => playChordSound(activeHybridChord?.guitar)}
         />
       </div>
@@ -2065,8 +2168,9 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
               <button
                 type="button"
                 onClick={() => {
-                  if (displayMode === 'lyrics_chord_diagram') setDisplayMode('lyrics_chord_name');
-                  else setDisplayMode('lyrics_chord_diagram');
+                  if (visualStyle === 'both') setVisualStyle('diagram');
+                  else if (visualStyle === 'diagram') setVisualStyle('name');
+                  else setVisualStyle('both');
                 }}
                 style={{
                   width: '26px',
@@ -2075,15 +2179,21 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: displayMode === 'lyrics_chord_diagram' ? accent.from : 'var(--c-text-secondary)',
-                  background: displayMode === 'lyrics_chord_diagram' ? `${accent.from}22` : 'transparent',
+                  color: accent.from,
+                  background: `${accent.from}22`,
                   border: 'none',
                   cursor: 'pointer',
                 }}
-                title="Toggle Diagram / Chord name format"
+                title={`Chords Focus: ${
+                  visualStyle === 'both'
+                    ? 'Diagram + Name'
+                    : visualStyle === 'diagram'
+                    ? 'Diagram Only'
+                    : 'Name Only'
+                } (Tap to cycle)`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                  auto_stories
+                  {visualStyle === 'both' ? 'tune' : visualStyle === 'diagram' ? 'grid_on' : 'title'}
                 </span>
               </button>
             </div>
@@ -2263,6 +2373,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     setShowSettings,
     displayMode,
     setDisplayMode,
+    visualStyle,
+    setVisualStyle,
     bpmOverride,
     setBpmOverride,
     beatsPerChord,
@@ -2584,11 +2696,28 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               }}
             >
               {CHORD_OPTIONS.map((opt) => {
-                const isSelected = displayMode === opt.value;
+                const isSelected = isBothActive
+                  ? (opt.value === 'chords_both' && visualStyle === 'both') ||
+                    (opt.value === 'chords_diagram' && visualStyle === 'diagram') ||
+                    (opt.value === 'chords_name' && visualStyle === 'name')
+                  : displayMode === opt.value;
+                const handleClick = () => {
+                  if (isBothActive) {
+                    const nextStyle =
+                      opt.value === 'chords_diagram'
+                        ? 'diagram'
+                        : opt.value === 'chords_name'
+                        ? 'name'
+                        : 'both';
+                    setVisualStyle(nextStyle);
+                  } else {
+                    setDisplayMode(opt.value);
+                  }
+                };
                 return (
                   <button
                     key={opt.value}
-                    onClick={() => setDisplayMode(opt.value)}
+                    onClick={handleClick}
                     data-testid={`mode-option-${opt.value}`}
                     className="btn-smooth"
                     style={{

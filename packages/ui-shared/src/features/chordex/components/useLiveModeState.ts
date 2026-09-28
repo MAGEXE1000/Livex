@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   getChordById,
+  getChordByName,
   transposeChordId,
   setNavHidden,
   setNavLocked,
@@ -262,8 +263,10 @@ export function splitLineIntoWords(
 
   for (let wIdx = 0; wIdx < rawWords.length; wIdx++) {
     const rw = rawWords[wIdx];
+    const prevEnd = wIdx > 0 ? rawWords[wIdx - 1].end : 0;
     const matchingChord =
       chords?.find((c) => c.offset >= rw.start && c.offset < rw.end) ||
+      chords?.find((c) => c.offset >= prevEnd && c.offset <= rw.start) ||
       (wIdx === 0 ? chords?.find((c) => c.offset < rw.start) : undefined);
 
     words.push({
@@ -484,10 +487,22 @@ export function useLiveModeState(
         labels.push(sec.name);
       });
     });
+    if (ids.length === 0 && preset.lyrics?.sections) {
+      preset.lyrics.sections.forEach((sec) => {
+        (sec.lines || []).forEach((line) => {
+          (line.chords || []).forEach((c) => {
+            if (c.chord && !ids.includes(c.chord)) {
+              ids.push(c.chord);
+              labels.push(sec.name);
+            }
+          });
+        });
+      });
+    }
     const finalIds =
       transposeOffset !== 0 ? ids.map((id) => transposeChordId(id, transposeOffset)) : ids;
     return { chords: finalIds, sectionLabels: labels };
-  }, [preset.chords, preset.sections, transposeOffset]);
+  }, [preset.chords, preset.sections, preset.lyrics, transposeOffset]);
   const total = chords.length;
 
   // ── Deterministic Musical Timing Schedule ────────────────────────
@@ -643,20 +658,40 @@ export function useLiveModeState(
     displayMode === 'lyrics_chord_diagram' ||
     displayMode === 'lyrics_only';
 
-  // Backwards-compatible visualStyle
+  // Independent visualStyle with local storage persistence
+  const [visualStyleState, setVisualStyleState] = useState<VisualStyle>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_live_visual_style') as VisualStyle;
+      if (saved === 'diagram' || saved === 'name' || saved === 'both') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'both';
+  });
+
   const visualStyle: VisualStyle = useMemo(() => {
     if (displayMode === 'chords_diagram') return 'diagram';
     if (displayMode === 'chords_name') return 'name';
-    return 'both';
-  }, [displayMode]);
+    return visualStyleState;
+  }, [displayMode, visualStyleState]);
 
   const setVisualStyle = useCallback(
     (v: VisualStyle) => {
-      if (v === 'diagram') setDisplayMode('chords_diagram');
-      else if (v === 'name') setDisplayMode('chords_name');
-      else setDisplayMode('chords_both');
+      setVisualStyleState(v);
+      try {
+        localStorage.setItem('chordex_live_visual_style', v);
+      } catch (_) {}
+      if (
+        displayMode === 'chords_both' ||
+        displayMode === 'chords_diagram' ||
+        displayMode === 'chords_name'
+      ) {
+        if (v === 'diagram') setDisplayMode('chords_diagram');
+        else if (v === 'name') setDisplayMode('chords_name');
+        else setDisplayMode('chords_both');
+      }
     },
-    [setDisplayMode]
+    [displayMode, setDisplayMode]
   );
 
   // ── Navigation Lifecycle & Cleanups ─────────────────────────────
@@ -1163,20 +1198,40 @@ export function useLiveModeState(
     if (curLine && curLine.words && curLine.words.length > 0) {
       const curWord = allWords[currentWordIdx];
       if (curWord?.chord) {
-        return getChordById(curWord.chord);
+        return getChordById(curWord.chord) || getChordByName(curWord.chord);
       }
       const lineWords = curLine.words;
       const wordInLine = lineWords.findIndex((w) => w.globalWordIdx === currentWordIdx);
       if (wordInLine !== -1) {
         for (let i = wordInLine; i >= 0; i--) {
           if (lineWords[i].chord) {
-            return getChordById(lineWords[i].chord!);
+            return getChordById(lineWords[i].chord!) || getChordByName(lineWords[i].chord!);
           }
         }
       }
       const firstChunkWithChord = curLine.chunks.find((c) => Boolean(c.chord));
       if (firstChunkWithChord?.chord) {
-        return getChordById(firstChunkWithChord.chord);
+        return getChordById(firstChunkWithChord.chord) || getChordByName(firstChunkWithChord.chord);
+      }
+    }
+    // Backward search in previous lines to sustain the prevailing chord
+    for (let l = currentLineIdx - 1; l >= 0; l--) {
+      const prevLine = teleprompterLines[l];
+      if (prevLine?.chunks) {
+        for (let c = prevLine.chunks.length - 1; c >= 0; c--) {
+          const chunkChord = prevLine.chunks[c]?.chord;
+          if (chunkChord) {
+            return getChordById(chunkChord) || getChordByName(chunkChord);
+          }
+        }
+      }
+    }
+    // Forward search if song starts with an intro or line before first chord
+    for (let l = currentLineIdx + 1; l < teleprompterLines.length; l++) {
+      const nextLine = teleprompterLines[l];
+      const chunkChord = nextLine?.chunks?.find((c) => Boolean(c.chord))?.chord;
+      if (chunkChord) {
+        return getChordById(chunkChord) || getChordByName(chunkChord);
       }
     }
     return shownChord;
@@ -1187,7 +1242,7 @@ export function useLiveModeState(
       const nextLine = teleprompterLines[currentLineIdx + 1];
       const nextChunkWithChord = nextLine?.chunks.find((c) => Boolean(c.chord));
       if (nextChunkWithChord?.chord) {
-        return getChordById(nextChunkWithChord.chord);
+        return getChordById(nextChunkWithChord.chord) || getChordByName(nextChunkWithChord.chord);
       }
     }
     return nextChord;
