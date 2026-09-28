@@ -10,6 +10,7 @@ import {
   playChord,
   useBackHandler,
   useNavigationStore,
+  useChordStore,
   type SongPreset,
   type GuitarChordData,
   type SongLyricLine,
@@ -228,35 +229,43 @@ export function splitLineIntoWords(
   text: string,
   chords: LyricChordPlacement[] | undefined,
   lineIdx: number,
-  startGlobalIdx: number
+  startGlobalIdx: number,
+  lineDurationMs: number = 2000
 ): TeleprompterWord[] {
   const safeText = text || '';
   const regex = /\S+/g;
   let match: RegExpExecArray | null;
-  const words: TeleprompterWord[] = [];
-  let wIdx = 0;
+  const rawWords: { text: string; start: number; end: number }[] = [];
 
   while ((match = regex.exec(safeText)) !== null) {
-    const wordText = match[0];
-    const start = match.index;
-    const end = start + wordText.length;
+    rawWords.push({
+      text: match[0],
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
 
+  const wordCount = Math.max(1, rawWords.length);
+  const wordDuration = Math.round(lineDurationMs / wordCount);
+  const words: TeleprompterWord[] = [];
+
+  for (let wIdx = 0; wIdx < rawWords.length; wIdx++) {
+    const rw = rawWords[wIdx];
     const matchingChord =
-      chords?.find((c) => c.offset >= start && c.offset < end) ||
-      (wIdx === 0 ? chords?.find((c) => c.offset < start) : undefined);
+      chords?.find((c) => c.offset >= rw.start && c.offset < rw.end) ||
+      (wIdx === 0 ? chords?.find((c) => c.offset < rw.start) : undefined);
 
     words.push({
       id: `word-${lineIdx}-${wIdx}`,
-      text: wordText,
+      text: rw.text,
       chord: matchingChord?.chord,
       globalWordIdx: startGlobalIdx + wIdx,
       lineIdx,
       wordIdxInLine: wIdx,
-      startOffset: start,
-      endOffset: end,
-      durationMs: 650,
+      startOffset: rw.start,
+      endOffset: rw.end,
+      durationMs: wordDuration,
     });
-    wIdx++;
   }
 
   if (words.length === 0 && safeText.trim().length === 0) {
@@ -269,7 +278,7 @@ export function splitLineIntoWords(
       wordIdxInLine: 0,
       startOffset: 0,
       endOffset: 0,
-      durationMs: 650,
+      durationMs: lineDurationMs,
     });
   }
 
@@ -391,10 +400,36 @@ export function useLiveModeState(
   }, []);
 
   const [showContext, setShowContext] = useState(true);
-  const [bpmOverride, setBpmOverride] = useState(preset.bpm || 120);
+  const [bpmOverride, setBpmOverrideState] = useState(preset.bpm || 120);
+  const [seekToken, setSeekToken] = useState(0);
+
+  // Sync if preset.bpm changes externally
+  useEffect(() => {
+    if (preset.bpm && preset.bpm > 0) {
+      setBpmOverrideState(preset.bpm);
+    }
+  }, [preset.bpm]);
+
+  const setBpmOverride = useCallback(
+    (action: number | ((prev: number) => number)) => {
+      let nextBpm = 120;
+      setBpmOverrideState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextBpm = Math.max(20, Math.min(300, Math.round(raw)));
+        return nextBpm;
+      });
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, { bpm: nextBpm });
+          } catch (_) {}
+        });
+      }
+    },
+    [preset?.id]
+  );
 
   const teleprompterContainerRef = useRef<HTMLDivElement | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Chord Progression Data ──────────────────────────────────────
   const { chords, sectionLabels } = useMemo(() => {
@@ -417,6 +452,10 @@ export function useLiveModeState(
   const total = chords.length;
 
   // ── Teleprompter Lines Data ─────────────────────────────────────
+  const lineDurationMs = useMemo(() => {
+    return (60000 / (bpmOverride || 120)) * beatsPerLine;
+  }, [bpmOverride, beatsPerLine]);
+
   const teleprompterLines = useMemo<TeleprompterLineItem[]>(() => {
     const sections = preset.lyrics?.sections;
     if (!sections || sections.length === 0) return [];
@@ -434,7 +473,13 @@ export function useLiveModeState(
         }));
 
         const chunks = splitLineIntoChunks(line.text, lineChords);
-        const words = splitLineIntoWords(line.text, lineChords, globalIndex, runningWordGlobalIdx);
+        const words = splitLineIntoWords(
+          line.text,
+          lineChords,
+          globalIndex,
+          runningWordGlobalIdx,
+          lineDurationMs
+        );
         runningWordGlobalIdx += words.length;
 
         items.push({
@@ -455,7 +500,7 @@ export function useLiveModeState(
     });
 
     return items;
-  }, [preset.lyrics, transposeOffset]);
+  }, [preset.lyrics, transposeOffset, lineDurationMs]);
   const totalLines = teleprompterLines.length;
 
   const allWords = useMemo<TeleprompterWord[]>(() => {
@@ -663,6 +708,7 @@ export function useLiveModeState(
           setCurrentIdx(chordIdx);
         }
       }
+      setSeekToken((t) => t + 1);
     },
     [allWords, currentLineIdx, chords]
   );
@@ -682,11 +728,6 @@ export function useLiveModeState(
       }
       return next;
     });
-    setCurrentBeat((b) => {
-      const nextBeat = (b + 1) % 4;
-      if (nextBeat === 0) setCurrentBar((bar) => bar + 1);
-      return nextBeat;
-    });
   }, [allWords, currentLineIdx, chords]);
 
   const stepWordBackward = useCallback(() => {
@@ -704,7 +745,6 @@ export function useLiveModeState(
       }
       return prevIdx;
     });
-    setCurrentBeat((b) => (b > 0 ? b - 1 : 3));
   }, [allWords, currentLineIdx, chords]);
 
   const goToLine = useCallback(
@@ -720,6 +760,7 @@ export function useLiveModeState(
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
+        setSeekToken((t) => t + 1);
       }
     },
     [totalLines, currentLineIdx, allWords, chords]
@@ -817,40 +858,157 @@ export function useLiveModeState(
     }
   }, [currentLineIdx, isTeleprompterMode]);
 
-  // ── Auto-Play Timer ──────────────────────────────────────────────
-  const msPerChord = (60000 / (bpmOverride || 120)) * beatsPerChord;
-  const msPerLine = (60000 / (bpmOverride || 120)) * beatsPerLine;
+  // ── Musical Timing Constants ─────────────────────────────────────
+  const beatDurationMs = (60000 / (bpmOverride || 120)) / (playbackSpeed || 1);
+  const msPerChord = beatDurationMs * beatsPerChord;
+  const msPerLine = beatDurationMs * beatsPerLine;
 
+  // ── Precision Musical Beat Clock (Decoupled & Drift-Compensated) ──
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
     if (!autoPlay || bpmOverride <= 0) return;
+    let expectedTime = performance.now() + beatDurationMs;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
-    if (!isTeleprompterMode) {
-      intervalRef.current = setInterval(() => {
-        goNext();
-        playChordSound();
-      }, msPerChord);
-    } else {
-      const baseWordDuration = Math.round((60000 / bpmOverride) * 0.75);
-      const intervalMs = Math.max(100, Math.round(baseWordDuration / playbackSpeed));
+    const tickBeat = () => {
+      const now = performance.now();
+      const drift = now - expectedTime;
 
-      intervalRef.current = setInterval(() => {
-        stepWordForward();
-      }, intervalMs);
-    }
+      setCurrentBeat((b) => {
+        const next = (b + 1) % 4;
+        if (next === 0) {
+          setCurrentBar((bar) => bar + 1);
+        }
+        return next;
+      });
+
+      expectedTime += beatDurationMs;
+      const nextDelay = Math.max(0, beatDurationMs - drift);
+      timerId = setTimeout(tickBeat, nextDelay);
+    };
+
+    timerId = setTimeout(tickBeat, beatDurationMs);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [autoPlay, bpmOverride, playbackSpeed, beatDurationMs]);
+
+  // ── Precision Chords Auto-Play Timer (Drift-Compensated) ─────────
+  useEffect(() => {
+    if (isTeleprompterMode || !autoPlay || bpmOverride <= 0 || total === 0) return;
+    let expectedTime = performance.now() + msPerChord;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const tickChord = () => {
+      const now = performance.now();
+      const drift = now - expectedTime;
+
+      goNext();
+      playChordSound();
+
+      expectedTime += msPerChord;
+      const nextDelay = Math.max(0, msPerChord - drift);
+      timerId = setTimeout(tickChord, nextDelay);
+    };
+
+    timerId = setTimeout(tickChord, msPerChord);
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
     };
   }, [
+    isTeleprompterMode,
     autoPlay,
     bpmOverride,
-    isTeleprompterMode,
-    msPerChord,
     playbackSpeed,
+    msPerChord,
+    total,
     goNext,
-    stepWordForward,
     playChordSound,
+  ]);
+
+  // ── Precision Lyrics & Both Teleprompter Auto-Play Timer ─────────
+  const currentLineIdxRef = useRef(currentLineIdx);
+  const currentWordIdxRef = useRef(currentWordIdx);
+  useEffect(() => {
+    currentLineIdxRef.current = currentLineIdx;
+  }, [currentLineIdx]);
+  useEffect(() => {
+    currentWordIdxRef.current = currentWordIdx;
+  }, [currentWordIdx]);
+
+  useEffect(() => {
+    if (!isTeleprompterMode || !autoPlay || bpmOverride <= 0 || totalLines === 0) return;
+
+    const activeLine = teleprompterLines[currentLineIdx];
+    const lineWords = activeLine?.words || [];
+    const wordCount = Math.max(1, lineWords.length);
+    const wordDurationMs = msPerLine / wordCount;
+
+    // Find current word's relative index in activeLine
+    let localWordIdx = 0;
+    const currentWord = allWords[currentWordIdxRef.current];
+    if (currentWord && currentWord.lineIdx === currentLineIdx) {
+      localWordIdx = currentWord.wordIdxInLine;
+    }
+
+    let expectedTime = performance.now() + wordDurationMs;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const tickWord = () => {
+      const now = performance.now();
+      const drift = now - expectedTime;
+
+      localWordIdx++;
+      if (localWordIdx < lineWords.length) {
+        // Advance to next word within current line
+        const nextWord = lineWords[localWordIdx];
+        if (nextWord) {
+          currentWordIdxRef.current = nextWord.globalWordIdx;
+          setCurrentWordIdxState(nextWord.globalWordIdx);
+          if (nextWord.chord) {
+            const chordIdx = chords.indexOf(nextWord.chord);
+            if (chordIdx !== -1) setCurrentIdx(chordIdx);
+          }
+        }
+        expectedTime += wordDurationMs;
+        const nextDelay = Math.max(0, wordDurationMs - drift);
+        timerId = setTimeout(tickWord, nextDelay);
+      } else {
+        // Line completed its allotted musical duration! Advance to next line
+        const nextLineIdx = (currentLineIdx + 1) % totalLines;
+        setDirection('forward');
+        setCurrentLineIdx(nextLineIdx);
+        const nextLineWords = teleprompterLines[nextLineIdx]?.words || [];
+        if (nextLineWords.length > 0) {
+          const firstWord = nextLineWords[0];
+          currentWordIdxRef.current = firstWord.globalWordIdx;
+          setCurrentWordIdxState(firstWord.globalWordIdx);
+          if (firstWord.chord) {
+            const chordIdx = chords.indexOf(firstWord.chord);
+            if (chordIdx !== -1) setCurrentIdx(chordIdx);
+          }
+        }
+      }
+    };
+
+    timerId = setTimeout(tickWord, wordDurationMs);
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [
+    isTeleprompterMode,
+    autoPlay,
+    bpmOverride,
+    playbackSpeed,
+    msPerLine,
+    currentLineIdx,
+    seekToken,
+    totalLines,
+    teleprompterLines,
+    allWords,
+    chords,
   ]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────

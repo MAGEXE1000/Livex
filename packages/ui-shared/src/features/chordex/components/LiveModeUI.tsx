@@ -154,6 +154,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>{bpmOverride} BPM</span>
           {preset.artist ? (
             <>
               <span style={{ opacity: 0.4 }}>•</span>
@@ -725,7 +727,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
                 type="button"
-                onClick={() => setBpmOverride((b: number) => Math.max(30, b - 5))}
+                onClick={() => setBpmOverride((b: number) => Math.max(20, b - 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -739,6 +741,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   cursor: 'pointer',
                 }}
                 title="Decrease BPM"
+                aria-label="Decrease BPM"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
               </button>
@@ -747,7 +750,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
               </span>
               <button
                 type="button"
-                onClick={() => setBpmOverride((b: number) => Math.min(260, b + 5))}
+                onClick={() => setBpmOverride((b: number) => Math.min(300, b + 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -761,6 +764,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   cursor: 'pointer',
                 }}
                 title="Increase BPM"
+                aria-label="Increase BPM"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
               </button>
@@ -1476,6 +1480,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
+          data-testid="lyrics-play-pause-btn"
           onClick={() => setAutoPlay((a) => !a)}
           style={{
             width: '46px',
@@ -2233,6 +2238,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </p>
           </div>
           <Button
+            data-testid="close-live-settings-btn"
             variant="ghost"
             size="icon"
             onClick={() => setShowSettings(false)}
@@ -2582,7 +2588,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
-                onClick={() => setBpmOverride((b: number) => Math.max(20, b - 10))}
+                type="button"
+                aria-label="Decrease BPM"
+                onClick={() => setBpmOverride((b: number) => Math.max(20, b - 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',
@@ -2605,14 +2613,16 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               <ElasticSlider
                 min={20}
                 max={300}
-                step={5}
+                step={1}
                 value={bpmOverride}
                 onChange={setBpmOverride as any}
                 accentColor={accent.from}
                 style={{ flex: 1 }}
               />
               <button
-                onClick={() => setBpmOverride((b: number) => Math.min(300, b + 10))}
+                type="button"
+                aria-label="Increase BPM"
+                onClick={() => setBpmOverride((b: number) => Math.min(300, b + 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',
