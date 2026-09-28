@@ -37,7 +37,8 @@ import {
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { SongViewModeSelector, type SongViewMode } from '../components/SongViewModeSelector';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
@@ -4219,7 +4220,8 @@ export default function SongsPanel() {
   const [customSectionMode, setCustomSectionMode] = useState(false);
 
   // Editor view mode: 'chords' | 'lyrics' | 'both'
-  const [editorViewMode, setEditorViewMode] = useState<'chords' | 'lyrics' | 'both'>('chords');
+  const [editorViewMode, setEditorViewMode] = useState<SongViewMode>('chords');
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
 
 
   // Section drag-to-reorder
@@ -4425,6 +4427,19 @@ export default function SongsPanel() {
         activePreset.lyrics.sections.some((s) => s.lines.some((l) => l.text.trim().length > 0))
     );
   }, [activePreset?.lyrics]);
+
+  const handleModeChange = useCallback(
+    (nextMode: SongViewMode) => {
+      if (nextMode === editorViewMode) return;
+      const order: Record<SongViewMode, number> = { chords: 0, lyrics: 1, both: 2 };
+      setSlideDirection(order[nextMode] > order[editorViewMode] ? 1 : -1);
+      if ((nextMode === 'lyrics' || nextMode === 'both') && activePreset && !activePreset.lyrics) {
+        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
+      }
+      setEditorViewMode(nextMode);
+    },
+    [editorViewMode, activePreset, setSongLyrics]
+  );
 
   const allSongChordNames = useMemo(() => {
     if (!activePreset) return [];
@@ -4812,81 +4827,95 @@ export default function SongsPanel() {
 
         {!isWebDesktop ? (
           /* ── Mobile Top Header (Canonical SharedFloatingHeader) ── */
-          <SharedFloatingHeader
-            key={editorViewMode}
-            title={activePreset.name || 'Song Editor'}
-            subtitle={
-              editorViewMode === 'lyrics' ? (
-                activePreset.artist || undefined
-              ) : (
-                <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
-                  {activePreset.artist ? (
-                    <>
-                      <span className="truncate max-w-[120px]">{activePreset.artist}</span>
-                      <span className="opacity-40">•</span>
-                    </>
-                  ) : null}
-                  <span>{displayKey}</span>
-                  <span className="opacity-40">•</span>
-                  <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
-                </span>
-              )
-            }
-            onBack={() => {
-              if (editorViewMode !== 'chords') {
-                setEditorViewMode('chords');
-              } else {
-                setActivePreset(null);
+          <>
+            <SharedFloatingHeader
+              title={activePreset.name || 'Song Editor'}
+              subtitle={
+                editorViewMode === 'lyrics' ? (
+                  activePreset.artist || undefined
+                ) : (
+                  <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
+                    {activePreset.artist ? (
+                      <>
+                        <span className="truncate max-w-[120px]">{activePreset.artist}</span>
+                        <span className="opacity-40">•</span>
+                      </>
+                    ) : null}
+                    <span>{displayKey}</span>
+                    <span className="opacity-40">•</span>
+                    <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
+                  </span>
+                )
               }
-            }}
-            backBtnTestId="editor-back-btn"
-            scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
-            toolbarActions={
-              <div className="flex items-center gap-1.5">
-                <motion.button
-                  whileTap={{ scale: 0.92 }}
-                  aria-label="Edit song details"
-                  data-purpose="edit-song-details-btn"
-                  onClick={() => {
-                    setEditingId(activePreset.id);
-                    setShowForm(true);
-                  }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: 'var(--c-text-primary, #FFFFFF)',
-                  }}
-                  type="button"
-                  title="Edit song details"
-                >
-                  <span className="material-symbols-rounded text-[18px]">edit</span>
-                </motion.button>
-
-                {hasLiveContent && (
+              onBack={() => {
+                if (editorViewMode !== 'chords') {
+                  handleModeChange('chords');
+                } else {
+                  setActivePreset(null);
+                }
+              }}
+              backBtnTestId="editor-back-btn"
+              scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
+              toolbarActions={
+                <div className="flex items-center gap-1.5">
                   <motion.button
                     whileTap={{ scale: 0.92 }}
-                    aria-label="Live Mode"
-                    onClick={() => setShowLive(true)}
-                    data-testid="enter-live-mode"
-                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                    aria-label="Edit song details"
+                    data-purpose="edit-song-details-btn"
+                    onClick={() => {
+                      setEditingId(activePreset.id);
+                      setShowForm(true);
+                    }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.12)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
-                      color: '#FFFFFF',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: 'var(--c-text-primary, #FFFFFF)',
                     }}
                     type="button"
-                    title="Start live performance"
+                    title="Edit song details"
                   >
-                    <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
-                      play_arrow
-                    </span>
+                    <span className="material-symbols-rounded text-[18px]">edit</span>
                   </motion.button>
-                )}
-              </div>
-            }
-          />
+
+                  {hasLiveContent && (
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      aria-label="Live Mode"
+                      onClick={() => setShowLive(true)}
+                      data-testid="enter-live-mode"
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.12)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255, 255, 255, 0.18)',
+                        color: '#FFFFFF',
+                      }}
+                      type="button"
+                      title="Start live performance"
+                    >
+                      <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
+                        play_arrow
+                      </span>
+                    </motion.button>
+                  )}
+                </div>
+              }
+            />
+            {/* Canonical Persistent Mobile View Mode Selector */}
+            <div
+              className="w-full flex items-center justify-center pointer-events-auto"
+              style={{
+                position: 'relative',
+                marginTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                paddingBottom: '8px',
+                zIndex: 35,
+                flexShrink: 0,
+              }}
+            >
+              <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+            </div>
+          </>
         ) : (
           /* Desktop Title and Meta Header */
           <header
@@ -5133,58 +5162,11 @@ export default function SongsPanel() {
                     {activePreset.bpm} BPM
                   </span>
                 )}
-                {(hasLyrics || editorViewMode !== 'chords') ? (
-                  <div
-                    className="flex items-center p-0.5 rounded-full border shadow-xs"
-                    style={{
-                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                    }}
-                  >
-                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
-                      const isActive = editorViewMode === mode;
-                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`desktop-view-mode-${mode}`}
-                          onClick={() => setEditorViewMode(mode)}
-                          className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
-                          style={{
-                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
-                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
-                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                          }}
-                        >
-                          {labels[mode]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    data-testid="desktop-add-lyrics-btn"
-                    onClick={() => {
-                      if (!activePreset.lyrics) {
-                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
-                      }
-                      setEditorViewMode('lyrics');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-secondary, #6B7280)',
-                    }}
-                  >
-                    <span className="material-symbols-rounded text-sm" style={{ color: 'var(--c-accent-from, #2563EB)' }}>
-                      lyrics
-                    </span>
-                    <span>+ Add Lyrics</span>
-                  </button>
-                )}
+                <SongViewModeSelector
+                  mode={editorViewMode}
+                  onChange={handleModeChange}
+                  testIdPrefix="desktop-view-mode"
+                />
               </div>
 
               {editorViewMode !== 'lyrics' && (
@@ -5204,8 +5186,39 @@ export default function SongsPanel() {
           </header>
         )}
 
-        {/* Chord list or Empty Progression State */}
-        {(() => {
+        {/* Animated View Mode Content */}
+        <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+          <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
+            <motion.div
+              key={editorViewMode}
+              custom={slideDirection}
+              variants={{
+                enter: (dir: number) => ({
+                  x: dir > 0 ? 32 : -32,
+                  opacity: 0,
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1,
+                },
+                exit: (dir: number) => ({
+                  x: dir > 0 ? -32 : 32,
+                  opacity: 0,
+                }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                type: 'spring',
+                stiffness: 450,
+                damping: 35,
+                mass: 0.8,
+              }}
+              className="flex-1 flex flex-col min-h-0 w-full h-full overflow-hidden"
+            >
+              {/* Chord list or Empty Progression State */}
+              {(() => {
           const totalChordsCount =
             (activePreset.chords?.length ?? 0) +
             (activePreset.sections ?? []).reduce((acc, s) => acc + s.chords.length, 0);
@@ -5218,8 +5231,7 @@ export default function SongsPanel() {
                 ref={lyricsScrollRef}
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
                 style={{
-                  paddingTop:
-                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                  paddingTop: isWebDesktop ? '16px' : '12px',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5228,38 +5240,6 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-lyrics-area"
               >
-                {/* View Mode Selector */}
-                <div className="w-full flex items-center justify-center pb-4 pt-1">
-                  <div
-                    className="flex items-center p-0.5 rounded-full border shadow-xs"
-                    style={{
-                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                    }}
-                    data-purpose="view-mode-selector"
-                  >
-                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
-                      const isActive = editorViewMode === mode;
-                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`view-mode-${mode}`}
-                          onClick={() => setEditorViewMode(mode)}
-                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
-                          style={{
-                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
-                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
-                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                          }}
-                        >
-                          {labels[mode]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 <SongLivePreparationView
                   preset={activePreset}
@@ -5286,8 +5266,7 @@ export default function SongsPanel() {
                 ref={editorScrollRef}
                 className="flex-1 flex flex-col items-center justify-center px-4"
                 style={{
-                  paddingTop:
-                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                  paddingTop: '12px',
                 }}
                 data-purpose="empty-chord-progression"
               >
@@ -5340,8 +5319,7 @@ export default function SongsPanel() {
               ref={editorScrollRef}
               className="flex-1 overflow-y-auto no-scrollbar"
               style={{
-                paddingTop:
-                  'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                paddingTop: isWebDesktop ? '16px' : '12px',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
@@ -5350,40 +5328,6 @@ export default function SongsPanel() {
               }}
               data-purpose="editor-content-area"
             >
-              {/* Optional View Mode Selector when song has lyrics or mode is not chords */}
-              {(hasLyrics || editorViewMode !== 'chords') && (
-                <div className="w-full flex items-center justify-center pb-3 pt-1">
-                  <div
-                    className="flex items-center p-0.5 rounded-full border shadow-xs"
-                    style={{
-                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                    }}
-                    data-purpose="view-mode-selector"
-                  >
-                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
-                      const isActive = editorViewMode === mode;
-                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`view-mode-${mode}`}
-                          onClick={() => setEditorViewMode(mode)}
-                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
-                          style={{
-                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
-                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
-                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                          }}
-                        >
-                          {labels[mode]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
               {/* Optional Lyrics / Notes Card */}
               {activePreset.notes && (
                 <div
@@ -6056,6 +6000,9 @@ export default function SongsPanel() {
             </div>
           );
         })()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* ── UNIFIED COMPACT MORPHING "+" ACTION CONTROL ── */}
         {editorViewMode !== 'lyrics' && (
@@ -6118,10 +6065,7 @@ export default function SongsPanel() {
                   icon: 'lyrics',
                   sublabel: 'Open lyrics workspace',
                   onPress: () => {
-                    if (!activePreset?.lyrics) {
-                      setSongLyrics(activePreset!.id, createEmptyLyricsDocument());
-                    }
-                    setEditorViewMode('lyrics');
+                    handleModeChange('lyrics');
                   },
                 },
               ]}
