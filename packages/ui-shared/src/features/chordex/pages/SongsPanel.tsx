@@ -6023,26 +6023,12 @@ export default function SongsPanel() {
                 </>
               )}
 
-              {/* In 'both' mode: Render SongLyricsEditor below the chords */}
+              {/* In 'both' mode: Render SongLyricsEditor below the chords with streamlined container */}
               {editorViewMode === 'both' && (
                 <div
-                  className="mt-6 pt-6 border-t"
+                  className="mt-4 pt-3 border-t"
                   style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <span
-                      className="material-symbols-rounded text-lg"
-                      style={{ color: 'var(--c-accent-from, #2563EB)' }}
-                    >
-                      lyrics
-                    </span>
-                    <h3
-                      className="text-sm font-bold tracking-tight"
-                      style={{ color: 'var(--c-text-primary)' }}
-                    >
-                      Lyrics & Vocal Roles
-                    </h3>
-                  </div>
                   <SongLyricsEditor
                     lyrics={activePreset.lyrics}
                     onChange={(nextLyrics) => {
@@ -6061,7 +6047,7 @@ export default function SongsPanel() {
         </div>
 
         {/* ── UNIFIED COMPACT MORPHING "+" ACTION CONTROL ── */}
-        {editorViewMode !== 'lyrics' && (
+        {editorViewMode === 'chords' && (
           <div
             className="fixed z-40 pointer-events-auto"
             style={{
