@@ -72,7 +72,6 @@ const liveModeStyles = `
 /* Active Word in Sung Focus (Apple Music lyric aesthetic) */
 .chord-cell.active .karaoke-word,
 .lyric-word.word-active {
-  color: var(--c-text-primary, #0f172a) !important;
   font-weight: 800 !important;
   transform: scale(1.06) translateY(-1px);
   filter: drop-shadow(0 2px 10px rgba(37, 99, 235, 0.35));
@@ -88,7 +87,6 @@ const liveModeStyles = `
 /* Passed words in current/prior context */
 .chord-cell.passed .karaoke-word,
 .lyric-word.word-past {
-  color: var(--c-text-primary, #334155);
   font-weight: 600;
   opacity: 0.95;
 }
@@ -98,7 +96,6 @@ const liveModeStyles = `
 
 /* Upcoming words */
 .lyric-word.word-upcoming {
-  color: var(--c-text-secondary, #94a3b8);
   opacity: 0.55;
   font-weight: 500;
 }
@@ -1146,11 +1143,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 borderRadius: '16px',
                 padding: '12px 16px',
                 background: isActive
-                  ? `color-mix(in srgb, ${accent.from} 12%, rgba(255,255,255,0.03))`
+                  ? `color-mix(in srgb, ${item.color || accent.from} 12%, rgba(255,255,255,0.03))`
                   : 'transparent',
-                borderLeft: isActive ? `4px solid ${accent.from}` : '4px solid transparent',
+                borderLeft: isActive ? `4px solid ${item.color || accent.from}` : '4px solid transparent',
                 boxShadow: isActive
-                  ? `0 0 24px ${accent.from}1a, inset 0 0 12px ${accent.from}0d`
+                  ? `0 0 24px ${item.color || accent.from}1a, inset 0 0 12px ${item.color || accent.from}0d`
                   : 'none',
                 opacity: isActive ? 1 : isPast ? 0.42 : 0.75,
                 transition:
@@ -1284,6 +1281,13 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   item.words.map((w) => {
                     const isWordActive = w.globalWordIdx === currentWordIdx;
                     const isWordPassed = w.globalWordIdx < currentWordIdx;
+                    const wordColor = w.color
+                      ? w.color
+                      : isWordActive
+                      ? 'var(--c-text-primary)'
+                      : isWordPassed
+                      ? 'var(--c-text-primary)'
+                      : 'var(--c-text-secondary)';
 
                     return (
                       <div
@@ -1313,6 +1317,9 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
                             fontWeight: isWordActive ? 800 : 600,
+                            color: wordColor,
+                            opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
+                            filter: isWordActive && w.color ? `drop-shadow(0 2px 10px ${w.color}88)` : undefined,
                           }}
                         >
                           {w.text}&nbsp;
@@ -1324,6 +1331,13 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   item.words.map((w) => {
                     const isWordActive = w.globalWordIdx === currentWordIdx;
                     const isWordPassed = w.globalWordIdx < currentWordIdx;
+                    const wordColor = w.color
+                      ? w.color
+                      : isWordActive
+                      ? 'var(--c-text-primary)'
+                      : isWordPassed
+                      ? 'var(--c-text-primary)'
+                      : 'var(--c-text-secondary)';
 
                     return (
                       <span
@@ -1339,11 +1353,9 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                           fontFamily: resolvedFontFamily,
                           fontSize: fontSizes.text,
                           fontWeight: isWordActive ? 800 : 600,
-                          color: isWordActive
-                            ? 'var(--c-text-primary)'
-                            : isWordPassed
-                            ? 'var(--c-text-primary)'
-                            : 'var(--c-text-secondary)',
+                          color: wordColor,
+                          opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
+                          filter: isWordActive && w.color ? `drop-shadow(0 2px 10px ${w.color}88)` : undefined,
                           cursor: 'pointer',
                         }}
                       >
@@ -1711,19 +1723,31 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 96px)',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        boxSizing: 'border-box',
+        overflow: 'hidden',
+        width: '100%',
+        height: '100%',
       }}
     >
-      {/* Centered Stage Presentation Wrapper */}
+      {/* Scrollable Stage Area */}
       <div
         style={{
+          flex: 1,
           width: '100%',
-          maxWidth: '560px',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 104px)',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Centered Stage Presentation Wrapper */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '560px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1840,6 +1864,13 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             currentLine.words.map((w) => {
               const isWordActive = w.globalWordIdx === currentWordIdx;
               const isWordPassed = w.globalWordIdx < currentWordIdx;
+              const wordColor = w.color
+                ? w.color
+                : isWordActive
+                ? accent.from
+                : isWordPassed
+                ? 'var(--c-text-primary)'
+                : 'var(--c-text-secondary)';
 
               return (
                 <span
@@ -1856,11 +1887,9 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                     fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                     fontSize: 'clamp(24px, 5.5vw, 36px)',
                     fontWeight: isWordActive ? 800 : isWordPassed ? 600 : 500,
-                    color: isWordActive
-                      ? accent.from
-                      : isWordPassed
-                      ? 'var(--c-text-primary)'
-                      : 'var(--c-text-secondary)',
+                    color: wordColor,
+                    opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
+                    filter: isWordActive && w.color ? `drop-shadow(0 2px 14px ${w.color}88)` : undefined,
                     cursor: 'pointer',
                   }}
                 >
@@ -1874,7 +1903,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                 fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                 fontSize: '28px',
                 fontWeight: 700,
-                color: 'var(--c-text-secondary)',
+                color: currentLine?.color || 'var(--c-text-secondary)',
               }}
             >
               {currentLine?.line.text || '...'}
@@ -1940,6 +1969,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             </div>
           </button>
         )}
+      </div>
       </div>
       </div>
 

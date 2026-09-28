@@ -197,3 +197,41 @@ export function setColorOnSelection(
 ): LyricTextSpan[] {
   return applyFormatToSpans(spans, fullText, startOffset, endOffset, { color });
 }
+
+/**
+ * Returns the color format of the character at the specified character offset.
+ */
+export function getCharacterColor(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): string | undefined {
+  if (!spans || spans.length === 0) return undefined;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return s.format?.color;
+    }
+    offset = end;
+  }
+  return undefined;
+}
+
+/**
+ * Checks if the character at the specified character offset is bold.
+ */
+export function getCharacterBold(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): boolean {
+  if (!spans || spans.length === 0) return false;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return Boolean(s.format?.bold);
+    }
+    offset = end;
+  }
+  return false;
+}

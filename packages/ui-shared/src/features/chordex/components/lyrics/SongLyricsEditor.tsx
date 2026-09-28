@@ -886,6 +886,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           paddingBottom: '16px',
         }}
         data-purpose="teleprompter-writing-canvas"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setEditingLineId(null);
+          }
+        }}
       >
         {/* If completely empty: Show pristine writing invitation without forced sections */}
         {isLyricsEmpty && (
@@ -1139,6 +1144,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 onChange={(e) =>
                                   handleUpdateLineText(section.id, line.id, e.target.value)
                                 }
+                                onBlur={() => {
+                                  setEditingLineId(null);
+                                }}
                                 onSelect={(e) => {
                                   const target = e.target as HTMLInputElement;
                                   setActiveSelection({
@@ -1165,21 +1173,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   }
                                 }}
                                 placeholder={isLyricsEmpty ? 'Type or paste lyrics...' : 'Type line text...'}
-                                className="flex-1 bg-transparent border-0 border-b border-blue-500/40 outline-none text-base leading-relaxed tracking-wide pb-0.5"
+                                className="flex-1 bg-transparent border-0 border-b border-white/20 focus:border-white/40 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 text-base leading-relaxed tracking-wide pb-0.5"
                                 style={{
+                                  outline: 'none',
+                                  boxShadow: 'none',
+                                  borderTop: 'none',
+                                  borderLeft: 'none',
+                                  borderRight: 'none',
+                                  borderBottom: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.25)',
+                                  borderRadius: 0,
                                   color: resolvedColor,
                                   fontWeight: isLineBold ? 800 : 500,
                                   fontFamily: 'inherit',
                                 }}
                               />
-                              <button
-                                type="button"
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => setEditingLineId(null)}
-                                className="text-xs font-bold px-3 py-1 rounded-lg bg-blue-600/30 text-blue-300 hover:bg-blue-600/40 border border-blue-500/30 cursor-pointer transition active:scale-95"
-                              >
-                                Done
-                              </button>
                             </div>
                           </div>
                         ) : line.text === '' ? (
@@ -1304,7 +1311,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                     }),
                                                   }));
                                                 } else {
-                                                  // Target this word for chord insertion or styling
+                                                  // Target this word for chord insertion and open line edit mode
                                                   setActiveSelection({
                                                     sectionId: section.id,
                                                     lineId: line.id,
@@ -1312,20 +1319,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                     end: globalEnd,
                                                     text: w.word,
                                                   });
+                                                  setEditingLineId(line.id);
                                                 }
                                               }}
                                               onDoubleClick={(e) => {
                                                 e.stopPropagation();
                                                 setEditingLineId(line.id);
                                               }}
-                                              className={`cursor-pointer rounded px-0.5 transition-all ${
-                                                isWordTargeted
-                                                  ? 'ring-2 ring-blue-500 bg-blue-500/20 font-bold'
-                                                  : 'hover:bg-white/10'
-                                              }`}
+                                              className="cursor-pointer rounded px-0.5 transition-all hover:bg-white/10"
                                               style={{
                                                 color: wordColor,
-                                                fontWeight: wordBold ? 800 : isWordTargeted ? 700 : 500,
+                                                fontWeight: wordBold ? 800 : 500,
                                                 fontFamily: 'inherit',
                                               }}
                                               title={activeColorTool !== null ? `Tap to color [${w.word}]` : `Target "${w.word}" for chord`}

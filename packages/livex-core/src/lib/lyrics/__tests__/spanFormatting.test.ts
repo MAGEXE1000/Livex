@@ -5,10 +5,36 @@ import {
   isSelectionBold,
   toggleBoldOnSelection,
   setColorOnSelection,
+  getCharacterColor,
+  getCharacterBold,
 } from '../spanFormatting';
 import type { LyricTextSpan } from '../../../types/lyrics';
 
 describe('Lyrics Span Formatting Utilities', () => {
+  it('correctly resolves character color and bold across formatted spans', () => {
+    const spans: LyricTextSpan[] = [
+      { text: 'Lead: ', format: { bold: true, color: '#3b82f6' } },
+      { text: 'I see a silhouette' },
+      { text: ' of a man', format: { color: '#ec4899' } },
+    ];
+
+    // Character 0 ('L') is inside the first span
+    expect(getCharacterColor(spans, 0)).toBe('#3b82f6');
+    expect(getCharacterBold(spans, 0)).toBe(true);
+
+    // Character 8 ('s' in silhouette) is inside the unformatted second span
+    expect(getCharacterColor(spans, 8)).toBeUndefined();
+    expect(getCharacterBold(spans, 8)).toBe(false);
+
+    // Character 26 ('f' in of a man) is inside the third span
+    expect(getCharacterColor(spans, 26)).toBe('#ec4899');
+    expect(getCharacterBold(spans, 26)).toBe(false);
+
+    // Negative or beyond bounds returns undefined / false
+    expect(getCharacterColor(spans, 999)).toBeUndefined();
+    expect(getCharacterBold(spans, 999)).toBe(false);
+  });
+
   it('applies bold to a single word in a line', () => {
     const text = 'This is important text';
     const start = text.indexOf('important');

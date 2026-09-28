@@ -21,6 +21,7 @@ import {
   formatDurationMmSs,
   parseDurationMmSs,
   type SongTimingSchedule,
+  getCharacterColor,
 } from '@workspace/livex-core';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
@@ -56,6 +57,7 @@ export interface TeleprompterWord {
   startOffset: number;
   endOffset: number;
   durationMs: number;
+  color?: string;
 }
 
 export interface TeleprompterLineItem {
@@ -70,6 +72,7 @@ export interface TeleprompterLineItem {
   line: SongLyricLine;
   chunks: TeleprompterLineChunk[];
   words: TeleprompterWord[];
+  color?: string;
 }
 
 export interface LiveModeState {
@@ -244,7 +247,9 @@ export function splitLineIntoWords(
   lineIdx: number,
   startGlobalIdx: number,
   lineDurationMs: number = 2000,
-  lineType?: string
+  lineType?: string,
+  line?: SongLyricLine,
+  defaultLineColor?: string
 ): TeleprompterWord[] {
   const safeText = text || '';
 
@@ -260,6 +265,7 @@ export function splitLineIntoWords(
         startOffset: 0,
         endOffset: safeText.length,
         durationMs: lineDurationMs,
+        color: defaultLineColor,
       },
     ];
   }
@@ -288,6 +294,9 @@ export function splitLineIntoWords(
       chords?.find((c) => c.offset >= prevEnd && c.offset <= rw.start) ||
       (wIdx === 0 ? chords?.find((c) => c.offset < rw.start) : undefined);
 
+    const spanColor = getCharacterColor(line?.spans, rw.start);
+    const resolvedWordColor = spanColor || defaultLineColor;
+
     words.push({
       id: `word-${lineIdx}-${wIdx}`,
       text: rw.text,
@@ -298,6 +307,7 @@ export function splitLineIntoWords(
       startOffset: rw.start,
       endOffset: rw.end,
       durationMs: wordDuration,
+      color: resolvedWordColor,
     });
   }
 
@@ -312,6 +322,7 @@ export function splitLineIntoWords(
       startOffset: 0,
       endOffset: 0,
       durationMs: lineDurationMs,
+      color: defaultLineColor,
     });
   }
 
@@ -550,11 +561,18 @@ export function useLiveModeState(
 
     sections.forEach((sec) => {
       const lines = sec.lines || [];
+      const sectionRole = sec.vocalRole || preset.lyrics?.defaultVocalRole;
       lines.forEach((line, lIdx) => {
         const lineChords = (line.chords || []).map((c) => ({
           ...c,
           chord: transposeOffset !== 0 ? transposeChordId(c.chord, transposeOffset) : c.chord,
         }));
+
+        const lineRole = line.vocalRole || sectionRole;
+        const defaultLineColor =
+          line.format?.color ||
+          lineRole?.color ||
+          preset.lyrics?.formatting?.defaultColor;
 
         const chunks = splitLineIntoChunks(line.text, lineChords);
         const words = splitLineIntoWords(
@@ -563,7 +581,9 @@ export function useLiveModeState(
           globalIndex,
           runningWordGlobalIdx,
           lineDurationMs,
-          line.type
+          line.type,
+          line,
+          defaultLineColor
         );
         runningWordGlobalIdx += words.length;
 
@@ -573,12 +593,13 @@ export function useLiveModeState(
           sectionId: sec.id,
           sectionName: sec.name,
           sectionType: sec.type,
-          sectionVocalRole: line.vocalRole || sec.vocalRole || preset.lyrics?.defaultVocalRole,
+          sectionVocalRole: lineRole,
           isFirstLineOfSection: lIdx === 0,
           isLastLineOfSection: lIdx === lines.length - 1,
           line,
           chunks,
           words,
+          color: defaultLineColor,
         });
         globalIndex++;
       });
@@ -653,14 +674,18 @@ export function useLiveModeState(
 
   const [displayMode, setDisplayModeState] = useState<LiveDisplayMode>(getDefaultMode);
 
+  const prevInitialModeRef = useRef(initialMode);
   // Sync mode if initialMode changes
   useEffect(() => {
-    if (initialMode === 'chords' && hasChords) {
-      setDisplayModeState('chords_both');
-    } else if (initialMode === 'lyrics' && hasLyrics) {
-      setDisplayModeState('lyrics_only');
-    } else if (initialMode === 'both' && (hasChords || hasLyrics)) {
-      setDisplayModeState('lyrics_chord_diagram');
+    if (prevInitialModeRef.current !== initialMode) {
+      prevInitialModeRef.current = initialMode;
+      if (initialMode === 'chords' && hasChords) {
+        setDisplayModeState('chords_both');
+      } else if (initialMode === 'lyrics' && hasLyrics) {
+        setDisplayModeState('lyrics_only');
+      } else if (initialMode === 'both' && (hasChords || hasLyrics)) {
+        setDisplayModeState('lyrics_chord_diagram');
+      }
     } else if (!compatibleModes.includes(displayMode) && compatibleModes.length > 0) {
       setDisplayModeState(getDefaultMode());
     }
