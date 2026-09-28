@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.62';
-export const NATIVE_VERSION_CODE = 40662;
-export const WEB_VERSION = '4.6.62';
+export const NATIVE_VERSION = '4.6.63';
+export const NATIVE_VERSION_CODE = 40663;
+export const WEB_VERSION = '4.6.63';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/28/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f47e9ea8';
+export const APP_COMMIT_SHA = '594db302';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/28/2026, 12:00:00 AM CST';
+export const APP_BUILD_TIMESTAMP = '9/28/2026, 12:00:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.',
-      'Word Repositioning Actions: Direct navigation controls ("← Prev Word", "Next Word →") within the chord adjustment modal to shift chords across lyrics with instant visual preview.',
+      'Canonical Library Fretboard in Both Live Mode: Integrated the full-fidelity DetailFretboardDiagram directly from the Chordex Library into Both Live mode, featuring realistic vector strings, fret wires, base fret indicators, nut bar, barre pills, and finger dots with note labels.',
+      'Large Stage-Ready Chord Diagram: Generously sized the live chord diagram (max-w-[360px], 312px × 304px SVG surface) for maximum stage and music stand visibility.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.',
-      'Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.',
-      'View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.',
+      'Centered Stage Presentation: Centered the live chord card and synchronized teleprompter with auto margins, eliminating crowding against the top header and establishing balanced vertical alignment.',
+      'Harmonized Vertical Layout: Unified vertical rhythm and eliminated dead gaps across Chords, Lyrics, Both, and Live modes.',
     ],
   },
 ];
@@ -122,6 +121,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.63',
+    date: '2026-09-28',
+    highlights: [
+      'Canonical Library Fretboard in Both Live Mode: Integrated the full-fidelity DetailFretboardDiagram directly from the Chordex Library into Both Live mode, featuring realistic vector strings, fret wires, base fret indicators, nut bar, barre pills, and finger dots with note labels.',
+      'Large Stage-Ready Chord Diagram: Generously sized the live chord diagram (max-w-[360px], 312px × 304px SVG surface) for maximum stage and music stand visibility.',
+      'Centered Stage Presentation: Centered the live chord card and synchronized teleprompter with auto margins, eliminating crowding against the top header and establishing balanced vertical alignment.',
+      'Harmonized Vertical Layout: Unified vertical rhythm and eliminated dead gaps across Chords, Lyrics, Both, and Live modes.',
+    ],
+  },
   {
     version: '4.6.62',
     date: '2026-09-28',
@@ -213,17 +222,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Developer Panel Lifecycle & Background Polling Teardown: Conditionally unmount DevToolsDashboard when navigating away from developer settings, terminating 5,000ms background polling timers and profiler subscriptions.',
       'Dual-Instance Hub Settings Elimination: Guarded LivexHub settings and profile tabs to prevent maintaining duplicate concurrent 5,000-line HubSettings component trees in memory.',
       'Comprehensive Performance Report Generation: Upgraded DevTools Performance "Copy" button to dynamically synthesize a comprehensive, 11-section diagnostic report directly from the live singleton PerformanceProfiler.',
-    ],
-  },
-  {
-    version: '4.6.53',
-    date: '2026-09-26',
-    highlights: [
-      'Stagex Controls Interactivity: Resolved a stacking-context collision where an invisible `SharedNavigationContainer` overlay pane at `z-index: 2` blocked all touch/click pointer events to the stage canvas at `z-index: 1`. Elevated Stage canvas viewport to `z-index: 10`, disabled pointer events on empty sub-navigation containers, and eliminated ghost panes for views returning null.',
-      'Restored All Stage Controls: Restored complete interactivity to all 11 Stage controls (Stage "+", eye/visibility mode, PDF export, scene "+" and scene switcher in `#sc-scenes-bar`, layers popup, ruler/measure, cloud collaboration, undo/redo history drawer, focus/reset view, clear stage trash, and portrait/landscape rotation).',
-      'Performance Diagnostics Layout: Fixed character-by-character vertical text splitting on narrow mobile Android screens by restructuring the Top Banner Row to a vertical flex column and replacing aggressive `wordBreak: break-word` with `overflowWrap: break-word, wordBreak: normal`.',
-      'Compact Diagnostics Presentation: Rebalanced 6 core telemetry cards into an ergonomic 2-column mobile grid, compacted actionable performance warning badges, and implemented single-line ellipsis truncation on long tasks, routes, and component profiler metrics.',
-      'Hub Navigation Performance: Eliminated 220ms synchronous navigation transition blocking task by removing eager sub-page pre-mounting in Hub Settings, and replaced layout projection reflows with GPU-accelerated CSS transforms on hub cards.',
     ],
   },
 ];
