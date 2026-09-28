@@ -28,8 +28,13 @@ import {
   getAdjacentWordOffset,
   type LyricLineSegment,
   type LyricTextSpan,
+  getAllChords,
+  searchChords,
+  ROOTS,
+  type Chord,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
+import ChordDiagram from '../../diagrams/ChordDiagram';
 
 export interface SongLyricsEditorProps {
   lyrics?: SongLyricsDocument;
@@ -134,13 +139,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [renameSectionTarget, setRenameSectionTarget] = useState<{ id: string; name: string } | null>(null);
 
-  // Chord Popover
+  // Chord Library Modal & Target
   const [showChordPicker, setShowChordPicker] = useState(false);
   const [chordPickerTarget, setChordPickerTarget] = useState<{
     sectionId: string;
     lineId: string;
     offset: number;
+    wordText?: string;
   } | null>(null);
+  const [chordSearchQuery, setChordSearchQuery] = useState('');
+  const [chordRootFilter, setChordRootFilter] = useState('All');
+  const [chordTypeFilter, setChordTypeFilter] = useState('all');
 
   // Selected chord target for context menu (move, replace, delete)
   const [selectedChordForEdit, setSelectedChordForEdit] = useState<{
@@ -449,15 +458,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const handleOpenChordPicker = useCallback(() => {
     const sel = activeSelectionRef.current;
     if (!sel) {
-      // If there are lines, pick the first line
+      // If there are lines, pick the first line at start
       const firstSec = currentDoc.sections[0];
       const firstLine = firstSec?.lines[0];
       if (firstSec && firstLine) {
         setChordPickerTarget({
           sectionId: firstSec.id,
           lineId: firstLine.id,
-          offset: firstLine.text.length,
+          offset: 0,
+          wordText: firstLine.text.split(' ')[0] || 'line start',
         });
+        setChordSearchQuery('');
+        setChordRootFilter('All');
+        setChordTypeFilter('all');
         setShowChordPicker(true);
       } else {
         toast.info('Type a lyric line first to attach chords');
@@ -469,7 +482,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       sectionId: sel.sectionId,
       lineId: sel.lineId,
       offset: sel.start,
+      wordText: sel.text,
     });
+    setChordSearchQuery('');
+    setChordRootFilter('All');
+    setChordTypeFilter('all');
     setShowChordPicker(true);
   }, [currentDoc.sections]);
 
@@ -483,7 +500,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             ...sec,
             lines: sec.lines.map((line) => {
               if (line.id !== lineId) return line;
-              const chords = [...(line.chords || [])];
+              // Cleanly replace any existing chord at the exact same character offset
+              const chords = (line.chords || []).filter((c) => c.offset !== offset);
               chords.push({
                 id: generateLyricId('chord'),
                 chord,
@@ -715,7 +733,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     }
   }, [currentDoc]);
 
-  // Combined chords list
+  // Combined chords list for quick alternatives
   const chordOptions = useMemo(() => {
     const list = new Set<string>();
     const formatChord = (raw: string) => {
@@ -729,6 +747,78 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     );
     return Array.from(list);
   }, [availableChords]);
+
+  // Canonical Chordex Chords
+  const allCanonicalChords = useMemo(() => getAllChords(), []);
+
+  // Quick Chords for the compact toolbar popover (Song chords first, then core essentials - max 10 total)
+  const quickChords = useMemo(() => {
+    const list: string[] = [];
+    const seen = new Set<string>();
+
+    const formatChord = (raw: string) => {
+      if (raw.includes('-min-')) return raw.replace(/^[a-z]/, (m) => m.toUpperCase()).replace('-min-1', 'm').replace('-min-', 'm');
+      if (raw.includes('-maj-')) return raw.replace(/^[a-z]/, (m) => m.toUpperCase()).replace('-maj-1', '').replace('-maj-', '');
+      return raw;
+    };
+
+    // 1. Song chords first
+    availableChords.forEach((c) => {
+      const formatted = formatChord(c).trim();
+      if (formatted && !seen.has(formatted)) {
+        seen.add(formatted);
+        list.push(formatted);
+      }
+    });
+
+    // 2. Common core essentials
+    const coreEssentials = ['C', 'G', 'D', 'Em', 'Am', 'F', 'A', 'E', 'Bm', 'C7', 'G7'];
+    for (const c of coreEssentials) {
+      if (!seen.has(c) && list.length < 10) {
+        seen.add(c);
+        list.push(c);
+      }
+    }
+
+    return list;
+  }, [availableChords]);
+
+  // Filtered Chords for the Full Library Modal
+  const filteredLibraryChords = useMemo(() => {
+    let list = allCanonicalChords;
+
+    // Search query
+    if (chordSearchQuery.trim()) {
+      const q = chordSearchQuery.trim().toLowerCase();
+      list = list.filter((c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.root.toLowerCase() === q ||
+        c.notes.some((n) => n.toLowerCase().includes(q))
+      );
+    }
+
+    // Root note
+    if (chordRootFilter !== 'All') {
+      list = list.filter((c) => c.root === chordRootFilter);
+    }
+
+    // Category / Quality
+    if (chordTypeFilter !== 'all') {
+      list = list.filter((c) => {
+        if (chordTypeFilter === 'major') return c.type === 'major';
+        if (chordTypeFilter === 'minor') return c.type === 'minor';
+        if (chordTypeFilter === '7th') return c.type === '7th';
+        if (chordTypeFilter === 'maj7') return c.type === 'maj7';
+        if (chordTypeFilter === 'min7') return c.type === 'min7';
+        if (chordTypeFilter === 'sus') return c.type.includes('sus');
+        if (chordTypeFilter === 'add9') return c.type.includes('9') || c.type.includes('add');
+        if (chordTypeFilter === 'dim') return c.type.includes('dim') || c.type.includes('aug');
+        return true;
+      });
+    }
+
+    return list;
+  }, [allCanonicalChords, chordSearchQuery, chordRootFilter, chordTypeFilter]);
 
   return (
     <div
@@ -940,6 +1030,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           /* Responsive Word-Segment Surface with Ruby Chord Alignment */
                           <div
                             className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-pointer"
+                            title="Tap to edit line"
                             onClick={() => {
                               if (activeColorTool === null) {
                                 setEditingLineId(line.id);
@@ -1017,6 +1108,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                         return (
                                           <React.Fragment key={wIdx}>
                                             <span
+                                              data-testid={`lyric-word-${w.word}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (activeColorTool !== null) {
@@ -1042,6 +1134,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                     }),
                                                   }));
                                                 } else {
+                                                  // Target this word for chord insertion or styling
                                                   setActiveSelection({
                                                     sectionId: section.id,
                                                     lineId: line.id,
@@ -1049,8 +1142,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                     end: globalEnd,
                                                     text: w.word,
                                                   });
-                                                  setEditingLineId(line.id);
                                                 }
+                                              }}
+                                              onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingLineId(line.id);
                                               }}
                                               className={`cursor-pointer rounded px-0.5 transition-all ${
                                                 isWordTargeted
@@ -1062,7 +1158,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                 fontWeight: wordBold ? 800 : isWordTargeted ? 700 : 500,
                                                 fontFamily: 'inherit',
                                               }}
-                                              title={activeColorTool !== null ? `Tap to color [${w.word}]` : `Tap to edit line`}
+                                              title={activeColorTool !== null ? `Tap to color [${w.word}]` : `Target "${w.word}" for chord`}
                                             >
                                               {w.word}
                                             </span>
@@ -1296,11 +1392,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         className="text-[10px] font-extrabold uppercase tracking-wider"
                         style={{ color: 'var(--c-text-primary)' }}
                       >
-                        Chord Placement
+                        Insert Chord
                       </span>
                     </div>
-                    <span className="text-[10px] text-blue-400 font-medium">
-                      {activeSelection ? `Word: "${activeSelection.text}" @ ${activeSelection.start}` : 'Tap word to target'}
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ backgroundColor: `${accent.from}22`, color: accent.from }}
+                    >
+                      {activeSelection ? `"${activeSelection.text}" @ ${activeSelection.start}` : 'At Line Start'}
                     </span>
                   </div>
 
@@ -1309,44 +1408,69 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   </p>
 
                   {/* Quick Chords Grid */}
-                  <div className="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto no-scrollbar py-0.5">
-                    {chordOptions.slice(0, 12).map((chord) => (
-                      <button
-                        key={chord}
-                        type="button"
-                        onClick={() => {
-                          const sel = activeSelectionRef.current;
-                          if (sel) {
-                            handleAddChordToLine(sel.sectionId, sel.lineId, chord, sel.start);
-                            toast.success(`Attached [${chord}] over "${sel.text}"`);
+                  <div className="grid grid-cols-5 gap-1.5 py-1">
+                    {quickChords.map((chord) => {
+                      const isSongChord = availableChords.includes(chord);
+                      return (
+                        <button
+                          key={chord}
+                          type="button"
+                          data-testid={`quick-chord-${chord}`}
+                          onClick={() => {
+                            const sel = activeSelectionRef.current;
+                            let targetSecId: string;
+                            let targetLId: string;
+                            let targetOffset: number;
+                            let label: string;
+
+                            if (sel) {
+                              targetSecId = sel.sectionId;
+                              targetLId = sel.lineId;
+                              targetOffset = sel.start;
+                              label = `"${sel.text}"`;
+                            } else if (currentDoc.sections.length > 0 && currentDoc.sections[0].lines.length > 0) {
+                              const firstSec = currentDoc.sections[0];
+                              const firstLine = firstSec.lines[0];
+                              targetSecId = firstSec.id;
+                              targetLId = firstLine.id;
+                              targetOffset = 0;
+                              label = 'line start';
+                            } else {
+                              toast.info('Type a lyric line first to attach chords');
+                              return;
+                            }
+
+                            handleAddChordToLine(targetSecId, targetLId, chord, targetOffset);
+                            toast.success(`Attached [${chord}] over ${label}`);
                             setActivePopover(null);
-                          } else if (currentDoc.sections.length > 0 && currentDoc.sections[0].lines.length > 0) {
-                            const firstSec = currentDoc.sections[0];
-                            const firstLine = firstSec.lines[0];
-                            handleAddChordToLine(firstSec.id, firstLine.id, chord, 0);
-                            toast.success(`Attached [${chord}]`);
-                            setActivePopover(null);
-                          } else {
-                            toast.info('Type a lyric line first to attach chords');
-                          }
-                        }}
-                        className="h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border"
-                        style={{
-                          backgroundColor: availableChords.includes(chord)
-                            ? `${accent.from}22`
-                            : 'rgba(255,255,255,0.05)',
-                          borderColor: availableChords.includes(chord)
-                            ? `${accent.from}66`
-                            : 'rgba(255,255,255,0.1)',
-                          color: availableChords.includes(chord) ? accent.from : 'var(--c-text-primary)',
-                        }}
-                      >
-                        {chord}
-                      </button>
-                    ))}
+                          }}
+                          className="h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border relative"
+                          style={{
+                            backgroundColor: isSongChord
+                              ? `${accent.from}28`
+                              : isEffectiveLight
+                                ? 'rgba(0,0,0,0.04)'
+                                : 'rgba(255,255,255,0.05)',
+                            borderColor: isSongChord
+                              ? `${accent.from}66`
+                              : isEffectiveLight
+                                ? 'rgba(0,0,0,0.12)'
+                                : 'rgba(255,255,255,0.1)',
+                            color: isSongChord
+                              ? accent.from
+                              : isEffectiveLight
+                                ? '#0f172a'
+                                : 'var(--c-text-primary)',
+                          }}
+                          title={isSongChord ? `Song Chord: ${chord}` : chord}
+                        >
+                          <span>{chord}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="flex gap-1.5 pt-1 border-t border-white/10">
+                  <div className="flex gap-1.5 pt-1.5 border-t border-white/10">
                     <button
                       type="button"
                       data-testid="toolbar-chord-btn"
@@ -1354,14 +1478,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         setActivePopover(null);
                         handleOpenChordPicker();
                       }}
-                      className="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold text-center border transition active:scale-95 cursor-pointer"
+                      className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center border transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                       style={{
-                        backgroundColor: 'rgba(255,255,255,0.06)',
-                        borderColor: 'rgba(255,255,255,0.12)',
+                        backgroundColor: `${accent.from}15`,
+                        borderColor: `${accent.from}40`,
                         color: accent.from,
                       }}
                     >
-                      + All Chords...
+                      <span className="material-symbols-rounded text-base">library_music</span>
+                      <span>Browse Full Library...</span>
                     </button>
                   </div>
                 </motion.div>
@@ -1897,6 +2022,27 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  data-testid="chord-replace-browse-library-btn"
+                  onClick={() => {
+                    setChordPickerTarget({
+                      sectionId: selectedChordForEdit.sectionId,
+                      lineId: selectedChordForEdit.lineId,
+                      offset: selectedChordForEdit.chord.offset,
+                      wordText: `Replace "${selectedChordForEdit.chord.chord}"`,
+                    });
+                    setChordSearchQuery('');
+                    setChordRootFilter('All');
+                    setChordTypeFilter('all');
+                    setSelectedChordForEdit(null);
+                    setShowChordPicker(true);
+                  }}
+                  className="w-full mt-1.5 py-1.5 px-2.5 rounded-xl text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/25 hover:bg-blue-500/20 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                >
+                  <span className="material-symbols-rounded text-sm">library_music</span>
+                  <span>Browse Full Library to Replace...</span>
+                </button>
               </div>
 
               {/* Delete button */}
@@ -1930,40 +2076,234 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         })()}
       </Dialog>
 
-      {/* ── DIALOG: ATTACH CHORD POPOVER ─────────────────────────────── */}
+      {/* ── DIALOG: FULL CANONICAL CHORDEX LIBRARY ─────────────────────── */}
       <Dialog
         open={showChordPicker}
         onClose={() => setShowChordPicker(false)}
-        title="Attach Chord"
+        title="Chord Library"
+        size="lg"
+        footer={
+          <div className="flex items-center justify-between w-full text-xs text-gray-400">
+            <span>{filteredLibraryChords.length} chords found</span>
+            <button
+              type="button"
+              onClick={() => setShowChordPicker(false)}
+              className="py-1.5 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        }
       >
-        <div className="flex flex-col gap-3 py-1">
-          <p className="text-xs text-gray-400">
-            Select a chord to place directly above this lyric position:
-          </p>
-          <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto pr-1">
-            {chordOptions.map((chord) => (
+        <div className="flex flex-col gap-3 py-1" data-testid="chord-library-dialog">
+          {/* Target Position Indicator */}
+          {chordPickerTarget && (
+            <div
+              className="flex items-center justify-between px-3 py-2 rounded-xl border text-xs"
+              style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                borderColor: 'rgba(59, 130, 246, 0.25)',
+              }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-rounded text-blue-400 text-sm flex-shrink-0">pin_drop</span>
+                <span className="text-gray-300 truncate">
+                  Target:{' '}
+                  <strong className="text-blue-400 font-mono">
+                    {chordPickerTarget.wordText ? chordPickerTarget.wordText : 'Line Start'}
+                  </strong>{' '}
+                  <span className="text-gray-500">(offset {chordPickerTarget.offset})</span>
+                </span>
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-400/90 bg-blue-500/15 px-2 py-0.5 rounded-full flex-shrink-0">
+                Tap chord to insert
+              </span>
+            </div>
+          )}
+
+          {/* Search Bar */}
+          <div className="relative">
+            <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
+              search
+            </span>
+            <input
+              type="text"
+              data-testid="chord-library-search-input"
+              value={chordSearchQuery}
+              onChange={(e) => setChordSearchQuery(e.target.value)}
+              placeholder="Search chords (e.g. C, Dm7, sus4, Bbm)..."
+              className={`w-full pl-9 pr-8 py-2 text-xs rounded-xl border focus:outline-none focus:border-blue-500 transition-colors ${
+                isEffectiveLight
+                  ? 'bg-black/5 border-black/10 text-gray-900 placeholder-gray-400'
+                  : 'bg-white/5 border-white/10 text-white placeholder-gray-500'
+              }`}
+            />
+            {chordSearchQuery && (
               <button
-                key={chord}
                 type="button"
-                onClick={() => {
-                  if (chordPickerTarget) {
-                    handleAddChordToLine(
-                      chordPickerTarget.sectionId,
-                      chordPickerTarget.lineId,
-                      chord,
-                      chordPickerTarget.offset
-                    );
-                  }
-                }}
-                className="py-2 px-3 rounded-xl border font-mono font-bold text-sm text-center transition-all active:scale-95 cursor-pointer hover:border-blue-500/50"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.04)',
-                  borderColor: 'rgba(255,255,255,0.1)',
-                }}
+                data-testid="chord-library-search-clear-btn"
+                onClick={() => setChordSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
               >
-                {chord}
+                <span className="material-symbols-rounded text-base">close</span>
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Root Note Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mr-1 flex-shrink-0">
+              Root:
+            </span>
+            {['All', ...ROOTS].map((r) => {
+              const isActive = chordRootFilter === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  data-testid={`chord-root-filter-${r}`}
+                  onClick={() => setChordRootFilter(r)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex-shrink-0 transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                      : isEffectiveLight
+                        ? 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/5'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
+                  }`}
+                >
+                  {r}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quality / Category Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mr-1 flex-shrink-0">
+              Type:
+            </span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'major', label: 'Major' },
+              { id: 'minor', label: 'Minor' },
+              { id: '7th', label: '7th' },
+              { id: 'maj7', label: 'Maj7' },
+              { id: 'min7', label: 'Min7' },
+              { id: 'sus', label: 'Sus' },
+              { id: 'add9', label: 'Add9' },
+              { id: 'dim', label: 'Dim/Aug' },
+            ].map((q) => {
+              const isActive = chordTypeFilter === q.id;
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  data-testid={`chord-type-filter-${q.id}`}
+                  onClick={() => setChordTypeFilter(q.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex-shrink-0 transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                      : isEffectiveLight
+                        ? 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/5'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
+                  }`}
+                >
+                  {q.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Chord Cards Grid with Diagrams */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[48vh] overflow-y-auto pr-1 no-scrollbar">
+            {filteredLibraryChords.map((chord) => {
+              const isInSong = availableChords.some(
+                (ac) => ac.toLowerCase() === chord.name.toLowerCase()
+              );
+              return (
+                <button
+                  key={chord.id || chord.name}
+                  type="button"
+                  data-testid={`library-chord-${chord.name}`}
+                  onClick={() => {
+                    if (chordPickerTarget) {
+                      handleAddChordToLine(
+                        chordPickerTarget.sectionId,
+                        chordPickerTarget.lineId,
+                        chord.name,
+                        chordPickerTarget.offset
+                      );
+                      setShowChordPicker(false);
+                    }
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/10 group"
+                  style={{
+                    backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+                    borderColor: isEffectiveLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {/* Fretboard Diagram Preview */}
+                  {chord.guitar ? (
+                    <div className="w-11 h-13 flex-shrink-0 flex items-center justify-center rounded-lg bg-black/40 border border-white/5 overflow-hidden">
+                      <div className="w-10 h-12 pointer-events-none scale-90">
+                        <ChordDiagram data={chord.guitar} accentFrom="#3b82f6" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-11 h-13 flex-shrink-0 flex items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono font-bold text-xs">
+                      {chord.root}
+                    </div>
+                  )}
+
+                  {/* Chord Metadata */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className="font-mono font-extrabold text-xs transition-colors group-hover:text-blue-500"
+                        style={{ color: isEffectiveLight ? '#0f172a' : '#ffffff' }}
+                      >
+                        {chord.name}
+                      </span>
+                      {isInSong && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                          Song
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="text-[10px] font-mono truncate mt-0.5"
+                      style={{ color: isEffectiveLight ? '#64748b' : '#9ca3af' }}
+                    >
+                      {chord.notes && chord.notes.length > 0 ? chord.notes.join('·') : chord.type}
+                    </div>
+                  </div>
+
+                  <span className="material-symbols-rounded text-gray-500 group-hover:text-blue-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    add_circle
+                  </span>
+                </button>
+              );
+            })}
+
+            {filteredLibraryChords.length === 0 && (
+              <div className="col-span-full py-8 text-center flex flex-col items-center justify-center gap-2">
+                <span className="material-symbols-rounded text-3xl text-gray-600">search_off</span>
+                <p className="text-xs text-gray-400">
+                  No chords found matching current filters
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChordSearchQuery('');
+                    setChordRootFilter('All');
+                    setChordTypeFilter('all');
+                  }}
+                  className="mt-1 px-3 py-1 rounded-lg text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </Dialog>
