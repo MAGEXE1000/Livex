@@ -40,6 +40,7 @@ import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SongViewModeSelector, type SongViewMode } from '../components/SongViewModeSelector';
+import { SongDurationModal } from '../components/SongDurationModal';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
@@ -4162,6 +4163,7 @@ export default function SongsPanel() {
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
   const [editCustomId, setEditCustomId] = useState<string | null>(null);
   const [showLive, setShowLive] = useState(false);
+  const [showDurationModal, setShowDurationModal] = useState(false);
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -4456,6 +4458,8 @@ export default function SongsPanel() {
         setSongLyrics(activePreset.id, createEmptyLyricsDocument());
       }
       setEditorViewMode(nextMode);
+      if (editorScrollRef.current) editorScrollRef.current.scrollTop = 0;
+      if (lyricsScrollRef.current) lyricsScrollRef.current.scrollTop = 0;
     },
     [editorViewMode, activePreset, setSongLyrics]
   );
@@ -4825,6 +4829,18 @@ export default function SongsPanel() {
             transposeOffset={transposeOffset}
           />
         )}
+        {showDurationModal && activePreset && (
+          <SongDurationModal
+            isOpen={showDurationModal}
+            onClose={() => setShowDurationModal(false)}
+            initialDurationSeconds={activePreset.targetDurationSeconds}
+            bpm={activePreset.bpm}
+            accent={accent}
+            onSave={(nextDuration) => {
+              updatePreset(activePreset.id, { targetDurationSeconds: nextDuration });
+            }}
+          />
+        )}
         {showPicker && (
           <ChordPicker
             accent={accent}
@@ -4876,36 +4892,66 @@ export default function SongsPanel() {
             <SharedFloatingHeader
               title={activePreset.name || 'Song Editor'}
               subtitle={
-                editorViewMode === 'lyrics' ? (
-                  activePreset.artist || undefined
-                ) : (
-                  <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
-                    {activePreset.artist ? (
-                      <>
-                        <span className="truncate max-w-[120px]">{activePreset.artist}</span>
-                        <span className="opacity-40">•</span>
-                      </>
-                    ) : null}
-                    <span>{displayKey}</span>
-                    <span className="opacity-40">•</span>
-                    <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
-                    {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
-                      <>
-                        <span className="opacity-40">•</span>
-                        <span
-                          data-testid="editor-header-duration"
-                          className="inline-flex items-center gap-1 font-bold"
-                          style={{
-                            color: '#2563eb',
-                          }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
-                          {formatDurationMmSs(activePreset.targetDurationSeconds)}
-                        </span>
-                      </>
-                    ) : null}
-                  </span>
-                )
+                <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
+                  {activePreset.artist ? (
+                    <>
+                      <span className="truncate max-w-[100px]">{activePreset.artist}</span>
+                      <span className="opacity-40">•</span>
+                    </>
+                  ) : null}
+                  <span>{displayKey}</span>
+                  <span className="opacity-40">•</span>
+                  <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
+                  {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
+                    <>
+                      <span className="opacity-40">•</span>
+                      <button
+                        type="button"
+                        data-testid="editor-header-duration"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDurationModal(true);
+                        }}
+                        className="inline-flex items-center gap-1 font-bold cursor-pointer transition-transform active:scale-95"
+                        style={{
+                          color: '#2563eb',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                        }}
+                        title="Edit target song duration"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
+                        {formatDurationMmSs(activePreset.targetDurationSeconds)}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="opacity-40">•</span>
+                      <button
+                        type="button"
+                        data-testid="editor-header-duration-empty"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDurationModal(true);
+                        }}
+                        className="inline-flex items-center gap-1 font-medium opacity-60 hover:opacity-100 cursor-pointer transition-all active:scale-95"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                          color: 'inherit',
+                        }}
+                        title="Set target song duration"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
+                        +Duration
+                      </button>
+                    </>
+                  )}
+                </span>
               }
               onBack={() => {
                 if (editorViewMode !== 'chords') {
@@ -4962,19 +5008,6 @@ export default function SongsPanel() {
                 </div>
               }
             />
-            {/* Canonical Persistent Mobile View Mode Selector */}
-            <div
-              className="w-full flex items-center justify-center pointer-events-auto"
-              style={{
-                position: 'relative',
-                marginTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
-                paddingBottom: '8px',
-                zIndex: 35,
-                flexShrink: 0,
-              }}
-            >
-              <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-            </div>
           </>
         ) : (
           /* Desktop Title and Meta Header */
@@ -5291,7 +5324,9 @@ export default function SongsPanel() {
                 ref={lyricsScrollRef}
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
                 style={{
-                  paddingTop: isWebDesktop ? '16px' : '12px',
+                  paddingTop: isWebDesktop
+                    ? '16px'
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5300,6 +5335,14 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-lyrics-area"
               >
+                {!isWebDesktop && (
+                  <div
+                    className="w-full flex items-center justify-center pointer-events-auto mb-3"
+                    style={{ flexShrink: 0 }}
+                  >
+                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                  </div>
+                )}
 
                 <SongLivePreparationView
                   preset={activePreset}
@@ -5324,12 +5367,20 @@ export default function SongsPanel() {
             return (
               <main
                 ref={editorScrollRef}
-                className="flex-1 flex flex-col items-center justify-center px-4"
+                className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
                 style={{
-                  paddingTop: '12px',
+                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
+                  paddingBottom:
+                    'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                 }}
                 data-purpose="empty-chord-progression"
               >
+                <div
+                  className="w-full flex items-center justify-center pointer-events-auto mb-6"
+                  style={{ flexShrink: 0 }}
+                >
+                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                </div>
                 {/* Musical Icon Graphic */}
                 <div className="relative flex items-center justify-center mb-6">
                   {/* Soft glowing aura */}
@@ -5379,7 +5430,9 @@ export default function SongsPanel() {
               ref={editorScrollRef}
               className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0"
               style={{
-                paddingTop: isWebDesktop ? '16px' : '12px',
+                paddingTop: isWebDesktop
+                  ? '16px'
+                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
@@ -5390,6 +5443,14 @@ export default function SongsPanel() {
               }}
               data-purpose="editor-content-area"
             >
+              {!isWebDesktop && (
+                <div
+                  className="w-full flex items-center justify-center pointer-events-auto mb-3"
+                  style={{ flexShrink: 0 }}
+                >
+                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                </div>
+              )}
               {/* Optional Lyrics / Notes Card */}
               {activePreset.notes && (
                 <div

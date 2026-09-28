@@ -223,6 +223,12 @@ export function useScrollMorph({
           if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
             return curr;
           }
+          const dedicatedAncestor = curr.querySelector<HTMLElement>(
+            '[data-purpose="editor-content-area"], [data-purpose="editor-lyrics-area"], [data-purpose*="scroll"], [data-purpose*="scaffold"], [class*="overflow-y-auto"]'
+          );
+          if (dedicatedAncestor && dedicatedAncestor !== headerEl && !headerEl.contains(dedicatedAncestor)) {
+            return dedicatedAncestor;
+          }
           curr = curr.parentElement;
         }
       }
