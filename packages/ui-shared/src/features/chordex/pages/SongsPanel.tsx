@@ -43,6 +43,10 @@ import { SongViewModeSelector, type SongViewMode } from '../components/SongViewM
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
+
+if (typeof window !== 'undefined') {
+  (window as any).useChordStore = useChordStore;
+}
 import { Capacitor } from '@capacitor/core';
 import SuccessLottie from '../../../shared/lottie/SuccessLottie';
 import MusicNotesLottie from '../../../shared/lottie/MusicNotesLottie';
@@ -5380,7 +5384,7 @@ export default function SongsPanel() {
                 paddingRight: '16px',
                 paddingBottom:
                   editorViewMode === 'both'
-                    ? 'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)'
+                    ? 'calc(max(16px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 16px))))'
                     : 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
                 position: 'relative',
               }}
