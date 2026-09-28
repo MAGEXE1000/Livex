@@ -80,22 +80,6 @@ export function DetailFretboardDiagram({
       aria-label="Guitar Fretboard Diagram"
       data-purpose="fretboard-diagram"
     >
-      {/* String Markers (Nut head: Muted ✕ & Open ○) */}
-      <div className="flex justify-between px-[14px] text-xs font-extrabold mb-1">
-        {stringIndicators.map((ind, i) => (
-          <span
-            key={`marker-${i}`}
-            className="w-7 text-center leading-none"
-            style={{
-              color: ind === '✕' ? '#EF4444' : 'var(--c-text-muted, #8A92A6)',
-              opacity: ind === '✕' ? 1 : 0.65,
-            }}
-          >
-            {ind}
-          </span>
-        ))}
-      </div>
-
       {/* Fretboard SVG Surface */}
       <div
         className="w-full rounded-2xl p-2.5 border shadow-inner transition-colors"
@@ -106,6 +90,25 @@ export function DetailFretboardDiagram({
         }}
       >
         <svg className="w-full" viewBox="0 0 236 218" fill="none">
+          {/* String Markers (Muted ✕ & Open ○) */}
+          {stringIndicators.map((ind, i) => {
+            if (!ind) return null;
+            return (
+              <text
+                key={`marker-${i}`}
+                x={stringX[i]}
+                y="12"
+                fill={ind === '✕' ? '#EF4444' : 'var(--c-text-muted, #8A92A6)'}
+                opacity={ind === '✕' ? 1 : 0.65}
+                fontSize="12"
+                fontWeight="800"
+                textAnchor="middle"
+              >
+                {ind}
+              </text>
+            );
+          })}
+
           {/* Top Nut Bar or Base Fret wire */}
           {minFret <= 1 ? (
             <rect fill="currentColor" opacity="0.8" height="4.5" rx="2" width="186" x="25" y="24" />

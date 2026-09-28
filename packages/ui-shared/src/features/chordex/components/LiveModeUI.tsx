@@ -382,11 +382,15 @@ export function StageChordCard({
   chord,
   accent,
   visualStyle = 'both',
+  size = 'standard',
+  maxWidth,
   onPlay,
 }: {
   chord: any;
   accent: { from: string; to: string };
   visualStyle?: VisualStyle;
+  size?: 'standard' | 'large';
+  maxWidth?: string | number;
   onPlay?: () => void;
 }) {
   if (!chord || !chord.name) {
@@ -434,8 +438,9 @@ export function StageChordCard({
         onClick={onPlay}
         data-testid="stage-chord-card"
         data-visual-style="name"
-        className="relative flex flex-col items-center w-full max-w-xs mx-auto py-5 px-6 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
+        className="relative flex flex-col items-center w-full mx-auto py-5 px-6 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
         style={{
+          maxWidth: maxWidth ?? (size === 'large' ? 'clamp(320px, 92vw, 420px)' : '320px'),
           background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
           border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
           backdropFilter: 'blur(16px)',
@@ -446,7 +451,7 @@ export function StageChordCard({
       >
         <div className="flex items-baseline gap-1.5 mb-2">
           <span
-            className="text-5xl sm:text-6xl font-extrabold tracking-tight"
+            className={`${size === 'large' ? 'text-7xl sm:text-8xl' : 'text-5xl sm:text-6xl'} font-extrabold tracking-tight`}
             style={{
               fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
               color: accent.from,
@@ -457,7 +462,7 @@ export function StageChordCard({
           </span>
           {suffix && (
             <span
-              className="text-3xl sm:text-4xl font-bold opacity-85"
+              className={`${size === 'large' ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-bold opacity-85`}
               style={{
                 fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                 color: 'var(--c-text-primary)',
@@ -493,8 +498,9 @@ export function StageChordCard({
       onClick={onPlay}
       data-testid="stage-chord-card"
       data-visual-style={visualStyle}
-      className="relative flex flex-col items-center w-full max-w-[340px] sm:max-w-[360px] mx-auto p-4 sm:p-5 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
+      className="relative flex flex-col items-center w-full mx-auto p-4 sm:p-5 rounded-3xl cursor-pointer select-none transition-transform active:scale-98"
       style={{
+        maxWidth: maxWidth ?? (size === 'large' ? 'clamp(320px, 92vw, 420px)' : '360px'),
         background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
         border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
         backdropFilter: 'blur(16px)',
@@ -507,7 +513,7 @@ export function StageChordCard({
       {visualStyle === 'both' ? (
         <div className="flex items-baseline gap-1.5 mb-2.5">
           <span
-            className="text-5xl sm:text-6xl font-black tracking-tight"
+            className={`${size === 'large' ? 'text-6xl sm:text-7xl' : 'text-5xl sm:text-6xl'} font-black tracking-tight`}
             style={{
               fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
               color: accent.from,
@@ -518,7 +524,7 @@ export function StageChordCard({
           </span>
           {suffix && (
             <span
-              className="text-3xl sm:text-4xl font-bold opacity-85"
+              className={`${size === 'large' ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-bold opacity-85`}
               style={{
                 fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                 color: 'var(--c-text-primary)',
@@ -642,173 +648,77 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
           </span>
         )}
 
-        {/* Hero Chord Name */}
-        <h1
-          style={{
-            fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-            fontSize: 'clamp(56px, 12vw, 84px)',
-            fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
-            color: 'var(--c-text-primary)',
-            textShadow: `0 0 24px ${accent.from}33`,
-            margin: '0 0 10px 0',
-            textAlign: 'center',
-          }}
-        >
-          {shownChord ? shownChord.name.replace(/\s/g, '') : '—'}
-        </h1>
+        {/* Stage Chord Area - Unified Centered Presentation */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+          <StageChordCard
+            chord={shownChord}
+            accent={accent}
+            visualStyle={
+              displayMode === 'chords_name'
+                ? 'name'
+                : displayMode === 'chords_diagram'
+                ? 'diagram'
+                : 'both'
+            }
+            size="large"
+            onPlay={() => playChordSound(shownChord?.guitar)}
+          />
+        </div>
 
-        {/* Notes Breakdown Pills */}
-        {shownChord?.notes && shownChord.notes.length > 0 && (
-          <div
+        {/* Next Chord Cue Pill - Positioned cleanly below card, zero overlap with diagram */}
+        {nextChord && (
+          <button
+            type="button"
+            onClick={goNext}
             style={{
-              display: 'flex',
+              marginTop: '16px',
+              padding: '6px 16px',
+              borderRadius: '9999px',
+              background: 'var(--surface-topbar-bg)',
+              border: 'var(--surface-topbar-border)',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              boxShadow: 'var(--surface-topbar-shadow)',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              flexWrap: 'wrap',
-              marginBottom: '20px',
+              gap: '8px',
+              cursor: 'pointer',
             }}
+            title="Next Chord"
           >
-            {shownChord.notes.map((n: string, i: number) => (
-              <React.Fragment key={i}>
-                <span
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    background: 'var(--surface-container-low, rgba(255,255,255,0.06))',
-                    border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.1))',
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  {n}
-                </span>
-                {i < shownChord.notes.length - 1 && (
-                  <span style={{ color: 'var(--c-text-secondary)', opacity: 0.5, fontWeight: 'bold' }}>
-                    •
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-
-        {/* Fretboard Area + Next Chord Cue */}
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            maxWidth: '380px',
-            minHeight: '230px',
-          }}
-        >
-          {/* Position label on left */}
-          <div
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '40px',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: 'var(--c-text-secondary)',
-              opacity: 0.7,
-            }}
-          >
-            {shownChord?.guitar?.baseFret && shownChord.guitar.baseFret > 1
-              ? `${shownChord.guitar.baseFret}fr`
-              : '1fr'}
-          </div>
-
-          {/* Main Diagram */}
-          <div
-            onClick={() => playChordSound(shownChord?.guitar)}
-            style={{ cursor: 'pointer', transition: 'transform 0.15s ease' }}
-            title="Tap to hear chord"
-          >
-            {shownChord?.guitar ? (
-              <LiveDiagram
-                data={shownChord.guitar}
-                accentFrom={accent.from}
-                accentTo={accent.to}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 200,
-                  height: 230,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--c-text-secondary)',
-                }}
-              >
-                No diagram
-              </div>
-            )}
-          </div>
-
-          {/* Next Chord Cue to the Right */}
-          {nextChord && (
-            <button
-              type="button"
-              onClick={goNext}
-              style={{
-                position: 'absolute',
-                right: '4px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '8px 6px',
-                borderRadius: '16px',
-                background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
-                border: '1px solid var(--surface-topbar-border, rgba(255,255,255,0.08))',
-                cursor: 'pointer',
-              }}
-              title="Next Chord"
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: '18px', color: accent.from }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', color: accent.from }}>
-                <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800 }}>
-                  Next
-                </span>
-                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                  chevron_right
-                </span>
-              </div>
-              {nextChord.guitar && (
-                <div style={{ transform: 'scale(0.85)', margin: '-4px 0' }}>
-                  <MiniLiveDiagram
-                    data={nextChord.guitar}
-                    accentFrom={accent.from}
-                    width={56}
-                    height={64}
-                  />
-                </div>
-              )}
+              fast_forward
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
               <span
                 style={{
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  fontSize: '11px',
+                  fontSize: '10px',
                   fontWeight: 800,
-                  color: accent.from,
-                  background: `${accent.from}22`,
-                  border: `1px solid ${accent.from}44`,
+                  textTransform: 'uppercase',
+                  color: 'var(--c-text-secondary)',
+                  letterSpacing: '0.05em',
                 }}
               >
-                {nextChord.name.replace(/\s/g, '')}
+                Next
               </span>
-            </button>
-          )}
-        </div>
+              <span
+                style={{
+                  fontWeight: 800,
+                  color: accent.from,
+                  padding: '1px 8px',
+                  borderRadius: '9999px',
+                  background: `${accent.from}1a`,
+                  border: `1px solid ${accent.from}33`,
+                }}
+              >
+                {nextChord.name ? nextChord.name.replace(/\s/g, '') : ''}
+              </span>
+            </div>
+          </button>
+        )}
 
         {/* Carousel Pagination Dots */}
         {total <= 16 && (
@@ -1822,7 +1732,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         }}
       >
         {/* Top Hero Stage Chord Card */}
-        <div style={{ width: '100%', maxWidth: '380px', margin: '0 auto 16px' }}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '0 auto 16px' }}>
           <StageChordCard
             chord={activeHybridChord}
             accent={accent}

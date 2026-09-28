@@ -758,12 +758,20 @@ export function useLiveModeState(
   );
 
   // ── Chord Resolution ─────────────────────────────────────────────
-  const currentChord = chords[currentIdx] ? getChordById(chords[currentIdx]) : null;
+  const currentChord = chords[currentIdx]
+    ? getChordById(chords[currentIdx]) || getChordByName(chords[currentIdx]) || null
+    : null;
   const prevChord =
-    currentIdx > 0 && chords[currentIdx - 1] ? getChordById(chords[currentIdx - 1]) : null;
+    currentIdx > 0 && chords[currentIdx - 1]
+      ? getChordById(chords[currentIdx - 1]) || getChordByName(chords[currentIdx - 1]) || null
+      : null;
   const nextChord =
-    currentIdx < total - 1 && chords[currentIdx + 1] ? getChordById(chords[currentIdx + 1]) : null;
-  const shownChord = chords[shownIdx] ? getChordById(chords[shownIdx]) : null;
+    currentIdx < total - 1 && chords[currentIdx + 1]
+      ? getChordById(chords[currentIdx + 1]) || getChordByName(chords[currentIdx + 1]) || null
+      : null;
+  const shownChord = chords[shownIdx]
+    ? getChordById(chords[shownIdx]) || getChordByName(chords[shownIdx]) || null
+    : null;
 
   // ── Word, Beat & Section Navigation ─────────────────────────────
   const [currentWordIdx, setCurrentWordIdxState] = useState(0);
