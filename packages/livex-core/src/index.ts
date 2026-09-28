@@ -138,3 +138,4 @@ export * from './types/lyrics';
 export * from './lib/lyrics/lyricsParser';
 export * from './lib/lyrics/vocalRoles';
 export * from './lib/lyrics/spanFormatting';
+export * from './lib/lyrics/lyricSegments';

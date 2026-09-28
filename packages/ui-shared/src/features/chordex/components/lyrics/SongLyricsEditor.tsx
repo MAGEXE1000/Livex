@@ -22,6 +22,11 @@ import {
   toggleBoldOnSelection,
   setColorOnSelection,
   getLineSpans,
+  splitLineIntoSegments,
+  findWordBoundaries,
+  snapToWordStart,
+  getAdjacentWordOffset,
+  type LyricLineSegment,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 
@@ -104,6 +109,16 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     lineId: string;
     offset: number;
   } | null>(null);
+
+  // Selected chord target for context menu (move, replace, delete)
+  const [selectedChordForEdit, setSelectedChordForEdit] = useState<{
+    sectionId: string;
+    lineId: string;
+    chord: LyricChordPlacement;
+  } | null>(null);
+
+  // Line currently in direct text typing mode (null = word targeting mode)
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
 
   // Active popover in the compact bottom capsule dock: 'chords' | 'style' | 'roles' | 'more' | null
   const [activePopover, setActivePopover] = useState<'chords' | 'style' | 'roles' | 'more' | null>(null);
@@ -469,6 +484,63 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
+  const handleMoveChord = useCallback(
+    (sectionId: string, lineId: string, chordId: string, newOffset: number) => {
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            lines: sec.lines.map((line) => {
+              if (line.id !== lineId) return line;
+              const chords = (line.chords || []).map((c) =>
+                c.id === chordId ? { ...c, offset: Math.max(0, newOffset) } : c
+              );
+              chords.sort((a, b) => a.offset - b.offset);
+              return { ...line, chords };
+            }),
+          };
+        }),
+      }));
+      setSelectedChordForEdit((prev) =>
+        prev && prev.chord.id === chordId
+          ? { ...prev, chord: { ...prev.chord, offset: Math.max(0, newOffset) } }
+          : prev
+      );
+      toast.success(`Moved to pos ${newOffset}`);
+    },
+    [updateDoc]
+  );
+
+  const handleReplaceChord = useCallback(
+    (sectionId: string, lineId: string, chordId: string, newChordSymbol: string) => {
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            lines: sec.lines.map((line) => {
+              if (line.id !== lineId) return line;
+              const chords = (line.chords || []).map((c) =>
+                c.id === chordId ? { ...c, chord: newChordSymbol } : c
+              );
+              return { ...line, chords };
+            }),
+          };
+        }),
+      }));
+      setSelectedChordForEdit((prev) =>
+        prev && prev.chord.id === chordId
+          ? { ...prev, chord: { ...prev.chord, chord: newChordSymbol } }
+          : prev
+      );
+      toast.success(`Chord changed to [${newChordSymbol}]`);
+    },
+    [updateDoc]
+  );
+
   // ── SECTION MANAGEMENT ───────────────────────────────────────────────
 
   const handleCreateSection = useCallback(
@@ -737,99 +809,241 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
                   const isLineBold = Boolean(line.format?.bold);
                   const hasChords = Boolean(line.chords && line.chords.length > 0);
+                  const isLineEditing = editingLineId === line.id || line.text === '';
+                  const segments = splitLineIntoSegments(line.text, line.chords);
 
                   return (
                     <div
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
-                      className="group/line relative flex flex-col py-1 px-2 rounded-xl transition-colors hover:bg-white/[0.02]"
+                      className="group/line relative flex flex-col py-1.5 px-2.5 rounded-xl transition-all hover:bg-white/[0.03]"
                     >
-                      {/* Attached Chords Row directly above lyrics */}
-                      {hasChords && (
-                        <div className="flex items-center gap-2 min-h-[22px] flex-wrap font-mono text-xs font-black select-none mb-0.5">
-                          {line.chords!.map((chord) => (
-                            <span
-                              key={chord.id}
-                              data-testid={`placed-chord-${chord.chord}`}
-                              onClick={() => handleRemoveChordFromLine(section.id, line.id, chord.id)}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold border transition-all cursor-pointer active:scale-95"
-                              style={{
-                                backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                                borderColor: 'rgba(56, 189, 248, 0.35)',
-                                color: '#38bdf8',
-                              }}
-                              title="Click to remove chord"
-                            >
-                              <span>{chord.chord}</span>
-                              <span className="text-[9px] opacity-60">×</span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        {isLineEditing ? (
+                          /* Direct Text Typing Input */
+                          <div className="flex-1 flex flex-col">
+                            {hasChords && (
+                              <div className="flex flex-wrap items-center gap-1.5 mb-1.5 select-none text-[11px] font-mono">
+                                {line.chords!.map((c) => (
+                                  <span
+                                    key={c.id}
+                                    className="px-1.5 py-0.5 rounded font-bold border border-sky-500/30 bg-sky-500/10 text-sky-400"
+                                  >
+                                    {c.chord} (pos {c.offset})
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={line.text}
+                                autoFocus={editingLineId === line.id}
+                                onChange={(e) =>
+                                  handleUpdateLineText(section.id, line.id, e.target.value)
+                                }
+                                onBlur={() => {
+                                  if (line.text.trim()) setEditingLineId(null);
+                                }}
+                                onSelect={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  setActiveSelection({
+                                    sectionId: section.id,
+                                    lineId: line.id,
+                                    start: target.selectionStart ?? 0,
+                                    end: target.selectionEnd ?? 0,
+                                    text: line.text,
+                                  });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddLine(section.id, lineIdx);
+                                  } else if (
+                                    e.key === 'Backspace' &&
+                                    line.text === '' &&
+                                    section.lines.length > 1
+                                  ) {
+                                    e.preventDefault();
+                                    handleDeleteLine(section.id, line.id);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingLineId(null);
+                                  }
+                                }}
+                                placeholder={isLyricsEmpty ? 'Type or paste lyrics...' : 'Type line text...'}
+                                className="flex-1 bg-transparent border-0 border-b border-blue-500/40 outline-none text-base leading-relaxed tracking-wide pb-0.5"
+                                style={{
+                                  color: resolvedColor,
+                                  fontWeight: isLineBold ? 800 : 500,
+                                  fontFamily: 'inherit',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setEditingLineId(null)}
+                                className="text-[11px] font-bold px-2 py-1 rounded bg-white/10 text-gray-300 hover:text-white cursor-pointer"
+                              >
+                                Done
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Responsive Word-Segment Surface with Ruby Chord Alignment */
+                          <div className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-default">
+                            {segments.map((seg, sIdx) => {
+                              const segWords = findWordBoundaries(seg.text);
 
-                      {/* Line Writing Surface */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={line.text}
-                          onChange={(e) =>
-                            handleUpdateLineText(section.id, line.id, e.target.value)
-                          }
-                          onSelect={(e) => {
-                            const target = e.target as HTMLInputElement;
-                            setActiveSelection({
-                              sectionId: section.id,
-                              lineId: line.id,
-                              start: target.selectionStart ?? 0,
-                              end: target.selectionEnd ?? 0,
-                              text: line.text,
-                            });
-                          }}
-                          onFocus={(e) => {
-                            const target = e.target as HTMLInputElement;
-                            setActiveSelection({
-                              sectionId: section.id,
-                              lineId: line.id,
-                              start: target.selectionStart ?? 0,
-                              end: target.selectionEnd ?? 0,
-                              text: line.text,
-                            });
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddLine(section.id, lineIdx);
-                            } else if (
-                              e.key === 'Backspace' &&
-                              line.text === '' &&
-                              section.lines.length > 1
-                            ) {
-                              e.preventDefault();
-                              handleDeleteLine(section.id, line.id);
-                            }
-                          }}
-                          placeholder={isLyricsEmpty ? 'Type or paste lyrics...' : ''}
-                          className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide"
-                          style={{
-                            color: resolvedColor,
-                            fontWeight: isLineBold ? 800 : 500,
-                            fontFamily: 'inherit',
-                          }}
-                        />
+                              return (
+                                <div
+                                  key={seg.id || sIdx}
+                                  className="inline-flex flex-col items-start align-bottom"
+                                >
+                                  {/* Placed Chord Chip */}
+                                  {seg.chord ? (
+                                    <div className="flex items-center gap-0.5 select-none mb-1">
+                                      <button
+                                        type="button"
+                                        data-testid={`placed-chord-${seg.chord.chord}`}
+                                        data-chord-id={seg.chord.id}
+                                        data-chord-offset={seg.chord.offset}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedChordForEdit({
+                                            sectionId: section.id,
+                                            lineId: line.id,
+                                            chord: seg.chord!,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110"
+                                        style={{
+                                          backgroundColor: isEffectiveLight
+                                            ? 'rgba(37, 99, 235, 0.10)'
+                                            : 'rgba(56, 189, 248, 0.18)',
+                                          borderColor: isEffectiveLight
+                                            ? 'rgba(37, 99, 235, 0.35)'
+                                            : 'rgba(56, 189, 248, 0.40)',
+                                          color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                        }}
+                                        title="Tap to move or replace chord"
+                                      >
+                                        <span>{seg.chord.chord}</span>
+                                        <span
+                                          className="text-[10px] opacity-40 hover:opacity-100 hover:text-rose-400 font-sans ml-0.5 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveChordFromLine(section.id, line.id, seg.chord!.id);
+                                          }}
+                                          title="Quick remove"
+                                        >
+                                          ×
+                                        </span>
+                                      </button>
+                                    </div>
+                                  ) : hasChords ? (
+                                    /* Spacer keeping text baselines aligned */
+                                    <div className="h-[23px] mb-1 select-none pointer-events-none" />
+                                  ) : null}
 
-                        {/* Line Vocal Role badge (if present) */}
-                        {line.vocalRole && (
-                          <span
-                            className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0"
-                            style={{
-                              backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
-                              borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
-                              color: line.vocalRole.color || '#3b82f6',
-                            }}
-                          >
-                            {line.vocalRole.label || line.vocalRole.type}
-                          </span>
+                                  {/* Segment Words / Text */}
+                                  <div className="inline-flex items-center flex-wrap">
+                                    {segWords.length > 0 ? (
+                                      segWords.map((w, wIdx) => {
+                                        const globalStart = seg.startOffset + w.start;
+                                        const isWordTargeted =
+                                          activeSelection?.lineId === line.id &&
+                                          activeSelection?.start === globalStart;
+
+                                        return (
+                                          <React.Fragment key={wIdx}>
+                                            <span
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveSelection({
+                                                  sectionId: section.id,
+                                                  lineId: line.id,
+                                                  start: globalStart,
+                                                  end: seg.startOffset + w.end,
+                                                  text: w.word,
+                                                });
+                                              }}
+                                              className={`cursor-pointer rounded px-0.5 transition-all ${
+                                                isWordTargeted
+                                                  ? 'ring-2 ring-blue-500 bg-blue-500/20 font-bold'
+                                                  : 'hover:bg-white/10'
+                                              }`}
+                                              style={{
+                                                color: resolvedColor,
+                                                fontWeight: isLineBold ? 800 : isWordTargeted ? 700 : 500,
+                                                fontFamily: 'inherit',
+                                              }}
+                                              title={`Tap to target [${w.word}] for chord placement`}
+                                            >
+                                              {w.word}
+                                            </span>
+                                            {/* Space after word if not last */}
+                                            {wIdx < segWords.length - 1 && <span>&nbsp;</span>}
+                                          </React.Fragment>
+                                        );
+                                      })
+                                    ) : (
+                                      <span
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveSelection({
+                                            sectionId: section.id,
+                                            lineId: line.id,
+                                            start: seg.startOffset,
+                                            end: seg.endOffset,
+                                            text: seg.text,
+                                          });
+                                        }}
+                                        className="whitespace-pre cursor-pointer hover:bg-white/10 rounded px-0.5"
+                                        style={{
+                                          color: resolvedColor,
+                                          fontWeight: isLineBold ? 800 : 500,
+                                          fontFamily: 'inherit',
+                                        }}
+                                      >
+                                        {seg.text || '\u00A0'}
+                                      </span>
+                                    )}
+                                    {/* Trailing space if segment ends with whitespace */}
+                                    {seg.text.endsWith(' ') && <span>&nbsp;</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
+
+                        {/* Line Controls (Edit text pencil & Vocal Role) */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0 self-center">
+                          {/* Edit line text pencil */}
+                          <button
+                            type="button"
+                            onClick={() => setEditingLineId(isLineEditing ? null : line.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition active:scale-90 cursor-pointer"
+                            title={isLineEditing ? 'Done editing' : 'Edit line text'}
+                          >
+                            <span className="material-symbols-rounded text-sm">
+                              {isLineEditing ? 'check' : 'edit'}
+                            </span>
+                          </button>
+
+                          {/* Line Vocal Role badge */}
+                          {line.vocalRole && (
+                            <span
+                              className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0"
+                              style={{
+                                backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
+                                borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
+                                color: line.vocalRole.color || '#3b82f6',
+                              }}
+                            >
+                              {line.vocalRole.label || line.vocalRole.type}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -862,6 +1076,161 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </button>
         </div>
       </main>
+
+      {/* ── DIALOG: REPOSITION / REPLACE / REMOVE CHORD ── */}
+      <Dialog
+        open={Boolean(selectedChordForEdit)}
+        onClose={() => setSelectedChordForEdit(null)}
+        title={`Chord: [${selectedChordForEdit?.chord.chord}]`}
+      >
+        {selectedChordForEdit && (() => {
+          const currentLine = currentDoc.sections
+            .find((s) => s.id === selectedChordForEdit.sectionId)
+            ?.lines.find((l) => l.id === selectedChordForEdit.lineId);
+          const lineText = currentLine?.text || '';
+          const currentOffset = selectedChordForEdit.chord.offset;
+          const prevOffset = getAdjacentWordOffset(lineText, currentOffset, 'prev');
+          const nextOffset = getAdjacentWordOffset(lineText, currentOffset, 'next');
+
+          return (
+            <div className="flex flex-col gap-4 py-1" data-testid="chord-reposition-dialog">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="px-2.5 py-1 rounded-lg text-sm font-mono font-black"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                      color: '#ffffff',
+                    }}
+                  >
+                    {selectedChordForEdit.chord.chord}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-white">
+                      Placed at character offset {currentOffset}
+                    </span>
+                    <span className="text-[11px] text-gray-400">
+                      Nearby: &ldquo;{lineText.slice(Math.max(0, currentOffset - 4), Math.min(lineText.length, currentOffset + 14))}&rdquo;
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Repositioning controls */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                  Reposition in Line
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    data-testid="chord-move-prev-btn"
+                    onClick={() => {
+                      handleMoveChord(
+                        selectedChordForEdit.sectionId,
+                        selectedChordForEdit.lineId,
+                        selectedChordForEdit.chord.id,
+                        prevOffset
+                      );
+                    }}
+                    disabled={currentOffset === 0 || prevOffset === currentOffset}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      borderColor: 'rgba(255,255,255,0.12)',
+                      color: 'var(--c-text-primary, #ffffff)',
+                    }}
+                  >
+                    <span className="material-symbols-rounded text-sm">arrow_back</span>
+                    <span>&larr; Prev Word</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="chord-move-next-btn"
+                    onClick={() => {
+                      handleMoveChord(
+                        selectedChordForEdit.sectionId,
+                        selectedChordForEdit.lineId,
+                        selectedChordForEdit.chord.id,
+                        nextOffset
+                      );
+                    }}
+                    disabled={nextOffset <= currentOffset}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      borderColor: 'rgba(255,255,255,0.12)',
+                      color: 'var(--c-text-primary, #ffffff)',
+                    }}
+                  >
+                    <span>Next Word &rarr;</span>
+                    <span className="material-symbols-rounded text-sm">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Replace Chord */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                  Replace Chord Symbol
+                </span>
+                <div className="grid grid-cols-4 gap-1.5 max-h-36 overflow-y-auto no-scrollbar py-0.5">
+                  {chordOptions.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      data-testid={`chord-replace-${c}`}
+                      onClick={() => {
+                        handleReplaceChord(
+                          selectedChordForEdit.sectionId,
+                          selectedChordForEdit.lineId,
+                          selectedChordForEdit.chord.id,
+                          c
+                        );
+                      }}
+                      className={`h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border ${
+                        c === selectedChordForEdit.chord.chord
+                          ? 'border-blue-500 bg-blue-500/20 text-blue-400 font-black'
+                          : 'border-white/10 bg-white/5 hover:border-white/20 text-white'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Delete button */}
+              <div className="pt-2 border-t border-white/10 flex gap-2">
+                <button
+                  type="button"
+                  data-testid="chord-delete-btn"
+                  onClick={() => {
+                    handleRemoveChordFromLine(
+                      selectedChordForEdit.sectionId,
+                      selectedChordForEdit.lineId,
+                      selectedChordForEdit.chord.id
+                    );
+                    setSelectedChordForEdit(null);
+                  }}
+                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span className="material-symbols-rounded text-base">delete</span>
+                  <span>Remove Chord</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChordForEdit(null)}
+                  className="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </Dialog>
 
       {/* ── DIALOG: ATTACH CHORD POPOVER ─────────────────────────────── */}
       <Dialog
@@ -1270,8 +1639,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       Chord Placement
                     </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {activeSelection ? `Line ${activeSelection.lineId.slice(-3)}` : 'Tap to place'}
+                  <span className="text-[10px] text-blue-400 font-medium">
+                    {activeSelection ? `Word: "${activeSelection.text}" @ ${activeSelection.start}` : 'Tap word to target'}
                   </span>
                 </div>
 
@@ -1289,12 +1658,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         const sel = activeSelectionRef.current;
                         if (sel) {
                           handleAddChordToLine(sel.sectionId, sel.lineId, chord, sel.start);
-                          toast.success(`Attached [${chord}]`);
+                          toast.success(`Attached [${chord}] over "${sel.text}"`);
                           setActivePopover(null);
                         } else if (currentDoc.sections.length > 0 && currentDoc.sections[0].lines.length > 0) {
                           const firstSec = currentDoc.sections[0];
                           const firstLine = firstSec.lines[0];
-                          handleAddChordToLine(firstSec.id, firstLine.id, chord, firstLine.text.length);
+                          handleAddChordToLine(firstSec.id, firstLine.id, chord, 0);
                           toast.success(`Attached [${chord}]`);
                           setActivePopover(null);
                         } else {

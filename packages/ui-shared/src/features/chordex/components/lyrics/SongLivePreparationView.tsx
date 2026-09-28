@@ -11,6 +11,7 @@ import {
   LYRIC_SECTION_TYPES,
   generateLyricId,
   getCombinedVocalRoles,
+  splitLineIntoSegments,
 } from '@workspace/livex-core';
 import { toast } from 'sonner';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
@@ -277,37 +278,49 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                     const lineTextColor = line.format?.color || resolvedColor;
 
                     return (
-                      <div key={line.id || `line-${lIdx}`} className="flex flex-col py-0.5">
-                        {/* Chords placement above text */}
-                        {showChords && (
-                          <div
-                            className="font-mono text-xs font-bold select-none h-5 flex items-center gap-1.5"
-                            style={{ color: accent.from }}
-                          >
-                            {line.chords!.map((c, cIdx) => (
-                              <span
-                                key={c.id || `ch-${cIdx}`}
-                                className="px-1.5 py-0.5 rounded text-[11px] font-extrabold"
-                                style={{
-                                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
-                                  color: 'var(--c-accent-from, #2563EB)',
-                                }}
+                      <div key={line.id || `line-${lIdx}`} className="flex flex-col py-1">
+                        {showChords ? (
+                          <div className="flex flex-wrap items-end gap-x-1 gap-y-1 select-text">
+                            {splitLineIntoSegments(line.text, line.chords).map((seg) => (
+                              <div
+                                key={seg.id}
+                                className="inline-flex flex-col items-start align-bottom"
                               >
-                                {c.chord}
-                              </span>
+                                {seg.chord ? (
+                                  <span
+                                    className="font-mono text-xs font-black tracking-tight select-none mb-0.5 px-1 py-0.2 rounded"
+                                    style={{
+                                      backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
+                                      color: 'var(--c-accent-from, #2563EB)',
+                                    }}
+                                  >
+                                    {seg.chord.chord}
+                                  </span>
+                                ) : (
+                                  <span className="h-5 mb-0.5 select-none pointer-events-none" />
+                                )}
+                                <span
+                                  style={{
+                                    fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                                    color: lineTextColor,
+                                  }}
+                                  className="whitespace-pre"
+                                >
+                                  {seg.text || '\u00A0'}
+                                </span>
+                              </div>
                             ))}
                           </div>
+                        ) : (
+                          <div
+                            style={{
+                              fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                              color: lineTextColor,
+                            }}
+                          >
+                            {line.text || '\u00A0'}
+                          </div>
                         )}
-
-                        {/* Lyric Text */}
-                        <div
-                          style={{
-                            fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
-                            color: lineTextColor,
-                          }}
-                        >
-                          {line.text || '\u00A0'}
-                        </div>
                       </div>
                     );
                   })}
