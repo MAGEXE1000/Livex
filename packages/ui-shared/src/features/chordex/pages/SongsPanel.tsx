@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { SongLibraryList } from '../components/SongLibraryList';
-import { SongEditorForm, FormData } from '../components/SongEditorForm';
+import { SongEditorForm, PresetFormContent, FormData } from '../components/SongEditorForm';
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog } from '../../../shared/design-system/dialogs';
@@ -4153,26 +4153,12 @@ export default function SongsPanel() {
     [composerSongId, presets]
   );
 
-  const handleCreateNewSong = useCallback(() => {
+  const handleStartNewSongDesktop = useCallback(() => {
     setEditingId(null);
-    setShowForm(false);
+    setShowForm(true);
     setShowLyricsComposer(false);
     setComposerSongId(null);
-    setSearchQuery('');
-
-    const newId = createPreset({
-      name: t.songs.newSong || 'New Song',
-      artist: '',
-      bpm: 120,
-      key: 'C',
-      notes: '',
-      chords: [],
-      sections: [],
-    });
-
-    setActivePreset(newId);
-    setEditorViewMode('chords');
-  }, [createPreset, setActivePreset, t.songs.newSong]);
+  }, []);
 
   const handleEditLyricsComposer = useCallback((presetId: string) => {
     setComposerSongId(presetId);
@@ -4562,7 +4548,7 @@ export default function SongsPanel() {
           : [];
 
       const newId = createPreset({
-        name: data.name.trim(),
+        name: data.name.trim() || t.songs.newSong || 'New Song',
         artist: data.artist.trim(),
         bpm,
         key: data.key,
@@ -4573,10 +4559,31 @@ export default function SongsPanel() {
 
       clearPendingImport();
       setActivePreset(newId);
+      setEditorViewMode('chords');
     }
     setShowForm(false);
     setEditingId(null);
   };
+
+  const renderCreateSongForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <PresetFormContent
+        accent={accent}
+        initial={undefined}
+        isEditing={false}
+        onSave={(formData) => {
+          handleFormSave(formData);
+          close?.();
+        }}
+        onCancel={() => {
+          clearPendingImport();
+          close?.();
+        }}
+        showFooterButtons={true}
+      />
+    ),
+    [accent, handleFormSave, clearPendingImport]
+  );
 
   const renderImportSongForm = useCallback(
     ({ close }: { close?: () => void } = {}) => (
@@ -4732,6 +4739,21 @@ export default function SongsPanel() {
   /* â•â•â•â•â•â•â• VIEW: PRESET EDITOR â•â•â•â•â•â•â• */
   const renderEditor = () => {
     if (!activePreset) return null;
+
+    const displayKey =
+      transposeOffset === 0
+        ? activePreset.key || 'C'
+        : transposeKeyString(activePreset.key || 'C', transposeOffset, preferFlats);
+
+    const hasLiveContent =
+      activePreset.chords.length > 0 ||
+      (activePreset.sections ?? []).some((s) => s.chords.length > 0) ||
+      Boolean(
+        activePreset.lyrics?.sections?.some((s) =>
+          s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
+        )
+      );
+
     return (
       <div className="flex flex-col h-full overflow-hidden app-bg" style={{ position: 'relative' }}>
         {showLive && (
@@ -4787,239 +4809,81 @@ export default function SongsPanel() {
         )}
 
         {!isWebDesktop ? (
-          /* ── Mobile Top Stack: Floating Header & Song Metadata Toolbar ── */
-          <>
-            <SharedFloatingHeader
-              title={activePreset.name || 'Song Editor'}
-              onBack={() => {
-                if (editorViewMode !== 'chords') {
-                  setEditorViewMode('chords');
-                } else {
-                  setActivePreset(null);
-                }
-              }}
-              backBtnTestId="editor-back-btn"
-              toolbarActions={
-                <div className="flex items-center gap-1">
-                  {(() => {
-                    const hasLiveContent =
-                      activePreset.chords.length > 0 ||
-                      (activePreset.sections ?? []).some((s) => s.chords.length > 0) ||
-                      Boolean(
-                        activePreset.lyrics?.sections?.some((s) =>
-                          s.lines.some((l) => l.text.trim().length > 0 || (l.chords && l.chords.length > 0))
-                        )
-                      );
-                    if (!hasLiveContent) return null;
-
-                    if (editorViewMode === 'lyrics') {
-                      return (
-                        <button
-                          aria-label="Live Mode"
-                          onClick={() => setShowLive(true)}
-                          data-testid="enter-live-mode"
-                          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs"
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.16)',
-                            backdropFilter: 'blur(8px)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#FFFFFF',
-                          }}
-                          type="button"
-                          title="Start live lyrics"
-                        >
-                          <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
-                            play_arrow
-                          </span>
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <button
-                        aria-label="Live Mode"
-                        onClick={() => setShowLive(true)}
-                        data-testid="enter-live-mode"
-                        className="h-8 px-2.5 rounded-full flex items-center gap-1 text-xs font-bold text-white shadow-sm transition-all active:scale-95 cursor-pointer"
-                        style={{
-                          background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                          boxShadow: `0 2px 8px ${accent.to}44`,
-                        }}
-                        type="button"
-                      >
-                        <span className="material-symbols-rounded text-sm">play_circle</span>
-                        <span>Live</span>
-                      </button>
-                    );
-                  })()}
-                  <button
-                    aria-label="Edit song details"
-                    data-purpose="edit-song-details-btn"
-                    onClick={() => {
-                      setEditingId(activePreset.id);
-                      setShowForm(true);
-                    }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                    type="button"
-                  >
-                    <span className="material-symbols-rounded text-[20px]">edit</span>
-                  </button>
-                </div>
+          /* ── Mobile Top Header (Canonical SharedFloatingHeader) ── */
+          <SharedFloatingHeader
+            title={activePreset.name || 'Song Editor'}
+            subtitle={
+              editorViewMode === 'lyrics' ? (
+                activePreset.artist || undefined
+              ) : (
+                <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
+                  {activePreset.artist ? (
+                    <>
+                      <span className="truncate max-w-[120px]">{activePreset.artist}</span>
+                      <span className="opacity-40">•</span>
+                    </>
+                  ) : null}
+                  <span>{displayKey}</span>
+                  <span className="opacity-40">•</span>
+                  <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
+                </span>
+              )
+            }
+            onBack={() => {
+              if (editorViewMode !== 'chords') {
+                setEditorViewMode('chords');
+              } else {
+                setActivePreset(null);
               }
-            />
-
-            <div
-              className="flex-none px-4 pt-2 pb-2 flex flex-col gap-2.5 z-30"
-              style={{
-                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 92px)',
-                background: 'var(--app-bg)',
-              }}
-            >
-              {/* BEGIN: SongMetadataToolbar (Hidden in Lyrics mode) */}
-              {editorViewMode !== 'lyrics' && (
-                <section
-                  aria-label="Song Controls and Tuning"
-                  className="w-full flex items-center justify-between gap-2 px-0.5"
-                  data-purpose="song-toolbar"
+            }}
+            backBtnTestId="editor-back-btn"
+            scrollContainerRef={editorScrollRef}
+            toolbarActions={
+              <div className="flex items-center gap-1.5">
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  aria-label="Edit song details"
+                  data-purpose="edit-song-details-btn"
+                  onClick={() => {
+                    setEditingId(activePreset.id);
+                    setShowForm(true);
+                  }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'var(--c-text-primary, #FFFFFF)',
+                  }}
+                  type="button"
+                  title="Edit song details"
                 >
-                  {/* Left: Key & BPM */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingId(activePreset.id);
-                        setShowForm(true);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 border shadow-sm text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                        borderColor: 'var(--c-border, #E3E6EB)',
-                        color: 'var(--c-text-primary, #111827)',
-                      }}
-                      data-purpose="key-badge"
-                      title="Click to edit key"
-                    >
-                      <span
-                        className="text-[11px] font-normal"
-                        style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                      >
-                        #
-                      </span>
-                      <span className="font-bold tracking-wide">
-                        {transposeOffset === 0
-                          ? activePreset.key || 'C'
-                          : transposeKeyString(activePreset.key || 'C', transposeOffset, preferFlats)}
-                      </span>
-                    </button>
+                  <span className="material-symbols-rounded text-[18px]">edit</span>
+                </motion.button>
 
-                    {activePreset.bpm > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingId(activePreset.id);
-                          setShowForm(true);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 border shadow-sm text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                        style={{
-                          backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                          borderColor: 'var(--c-border, #E3E6EB)',
-                          color: 'var(--c-text-primary, #111827)',
-                        }}
-                        data-purpose="bpm-badge"
-                        title="Click to edit tempo"
-                      >
-                        <span
-                          className="material-symbols-rounded text-sm"
-                          style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                        >
-                          speed
-                        </span>
-                        <span className="font-bold">{activePreset.bpm}</span>
-                        <span
-                          className="text-[10px] font-medium"
-                          style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                        >
-                          BPM
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Right: Transposition Controls */}
-                  <TransposeControls
-                    variant="mobile"
-                    activePresetId={activePreset.id}
-                    transposeOffset={transposeOffset}
-                    setTranspose={setTranspose}
-                    resetTranspose={resetTranspose}
-                    preferFlats={preferFlats}
-                    formatOffset={formatOffset}
-                    accent={accent}
-                    t={t}
-                  />
-                </section>
-              )}
-              {/* END: SongMetadataToolbar */}
-
-              {/* View Mode Selector / Add Lyrics (Mobile) */}
-              <div className="w-full flex items-center justify-between gap-2 px-0.5 pt-0.5">
-                {(hasLyrics || editorViewMode !== 'chords') ? (
-                  <div
-                    className="flex items-center p-0.5 rounded-full border shadow-xs"
+                {hasLiveContent && (
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    aria-label="Live Mode"
+                    onClick={() => setShowLive(true)}
+                    data-testid="enter-live-mode"
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs"
                     style={{
-                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
-                      borderColor: 'var(--c-border, #E3E6EB)',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
+                      color: '#FFFFFF',
                     }}
-                    data-purpose="view-mode-selector"
-                  >
-                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
-                      const isActive = editorViewMode === mode;
-                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          data-testid={`view-mode-${mode}`}
-                          onClick={() => setEditorViewMode(mode)}
-                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
-                          style={{
-                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
-                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
-                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                          }}
-                        >
-                          {labels[mode]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <button
                     type="button"
-                    data-testid="add-lyrics-btn"
-                    onClick={() => {
-                      if (!activePreset.lyrics) {
-                        setSongLyrics(activePreset.id, createEmptyLyricsDocument());
-                      }
-                      setEditorViewMode('lyrics');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-xs text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor: 'var(--c-border, #E3E6EB)',
-                      color: 'var(--c-text-secondary, #6B7280)',
-                    }}
+                    title="Start live performance"
                   >
-                    <span className="material-symbols-rounded text-sm" style={{ color: 'var(--c-accent-from, #2563EB)' }}>
-                      lyrics
+                    <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
+                      play_arrow
                     </span>
-                    <span>+ Add Lyrics</span>
-                  </button>
+                  </motion.button>
                 )}
               </div>
-            </div>
-          </>
+            }
+          />
         ) : (
           /* Desktop Title and Meta Header */
           <header
@@ -5352,7 +5216,7 @@ export default function SongsPanel() {
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
                 style={{
                   padding:
-                    '0 0 calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px) 0 calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
                   position: 'relative',
                 }}
                 data-purpose="editor-lyrics-area"
@@ -5379,7 +5243,12 @@ export default function SongsPanel() {
           if (!isWebDesktop && isEmptyProgression && editorViewMode !== 'both') {
             return (
               <main
-                className="flex-1 flex flex-col items-center justify-center px-4 -mt-8"
+                ref={editorScrollRef}
+                className="flex-1 flex flex-col items-center justify-center px-4"
+                style={{
+                  paddingTop:
+                    'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                }}
                 data-purpose="empty-chord-progression"
               >
                 {/* Musical Icon Graphic */}
@@ -5431,12 +5300,50 @@ export default function SongsPanel() {
               ref={editorScrollRef}
               className="flex-1 overflow-y-auto no-scrollbar"
               style={{
-                padding:
-                  '0 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
+                paddingTop:
+                  'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 84px)',
+                paddingLeft: '16px',
+                paddingRight: '16px',
+                paddingBottom:
+                  'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 90px)',
                 position: 'relative',
               }}
               data-purpose="editor-content-area"
             >
+              {/* Optional View Mode Selector when song has lyrics or mode is not chords */}
+              {(hasLyrics || editorViewMode !== 'chords') && (
+                <div className="w-full flex items-center justify-center pb-3 pt-1">
+                  <div
+                    className="flex items-center p-0.5 rounded-full border shadow-xs"
+                    style={{
+                      backgroundColor: 'var(--app-surface-low, rgba(0,0,0,0.04))',
+                      borderColor: 'var(--c-border, #E3E6EB)',
+                    }}
+                    data-purpose="view-mode-selector"
+                  >
+                    {(['chords', 'lyrics', 'both'] as const).map((mode) => {
+                      const isActive = editorViewMode === mode;
+                      const labels = { chords: 'Chords', lyrics: 'Lyrics', both: 'Both' };
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          data-testid={`view-mode-${mode}`}
+                          onClick={() => setEditorViewMode(mode)}
+                          className="px-3 py-1 rounded-full text-[11px] font-bold capitalize transition-all cursor-pointer"
+                          style={{
+                            backgroundColor: isActive ? 'var(--surface-card-bg, #ffffff)' : 'transparent',
+                            color: isActive ? 'var(--c-text-primary, #111827)' : 'var(--c-text-muted, #8A92A6)',
+                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                          }}
+                        >
+                          {labels[mode]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {/* Optional Lyrics / Notes Card */}
               {activePreset.notes && (
                 <div
@@ -6279,7 +6186,7 @@ export default function SongsPanel() {
           setEditingId={setEditingId}
           setShowForm={setShowForm}
           setShowImport={setShowImport}
-          onNewSong={handleCreateNewSong}
+          onNewSong={handleStartNewSongDesktop}
           accent={accent}
           t={t}
         />
@@ -6532,20 +6439,32 @@ export default function SongsPanel() {
                           button to create your first progression
                         </p>
                         <div className="flex items-center gap-2.5 mt-6">
-                          <motion.button
-                            type="button"
-                            onClick={handleCreateNewSong}
-                            className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
-                            style={{
-                              backgroundColor: 'var(--c-accent-from, #2563EB)',
-                              boxShadow:
-                                '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
-                            }}
-                            data-purpose="empty-create-song-btn"
+                          <MorphingActionSurface
+                            placement="center"
+                            maxWidth={400}
+                            title={t.songs.newSong || 'New Song'}
+                            subtitle="Create a new chord progression"
+                            accentColor={accent.from}
+                            customTrigger={({ triggerProps }) => (
+                              <motion.button
+                                {...triggerProps}
+                                whileTap={{ scale: 0.96 }}
+                                type="button"
+                                className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+                                style={{
+                                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                                  boxShadow:
+                                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                                }}
+                                data-purpose="empty-create-song-btn"
+                              >
+                                <span className="material-symbols-rounded text-base">add</span>
+                                <span>Create Song</span>
+                              </motion.button>
+                            )}
                           >
-                            <span className="material-symbols-rounded text-base">add</span>
-                            <span>Create Song</span>
-                          </motion.button>
+                            {renderCreateSongForm}
+                          </MorphingActionSurface>
 
                           <MorphingActionSurface
                             placement="center"
@@ -6737,23 +6656,35 @@ export default function SongsPanel() {
                 </MorphingActionSurface>
 
                 {/* Primary FAB: Create Song */}
-                <motion.button
-                  type="button"
-                  data-testid="new-preset-btn"
-                  aria-label="Create new progression"
-                  title="Create new progression"
-                  onClick={handleCreateNewSong}
-                  className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
-                    boxShadow:
-                      '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-                  }}
+                <MorphingActionSurface
+                  placement="center"
+                  maxWidth={400}
+                  title={t.songs.newSong || 'New Song'}
+                  subtitle="Create a new chord progression"
+                  accentColor={accent.from}
+                  customTrigger={({ triggerProps }) => (
+                    <motion.button
+                      {...triggerProps}
+                      whileTap={{ scale: 0.92 }}
+                      type="button"
+                      data-testid="new-preset-btn"
+                      aria-label="Create new progression"
+                      title="Create new progression"
+                      className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                      style={{
+                        width: '52px',
+                        height: '52px',
+                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        boxShadow:
+                          '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                      }}
+                    >
+                      <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                    </motion.button>
+                  )}
                 >
-                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
-                </motion.button>
+                  {renderCreateSongForm}
+                </MorphingActionSurface>
               </aside>
             </div>
           )}
