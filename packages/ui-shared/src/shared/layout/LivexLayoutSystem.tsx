@@ -317,13 +317,14 @@ export function SharedFloatingHeader({
         <div
           ref={glassSurfaceRef}
           data-testid="shared-floating-header-glass-surface"
-          className="shared-topbar-surface glass-nav"
+          className="shared-topbar-surface"
           style={{
             position: 'absolute',
             inset: 0,
             borderRadius: '9999px',
             clipPath: 'inset(0 round 9999px)',
-            background: 'var(--surface-topbar-bg)',
+            backgroundColor: 'var(--surface-topbar-fallback, #ffffff)',
+            backgroundImage: 'var(--surface-topbar-bg)',
             border: 'var(--surface-topbar-border)',
             backdropFilter: 'var(--surface-topbar-backdrop)',
             WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',

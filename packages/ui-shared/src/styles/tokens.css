@@ -1369,8 +1369,8 @@ html[data-perf-mode='on'] *::after {
   html[data-nav-hidden='true'] .shared-bottom-navbar-wrapper,
   html[data-nav-locked='true'] .shared-bottom-nav,
   html[data-nav-hidden='true'] .shared-bottom-nav,
-  html[data-nav-locked='true'] .glass-nav,
-  html[data-nav-hidden='true'] .glass-nav {
+  html[data-nav-locked='true'] .shared-bottom-navbar-wrapper .glass-nav,
+  html[data-nav-hidden='true'] .shared-bottom-navbar-wrapper .glass-nav {
     pointer-events: none !important;
     opacity: 0 !important;
     visibility: hidden !important;

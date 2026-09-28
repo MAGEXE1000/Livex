@@ -101,6 +101,7 @@ export const SongDurationModal: React.FC<SongDurationModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Set Song Duration"
+      data-testid="song-duration-modal"
       className="fixed inset-0 z-[1200] flex items-center justify-center p-4"
       style={{ userSelect: 'none' }}
     >
@@ -188,7 +189,7 @@ export const SongDurationModal: React.FC<SongDurationModalProps> = ({
               ref={inputRef}
               type="text"
               inputMode="numeric"
-              data-testid="duration-modal-input"
+              data-testid="duration-text-input"
               value={inputValue}
               onChange={(e) => {
                 setInputValue(e.target.value);

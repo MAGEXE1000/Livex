@@ -1,6 +1,10 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import type { SongPreset } from '@workspace/livex-core';
+import { calculateSongTimingSchedule, type SongPreset } from '@workspace/livex-core';
+
+if (typeof window !== 'undefined') {
+  (window as any).calculateSongTimingSchedule = calculateSongTimingSchedule;
+}
 import { useLiveModeState } from './useLiveModeState';
 import {
   LiveModeHeader,
