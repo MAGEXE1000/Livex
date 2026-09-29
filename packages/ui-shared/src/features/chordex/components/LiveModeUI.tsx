@@ -600,7 +600,9 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
         padding: '12px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
       }}
     >
@@ -665,41 +667,51 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
           />
         </div>
 
-        {/* Next Chord Cue Pill - Positioned cleanly below card, zero overlap with diagram */}
+        {/* Next Chord Presentation - Cleanly separated from primary card */}
         {nextChord && (
           <button
             type="button"
             onClick={goNext}
+            title="Go to next chord"
+            aria-label={`Next chord: ${nextChord.name}`}
             style={{
               marginTop: '16px',
-              padding: '6px 16px',
-              borderRadius: '9999px',
-              background: 'var(--surface-topbar-bg)',
+              padding: '12px 16px',
+              borderRadius: '24px',
+              background: 'var(--surface-float-bg, var(--surface-topbar-bg))',
               border: 'var(--surface-topbar-border)',
               backdropFilter: 'var(--surface-topbar-backdrop)',
               WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
               boxShadow: 'var(--surface-topbar-shadow)',
-              display: 'inline-flex',
+              display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: '8px',
+              gap: '12px',
               cursor: 'pointer',
+              width: 'auto',
+              minWidth: '130px',
+              transition: 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
+              /* Ensure the container doesn't overflow */
+              flexShrink: 0
             }}
-            title="Next Chord"
+            onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
+            onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: '18px', color: accent.from }}
-            >
-              fast_forward
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: '18px', color: accent.from }}
+              >
+                fast_forward
+              </span>
               <span
                 style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
                   color: 'var(--c-text-secondary)',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '0.08em',
                 }}
               >
                 Next
@@ -707,8 +719,9 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
               <span
                 style={{
                   fontWeight: 800,
+                  fontSize: '13px',
                   color: accent.from,
-                  padding: '1px 8px',
+                  padding: '2px 8px',
                   borderRadius: '9999px',
                   background: `${accent.from}1a`,
                   border: `1px solid ${accent.from}33`,
@@ -717,6 +730,45 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                 {nextChord.name ? nextChord.name.replace(/\s/g, '') : ''}
               </span>
             </div>
+
+            {nextChord.guitar && (
+              <div style={{ width: '100%', maxWidth: '120px', pointerEvents: 'none' }}>
+                <DetailFretboardDiagram
+                  chordData={nextChord.guitar}
+                  maxWidth="100%"
+                  accentColor={accent.from}
+                  displayMode="notes"
+                />
+              </div>
+            )}
+            
+            {/* Notes badges */}
+            {nextChord.notes && nextChord.notes.length > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '4px', 
+                flexWrap: 'wrap', 
+                justifyContent: 'center',
+                marginTop: '4px'
+              }}>
+                {nextChord.notes.map((note, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: 'var(--c-text-secondary)',
+                      background: 'var(--surface-bottomnav-bg, rgba(0,0,0,0.2))',
+                      padding: '2px 6px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+                    }}
+                  >
+                    {note.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
           </button>
         )}
 
