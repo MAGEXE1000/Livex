@@ -5443,7 +5443,7 @@ export default function SongsPanel() {
                 paddingRight: '16px',
                 paddingBottom:
                   editorViewMode === 'both'
-                    ? 'calc(max(16px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 16px))))'
+                    ? 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)'
                     : 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
                 position: 'relative',
               }}

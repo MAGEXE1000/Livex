@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import {
@@ -195,6 +196,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       document.removeEventListener('pointerdown', handleOutside);
     };
   }, [activePopover]);
+
+  // Ensure popover closes on unmount so it doesn't linger in portal
+  useEffect(() => {
+    return () => setActivePopover(null);
+  }, []);
 
   // Role Picker
   const [rolePickerTarget, setRolePickerTarget] = useState<{
@@ -906,7 +912,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       <main
         className="flex flex-col gap-4 outline-none w-full"
         style={{
-          paddingBottom: '8px',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
         }}
         data-purpose="teleprompter-writing-canvas"
         onClick={(e) => {
@@ -1472,20 +1478,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         )}
 
         {/* ── DOCUMENT-FLOW BOTTOM TOOLBAR ── */}
-        <aside
-          ref={dockRef}
-          aria-label="Song Both editor toolbar"
-          data-testid="both-editing-bottom-dock"
-          data-purpose="both-editing-bottom-dock"
-          className="relative z-20 flex items-center justify-center mx-auto mt-6 mb-8 gap-1.5 px-3 py-1.5 rounded-full border shadow-xl backdrop-blur-xl pointer-events-auto"
-          style={{
-            width: 'fit-content',
-            backgroundColor: dockBg,
-            borderColor: dockBorder,
-            boxShadow: dockShadow,
-          }}
-        >
-          {/* ── LEFT CLUSTER: Direct high-frequency actions (Undo, Redo, Paste) ── */}
+        {(() => {
+          const dockContent = (
+            <aside
+              ref={dockRef}
+              aria-label="Song Both editor toolbar"
+              data-testid="both-editing-bottom-dock"
+              data-purpose="both-editing-bottom-dock"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border shadow-2xl backdrop-blur-xl pointer-events-auto select-none"
+              style={{
+                position: 'fixed',
+                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 45,
+                width: 'fit-content',
+                maxWidth: 'calc(100vw - 32px)',
+                backgroundColor: dockBg,
+                borderColor: dockBorder,
+                boxShadow: dockShadow,
+                pointerEvents: 'auto',
+              }}
+            >
+              {/* ── LEFT CLUSTER: Direct high-frequency actions (Undo, Redo, Paste) ── */}
           <div className="flex items-center gap-1">
             {/* Undo */}
             <button
@@ -2117,6 +2132,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             </div>
           </div>
         </aside>
+          );
+          return typeof document !== 'undefined' ? createPortal(dockContent, document.body) : dockContent;
+        })()}
       </main>
 
       {/* ── DIALOG: REPOSITION / REPLACE / REMOVE CHORD ── */}
