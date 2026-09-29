@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.64';
-export const NATIVE_VERSION_CODE = 40664;
-export const WEB_VERSION = '4.6.64';
+export const NATIVE_VERSION = '4.6.65';
+export const NATIVE_VERSION_CODE = 40665;
+export const WEB_VERSION = '4.6.65';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/28/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '8ac42190';
+export const APP_COMMIT_SHA = 'fa01560b';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/28/2026, 4:17:16 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/29/2026, 4:23:59 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,15 +101,15 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Colored Lyrics in Live Modes: Preserved inline text span colors, line formatting colors, and vocal role colors across both Lyrics Live mode (LyricsLiveView) and Both Live mode (HybridLiveView), enabling performers to visually differentiate vocal parts and performers in real-time with drop-shadow bloom on active words.',
+      'Next Chord Modern Diagram in Live Mode: Displayed the canonical DetailFretboardDiagram for the upcoming chord in Chords Live mode (ChordsLiveView) with high-fidelity fretboard markers and interactive advance tap target.',
+      'Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.',
+      'First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Floating Viewport Bottom Toolbar in Both Mode: Re-architected HybridLiveView layout with dedicated scroll isolation, ensuring the transport and HUD controls remain persistently anchored at the viewport bottom above the safe area, matching bottom navbar behavior across all scrolling states.',
-      'Clean Line Editing in Song Lyrics Editor: Polished inline lyric editing by removing word selection highlight rectangles, eliminating the explicit Done button, adding clean baseline indicators, and auto-committing edits on blur or clicking away.',
-      'Unified Live Display Mode Guard: Fixed mode-synchronization in useLiveModeState to prevent initialMode from overriding manual user mode switches in the Live Settings sheet.',
+      'Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.',
     ],
   },
 ];
@@ -121,6 +121,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.65',
+    date: '2026-09-29',
+    highlights: [
+      'Next Chord Modern Diagram in Live Mode: Displayed the canonical DetailFretboardDiagram for the upcoming chord in Chords Live mode (ChordsLiveView) with high-fidelity fretboard markers and interactive advance tap target.',
+      'Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.',
+      'First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.',
+      'Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.',
+    ],
+  },
   {
     version: '4.6.64',
     date: '2026-09-28',
@@ -208,18 +218,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.',
       'Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.',
       'Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.',
-    ],
-  },
-  {
-    version: '4.6.55',
-    date: '2026-09-26',
-    highlights: [
-      'Content-Aware Chordex Live: High-performance musician presentation mode that automatically adapts between chords-only, chords-with-lyrics, and lyrics-only layouts with dynamic chord diagram drawers, pitch transposition, and variable-speed teleprompter scrolling.',
-      'Structured Optional Lyrics Workspace: Native lyric writer and teleprompter editor with inline chord markers, vocal role tagging (lead/harmony/backing), and tempo sync without disrupting standard chord progression workflows.',
-      'Stagex Setlist Presets & Custom Ordering: Direct drag-and-drop song reordering, setlist templates, and persistent production stage plan element name preferences.',
-      'Cross-App Assistant Orchestration: Intelligent context sharing and direct action execution across Hub, Chordex, Drumex, and Stagex.',
-      'Repository Architecture & Monolith Deconstruction: Extracted DrumEditor panels and drag hooks, SongsPanel, HubSettings pages, and AccountCard authentication sheets into clean modular components.',
-      'Zero Circular Dependencies: Fully decoupled auth UI primitives and settings navigation rows, eliminating circular dependencies across the entire repository.',
     ],
   },
 ];

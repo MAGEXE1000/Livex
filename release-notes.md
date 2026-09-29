@@ -1,11 +1,11 @@
-# Version 4.6.64
+# Version 4.6.65
 
-Release Date: 2026-09-28
+Release Date: 2026-09-29
 
 ### Added
-- Colored Lyrics in Live Modes: Preserved inline text span colors, line formatting colors, and vocal role colors across both Lyrics Live mode (LyricsLiveView) and Both Live mode (HybridLiveView), enabling performers to visually differentiate vocal parts and performers in real-time with drop-shadow bloom on active words.
+- Next Chord Modern Diagram in Live Mode: Displayed the canonical DetailFretboardDiagram for the upcoming chord in Chords Live mode (ChordsLiveView) with high-fidelity fretboard markers and interactive advance tap target.
+- Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.
+- First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.
 
 ### Fixed
-- Floating Viewport Bottom Toolbar in Both Mode: Re-architected HybridLiveView layout with dedicated scroll isolation, ensuring the transport and HUD controls remain persistently anchored at the viewport bottom above the safe area, matching bottom navbar behavior across all scrolling states.
-- Clean Line Editing in Song Lyrics Editor: Polished inline lyric editing by removing word selection highlight rectangles, eliminating the explicit Done button, adding clean baseline indicators, and auto-committing edits on blur or clicking away.
-- Unified Live Display Mode Guard: Fixed mode-synchronization in useLiveModeState to prevent initialMode from overriding manual user mode switches in the Live Settings sheet.
+- Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.
