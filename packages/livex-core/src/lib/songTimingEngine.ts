@@ -39,6 +39,8 @@ export interface SongTimingSchedule {
   totalTargetDurationMs: number;
   effectiveDurationMs: number;
   pacingFactor: number;
+  effectiveSpeed: number;
+  referenceSpeed: number;
   effectiveBpm: number;
   referenceBpm: number;
   isDurationPaced: boolean;
@@ -49,6 +51,7 @@ export interface SongTimingSchedule {
 }
 
 export interface TimingEngineOptions {
+  speedOverride?: number;
   bpmOverride?: number;
   beatsPerChord?: number;
   beatsPerLine?: number;
@@ -66,19 +69,34 @@ export function formatDurationMmSs(totalSeconds: number): string {
 }
 
 /**
- * Parse "mm:ss" or total seconds string into integer seconds
+ * Parse "mm:ss", "mm.ss", or total seconds string into integer seconds
  */
 export function parseDurationMmSs(input: string): number | null {
   if (!input || !input.trim()) return null;
   const clean = input.trim();
-  if (clean.includes(':')) {
-    const parts = clean.split(':');
-    const m = parseInt(parts[0], 10) || 0;
-    const s = parseInt(parts[1], 10) || 0;
-    if (m < 0 || s < 0 || s >= 60) return null;
-    const total = m * 60 + s;
-    return total > 0 ? total : null;
+  if (clean.includes(':') || clean.includes('.')) {
+    const delimiter = clean.includes(':') ? ':' : '.';
+    const parts = clean.split(delimiter);
+    if (parts.length === 2) {
+      if (!/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) return null;
+      const m = parseInt(parts[0], 10);
+      const s = parseInt(parts[1], 10);
+      if (isNaN(m) || isNaN(s) || m < 0 || s < 0 || s >= 60) return null;
+      const total = m * 60 + s;
+      return total > 0 ? total : null;
+    }
+    if (parts.length === 3) {
+      if (!/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1]) || !/^\d+$/.test(parts[2])) return null;
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const s = parseInt(parts[2], 10);
+      if (isNaN(h) || isNaN(m) || isNaN(s) || h < 0 || m < 0 || m >= 60 || s < 0 || s >= 60) return null;
+      const total = h * 3600 + m * 60 + s;
+      return total > 0 ? total : null;
+    }
+    return null;
   }
+  if (!/^\d+$/.test(clean)) return null;
   const sec = parseInt(clean, 10);
   return !isNaN(sec) && sec > 0 ? sec : null;
 }
@@ -90,10 +108,14 @@ export function calculateSongTimingSchedule(
   preset: SongPreset,
   options?: TimingEngineOptions
 ): SongTimingSchedule {
-  const referenceBpm = Math.max(20, Math.min(300, options?.bpmOverride || preset.bpm || 120));
+  const referenceSpeed = Math.max(
+    20,
+    Math.min(1200, options?.speedOverride || options?.bpmOverride || preset.speed || preset.bpm || 120)
+  );
+  const referenceBpm = referenceSpeed;
   const beatsPerChord = options?.beatsPerChord || 4;
   const beatsPerLine = options?.beatsPerLine || 4;
-  const beatDurationMs = 60000 / referenceBpm;
+  const beatDurationMs = 60000 / referenceSpeed;
 
   const targetSec =
     options?.targetDurationOverride !== undefined
@@ -323,7 +345,8 @@ export function calculateSongTimingSchedule(
   const scalableTargetMs = targetDurationMs - totalFixedDurationMs;
   const pacingFactor = (isDurationPaced && scalableNominalMs > 0) ? Math.max(0, scalableTargetMs) / scalableNominalMs : 1.0;
   const effectiveDurationMs = isDurationPaced ? Math.max(totalFixedDurationMs, targetDurationMs) : totalNominalDurationMs;
-  const effectiveBpm = Math.round((referenceBpm / pacingFactor) * 10) / 10;
+  const effectiveSpeed = Math.round((referenceSpeed / pacingFactor) * 10) / 10;
+  const effectiveBpm = effectiveSpeed;
 
   // ── MAP MONOTONIC START/END TIMESTAMPS ──
   const mapTimeline = (items: PerformanceTimingItem[], targetTotal: number) => {
@@ -383,6 +406,8 @@ export function calculateSongTimingSchedule(
     totalTargetDurationMs: targetDurationMs,
     effectiveDurationMs,
     pacingFactor,
+    effectiveSpeed,
+    referenceSpeed,
     effectiveBpm,
     referenceBpm,
     isDurationPaced,

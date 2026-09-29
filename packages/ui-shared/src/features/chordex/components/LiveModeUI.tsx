@@ -142,6 +142,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
   const elapsedSec = Math.round(state.elapsedMs / 1000);
   const totalSec = Math.round((state.timingSchedule?.effectiveDurationMs || 0) / 1000);
   const durationText = `${formatDurationMmSs(elapsedSec)} / ${formatDurationMmSs(totalSec)}`;
+  const currentSpeed = state.speed || state.bpmOverride;
 
   const durationBadge = (
     <button
@@ -176,7 +177,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <span style={{ opacity: 0.4 }}>•</span>
           <span>KEY {preset.key || 'C'}</span>
           <span style={{ opacity: 0.4 }}>•</span>
-          <span>{bpmOverride} BPM</span>
+          <span>Speed {currentSpeed}</span>
           <span style={{ opacity: 0.4 }}>•</span>
           {durationBadge}
         </span>
@@ -187,7 +188,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
           <span style={{ opacity: 0.4 }}>•</span>
-          <span>{bpmOverride} BPM</span>
+          <span>Speed {currentSpeed}</span>
           <span style={{ opacity: 0.4 }}>•</span>
           {durationBadge}
           {preset.artist ? (
@@ -218,7 +219,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         <span style={{ opacity: 0.4 }}>•</span>
         <span>KEY {preset.key || 'C'}</span>
         <span style={{ opacity: 0.4 }}>•</span>
-        <span>{bpmOverride} BPM</span>
+        <span>Speed {currentSpeed}</span>
         <span style={{ opacity: 0.4 }}>•</span>
         {durationBadge}
       </span>
@@ -582,6 +583,8 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
     setShowSettings,
     showQuickActions,
     setShowQuickActions,
+    speed,
+    setSpeed,
     bpmOverride,
     setBpmOverride,
     displayMode,
@@ -784,11 +787,11 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
               boxShadow: 'var(--surface-topbar-shadow)',
             }}
           >
-            {/* BPM Adjuster */}
+            {/* Speed Adjuster */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
                 type="button"
-                onClick={() => setBpmOverride((b: number) => Math.max(20, b - 1))}
+                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.max(20, b - 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -801,17 +804,17 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   border: 'none',
                   cursor: 'pointer',
                 }}
-                title="Decrease BPM"
-                aria-label="Decrease BPM"
+                title="Decrease Speed"
+                aria-label="Decrease Speed"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
               </button>
               <span style={{ fontSize: '11px', fontWeight: 800, color: accent.from, minWidth: '48px', textAlign: 'center' }}>
-                {bpmOverride} BPM
+                Speed {speed || bpmOverride}
               </span>
               <button
                 type="button"
-                onClick={() => setBpmOverride((b: number) => Math.min(300, b + 1))}
+                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.min(1000, b + 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -824,8 +827,8 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   border: 'none',
                   cursor: 'pointer',
                 }}
-                title="Increase BPM"
-                aria-label="Increase BPM"
+                title="Increase Speed"
+                aria-label="Increase Speed"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
               </button>
@@ -2836,7 +2839,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
           </div>
 
-          {/* ── 3. SPEED & TEMPO ─────────────────────────────────── */}
+          {/* ── 3. SPEED ────────────────────────────────────────── */}
           <div>
             <div
               style={{
@@ -2866,14 +2869,14 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   fontSize: '14px',
                 }}
               >
-                {bpmOverride} BPM
+                {state.speed || state.bpmOverride}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 type="button"
-                aria-label="Decrease BPM"
-                onClick={() => setBpmOverride((b: number) => Math.max(20, b - 1))}
+                aria-label="Decrease Speed"
+                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.max(20, b - 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',
@@ -2895,17 +2898,17 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               </button>
               <ElasticSlider
                 min={20}
-                max={300}
+                max={1000}
                 step={1}
-                value={bpmOverride}
-                onChange={setBpmOverride as any}
+                value={state.speed || state.bpmOverride}
+                onChange={(state.setSpeed || state.setBpmOverride) as any}
                 accentColor={accent.from}
                 style={{ flex: 1 }}
               />
               <button
                 type="button"
-                aria-label="Increase BPM"
-                onClick={() => setBpmOverride((b: number) => Math.min(300, b + 1))}
+                aria-label="Increase Speed"
+                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.min(1000, b + 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',
@@ -2928,81 +2931,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
           </div>
 
-          {/* ── 4. PACING (BEATS PER CHORD OR LINE) ──────────────── */}
-          <div>
-            <p
-              style={{
-                color: 'var(--c-text-secondary)',
-                fontFamily: 'var(--studio-font-body)',
-                fontWeight: 700,
-                fontSize: '10.5px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                marginBottom: '10px',
-              }}
-            >
-              {isTeleprompterMode ? 'Beats Per Line (Auto-Scroll)' : 'Beats Per Chord'}
-            </p>
-            {isTeleprompterMode ? (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[2, 4, 8, 16].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBeatsPerLine(b)}
-                    className="btn-smooth"
-                    style={{
-                      flex: 1,
-                      padding: '10px 4px',
-                      borderRadius: '0.75rem',
-                      background:
-                        beatsPerLine === b
-                          ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                          : 'rgba(255,255,255,0.06)',
-                      color: beatsPerLine === b ? '#fff' : '#acabaa',
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      border: 'none',
-                      boxShadow: beatsPerLine === b ? `0 2px 12px ${accent.to}44` : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[1, 2, 4, 8].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBeatsPerChord(b as any)}
-                    className="btn-smooth"
-                    style={{
-                      flex: 1,
-                      padding: '10px 4px',
-                      borderRadius: '0.75rem',
-                      background:
-                        beatsPerChord === b
-                          ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                          : 'rgba(255,255,255,0.06)',
-                      color: beatsPerChord === b ? '#fff' : '#acabaa',
-                      fontFamily: 'var(--studio-font-body)',
-                      fontWeight: 800,
-                      fontSize: '14px',
-                      border: 'none',
-                      boxShadow: beatsPerChord === b ? `0 2px 12px ${accent.to}44` : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ── 4b. SONG DURATION (MINUTES : SECONDS) ───────────── */}
+          {/* ── 4. SONG DURATION (MINUTES : SECONDS) ─────────────── */}
           <div
             data-testid="live-settings-duration-card"
             style={{
@@ -3043,7 +2972,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     marginTop: '2px',
                   }}
                 >
-                  Target presentation duration (Tempo: {bpmOverride} BPM)
+                  Target presentation duration
                 </p>
               </div>
             </div>
@@ -3098,7 +3027,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   <input
                     ref={durationInputRef}
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     data-testid="live-duration-inline-input"
                     value={durationInputVal}
                     onChange={(e) => setDurationInputVal(e.target.value)}

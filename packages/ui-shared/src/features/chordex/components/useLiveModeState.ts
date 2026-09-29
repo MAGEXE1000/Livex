@@ -138,6 +138,8 @@ export interface LiveModeState {
   setBeatsPerLine: (v: number) => void;
   showContext: boolean;
   setShowContext: (v: boolean | ((prev: boolean) => boolean)) => void;
+  speed: number;
+  setSpeed: (v: number | ((prev: number) => number)) => void;
   bpmOverride: number;
   setBpmOverride: (v: number | ((prev: number) => number)) => void;
   playbackSpeed: number;
@@ -444,34 +446,39 @@ export function useLiveModeState(
   }, []);
 
   const [showContext, setShowContext] = useState(true);
-  const [bpmOverride, setBpmOverrideState] = useState(preset.bpm || 120);
+  const initialSpeed = preset.speed || preset.bpm || 120;
+  const [speed, setSpeedState] = useState(initialSpeed);
   const [seekToken, setSeekToken] = useState(0);
 
-  // Sync if preset.bpm changes externally
+  // Sync if preset.speed or preset.bpm changes externally
   useEffect(() => {
-    if (preset.bpm && preset.bpm > 0) {
-      setBpmOverrideState(preset.bpm);
+    const next = preset.speed || preset.bpm;
+    if (next && next > 0) {
+      setSpeedState(next);
     }
-  }, [preset.bpm]);
+  }, [preset.speed, preset.bpm]);
 
-  const setBpmOverride = useCallback(
+  const setSpeed = useCallback(
     (action: number | ((prev: number) => number)) => {
-      let nextBpm = 120;
-      setBpmOverrideState((prev) => {
+      let nextSpeed = 120;
+      setSpeedState((prev) => {
         const raw = typeof action === 'function' ? action(prev) : action;
-        nextBpm = Math.max(20, Math.min(300, Math.round(raw)));
-        return nextBpm;
+        nextSpeed = Math.max(20, Math.min(1200, Math.round(raw)));
+        return nextSpeed;
       });
       if (preset?.id) {
         queueMicrotask(() => {
           try {
-            useChordStore.getState().updatePreset(preset.id, { bpm: nextBpm });
+            useChordStore.getState().updatePreset(preset.id, { speed: nextSpeed, bpm: nextSpeed });
           } catch (_) {}
         });
       }
     },
     [preset?.id]
   );
+
+  const bpmOverride = speed;
+  const setBpmOverride = setSpeed;
 
   const [targetDurationSeconds, setTargetDurationSecondsState] = useState<number | undefined>(
     preset.targetDurationSeconds
@@ -1444,6 +1451,8 @@ export function useLiveModeState(
     setBeatsPerLine,
     showContext,
     setShowContext,
+    speed,
+    setSpeed,
     bpmOverride,
     setBpmOverride,
     playbackSpeed,

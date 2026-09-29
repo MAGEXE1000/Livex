@@ -7,6 +7,7 @@ export interface SongDurationModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialDurationSeconds?: number;
+  speed?: number;
   bpm?: number;
   accent?: { from: string; to: string; mid?: string };
   onSave: (targetDurationSeconds: number | undefined) => void;
@@ -25,10 +26,12 @@ export const SongDurationModal: React.FC<SongDurationModalProps> = ({
   isOpen,
   onClose,
   initialDurationSeconds,
+  speed,
   bpm = 120,
   accent = { from: '#2563EB', to: '#1D4ED8' },
   onSave,
 }) => {
+  const currentSpeed = speed || bpm;
   const [inputValue, setInputValue] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -188,7 +191,7 @@ export const SongDurationModal: React.FC<SongDurationModalProps> = ({
             <input
               ref={inputRef}
               type="text"
-              inputMode="numeric"
+              inputMode="text"
               data-testid="duration-text-input"
               value={inputValue}
               onChange={(e) => {
@@ -211,8 +214,8 @@ export const SongDurationModal: React.FC<SongDurationModalProps> = ({
             <p className="text-xs font-semibold text-red-400 text-center">{error}</p>
           ) : (
             <p className="text-[11px] text-center" style={{ color: 'var(--c-text-muted, #8A92A6)' }}>
-              Enter format <span className="font-mono font-bold">mm:ss</span> (e.g. 3:45) • Tempo:{' '}
-              <span className="font-bold" style={{ color: accent.from }}>{bpm} BPM</span>
+              Enter format <span className="font-mono font-bold">mm:ss</span> (e.g. 3:45) • Speed:{' '}
+              <span className="font-bold" style={{ color: accent.from }}>{currentSpeed}</span>
             </p>
           )}
         </div>

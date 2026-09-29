@@ -45,7 +45,7 @@ export function SongCardGrid({ songs, onSelectSong }: SongCardGridProps) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-text-primary)' }}>{song.name}</div>
             <div style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-              {song.artist ? `by ${song.artist}` : 'Unknown Artist'} • Key: {song.key || 'C'} • {song.bpm || 120} BPM
+              {song.artist ? `by ${song.artist}` : 'Unknown Artist'} • Key: {song.key || 'C'} • Speed: {song.speed || song.bpm || 120}
             </div>
           </div>
           <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--c-text-muted)' }} aria-hidden="true">

@@ -1,11 +1,12 @@
 import { Button, Input } from '../../../shared/design-system/StudioDesignSystem';
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '../../../shared/design-system/dialogs';
-import { useT } from '@workspace/livex-core'; 
+import { useT, formatDurationMmSs, parseDurationMmSs } from '@workspace/livex-core'; 
 
 export interface FormData {
   name: string;
   artist: string;
+  speed?: string;
   bpm: string;
   key: string;
   notes: string;
@@ -61,9 +62,21 @@ export function PresetFormContent({
     initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '', durationMinutes: '', durationSeconds: '' }
   );
 
+  const getFormattedDuration = (min?: string, sec?: string) => {
+    if (!min && !sec) return '';
+    const m = parseInt(min || '0', 10) || 0;
+    const s = parseInt(sec || '0', 10) || 0;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const [durationStr, setDurationStr] = useState<string>(() =>
+    getFormattedDuration(initial?.durationMinutes, initial?.durationSeconds)
+  );
+
   useEffect(() => {
     if (initial) {
       setForm(initial);
+      setDurationStr(getFormattedDuration(initial.durationMinutes, initial.durationSeconds));
     }
   }, [initial]);
 
@@ -111,11 +124,11 @@ export function PresetFormContent({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <Input
           type="number"
-          label={t.songs.bpm}
+          label="Speed"
           min={20}
-          max={400}
-          value={form.bpm}
-          onChange={(e) => setForm((f) => ({ ...f, bpm: e.target.value }))}
+          max={1200}
+          value={form.speed || form.bpm}
+          onChange={(e) => setForm((f) => ({ ...f, speed: e.target.value, bpm: e.target.value }))}
         />
         <div>
           <label style={labelStyle}>{t.songs.key}</label>
@@ -133,15 +146,18 @@ export function PresetFormContent({
         </div>
       </div>
 
-      {/* Song Duration Control (Minutes : Seconds) */}
+      {/* Song Duration Control (Direct MM:SS with colon support) */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
           <label style={labelStyle}>Song Duration</label>
-          {(form.durationMinutes || form.durationSeconds) && (
+          {(durationStr || form.durationMinutes || form.durationSeconds) && (
             <button
               type="button"
               data-testid="clear-song-duration-btn"
-              onClick={() => setForm((f) => ({ ...f, durationMinutes: '', durationSeconds: '' }))}
+              onClick={() => {
+                setDurationStr('');
+                setForm((f) => ({ ...f, durationMinutes: '', durationSeconds: '' }));
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -153,90 +169,52 @@ export function PresetFormContent({
                 padding: '0 4px',
               }}
             >
-              Auto (from BPM)
+              Auto (from Speed)
             </button>
           )}
         </div>
         <div
           data-testid="song-duration-control"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            gap: '8px',
-          }}
+          style={{ position: 'relative' }}
         >
-          <div style={{ position: 'relative' }}>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              data-testid="song-duration-minutes"
-              value={form.durationMinutes ?? ''}
-              placeholder="0"
-              onChange={(e) => {
-                const raw = e.target.value;
-                const val = raw === '' ? '' : Math.max(0, Math.min(59, parseInt(raw, 10) || 0)).toString();
-                setForm((f) => ({ ...f, durationMinutes: val }));
-              }}
-              style={{
-                ...selectStyle,
-                textAlign: 'center',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontWeight: 700,
-              }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: '11px',
-                color: 'var(--c-text-muted, #8A92A6)',
-                pointerEvents: 'none',
-                fontWeight: 600,
-              }}
-            >
-              min
-            </span>
-          </div>
-          <span style={{ color: 'var(--c-text-muted, #8A92A6)', fontWeight: 800, fontSize: '16px' }}>:</span>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              data-testid="song-duration-seconds"
-              value={form.durationSeconds ?? ''}
-              placeholder="00"
-              onChange={(e) => {
-                const raw = e.target.value;
-                const val = raw === '' ? '' : Math.max(0, Math.min(59, parseInt(raw, 10) || 0)).toString();
-                setForm((f) => ({ ...f, durationSeconds: val }));
-              }}
-              style={{
-                ...selectStyle,
-                textAlign: 'center',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontWeight: 700,
-              }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: '11px',
-                color: 'var(--c-text-muted, #8A92A6)',
-                pointerEvents: 'none',
-                fontWeight: 600,
-              }}
-            >
-              sec
-            </span>
-          </div>
+          <input
+            type="text"
+            inputMode="text"
+            data-testid="song-duration-input"
+            value={durationStr}
+            placeholder="e.g. 3:45"
+            onChange={(e) => {
+              const val = e.target.value;
+              setDurationStr(val);
+              const parsed = parseDurationMmSs(val);
+              if (parsed !== null) {
+                const m = Math.floor(parsed / 60).toString();
+                const s = (parsed % 60).toString();
+                setForm((f) => ({ ...f, durationMinutes: m, durationSeconds: s }));
+              } else if (!val.trim()) {
+                setForm((f) => ({ ...f, durationMinutes: '', durationSeconds: '' }));
+              }
+            }}
+            onBlur={() => {
+              const parsed = parseDurationMmSs(durationStr);
+              if (parsed !== null) {
+                setDurationStr(formatDurationMmSs(parsed));
+                const m = Math.floor(parsed / 60).toString();
+                const s = (parsed % 60).toString();
+                setForm((f) => ({ ...f, durationMinutes: m, durationSeconds: s }));
+              }
+            }}
+            style={{
+              ...selectStyle,
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontWeight: 700,
+              fontSize: '15px',
+            }}
+          />
+          {/* Backwards-compatible hidden inputs for testids */}
+          <input type="hidden" data-testid="song-duration-minutes" value={form.durationMinutes ?? ''} />
+          <input type="hidden" data-testid="song-duration-seconds" value={form.durationSeconds ?? ''} />
         </div>
       </div>
       <div>

@@ -2228,7 +2228,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
                           color: 'var(--c-text-primary)',
                         }}
                       >
-                        {tempo} BPM
+                        Speed {tempo}
                       </span>
                       <button
                         onClick={() => setTempo((t) => Math.min(240, t + 5))}

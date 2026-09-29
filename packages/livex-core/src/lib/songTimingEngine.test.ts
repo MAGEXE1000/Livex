@@ -395,4 +395,41 @@ describe('SongTimingEngine Verification Suite', () => {
       expect(s20.lines[1].durationMs).toBe(20000);
     });
   });
+
+  describe('Teleprompter Speed & Duration Redesign', () => {
+    it('supports speed exceeding 300 without artificial clamping', () => {
+      const schedule300 = calculateSongTimingSchedule(mockSong, { speedOverride: 300 });
+      const schedule600 = calculateSongTimingSchedule(mockSong, { speedOverride: 600 });
+      const schedule900 = calculateSongTimingSchedule(mockSong, { speedOverride: 900 });
+
+      expect(schedule300.referenceSpeed).toBe(300);
+      expect(schedule600.referenceSpeed).toBe(600);
+      expect(schedule900.referenceSpeed).toBe(900);
+
+      // Speed 600 should advance lines in half the time of Speed 300
+      expect(schedule600.lines[0].durationMs).toBe(Math.round(schedule300.lines[0].durationMs / 2));
+      expect(schedule600.effectiveDurationMs).toBeLessThan(schedule300.effectiveDurationMs);
+      expect(schedule900.effectiveDurationMs).toBeLessThan(schedule600.effectiveDurationMs);
+    });
+
+    it('parseDurationMmSs handles both colon (:) and dot (.) notations', () => {
+      expect(parseDurationMmSs('3:45')).toBe(225);
+      expect(parseDurationMmSs('3.45')).toBe(225);
+      expect(parseDurationMmSs('0:30')).toBe(30);
+      expect(parseDurationMmSs('0.30')).toBe(30);
+      expect(parseDurationMmSs('4:00')).toBe(240);
+      expect(parseDurationMmSs('4.00')).toBe(240);
+      expect(parseDurationMmSs('225')).toBe(225);
+    });
+
+    it('preset with speed property uses speed directly', () => {
+      const songWithSpeed: SongPreset = {
+        ...mockSong,
+        speed: 450,
+      };
+      const schedule = calculateSongTimingSchedule(songWithSpeed);
+      expect(schedule.referenceSpeed).toBe(450);
+      expect(schedule.effectiveSpeed).toBe(450);
+    });
+  });
 });

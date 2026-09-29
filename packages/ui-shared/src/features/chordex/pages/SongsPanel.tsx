@@ -466,7 +466,7 @@ async function exportPresetToPDF(
     cfg.includeKey && preset.key
       ? `<span style="${badgeStyle}">Tonalidad de ${preset.key}</span>`
       : '',
-    cfg.includeBPM && preset.bpm > 0 ? `<span style="${badgeStyle}">${preset.bpm} BPM</span>` : '',
+    cfg.includeBPM && (preset.speed || preset.bpm) ? `<span style="${badgeStyle}">Speed ${preset.speed || preset.bpm}</span>` : '',
   ]
     .filter(Boolean)
     .join('');
@@ -884,7 +884,7 @@ ${lyricsHtml}
       if (hasBadges) {
         const badges: string[] = [];
         if (cfg.includeKey && preset.key) badges.push(`Key: ${preset.key}`);
-        if (cfg.includeBPM && preset.bpm > 0) badges.push(`${preset.bpm} BPM`);
+        if (cfg.includeBPM && (preset.speed || preset.bpm)) badges.push(`Speed: ${preset.speed || preset.bpm}`);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
         doc.setTextColor(...hexRgb(C_ACCENT));
@@ -1690,7 +1690,7 @@ function PaperPreview({
                     color: sub,
                   }}
                 >
-                  {preset.bpm} BPM
+                  Speed {preset.speed || preset.bpm}
                 </span>
               )}
             </div>
@@ -3066,7 +3066,7 @@ export function ImportSongContent({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {parsed.key && <Pill label={parsed.key} color="var(--c-accent-from)" />}
               {parsed.bpm > 0 && (
-                <Pill label={`${parsed.bpm} BPM`} color="var(--c-text-secondary)" />
+                <Pill label={`Speed ${parsed.bpm}`} color="var(--c-text-secondary)" />
               )}
               <Pill label={t.songs.chordsLabel(parsed.chords.length)} color="#34d399" />
               {parsed.unresolvedCount > 0 && (
@@ -3950,7 +3950,7 @@ const PresetCard = React.memo(
                   {preset.key}
                 </span>
               )}
-              {preset.bpm > 0 && (
+              {(preset.speed || preset.bpm) && (preset.speed || preset.bpm) > 0 && (
                 <span
                   className="px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1"
                   style={{
@@ -3960,7 +3960,7 @@ const PresetCard = React.memo(
                   }}
                 >
                   <span className="material-symbols-rounded text-[11px]">speed</span>
-                  {preset.bpm} BPM
+                  Speed {preset.speed || preset.bpm}
                 </span>
               )}
               <span
@@ -4549,7 +4549,8 @@ export default function SongsPanel() {
     ? {
         name: editingPreset.name,
         artist: editingPreset.artist,
-        bpm: String(editingPreset.bpm),
+        speed: String(editingPreset.speed || editingPreset.bpm || 120),
+        bpm: String(editingPreset.speed || editingPreset.bpm || 120),
         key: editingPreset.key,
         notes: editingPreset.notes,
         durationMinutes:
@@ -4565,7 +4566,8 @@ export default function SongsPanel() {
       ? {
           name: pendingImport.title,
           artist: pendingImport.artist || '',
-          bpm: String(pendingImport.bpm || 120),
+          speed: String(pendingImport.speed || pendingImport.bpm || 120),
+          bpm: String(pendingImport.speed || pendingImport.bpm || 120),
           key: pendingImport.key || 'C',
           notes: pendingImport.notes || '',
           durationMinutes:
@@ -4580,7 +4582,8 @@ export default function SongsPanel() {
       : undefined;
 
   const handleFormSave = (data: FormData) => {
-    const bpm = parseInt(data.bpm) || 120;
+    const speed = parseInt(data.speed || data.bpm) || 120;
+    const bpm = speed;
     const min = parseInt(data.durationMinutes || '', 10) || 0;
     const sec = parseInt(data.durationSeconds || '', 10) || 0;
     const hasDurationInput = Boolean(
@@ -4593,6 +4596,7 @@ export default function SongsPanel() {
       updatePreset(editingId, {
         name: data.name,
         artist: data.artist,
+        speed,
         bpm,
         key: data.key,
         notes: data.notes,
@@ -4614,6 +4618,7 @@ export default function SongsPanel() {
       const newId = createPreset({
         name: data.name.trim() || t.songs.newSong || 'New Song',
         artist: data.artist.trim(),
+        speed,
         bpm,
         key: data.key,
         notes: data.notes,
@@ -4834,7 +4839,8 @@ export default function SongsPanel() {
             isOpen={showDurationModal}
             onClose={() => setShowDurationModal(false)}
             initialDurationSeconds={activePreset.targetDurationSeconds}
-            bpm={activePreset.bpm}
+            speed={activePreset.speed || activePreset.bpm}
+            bpm={activePreset.speed || activePreset.bpm}
             accent={accent}
             onSave={(nextDuration) => {
               updatePreset(activePreset.id, { targetDurationSeconds: nextDuration });
@@ -4901,7 +4907,7 @@ export default function SongsPanel() {
                   ) : null}
                   <span>{displayKey}</span>
                   <span className="opacity-40">•</span>
-                  <span>{activePreset.bpm > 0 ? `${activePreset.bpm} BPM` : '120 BPM'}</span>
+                  <span>Speed {activePreset.speed || activePreset.bpm || 120}</span>
                   {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
                     <>
                       <span className="opacity-40">•</span>
@@ -5239,7 +5245,7 @@ export default function SongsPanel() {
                     )}
                   </span>
                 )}
-                {editorViewMode !== 'lyrics' && activePreset.bpm > 0 && (
+                {editorViewMode !== 'lyrics' && (activePreset.speed || activePreset.bpm) && (
                   <span
                     style={{
                       padding: '3px 10px',
@@ -5252,7 +5258,7 @@ export default function SongsPanel() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {activePreset.bpm} BPM
+                    Speed {activePreset.speed || activePreset.bpm || 120}
                   </span>
                 )}
                 <SongViewModeSelector
