@@ -163,7 +163,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Active popover in the compact bottom capsule dock: 'chords' | 'style' | 'roles' | 'more' | null
   const [activePopover, setActivePopover] = useState<'chords' | 'style' | 'roles' | 'more' | null>(null);
+  const [popoverPlacement, setPopoverPlacement] = useState<'top' | 'bottom'>('top');
   const dockRef = useRef<HTMLElement | null>(null);
+
+  const togglePopover = useCallback((name: 'chords' | 'style' | 'roles' | 'more') => {
+    setActivePopover((prev) => {
+      const next = prev === name ? null : name;
+      if (next && dockRef.current) {
+        const rect = dockRef.current.getBoundingClientRect();
+        // If dock is close to the top of viewport (e.g. < 320px), open downwards into available space
+        if (rect.top < 320) {
+          setPopoverPlacement('bottom');
+        } else {
+          setPopoverPlacement('top');
+        }
+      }
+      return next;
+    });
+  }, []);
 
   // Close active popover when tapping outside
   useEffect(() => {
@@ -230,19 +247,25 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     ? '0 12px 36px rgba(0,0,0,0.15)'
     : '0 12px 40px rgba(0,0,0,0.65)';
 
-  const popoverMotionCenter = {
-    initial: { opacity: 0, y: 8, scale: 0.95, x: '-50%' },
-    animate: { opacity: 1, y: 0, scale: 1, x: '-50%' },
-    exit: { opacity: 0, y: 8, scale: 0.95, x: '-50%' },
-    transition: { type: 'spring' as const, damping: 25, stiffness: 420 },
-  };
+  const popoverMotionCenter = useMemo(
+    () => ({
+      initial: { opacity: 0, y: popoverPlacement === 'bottom' ? -8 : 8, scale: 0.95, x: '-50%' },
+      animate: { opacity: 1, y: 0, scale: 1, x: '-50%' },
+      exit: { opacity: 0, y: popoverPlacement === 'bottom' ? -8 : 8, scale: 0.95, x: '-50%' },
+      transition: { type: 'spring' as const, damping: 25, stiffness: 420 },
+    }),
+    [popoverPlacement]
+  );
 
-  const popoverMotionRight = {
-    initial: { opacity: 0, y: 8, scale: 0.95, x: 0 },
-    animate: { opacity: 1, y: 0, scale: 1, x: 0 },
-    exit: { opacity: 0, y: 8, scale: 0.95, x: 0 },
-    transition: { type: 'spring' as const, damping: 25, stiffness: 420 },
-  };
+  const popoverMotionRight = useMemo(
+    () => ({
+      initial: { opacity: 0, y: popoverPlacement === 'bottom' ? -8 : 8, scale: 0.95, x: 0 },
+      animate: { opacity: 1, y: 0, scale: 1, x: 0 },
+      exit: { opacity: 0, y: popoverPlacement === 'bottom' ? -8 : 8, scale: 0.95, x: 0 },
+      transition: { type: 'spring' as const, damping: 25, stiffness: 420 },
+    }),
+    [popoverPlacement]
+  );
 
   const popoverMotion = popoverMotionRight;
 
@@ -873,7 +896,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   return (
     <div
       data-testid="song-lyrics-editor-workspace"
-      className="flex flex-col w-full h-full min-h-0 relative select-text"
+      className="flex flex-col w-full relative select-text"
       style={{
         color: 'var(--c-text-primary, #ffffff)',
         fontFamily: 'var(--studio-font-body, var(--font-body))',
@@ -881,9 +904,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        className="flex-1 flex flex-col gap-4 outline-none min-h-full"
+        className="flex flex-col gap-4 outline-none w-full"
         style={{
-          paddingBottom: '16px',
+          paddingBottom: '8px',
         }}
         data-purpose="teleprompter-writing-canvas"
         onClick={(e) => {
@@ -1454,7 +1477,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           aria-label="Song Both editor toolbar"
           data-testid="both-editing-bottom-dock"
           data-purpose="both-editing-bottom-dock"
-          className="relative z-20 flex items-center justify-center mx-auto my-6 gap-1.5 px-3 py-1.5 rounded-full border shadow-xl backdrop-blur-xl pointer-events-auto"
+          className="relative z-20 flex items-center justify-center mx-auto mt-6 mb-8 gap-1.5 px-3 py-1.5 rounded-full border shadow-xl backdrop-blur-xl pointer-events-auto"
           style={{
             width: 'fit-content',
             backgroundColor: dockBg,
@@ -1545,7 +1568,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   data-testid="both-chords-popover"
                   className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
                   style={{
-                    bottom: 'calc(100% + 14px)',
+                    ...(popoverPlacement === 'bottom'
+                      ? { top: 'calc(100% + 14px)' }
+                      : { bottom: 'calc(100% + 14px)' }),
                     left: '50%',
                     width: 'max-content',
                     minWidth: 260,
@@ -1671,7 +1696,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <button
               type="button"
               data-testid="both-toolbar-chords-btn"
-              onClick={() => setActivePopover((p) => (p === 'chords' ? null : 'chords'))}
+              onClick={() => togglePopover('chords')}
               aria-label="Attach or Place Chords"
               title="Chords"
               className="w-11 h-11 rounded-full flex items-center justify-center text-white transition active:scale-95 cursor-pointer shadow-lg"
@@ -1704,7 +1729,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     data-testid="both-style-popover"
                     className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
                     style={{
-                      bottom: 'calc(100% + 14px)',
+                      ...(popoverPlacement === 'bottom'
+                        ? { top: 'calc(100% + 14px)' }
+                        : { bottom: 'calc(100% + 14px)' }),
                       right: -24,
                       width: 230,
                       backgroundColor: popoverBg,
@@ -1816,7 +1843,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 type="button"
                 data-testid="toolbar-color-btn"
                 data-action="both-toolbar-style-btn"
-                onClick={() => setActivePopover((p) => (p === 'style' ? null : 'style'))}
+                onClick={() => togglePopover('style')}
                 aria-label="Text Color and Styling"
                 title={activeColorTool !== null ? 'Color tool active (tap to change/exit)' : 'Text Color'}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
@@ -1849,7 +1876,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     data-testid="both-roles-popover"
                     className="absolute z-50 flex flex-col gap-2 p-3 rounded-2xl"
                     style={{
-                      bottom: 'calc(100% + 14px)',
+                      ...(popoverPlacement === 'bottom'
+                        ? { top: 'calc(100% + 14px)' }
+                        : { bottom: 'calc(100% + 14px)' }),
                       right: -12,
                       width: 230,
                       backgroundColor: popoverBg,
@@ -1937,7 +1966,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               <button
                 type="button"
                 data-action="both-toolbar-roles-btn"
-                onClick={() => setActivePopover((p) => (p === 'roles' ? null : 'roles'))}
+                onClick={() => togglePopover('roles')}
                 aria-label="Vocal Roles"
                 title="Vocal Performer Roles"
                 className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
@@ -1967,7 +1996,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     data-testid="both-more-popover"
                     className="absolute z-50 flex flex-col gap-1.5 p-3 rounded-2xl"
                     style={{
-                      bottom: 'calc(100% + 14px)',
+                      ...(popoverPlacement === 'bottom'
+                        ? { top: 'calc(100% + 14px)' }
+                        : { bottom: 'calc(100% + 14px)' }),
                       right: 0,
                       width: 210,
                       backgroundColor: popoverBg,
@@ -2065,7 +2096,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               <button
                 type="button"
                 data-testid="both-toolbar-more-btn"
-                onClick={() => setActivePopover((p) => (p === 'more' ? null : 'more'))}
+                onClick={() => togglePopover('more')}
                 aria-label="More Song Actions"
                 title="More Actions"
                 className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
