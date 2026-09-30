@@ -48,6 +48,7 @@ import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
 if (typeof window !== 'undefined') {
   (window as any).useChordStore = useChordStore;
+  (window as any).useSettingsStore = useSettingsStore;
 }
 import { Capacitor } from '@capacitor/core';
 import SuccessLottie from '../../../shared/lottie/SuccessLottie';
@@ -55,6 +56,7 @@ import MusicNotesLottie from '../../../shared/lottie/MusicNotesLottie';
 import LiveMode from '../../chordex/components/LiveMode';
 import CustomChordBuilder, { CustomMiniDiagram } from '../../chordex/components/CustomChordBuilder';
 import ChordDiagram from '../../chordex/diagrams/ChordDiagram';
+import { DetailFretboardDiagram, buildDetailFretboardSvgString } from '../../chordex/diagrams/DetailFretboardDiagram';
 import { StaggeredReveal } from '../../../shared/animation';
 import {
   ScreenScaffold,
@@ -117,82 +119,16 @@ const DEFAULT_EXPORT_CONFIG: ExportConfig = {
 function buildPrintSVG(
   data: GuitarChordData,
   dark = false,
-  _accentColor = '#679cff',
+  accentColor = '#2563EB',
   _scale = 1,
-  noLabel = false
+  _noLabel = false
 ): string {
-  const numS = 6;
-  const { frets, barres, baseFret } = data;
-  const posF = frets.filter((f) => f > 0);
-  const minA = posF.length ? Math.min(...posF) : 1;
-  const maxA = posF.length ? Math.max(...posF) : 1;
-  const effBase = baseFret > 1 ? baseFret : Math.max(1, minA);
-  const numF = Math.max(4, maxA - effBase + 1);
-  const W = 86,
-    H = 84;
-  const pL = 10,
-    pT = 14,
-    pR = 10;
-  const gridW = W - pL - pR;
-  const cW = gridW / (numS - 1);
-  const cH = (H - pT - 10) / numF;
-  const r = 4.5;
-  const minF = effBase;
-  const showNut = minF <= 1;
-
-  const dotFill = dark ? '#e8e8e8' : '#191a1a';
-  const lineFill = dark ? 'rgba(200,200,200,0.18)' : 'rgba(25,26,26,0.15)';
-  const nutFill = dark ? '#ddd' : '#191a1a';
-  const muteColor = dark ? '#555' : '#ccc';
-  const openStroke = dark ? '#555' : '#bbb';
-
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" overflow="visible">`;
-
-  if (showNut) {
-    s += `<rect x="${pL}" y="${pT - 5}" width="${gridW}" height="4" rx="1.5" fill="${nutFill}"/>`;
-  }
-  if (!showNut && !noLabel) {
-    s += `<text x="${pL - 3}" y="${pT + cH * 0.5}" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="${dark ? '#aaa' : '#777'}" text-anchor="end" dominant-baseline="middle">${minF}</text>`;
-  }
-  for (let i = 0; i <= numF; i++) {
-    const y = pT + i * cH;
-    const isTopFret = i === 0 && !showNut;
-    s += `<line x1="${pL}" y1="${y}" x2="${pL + gridW}" y2="${y}" stroke="${lineFill}" stroke-width="${isTopFret ? 1.5 : 1}"/>`;
-  }
-  for (let i = 0; i < numS; i++) {
-    const x = pL + i * cW;
-    s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pT + numF * cH}" stroke="${lineFill}" stroke-width="1"/>`;
-  }
-  if (barres) {
-    for (const barre of barres) {
-      const fp = barre.fret - minF;
-      if (fp >= 0 && fp < numF) {
-        const x1 = pL + (numS - barre.fromString) * cW;
-        const x2 = pL + (numS - barre.toString) * cW;
-        const cy = pT + fp * cH + cH / 2;
-        s += `<rect x="${Math.min(x1, x2)}" y="${cy - r}" width="${Math.abs(x2 - x1)}" height="${r * 2}" rx="${r}" fill="${dotFill}"/>`;
-      }
-    }
-  }
-  frets.forEach((f, si) => {
-    if (f <= 0) return;
-    const fp = f - minF;
-    if (fp < 0 || fp >= numF) return;
-    const cx = pL + si * cW,
-      cy = pT + fp * cH + cH / 2;
-    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${dotFill}"/>`;
+  return buildDetailFretboardSvgString(data, {
+    dark,
+    accentColor,
+    displayMode: 'notes',
+    showStringNames: true,
   });
-  const aboveY = pT - 9;
-  frets.forEach((f, si) => {
-    const cx = pL + si * cW;
-    if (f === -1)
-      s += `<text x="${cx}" y="${aboveY + 3}" font-family="Arial,sans-serif" font-size="10" fill="${muteColor}" text-anchor="middle" dominant-baseline="middle" font-weight="bold">×</text>`;
-    else if (f === 0)
-      s += `<circle cx="${cx}" cy="${aboveY}" r="3.5" fill="none" stroke="${openStroke}" stroke-width="1.2"/>`;
-  });
-
-  s += '</svg>';
-  return s;
 }
 
 /** Generalized fretboard SVG for any string count (bass=4, guitar=6) */
@@ -1166,135 +1102,41 @@ const PICKER_CATS: { type: ChordType | 'all'; label: string }[] = [
 ];
 
 /* ──────────────────── Preview Fretboard (inside paper card) ──────────────────── */
-function PreviewFretboard({ data, dark }: { data: GuitarChordData; dark: boolean }) {
-  const W = 86,
-    H = 84,
-    numS = 6,
-    numF = 4;
-  const pL = 10,
-    pT = 14,
-    pR = 10;
-  const cW = (W - pL - pR) / (numS - 1);
-  const cH = (H - pT - 10) / numF;
-  const r = 4.5;
-  const { frets, barres, baseFret } = data;
-  const allPositive = frets.filter((f) => f > 0);
-  const minActive = allPositive.length ? Math.min(...allPositive) : 1;
-  const minF = baseFret > 1 ? baseFret : Math.max(1, minActive);
-  const showNut = minF <= 1;
-  const dotFill = dark ? '#e8e8e8' : '#191a1a';
-  const lineFill = dark ? 'rgba(200,200,200,0.18)' : 'rgba(25,26,26,0.15)';
-  const nutFill = dark ? '#ddd' : '#191a1a';
-
+function PreviewFretboard({
+  data,
+  dark = false,
+  accentColor,
+}: {
+  data: GuitarChordData;
+  dark?: boolean;
+  accentColor?: string;
+}) {
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
-      {showNut && (
-        <rect x={pL} y={pT - 5} width={(numS - 1) * cW} height={4} rx={1.5} fill={nutFill} />
-      )}
-      {!showNut && (
-        <text
-          x={pL - 3}
-          y={pT + cH * 0.5}
-          fontFamily="Arial"
-          fontSize={8}
-          fontWeight="700"
-          fill={dark ? '#aaa' : '#777'}
-          textAnchor="end"
-          dominantBaseline="middle"
-        >
-          {minF}
-        </text>
-      )}
-      {Array.from({ length: numF + 1 }).map((_, i) => (
-        <line
-          key={i}
-          x1={pL}
-          y1={pT + i * cH}
-          x2={pL + (numS - 1) * cW}
-          y2={pT + i * cH}
-          stroke={lineFill}
-          strokeWidth={i === 0 && !showNut ? 1.5 : 1}
-        />
-      ))}
-      {Array.from({ length: numS }).map((_, i) => (
-        <line
-          key={i}
-          x1={pL + i * cW}
-          y1={pT}
-          x2={pL + i * cW}
-          y2={pT + numF * cH}
-          stroke={lineFill}
-          strokeWidth={1}
-        />
-      ))}
-      {barres.map((barre, bi) => {
-        const fp = barre.fret - minF;
-        if (fp < 0 || fp >= numF) return null;
-        const x1 = pL + (numS - barre.fromString) * cW;
-        const x2 = pL + (numS - barre.toString) * cW;
-        const cy = pT + fp * cH + cH / 2;
-        return (
-          <rect
-            key={`b-${bi}`}
-            x={Math.min(x1, x2)}
-            y={cy - r}
-            width={Math.abs(x2 - x1)}
-            height={r * 2}
-            rx={r}
-            fill={dotFill}
-          />
-        );
-      })}
-      {frets.map((f, si) => {
-        if (f === -1)
-          return (
-            <text
-              key={si}
-              x={pL + si * cW}
-              y={pT - 9}
-              fontFamily="Arial"
-              fontSize={10}
-              fill={dark ? '#555' : '#ccc'}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontWeight="bold"
-            >
-              ×
-            </text>
-          );
-        if (f === 0)
-          return (
-            <circle
-              key={si}
-              cx={pL + si * cW}
-              cy={pT - 9}
-              r={3.5}
-              fill="none"
-              stroke={dark ? '#555' : '#bbb'}
-              strokeWidth={1.2}
-            />
-          );
-        const fp = f - minF;
-        if (fp < 0 || fp >= numF) return null;
-        const stringNum = numS - si;
-        const onBarre = barres.some(
-          (b) => b.fret === f && stringNum >= b.toString && stringNum <= b.fromString
-        );
-        if (onBarre) return null;
-        const cx = pL + si * cW,
-          cy = pT + fp * cH + cH / 2;
-        return <circle key={si} cx={cx} cy={cy} r={r} fill={dotFill} />;
-      })}
-    </svg>
+    <DetailFretboardDiagram
+      chordData={data}
+      accentColor={accentColor}
+      maxWidth="100%"
+      displayMode="notes"
+      surfaceStyle={{
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        padding: 0,
+        boxShadow: 'none',
+      }}
+    />
   );
 }
 
 /* ──────────────────── Print-neutral custom chord diagram ──────────────────── */
-function PreviewCustomDiagram({ chord, dark }: { chord: CustomChord; dark: boolean }) {
-  const dotFill = dark ? '#e8e8e8' : '#191a1a';
-  const lineFill = dark ? 'rgba(200,200,200,0.18)' : 'rgba(25,26,26,0.15)';
-  const nutFill = dark ? '#ddd' : '#191a1a';
-
+function PreviewCustomDiagram({
+  chord,
+  dark = false,
+  accentColor,
+}: {
+  chord: CustomChord;
+  dark?: boolean;
+  accentColor?: string;
+}) {
   if (chord.instrument === 'piano') {
     const keys = chord.pianoKeys ?? [];
     const W = 76,
@@ -1306,6 +1148,7 @@ function PreviewCustomDiagram({ chord, dark }: { chord: CustomChord; dark: boole
       wkH = H;
     const bkW = wkW * 0.6,
       bkH = wkH * 0.58;
+    const dotFill = dark ? '#e8e8e8' : '#191a1a';
     return (
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
         {WHITE.map((chroma, i) => (
@@ -1336,7 +1179,33 @@ function PreviewCustomDiagram({ chord, dark }: { chord: CustomChord; dark: boole
     );
   }
 
-  const numS = chord.instrument === 'guitar' ? 6 : 4;
+  if (chord.instrument === 'guitar') {
+    const frets = chord.frets ?? [0, 0, 0, 0, 0, 0];
+    const activeFrets = frets.filter((f) => f > 0);
+    const baseFret = activeFrets.length > 0 ? Math.min(...activeFrets) : 1;
+    const guitarData: GuitarChordData = {
+      frets,
+      fingers: [],
+      barres: chord.barres ?? [],
+      baseFret,
+    };
+    return (
+      <DetailFretboardDiagram
+        chordData={guitarData}
+        accentColor={accentColor}
+        maxWidth="100%"
+        displayMode="notes"
+        surfaceStyle={{
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+          padding: 0,
+          boxShadow: 'none',
+        }}
+      />
+    );
+  }
+
+  const numS = 4;
   const frets = chord.frets ?? Array(numS).fill(0);
   const cBarres = chord.barres ?? [];
   const active = frets.filter((f) => f > 0);
@@ -1353,6 +1222,9 @@ function PreviewCustomDiagram({ chord, dark }: { chord: CustomChord; dark: boole
   const r = 4.5;
   const minF = Math.max(1, minActive);
   const showNut = minF <= 1;
+  const dotFill = dark ? '#e8e8e8' : '#191a1a';
+  const lineFill = dark ? 'rgba(200,200,200,0.18)' : 'rgba(25,26,26,0.15)';
+  const nutFill = dark ? '#ddd' : '#191a1a';
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
@@ -1765,10 +1637,10 @@ function PaperPreview({
                       </p>
                     )}
                     {cfg.chordDisplay !== 'name' && entry.kind === 'standard' && (
-                      <PreviewFretboard data={entry.chord.guitar} dark={dark} />
+                      <PreviewFretboard data={entry.chord.guitar} dark={dark} accentColor={accentC} />
                     )}
                     {cfg.chordDisplay !== 'name' && entry.kind === 'custom' && (
-                      <PreviewCustomDiagram chord={entry.cc} dark={dark} />
+                      <PreviewCustomDiagram chord={entry.cc} dark={dark} accentColor={accentC} />
                     )}
                   </div>
                 );

@@ -78,6 +78,7 @@ export interface TeleprompterLineItem {
 export interface LiveModeState {
   preset: SongPreset;
   accent: { from: string; to: string; mid?: string };
+  transposeOffset: number;
   displayMode: LiveDisplayMode;
   setDisplayMode: (mode: LiveDisplayMode) => void;
   visualStyle: VisualStyle;
@@ -1403,6 +1404,7 @@ export function useLiveModeState(
     setTeleprompterMirror,
     teleprompterContainerRef,
     isTeleprompterMode,
+    transposeOffset,
     autoPlay,
     setAutoPlay,
     showSettings,

@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LiveDiagram, MiniLiveDiagram } from './LiveDiagrams';
-import DetailFretboardDiagram from '../diagrams/DetailFretboardDiagram';
+import { DetailFretboardDiagram } from '../diagrams/DetailFretboardDiagram';
 import { Button } from '../../../shared/design-system/buttons';
 import ElasticSlider from '../../../shared/progress/ElasticSlider';
 import {
@@ -15,7 +14,10 @@ import {
 } from './useLiveModeState';
 import {
   useSettingsStore,
+  useChordStore,
   getChordById,
+  getChordByName,
+  transposeChordId,
   type LyricTextSpan,
   type GuitarChordData,
   formatDurationMmSs,
@@ -593,536 +595,371 @@ export function StageChordCard({
 
 }
 
-/* ── MODE 1: CHORDS LIVE VIEW (Stitch Section 1) ───────────────── */
+/* ── MODE 1: CHORDS LIVE VIEW (Reference Grid / Cheat-Sheet) ────── */
 export function ChordsLiveView({ state }: { state: LiveModeState }) {
   const {
-    shownChord,
-    nextChord,
+    preset,
     accent,
-    shownIdx,
-    sectionLabels,
-    chords,
-    currentIdx,
-    total,
-    autoPlay,
-    setAutoPlay,
-    goNext,
-    goPrev,
-    setDirection,
-    setCurrentIdx,
     playChordSound,
-    chordStyle,
     setShowSettings,
-    showQuickActions,
-    setShowQuickActions,
-    speed,
-    setSpeed,
-    bpmOverride,
-    setBpmOverride,
     displayMode,
-    setDisplayMode,
+    transposeOffset = 0,
   } = state;
+
+  const customChords = useChordStore((s) => s.customChords);
+
+  // Extract all sections and chords for the reference grid
+  const sections = useMemo(() => {
+    // 1. If preset has sections defined with chords
+    if (preset.sections && preset.sections.length > 0) {
+      return preset.sections.map((sec) => {
+        const rawChords = (sec.chords || []).map((chordId) => {
+          const isCustom = chordId.startsWith('custom-');
+          const customChord = isCustom
+            ? (customChords || []).find((c) => c.id === chordId) ?? null
+            : null;
+          const displayId =
+            !isCustom && transposeOffset !== 0
+              ? transposeChordId(chordId, transposeOffset)
+              : chordId;
+          const chord = isCustom
+            ? null
+            : (getChordById(displayId) ??
+               getChordById(chordId) ??
+               getChordByName(displayId) ??
+               getChordByName(chordId));
+          return {
+            id: chordId,
+            chord,
+            customChord,
+            name: isCustom
+              ? customChord?.name || 'Custom'
+              : chord?.name.replace(/\s/g, '') || chordId,
+          };
+        });
+        return {
+          id: sec.id,
+          name: sec.name,
+          chords: rawChords,
+        };
+      });
+    }
+
+    // 2. If flat chords list
+    if (preset.chords && preset.chords.length > 0) {
+      const rawChords = preset.chords.map((chordId) => {
+        const isCustom = chordId.startsWith('custom-');
+        const customChord = isCustom
+          ? (customChords || []).find((c) => c.id === chordId) ?? null
+          : null;
+        const displayId =
+          !isCustom && transposeOffset !== 0
+            ? transposeChordId(chordId, transposeOffset)
+            : chordId;
+        const chord = isCustom
+          ? null
+          : (getChordById(displayId) ??
+             getChordById(chordId) ??
+             getChordByName(displayId) ??
+             getChordByName(chordId));
+        return {
+          id: chordId,
+          chord,
+          customChord,
+          name: isCustom
+            ? customChord?.name || 'Custom'
+            : chord?.name.replace(/\s/g, '') || chordId,
+        };
+      });
+      return [
+        {
+          id: 'progression',
+          name: 'Chord Progression',
+          chords: rawChords,
+        },
+      ];
+    }
+
+    // 3. If chords from lyrics
+    if (preset.lyrics?.sections) {
+      const extracted: { id: string; chord: any; customChord: any; name: string }[] = [];
+      const seen = new Set<string>();
+      preset.lyrics.sections.forEach((sec) => {
+        sec.lines?.forEach((line) => {
+          (line.chords || []).forEach((c) => {
+            if (c.chord && !seen.has(c.chord)) {
+              seen.add(c.chord);
+              const isCustom = c.chord.startsWith('custom-');
+              const customChord = isCustom
+                ? (customChords || []).find((cc) => cc.id === c.chord) ?? null
+                : null;
+              const displayId =
+                !isCustom && transposeOffset !== 0
+                  ? transposeChordId(c.chord, transposeOffset)
+                  : c.chord;
+              const chord = isCustom
+                ? null
+                : (getChordById(displayId) ??
+                   getChordById(c.chord) ??
+                   getChordByName(displayId) ??
+                   getChordByName(c.chord));
+              extracted.push({
+                id: c.chord,
+                chord,
+                customChord,
+                name: isCustom
+                  ? customChord?.name || 'Custom'
+                  : chord?.name.replace(/\s/g, '') || c.chord,
+              });
+            }
+          });
+        });
+      });
+      return [{ id: 'lyrics-chords', name: 'Song Chords', chords: extracted }];
+    }
+
+    return [];
+  }, [preset.sections, preset.chords, preset.lyrics, customChords, transposeOffset]);
+
+  const totalChords = sections.reduce((acc, s) => acc + s.chords.length, 0);
 
   return (
     <div
+      data-purpose="live-chords-grid-view"
       style={{
         flex: 1,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        padding: '12px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
+        padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* Ambient background glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full blur-3xl"
-          style={{ background: `${accent.from}12` }}
+          style={{ background: `${accent.from}10` }}
         />
         <div
           className="absolute bottom-10 left-1/4 w-[380px] h-[280px] rounded-full blur-2xl"
-          style={{ background: `${accent.to}18` }}
+          style={{ background: `${accent.to}14` }}
         />
       </div>
 
-      {/* Centered Chord Display */}
+      {/* Main Grid Container */}
       <div
-        key={shownIdx}
         style={{
           zIndex: 1,
+          width: '100%',
+          maxWidth: '560px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          maxWidth: '540px',
-          width: '100%',
-          ...chordStyle,
+          gap: '20px',
         }}
       >
-        {/* Section Label */}
-        {sectionLabels[shownIdx] && (
-          <span
-            style={{
-              padding: '3px 12px',
-              borderRadius: '9999px',
-              fontSize: '11px',
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: accent.from,
-              background: `${accent.from}22`,
-              border: `1px solid ${accent.from}44`,
-              marginBottom: '10px',
-            }}
-          >
-            {sectionLabels[shownIdx]}
-          </span>
-        )}
-
-        {/* Stage Chord Area - Unified Centered Presentation */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <StageChordCard
-            chord={shownChord}
-            accent={accent}
-            visualStyle={
-              displayMode === 'chords_name'
-                ? 'name'
-                : displayMode === 'chords_diagram'
-                ? 'diagram'
-                : 'both'
-            }
-            size="large"
-            onPlay={() => playChordSound(shownChord?.guitar)}
-          />
-        </div>
-
-        {/* Next Chord Presentation - Cleanly separated from primary card */}
-        {nextChord && (
-          <button
-            type="button"
-            onClick={goNext}
-            title="Go to next chord"
-            aria-label={`Next chord: ${nextChord.name}`}
-            style={{
-              marginTop: '16px',
-              padding: '12px 16px',
-              borderRadius: '24px',
-              background: 'var(--surface-float-bg, var(--surface-topbar-bg))',
-              border: 'var(--surface-topbar-border)',
-              backdropFilter: 'var(--surface-topbar-backdrop)',
-              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-              boxShadow: 'var(--surface-topbar-shadow)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              cursor: 'pointer',
-              width: 'auto',
-              minWidth: '130px',
-              transition: 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
-              /* Ensure the container doesn't overflow */
-              flexShrink: 0
-            }}
-            onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
-            onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-            onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: '18px', color: accent.from }}
-              >
-                fast_forward
-              </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: 'var(--c-text-secondary)',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Next
-              </span>
-              <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  color: accent.from,
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  background: `${accent.from}1a`,
-                  border: `1px solid ${accent.from}33`,
-                }}
-              >
-                {nextChord.name ? nextChord.name.replace(/\s/g, '') : ''}
-              </span>
-            </div>
-
-            {nextChord.guitar && (
-              <div style={{ width: '100%', maxWidth: '120px', pointerEvents: 'none' }}>
-                <DetailFretboardDiagram
-                  chordData={nextChord.guitar}
-                  maxWidth="100%"
-                  accentColor={accent.from}
-                  displayMode="notes"
-                />
-              </div>
-            )}
-            
-            {/* Notes badges */}
-            {nextChord.notes && nextChord.notes.length > 0 && (
-              <div style={{ 
-                display: 'flex', 
-                gap: '4px', 
-                flexWrap: 'wrap', 
-                justifyContent: 'center',
-                marginTop: '4px'
-              }}>
-                {nextChord.notes.map((note, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      color: 'var(--c-text-secondary)',
-                      background: 'var(--surface-bottomnav-bg, rgba(0,0,0,0.2))',
-                      padding: '2px 6px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
-                    }}
-                  >
-                    {note.trim()}
-                  </span>
-                ))}
-              </div>
-            )}
-          </button>
-        )}
-
-        {/* Carousel Pagination Dots */}
-        {total <= 16 && (
+        {totalChords === 0 ? (
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              marginTop: '20px',
+              padding: '40px 20px',
+              textAlign: 'center',
+              color: 'var(--c-text-secondary)',
+              fontFamily: 'var(--font-headline)',
+              fontSize: '15px',
             }}
           >
-            {chords.map((_, i) => {
-              const isActive = i === currentIdx;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setDirection(i > currentIdx ? 'forward' : 'backward');
-                    setCurrentIdx(i);
-                    playChordSound(getChordById(chords[i])?.guitar);
-                  }}
-                  style={{
-                    width: isActive ? '22px' : '7px',
-                    height: '7px',
-                    borderRadius: '9999px',
-                    background: isActive
-                      ? accent.from
-                      : 'var(--surface-topbar-border, rgba(255,255,255,0.2))',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    boxShadow: isActive ? `0 0 8px ${accent.from}88` : 'none',
-                  }}
-                />
-              );
-            })}
+            No chords found for this song.
           </div>
+        ) : (
+          sections.map((section) => (
+            <div key={section.id} style={{ width: '100%' }}>
+              {/* Section Header */}
+              {sections.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: accent.from,
+                      background: `${accent.from}1a`,
+                      border: `1px solid ${accent.from}33`,
+                    }}
+                  >
+                    {section.name}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--c-text-muted)', fontWeight: 600 }}>
+                    {section.chords.length} {section.chords.length === 1 ? 'chord' : 'chords'}
+                  </span>
+                </div>
+              )}
+
+              {/* Grid of Chord Cards */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                  gap: '12px',
+                  width: '100%',
+                }}
+              >
+                {section.chords.map((chordItem, cIdx) => {
+                  const guitarData =
+                    chordItem.chord?.guitar ||
+                    (chordItem.customChord?.frets
+                      ? {
+                          frets: chordItem.customChord.frets,
+                          fingers: [],
+                          barres: chordItem.customChord.barres || [],
+                          baseFret: chordItem.customChord.baseFret || 1,
+                        }
+                      : null);
+
+                  return (
+                    <motion.div
+                      key={`${chordItem.id}-${cIdx}`}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        if (guitarData) playChordSound(guitarData);
+                      }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '12px 10px 10px',
+                        borderRadius: '18px',
+                        background: 'var(--c-surface-card, var(--app-surface-card, rgba(255,255,255,0.05)))',
+                        border: '1px solid var(--c-border-subtle, var(--c-border, rgba(255,255,255,0.08)))',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        userSelect: 'none',
+                        transition: 'border-color 0.2s ease, transform 0.15s ease',
+                      }}
+                    >
+                      {/* Chord Name Header */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-headline, sans-serif)',
+                            fontWeight: 900,
+                            fontSize: '18px',
+                            letterSpacing: '-0.02em',
+                            color: 'var(--c-text-primary, currentColor)',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {chordItem.name}
+                        </span>
+                      </div>
+
+                      {/* Canonical DetailFretboardDiagram */}
+                      {displayMode !== 'chords_name' && (
+                        <div style={{ width: '100%', maxWidth: '136px', pointerEvents: 'none' }}>
+                          <DetailFretboardDiagram
+                            chordData={guitarData}
+                            maxWidth="100%"
+                            accentColor={accent.from}
+                            displayMode="notes"
+                            surfaceStyle={{
+                              backgroundColor: 'var(--c-surface-lowest, var(--app-surface-lowest, rgba(0,0,0,0.05)))',
+                              borderColor: 'var(--c-border-subtle, var(--c-border, rgba(0,0,0,0.08)))',
+                              padding: '5px',
+                              borderRadius: '12px',
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Note badges (if present) */}
+                      {chordItem.chord?.notes && chordItem.chord.notes.length > 0 && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '3px',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
+                            marginTop: '6px',
+                          }}
+                        >
+                          {chordItem.chord.notes.map((note: string, nIdx: number) => (
+                            <span
+                              key={nIdx}
+                              style={{
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                color: 'var(--c-text-secondary, #6B7280)',
+                                background: 'var(--c-surface-low, rgba(128,128,128,0.1))',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                border: '1px solid var(--c-border-subtle, rgba(128,128,128,0.15))',
+                              }}
+                            >
+                              {note.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
       </div>
 
-      {/* Preferences / Quick Controls HUD Bar */}
-      <AnimatePresence>
-        {showQuickActions && (
-          <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
-            style={{
-              position: 'fixed',
-              bottom: 'calc(max(24px, env(safe-area-inset-bottom, 24px)) + 58px)',
-              left: '50%',
-              x: '-50%',
-              zIndex: 48,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: '9999px',
-              background: 'var(--surface-topbar-bg)',
-              border: 'var(--surface-topbar-border)',
-              backdropFilter: 'var(--surface-topbar-backdrop)',
-              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-              boxShadow: 'var(--surface-topbar-shadow)',
-            }}
-          >
-            {/* BPM Adjuster */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <button
-                type="button"
-                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.max(40, b - 1))}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--c-text-secondary)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Decrease BPM"
-                aria-label="Decrease BPM"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
-              </button>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: accent.from, minWidth: '48px', textAlign: 'center' }}>
-                BPM {speed || bpmOverride}
-              </span>
-              <button
-                type="button"
-                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.min(400, b + 1))}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--c-text-secondary)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Increase BPM"
-                aria-label="Increase BPM"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
-              </button>
-            </div>
-
-            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
-
-            {/* Display Style Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <button
-                type="button"
-                onClick={() => setDisplayMode('chords_both')}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '9999px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: displayMode === 'chords_both' ? accent.from : 'var(--c-text-secondary)',
-                  background: displayMode === 'chords_both' ? `${accent.from}22` : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Both Diagram and Name"
-              >
-                Both
-              </button>
-              <button
-                type="button"
-                onClick={() => setDisplayMode('chords_diagram')}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '9999px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: displayMode === 'chords_diagram' ? accent.from : 'var(--c-text-secondary)',
-                  background: displayMode === 'chords_diagram' ? `${accent.from}22` : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Diagram Only"
-              >
-                Diagram
-              </button>
-              <button
-                type="button"
-                onClick={() => setDisplayMode('chords_name')}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '9999px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: displayMode === 'chords_name' ? accent.from : 'var(--c-text-secondary)',
-                  background: displayMode === 'chords_name' ? `${accent.from}22` : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Name Only"
-              >
-                Name
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Symmetrical Bottom Transport Bar */}
-      <footer
+      {/* Floating Settings FAB in Bottom-Right Corner */}
+      <button
+        type="button"
+        data-testid="chords-grid-settings-btn"
+        onClick={() => setShowSettings(true)}
         style={{
           position: 'fixed',
-          bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          bottom: 'calc(max(20px, env(safe-area-inset-bottom, 20px)) + 16px)',
+          right: '20px',
           zIndex: 50,
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
+          border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
+          backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+          boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          padding: '6px 14px',
-          borderRadius: '9999px',
-          background: 'var(--surface-topbar-bg)',
-          border: 'var(--surface-topbar-border)',
-          backdropFilter: 'var(--surface-topbar-backdrop)',
-          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-          boxShadow: 'var(--surface-topbar-shadow)',
-          boxSizing: 'border-box',
+          justifyContent: 'center',
+          color: 'var(--c-text-primary, #ffffff)',
+          cursor: 'pointer',
+          transition: 'transform 0.15s ease, background 0.15s ease',
         }}
+        onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
+        onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+        onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+        title="Song Live Settings"
+        aria-label="Song Live Settings"
       >
-        <button
-          type="button"
-          data-testid="chords-live-settings-btn"
-          onClick={() => setShowSettings(true)}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Song Settings"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-            settings
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={currentIdx === 0}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            opacity: currentIdx === 0 ? 0.3 : 1,
-            cursor: currentIdx === 0 ? 'default' : 'pointer',
-          }}
-          title="Previous Chord"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
-            skip_previous
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setAutoPlay((a) => !a)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 18px',
-            borderRadius: '9999px',
-            color: '#fff',
-            fontWeight: 800,
-            fontSize: '14px',
-            border: 'none',
-            cursor: 'pointer',
-            background: autoPlay
-              ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-            boxShadow: autoPlay
-              ? '0 4px 16px rgba(34, 197, 94, 0.4)'
-              : `0 4px 16px ${accent.from}55`,
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-            {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
-          <span>{autoPlay ? 'Pause' : 'Auto'}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={currentIdx >= total - 1 && !autoPlay}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            opacity: currentIdx >= total - 1 && !autoPlay ? 0.3 : 1,
-            cursor: currentIdx >= total - 1 && !autoPlay ? 'default' : 'pointer',
-          }}
-          title="Next Chord"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
-            skip_next
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-testid="chords-live-preferences-btn"
-          onClick={() => setShowQuickActions((q) => !q)}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: showQuickActions ? `${accent.from}28` : 'transparent',
-            border: 'none',
-            color: showQuickActions ? accent.from : 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Toggle Quick Preferences"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-            tune
-          </span>
-        </button>
-      </footer>
+        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+          settings
+        </span>
+      </button>
     </div>
   );
 }
