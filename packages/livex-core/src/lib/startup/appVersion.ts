@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.65';
-export const NATIVE_VERSION_CODE = 40665;
-export const WEB_VERSION = '4.6.65';
+export const NATIVE_VERSION = '4.6.66';
+export const NATIVE_VERSION_CODE = 40666;
+export const WEB_VERSION = '4.6.66';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/28/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'fa01560b';
+export const APP_COMMIT_SHA = 'fd3fe2e2';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/29/2026, 4:23:59 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/30/2026, 1:18:49 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,15 +101,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Next Chord Modern Diagram in Live Mode: Displayed the canonical DetailFretboardDiagram for the upcoming chord in Chords Live mode (ChordsLiveView) with high-fidelity fretboard markers and interactive advance tap target.',
-      'Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.',
-      'First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.',
+      'Butter-Smooth Sliding Letter Lyric Highlight: Implemented GPU compositor text-clip gradient wipe (`@keyframes lyric-word-wipe`) that fluidly glides across letters in lockstep with the precision timeline clock with 0 lag and 120fps hardware acceleration.',
+      'Luminous Accent Bloom on Sung Words: Enhanced active lyrics in both Teleprompter and Both (Hybrid) modes with glowing leading edges and subtle drop-shadow depth.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.',
+      'Super-Optimized Live Mode Performance: Streamlined chord and lyric state synchronization in LiveModeUI, eliminating redundant recalculations and layout shifts during auto-play and manual word seek.',
     ],
   },
 ];
@@ -121,6 +120,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.66',
+    date: '2026-09-30',
+    highlights: [
+      'Butter-Smooth Sliding Letter Lyric Highlight: Implemented GPU compositor text-clip gradient wipe (`@keyframes lyric-word-wipe`) that fluidly glides across letters in lockstep with the precision timeline clock with 0 lag and 120fps hardware acceleration.',
+      'Luminous Accent Bloom on Sung Words: Enhanced active lyrics in both Teleprompter and Both (Hybrid) modes with glowing leading edges and subtle drop-shadow depth.',
+      'Super-Optimized Live Mode Performance: Streamlined chord and lyric state synchronization in LiveModeUI, eliminating redundant recalculations and layout shifts during auto-play and manual word seek.',
+    ],
+  },
   {
     version: '4.6.65',
     date: '2026-09-29',
@@ -209,15 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Redesigned Stitch Live Experience: Full production integration of 3 specialized live presentation interfaces across Chordex: Mode 1 (Chords Live with ambient glows and audio synthesis), Mode 2 (Lyrics Live with Quick Actions HUD, auto-scroll speed controls, and karaoke word sync), and Mode 3 (Hybrid Lyrics + Chords with Hero Stage Chord card, timing pulse BAR/BEAT counter, and Apple Music lyric bloom).',
       'Canonical Live Header Integration: SharedFloatingHeader adopted as the universal 58px glass capsule header with live pulsing status indicator, dynamic section/BPM subtitles, and hardware back button priority.',
       'Android Back Navigation Containment: Fixed sub-app back navigation containment across all internal apps, resolved bottom nav disappearance upon rotation, and refined landscape toolbar alignment.',
-    ],
-  },
-  {
-    version: '4.6.56',
-    date: '2026-09-27',
-    highlights: [
-      'Chordex Custom Vocal Roles & Action Dock: Support for custom vocal roles and badge cues (lead, harmony, backing) directly within the lyrics editor, paired with an ergonomic bottom action dock for formatting, chord insertion, and playback markers.',
-      'Unified Android Back Navigation: Consolidated hardware back button and predictive swipe-back gesture handling through priority-ranked back stack dispatch with a 280ms debounce window to eliminate accidental double-pop route skipping.',
-      'Bottom Navigation State Synchronization: Calibrated active tab state synchronization with canonical router history, ensuring accurate section highlighting, self-healing overlay registry state, and deterministic icon entrance motion without re-render loops.',
     ],
   },
 ];
