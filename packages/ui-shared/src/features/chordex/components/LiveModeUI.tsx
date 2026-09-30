@@ -298,11 +298,13 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--surface-topbar-bg, rgba(19, 19, 24, 0.85))',
-          backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-          WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-          borderBottom: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.08))',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
+          background: 'var(--surface-topbar-bg)',
+          backdropFilter: 'var(--surface-topbar-backdrop)',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+          borderBottom: 'var(--surface-topbar-border)',
+          boxShadow: 'var(--surface-topbar-shadow)',
+          transform: 'translateZ(0)',
+          willChange: 'transform, backdrop-filter',
           boxSizing: 'border-box',
         }}
       >
@@ -398,31 +400,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           </div>
         </div>
 
-        {/* Right: Settings button */}
-        <button
-          type="button"
-          data-testid="live-topbar-settings-btn"
-          onClick={() => setShowSettings(true)}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: 'var(--c-text-primary, #ffffff)',
-            cursor: 'pointer',
-            flexShrink: 0,
-            transition: 'all 0.15s ease',
-          }}
-          title="Song Live Settings"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-            tune
-          </span>
-        </button>
+        {/* Right: Symmetrical balancing spacer (single entry point for settings is the bottom transport dock gear) */}
+        <div style={{ width: '38px', height: '38px', flexShrink: 0 }} aria-hidden="true" />
       </header>
     </>
   );
@@ -2545,16 +2524,16 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
           width: '100%',
           maxWidth: '520px',
           maxHeight: 'calc(100% - var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) - 68px)',
-          background: '#131318',
-          borderTop: '1px solid rgba(255,255,255,0.15)',
-          borderLeft: '1px solid rgba(255,255,255,0.1)',
-          borderRight: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--surface-dialog-bg, var(--app-surface-high, #131318))',
+          borderTop: '1px solid var(--c-border, rgba(255,255,255,0.15))',
+          borderLeft: '1px solid var(--c-border, rgba(255,255,255,0.1))',
+          borderRight: '1px solid var(--c-border, rgba(255,255,255,0.1))',
           borderTopLeftRadius: '28px',
           borderTopRightRadius: '28px',
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
           zIndex: 95,
-          boxShadow: '0 -10px 40px rgba(0,0,0,0.85)',
+          boxShadow: 'var(--shadow-elevation-high, 0 -10px 40px rgba(0,0,0,0.5))',
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
@@ -2567,7 +2546,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             width: '36px',
             height: '4px',
             borderRadius: '2px',
-            background: 'rgba(255, 255, 255, 0.2)',
+            background: 'var(--c-border-strong, rgba(255, 255, 255, 0.2))',
             margin: '12px auto 2px',
             flexShrink: 0,
           }}
@@ -2652,9 +2631,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 gridTemplateColumns: '1fr 1fr 1fr',
                 gap: '6px',
                 padding: '4px',
-                background: 'rgba(255,255,255,0.05)',
+                background: 'var(--surface-container-low, rgba(255,255,255,0.05))',
                 borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
               }}
             >
               <button
@@ -2810,8 +2789,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     style={{
                       padding: '12px 6px',
                       borderRadius: '1rem',
-                      background: isSelected ? `${accent.from}22` : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isSelected ? accent.from + '66' : 'rgba(255,255,255,0.08)'}`,
+                      background: isSelected ? `${accent.from}22` : 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                      border: `1px solid ${isSelected ? accent.from + '66' : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -2824,7 +2803,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       className="material-symbols-outlined"
                       style={{
                         fontSize: '20px',
-                        color: isSelected ? accent.from : '#acabaa',
+                        color: isSelected ? accent.from : 'var(--c-text-secondary)',
                         fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
                       }}
                     >
@@ -2832,7 +2811,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     </span>
                     <p
                       style={{
-                        color: isSelected ? '#ffffff' : '#888888',
+                        color: isSelected ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily: 'var(--studio-font-body)',
                         fontWeight: 700,
                         fontSize: '10.5px',
@@ -2907,8 +2886,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     style={{
                       padding: '12px 6px',
                       borderRadius: '1rem',
-                      background: isSelected ? `${accent.from}22` : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isSelected ? accent.from + '66' : 'rgba(255,255,255,0.08)'}`,
+                      background: isSelected ? `${accent.from}22` : 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                      border: `1px solid ${isSelected ? accent.from + '66' : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -2922,7 +2901,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       className="material-symbols-outlined"
                       style={{
                         fontSize: '20px',
-                        color: isSelected ? accent.from : '#acabaa',
+                        color: isSelected ? accent.from : 'var(--c-text-secondary)',
                         fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
                       }}
                     >
@@ -2930,7 +2909,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     </span>
                     <p
                       style={{
-                        color: isSelected ? '#ffffff' : '#888888',
+                        color: isSelected ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily: 'var(--studio-font-body)',
                         fontWeight: 700,
                         fontSize: '10.5px',
@@ -2989,12 +2968,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.08)',
+                  background: 'var(--surface-container-low, rgba(255,255,255,0.08))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  border: 'none',
+                  border: '1px solid var(--c-border, transparent)',
                   color: 'var(--c-text-primary)',
                   cursor: 'pointer',
                 }}
@@ -3021,12 +3000,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.08)',
+                  background: 'var(--surface-container-low, rgba(255,255,255,0.08))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  border: 'none',
+                  border: '1px solid var(--c-border, transparent)',
                   color: 'var(--c-text-primary)',
                   cursor: 'pointer',
                 }}
@@ -3044,8 +3023,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             style={{
               padding: '14px',
               borderRadius: '16px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
@@ -3061,7 +3040,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               <div>
                 <p
                   style={{
-                    color: 'var(--c-text-primary, #FFFFFF)',
+                    color: 'var(--c-text-primary)',
                     fontFamily: 'var(--studio-font-body)',
                     fontWeight: 700,
                     fontSize: '11px',
@@ -3102,13 +3081,13 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   width: '42px',
                   height: '38px',
                   borderRadius: '12px',
-                  background: 'rgba(255, 255, 255, 0.12)',
+                  background: 'var(--surface-container-low, rgba(255, 255, 255, 0.12))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
+                  border: '1px solid var(--c-border, rgba(255, 255, 255, 0.15))',
+                  color: 'var(--c-text-primary)',
                   cursor: 'pointer',
                   fontWeight: 700,
                   fontSize: '12px',
@@ -3148,7 +3127,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       background: 'transparent',
                       border: 'none',
                       outline: 'none',
-                      color: '#ffffff',
+                      color: 'var(--c-text-primary)',
                       fontFamily: 'var(--studio-font-mono, monospace)',
                       fontSize: '18px',
                       fontWeight: 800,
@@ -3187,10 +3166,10 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    background: 'rgba(255, 255, 255, 0.08)',
+                    background: 'var(--surface-container-low, rgba(255, 255, 255, 0.08))',
                     padding: '6px 12px',
                     borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    border: '1px solid var(--c-border, rgba(255, 255, 255, 0.15))',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -3211,7 +3190,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       fontFamily: 'var(--studio-font-mono, monospace)',
                       fontSize: '18px',
                       fontWeight: 800,
-                      color: '#ffffff',
+                      color: 'var(--c-text-primary)',
                       letterSpacing: '0.05em',
                     }}
                   >
@@ -3222,7 +3201,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   </span>
                   <span
                     className="material-symbols-rounded text-sm"
-                    style={{ color: 'rgba(255, 255, 255, 0.4)', marginLeft: '2px' }}
+                    style={{ color: 'var(--c-text-secondary)', marginLeft: '2px' }}
                   >
                     edit
                   </span>
@@ -3245,13 +3224,13 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   width: '42px',
                   height: '38px',
                   borderRadius: '12px',
-                  background: 'rgba(255, 255, 255, 0.12)',
+                  background: 'var(--surface-container-low, rgba(255, 255, 255, 0.12))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
+                  border: '1px solid var(--c-border, rgba(255, 255, 255, 0.15))',
+                  color: 'var(--c-text-primary)',
                   cursor: 'pointer',
                   fontWeight: 700,
                   fontSize: '12px',
@@ -3287,12 +3266,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       borderRadius: '10px',
                       background: isSelected
                         ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                        : 'rgba(255, 255, 255, 0.06)',
+                        : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
                       color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
                       fontFamily: 'var(--studio-font-body)',
                       fontWeight: 700,
                       fontSize: '11px',
-                      border: 'none',
+                      border: isSelected ? 'none' : '1px solid var(--c-border, transparent)',
                       cursor: 'pointer',
                       boxShadow: isSelected ? `0 2px 10px ${accent.to}33` : 'none',
                       transition: 'all 0.15s ease',
@@ -3340,9 +3319,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         background:
                           teleprompterFontFamily === font.id
                             ? `${accent.from}22`
-                            : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${teleprompterFontFamily === font.id ? accent.from + '66' : 'transparent'}`,
-                        color: teleprompterFontFamily === font.id ? '#ffffff' : '#acabaa',
+                            : 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                        border: `1px solid ${teleprompterFontFamily === font.id ? accent.from + '66' : 'var(--c-border, transparent)'}`,
+                        color: teleprompterFontFamily === font.id ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily:
                           font.id === 'mono'
                             ? 'var(--studio-font-mono, monospace)'
@@ -3388,9 +3367,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         background:
                           teleprompterFontSize === size
                             ? `${accent.from}22`
-                            : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${teleprompterFontSize === size ? accent.from + '66' : 'transparent'}`,
-                        color: teleprompterFontSize === size ? '#ffffff' : '#acabaa',
+                            : 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                        border: `1px solid ${teleprompterFontSize === size ? accent.from + '66' : 'var(--c-border, transparent)'}`,
+                        color: teleprompterFontSize === size ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily: 'var(--studio-font-body)',
                         fontWeight: 700,
                         fontSize: '12px',
@@ -3432,9 +3411,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         background:
                           teleprompterLineHeight === spacing
                             ? `${accent.from}22`
-                            : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${teleprompterLineHeight === spacing ? accent.from + '66' : 'transparent'}`,
-                        color: teleprompterLineHeight === spacing ? '#ffffff' : '#acabaa',
+                            : 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                        border: `1px solid ${teleprompterLineHeight === spacing ? accent.from + '66' : 'var(--c-border, transparent)'}`,
+                        color: teleprompterLineHeight === spacing ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily: 'var(--studio-font-body)',
                         fontWeight: 700,
                         fontSize: '12px',
@@ -3476,9 +3455,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         background:
                           teleprompterAlignment === align
                             ? `${accent.from}22`
-                            : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${teleprompterAlignment === align ? accent.from + '66' : 'transparent'}`,
-                        color: teleprompterAlignment === align ? '#ffffff' : '#acabaa',
+                            : 'var(--surface-container-low, rgba(255,255,255,0.06))',
+                        border: `1px solid ${teleprompterAlignment === align ? accent.from + '66' : 'var(--c-border, transparent)'}`,
+                        color: teleprompterAlignment === align ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                         fontFamily: 'var(--studio-font-body)',
                         fontWeight: 700,
                         fontSize: '12px',
@@ -3507,7 +3486,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   </p>
                   <p
                     style={{
-                      color: '#6b6b6b',
+                      color: 'var(--c-text-secondary)',
                       fontFamily: 'Inter',
                       fontSize: '11px',
                       marginTop: '2px',
@@ -3526,7 +3505,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     borderRadius: '9999px',
                     background: teleprompterMirror
                       ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                      : 'rgba(255,255,255,0.1)',
+                      : 'var(--surface-container-high, rgba(255,255,255,0.12))',
                     position: 'relative',
                     flexShrink: 0,
                     transition: 'background 300ms ease',
@@ -3566,7 +3545,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 </p>
                 <p
                   style={{
-                    color: '#6b6b6b',
+                    color: 'var(--c-text-secondary)',
                     fontFamily: 'Inter',
                     fontSize: '12px',
                     marginTop: '2px',
@@ -3584,7 +3563,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   borderRadius: '9999px',
                   background: showContext
                     ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                    : 'rgba(255,255,255,0.1)',
+                    : 'var(--surface-container-high, rgba(255,255,255,0.12))',
                   position: 'relative',
                   flexShrink: 0,
                   transition: 'background 300ms ease',

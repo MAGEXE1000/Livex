@@ -1822,27 +1822,21 @@ html[data-perf-mode='on'] *::after {
 
   /* ── Glass Tiering & Floating-surface tokens — dark (default) ───────────── */
   --glass-tier: blur;
-  --glass-blur-radius: 20px;
+  --glass-blur-radius: 8px;
   --glass-blur: blur(var(--glass-blur-radius));
   /* Translucent obsidian liquid glass with softly diffused background visibility */
-  --surface-float-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(20, 20, 26, 0.68) 100%
-  );
-  --surface-topbar-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(20, 20, 26, 0.68) 100%
-  );
-  /* Outer border: crisp, micro-refined translucent rim */
-  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.12);
+  --surface-float-bg: rgba(20, 20, 26, 0.75);
+  --surface-topbar-bg: rgba(20, 20, 26, 0.75);
+  /* Outer border: crisp, micro-refined translucent rim matching AMOLED specification */
+  --surface-topbar-border: 1px solid rgba(255, 255, 255, 0.08);
   /* Canonical navigation surface elevation shadow matching validated bottom navbar */
   --surface-topbar-shadow:
-    0 8px 32px -4px rgba(0, 0, 0, 0.50), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+    0 8px 32px -4px rgba(0, 0, 0, 0.60), 0 2px 8px -2px rgba(0, 0, 0, 0.40),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   --surface-topbar-blur: var(--glass-blur);
   --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
-  --surface-topbar-fallback: rgba(20, 20, 24, 0.96);
+  --surface-topbar-fallback: rgba(20, 20, 26, 0.96);
   --surface-float-blur: var(--surface-topbar-backdrop); /* shared backdrop-filter */
   --surface-scrim-blur: none;
   /* Canonical Navigation Surface Tokens (Shared by topbar & bottom navbar) */
@@ -1888,21 +1882,15 @@ html[data-perf-mode='on'] *::after {
 /* Light-theme overrides — translucent frosted white glass */
 :root.light {
   --glass-tier: blur;
-  --glass-blur-radius: 20px;
+  --glass-blur-radius: 8px;
   --glass-blur: blur(var(--glass-blur-radius));
-  --surface-float-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(242, 245, 252, 0.72) 100%
-  );
-  --surface-topbar-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(242, 245, 252, 0.72) 100%
-  );
-  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.07);
+  --surface-float-bg: rgba(255, 255, 255, 0.75);
+  --surface-topbar-bg: rgba(255, 255, 255, 0.75);
+  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.08);
   --surface-topbar-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    0 8px 32px -4px rgba(0, 0, 0, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.65),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.02);
   --surface-topbar-blur: var(--glass-blur);
   --surface-topbar-backdrop: var(--surface-topbar-blur) saturate(140%);
   --surface-float-blur: var(--surface-topbar-backdrop);

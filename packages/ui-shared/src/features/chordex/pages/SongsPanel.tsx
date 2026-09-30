@@ -5347,7 +5347,7 @@ export default function SongsPanel() {
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
-                    'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
+                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)',
                   position: 'relative',
                 }}
                 data-purpose="editor-lyrics-area"

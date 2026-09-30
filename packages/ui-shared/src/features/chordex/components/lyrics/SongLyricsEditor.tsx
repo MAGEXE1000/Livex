@@ -178,6 +178,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Line currently in direct text typing mode (null = word targeting mode)
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  // Read-only by default in Both mode: editing mode requires explicit user activation
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
   // Active popover in the compact bottom capsule dock: 'chords' | 'style' | 'roles' | 'more' | null
   const [activePopover, setActivePopover] = useState<'chords' | 'style' | 'roles' | 'more' | null>(null);
@@ -248,27 +250,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       (document.documentElement.classList.contains('amoled') ||
         document.documentElement.getAttribute('data-theme') === 'amoled'));
 
-  const dockBg = isEffectiveAmoled
-    ? 'rgba(12, 12, 14, 0.94)'
-    : isEffectiveLight
-      ? 'rgba(255, 255, 255, 0.94)'
-      : 'rgba(22, 22, 26, 0.94)';
-  const dockBorder = isEffectiveLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
-  const dockShadow = isEffectiveLight
-    ? '0 10px 30px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)'
-    : '0 12px 36px -4px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08)';
+  const dockBg = 'var(--surface-topbar-bg)';
+  const dockBorder = 'var(--surface-topbar-border)';
+  const dockShadow = 'var(--surface-topbar-shadow)';
 
-  const popoverBg = isEffectiveAmoled
-    ? 'rgba(4, 4, 4, 0.98)'
-    : isEffectiveLight
-      ? 'rgba(250, 250, 252, 0.98)'
-      : 'rgba(18, 18, 22, 0.98)';
-  const popoverBorder = isEffectiveLight
-    ? '1px solid rgba(0, 0, 0, 0.10)'
-    : '1px solid rgba(255, 255, 255, 0.12)';
-  const popoverShadow = isEffectiveLight
-    ? '0 12px 36px rgba(0,0,0,0.15)'
-    : '0 12px 40px rgba(0,0,0,0.65)';
+  const popoverBg = 'var(--surface-dialog-bg, var(--app-surface-high, #121216))';
+  const popoverBorder = '1px solid var(--c-border, rgba(255, 255, 255, 0.12))';
+  const popoverShadow = 'var(--shadow-elevation-high, 0 12px 40px rgba(0,0,0,0.5))';
 
   const popoverMotionCenter = useMemo(
     () => ({
@@ -1403,6 +1391,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             <div className="flex items-center gap-2">
                               <input
                                 type="text"
+                                data-testid="active-line-input"
                                 value={line.text}
                                 autoFocus={editingLineId === line.id}
                                 onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
@@ -1462,23 +1451,23 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             className="flex-1 py-1 cursor-pointer"
                             onClick={() => {
                               setLastActivePosition(section.id, lineIdx, line.id);
-                              if (activeColorTool === null) {
+                              if (isEditMode && activeColorTool === null) {
                                 setEditingLineId(line.id);
                               }
                             }}
                           >
                             <span className="text-gray-500/50 italic text-sm select-none">
-                              Tap to write line...
+                              {isEditMode ? 'Tap to write line...' : 'Empty line'}
                             </span>
                           </div>
                         ) : (
                           /* Responsive Word-Segment Surface with Ruby Chord Alignment */
                           <div
                             className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-pointer"
-                            title="Tap to edit line"
+                            title={isEditMode ? 'Tap to edit line' : "Tap 'Edit' in toolbar to edit text"}
                             onClick={() => {
                               setLastActivePosition(section.id, lineIdx, line.id);
-                              if (activeColorTool === null) {
+                              if (isEditMode && activeColorTool === null) {
                                 setEditingLineId(line.id);
                               }
                             }}
@@ -1749,18 +1738,59 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 position: 'fixed',
                 bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
                 left: '50%',
-                transform: 'translateX(-50%)',
+                transform: 'translateX(-50%) translateZ(0)',
+                willChange: 'transform, backdrop-filter',
                 zIndex: 45,
                 width: 'fit-content',
                 maxWidth: 'calc(100vw - 32px)',
                 backgroundColor: dockBg,
                 borderColor: dockBorder,
                 boxShadow: dockShadow,
+                backdropFilter: 'var(--surface-topbar-backdrop)',
+                WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
                 pointerEvents: 'auto',
               }}
             >
-              {/* ── LEFT CLUSTER: Direct high-frequency actions (Undo, Redo, Paste) ── */}
+              {/* ── LEFT CLUSTER: Direct high-frequency actions (Edit toggle, Undo, Redo, Paste) ── */}
           <div className="flex items-center gap-1">
+            {/* Edit / Read-Only Mode Toggle */}
+            <button
+              type="button"
+              data-testid="toolbar-edit-toggle-btn"
+              data-action="both-toolbar-edit-toggle-btn"
+              onClick={() => {
+                setActivePopover(null);
+                if (isEditMode) {
+                  setIsEditMode(false);
+                  setEditingLineId(null);
+                  toast.success('Read-only mode active');
+                } else {
+                  setIsEditMode(true);
+                  toast.info('Edit mode active: tap any line to type');
+                }
+              }}
+              aria-label={isEditMode ? 'Done editing' : 'Edit lyrics'}
+              title={isEditMode ? 'Done editing' : 'Edit lyrics'}
+              className="px-2.5 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs"
+              style={{
+                backgroundColor: isEditMode
+                  ? accent.from
+                  : isEffectiveLight
+                    ? 'rgba(0,0,0,0.04)'
+                    : 'rgba(255,255,255,0.06)',
+                color: isEditMode
+                  ? '#ffffff'
+                  : 'var(--c-text-primary, #ffffff)',
+                border: isEditMode ? 'none' : '1px solid var(--c-border, transparent)',
+                boxShadow: isEditMode ? `0 2px 8px ${accent.to}44` : 'none',
+              }}
+            >
+              <span className="material-symbols-rounded text-base">
+                {isEditMode ? 'check' : 'edit'}
+              </span>
+              <span>{isEditMode ? 'Done' : 'Edit'}</span>
+            </button>
+
             {/* Undo */}
             <button
               type="button"
@@ -2287,6 +2317,30 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         Song Actions
                       </span>
                     </div>
+
+                    {/* Toggle Edit Mode */}
+                    <button
+                      type="button"
+                      data-testid="toolbar-more-edit-toggle-btn"
+                      onClick={() => {
+                        if (isEditMode) {
+                          setIsEditMode(false);
+                          setEditingLineId(null);
+                          toast.success('Read-only mode active');
+                        } else {
+                          setIsEditMode(true);
+                          toast.info('Edit mode active: tap any line to type');
+                        }
+                        setActivePopover(null);
+                      }}
+                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                      style={{ color: isEditMode ? accent.from : 'var(--c-text-primary)' }}
+                    >
+                      <span className="material-symbols-rounded text-base" style={{ color: isEditMode ? accent.from : 'var(--c-text-secondary)' }}>
+                        {isEditMode ? 'check_circle' : 'edit_note'}
+                      </span>
+                      <span>{isEditMode ? 'Exit Edit Mode (Done)' : 'Enter Edit Mode'}</span>
+                    </button>
 
                     {/* Add Section */}
                     <button

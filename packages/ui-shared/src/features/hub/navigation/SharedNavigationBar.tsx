@@ -1001,6 +1001,8 @@ export function SharedNavigationBar({
                 transformOrigin: 'center bottom',
                 scale: containerScale,
                 y: containerY,
+                transform: 'translateZ(0)',
+                willChange: 'transform, backdrop-filter',
                 boxSizing: 'border-box',
               }}
             >

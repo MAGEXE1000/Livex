@@ -331,69 +331,159 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         </div>
       )}
 
-      {/* ── Viewport-Anchored Floating [ + ] Action (Bottom Right) ── */}
+      {/* ── Canonical Floating Bottom Toolbar (Lyrics Mode Parity) ── */}
       {typeof document !== 'undefined' &&
         createPortal(
-          <div
-            className="fixed z-40 pointer-events-auto"
+          <aside
+            aria-label="Song Lyrics preparation toolbar"
+            data-testid="lyrics-editing-bottom-dock"
+            data-purpose="lyrics-editing-bottom-dock"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border shadow-2xl backdrop-blur-xl pointer-events-auto select-none"
             style={{
-              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-              right: '24px',
+              position: 'fixed',
+              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+              left: '50%',
+              transform: 'translateX(-50%) translateZ(0)',
+              willChange: 'transform, backdrop-filter',
+              zIndex: 45,
+              width: 'fit-content',
+              maxWidth: 'calc(100vw - 32px)',
+              backgroundColor: 'var(--surface-float-bg, rgba(20, 20, 26, 0.75))',
+              borderColor: 'var(--surface-topbar-border, rgba(255, 255, 255, 0.12))',
+              boxShadow: 'var(--surface-topbar-shadow, 0 10px 30px rgba(0, 0, 0, 0.35))',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              pointerEvents: 'auto',
             }}
-            data-purpose="lyrics-action-menu"
           >
-            <MorphingActionSurface
-              placement="anchor"
-              compact
-              maxWidth={240}
-              title="Lyrics"
-              accentColor={accent.from}
-              customTrigger={({ triggerProps }) => (
-                <motion.button
-                  {...triggerProps}
-                  aria-label="Lyrics Actions"
-                  data-testid="lyrics-action-btn"
-                  className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
-                  style={{
-                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                    boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
-                  }}
-                  type="button"
-                >
-                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
-                </motion.button>
-              )}
-              rows={[
-                {
-                  id: 'action-edit',
-                  label: 'Edit',
-                  icon: 'edit',
-                  sublabel: 'Open lyric composer',
-                  onPress: () => {
-                    onEditLyrics();
-                  },
-                },
-                {
-                  id: 'action-sections',
-                  label: 'Sections',
-                  icon: 'layers',
-                  sublabel: 'Add song sections',
-                  onPress: () => {
-                    setShowSectionMorph(true);
-                  },
-                },
-                {
-                  id: 'action-text',
-                  label: 'Text',
-                  icon: 'text_fields',
-                  sublabel: 'Typography & styling',
-                  onPress: () => {
-                    setShowTextMorph(true);
-                  },
-                },
-              ]}
+            {/* ── LEFT CLUSTER: Edit Composer & Add Sections ── */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                data-testid="lyrics-toolbar-edit-btn"
+                onClick={onEditLyrics}
+                aria-label="Open Lyric Composer"
+                title="Open Lyric Composer"
+                className="px-2.5 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs"
+                style={{
+                  backgroundColor:
+                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                      ? 'rgba(0,0,0,0.04)'
+                      : 'rgba(255,255,255,0.06)',
+                  color: 'var(--c-text-primary, #ffffff)',
+                  border: '1px solid var(--c-border, transparent)',
+                }}
+              >
+                <span className="material-symbols-rounded text-base">edit</span>
+                <span>Edit</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="lyrics-toolbar-sections-btn"
+                onClick={() => setShowSectionMorph(true)}
+                aria-label="Add Section"
+                title="Add Section"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                style={{
+                  backgroundColor:
+                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                      ? 'rgba(0,0,0,0.04)'
+                      : 'rgba(255,255,255,0.06)',
+                  color: accent.from,
+                }}
+              >
+                <span className="material-symbols-rounded text-lg">layers</span>
+              </button>
+            </div>
+
+            {/* Vertical Divider */}
+            <div
+              className="w-[1px] h-5 mx-0.5"
+              style={{
+                backgroundColor:
+                  typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                    ? 'rgba(0,0,0,0.10)'
+                    : 'rgba(255,255,255,0.12)',
+              }}
             />
-          </div>,
+
+            {/* ── CENTER SECTION: Live Playback FAB ── */}
+            <div className="relative flex items-center justify-center">
+              <button
+                type="button"
+                data-testid="lyrics-toolbar-live-btn"
+                onClick={onLaunchLive}
+                aria-label="Launch Live Playback"
+                title="Launch Live"
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white transition active:scale-95 cursor-pointer shadow-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                  boxShadow: `0 4px 16px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.25)`,
+                }}
+              >
+                <span className="material-symbols-rounded text-2xl font-bold">play_arrow</span>
+              </button>
+            </div>
+
+            {/* Vertical Divider */}
+            <div
+              className="w-[1px] h-5 mx-0.5"
+              style={{
+                backgroundColor:
+                  typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                    ? 'rgba(0,0,0,0.10)'
+                    : 'rgba(255,255,255,0.12)',
+              }}
+            />
+
+            {/* ── RIGHT CLUSTER: Text Presentation & Song Details ── */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                data-testid="lyrics-toolbar-text-btn"
+                onClick={() => setShowTextMorph(true)}
+                aria-label="Text Presentation & Formatting"
+                title="Typography & Styling"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                style={{
+                  backgroundColor:
+                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                      ? 'rgba(0,0,0,0.04)'
+                      : 'rgba(255,255,255,0.06)',
+                  color:
+                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                      ? '#334155'
+                      : '#cbd5e1',
+                }}
+              >
+                <span className="material-symbols-rounded text-lg">text_fields</span>
+              </button>
+
+              {onEditDetails && (
+                <button
+                  type="button"
+                  data-testid="lyrics-toolbar-details-btn"
+                  onClick={onEditDetails}
+                  aria-label="Song Details"
+                  title="Song Details"
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                  style={{
+                    backgroundColor:
+                      typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                        ? 'rgba(0,0,0,0.04)'
+                        : 'rgba(255,255,255,0.06)',
+                    color:
+                      typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+                        ? '#334155'
+                        : '#cbd5e1',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-lg">tune</span>
+                </button>
+              )}
+            </div>
+          </aside>,
           document.body
         )}
 
@@ -401,7 +491,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
       <MorphingActionSurface
         isOpen={showSectionMorph}
         onOpenChange={setShowSectionMorph}
-        placement="anchor"
+        placement="center"
         compact
         maxWidth={240}
         title="Add Section"
