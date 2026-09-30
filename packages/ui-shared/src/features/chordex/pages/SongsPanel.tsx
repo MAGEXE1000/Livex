@@ -3,7 +3,7 @@ import { SongLibraryList } from '../components/SongLibraryList';
 import { SongEditorForm, PresetFormContent, FormData } from '../components/SongEditorForm';
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
-import { Dialog } from '../../../shared/design-system/dialogs';
+import { Dialog, activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import { SongLyricsEditor, SongLyricsComposer, SongLivePreparationView } from '../components/lyrics';
 import {
   getAllChords,
@@ -35,6 +35,7 @@ import {
   useNavigationStore,
   useSettingsStore,
   formatDurationMmSs,
+  useBottomNavigationStore,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -102,7 +103,7 @@ const DEFAULT_EXPORT_CONFIG: ExportConfig = {
   includeBPM: true,
   includeKey: true,
   includeNotes: true,
-  includeLyrics: true,
+  includeLyrics: false,
   chordDisplay: 'both',
   orientation: 'portrait',
   paperSize: 'a4',
@@ -462,11 +463,16 @@ async function exportPresetToPDF(
       : `<div>${titleInner}</div>`
     : '';
 
+  const chordCount = `${entries.length} acorde${entries.length !== 1 ? 's' : ''}`;
+
   const badges = [
     cfg.includeKey && preset.key
-      ? `<span style="${badgeStyle}">Tonalidad de ${preset.key}</span>`
+      ? `<span style="${badgeStyle}">Key ${preset.key}</span>`
       : '',
-    cfg.includeBPM && (preset.speed || preset.bpm) ? `<span style="${badgeStyle}">BPM ${preset.speed || preset.bpm}</span>` : '',
+    cfg.includeBPM && (preset.speed || preset.bpm)
+      ? `<span style="${badgeStyle}">BPM ${preset.speed || preset.bpm}</span>`
+      : '',
+    `<span style="${badgeStyle}">${chordCount}</span>`,
   ]
     .filter(Boolean)
     .join('');
@@ -481,40 +487,7 @@ async function exportPresetToPDF(
     ? `<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${accentColor};margin-right:7px;flex-shrink:0;"></span>`
     : '';
 
-  const lyricsHtml =
-    cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0
-      ? `
-      <div class="lyrics-section" style="margin-top:24px;border-top:1px solid ${divider};padding-top:16px;">
-        <div class="section-label" style="margin-bottom:12px;">${pip}LETRAS Y ROLES VOCALES</div>
-        ${preset.lyrics.sections
-          .map(
-            (sec) => `
-          <div style="margin-bottom:14px;break-inside:avoid;">
-            <div style="font-size:11px;font-weight:800;color:${accentColor};margin-bottom:6px;display:flex;align-items:center;gap:8px;">
-              <span>${sec.name}</span>
-              ${sec.vocalRole ? `<span style="font-size:9px;padding:2px 8px;border-radius:9999px;background:${sec.vocalRole.color}22;color:${sec.vocalRole.color};border:1px solid ${sec.vocalRole.color}44;">${sec.vocalRole.label}</span>` : ''}
-            </div>
-            ${sec.lines
-              .map((line) => {
-                const isBold = line.format?.bold;
-                const lineColor = line.format?.color || preset.lyrics?.formatting?.defaultColor || text;
-                const chordPlacements =
-                  line.chords && line.chords.length > 0
-                    ? `<div style="font-family:monospace;font-size:11px;font-weight:700;color:#0284c7;margin-bottom:2px;">${line.chords.map((c) => `[${c.chord}]`).join(' ')}</div>`
-                    : '';
-                return `
-                <div style="margin-bottom:4px;">
-                  ${chordPlacements}
-                  <div style="font-size:12px;color:${lineColor};font-weight:${isBold ? '700' : '400'};line-height:1.4;">${line.text || '&nbsp;'}</div>
-                </div>`;
-              })
-              .join('')}
-          </div>`
-          )
-          .join('')}
-      </div>`
-      : '';
-  const chordCount = `${entries.length} acorde${entries.length !== 1 ? 's' : ''}`;
+  const lyricsHtml = '';
 
   /* ── Instrument badge helper ── */
   const INSTR_COLORS: Record<string, string> = {
@@ -674,7 +647,6 @@ body{
   <div class="section-label">${chordCount}</div>
 </div>
 ${chordContent}
-${lyricsHtml}
 <div class="doc-footer">
   <span class="footer-txt">Chordex</span>
   <span class="footer-txt">${new Date().getFullYear()}</span>
@@ -733,7 +705,7 @@ ${lyricsHtml}
     // Estimate header height in mm
     const hasTitle = cfg.includeTitle && !!preset.name;
     const hasArtist = cfg.includeArtist && !!preset.artist;
-    const hasBadges = (cfg.includeKey && !!preset.key) || (cfg.includeBPM && preset.bpm > 0);
+    const hasBadges = Boolean((cfg.includeKey && preset.key) || (cfg.includeBPM && (preset.speed || preset.bpm)) || entries.length > 0);
     const HDR_H =
       (hasTitle ? (compact ? 7 : 9) : 0) +
       (hasArtist ? (compact ? 5 : 6.5) : 0) +
@@ -883,8 +855,9 @@ ${lyricsHtml}
       }
       if (hasBadges) {
         const badges: string[] = [];
-        if (cfg.includeKey && preset.key) badges.push(`Key: ${preset.key}`);
-        if (cfg.includeBPM && (preset.speed || preset.bpm)) badges.push(`Speed: ${preset.speed || preset.bpm}`);
+        if (cfg.includeKey && preset.key) badges.push(`Key ${preset.key}`);
+        if (cfg.includeBPM && (preset.speed || preset.bpm)) badges.push(`BPM ${preset.speed || preset.bpm}`);
+        badges.push(`${entries.length} ${entries.length === 1 ? 'acorde' : 'acordes'}`);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
         doc.setTextColor(...hexRgb(C_ACCENT));
@@ -1094,47 +1067,6 @@ ${lyricsHtml}
           colIdx = 0;
           cy += CARD_H + CARD_GAP;
         }
-      }
-    }
-
-    // Draw Lyrics if enabled and present
-    if (cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0) {
-      if (colIdx > 0) {
-        cy += CARD_H + CARD_GAP;
-        colIdx = 0;
-      }
-      cy += 6;
-      pageBreakIfNeeded(15);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(...hexRgb(C_ACCENT));
-      doc.text('LETRAS', ML, cy);
-      cy += 6;
-
-      for (const sec of preset.lyrics.sections) {
-        pageBreakIfNeeded(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.setTextColor(...hexRgb(C_TEXT));
-        doc.text(sec.vocalRole ? `${sec.name} (${sec.vocalRole.label})` : sec.name, ML, cy);
-        cy += 4.5;
-
-        for (const line of sec.lines) {
-          pageBreakIfNeeded(10);
-          if (line.chords && line.chords.length > 0) {
-            doc.setFont('courier', 'bold');
-            doc.setFontSize(7.5);
-            doc.setTextColor(...hexRgb(C_ACCENT));
-            doc.text(line.chords.map((c) => `[${c.chord}]`).join('  '), ML, cy);
-            cy += 3.5;
-          }
-          doc.setFont('helvetica', line.format?.bold ? 'bold' : 'normal');
-          doc.setFontSize(8);
-          doc.setTextColor(...hexRgb(C_TEXT));
-          doc.text(line.text || ' ', ML, cy);
-          cy += 4.5;
-        }
-        cy += 2;
       }
     }
 
@@ -1658,7 +1590,7 @@ function PaperPreview({
                 {preset.artist}
               </p>
             )}
-            <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '4px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
               {cfg.includeKey && preset.key && (
                 <span
                   style={{
@@ -1666,7 +1598,7 @@ function PaperPreview({
                     borderRadius: '100px',
                     fontSize: '6px',
                     fontWeight: 700,
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.04em',
                     textTransform: 'uppercase',
                     border: elegant ? `1px solid ${accentC}44` : `1px solid ${divider}`,
                     background: elegant ? `${accentC}18` : 'transparent',
@@ -1676,38 +1608,40 @@ function PaperPreview({
                   Key {preset.key}
                 </span>
               )}
-              {cfg.includeBPM && preset.bpm > 0 && (
+              {cfg.includeBPM && (preset.speed || preset.bpm) && (
                 <span
                   style={{
                     padding: '2px 7px',
                     borderRadius: '100px',
                     fontSize: '6px',
                     fontWeight: 700,
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.04em',
                     textTransform: 'uppercase',
                     border: elegant ? `1px solid ${accentC}44` : `1px solid ${divider}`,
                     background: elegant ? `${accentC}18` : 'transparent',
                     color: sub,
                   }}
                 >
-                  Speed {preset.speed || preset.bpm}
+                  BPM {preset.speed || preset.bpm}
                 </span>
               )}
+              <span
+                style={{
+                  padding: '2px 7px',
+                  borderRadius: '100px',
+                  fontSize: '6px',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  border: elegant ? `1px solid ${accentC}44` : `1px solid ${divider}`,
+                  background: elegant ? `${accentC}18` : 'transparent',
+                  color: sub,
+                }}
+              >
+                {previewSections.reduce((n, s) => n + s.entries.length, 0)} chords
+              </span>
             </div>
           </div>
-          <p
-            style={{
-              fontSize: '6px',
-              fontWeight: 700,
-              color: muted,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-              paddingTop: '2px',
-            }}
-          >
-            {previewSections.reduce((n, s) => n + s.entries.length, 0)} chords
-          </p>
         </div>
       )}
 
@@ -1844,37 +1778,6 @@ function PaperPreview({
         ))}
       </div>
 
-      {/* Lyrics Preview if enabled and present */}
-      {cfg.includeLyrics !== false && preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0 && (
-        <div style={{ marginTop: '12px', borderTop: `1px solid ${divider}`, paddingTop: '8px' }}>
-          <p style={{ fontSize: '7px', fontWeight: 800, color: accentC, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Lyrics & Vocal Roles
-          </p>
-          {preset.lyrics.sections.map((sec) => (
-            <div key={sec.id} style={{ marginBottom: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '6.5px', fontWeight: 700, color: text }}>{sec.name}</span>
-                {sec.vocalRole && (
-                  <span style={{ fontSize: '5px', padding: '1px 4px', borderRadius: '4px', background: `${sec.vocalRole.color}22`, color: sec.vocalRole.color }}>
-                    {sec.vocalRole.label}
-                  </span>
-                )}
-              </div>
-              {sec.lines.slice(0, 4).map((line) => (
-                <p key={line.id} style={{ fontSize: '5.5px', color: line.format?.color || text, fontWeight: line.format?.bold ? 700 : 400, margin: '1px 0' }}>
-                  {line.chords && line.chords.length > 0 && (
-                    <span style={{ color: '#0284c7', fontFamily: 'monospace', marginRight: '4px' }}>
-                      {line.chords.map((c) => `[${c.chord}]`).join('')}
-                    </span>
-                  )}
-                  {line.text}
-                </p>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Footer */}
       <div
         style={{
@@ -1967,7 +1870,7 @@ function ExportModal({
   storedCustomChords?: CustomChord[];
 }) {
   const t = useT();
-  const [cfg, setCfg] = useState<ExportConfig>({ ...DEFAULT_EXPORT_CONFIG });
+  const [cfg, setCfg] = useState<ExportConfig>({ ...DEFAULT_EXPORT_CONFIG, includeLyrics: false });
   const [pdfName, setPdfName] = useState('');
   const [savingPDF, setSavingPDF] = useState(false);
   const [sharingPDF, setSharingPDF] = useState(false);
@@ -1975,28 +1878,38 @@ function ExportModal({
   const [saveResult, setSaveResult] = useState<'ok' | 'fail' | null>(null);
   const isNative =
     typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [barVisible, setBarVisible] = useState(true);
-  const lastScrollTop = useRef(0);
+  const pdfScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(onClose, 280);
+  };
+
+  // Suppress global bottom navbar completely and reliably during PDF export preview
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const sy = el.scrollTop;
-      setBarVisible(sy <= lastScrollTop.current || sy < 50);
-      lastScrollTop.current = sy;
+    const id = 'chordex-pdf-export-modal';
+    activeOverlaysRegistry.register('modal', id);
+    setNavLocked(true);
+    setNavHidden(true);
+    useBottomNavigationStore.getState().setLocked(true);
+    useBottomNavigationStore.getState().setVisible(false);
+
+    return () => {
+      activeOverlaysRegistry.unregister('modal', id);
+      setNavLocked(false);
+      setNavHidden(false);
+      useBottomNavigationStore.getState().setLocked(false);
+      useBottomNavigationStore.getState().setVisible(true);
     };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useBackHandler('modal', () => {
+    handleClose();
+    return true;
   }, []);
 
   const update = <K extends keyof ExportConfig>(key: K, val: ExportConfig[K]) =>
     setCfg((prev) => ({ ...prev, [key]: val }));
-
-  const handleClose = () => {
-    setClosing(true);
-    setTimeout(onClose, 320);
-  };
 
   const handleExport = async (mode: 'save' | 'share' = 'share') => {
     if (mode === 'save') setSavingPDF(true);
@@ -2024,67 +1937,21 @@ function ExportModal({
     }
   };
 
-
-  /* Segmented control */
-  const Segment = <T extends string>({
-    options,
-    value,
-    onChange,
-  }: {
-    options: { value: T; label: string }[];
-    value: T;
-    onChange: (v: T) => void;
-  }) => (
-    <div
-      style={{
-        display: 'flex',
-        background: 'var(--app-surface)',
-        borderRadius: '10px',
-        padding: '3px',
-        gap: '2px',
-      }}
-    >
-      {options.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <button
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className="btn-smooth"
-            style={{
-              flex: 1,
-              padding: '6px 10px',
-              borderRadius: '7px',
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 700,
-              fontSize: '11px',
-              whiteSpace: 'nowrap',
-              background: active ? 'var(--app-surface-highest)' : 'transparent',
-              color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
-              boxShadow: active ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
-              transition: 'all 160ms ease',
-            }}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-
-
   const totalChordCount = preset.sections?.length
     ? preset.sections.reduce((n, s) => n + s.chords.length, 0)
     : preset.chords.length;
 
-  const pdfScrollRef = useRef<HTMLDivElement | null>(null);
-
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={preset?.name ? `${preset.name} - PDF Export` : 'PDF Export'}
+      data-purpose="pdf-export-modal"
+      data-dialog="true"
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 200,
+        zIndex: 10000,
         background: 'var(--c-background)',
         display: 'flex',
         flexDirection: 'column',
@@ -2096,21 +1963,32 @@ function ExportModal({
         onBack={handleClose}
         scrollContainerRef={pdfScrollRef}
         toolbarActions={
-          <span
+          <button
+            type="button"
+            onClick={() => handleExport(Capacitor.isNativePlatform() ? 'save' : 'share')}
+            disabled={savingPDF || sharingPDF}
+            className="btn-smooth"
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              background: accent.from,
+              color: '#ffffff',
+              border: 'none',
+              fontFamily: 'var(--font-headline)',
               fontWeight: 700,
-              color: 'var(--c-text-muted)',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              padding: '3px 8px',
-              borderRadius: '6px',
-              border: '1px solid rgba(72,72,72,0.3)',
+              fontSize: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
             }}
           >
-            PDF
-          </span>
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+              download
+            </span>
+            <span>Export</span>
+          </button>
         }
       />
 
@@ -2127,8 +2005,8 @@ function ExportModal({
         {/* Paper stage */}
         <div
           style={{
-            padding: '32px 24px 28px',
-            background: '#0a0a0a',
+            padding: '24px 20px 20px',
+            background: 'var(--c-surface-sunken, #0a0a0a)',
             position: 'relative',
           }}
         >
@@ -2136,9 +2014,9 @@ function ExportModal({
             style={{
               position: 'absolute',
               inset: 0,
-              opacity: 0.1,
+              opacity: 0.08,
               pointerEvents: 'none',
-              backgroundImage: 'radial-gradient(#555 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(#888 1px, transparent 1px)',
               backgroundSize: '28px 28px',
             }}
           />
@@ -2167,7 +2045,7 @@ function ExportModal({
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#3a3a3a',
+                color: 'var(--c-text-muted)',
               }}
             >
               Página 1 de 1
@@ -2177,8 +2055,9 @@ function ExportModal({
                 width: '3px',
                 height: '3px',
                 borderRadius: '50%',
-                background: '#3a3a3a',
+                background: 'var(--c-text-muted)',
                 display: 'inline-block',
+                opacity: 0.6,
               }}
             />
             <span
@@ -2188,7 +2067,7 @@ function ExportModal({
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#3a3a3a',
+                color: 'var(--c-text-muted)',
               }}
             >
               {totalChordCount} {totalChordCount === 1 ? 'acorde' : 'acordes'}
@@ -2196,296 +2075,270 @@ function ExportModal({
           </div>
         </div>
 
-        {/* File name + notes */}
-        <div style={{ padding: '28px 20px 8px' }}>
-          <p
+        {/* ── Streamlined bottom configuration drawer ── */}
+        <div
+          data-purpose="pdf-export-drawer"
+          style={{
+            background: 'var(--c-surface-card)',
+            borderTop: '1px solid var(--c-border-subtle)',
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+            padding: '20px 20px',
+            paddingBottom: 'calc(max(28px, env(safe-area-inset-bottom, 28px)))',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+            boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.12)',
+          }}
+        >
+          {/* Drawer handle */}
+          <div
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '10px',
-              fontWeight: 700,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--c-text-muted)',
-              marginBottom: '10px',
-            }}
-          >
-            File Name
-          </p>
-          <input
-            type="text"
-            value={pdfName}
-            onChange={(e) => setPdfName(e.target.value)}
-            placeholder={preset.name || 'Song'}
-            maxLength={80}
-            style={{
-              width: '100%',
-              padding: '13px 16px',
-              borderRadius: '12px',
-              background: 'var(--c-surface-low)',
-              border: '1px solid var(--c-border)',
-              color: 'var(--c-text-primary)',
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 600,
-              fontSize: '15px',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 200ms ease',
-              marginBottom: '16px',
+              width: '36px',
+              height: '4px',
+              borderRadius: '2px',
+              background: 'var(--c-border)',
+              margin: '0 auto 4px',
+              opacity: 0.7,
             }}
           />
 
-          {/* PDF personalization options */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '7px',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              marginBottom: '20px',
-            }}
-          >
-            {/* Paper size */}
-            <div
+          {/* File Name */}
+          <div>
+            <label
               style={{
-                display: 'flex',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                padding: '2px',
-                gap: '1px',
-              }}
-            >
-              {(['a4', 'letter'] as const).map((v) => {
-                const active = (cfg.paperSize ?? 'a4') === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => update('paperSize', v)}
-                    className="btn-smooth"
-                    style={{
-                      padding: '5px 11px',
-                      borderRadius: '6px',
-                      fontFamily: 'var(--font-body)',
-                      fontWeight: 700,
-                      fontSize: '10px',
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                      background: active ? accent.from : 'transparent',
-                      color: active ? '#fff' : '#6e6e80',
-                      transition: 'all 160ms ease',
-                    }}
-                  >
-                    {v === 'a4' ? 'A4' : 'US'}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Orientation */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                padding: '2px',
-                gap: '1px',
-              }}
-            >
-              {[['portrait', 'Port'] as const, ['landscape', 'Land'] as const].map(([v, lbl]) => {
-                const active = cfg.orientation === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => update('orientation', v)}
-                    className="btn-smooth"
-                    style={{
-                      padding: '5px 11px',
-                      borderRadius: '6px',
-                      fontFamily: 'var(--font-body)',
-                      fontWeight: 700,
-                      fontSize: '10px',
-                      letterSpacing: '0.05em',
-                      background: active ? accent.from : 'transparent',
-                      color: active ? '#fff' : '#6e6e80',
-                      transition: 'all 160ms ease',
-                    }}
-                  >
-                    {lbl}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Export style */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                padding: '2px',
-                gap: '1px',
-              }}
-            >
-              {[
-                ['minimal', 'Min'] as const,
-                ['elegant', 'Ele'] as const,
-                ['compact', 'Cmp'] as const,
-              ].map(([v, lbl]) => {
-                const active = (cfg.exportStyle ?? 'elegant') === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => update('exportStyle', v as ExportConfig['exportStyle'])}
-                    className="btn-smooth"
-                    style={{
-                      padding: '5px 11px',
-                      borderRadius: '6px',
-                      fontFamily: 'var(--font-body)',
-                      fontWeight: 700,
-                      fontSize: '10px',
-                      letterSpacing: '0.05em',
-                      background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                      color: active ? '#e7e5e4' : '#6e6e80',
-                      transition: 'all 160ms ease',
-                    }}
-                  >
-                    {lbl}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Dark theme chip */}
-            <button
-              onClick={() => update('theme', cfg.theme === 'dark' ? 'light' : 'dark')}
-              className="btn-smooth"
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontFamily: 'var(--font-body)',
+                display: 'block',
+                fontFamily: 'var(--font-headline)',
+                fontSize: '11px',
                 fontWeight: 700,
-                fontSize: '10px',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background:
-                  cfg.theme === 'dark' ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.04)',
-                color: cfg.theme === 'dark' ? '#e7e5e4' : '#6e6e80',
-                border:
-                  cfg.theme === 'dark'
-                    ? '1px solid rgba(255,255,255,0.1)'
-                    : '1px solid rgba(255,255,255,0.04)',
-                transition: 'all 160ms ease',
+                color: 'var(--c-text-muted)',
+                marginBottom: '8px',
               }}
             >
-              <span
-                className="material-symbols-outlined"
+              File Name
+            </label>
+            <input
+              type="text"
+              value={pdfName}
+              onChange={(e) => setPdfName(e.target.value)}
+              placeholder={preset.name || 'Song'}
+              maxLength={80}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'var(--c-surface-low)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-text-primary)',
+                fontFamily: 'var(--font-headline)',
+                fontWeight: 600,
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 200ms ease',
+              }}
+            />
+          </div>
+
+          {/* Document Options */}
+          <div>
+            <p
+              style={{
+                fontFamily: 'var(--font-headline)',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--c-text-muted)',
+                marginBottom: '10px',
+              }}
+            >
+              Document Options
+            </p>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}
+            >
+              {/* Paper size */}
+              <div
                 style={{
-                  fontSize: '13px',
-                  fontVariationSettings: cfg.theme === 'dark' ? "'FILL' 1" : "'FILL' 0",
+                  display: 'flex',
+                  background: 'var(--c-surface-low)',
+                  border: '1px solid var(--c-border-subtle)',
+                  borderRadius: '8px',
+                  padding: '2px',
+                  gap: '2px',
                 }}
               >
-                dark_mode
-              </span>
-              Dark
-            </button>
+                {(['a4', 'letter'] as const).map((v) => {
+                  const active = (cfg.paperSize ?? 'a4') === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => update('paperSize', v)}
+                      className="btn-smooth"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontFamily: 'var(--font-headline)',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        background: active ? accent.from : 'transparent',
+                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                        transition: 'all 160ms ease',
+                      }}
+                    >
+                      {v === 'a4' ? 'A4' : 'Letter'}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Diagrams chip */}
-            <button
-              onClick={() => update('chordDisplay', cfg.chordDisplay !== 'name' ? 'name' : 'both')}
-              className="btn-smooth"
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: '10px',
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background:
-                  cfg.chordDisplay !== 'name' ? `${accent.from}20` : 'rgba(255,255,255,0.04)',
-                color: cfg.chordDisplay !== 'name' ? accent.from : '#6e6e80',
-                border:
-                  cfg.chordDisplay !== 'name'
-                    ? `1px solid ${accent.from}2e`
-                    : '1px solid rgba(255,255,255,0.04)',
-                transition: 'all 160ms ease',
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
+              {/* Orientation */}
+              <div
                 style={{
-                  fontSize: '13px',
-                  fontVariationSettings: cfg.chordDisplay !== 'name' ? "'FILL' 1" : "'FILL' 0",
+                  display: 'flex',
+                  background: 'var(--c-surface-low)',
+                  border: '1px solid var(--c-border-subtle)',
+                  borderRadius: '8px',
+                  padding: '2px',
+                  gap: '2px',
                 }}
               >
-                grid_view
-              </span>
-              Diagrams
-            </button>
+                {[['portrait', 'Portrait'] as const, ['landscape', 'Landscape'] as const].map(([v, lbl]) => {
+                  const active = cfg.orientation === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => update('orientation', v)}
+                      className="btn-smooth"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontFamily: 'var(--font-headline)',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        letterSpacing: '0.04em',
+                        background: active ? accent.from : 'transparent',
+                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                        transition: 'all 160ms ease',
+                      }}
+                    >
+                      {lbl}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Lyrics chip */}
-            {preset.lyrics && preset.lyrics.sections && preset.lyrics.sections.length > 0 && (
+              {/* Chord display */}
+              <div
+                style={{
+                  display: 'flex',
+                  background: 'var(--c-surface-low)',
+                  border: '1px solid var(--c-border-subtle)',
+                  borderRadius: '8px',
+                  padding: '2px',
+                  gap: '2px',
+                }}
+              >
+                {[
+                  ['both', 'Both'] as const,
+                  ['diagram', 'Diagrams'] as const,
+                  ['name', 'Names'] as const,
+                ].map(([v, lbl]) => {
+                  const active = (cfg.chordDisplay ?? 'both') === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => update('chordDisplay', v as ExportConfig['chordDisplay'])}
+                      className="btn-smooth"
+                      style={{
+                        padding: '6px 11px',
+                        borderRadius: '6px',
+                        fontFamily: 'var(--font-headline)',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        letterSpacing: '0.04em',
+                        background: active ? accent.from : 'transparent',
+                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                        transition: 'all 160ms ease',
+                      }}
+                    >
+                      {lbl}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Theme toggle chip */}
               <button
-                onClick={() => update('includeLyrics', cfg.includeLyrics === false ? true : false)}
+                type="button"
+                onClick={() => update('theme', cfg.theme === 'dark' ? 'light' : 'dark')}
                 className="btn-smooth"
                 style={{
-                  padding: '5px 12px',
+                  padding: '6px 12px',
                   borderRadius: '8px',
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: 'var(--font-headline)',
                   fontWeight: 700,
-                  fontSize: '10px',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
+                  fontSize: '11px',
+                  letterSpacing: '0.04em',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
                   background:
-                    cfg.includeLyrics !== false ? `${accent.from}20` : 'rgba(255,255,255,0.04)',
-                  color: cfg.includeLyrics !== false ? accent.from : '#6e6e80',
-                  border:
-                    cfg.includeLyrics !== false
-                      ? `1px solid ${accent.from}2e`
-                      : '1px solid rgba(255,255,255,0.04)',
+                    cfg.theme === 'dark' ? 'var(--c-surface-card)' : 'var(--c-surface-low)',
+                  color: 'var(--c-text-primary)',
+                  border: '1px solid var(--c-border-subtle)',
                   transition: 'all 160ms ease',
                 }}
               >
                 <span
                   className="material-symbols-outlined"
                   style={{
-                    fontSize: '13px',
-                    fontVariationSettings: cfg.includeLyrics !== false ? "'FILL' 1" : "'FILL' 0",
+                    fontSize: '14px',
+                    fontVariationSettings: cfg.theme === 'dark' ? "'FILL' 1" : "'FILL' 0",
                   }}
                 >
-                  lyrics
+                  {cfg.theme === 'dark' ? 'dark_mode' : 'light_mode'}
                 </span>
-                Lyrics
+                {cfg.theme === 'dark' ? 'Dark' : 'Light'}
               </button>
-            )}
+            </div>
           </div>
 
+          {/* Info note */}
           <div
             style={{
-              padding: '14px 16px',
-              borderRadius: '12px',
-              background: `${accent.from}0d`,
-              border: `1px solid ${accent.from}18`,
+              padding: '12px 14px',
+              borderRadius: '10px',
+              background: 'var(--c-surface-low)',
+              border: '1px solid var(--c-border-subtle)',
               display: 'flex',
               gap: '10px',
-              alignItems: 'flex-start',
+              alignItems: 'center',
             }}
           >
             <span
               className="material-symbols-outlined"
               style={{
                 color: accent.from,
-                fontSize: '15px',
+                fontSize: '18px',
                 flexShrink: 0,
-                marginTop: '1px',
                 fontVariationSettings: "'FILL' 1",
               }}
             >
@@ -2495,103 +2348,106 @@ function ExportModal({
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '12px',
-                color: '#6e6e80',
-                lineHeight: 1.55,
+                color: 'var(--c-text-secondary)',
+                lineHeight: 1.45,
                 margin: 0,
               }}
             >
               {t.songs.pdfExportNote}
             </p>
           </div>
+
+          {/* Primary PDF Generation / Export Action Buttons */}
+          <div
+            data-purpose="pdf-export-dock"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              marginTop: '4px',
+            }}
+          >
+            {saveResult && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: 'var(--c-surface-card)',
+                  border: `1px solid ${saveResult === 'ok' ? '#34d399' : '#f87171'}`,
+                  fontFamily: 'var(--font-headline)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  color: saveResult === 'ok' ? '#34d399' : '#f87171',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                }}
+              >
+                {saveResult === 'ok' && (
+                  <SuccessLottie size={18} isLight={false} style={{ flexShrink: 0 }} />
+                )}
+                {saveResult === 'ok' ? 'Saved to Downloads!' : 'Could not save — try Share instead'}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {Capacitor.isNativePlatform() ? (
+                <>
+                  <Button
+                    variant="primary"
+                    onClick={() => handleExport('save')}
+                    disabled={savingPDF || sharingPDF}
+                    loading={savingPDF}
+                    icon="save"
+                    style={{
+                      flex: 1,
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '14px',
+                    }}
+                  >
+                    Save PDF
+                  </Button>
+                  <Button
+                    onClick={() => handleExport('share')}
+                    disabled={savingPDF || sharingPDF}
+                    loading={sharingPDF}
+                    icon="share"
+                    style={{
+                      flex: 1,
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '14px',
+                    }}
+                  >
+                    Share
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={() => handleExport('share')}
+                  disabled={sharingPDF}
+                  loading={sharingPDF}
+                  icon="download"
+                  style={{
+                    flex: 1,
+                    height: '48px',
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                  }}
+                >
+                  {t.songs.downloadPdf}
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </ScrollScaffold>
-
-      {/* ── Floating bottom bar ── */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 300,
-          transform: barVisible ? 'translateY(0)' : 'translateY(110%)',
-          transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-          background: 'rgba(15,15,15,0.94)',
-          backdropFilter: 'var(--surface-float-blur)',
-          WebkitBackdropFilter: 'var(--surface-float-blur)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
-        {/* Export button */}
-        <div
-          style={{
-            padding: '6px 16px',
-            paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-            display: 'flex',
-            gap: '10px',
-            position: 'relative',
-          }}
-        >
-          {saveResult && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: 0,
-                right: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '6px',
-                fontFamily: 'var(--font-headline)',
-                fontWeight: 700,
-                fontSize: '12px',
-                color: saveResult === 'ok' ? '#34d399' : '#f87171',
-              }}
-            >
-              {saveResult === 'ok' && (
-                <SuccessLottie size={20} isLight={false} style={{ flexShrink: 0 }} />
-              )}
-              {saveResult === 'ok' ? 'Saved to Downloads!' : 'Could not save — try Share instead'}
-            </div>
-          )}
-          {Capacitor.isNativePlatform() ? (
-            <>
-              <Button
-                variant="primary"
-                onClick={() => handleExport('save')}
-                disabled={savingPDF || sharingPDF}
-                loading={savingPDF}
-                icon="save"
-                style={{ flex: 1 }}
-              >
-                Save
-              </Button>
-              <Button
-                onClick={() => handleExport('share')}
-                disabled={savingPDF || sharingPDF}
-                loading={sharingPDF}
-                icon="share"
-                style={{ flex: 1 }}
-              >
-                Share
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="primary"
-              onClick={() => handleExport('share')}
-              disabled={sharingPDF}
-              loading={sharingPDF}
-              icon="download"
-              style={{ flex: 1 }}
-            >
-              {t.songs.downloadPdf}
-            </Button>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -310,11 +310,15 @@ export function BottomNavigationController() {
         }
       }
 
+      const isPdfExport =
+        typeof document !== 'undefined' &&
+        Boolean(document.querySelector('[data-purpose="pdf-export-modal"]'));
+
       const isModalOpen =
         activeOverlaysRegistry.modals.size > 0 ||
         activeOverlaysRegistry.sheets.size > 0;
       setHasDOMHiddenIndicator(
-        isFullscreen || isModalOpen || (isStageEditor && isLandscape)
+        isFullscreen || isModalOpen || isPdfExport || (isStageEditor && isLandscape)
       );
     };
 
@@ -568,13 +572,18 @@ export function BottomNavigationController() {
       (currentRoute as any)?.tab === 'Export' ||
       (currentRoute as any)?.subView === 'Export');
 
+  const isPdfExport =
+    typeof document !== 'undefined' &&
+    Boolean(document.querySelector('[data-purpose="pdf-export-modal"]'));
+
   const isExpectedVisible =
     !isDrumexEditor &&
     !isDrumexMetronome &&
     !isChordexSong &&
     !isGroovexSong &&
     !isAssistantScreen &&
-    !isStageExport;
+    !isStageExport &&
+    !isPdfExport;
 
   const visible =
     isExpectedVisible &&

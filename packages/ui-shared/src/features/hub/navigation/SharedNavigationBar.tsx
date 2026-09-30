@@ -925,6 +925,7 @@ export function SharedNavigationBar({
         <motion.div
           key="navigation-bar-wrapper"
           ref={containerRef}
+          data-purpose="shared-navigation-bar"
           className="shared-bottom-navbar-wrapper"
           animate={{
             y: isEffectiveHidden ? 100 : 0,
