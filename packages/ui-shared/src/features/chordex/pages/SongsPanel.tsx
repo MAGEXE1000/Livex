@@ -5189,7 +5189,50 @@ export default function SongsPanel() {
             );
           }
 
-          if (!isWebDesktop && isEmptyProgression && editorViewMode !== 'both') {
+          if (editorViewMode === 'both') {
+            const allSongChordNames = [
+              ...activePreset.chords,
+              ...(activePreset.sections ?? []).flatMap((s) => s.chords),
+            ];
+
+            return (
+              <div
+                ref={editorScrollRef}
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0"
+                style={{
+                  paddingTop: isWebDesktop
+                    ? '16px'
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  paddingBottom:
+                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)',
+                  position: 'relative',
+                }}
+                data-purpose="editor-both-area"
+              >
+                {!isWebDesktop && (
+                  <div
+                    className="w-full flex items-center justify-center pointer-events-auto mb-2"
+                    style={{ flexShrink: 0 }}
+                  >
+                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                  </div>
+                )}
+
+                <SongLyricsEditor
+                  lyrics={activePreset.lyrics}
+                  onChange={(nextLyrics) => {
+                    setSongLyrics(activePreset.id, nextLyrics);
+                  }}
+                  availableChords={allSongChordNames}
+                  accent={accent}
+                />
+              </div>
+            );
+          }
+
+          if (!isWebDesktop && isEmptyProgression) {
             return (
               <main
                 ref={editorScrollRef}
@@ -5262,9 +5305,7 @@ export default function SongsPanel() {
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
-                  editorViewMode === 'both'
-                    ? 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)'
-                    : 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
+                  'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
                 position: 'relative',
               }}
               data-purpose="editor-content-area"
@@ -5329,7 +5370,7 @@ export default function SongsPanel() {
                 <div
                   style={{
                     paddingTop: '0px',
-                    paddingBottom: editorViewMode === 'both' ? '8px' : '16px',
+                    paddingBottom: '16px',
                   }}
                   onPointerMove={onSecDragMove}
                   onPointerUp={onSecDragEnd}
@@ -5716,7 +5757,7 @@ export default function SongsPanel() {
                   <div
                     style={{
                       paddingTop: '0px',
-                      paddingBottom: editorViewMode === 'both' ? '8px' : '24px',
+                      paddingBottom: '24px',
                       position: 'relative',
                       height: dragIdx !== null ? `${localChords.length * ITEM_H + 32}px` : 'auto',
                     }}
@@ -5917,23 +5958,6 @@ export default function SongsPanel() {
                     })}
                   </div>
                 </>
-              )}
-
-              {/* In 'both' mode: Render SongLyricsEditor below the chords with streamlined container */}
-              {editorViewMode === 'both' && (
-                <div
-                  className="mt-2.5 pt-2 border-t flex-1 flex flex-col min-h-0"
-                  style={{ borderColor: 'var(--c-border, rgba(255,255,255,0.08))' }}
-                >
-                  <SongLyricsEditor
-                    lyrics={activePreset.lyrics}
-                    onChange={(nextLyrics) => {
-                      setSongLyrics(activePreset.id, nextLyrics);
-                    }}
-                    availableChords={allSongChordNames}
-                    accent={accent}
-                  />
-                </div>
               )}
             </div>
           );

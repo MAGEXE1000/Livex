@@ -30,12 +30,15 @@ import {
   type LyricLineSegment,
   type LyricTextSpan,
   getAllChords,
+  getChordById,
+  getChordByName,
   searchChords,
   ROOTS,
   type Chord,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import ChordDiagram from '../../diagrams/ChordDiagram';
+import DetailFretboardDiagram from '../../diagrams/DetailFretboardDiagram';
 
 export interface SongLyricsEditorProps {
   lyrics?: SongLyricsDocument;
@@ -175,6 +178,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     lineId: string;
     chord: LyricChordPlacement;
   } | null>(null);
+
+  const resolvedChordObj = useMemo(() => {
+    if (!selectedChordForEdit) return null;
+    const sym = selectedChordForEdit.chord.chord;
+    return getChordById(sym) || getChordByName(sym) || null;
+  }, [selectedChordForEdit]);
 
   // Line currently in direct text typing mode (null = word targeting mode)
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -1461,7 +1470,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </span>
                           </div>
                         ) : (
-                          /* Responsive Word-Segment Surface with Ruby Chord Alignment */
+                          /* Responsive Word-Segment Surface with Lead-Sheet Chord Alignment */
                           <div
                             className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-pointer"
                             title={isEditMode ? 'Tap to edit line' : "Tap 'Edit' in toolbar to edit text"}
@@ -1506,19 +1515,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                             : 'rgba(56, 189, 248, 0.40)',
                                           color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
                                         }}
-                                        title="Tap to move or replace chord"
+                                        title="Tap to view chord diagram or edit placement"
                                       >
                                         <span>{seg.chord.chord}</span>
-                                        <span
-                                          className="text-[10px] opacity-40 hover:opacity-100 hover:text-rose-400 font-sans ml-0.5 cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRemoveChordFromLine(section.id, line.id, seg.chord!.id);
-                                          }}
-                                          title="Quick remove"
-                                        >
-                                          ×
-                                        </span>
+                                        {isEditMode && (
+                                          <span
+                                            className="text-[10px] opacity-40 hover:opacity-100 hover:text-rose-400 font-sans ml-0.5 cursor-pointer"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRemoveChordFromLine(section.id, line.id, seg.chord!.id);
+                                            }}
+                                            title="Quick remove"
+                                          >
+                                            ×
+                                          </span>
+                                        )}
                                       </button>
                                     </div>
                                   ) : hasChords ? (
@@ -1536,9 +1547,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                         const spanBold = getCharacterBold(line.spans, globalStart);
                                         const wordColor = spanColor || resolvedColor;
                                         const wordBold = isLineBold || spanBold;
-                                        const isWordTargeted =
-                                          activeSelection?.lineId === line.id &&
-                                          activeSelection?.start === globalStart;
 
                                         return (
                                           <React.Fragment key={wIdx}>
@@ -1546,6 +1554,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                               data-testid={`lyric-word-${w.word}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
+                                                if (!isEditMode) return;
                                                 if (activeColorTool !== null) {
                                                   // Apply active color tool to this word
                                                   updateDoc((doc) => ({
@@ -1582,15 +1591,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                               }}
                                               onDoubleClick={(e) => {
                                                 e.stopPropagation();
-                                                setEditingLineId(line.id);
+                                                if (isEditMode) {
+                                                  setEditingLineId(line.id);
+                                                }
                                               }}
-                                              className="cursor-pointer rounded px-0.5 transition-all hover:bg-white/10"
+                                              className={`${isEditMode ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'} rounded px-0.5 transition-all`}
                                               style={{
                                                 color: wordColor,
                                                 fontWeight: wordBold ? 800 : 500,
                                                 fontFamily: 'inherit',
                                               }}
-                                              title={activeColorTool !== null ? `Tap to color [${w.word}]` : `Target "${w.word}" for chord`}
+                                              title={isEditMode ? (activeColorTool !== null ? `Tap to color [${w.word}]` : `Target "${w.word}" for chord`) : undefined}
                                             >
                                               {w.word}
                                             </span>
@@ -1603,6 +1614,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                       <span
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          if (!isEditMode) return;
                                           if (activeColorTool !== null) {
                                             updateDoc((doc) => ({
                                               ...doc,
@@ -1635,7 +1647,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                             setEditingLineId(line.id);
                                           }
                                         }}
-                                        className="whitespace-pre cursor-pointer hover:bg-white/10 rounded px-0.5"
+                                        className={`whitespace-pre rounded px-0.5 ${isEditMode ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'}`}
                                         style={{
                                           color: getCharacterColor(line.spans, seg.startOffset) || resolvedColor,
                                           fontWeight: isLineBold || getCharacterBold(line.spans, seg.startOffset) ? 800 : 500,
@@ -1725,9 +1737,44 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </div>
         )}
 
-        {/* ── DOCUMENT-FLOW BOTTOM TOOLBAR ── */}
-        {(() => {
-          const dockContent = (
+        {/* ── VIEW MODE: Floating Pencil Button at Bottom Right ── */}
+        {!isEditMode &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <aside
+              data-testid="both-floating-edit-dock"
+              style={{
+                position: 'fixed',
+                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+                right: '20px',
+                zIndex: 45,
+                pointerEvents: 'auto',
+              }}
+            >
+              <button
+                type="button"
+                data-testid="both-floating-edit-btn"
+                onClick={() => {
+                  setIsEditMode(true);
+                }}
+                aria-label="Edit Chords & Lyrics"
+                title="Edit Chords & Lyrics"
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white transition active:scale-90 cursor-pointer shadow-xl hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                  boxShadow: `0 6px 24px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.25)`,
+                }}
+              >
+                <span className="material-symbols-rounded text-2xl font-bold">edit</span>
+              </button>
+            </aside>,
+            document.body
+          )}
+
+        {/* ── EDIT MODE: Dedicated Bottom Action Dock ── */}
+        {isEditMode &&
+          typeof document !== 'undefined' &&
+          createPortal(
             <aside
               ref={dockRef}
               aria-label="Song Both editor toolbar"
@@ -1751,691 +1798,562 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 pointerEvents: 'auto',
               }}
             >
-              {/* ── LEFT CLUSTER: Direct high-frequency actions (Edit toggle, Undo, Redo, Paste) ── */}
-          <div className="flex items-center gap-1">
-            {/* Edit / Read-Only Mode Toggle */}
-            <button
-              type="button"
-              data-testid="toolbar-edit-toggle-btn"
-              data-action="both-toolbar-edit-toggle-btn"
-              onClick={() => {
-                setActivePopover(null);
-                if (isEditMode) {
-                  setIsEditMode(false);
-                  setEditingLineId(null);
-                  toast.success('Read-only mode active');
-                } else {
-                  setIsEditMode(true);
-                  toast.info('Edit mode active: tap any line to type');
-                }
-              }}
-              aria-label={isEditMode ? 'Done editing' : 'Edit lyrics'}
-              title={isEditMode ? 'Done editing' : 'Edit lyrics'}
-              className="px-2.5 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs"
-              style={{
-                backgroundColor: isEditMode
-                  ? accent.from
-                  : isEffectiveLight
-                    ? 'rgba(0,0,0,0.04)'
-                    : 'rgba(255,255,255,0.06)',
-                color: isEditMode
-                  ? '#ffffff'
-                  : 'var(--c-text-primary, #ffffff)',
-                border: isEditMode ? 'none' : '1px solid var(--c-border, transparent)',
-                boxShadow: isEditMode ? `0 2px 8px ${accent.to}44` : 'none',
-              }}
-            >
-              <span className="material-symbols-rounded text-base">
-                {isEditMode ? 'check' : 'edit'}
-              </span>
-              <span>{isEditMode ? 'Done' : 'Edit'}</span>
-            </button>
-
-            {/* Undo */}
-            <button
-              type="button"
-              data-testid="toolbar-undo-btn"
-              data-action="both-toolbar-undo-btn"
-              onClick={() => {
-                setActivePopover(null);
-                handleUndo();
-              }}
-              disabled={historyRef.current.length === 0}
-              aria-label="Undo"
-              title="Undo"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer disabled:opacity-30 disabled:pointer-events-none relative after:absolute after:-inset-1.5 after:content-['']"
-              style={{
-                backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-                color: 'var(--c-text-secondary, #94a3b8)',
-              }}
-            >
-              <span className="material-symbols-rounded text-lg">undo</span>
-            </button>
-
-            {/* Redo */}
-            <button
-              type="button"
-              data-testid="toolbar-redo-btn"
-              data-action="both-toolbar-redo-btn"
-              onClick={() => {
-                setActivePopover(null);
-                handleRedo();
-              }}
-              disabled={futureRef.current.length === 0}
-              aria-label="Redo"
-              title="Redo"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer disabled:opacity-30 disabled:pointer-events-none relative after:absolute after:-inset-1.5 after:content-['']"
-              style={{
-                backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-                color: 'var(--c-text-secondary, #94a3b8)',
-              }}
-            >
-              <span className="material-symbols-rounded text-lg">redo</span>
-            </button>
-
-            {/* Paste */}
-            <button
-              type="button"
-              data-testid="toolbar-paste-btn"
-              data-action="both-toolbar-paste-btn"
-              onClick={() => {
-                setActivePopover(null);
-                handlePasteLyricsFromClipboard();
-              }}
-              aria-label="Paste lyrics"
-              title="Paste lyrics"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
-              style={{
-                backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-                color: accent.from,
-              }}
-            >
-              <span className="material-symbols-rounded text-lg">content_paste</span>
-            </button>
-          </div>
-
-          {/* Vertical Divider */}
-          <div
-            className="w-[1px] h-5 mx-0.5"
-            style={{
-              backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
-            }}
-          />
-
-          {/* ── CENTER SECTION: Visually Dominant Chords Action & Popover ── */}
-          <div className="relative flex items-center justify-center">
-            <AnimatePresence>
-              {activePopover === 'chords' && (
-                <motion.div
-                  key="chords-popover"
-                  {...popoverMotionCenter}
-                  data-testid="both-chords-popover"
-                  className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
-                  style={{
-                    ...(popoverPlacement === 'bottom'
-                      ? { top: 'calc(100% + 14px)' }
-                      : { bottom: 'calc(100% + 14px)' }),
-                    left: '50%',
-                    width: 'max-content',
-                    minWidth: 260,
-                    maxWidth: 'calc(100vw - 32px)',
-                    backgroundColor: popoverBg,
-                    border: popoverBorder,
-                    boxShadow: popoverShadow,
-                    backdropFilter: 'var(--surface-float-blur, blur(20px))',
-                    WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
-                  }}
-                >
-                  <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-rounded text-sm" style={{ color: accent.from }}>
-                        music_note
-                      </span>
-                      <span
-                        className="text-[10px] font-extrabold uppercase tracking-wider"
-                        style={{ color: 'var(--c-text-primary)' }}
-                      >
-                        Insert Chord
-                      </span>
-                    </div>
-                    <span
-                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ backgroundColor: `${accent.from}22`, color: accent.from }}
-                    >
-                      {activeSelection ? `"${activeSelection.text}" @ ${activeSelection.start}` : 'At Line Start'}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-gray-400 leading-snug">
-                    Select chord to insert into active lyrics line:
-                  </p>
-
-                  {/* Quick Chords Grid */}
-                  <div className="grid grid-cols-5 gap-1.5 py-1">
-                    {quickChords.map((chord) => {
-                      const isSongChord = availableChords.includes(chord);
-                      return (
-                        <button
-                          key={chord}
-                          type="button"
-                          data-testid={`quick-chord-${chord}`}
-                          onClick={() => {
-                            const sel = activeSelectionRef.current;
-                            let targetSecId: string;
-                            let targetLId: string;
-                            let targetOffset: number;
-                            let label: string;
-
-                            if (sel) {
-                              targetSecId = sel.sectionId;
-                              targetLId = sel.lineId;
-                              targetOffset = sel.start;
-                              label = `"${sel.text}"`;
-                            } else if (currentDoc.sections.length > 0 && currentDoc.sections[0].lines.length > 0) {
-                              const firstSec = currentDoc.sections[0];
-                              const firstLine = firstSec.lines[0];
-                              targetSecId = firstSec.id;
-                              targetLId = firstLine.id;
-                              targetOffset = 0;
-                              label = 'line start';
-                            } else {
-                              toast.info('Type a lyric line first to attach chords');
-                              return;
-                            }
-
-                            handleAddChordToLine(targetSecId, targetLId, chord, targetOffset);
-                            toast.success(`Attached [${chord}] over ${label}`);
-                            setActivePopover(null);
-                          }}
-                          className="h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border relative"
-                          style={{
-                            backgroundColor: isSongChord
-                              ? `${accent.from}28`
-                              : isEffectiveLight
-                                ? 'rgba(0,0,0,0.04)'
-                                : 'rgba(255,255,255,0.05)',
-                            borderColor: isSongChord
-                              ? `${accent.from}66`
-                              : isEffectiveLight
-                                ? 'rgba(0,0,0,0.12)'
-                                : 'rgba(255,255,255,0.1)',
-                            color: isSongChord
-                              ? accent.from
-                              : isEffectiveLight
-                                ? '#0f172a'
-                                : 'var(--c-text-primary)',
-                          }}
-                          title={isSongChord ? `Song Chord: ${chord}` : chord}
-                        >
-                          <span>{chord}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex gap-1.5 pt-1.5 border-t border-white/10">
-                    <button
-                      type="button"
-                      data-testid="toolbar-chord-btn"
-                      onClick={() => {
-                        setActivePopover(null);
-                        handleOpenChordPicker();
-                      }}
-                      className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center border transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                      style={{
-                        backgroundColor: `${accent.from}15`,
-                        borderColor: `${accent.from}40`,
-                        color: accent.from,
-                      }}
-                    >
-                      <span className="material-symbols-rounded text-base">library_music</span>
-                      <span>Browse Full Library...</span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* The Dominant Center FAB */}
-            <button
-              type="button"
-              data-testid="both-toolbar-chords-btn"
-              onClick={() => togglePopover('chords')}
-              aria-label="Attach or Place Chords"
-              title="Chords"
-              className="w-11 h-11 rounded-full flex items-center justify-center text-white transition active:scale-95 cursor-pointer shadow-lg"
-              style={{
-                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                boxShadow: `0 4px 16px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.25)`,
-              }}
-            >
-              <span className="material-symbols-rounded text-2xl font-bold">music_note</span>
-            </button>
-          </div>
-
-          {/* Vertical Divider */}
-          <div
-            className="w-[1px] h-5 mx-0.5"
-            style={{
-              backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
-            }}
-          />
-
-          {/* ── RIGHT CLUSTER: Text Color, Roles, More ── */}
-          <div className="flex items-center gap-1">
-            {/* Style & Color */}
-            <div className="relative flex items-center justify-center">
-              <AnimatePresence>
-                {activePopover === 'style' && (
-                  <motion.div
-                    key="style-popover"
-                    {...popoverMotionRight}
-                    data-testid="both-style-popover"
-                    className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
-                    style={{
-                      ...(popoverPlacement === 'bottom'
-                        ? { top: 'calc(100% + 14px)' }
-                        : { bottom: 'calc(100% + 14px)' }),
-                      right: -24,
-                      width: 230,
-                      backgroundColor: popoverBg,
-                      border: popoverBorder,
-                      boxShadow: popoverShadow,
-                      backdropFilter: 'var(--surface-float-blur, blur(20px))',
-                      WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
-                    }}
-                  >
-                    <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
-                        Text Color Tool
-                      </span>
-                      {activeColorTool !== null && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveColorTool(null);
-                            setActivePopover(null);
-                            toast.info('Color tool exited');
-                          }}
-                          className="text-[10px] text-gray-400 hover:text-white cursor-pointer"
-                        >
-                          Exit Tool
-                        </button>
-                      )}
-                    </div>
-
-                    <p className="text-[11px] text-gray-400 leading-snug">
-                      Choose a color to activate the brush, then tap any word in the lyrics to paint it:
-                    </p>
-
-                    {/* Color Palette */}
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {COLOR_PALETTE.map((c) => {
-                        const isSelected = activeColorTool === (c.value || '');
-                        return (
-                          <button
-                            key={c.label}
-                            type="button"
-                            onClick={() => {
-                              const newColor = c.value || '';
-                              setActiveColorTool(newColor);
-                              setActivePopover(null);
-                              if (activeSelection && activeSelection.start !== activeSelection.end) {
-                                handleFormatColor(newColor);
-                              }
-                              if (newColor) {
-                                toast.success(`Color tool active: tap words to apply ${c.label}`);
-                              } else {
-                                toast.info('Color reset tool active: tap words to reset color');
-                              }
-                            }}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-transform active:scale-90 cursor-pointer ${
-                              isSelected ? 'ring-2 ring-blue-500 scale-105' : ''
-                            }`}
-                            style={{
-                              backgroundColor: c.value || 'transparent',
-                              borderColor: isSelected
-                                ? '#3b82f6'
-                                : isEffectiveLight
-                                  ? 'rgba(0,0,0,0.15)'
-                                  : 'rgba(255,255,255,0.2)',
-                            }}
-                            title={c.label}
-                          >
-                            {!c.value && (
-                              <span className="material-symbols-rounded text-xs text-gray-400">format_color_reset</span>
-                            )}
-                            {isSelected && c.value && (
-                              <span
-                                className="material-symbols-rounded text-xs"
-                                style={{ color: c.value === '#ffffff' ? '#000000' : '#ffffff' }}
-                              >
-                                check
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Bold Toggle */}
-                    <div className="pt-1 border-t border-white/10">
-                      <button
-                        type="button"
-                        data-testid="toolbar-bold-btn"
-                        onClick={() => {
-                          handleFormatBold();
-                        }}
-                        className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg border text-xs font-bold transition active:scale-95 cursor-pointer hover:bg-white/5"
-                        style={{
-                          backgroundColor: 'rgba(255,255,255,0.06)',
-                          borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
-                          color: 'var(--c-text-primary, #ffffff)',
-                        }}
-                      >
-                        <span className="w-4 h-4 rounded bg-white/10 flex items-center justify-center font-black text-xs">
-                          B
-                        </span>
-                        <span>Toggle Bold</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
+              {/* Done / Exit Edit Mode Button */}
               <button
                 type="button"
-                data-testid="toolbar-color-btn"
-                data-action="both-toolbar-style-btn"
-                onClick={() => togglePopover('style')}
-                aria-label="Text Color and Styling"
-                title={activeColorTool !== null ? 'Color tool active (tap to change/exit)' : 'Text Color'}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                data-testid="both-toolbar-done-btn"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setEditingLineId(null);
+                  setActivePopover(null);
+                  setActiveColorTool(null);
+                }}
+                aria-label="Done editing"
+                title="Done editing"
+                className="px-3 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs"
                 style={{
-                  backgroundColor:
-                    activeColorTool !== null
-                      ? `${activeColorTool || '#3b82f6'}28`
-                      : activePopover === 'style'
+                  backgroundColor: accent.from,
+                  color: '#ffffff',
+                  boxShadow: `0 2px 8px ${accent.to}44`,
+                }}
+              >
+                <span className="material-symbols-rounded text-base font-bold">check</span>
+                <span>Done</span>
+              </button>
+
+              {/* Vertical Divider */}
+              <div
+                className="w-[1px] h-5 mx-0.5"
+                style={{
+                  backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
+                }}
+              />
+
+              {/* ── LEFT CLUSTER: Undo / Redo ── */}
+              <div className="flex items-center gap-1">
+                {/* Undo */}
+                <button
+                  type="button"
+                  data-testid="toolbar-undo-btn"
+                  data-action="both-toolbar-undo-btn"
+                  onClick={() => {
+                    setActivePopover(null);
+                    handleUndo();
+                  }}
+                  disabled={historyRef.current.length === 0}
+                  aria-label="Undo"
+                  title="Undo"
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer disabled:opacity-30 disabled:pointer-events-none relative after:absolute after:-inset-1.5 after:content-['']"
+                  style={{
+                    backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                    color: 'var(--c-text-secondary, #94a3b8)',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-lg">undo</span>
+                </button>
+
+                {/* Redo */}
+                <button
+                  type="button"
+                  data-testid="toolbar-redo-btn"
+                  data-action="both-toolbar-redo-btn"
+                  onClick={() => {
+                    setActivePopover(null);
+                    handleRedo();
+                  }}
+                  disabled={futureRef.current.length === 0}
+                  aria-label="Redo"
+                  title="Redo"
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer disabled:opacity-30 disabled:pointer-events-none relative after:absolute after:-inset-1.5 after:content-['']"
+                  style={{
+                    backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                    color: 'var(--c-text-secondary, #94a3b8)',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-lg">redo</span>
+                </button>
+              </div>
+
+              {/* Vertical Divider */}
+              <div
+                className="w-[1px] h-5 mx-0.5"
+                style={{
+                  backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
+                }}
+              />
+
+              {/* ── CENTER SECTION: Neutral Chord Insertion Tool & Popover ── */}
+              <div className="relative flex items-center justify-center">
+                <AnimatePresence>
+                  {activePopover === 'chords' && (
+                    <motion.div
+                      key="chords-popover"
+                      {...popoverMotionCenter}
+                      data-testid="both-chords-popover"
+                      className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
+                      style={{
+                        ...(popoverPlacement === 'bottom'
+                          ? { top: 'calc(100% + 14px)' }
+                          : { bottom: 'calc(100% + 14px)' }),
+                        left: '50%',
+                        width: 'max-content',
+                        minWidth: 260,
+                        maxWidth: 'calc(100vw - 32px)',
+                        backgroundColor: popoverBg,
+                        border: popoverBorder,
+                        boxShadow: popoverShadow,
+                        backdropFilter: 'var(--surface-float-blur, blur(20px))',
+                        WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
+                      }}
+                    >
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-rounded text-sm" style={{ color: accent.from }}>
+                            music_note
+                          </span>
+                          <span
+                            className="text-[10px] font-extrabold uppercase tracking-wider"
+                            style={{ color: 'var(--c-text-primary)' }}
+                          >
+                            Insert Chord
+                          </span>
+                        </div>
+                        <span
+                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          style={{ backgroundColor: `${accent.from}22`, color: accent.from }}
+                        >
+                          {activeSelection ? `"${activeSelection.text}" @ ${activeSelection.start}` : 'At Line Start'}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-gray-400 leading-snug">
+                        Select chord to insert into active lyrics line:
+                      </p>
+
+                      {/* Quick Chords Grid */}
+                      <div className="grid grid-cols-5 gap-1.5 py-1">
+                        {quickChords.map((chord) => {
+                          const isSongChord = availableChords.includes(chord);
+                          return (
+                            <button
+                              key={chord}
+                              type="button"
+                              data-testid={`quick-chord-${chord}`}
+                              onClick={() => {
+                                const sel = activeSelectionRef.current;
+                                let targetSecId: string;
+                                let targetLId: string;
+                                let targetOffset: number;
+                                let label: string;
+
+                                if (sel) {
+                                  targetSecId = sel.sectionId;
+                                  targetLId = sel.lineId;
+                                  targetOffset = sel.start;
+                                  label = `"${sel.text}"`;
+                                } else if (currentDoc.sections.length > 0 && currentDoc.sections[0].lines.length > 0) {
+                                  const firstSec = currentDoc.sections[0];
+                                  const firstLine = firstSec.lines[0];
+                                  targetSecId = firstSec.id;
+                                  targetLId = firstLine.id;
+                                  targetOffset = 0;
+                                  label = 'line start';
+                                } else {
+                                  toast.info('Type a lyric line first to attach chords');
+                                  return;
+                                }
+
+                                handleAddChordToLine(targetSecId, targetLId, chord, targetOffset);
+                                toast.success(`Attached [${chord}] over ${label}`);
+                                setActivePopover(null);
+                              }}
+                              className="h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border relative"
+                              style={{
+                                backgroundColor: isSongChord
+                                  ? `${accent.from}28`
+                                  : isEffectiveLight
+                                    ? 'rgba(0,0,0,0.04)'
+                                    : 'rgba(255,255,255,0.05)',
+                                borderColor: isSongChord
+                                  ? `${accent.from}66`
+                                  : isEffectiveLight
+                                    ? 'rgba(0,0,0,0.12)'
+                                    : 'rgba(255,255,255,0.1)',
+                                color: isSongChord
+                                  ? accent.from
+                                  : isEffectiveLight
+                                    ? '#0f172a'
+                                    : 'var(--c-text-primary)',
+                              }}
+                              title={isSongChord ? `Song Chord: ${chord}` : chord}
+                            >
+                              <span>{chord}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex gap-1.5 pt-1.5 border-t border-white/10">
+                        <button
+                          type="button"
+                          data-testid="toolbar-chord-btn"
+                          onClick={() => {
+                            setActivePopover(null);
+                            handleOpenChordPicker();
+                          }}
+                          className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center border transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                          style={{
+                            backgroundColor: `${accent.from}15`,
+                            borderColor: `${accent.from}40`,
+                            color: accent.from,
+                          }}
+                        >
+                          <span className="material-symbols-rounded text-base">library_music</span>
+                          <span>Browse Full Library...</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Standard Neutral Chord Insertion Button */}
+                <button
+                  type="button"
+                  data-testid="both-toolbar-chords-btn"
+                  onClick={() => togglePopover('chords')}
+                  aria-label="Attach or Place Chords"
+                  title="Chords"
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                  style={{
+                    backgroundColor:
+                      activePopover === 'chords'
                         ? isEffectiveLight
                           ? 'rgba(0,0,0,0.12)'
                           : 'rgba(255,255,255,0.18)'
                         : isEffectiveLight
                           ? 'rgba(0,0,0,0.04)'
                           : 'rgba(255,255,255,0.06)',
-                  border: activeColorTool !== null ? `1.5px solid ${activeColorTool || '#3b82f6'}` : 'none',
-                  color: activeColorTool || documentColor || (isEffectiveLight ? '#334155' : '#cbd5e1'),
+                    border: activePopover === 'chords' ? `1.5px solid ${accent.from}` : '1px solid transparent',
+                    color: activePopover === 'chords' ? accent.from : isEffectiveLight ? '#334155' : '#cbd5e1',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-lg">music_note</span>
+                </button>
+              </div>
+
+              {/* Vertical Divider */}
+              <div
+                className="w-[1px] h-5 mx-0.5"
+                style={{
+                  backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
                 }}
-              >
-                <span className="material-symbols-rounded text-lg">palette</span>
-              </button>
-            </div>
+              />
 
-            {/* Vocal Roles */}
-            <div className="relative flex items-center justify-center">
-              <AnimatePresence>
-                {activePopover === 'roles' && (
-                  <motion.div
-                    key="roles-popover"
-                    {...popoverMotionRight}
-                    data-testid="both-roles-popover"
-                    className="absolute z-50 flex flex-col gap-2 p-3 rounded-2xl"
-                    style={{
-                      ...(popoverPlacement === 'bottom'
-                        ? { top: 'calc(100% + 14px)' }
-                        : { bottom: 'calc(100% + 14px)' }),
-                      right: -12,
-                      width: 230,
-                      backgroundColor: popoverBg,
-                      border: popoverBorder,
-                      boxShadow: popoverShadow,
-                      backdropFilter: 'var(--surface-float-blur, blur(20px))',
-                      WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
-                    }}
-                  >
-                    <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
-                        Vocal Roles
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleAssignRole(undefined);
-                          setActivePopover(null);
-                        }}
-                        className="text-[10px] text-gray-400 hover:text-rose-400 transition-colors"
-                      >
-                        Clear Role
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto no-scrollbar">
-                      {defaultVocalRoles.map((role) => (
-                        <button
-                          key={role.type}
-                          type="button"
-                          onClick={() => {
-                            handleAssignRole(role);
-                            setActivePopover(null);
-                          }}
-                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5"
-                        >
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: role.color }} />
-                          <span style={{ color: 'var(--c-text-primary)' }}>{role.label}</span>
-                        </button>
-                      ))}
-                      {customVocalRoles.map((role) => (
-                        <button
-                          key={role.label}
-                          type="button"
-                          onClick={() => {
-                            handleAssignRole(role);
-                            setActivePopover(null);
-                          }}
-                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5"
-                        >
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: role.color }} />
-                          <span style={{ color: 'var(--c-text-primary)' }}>{role.label}</span>
-                          <span className="text-[9px] uppercase opacity-40 ml-auto font-mono">Custom</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="pt-1 border-t border-white/10">
-                      <button
-                        type="button"
-                        data-testid="toolbar-role-btn"
-                        onClick={() => {
-                          const sel = activeSelectionRef.current;
-                          if (sel) {
-                            setRolePickerTarget({ sectionId: sel.sectionId, lineId: sel.lineId });
-                          } else if (currentDoc.sections.length > 0) {
-                            setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
-                          }
-                          setActivePopover(null);
-                        }}
-                        className="w-full py-1.5 px-2 rounded-lg text-xs font-bold text-center border transition active:scale-95 cursor-pointer"
+              {/* ── RIGHT CLUSTER: Text Color & More ── */}
+              <div className="flex items-center gap-1">
+                {/* Style & Color */}
+                <div className="relative flex items-center justify-center">
+                  <AnimatePresence>
+                    {activePopover === 'style' && (
+                      <motion.div
+                        key="style-popover"
+                        {...popoverMotionRight}
+                        data-testid="both-style-popover"
+                        className="absolute z-50 flex flex-col gap-2.5 p-3 rounded-2xl"
                         style={{
-                          backgroundColor: 'rgba(255,255,255,0.06)',
-                          borderColor: 'rgba(255,255,255,0.12)',
-                          color: 'var(--c-text-primary)',
+                          ...(popoverPlacement === 'bottom'
+                            ? { top: 'calc(100% + 14px)' }
+                            : { bottom: 'calc(100% + 14px)' }),
+                          right: -24,
+                          width: 230,
+                          backgroundColor: popoverBg,
+                          border: popoverBorder,
+                          boxShadow: popoverShadow,
+                          backdropFilter: 'var(--surface-float-blur, blur(20px))',
+                          WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
                         }}
                       >
-                        + Manage / New Role...
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                            Text Color Tool
+                          </span>
+                          {activeColorTool !== null && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveColorTool(null);
+                                setActivePopover(null);
+                                toast.info('Color tool exited');
+                              }}
+                              className="text-[10px] text-gray-400 hover:text-white cursor-pointer"
+                            >
+                              Exit Tool
+                            </button>
+                          )}
+                        </div>
 
-              <button
-                type="button"
-                data-action="both-toolbar-roles-btn"
-                onClick={() => togglePopover('roles')}
-                aria-label="Vocal Roles"
-                title="Vocal Performer Roles"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
-                style={{
-                  backgroundColor:
-                    activePopover === 'roles'
-                      ? isEffectiveLight
-                        ? 'rgba(0,0,0,0.12)'
-                        : 'rgba(255,255,255,0.18)'
-                      : isEffectiveLight
-                        ? 'rgba(0,0,0,0.04)'
-                        : 'rgba(255,255,255,0.06)',
-                  color: isEffectiveLight ? '#334155' : '#cbd5e1',
-                }}
-              >
-                <span className="material-symbols-rounded text-lg">mic</span>
-              </button>
-            </div>
+                        <p className="text-[11px] text-gray-400 leading-snug">
+                          Choose a color to activate the brush, then tap any word in the lyrics to paint it:
+                        </p>
 
-            {/* More / Sections / Clear */}
-            <div className="relative flex items-center justify-center">
-              <AnimatePresence>
-                {activePopover === 'more' && (
-                  <motion.div
-                    key="more-popover"
-                    {...popoverMotionRight}
-                    data-testid="both-more-popover"
-                    className="absolute z-50 flex flex-col gap-1.5 p-3 rounded-2xl"
+                        {/* Color Palette */}
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {COLOR_PALETTE.map((c) => {
+                            const isSelected = activeColorTool === (c.value || '');
+                            return (
+                              <button
+                                key={c.label}
+                                type="button"
+                                onClick={() => {
+                                  const newColor = c.value || '';
+                                  setActiveColorTool(newColor);
+                                  setActivePopover(null);
+                                  if (activeSelection && activeSelection.start !== activeSelection.end) {
+                                    handleFormatColor(newColor);
+                                  }
+                                  if (newColor) {
+                                    toast.success(`Color tool active: tap words to apply ${c.label}`);
+                                  } else {
+                                    toast.info('Color reset tool active: tap words to reset color');
+                                  }
+                                }}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-transform active:scale-90 cursor-pointer ${
+                                  isSelected ? 'ring-2 ring-blue-500 scale-105' : ''
+                                }`}
+                                style={{
+                                  backgroundColor: c.value || 'transparent',
+                                  borderColor: isSelected
+                                    ? '#3b82f6'
+                                    : isEffectiveLight
+                                      ? 'rgba(0,0,0,0.15)'
+                                      : 'rgba(255,255,255,0.2)',
+                                }}
+                                title={c.label}
+                              >
+                                {!c.value && (
+                                  <span className="material-symbols-rounded text-xs text-gray-400">format_color_reset</span>
+                                )}
+                                {isSelected && c.value && (
+                                  <span
+                                    className="material-symbols-rounded text-xs"
+                                    style={{ color: c.value === '#ffffff' ? '#000000' : '#ffffff' }}
+                                  >
+                                    check
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Bold Toggle */}
+                        <div className="pt-1 border-t border-white/10">
+                          <button
+                            type="button"
+                            data-testid="toolbar-bold-btn"
+                            onClick={() => {
+                              handleFormatBold();
+                            }}
+                            className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg border text-xs font-bold transition active:scale-95 cursor-pointer hover:bg-white/5"
+                            style={{
+                              backgroundColor: 'rgba(255,255,255,0.06)',
+                              borderColor: 'var(--c-border, rgba(255,255,255,0.12))',
+                              color: 'var(--c-text-primary, #ffffff)',
+                            }}
+                          >
+                            <span className="w-4 h-4 rounded bg-white/10 flex items-center justify-center font-black text-xs">
+                              B
+                            </span>
+                            <span>Toggle Bold</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="button"
+                    data-testid="toolbar-color-btn"
+                    data-action="both-toolbar-style-btn"
+                    onClick={() => togglePopover('style')}
+                    aria-label="Text Color and Styling"
+                    title={activeColorTool !== null ? 'Color tool active (tap to change/exit)' : 'Text Color'}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
                     style={{
-                      ...(popoverPlacement === 'bottom'
-                        ? { top: 'calc(100% + 14px)' }
-                        : { bottom: 'calc(100% + 14px)' }),
-                      right: 0,
-                      width: 210,
-                      backgroundColor: popoverBg,
-                      border: popoverBorder,
-                      boxShadow: popoverShadow,
-                      backdropFilter: 'var(--surface-float-blur, blur(20px))',
-                      WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
+                      backgroundColor:
+                        activeColorTool !== null
+                          ? `${activeColorTool || '#3b82f6'}28`
+                          : activePopover === 'style'
+                            ? isEffectiveLight
+                              ? 'rgba(0,0,0,0.12)'
+                              : 'rgba(255,255,255,0.18)'
+                            : isEffectiveLight
+                              ? 'rgba(0,0,0,0.04)'
+                              : 'rgba(255,255,255,0.06)',
+                      border: activeColorTool !== null ? `1.5px solid ${activeColorTool || '#3b82f6'}` : 'none',
+                      color: activeColorTool || documentColor || (isEffectiveLight ? '#334155' : '#cbd5e1'),
                     }}
                   >
-                    <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
-                        Song Actions
-                      </span>
-                    </div>
+                    <span className="material-symbols-rounded text-lg">palette</span>
+                  </button>
+                </div>
 
-                    {/* Toggle Edit Mode */}
-                    <button
-                      type="button"
-                      data-testid="toolbar-more-edit-toggle-btn"
-                      onClick={() => {
-                        if (isEditMode) {
-                          setIsEditMode(false);
-                          setEditingLineId(null);
-                          toast.success('Read-only mode active');
-                        } else {
-                          setIsEditMode(true);
-                          toast.info('Edit mode active: tap any line to type');
-                        }
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
-                      style={{ color: isEditMode ? accent.from : 'var(--c-text-primary)' }}
-                    >
-                      <span className="material-symbols-rounded text-base" style={{ color: isEditMode ? accent.from : 'var(--c-text-secondary)' }}>
-                        {isEditMode ? 'check_circle' : 'edit_note'}
-                      </span>
-                      <span>{isEditMode ? 'Exit Edit Mode (Done)' : 'Enter Edit Mode'}</span>
-                    </button>
+                {/* More / Sections / Clear */}
+                <div className="relative flex items-center justify-center">
+                  <AnimatePresence>
+                    {activePopover === 'more' && (
+                      <motion.div
+                        key="more-popover"
+                        {...popoverMotionRight}
+                        data-testid="both-more-popover"
+                        className="absolute z-50 flex flex-col gap-1.5 p-3 rounded-2xl"
+                        style={{
+                          ...(popoverPlacement === 'bottom'
+                            ? { top: 'calc(100% + 14px)' }
+                            : { bottom: 'calc(100% + 14px)' }),
+                          right: 0,
+                          width: 210,
+                          backgroundColor: popoverBg,
+                          border: popoverBorder,
+                          boxShadow: popoverShadow,
+                          backdropFilter: 'var(--surface-float-blur, blur(20px))',
+                          WebkitBackdropFilter: 'var(--surface-float-blur, blur(20px))',
+                        }}
+                      >
+                        <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                            Song Actions
+                          </span>
+                        </div>
 
-                    {/* Add Section */}
-                    <button
-                      type="button"
-                      data-testid="toolbar-add-section-btn"
-                      onClick={() => {
-                        setShowAddSectionModal(true);
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
-                      style={{ color: 'var(--c-text-primary)' }}
-                    >
-                      <span className="material-symbols-rounded text-base" style={{ color: accent.from }}>
-                        layers
-                      </span>
-                      <span>+ Add Section</span>
-                    </button>
+                        {/* Add Section */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-add-section-btn"
+                          onClick={() => {
+                            setShowAddSectionModal(true);
+                            setActivePopover(null);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                          style={{ color: 'var(--c-text-primary)' }}
+                        >
+                          <span className="material-symbols-rounded text-base" style={{ color: accent.from }}>
+                            layers
+                          </span>
+                          <span>+ Add Section</span>
+                        </button>
 
+                        {/* Add Interlude */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-add-interlude-btn"
+                          onClick={() => {
+                            handleAddInterludeLine();
+                            setActivePopover(null);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                          style={{ color: 'var(--c-text-primary)' }}
+                        >
+                          <span className="material-symbols-rounded text-base text-gray-400">timer</span>
+                          <span>+ Add Timed Interlude</span>
+                        </button>
 
-                    {/* Add Interlude */}
-                    <button
-                      type="button"
-                      data-testid="toolbar-add-interlude-btn"
-                      onClick={() => {
-                        handleAddInterludeLine();
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
-                      style={{ color: 'var(--c-text-primary)' }}
-                    >
-                      <span className="material-symbols-rounded text-base text-gray-400">timer</span>
-                      <span>+ Add Timed Interlude</span>
-                    </button>
+                        {/* Paste Lyrics */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-paste-btn"
+                          data-action="both-toolbar-paste-btn"
+                          onClick={() => {
+                            setActivePopover(null);
+                            handlePasteLyricsFromClipboard();
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                          style={{ color: 'var(--c-text-primary)' }}
+                        >
+                          <span className="material-symbols-rounded text-base text-gray-400">content_paste</span>
+                          <span>Paste Lyrics</span>
+                        </button>
 
-                    {/* Copy Lyrics */}
-                    <button
-                      type="button"
-                      data-testid="toolbar-copy-btn"
-                      onClick={() => {
-                        handleCopyLyricsToClipboard();
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
-                      style={{ color: 'var(--c-text-primary)' }}
-                    >
-                      <span className="material-symbols-rounded text-base text-gray-400">content_copy</span>
-                      <span>Copy Lyrics & Chords</span>
-                    </button>
+                        {/* Copy Lyrics */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-copy-btn"
+                          onClick={() => {
+                            handleCopyLyricsToClipboard();
+                            setActivePopover(null);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                          style={{ color: 'var(--c-text-primary)' }}
+                        >
+                          <span className="material-symbols-rounded text-base text-gray-400">content_copy</span>
+                          <span>Copy Lyrics & Chords</span>
+                        </button>
 
-                    <div className="my-1 border-t border-white/10" />
+                        {/* Vocal Roles */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-role-btn"
+                          onClick={() => {
+                            const sel = activeSelectionRef.current;
+                            if (sel) {
+                              setRolePickerTarget({ sectionId: sel.sectionId, lineId: sel.lineId });
+                            } else if (currentDoc.sections.length > 0) {
+                              setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
+                            }
+                            setActivePopover(null);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
+                          style={{ color: 'var(--c-text-primary)' }}
+                        >
+                          <span className="material-symbols-rounded text-base text-gray-400">mic</span>
+                          <span>Vocal Roles...</span>
+                        </button>
 
-                    {/* Clear Lyrics */}
-                    <button
-                      type="button"
-                      data-testid="toolbar-clear-btn"
-                      onClick={() => {
-                        setShowClearConfirm(true);
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-rose-500/10 text-rose-400 text-left"
-                    >
-                      <span className="material-symbols-rounded text-base">delete</span>
-                      <span>Clear All Lyrics</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        <div className="my-1 border-t border-white/10" />
 
-              <button
-                type="button"
-                data-testid="both-toolbar-more-btn"
-                onClick={() => togglePopover('more')}
-                aria-label="More Song Actions"
-                title="More Actions"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
-                style={{
-                  backgroundColor:
-                    activePopover === 'more'
-                      ? isEffectiveLight
-                        ? 'rgba(0,0,0,0.12)'
-                        : 'rgba(255,255,255,0.18)'
-                      : isEffectiveLight
-                        ? 'rgba(0,0,0,0.04)'
-                        : 'rgba(255,255,255,0.06)',
-                  color: isEffectiveLight ? '#334155' : '#cbd5e1',
-                }}
-              >
-                <span className="material-symbols-rounded text-lg">more_horiz</span>
-              </button>
-            </div>
-          </div>
-        </aside>
-          );
-          return typeof document !== 'undefined' ? createPortal(dockContent, document.body) : dockContent;
-        })()}
+                        {/* Clear Lyrics */}
+                        <button
+                          type="button"
+                          data-testid="toolbar-clear-btn"
+                          onClick={() => {
+                            setShowClearConfirm(true);
+                            setActivePopover(null);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-rose-500/10 text-rose-400 text-left"
+                        >
+                          <span className="material-symbols-rounded text-base">delete</span>
+                          <span>Clear All Lyrics</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="button"
+                    data-testid="both-toolbar-more-btn"
+                    onClick={() => togglePopover('more')}
+                    aria-label="More Song Actions"
+                    title="More Actions"
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                    style={{
+                      backgroundColor:
+                        activePopover === 'more'
+                          ? isEffectiveLight
+                            ? 'rgba(0,0,0,0.12)'
+                            : 'rgba(255,255,255,0.18)'
+                          : isEffectiveLight
+                            ? 'rgba(0,0,0,0.04)'
+                            : 'rgba(255,255,255,0.06)',
+                      color: isEffectiveLight ? '#334155' : '#cbd5e1',
+                    }}
+                  >
+                    <span className="material-symbols-rounded text-lg">more_horiz</span>
+                  </button>
+                </div>
+              </div>
+            </aside>,
+            document.body
+          )}
       </main>
 
       {/* ── DIALOG: REPOSITION / REPLACE / REMOVE CHORD ── */}
@@ -2476,6 +2394,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Canonical Guitar Fretboard Diagram Preview */}
+              {resolvedChordObj && (
+                <div className="flex flex-col items-center justify-center p-3 rounded-2xl border border-white/10 bg-white/5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 self-start">
+                    Fretboard Diagram
+                  </span>
+                  <DetailFretboardDiagram
+                    chordData={resolvedChordObj.guitar}
+                    maxWidth="180px"
+                    accentColor={accent.from}
+                    displayMode="notes"
+                  />
+                </div>
+              )}
 
               {/* Repositioning controls */}
               <div className="flex flex-col gap-1.5">
