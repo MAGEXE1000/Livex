@@ -118,7 +118,7 @@ export function calculateSongTimingSchedule(
   const beatDurationMs = 60000 / referenceSpeed;
 
   const targetSec =
-    options?.targetDurationOverride !== undefined
+    options && 'targetDurationOverride' in options
       ? options.targetDurationOverride
       : preset.targetDurationSeconds;
 

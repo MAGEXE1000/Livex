@@ -431,5 +431,34 @@ describe('SongTimingEngine Verification Suite', () => {
       expect(schedule.referenceSpeed).toBe(450);
       expect(schedule.effectiveSpeed).toBe(450);
     });
+
+    it('targetDurationOverride: undefined explicitly clears preset targetDurationSeconds and restores speed scaling', () => {
+      const songWithDuration: SongPreset = {
+        ...mockSong,
+        targetDurationSeconds: 180,
+      };
+
+      // When target duration is locked, speed changes do not scale duration
+      const lockedSpeed60 = calculateSongTimingSchedule(songWithDuration, { speedOverride: 60 });
+      const lockedSpeed240 = calculateSongTimingSchedule(songWithDuration, { speedOverride: 240 });
+      expect(lockedSpeed60.effectiveDurationMs).toBe(180000);
+      expect(lockedSpeed240.effectiveDurationMs).toBe(180000);
+
+      // When explicitly cleared via targetDurationOverride: undefined, speed directly drives progression
+      const unlockedSpeed60 = calculateSongTimingSchedule(songWithDuration, {
+        speedOverride: 60,
+        targetDurationOverride: undefined,
+      });
+      const unlockedSpeed240 = calculateSongTimingSchedule(songWithDuration, {
+        speedOverride: 240,
+        targetDurationOverride: undefined,
+      });
+
+      // Speed 240 is 4x faster than Speed 60
+      expect(unlockedSpeed240.lines[0].durationMs).toBe(Math.round(unlockedSpeed60.lines[0].durationMs / 4));
+      expect(unlockedSpeed240.chords[0].durationMs).toBe(Math.round(unlockedSpeed60.chords[0].durationMs / 4));
+      expect(unlockedSpeed240.effectiveDurationMs).toBe(Math.round(unlockedSpeed60.effectiveDurationMs / 4));
+    });
   });
 });
+

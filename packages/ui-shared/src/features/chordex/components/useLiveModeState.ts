@@ -450,6 +450,9 @@ export function useLiveModeState(
   const [speed, setSpeedState] = useState(initialSpeed);
   const [seekToken, setSeekToken] = useState(0);
 
+  const wordRemainingMsRef = useRef<number>(0);
+  const wordStartTimestampRef = useRef<number>(0);
+
   // Sync if preset.speed or preset.bpm changes externally
   useEffect(() => {
     const next = preset.speed || preset.bpm;
@@ -466,10 +469,19 @@ export function useLiveModeState(
         nextSpeed = Math.max(20, Math.min(1200, Math.round(raw)));
         return nextSpeed;
       });
+      
+      setTargetDurationSecondsState(undefined);
+      wordRemainingMsRef.current = 0;
+      wordStartTimestampRef.current = 0;
+
       if (preset?.id) {
         queueMicrotask(() => {
           try {
-            useChordStore.getState().updatePreset(preset.id, { speed: nextSpeed, bpm: nextSpeed });
+            useChordStore.getState().updatePreset(preset.id, { 
+              speed: nextSpeed, 
+              bpm: nextSpeed, 
+              targetDurationSeconds: undefined 
+            });
           } catch (_) {}
         });
       }
@@ -544,12 +556,15 @@ export function useLiveModeState(
 
   // ── Deterministic Musical Timing Schedule ────────────────────────
   const timingSchedule = useMemo(() => {
-    return calculateSongTimingSchedule(preset, {
-      bpmOverride,
-      beatsPerChord,
-      beatsPerLine,
-      targetDurationOverride: targetDurationSeconds,
-    });
+    return calculateSongTimingSchedule(
+      { ...preset, targetDurationSeconds },
+      {
+        bpmOverride,
+        beatsPerChord,
+        beatsPerLine,
+        targetDurationOverride: targetDurationSeconds,
+      }
+    );
   }, [preset, bpmOverride, beatsPerChord, beatsPerLine, targetDurationSeconds]);
 
   // ── Teleprompter Lines Data ─────────────────────────────────────
@@ -1112,8 +1127,6 @@ export function useLiveModeState(
 
   const currentLineIdxRef = useRef(currentLineIdx);
   const currentWordIdxRef = useRef(currentWordIdx);
-  const wordRemainingMsRef = useRef<number>(0);
-  const wordStartTimestampRef = useRef<number>(0);
 
   useEffect(() => {
     currentLineIdxRef.current = currentLineIdx;
