@@ -1,14 +1,13 @@
-# Version 4.6.67
+# Version 4.6.68
 
 Release Date: 2026-09-30
 
 ### Added
-- Modern PDF Export Screen: Streamlined PDF export interface with instant header action, unobscured bottom drawer with paper format (A4, Letter), orientation (Portrait, Landscape), and theme toggles.
-- Enhanced Song Library Experience: Modernized song cards with single-line metadata badges, custom song cover picker and local persistence, and clean full song export.
-- First-Class Timed Interludes in Song Editor: Added support for inserting timed interlude/solo segments anywhere in song lyrics with custom explicit duration and live teleprompter countdown.
+- Above-Word Inline Chord Badges in Both Mode: Replaced the vertical stacked chord list with compact inline chord chips anchored directly above specific lyrics/words with character-offset synchronization.
+- Canonical Fretboard Diagram Preview in Song Editor: Tapping any inline chord tag displays the full-fidelity DetailFretboardDiagram showing guitar fingerings, muted strings, and note positions.
+- Clean View Mode & Floating Edit Button: In view mode, the bottom toolbar is hidden and a single floating Pencil FAB is rendered in the bottom right, with lyrics protected against accidental touch/keyboard editing.
 
 ### Fixed
-- Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.
-- Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.
-- Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.
-- AMOLED Material Harmonization: Standardized backdrop filters, blur, and translucency tokens across Dark, Light, and AMOLED modes.
+- Reorganized Both-Mode Edit Toolbar: Placed Undo and Redo on the left, a neutral standard Chord tool in the center, Text Styling/Color tool and clean More menu on the right-center, and anchored the primary Done action all the way to the far right.
+- Cleaned More Action Menu: Removed redundant "Enter edit mode" and "Add lyric line" items, retaining "+ Add Section" (with layers icon), "+ Add Timed Interlude", and essential song actions.
+- Unobscured Viewport Docking: Removed intrusive mode toggle toasts and anchored the bottom dock persistently as a mobile floating navbar.
