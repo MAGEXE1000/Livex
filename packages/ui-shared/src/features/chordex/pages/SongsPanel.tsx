@@ -2596,43 +2596,61 @@ function ExportModal({
   );
 }
 
-/* ──────────────────── JSON Export ──────────────────── */
+/* ──────────────────── Song Package Export (.livex / .json) ──────────────────── */
 export interface ChordexJsonFile {
-  _app: 'Chordex';
-  _version: 1;
+  _app: 'Livex' | 'Chordex';
+  _version: number;
+  id?: string;
   songName: string;
+  name?: string;
+  title?: string;
   artist: string;
   bpm: number;
+  speed?: number;
   key: string;
   notes: string;
-  chords: { name: string; position: number }[];
+  chords: { id?: string; name: string; position: number }[];
+  chordIds?: string[];
   sections?: SongSection[];
   lyrics?: SongLyricsDocument;
+  targetDurationSeconds?: number;
+  coverImage?: string;
+  exportedAt?: number;
 }
 
 async function exportPresetToJSON(
   preset: SongPreset,
   mode: 'save' | 'share' = 'share'
 ): Promise<boolean> {
-  logActivity('export', `Exported ${preset.name} to JSON`, 'Chordex');
+  logActivity('export', `Exported ${preset.name}`, 'Chordex');
   const idToName = new Map(getAllChords().map((c) => [c.id, c.name]));
   const file: ChordexJsonFile = {
-    _app: 'Chordex',
-    _version: 1,
+    _app: 'Livex',
+    _version: 2,
+    id: preset.id,
     songName: preset.name,
+    name: preset.name,
+    title: preset.name,
     artist: preset.artist,
     bpm: preset.bpm,
+    speed: preset.speed || preset.bpm,
     key: preset.key,
     notes: preset.notes,
     chords: preset.chords.map((id, i) => ({
+      id,
       name: idToName.get(id) ?? id,
       position: i + 1,
     })),
+    chordIds: preset.chords,
     sections: preset.sections,
     lyrics: preset.lyrics,
+    targetDurationSeconds: preset.targetDurationSeconds,
+    coverImage: preset.coverImage,
+    exportedAt: Date.now(),
   };
   const content = JSON.stringify(file, null, 2);
-  const fileName = `${preset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+  const baseSlug = preset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'song';
+  const fileName = `${baseSlug}.livex`;
 
   if (Capacitor.isNativePlatform()) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem');
@@ -2678,7 +2696,7 @@ async function exportPresetToJSON(
         await Share.share({
           title: preset.name,
           url: cacheResult.uri,
-          dialogTitle: 'Share your Chordex song',
+          dialogTitle: `Share ${preset.name}`,
         });
       } catch {
         /* User cancelled or share unavailable */
@@ -2739,6 +2757,8 @@ interface ParsedImport {
   unresolvedCount: number;
   sections?: SongSection[];
   lyrics?: SongLyricsDocument;
+  targetDurationSeconds?: number;
+  coverImage?: string;
 }
 
 export interface ImportSongContentProps {
@@ -2813,9 +2833,12 @@ export function ImportSongContent({
 
   const parseFile = useCallback(
     (file: File) => {
-      const isJson = file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
-      if (!isJson) {
-        setErrorMsg(t.songs.supportsJson);
+      const isSupported =
+        file.name.toLowerCase().endsWith('.json') ||
+        file.name.toLowerCase().endsWith('.livex') ||
+        file.type === 'application/json';
+      if (!isSupported) {
+        setErrorMsg('Please select a .livex or .json song file.');
         setStage('error');
         return;
       }
@@ -2826,33 +2849,51 @@ export function ImportSongContent({
           if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
             throw new Error('Not a valid JSON object.');
 
-          const songName = (raw.songName ?? raw.name ?? '').trim();
+          const songName = (raw.songName ?? raw.name ?? raw.title ?? '').trim();
           if (!songName) throw new Error('Missing required field: songName');
-          if (!Array.isArray(raw.chords))
-            throw new Error('Missing required field: chords (must be an array)');
-          if (raw.chords.length === 0) throw new Error('The chords array is empty.');
 
           let unresolvedCount = 0;
           const resolvedIds: string[] = [];
-          for (const c of raw.chords) {
-            if (typeof c !== 'object' || c === null || typeof c.name !== 'string')
-              throw new Error('Each chord entry must have a "name" field.');
-            const id = resolveChordId(c.name);
-            if (id) resolvedIds.push(id);
-            else unresolvedCount++;
+
+          if (Array.isArray(raw.chordIds) && raw.chordIds.length > 0) {
+            for (const id of raw.chordIds) {
+              if (typeof id === 'string' && id.trim()) {
+                resolvedIds.push(id.trim());
+              }
+            }
+          } else if (Array.isArray(raw.chords)) {
+            for (const c of raw.chords) {
+              if (typeof c === 'string') {
+                const id = resolveChordId(c) || c;
+                resolvedIds.push(id);
+              } else if (typeof c === 'object' && c !== null) {
+                if (c.id && typeof c.id === 'string') {
+                  resolvedIds.push(c.id);
+                } else if (typeof c.name === 'string') {
+                  const id = resolveChordId(c.name);
+                  if (id) resolvedIds.push(id);
+                  else unresolvedCount++;
+                }
+              }
+            }
           }
 
           const result: ParsedImport = {
             name: songName,
             artist: (raw.artist ?? '').trim(),
-            bpm: Math.max(0, Math.min(999, parseInt(raw.bpm) || 0)),
-            key: (raw.key ?? '').trim(),
+            bpm: Math.max(40, Math.min(400, parseInt(raw.bpm || raw.speed) || 120)),
+            key: (raw.key ?? '').trim() || 'C',
             notes: (raw.notes ?? '').trim(),
             chords: resolvedIds,
-            rawCount: raw.chords.length,
+            rawCount: resolvedIds.length + unresolvedCount,
             unresolvedCount,
             sections: Array.isArray(raw.sections) ? raw.sections : undefined,
             lyrics: raw.lyrics && typeof raw.lyrics === 'object' ? raw.lyrics : undefined,
+            targetDurationSeconds:
+              typeof raw.targetDurationSeconds === 'number' && raw.targetDurationSeconds > 0
+                ? raw.targetDurationSeconds
+                : undefined,
+            coverImage: typeof raw.coverImage === 'string' ? raw.coverImage : undefined,
           };
 
           setParsed(result);
@@ -2901,11 +2942,14 @@ export function ImportSongContent({
         name: nameOverride ?? parsed.name,
         artist: parsed.artist,
         bpm: parsed.bpm,
+        speed: parsed.bpm,
         key: parsed.key,
         notes: parsed.notes,
         chords: parsed.chords,
         sections: parsed.sections,
         lyrics: parsed.lyrics,
+        targetDurationSeconds: parsed.targetDurationSeconds,
+        coverImage: parsed.coverImage,
       },
       replaceId ?? undefined
     );
@@ -2991,7 +3035,7 @@ export function ImportSongContent({
                   margin: 0,
                 }}
               >
-                {t.songs.supportsJson}
+                {t.songs.supportsJson ? `${t.songs.supportsJson} (.livex / .json)` : 'Supports .livex and .json song packages'}
               </p>
             </div>
             <Button
@@ -3007,7 +3051,7 @@ export function ImportSongContent({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json,application/json"
+            accept=".json,.livex,application/json"
             onChange={handleFileInput}
             style={{ display: 'none' }}
           />
@@ -3873,10 +3917,18 @@ const PresetCard = React.memo(
       () => setActivePreset(preset.id),
       [setActivePreset, preset.id]
     );
-    const handleLiveClick = useCallback(() => {
-      setActivePreset(preset.id);
-      setTimeout(() => setShowLive(true), 100);
-    }, [setActivePreset, preset.id, setShowLive]);
+    const [isExporting, setIsExporting] = useState(false);
+    const handleExportClick = useCallback(async () => {
+      setIsExporting(true);
+      try {
+        await exportPresetToJSON(preset, 'share');
+        toast.success(`Exported ${preset.name}`);
+      } catch (err) {
+        toast.error('Failed to export song package');
+      } finally {
+        setIsExporting(false);
+      }
+    }, [preset]);
     const handlePdfClick = useCallback(() => setExportModal(preset), [setExportModal, preset]);
     const handleEditClick = useCallback(() => {
       setEditingId(preset.id);
@@ -3904,19 +3956,28 @@ const PresetCard = React.memo(
           className="w-full text-left p-3.5 flex items-center gap-3.5 active:scale-[0.99] transition-transform cursor-pointer"
         >
           <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border"
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border overflow-hidden relative"
             style={{
               backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
               borderColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
               color: 'var(--c-accent-from, #2563EB)',
             }}
           >
-            <span
-              className="material-symbols-rounded text-2xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              queue_music
-            </span>
+            {preset.coverImage ? (
+              <img
+                src={preset.coverImage}
+                alt={preset.name}
+                data-testid={`preset-cover-${preset.id}`}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <span
+                className="material-symbols-rounded text-2xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                queue_music
+              </span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h3
@@ -3936,10 +3997,18 @@ const PresetCard = React.memo(
                 {preset.artist}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {/* Single uniform horizontal metadata row */}
+            <div
+              className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+              }}
+            >
               {preset.key && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1"
+                  data-testid={`preset-key-${preset.id}`}
+                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
                   style={{
                     backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
                     borderColor: 'var(--c-border, #E3E6EB)',
@@ -3947,12 +4016,13 @@ const PresetCard = React.memo(
                   }}
                 >
                   <span style={{ color: 'var(--c-text-secondary, #6B7280)' }}>#</span>
-                  {preset.key}
+                  <span>{preset.key}</span>
                 </span>
               )}
               {(preset.speed || preset.bpm) && (preset.speed || preset.bpm) > 0 && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1"
+                  data-testid={`preset-bpm-${preset.id}`}
+                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
                   style={{
                     backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
                     borderColor: 'var(--c-border, #E3E6EB)',
@@ -3960,35 +4030,38 @@ const PresetCard = React.memo(
                   }}
                 >
                   <span className="material-symbols-rounded text-[11px]">speed</span>
-                  BPM {preset.speed || preset.bpm}
+                  <span>{preset.speed || preset.bpm} BPM</span>
                 </span>
               )}
+              {preset.targetDurationSeconds && preset.targetDurationSeconds > 0 ? (
+                <span
+                  data-testid={`preset-duration-${preset.id}`}
+                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
+                  style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                    borderColor: 'rgba(59, 130, 246, 0.25)',
+                    color: 'var(--c-accent-from, #2563eb)',
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[11px]">timer</span>
+                  <span>{formatDurationMmSs(preset.targetDurationSeconds)}</span>
+                </span>
+              ) : null}
               <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                data-testid={`preset-chords-${preset.id}`}
+                className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
                 style={{
                   backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
                   borderColor: 'var(--c-border, #E3E6EB)',
                   color: 'var(--c-text-secondary, #6B7280)',
                 }}
               >
-                {preset.sections && preset.sections.length > 0
-                  ? `${preset.sections.length} ${preset.sections.length === 1 ? 'Section' : 'Sections'}`
-                  : t.songs.chordsLabel(preset.chords.length)}
-              </span>
-              {preset.targetDurationSeconds && preset.targetDurationSeconds > 0 ? (
-                <span
-                  data-testid={`preset-duration-${preset.id}`}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold border inline-flex items-center gap-1"
-                  style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                    borderColor: 'rgba(59, 130, 246, 0.25)',
-                    color: '#2563eb',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>timer</span>
-                  {formatDurationMmSs(preset.targetDurationSeconds)}
+                <span>
+                  {preset.sections && preset.sections.length > 0
+                    ? `${preset.sections.length} ${preset.sections.length === 1 ? 'Section' : 'Sections'}`
+                    : t.songs.chordsLabel(preset.chords.length)}
                 </span>
-              ) : null}
+              </span>
             </div>
           </div>
           <span
@@ -3999,23 +4072,26 @@ const PresetCard = React.memo(
           </span>
         </button>
 
-        {/* Quick action row: Live | Export PDF | Edit | Delete */}
+        {/* Quick action row: Export | PDF | Edit | Delete */}
         <div
           className="flex items-center border-t text-xs font-semibold"
           style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
         >
           <button
             type="button"
-            onClick={handleLiveClick}
-            data-testid={`live-${preset.id}`}
-            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
+            onClick={handleExportClick}
+            disabled={isExporting}
+            data-testid={`export-${preset.id}`}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75 disabled:opacity-50"
             style={{
               borderColor: 'var(--c-border, #E3E6EB)',
               color: 'var(--c-accent-from, #2563EB)',
             }}
+            title="Export full song package (.livex)"
+            aria-label={`Export ${preset.name}`}
           >
-            <span className="material-symbols-rounded text-base">play_circle</span>
-            <span>Live</span>
+            <span className="material-symbols-rounded text-base">ios_share</span>
+            <span>Export</span>
           </button>
           <button
             type="button"
@@ -4061,6 +4137,7 @@ const PresetCard = React.memo(
     return (
       prev.preset.id === next.preset.id &&
       prev.preset.updatedAt === next.preset.updatedAt &&
+      prev.preset.coverImage === next.preset.coverImage &&
       prev.accent.from === next.accent.from
     );
   }
@@ -4561,6 +4638,7 @@ export default function SongsPanel() {
           editingPreset.targetDurationSeconds && editingPreset.targetDurationSeconds > 0
             ? String(editingPreset.targetDurationSeconds % 60)
             : '',
+        coverImage: editingPreset.coverImage,
       }
     : pendingImport
       ? {
@@ -4578,6 +4656,7 @@ export default function SongsPanel() {
             pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
               ? String(pendingImport.targetDurationSeconds % 60)
               : '',
+          coverImage: pendingImport.coverImage,
         }
       : undefined;
 
@@ -4601,6 +4680,7 @@ export default function SongsPanel() {
         key: data.key,
         notes: data.notes,
         targetDurationSeconds,
+        coverImage: data.coverImage,
       });
     } else {
       const chordsToImport = pendingImport?.chordIds || [];
@@ -4625,6 +4705,7 @@ export default function SongsPanel() {
         chords: chordsToImport,
         sections: sectionsToImport,
         targetDurationSeconds,
+        coverImage: data.coverImage,
       });
 
       clearPendingImport();

@@ -12,6 +12,7 @@ export interface FormData {
   notes: string;
   durationMinutes?: string;
   durationSeconds?: string;
+  coverImage?: string;
 }
 const KEYS = [
   'C',
@@ -59,8 +60,45 @@ export function PresetFormContent({
 }: PresetFormContentProps) {
   const t = useT();
   const [form, setForm] = useState<FormData>(
-    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '', durationMinutes: '', durationSeconds: '' }
+    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '', durationMinutes: '', durationSeconds: '', coverImage: undefined }
   );
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 512;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setForm((f) => ({ ...f, coverImage: dataUrl }));
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const getFormattedDuration = (min?: string, sec?: string) => {
     if (!min && !sec) return '';
@@ -104,6 +142,120 @@ export function PresetFormContent({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '6px 4px 4px 4px' }}>
+      {/* Cover Image Selection Control */}
+      <div>
+        <label style={labelStyle}>Cover Image</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '16px',
+              backgroundColor: 'var(--c-surface-high)',
+              border: '1px solid var(--c-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              flexShrink: 0,
+              position: 'relative',
+            }}
+          >
+            {form.coverImage ? (
+              <img
+                src={form.coverImage}
+                alt="Song cover"
+                data-testid="song-cover-preview"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span
+                className="material-symbols-rounded"
+                style={{
+                  fontSize: '28px',
+                  color: 'var(--c-text-secondary)',
+                  opacity: 0.6,
+                }}
+              >
+                album
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleCoverSelect}
+              data-testid="song-cover-file-input"
+            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                data-testid="upload-song-cover-btn"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  background: 'var(--c-surface-high)',
+                  border: '1px solid var(--c-border)',
+                  color: 'var(--c-text-primary)',
+                  fontFamily: 'var(--font-headline)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                  {form.coverImage ? 'edit' : 'add_photo_alternate'}
+                </span>
+                {form.coverImage ? 'Change Cover' : 'Add Cover Image'}
+              </button>
+              {form.coverImage && (
+                <button
+                  type="button"
+                  data-testid="remove-song-cover-btn"
+                  onClick={() => setForm((f) => ({ ...f, coverImage: undefined }))}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#EF4444',
+                    fontFamily: 'var(--font-headline)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title="Remove cover image"
+                >
+                  <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                    delete
+                  </span>
+                  Remove
+                </button>
+              )}
+            </div>
+            <span
+              style={{
+                fontSize: '10px',
+                color: 'var(--c-text-secondary)',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              JPG or PNG (auto-optimized max 512×512)
+            </span>
+          </div>
+        </div>
+      </div>
+
       <Input
         label={t.songs.songTitle}
         value={form.name}
@@ -124,9 +276,9 @@ export function PresetFormContent({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <Input
           type="number"
-          label="Speed"
-          min={20}
-          max={1200}
+          label="BPM"
+          min={40}
+          max={400}
           value={form.speed || form.bpm}
           onChange={(e) => setForm((f) => ({ ...f, speed: e.target.value, bpm: e.target.value }))}
         />
@@ -169,7 +321,7 @@ export function PresetFormContent({
                 padding: '0 4px',
               }}
             >
-              Auto (from Speed)
+              Auto (from BPM)
             </button>
           )}
         </div>
