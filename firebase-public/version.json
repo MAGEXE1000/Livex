@@ -1,27 +1,15 @@
 {
   "platform": "web",
-  "version": "4.6.67",
-  "versionName": "4.6.67",
-  "versionCode": 40667,
-  "version_code": 40667,
-  "commit": "c124ddde",
-  "releasedAt": "9/30/2026, 11:43:28 AM CST",
-  "buildTimestamp": "9/30/2026, 11:43:28 AM CST",
+  "version": "4.6.68",
+  "versionName": "4.6.68",
+  "versionCode": 40668,
+  "version_code": 40668,
+  "commit": "5fa0b50d",
+  "releasedAt": "9/30/2026, 1:39:39 PM CST",
+  "buildTimestamp": "9/30/2026, 1:39:39 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Modern PDF Export Screen: Streamlined PDF export interface with instant header action, unobscured bottom drawer with paper format (A4, Letter), orientation (Portrait, Landscape), and theme toggles.\n• Enhanced Song Library Experience: Modernized song cards with single-line metadata badges, custom song cover picker and local persistence, and clean full song export.\n• First-Class Timed Interludes in Song Editor: Added support for inserting timed interlude/solo segments anywhere in song lyrics with custom explicit duration and live teleprompter countdown.\n• Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.\n• Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.\n• Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.\n• AMOLED Material Harmonization: Standardized backdrop filters, blur, and translucency tokens across Dark, Light, and AMOLED modes.",
-  "whatsNew": "• Modern PDF Export Screen: Streamlined PDF export interface with instant header action, unobscured bottom drawer with paper format (A4, Letter), orientation (Portrait, Landscape), and theme toggles.\n• Enhanced Song Library Experience: Modernized song cards with single-line metadata badges, custom song cover picker and local persistence, and clean full song export.\n• First-Class Timed Interludes in Song Editor: Added support for inserting timed interlude/solo segments anywhere in song lyrics with custom explicit duration and live teleprompter countdown.\n• Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.\n• Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.\n• Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.\n• AMOLED Material Harmonization: Standardized backdrop filters, blur, and translucency tokens across Dark, Light, and AMOLED modes.",
-  "releaseNotes": {
-    "added": [
-      "Modern PDF Export Screen: Streamlined PDF export interface with instant header action, unobscured bottom drawer with paper format (A4, Letter), orientation (Portrait, Landscape), and theme toggles.",
-      "Enhanced Song Library Experience: Modernized song cards with single-line metadata badges, custom song cover picker and local persistence, and clean full song export.",
-      "First-Class Timed Interludes in Song Editor: Added support for inserting timed interlude/solo segments anywhere in song lyrics with custom explicit duration and live teleprompter countdown."
-    ],
-    "fixed": [
-      "Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.",
-      "Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.",
-      "Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.",
-      "AMOLED Material Harmonization: Standardized backdrop filters, blur, and translucency tokens across Dark, Light, and AMOLED modes."
-    ]
-  },
+  "changelog": "",
+  "whatsNew": "",
+  "releaseNotes": {},
   "mandatory": false
 }
