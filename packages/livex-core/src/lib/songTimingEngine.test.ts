@@ -459,6 +459,25 @@ describe('SongTimingEngine Verification Suite', () => {
       expect(unlockedSpeed240.chords[0].durationMs).toBe(Math.round(unlockedSpeed60.chords[0].durationMs / 4));
       expect(unlockedSpeed240.effectiveDurationMs).toBe(Math.round(unlockedSpeed60.effectiveDurationMs / 4));
     });
+
+    it('8-beat musical measure standard: lines advance strictly every 8 beats (2 bars) by default', () => {
+      const songWithoutTarget: SongPreset = {
+        ...mockSong,
+        targetDurationSeconds: undefined,
+      };
+
+      // 192 BPM: 8 * (60,000 / 192) = 2,500ms = 2.50s per line
+      const sched192 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 192, targetDurationOverride: undefined });
+      expect(sched192.lines[0].durationMs).toBe(2500);
+
+      // 152 BPM: 8 * (60,000 / 152) = 3157.89ms -> 3158ms (~3.15s) per line
+      const sched152 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 152, targetDurationOverride: undefined });
+      expect(sched152.lines[0].durationMs).toBe(3158);
+
+      // 120 BPM: 8 * (60,000 / 120) = 4,000ms = 4.00s per line
+      const sched120 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 120, targetDurationOverride: undefined });
+      expect(sched120.lines[0].durationMs).toBe(4000);
+    });
   });
 });
 

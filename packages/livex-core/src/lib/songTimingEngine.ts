@@ -114,7 +114,7 @@ export function calculateSongTimingSchedule(
   );
   const referenceBpm = referenceSpeed;
   const beatsPerChord = options?.beatsPerChord || 4;
-  const beatsPerLine = options?.beatsPerLine || 4;
+  const beatsPerLine = options?.beatsPerLine || 8;
   const beatDurationMs = 60000 / referenceSpeed;
 
   const targetSec =

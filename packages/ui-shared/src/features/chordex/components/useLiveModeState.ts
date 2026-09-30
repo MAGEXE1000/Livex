@@ -359,7 +359,7 @@ export function useLiveModeState(
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [beatsPerChord, setBeatsPerChord] = useState<BeatsPerChord>(4);
-  const [beatsPerLine, setBeatsPerLine] = useState<number>(4);
+  const [beatsPerLine, setBeatsPerLine] = useState<number>(8);
 
   // Teleprompter presentation states with local storage persistence
   const [teleprompterFontSize, setTeleprompterFontSizeState] = useState<TeleprompterFontSize>(() => {

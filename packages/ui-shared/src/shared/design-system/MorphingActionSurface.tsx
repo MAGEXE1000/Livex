@@ -631,6 +631,7 @@ export const MorphingActionSurface: React.FC<MorphingActionSurfaceProps> = ({
                     return (
                       <motion.div
                         key={row.id}
+                        data-testid={`morphing-action-row-${row.id}`}
                         data-disabled={isDisabled ? 'true' : undefined}
                         whileTap={isReduced || isDisabled ? undefined : { scale: 0.98 }}
                         transition={{ duration: 0.08 }}

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   type SongLyricsDocument,
@@ -542,6 +543,103 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }));
     },
     [updateDoc]
+  );
+
+  const [draggedLine, setDraggedLine] = useState<{ sectionId: string; lineId: string } | null>(null);
+
+  const handleMoveLine = useCallback(
+    (fromSectionId: string, fromLineId: string, toSectionId: string, toLineIdx: number) => {
+      updateDoc((doc) => {
+        let lineToMove: SongLyricLine | null = null;
+        const sectionsWithoutLine = doc.sections.map((sec) => {
+          if (sec.id === fromSectionId) {
+            const found = sec.lines.find((l) => l.id === fromLineId);
+            if (found) lineToMove = found;
+            return {
+              ...sec,
+              lines: sec.lines.filter((l) => l.id !== fromLineId),
+            };
+          }
+          return sec;
+        });
+
+        if (!lineToMove) return doc;
+
+        const finalSections = sectionsWithoutLine.map((sec) => {
+          if (sec.id === toSectionId) {
+            const newLines = [...sec.lines];
+            const insertAt = Math.max(0, Math.min(newLines.length, toLineIdx));
+            newLines.splice(insertAt, 0, lineToMove!);
+            return {
+              ...sec,
+              lines: newLines,
+            };
+          }
+          return sec;
+        });
+
+        return {
+          ...doc,
+          sections: finalSections,
+        };
+      });
+      toast.success('Interlude repositioned');
+    },
+    [updateDoc]
+  );
+
+  const handleMoveLineRelative = useCallback(
+    (sectionId: string, currentLineIdx: number, delta: number) => {
+      const secIdx = currentDoc.sections.findIndex((s) => s.id === sectionId);
+      if (secIdx === -1) return;
+      const targetSec = currentDoc.sections[secIdx];
+      const line = targetSec.lines[currentLineIdx];
+      if (!line) return;
+
+      const targetLineIdx = currentLineIdx + delta;
+      if (targetLineIdx >= 0 && targetLineIdx < targetSec.lines.length) {
+        handleMoveLine(sectionId, line.id, sectionId, targetLineIdx);
+      } else if (delta < 0 && secIdx > 0) {
+        const prevSec = currentDoc.sections[secIdx - 1];
+        handleMoveLine(sectionId, line.id, prevSec.id, prevSec.lines.length);
+      } else if (delta > 0 && secIdx < currentDoc.sections.length - 1) {
+        const nextSec = currentDoc.sections[secIdx + 1];
+        handleMoveLine(sectionId, line.id, nextSec.id, 0);
+      }
+    },
+    [currentDoc.sections, handleMoveLine]
+  );
+
+  const handleDragStart = useCallback((e: React.DragEvent, sectionId: string, lineId: string) => {
+    setDraggedLine({ sectionId, lineId });
+    try {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ fromSectionId: sectionId, fromLineId: lineId }));
+      e.dataTransfer.effectAllowed = 'move';
+    } catch (_) {}
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedLine(null);
+  }, []);
+
+  const handleDropOnLine = useCallback(
+    (e: React.DragEvent, targetSectionId: string, targetLineIdx: number) => {
+      e.preventDefault();
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        const data = JSON.parse(raw);
+        if (data.fromSectionId && data.fromLineId) {
+          handleMoveLine(data.fromSectionId, data.fromLineId, targetSectionId, targetLineIdx);
+          setDraggedLine(null);
+          return;
+        }
+      } catch (_) {}
+      if (draggedLine) {
+        handleMoveLine(draggedLine.sectionId, draggedLine.lineId, targetSectionId, targetLineIdx);
+      }
+      setDraggedLine(null);
+    },
+    [draggedLine, handleMoveLine]
   );
 
   // ── INLINE FORMATTING (BOLD & COLOR) ────────────────────────────────
@@ -1129,6 +1227,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         key={line.id || lineIdx}
                         data-testid={`lyric-line-interlude-${section.id}-${lineIdx}`}
                         onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="group/line relative flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-2xl transition-all border my-2 shadow-xs"
                         style={{
                           backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.08)',
@@ -1137,7 +1240,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       >
                         {/* Top row: Icon, Label Input, Duration Pill, Delete Button */}
                         <div className="flex items-center justify-between gap-2.5 flex-wrap">
-                          <div className="flex items-center gap-2.5 flex-1 min-w-[180px]">
+                          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                            {/* Drag handle */}
+                            <div
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, section.id, line.id)}
+                              onDragEnd={handleDragEnd}
+                              data-testid={`interlude-drag-handle-${lineIdx}`}
+                              className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0"
+                              title="Drag to reposition interlude"
+                              aria-label="Drag to reposition interlude"
+                            >
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+
                             <div
                               className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs"
                               style={{
@@ -1169,7 +1285,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             {/* Formatted live duration indicator badge */}
                             <div
                               className="flex items-center gap-1 px-2.5 py-1 rounded-lg border shadow-2xs"
@@ -1189,6 +1305,32 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 {durSec}s
                               </span>
                             </div>
+
+                            {/* Move Up / Move Down buttons */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveLineRelative(section.id, lineIdx, -1);
+                              }}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                              title="Move interlude up"
+                              aria-label="Move interlude up"
+                            >
+                              <span className="material-symbols-rounded text-base">arrow_upward</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveLineRelative(section.id, lineIdx, 1);
+                              }}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                              title="Move interlude down"
+                              aria-label="Move interlude down"
+                            >
+                              <span className="material-symbols-rounded text-base">arrow_downward</span>
+                            </button>
 
                             {/* Delete Button */}
                             <button
@@ -1379,6 +1521,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
                       onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                       className="group/line relative flex flex-col py-1.5 px-2.5 rounded-xl transition-all hover:bg-white/[0.03]"
                     >
                       <div className="flex items-start justify-between gap-2">

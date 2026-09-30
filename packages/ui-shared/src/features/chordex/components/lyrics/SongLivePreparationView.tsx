@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { GripVertical } from 'lucide-react';
 import {
   type SongPreset,
   type SongLyricsDocument,
@@ -69,6 +70,31 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
   const [showSectionMorph, setShowSectionMorph] = useState(false);
   const [showTextMorph, setShowTextMorph] = useState(false);
   const [selectedSectionForRole, setSelectedSectionForRole] = useState<string | null>(null);
+
+  // Floating pencil & dock geometry anchor for contextual morphing popup
+  const pencilButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dockAddButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [pencilRect, setPencilRect] = useState<{
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  // Active cursor/line tracking for cursor-anchored insertion
+  const [activePosition, setActivePosition] = useState<{
+    sectionId: string;
+    lineIndex: number;
+    lineId?: string;
+  } | null>(null);
+
+  // Drag and drop state for interludes
+  const [draggedLine, setDraggedLine] = useState<{ sectionId: string; lineId: string } | null>(null);
+
+  const isEffectiveLight =
+    typeof document !== 'undefined' && document.documentElement.classList.contains('light');
 
   // Available vocal roles (presets + custom saved)
   const combinedVocalRoles = useMemo(() => getCombinedVocalRoles(), []);
@@ -161,24 +187,28 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     [lyricsDoc, sections, onUpdateLyrics]
   );
 
-  // Insert explicit timed silence / interlude
+  // Insert explicit timed silence / interlude (cursor-anchored)
   const handleAddInterludeLine = useCallback(
-    (sectionId?: string) => {
+    (sectionId?: string, afterLineIdx?: number) => {
       if (!lyricsDoc) return;
-      const targetSectionId = sectionId || (sections.length > 0 ? sections[sections.length - 1].id : null);
+      const targetSectionId =
+        sectionId ||
+        activePosition?.sectionId ||
+        (sections.length > 0 ? sections[sections.length - 1].id : null);
+
+      const newLine: SongLyricLine = {
+        id: generateLyricId('line'),
+        type: 'interlude',
+        text: '(Solo)',
+        explicitDurationMs: 15000,
+      };
+
       if (!targetSectionId) {
         const newSec: SongLyricSection = {
           id: generateLyricId('sec'),
           name: 'Interlude',
           type: 'interlude',
-          lines: [
-            {
-              id: generateLyricId('line'),
-              type: 'interlude',
-              text: '(Solo)',
-              explicitDurationMs: 15000,
-            },
-          ],
+          lines: [newLine],
         };
         onUpdateLyrics({
           ...lyricsDoc,
@@ -190,15 +220,17 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
 
       const nextSections = sections.map((sec) => {
         if (sec.id !== targetSectionId) return sec;
-        const newLine: SongLyricLine = {
-          id: generateLyricId('line'),
-          type: 'interlude',
-          text: '(Solo)',
-          explicitDurationMs: 15000,
-        };
+        const newLines = [...sec.lines];
+        const insertAt =
+          afterLineIdx !== undefined
+            ? afterLineIdx + 1
+            : activePosition && activePosition.sectionId === targetSectionId
+            ? activePosition.lineIndex + 1
+            : newLines.length;
+        newLines.splice(insertAt, 0, newLine);
         return {
           ...sec,
-          lines: [...sec.lines, newLine],
+          lines: newLines,
         };
       });
 
@@ -208,8 +240,187 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
       });
       toast.success('Added 15s Timed Interlude');
     },
+    [lyricsDoc, sections, activePosition, onUpdateLyrics]
+  );
+
+  const handleUpdateLineText = useCallback(
+    (sectionId: string, lineId: string, text: string) => {
+      if (!lyricsDoc) return;
+      const nextSections = sections.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        return {
+          ...sec,
+          lines: sec.lines.map((l) => (l.id === lineId ? { ...l, text } : l)),
+        };
+      });
+      onUpdateLyrics({
+        ...lyricsDoc,
+        sections: nextSections,
+      });
+    },
     [lyricsDoc, sections, onUpdateLyrics]
   );
+
+  const handleAddLine = useCallback(
+    (sectionId: string, afterLineIdx?: number) => {
+      if (!lyricsDoc) return;
+      const newLine: SongLyricLine = {
+        id: generateLyricId('line'),
+        type: 'lyric',
+        text: '',
+      };
+      const nextSections = sections.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        const newLines = [...sec.lines];
+        if (afterLineIdx !== undefined && afterLineIdx >= 0) {
+          newLines.splice(afterLineIdx + 1, 0, newLine);
+        } else {
+          newLines.push(newLine);
+        }
+        return {
+          ...sec,
+          lines: newLines,
+        };
+      });
+      onUpdateLyrics({
+        ...lyricsDoc,
+        sections: nextSections,
+      });
+    },
+    [lyricsDoc, sections, onUpdateLyrics]
+  );
+
+  const handleMoveLine = useCallback(
+    (fromSectionId: string, fromLineId: string, toSectionId: string, toLineIdx: number) => {
+      if (!lyricsDoc) return;
+      let lineToMove: SongLyricLine | null = null;
+
+      // 1. Remove from source section
+      const sectionsWithoutLine = sections.map((sec) => {
+        if (sec.id === fromSectionId) {
+          const found = sec.lines.find((l) => l.id === fromLineId);
+          if (found) lineToMove = found;
+          return {
+            ...sec,
+            lines: sec.lines.filter((l) => l.id !== fromLineId),
+          };
+        }
+        return sec;
+      });
+
+      if (!lineToMove) return;
+
+      // 2. Insert into destination section at toLineIdx
+      const finalSections = sectionsWithoutLine.map((sec) => {
+        if (sec.id === toSectionId) {
+          const newLines = [...sec.lines];
+          const insertAt = Math.max(0, Math.min(newLines.length, toLineIdx));
+          newLines.splice(insertAt, 0, lineToMove!);
+          return {
+            ...sec,
+            lines: newLines,
+          };
+        }
+        return sec;
+      });
+
+      onUpdateLyrics({
+        ...lyricsDoc,
+        sections: finalSections,
+      });
+      toast.success('Interlude repositioned');
+    },
+    [lyricsDoc, sections, onUpdateLyrics]
+  );
+
+  const handleMoveLineRelative = useCallback(
+    (sectionId: string, currentLineIdx: number, delta: number) => {
+      if (!lyricsDoc) return;
+      const secIdx = sections.findIndex((s) => s.id === sectionId);
+      if (secIdx === -1) return;
+      const targetSec = sections[secIdx];
+      const line = targetSec.lines[currentLineIdx];
+      if (!line) return;
+
+      const targetLineIdx = currentLineIdx + delta;
+      if (targetLineIdx >= 0 && targetLineIdx < targetSec.lines.length) {
+        // Same section move
+        handleMoveLine(sectionId, line.id, sectionId, targetLineIdx);
+      } else if (delta < 0 && secIdx > 0) {
+        // Move to previous section end
+        const prevSec = sections[secIdx - 1];
+        handleMoveLine(sectionId, line.id, prevSec.id, prevSec.lines.length);
+      } else if (delta > 0 && secIdx < sections.length - 1) {
+        // Move to next section beginning
+        const nextSec = sections[secIdx + 1];
+        handleMoveLine(sectionId, line.id, nextSec.id, 0);
+      }
+    },
+    [lyricsDoc, sections, handleMoveLine]
+  );
+
+  const handleDragStart = useCallback((e: React.DragEvent, sectionId: string, lineId: string) => {
+    setDraggedLine({ sectionId, lineId });
+    try {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ fromSectionId: sectionId, fromLineId: lineId }));
+      e.dataTransfer.effectAllowed = 'move';
+    } catch (_) {}
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedLine(null);
+  }, []);
+
+  const handleDropOnLine = useCallback(
+    (e: React.DragEvent, targetSectionId: string, targetLineIdx: number) => {
+      e.preventDefault();
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        const data = JSON.parse(raw);
+        if (data.fromSectionId && data.fromLineId) {
+          handleMoveLine(data.fromSectionId, data.fromLineId, targetSectionId, targetLineIdx);
+          setDraggedLine(null);
+          return;
+        }
+      } catch (_) {}
+      if (draggedLine) {
+        handleMoveLine(draggedLine.sectionId, draggedLine.lineId, targetSectionId, targetLineIdx);
+      }
+      setDraggedLine(null);
+    },
+    [draggedLine, handleMoveLine]
+  );
+
+  const handlePencilClick = useCallback(() => {
+    if (pencilButtonRef.current) {
+      const r = pencilButtonRef.current.getBoundingClientRect();
+      setPencilRect({
+        top: r.top,
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+        width: r.width,
+        height: r.height,
+      });
+    }
+    setIsEditing(true);
+    setShowAddMenu(true);
+  }, []);
+
+  const handleDockAddClick = useCallback(() => {
+    if (dockAddButtonRef.current) {
+      const r = dockAddButtonRef.current.getBoundingClientRect();
+      setPencilRect({
+        top: r.top,
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+        width: r.width,
+        height: r.height,
+      });
+    }
+    setShowAddMenu(true);
+  }, []);
 
   const handleUpdateInterludeDuration = useCallback(
     (sectionId: string, lineId: string, durationSec: number) => {
@@ -396,6 +607,11 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                         <div
                           key={line.id || `interlude-${lIdx}`}
                           data-testid={`interlude-line-${lIdx}`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                          }}
+                          onDrop={(e) => handleDropOnLine(e, section.id, lIdx)}
                           className="w-full my-2 p-3.5 rounded-2xl border flex flex-col gap-2 transition-all"
                           style={{
                             backgroundColor: 'var(--surface-card-bg, #ffffff)',
@@ -404,9 +620,22 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                           }}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2">
+                              {isEditing && (
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, section.id, line.id)}
+                                  onDragEnd={handleDragEnd}
+                                  data-testid={`interlude-drag-handle-${lIdx}`}
+                                  className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0"
+                                  title="Drag to reposition interlude"
+                                  aria-label="Drag to reposition interlude"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </div>
+                              )}
                               <div
-                                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{
                                   backgroundColor: `${accent.from}18`,
                                   color: accent.from,
@@ -418,7 +647,11 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 <input
                                   type="text"
                                   value={line.text || '(Solo)'}
-                                  onChange={(e) => handleUpdateInterludeLabel(section.id, line.id, e.target.value)}
+                                  onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
+                                  onChange={(e) => {
+                                    setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
+                                    handleUpdateInterludeLabel(section.id, line.id, e.target.value);
+                                  }}
                                   className="px-2 py-1 rounded-lg text-sm font-bold border outline-none"
                                   style={{
                                     backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
@@ -453,14 +686,35 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 {durSec}s
                               </span>
                               {isEditing && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteLine(section.id, line.id)}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer"
-                                  title="Delete interlude"
-                                >
-                                  <span className="material-symbols-rounded text-base">delete</span>
-                                </button>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveLineRelative(section.id, lIdx, -1)}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                    title="Move interlude up"
+                                    aria-label="Move interlude up"
+                                  >
+                                    <span className="material-symbols-rounded text-base">arrow_upward</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveLineRelative(section.id, lIdx, 1)}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                    title="Move interlude down"
+                                    aria-label="Move interlude down"
+                                  >
+                                    <span className="material-symbols-rounded text-base">arrow_downward</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteLine(section.id, line.id)}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer"
+                                    title="Delete interlude"
+                                    aria-label="Delete interlude"
+                                  >
+                                    <span className="material-symbols-rounded text-base">delete</span>
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -523,15 +777,63 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                     const showChords = displayMode === 'chords_lyrics' && line.chords && line.chords.length > 0;
                     const isBlank = !line.text.trim() && (!line.chords || line.chords.length === 0);
 
-                    if (isBlank) {
+                    if (isBlank && !isEditing) {
                       return <div key={line.id || `blank-${lIdx}`} className="h-4" />;
                     }
 
                     const lineTextColor = line.format?.color || resolvedColor;
 
                     return (
-                      <div key={line.id || `line-${lIdx}`} className="flex flex-col py-1">
-                        {showChords ? (
+                      <div
+                        key={line.id || `line-${lIdx}`}
+                        className="flex flex-col py-1 w-full"
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={(e) => handleDropOnLine(e, section.id, lIdx)}
+                      >
+                        {isEditing ? (
+                          <div className="flex items-center gap-2 w-full group/line">
+                            <input
+                              type="text"
+                              data-testid={`lyrics-line-input-${lIdx}`}
+                              value={line.text}
+                              onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
+                              onChange={(e) => {
+                                setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
+                                handleUpdateLineText(section.id, line.id, e.target.value);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddLine(section.id, lIdx);
+                                } else if (e.key === 'Backspace' && line.text === '' && section.lines.length > 1) {
+                                  e.preventDefault();
+                                  handleDeleteLine(section.id, line.id);
+                                }
+                              }}
+                              placeholder="Type lyric line..."
+                              className="flex-1 bg-transparent border-0 border-b outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
+                              style={{
+                                borderBottom: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.25)',
+                                color: lineTextColor,
+                                fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                                fontSize: `${fontSize}px`,
+                                fontFamily: 'inherit',
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLine(section.id, line.id)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer opacity-40 hover:opacity-100 flex-shrink-0"
+                              title="Delete line"
+                              aria-label="Delete line"
+                            >
+                              <span className="material-symbols-outlined text-base">close</span>
+                            </button>
+                          </div>
+                        ) : showChords ? (
                           <div className="flex flex-wrap items-end gap-x-1 gap-y-1 select-text">
                             {splitLineIntoSegments(line.text, line.chords).map((seg) => (
                               <div
@@ -576,6 +878,26 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                       </div>
                     );
                   })}
+
+                  {isEditing && (
+                    <div
+                      className="flex items-center gap-2 mt-2 pt-1.5 border-t border-dashed border-white/10"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={(e) => handleDropOnLine(e, section.id, section.lines.length)}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleAddLine(section.id)}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-rounded text-sm">add</span>
+                        <span>Add Line</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -588,9 +910,10 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         createPortal(
           !isEditing ? (
             <button
+              ref={pencilButtonRef}
               type="button"
               data-testid="lyrics-floating-edit-btn"
-              onClick={() => setIsEditing(true)}
+              onClick={handlePencilClick}
               style={{
                 position: 'fixed',
                 bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
@@ -673,9 +996,10 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
 
               {/* Unified + Action Button */}
               <button
+                ref={dockAddButtonRef}
                 type="button"
                 data-testid="lyrics-edit-unified-add-btn"
-                onClick={() => setShowAddMenu(true)}
+                onClick={handleDockAddClick}
                 aria-label="Add to Lyrics"
                 title="Add Options"
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white transition active:scale-95 cursor-pointer shadow-lg"
@@ -698,13 +1022,13 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                 }}
               />
 
-              {/* Text Presentation / Typography Button */}
+              {/* Text Presentation / Typography Button with Palette Icon */}
               <button
                 type="button"
                 data-testid="lyrics-toolbar-text-btn"
                 onClick={() => setShowTextMorph(true)}
-                aria-label="Text Presentation & Formatting"
-                title="Typography & Styling"
+                aria-label="Text & Color Styling"
+                title="Text & Color Styling"
                 className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer"
                 style={{
                   backgroundColor:
@@ -717,33 +1041,24 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                       : '#cbd5e1',
                 }}
               >
-                <span className="material-symbols-rounded text-lg">text_fields</span>
+                <span className="material-symbols-rounded text-lg">palette</span>
               </button>
             </aside>
           ),
           document.body
         )}
 
-      {/* ── Unified "+" Options Menu (Add Lyrics, Add Section, Add Timed Interlude, Text Styling) ── */}
+      {/* ── Unified Contextual Morphing Popup (Add Section, Add Timed Interlude, Text Styling) ── */}
       <MorphingActionSurface
         isOpen={showAddMenu}
         onOpenChange={setShowAddMenu}
-        placement="center"
+        placement="anchor"
+        originRect={pencilRect}
         compact
         maxWidth={260}
         title="Add to Lyrics"
         accentColor={accent.from}
         rows={[
-          {
-            id: 'add-lyrics',
-            label: 'Add Lyrics',
-            icon: 'draw',
-            sublabel: 'Open lyric composer',
-            onPress: () => {
-              setShowAddMenu(false);
-              onEditLyrics();
-            },
-          },
           {
             id: 'add-section',
             label: 'Add Section',
@@ -761,13 +1076,13 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
             sublabel: 'Timed silence / solo (e.g. 15s)',
             onPress: () => {
               setShowAddMenu(false);
-              handleAddInterludeLine();
+              handleAddInterludeLine(activePosition?.sectionId, activePosition?.lineIndex);
             },
           },
           {
             id: 'text-styling',
             label: 'Text Styling',
-            icon: 'format_size',
+            icon: 'palette',
             sublabel: 'Font size, spacing, colors',
             onPress: () => {
               setShowAddMenu(false);
