@@ -1136,45 +1136,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
       >
         {({ close }) => (
           <div className="flex flex-col gap-4 py-1" data-purpose="lyrics-text-formatting-controls">
-            {/* View Mode */}
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>
-                View Mode
-              </span>
-              <div
-                className="flex items-center p-0.5 rounded-full border shadow-2xs"
-                style={{
-                  backgroundColor: 'var(--surface-container-low, rgba(0, 0, 0, 0.04))',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                }}
-              >
-                <button
-                  type="button"
-                  data-testid="text-mode-lyrics"
-                  onClick={() => setDisplayMode('lyrics')}
-                  className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
-                  style={{
-                    backgroundColor: displayMode === 'lyrics' ? accent.from : 'transparent',
-                    color: displayMode === 'lyrics' ? '#ffffff' : 'var(--c-text-muted, #8A92A6)',
-                  }}
-                >
-                  Lyrics
-                </button>
-                <button
-                  type="button"
-                  data-testid="text-mode-chords-lyrics"
-                  onClick={() => setDisplayMode('chords_lyrics')}
-                  className="px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer"
-                  style={{
-                    backgroundColor: displayMode === 'chords_lyrics' ? accent.from : 'transparent',
-                    color: displayMode === 'chords_lyrics' ? '#ffffff' : 'var(--c-text-muted, #8A92A6)',
-                  }}
-                >
-                  Chords + Lyrics
-                </button>
-              </div>
-            </div>
-
             {/* Font Size & Bold Stepper */}
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-semibold" style={{ color: 'var(--c-text-secondary, #6B7280)' }}>

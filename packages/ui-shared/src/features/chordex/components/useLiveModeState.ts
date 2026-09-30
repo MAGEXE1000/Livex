@@ -136,6 +136,8 @@ export interface LiveModeState {
   setShowSettings: (v: boolean | ((prev: boolean) => boolean)) => void;
   showQuickActions: boolean;
   setShowQuickActions: (v: boolean | ((prev: boolean) => boolean)) => void;
+  isHeaderHidden: boolean;
+  setIsHeaderHidden: (v: boolean) => void;
   beatsPerChord: BeatsPerChord;
   setBeatsPerChord: (v: BeatsPerChord) => void;
   barsPerLine: number;
@@ -355,6 +357,19 @@ export function useLiveModeState(
   const [currentLineIdx, setCurrentLineIdx] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [autoPlay, setAutoPlay] = useState(false);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+
+  useEffect(() => {
+    if (!autoPlay) {
+      setIsHeaderHidden(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setIsHeaderHidden(true);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [autoPlay]);
+
   const [shownIdx, setShownIdx] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -983,6 +998,7 @@ export function useLiveModeState(
 
   const goToLine = useCallback(
     (idx: number) => {
+      setIsHeaderHidden(false);
       if (idx >= 0 && idx < totalLines) {
         setDirection(idx >= currentLineIdx ? 'forward' : 'backward');
         setCurrentLineIdx(idx);
@@ -1091,8 +1107,11 @@ export function useLiveModeState(
         top: targetScroll,
         behavior: 'smooth',
       });
+      if (autoPlay && targetScroll > 20) {
+        setIsHeaderHidden(true);
+      }
     }
-  }, [currentLineIdx, isTeleprompterMode]);
+  }, [currentLineIdx, isTeleprompterMode, autoPlay]);
 
   // ── Musical Timing Constants ─────────────────────────────────────
   const pacingFactor = timingSchedule.pacingFactor || 1.0;
@@ -1294,6 +1313,7 @@ export function useLiveModeState(
     }
 
     const tickWord = () => {
+      setIsHeaderHidden(true);
       wordRemainingMsRef.current = 0; // reset for next word
       wordStartTimestampRef.current = performance.now();
 
@@ -1471,6 +1491,8 @@ export function useLiveModeState(
   return {
     preset,
     accent,
+    isHeaderHidden,
+    setIsHeaderHidden,
     displayMode,
     setDisplayMode,
     visualStyle,

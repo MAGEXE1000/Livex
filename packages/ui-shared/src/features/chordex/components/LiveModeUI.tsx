@@ -288,10 +288,15 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         data-purpose="live-mode-topbar"
         data-testid="live-mode-topbar"
         style={{
-          width: '100%',
-          flexShrink: 0,
-          position: 'relative',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
           zIndex: 100,
+          transform: state.isHeaderHidden ? 'translateY(-100%)' : 'translateY(0)',
+          opacity: state.isHeaderHidden ? 0 : 1,
+          pointerEvents: state.isHeaderHidden ? 'none' : 'auto',
+          transition: 'transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease',
           paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px)',
           paddingBottom: '8px',
           paddingLeft: '16px',
@@ -305,8 +310,6 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
           borderBottom: 'var(--surface-topbar-border)',
           boxShadow: 'var(--surface-topbar-shadow)',
-          transform: 'translateZ(0)',
-          willChange: 'transform, backdrop-filter',
           boxSizing: 'border-box',
         }}
       >
@@ -1071,6 +1074,34 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
   const isCentered = teleprompterAlignment === 'center';
 
+  React.useEffect(() => {
+    const el = teleprompterContainerRef.current;
+    if (!el) return;
+    let lastScrollTop = el.scrollTop;
+    let ticking = false;
+
+    const handleScroll = () => {
+      const currentScrollTop = el.scrollTop;
+      const diff = currentScrollTop - lastScrollTop;
+      lastScrollTop = currentScrollTop;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (diff > 12 && currentScrollTop > 40) {
+            state.setIsHeaderHidden(true);
+          } else if (diff < -12) {
+            state.setIsHeaderHidden(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [state]);
+
   return (
     <div
       style={{
@@ -1081,6 +1112,16 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         overflow: 'hidden',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          zIndex: 90,
+          pointerEvents: state.isHeaderHidden ? 'auto' : 'none',
+        }}
+        onClick={() => state.setIsHeaderHidden(false)}
+      />
       {/* Main Teleprompter Canvas */}
       <div
         ref={teleprompterContainerRef}
@@ -1092,7 +1133,10 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: '10px 20px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 100px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 100px)',
+          paddingLeft: '20px',
+          paddingRight: '20px',
           display: 'flex',
           flexDirection: 'column',
           gap: fontSizes.lineGap,
@@ -1105,6 +1149,15 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         {teleprompterLines.map((item, idx) => {
           const isActive = idx === currentLineIdx;
           const isPast = idx < currentLineIdx;
+
+          const isTextColorWhite = !item.color || item.color.toLowerCase() === '#ffffff' || item.color.toLowerCase() === '#fff' || item.color.toLowerCase().startsWith('rgb(255');
+          const highlightBorderColor = isTextColorWhite ? accent.from : item.color;
+          const highlightBg = isTextColorWhite
+            ? `color-mix(in srgb, ${accent.from} 18%, rgba(255, 255, 255, 0.08))`
+            : `color-mix(in srgb, ${item.color} 14%, rgba(255, 255, 255, 0.03))`;
+          const highlightShadow = isTextColorWhite
+            ? `0 0 24px ${accent.from}28, inset 0 0 12px ${accent.from}14`
+            : `0 0 24px ${item.color}1a, inset 0 0 12px ${item.color}0d`;
 
           return (
             <div
@@ -1120,13 +1173,9 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 position: 'relative',
                 borderRadius: '16px',
                 padding: '12px 16px',
-                background: isActive
-                  ? `color-mix(in srgb, ${item.color || accent.from} 12%, rgba(255,255,255,0.03))`
-                  : 'transparent',
-                borderLeft: isActive ? `4px solid ${item.color || accent.from}` : '4px solid transparent',
-                boxShadow: isActive
-                  ? `0 0 24px ${item.color || accent.from}1a, inset 0 0 12px ${item.color || accent.from}0d`
-                  : 'none',
+                background: isActive ? highlightBg : 'transparent',
+                borderLeft: isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent',
+                boxShadow: isActive ? highlightShadow : 'none',
                 opacity: isActive ? 1 : isPast ? 0.42 : 0.75,
                 transition:
                   'background 250ms ease, opacity 250ms ease, transform 250ms ease, border-color 250ms ease',
@@ -1325,6 +1374,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
       <AnimatePresence>
         {showQuickActions && (
           <motion.div
+            data-testid="lyrics-quick-controls-hud"
             initial={{ opacity: 0, y: 16, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
@@ -1338,7 +1388,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '6px 14px',
+              padding: '5px 12px',
               borderRadius: '9999px',
               background: 'var(--surface-topbar-bg)',
               border: 'var(--surface-topbar-border)',
@@ -1411,7 +1461,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
             <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -1460,32 +1510,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               >
                 A+
               </button>
-              {compatibleModes.includes('lyrics_chord_name') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (displayMode === 'lyrics_only') setDisplayMode('lyrics_chord_name');
-                    else setDisplayMode('lyrics_only');
-                  }}
-                  style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: displayMode === 'lyrics_chord_name' ? accent.from : 'var(--c-text-secondary)',
-                    background: displayMode === 'lyrics_chord_name' ? `${accent.from}22` : 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  title="Toggle Chords above Lyrics"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                    grid_view
-                  </span>
-                </button>
-              )}
             </div>
           </motion.div>
         )}
@@ -1666,6 +1690,34 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
 
   const currentLine = teleprompterLines[currentLineIdx];
 
+  React.useEffect(() => {
+    const el = state.teleprompterContainerRef.current;
+    if (!el) return;
+    let lastScrollTop = el.scrollTop;
+    let ticking = false;
+
+    const handleScroll = () => {
+      const currentScrollTop = el.scrollTop;
+      const diff = currentScrollTop - lastScrollTop;
+      lastScrollTop = currentScrollTop;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (diff > 12 && currentScrollTop > 40) {
+            state.setIsHeaderHidden(true);
+          } else if (diff < -12) {
+            state.setIsHeaderHidden(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [state]);
+
   return (
     <div
       style={{
@@ -1678,8 +1730,19 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         height: '100%',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          zIndex: 90,
+          pointerEvents: state.isHeaderHidden ? 'auto' : 'none',
+        }}
+        onClick={() => state.setIsHeaderHidden(false)}
+      />
       {/* Scrollable Stage Area */}
       <div
+        ref={state.teleprompterContainerRef}
         style={{
           flex: 1,
           width: '100%',
@@ -1689,7 +1752,10 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 104px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 104px)',
+          paddingLeft: '16px',
+          paddingRight: '16px',
           boxSizing: 'border-box',
         }}
       >
