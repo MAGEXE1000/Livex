@@ -97,6 +97,9 @@ const CUSTOM_ROLE_COLORS = [
   '#a855f7', // Violet
 ];
 
+const INTERLUDE_PRESET_DURATIONS = [5, 10, 15, 20, 30, 45, 60];
+const INTERLUDE_PRESET_LABELS = ['(Solo)', '(Interlude)', '(Guitar Solo)', '(Intro)', '(Bridge)', '(Outro)'];
+
 interface ActiveSelection {
   sectionId: string;
   lineId: string;
@@ -126,6 +129,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [activeSelection, setActiveSelection] = useState<ActiveSelection | null>(null);
   const activeSelectionRef = useRef<ActiveSelection | null>(null);
   activeSelectionRef.current = activeSelection;
+
+  // Active cursor/line position tracking for arbitrary element insertion
+  const lastActivePositionRef = useRef<{
+    sectionId: string;
+    lineIndex: number;
+    lineId?: string;
+  } | null>(null);
+
+  const setLastActivePosition = useCallback(
+    (sectionId: string, lineIndex: number, lineId?: string) => {
+      lastActivePositionRef.current = { sectionId, lineIndex, lineId };
+    },
+    []
+  );
 
   // Active text color paint tool (null = inactive, string = hex or '' for clear)
   const [activeColorTool, setActiveColorTool] = useState<string | null>(null);
@@ -344,8 +361,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     (sectionId?: string, afterLineIdx?: number) => {
       let createdLineId = '';
       updateDoc((doc) => {
-        // If document has no sections, create a transparent unsectioned section
         let targetSecId = sectionId;
+        let resolvedLineIdx = afterLineIdx;
         let sections = [...doc.sections];
 
         if (sections.length === 0) {
@@ -357,8 +374,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           };
           sections = [newSec];
           targetSecId = newSec.id;
+          resolvedLineIdx = undefined;
         } else if (!targetSecId) {
-          targetSecId = sections[sections.length - 1].id;
+          if (lastActivePositionRef.current) {
+            const secExists = sections.some((s) => s.id === lastActivePositionRef.current!.sectionId);
+            if (secExists) {
+              targetSecId = lastActivePositionRef.current.sectionId;
+              if (resolvedLineIdx === undefined) {
+                resolvedLineIdx = lastActivePositionRef.current.lineIndex;
+              }
+            }
+          }
+          if (!targetSecId) {
+            targetSecId = sections[sections.length - 1].id;
+          }
         }
 
         const newLine: SongLyricLine = {
@@ -370,8 +399,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         const updatedSections = sections.map((sec) => {
           if (sec.id !== targetSecId) return sec;
           const lines = [...sec.lines];
-          if (afterLineIdx !== undefined && afterLineIdx >= 0) {
-            lines.splice(afterLineIdx + 1, 0, newLine);
+          if (resolvedLineIdx !== undefined && resolvedLineIdx >= -1 && resolvedLineIdx < lines.length) {
+            lines.splice(resolvedLineIdx + 1, 0, newLine);
           } else {
             lines.push(newLine);
           }
@@ -388,10 +417,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   );
 
   const handleAddInterludeLine = useCallback(
-    (sectionId?: string, afterLineIdx?: number) => {
+    (sectionId?: string, afterLineIdx?: number, initialLabel?: string, initialDurationSec?: number) => {
       let createdLineId = '';
       updateDoc((doc) => {
         let targetSecId = sectionId;
+        let resolvedLineIdx = afterLineIdx;
         let sections = [...doc.sections];
 
         if (sections.length === 0) {
@@ -403,23 +433,65 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           };
           sections = [newSec];
           targetSecId = newSec.id;
+          resolvedLineIdx = undefined;
         } else if (!targetSecId) {
-          targetSecId = sections[sections.length - 1].id;
+          // 1. Try active position tracking
+          if (lastActivePositionRef.current) {
+            const secExists = sections.some((s) => s.id === lastActivePositionRef.current!.sectionId);
+            if (secExists) {
+              targetSecId = lastActivePositionRef.current.sectionId;
+              if (resolvedLineIdx === undefined) {
+                resolvedLineIdx = lastActivePositionRef.current.lineIndex;
+              }
+            }
+          }
+          // 2. Try active selection
+          if (!targetSecId && activeSelectionRef.current) {
+            const secExists = sections.some((s) => s.id === activeSelectionRef.current!.sectionId);
+            if (secExists) {
+              targetSecId = activeSelectionRef.current.sectionId;
+              if (resolvedLineIdx === undefined) {
+                const targetSec = sections.find((s) => s.id === targetSecId);
+                const lIdx = targetSec?.lines.findIndex((l) => l.id === activeSelectionRef.current!.lineId);
+                if (lIdx !== undefined && lIdx >= 0) {
+                  resolvedLineIdx = lIdx;
+                }
+              }
+            }
+          }
+          // 3. Try editingLineId
+          if (!targetSecId && editingLineId) {
+            for (const s of sections) {
+              const lIdx = s.lines.findIndex((l) => l.id === editingLineId);
+              if (lIdx >= 0) {
+                targetSecId = s.id;
+                if (resolvedLineIdx === undefined) {
+                  resolvedLineIdx = lIdx;
+                }
+                break;
+              }
+            }
+          }
+          // 4. Fallback: last section
+          if (!targetSecId) {
+            targetSecId = sections[sections.length - 1].id;
+          }
         }
 
+        const durMs = Math.max(1000, Math.min(600000, (initialDurationSec ? initialDurationSec * 1000 : 15000)));
         const newLine: SongLyricLine = {
           id: generateLyricId('line'),
           type: 'interlude',
-          text: '(Solo)',
-          explicitDurationMs: 15000,
+          text: initialLabel || '(Solo)',
+          explicitDurationMs: durMs,
         };
         createdLineId = newLine.id;
 
         const updatedSections = sections.map((sec) => {
           if (sec.id !== targetSecId) return sec;
           const lines = [...sec.lines];
-          if (afterLineIdx !== undefined && afterLineIdx >= 0) {
-            lines.splice(afterLineIdx + 1, 0, newLine);
+          if (resolvedLineIdx !== undefined && resolvedLineIdx >= -1 && resolvedLineIdx < lines.length) {
+            lines.splice(resolvedLineIdx + 1, 0, newLine);
           } else {
             lines.push(newLine);
           }
@@ -428,11 +500,32 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
         return { ...doc, sections: updatedSections };
       });
-      // Do not focus the interlude as text by default, it uses a distinct UI
+
       if (createdLineId) {
-        // Wait, for consistency we can clear editing line ID if we add an interlude
         setEditingLineId(null);
       }
+    },
+    [updateDoc, editingLineId]
+  );
+
+  const handleUpdateInterludeDuration = useCallback(
+    (sectionId: string, lineId: string, sec: number) => {
+      const clampedSec = Math.max(1, Math.min(600, Math.round(sec)));
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((s) =>
+          s.id === sectionId
+            ? {
+                ...s,
+                lines: s.lines.map((l) =>
+                  l.id === lineId
+                    ? { ...l, explicitDurationMs: clampedSec * 1000 }
+                    : l
+                ),
+              }
+            : s
+        ),
+      }));
     },
     [updateDoc]
   );
@@ -999,6 +1092,22 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       <span className="material-symbols-rounded text-[11px]">mic</span>
                       <span>{section.vocalRole?.label || '+ Role'}</span>
                     </button>
+
+                    {/* Add Interlude to Section Header */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLastActivePosition(section.id, -1);
+                        handleAddInterludeLine(section.id, -1);
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-sky-500/10 text-sky-400 border-sky-500/20"
+                      title="Insert Timed Interlude at start of this section"
+                      aria-label="Insert timed interlude at start of this section"
+                      data-testid={`section-add-interlude-${secIdx}`}
+                    >
+                      <span className="material-symbols-rounded text-[11px]">timer</span>
+                      <span>+ Interlude</span>
+                    </button>
                   </div>
 
                   {/* Section Delete button */}
@@ -1022,107 +1131,78 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       <div
                         key={line.id || lineIdx}
                         data-testid={`lyric-line-interlude-${section.id}-${lineIdx}`}
-                        className="group/line relative flex flex-col py-3 px-3.5 rounded-xl transition-all border my-1.5 shadow-xs"
+                        onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                        className="group/line relative flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-2xl transition-all border my-2 shadow-xs"
                         style={{
-                          backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.06)' : 'rgba(59, 130, 246, 0.10)',
-                          borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.22)' : 'rgba(59, 130, 246, 0.32)',
+                          backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.08)',
+                          borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.30)',
                         }}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{
-                              backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.14)' : 'rgba(59, 130, 246, 0.22)',
-                              color: isEffectiveLight ? '#2563eb' : '#60a5fa',
-                            }}
-                          >
-                            <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
-                          </div>
-                          
-                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2.5">
-                            <input
-                              type="text"
-                              value={line.text}
-                              onChange={(e) => handleUpdateLineText(section.id, line.id, e.target.value)}
-                              placeholder="Event Label (e.g. Solo)"
-                              aria-label="Interlude event label"
-                              className="bg-transparent border-0 border-b outline-none text-sm font-bold pb-0.5 w-36 transition-colors"
+                        {/* Top row: Icon, Label Input, Duration Pill, Delete Button */}
+                        <div className="flex items-center justify-between gap-2.5 flex-wrap">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-[180px]">
+                            <div
+                              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs"
                               style={{
-                                color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
-                                borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
+                                backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.22)',
+                                color: isEffectiveLight ? '#2563eb' : '#60a5fa',
                               }}
-                            />
-                            
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-xs font-bold uppercase tracking-wider"
-                                style={{ color: isEffectiveLight ? '#475569' : '#94a3b8' }}
-                              >
-                                Duration:
-                              </span>
+                            >
+                              <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
+                            </div>
+
+                            <div className="flex-1 flex items-center gap-2">
                               <input
-                                type="number"
-                                min={1}
-                                max={600}
-                                value={durSec}
-                                aria-label="Interlude duration in seconds"
+                                type="text"
+                                value={line.text}
+                                onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
                                 onChange={(e) => {
-                                  const sec = parseInt(e.target.value, 10);
-                                  if (!isNaN(sec) && sec >= 0) {
-                                    updateDoc((doc) => ({
-                                      ...doc,
-                                      sections: doc.sections.map((s) =>
-                                        s.id === section.id
-                                          ? {
-                                              ...s,
-                                              lines: s.lines.map((l) =>
-                                                l.id === line.id
-                                                  ? { ...l, explicitDurationMs: Math.round(sec * 1000) }
-                                                  : l
-                                              ),
-                                            }
-                                          : s
-                                      ),
-                                    }));
-                                  }
+                                  setLastActivePosition(section.id, lineIdx, line.id);
+                                  handleUpdateLineText(section.id, line.id, e.target.value);
                                 }}
-                                className="rounded-lg px-2.5 py-1 text-sm font-mono font-bold w-16 outline-none text-center shadow-xs transition-colors"
+                                placeholder="Event Label (e.g. Solo)"
+                                aria-label="Interlude event label"
+                                data-testid={`interlude-label-input-${lineIdx}`}
+                                className="bg-transparent border-0 border-b outline-none text-sm font-bold pb-0.5 w-36 sm:w-44 transition-colors"
                                 style={{
-                                  backgroundColor: isEffectiveLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
-                                  border: isEffectiveLight ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.16)',
-                                  color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                                  color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
+                                  borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
                                 }}
                               />
-                              <span
-                                className="text-xs font-mono font-semibold"
-                                style={{ color: isEffectiveLight ? '#64748b' : '#94a3b8' }}
-                              >
-                                sec
-                              </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2.5">
+                          <div className="flex items-center gap-2">
+                            {/* Formatted live duration indicator badge */}
                             <div
-                              className="flex items-center justify-center px-2.5 py-1 rounded-lg border shadow-2xs"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg border shadow-2xs"
                               style={{
                                 backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.10)' : 'rgba(59, 130, 246, 0.18)',
                                 borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.35)',
                               }}
                             >
+                              <span className="material-symbols-rounded text-xs" style={{ color: isEffectiveLight ? '#2563eb' : '#60a5fa' }}>
+                                timer
+                              </span>
                               <span
+                                data-testid={`interlude-dur-display-${lineIdx}`}
                                 className="text-xs font-black font-mono"
                                 style={{ color: isEffectiveLight ? '#1d4ed8' : '#93c5fd' }}
                               >
                                 {durSec}s
                               </span>
                             </div>
-                            
+
+                            {/* Delete Button */}
                             <button
                               type="button"
-                              onClick={() => handleDeleteLine(section.id, line.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteLine(section.id, line.id);
+                              }}
                               aria-label="Remove interlude event"
-                              className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                              data-testid={`interlude-delete-btn-${lineIdx}`}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer hover:bg-rose-500/10 active:scale-95"
                               style={{
                                 color: isEffectiveLight ? '#e11d48' : '#fb7185',
                               }}
@@ -1130,6 +1210,160 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             >
                               <span className="material-symbols-rounded text-lg">close</span>
                             </button>
+                          </div>
+                        </div>
+
+                        {/* Middle row: Label quick preset chips */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
+                            style={{ color: isEffectiveLight ? '#64748b' : '#94a3b8' }}
+                          >
+                            Preset:
+                          </span>
+                          {INTERLUDE_PRESET_LABELS.map((presetLabel) => {
+                            const isSelected = line.text.trim().toLowerCase() === presetLabel.toLowerCase();
+                            return (
+                              <button
+                                key={presetLabel}
+                                type="button"
+                                data-testid={`interlude-label-chip-${presetLabel}-${lineIdx}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLastActivePosition(section.id, lineIdx, line.id);
+                                  handleUpdateLineText(section.id, line.id, presetLabel);
+                                }}
+                                className="px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95"
+                                style={{
+                                  backgroundColor: isSelected
+                                    ? isEffectiveLight ? '#2563eb' : '#3b82f6'
+                                    : isEffectiveLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                                  color: isSelected ? '#ffffff' : isEffectiveLight ? '#334155' : '#cbd5e1',
+                                  border: isSelected
+                                    ? '1px solid transparent'
+                                    : isEffectiveLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.08)',
+                                }}
+                              >
+                                {presetLabel}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Bottom row: Stepper controls & Quick duration preset chips */}
+                        <div className="flex items-center justify-between gap-3 pt-1 border-t border-white/5 flex-wrap">
+                          {/* Duration Stepper Controls */}
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="text-xs font-bold uppercase tracking-wider mr-1"
+                              style={{ color: isEffectiveLight ? '#475569' : '#94a3b8' }}
+                            >
+                              Duration:
+                            </span>
+
+                            {/* Stepper Down [-] */}
+                            <button
+                              type="button"
+                              data-testid={`interlude-dec-btn-${lineIdx}`}
+                              aria-label="Decrease interlude duration"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLastActivePosition(section.id, lineIdx, line.id);
+                                handleUpdateInterludeDuration(section.id, line.id, Math.max(1, durSec - 1));
+                              }}
+                              className="w-7 h-7 rounded-md flex items-center justify-center font-bold text-sm transition-all cursor-pointer hover:bg-white/10 active:scale-90"
+                              style={{
+                                backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                                border: isEffectiveLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.12)',
+                                color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                              }}
+                              title="Decrease 1s"
+                            >
+                              −
+                            </button>
+
+                            {/* Direct numeric input */}
+                            <input
+                              type="number"
+                              min={1}
+                              max={600}
+                              value={durSec}
+                              aria-label="Interlude duration in seconds"
+                              data-testid={`interlude-dur-input-${lineIdx}`}
+                              onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                              onChange={(e) => {
+                                setLastActivePosition(section.id, lineIdx, line.id);
+                                const sec = parseInt(e.target.value, 10);
+                                if (!isNaN(sec) && sec >= 0) {
+                                  handleUpdateInterludeDuration(section.id, line.id, sec);
+                                }
+                              }}
+                              className="rounded-md px-2 py-1 text-sm font-mono font-bold w-14 outline-none text-center shadow-xs transition-colors"
+                              style={{
+                                backgroundColor: isEffectiveLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
+                                border: isEffectiveLight ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid rgba(255, 255, 255, 0.16)',
+                                color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                              }}
+                            />
+
+                            {/* Stepper Up [+] */}
+                            <button
+                              type="button"
+                              data-testid={`interlude-inc-btn-${lineIdx}`}
+                              aria-label="Increase interlude duration"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLastActivePosition(section.id, lineIdx, line.id);
+                                handleUpdateInterludeDuration(section.id, line.id, Math.min(600, durSec + 1));
+                              }}
+                              className="w-7 h-7 rounded-md flex items-center justify-center font-bold text-sm transition-all cursor-pointer hover:bg-white/10 active:scale-90"
+                              style={{
+                                backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                                border: isEffectiveLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.12)',
+                                color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                              }}
+                              title="Increase 1s"
+                            >
+                              +
+                            </button>
+
+                            <span
+                              className="text-xs font-mono font-semibold ml-0.5"
+                              style={{ color: isEffectiveLight ? '#64748b' : '#94a3b8' }}
+                            >
+                              sec
+                            </span>
+                          </div>
+
+                          {/* Quick Duration Preset Chips */}
+                          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                            {INTERLUDE_PRESET_DURATIONS.map((presetSec) => {
+                              const isSelected = durSec === presetSec;
+                              return (
+                                <button
+                                  key={presetSec}
+                                  type="button"
+                                  data-testid={`interlude-chip-${presetSec}s-${lineIdx}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLastActivePosition(section.id, lineIdx, line.id);
+                                    handleUpdateInterludeDuration(section.id, line.id, presetSec);
+                                  }}
+                                  className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: isSelected
+                                      ? isEffectiveLight ? '#2563eb' : '#3b82f6'
+                                      : isEffectiveLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.06)',
+                                    color: isSelected ? '#ffffff' : isEffectiveLight ? '#334155' : '#cbd5e1',
+                                    border: isSelected
+                                      ? '1px solid transparent'
+                                      : isEffectiveLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.08)',
+                                  }}
+                                >
+                                  {presetSec}s
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -1147,6 +1381,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     <div
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                      onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
                       className="group/line relative flex flex-col py-1.5 px-2.5 rounded-xl transition-all hover:bg-white/[0.03]"
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -1170,9 +1405,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 type="text"
                                 value={line.text}
                                 autoFocus={editingLineId === line.id}
-                                onChange={(e) =>
-                                  handleUpdateLineText(section.id, line.id, e.target.value)
-                                }
+                                onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                                onChange={(e) => {
+                                  setLastActivePosition(section.id, lineIdx, line.id);
+                                  handleUpdateLineText(section.id, line.id, e.target.value);
+                                }}
                                 onBlur={() => {
                                   setEditingLineId(null);
                                 }}
@@ -1185,6 +1422,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                     end: target.selectionEnd ?? 0,
                                     text: line.text,
                                   });
+                                  setLastActivePosition(section.id, lineIdx, line.id);
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -1223,6 +1461,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           <div
                             className="flex-1 py-1 cursor-pointer"
                             onClick={() => {
+                              setLastActivePosition(section.id, lineIdx, line.id);
                               if (activeColorTool === null) {
                                 setEditingLineId(line.id);
                               }
@@ -1238,6 +1477,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-pointer"
                             title="Tap to edit line"
                             onClick={() => {
+                              setLastActivePosition(section.id, lineIdx, line.id);
                               if (activeColorTool === null) {
                                 setEditingLineId(line.id);
                               }
@@ -1440,6 +1680,25 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </span>
                           </div>
                         )}
+
+                        {/* Inline Actions (Add Interlude after this line) */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover/line:opacity-100 transition-opacity flex-shrink-0 self-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLastActivePosition(section.id, lineIdx, line.id);
+                              handleAddInterludeLine(section.id, lineIdx);
+                            }}
+                            title="Insert timed interlude after this line"
+                            aria-label={`Insert interlude after line ${lineIdx + 1}`}
+                            data-testid={`insert-interlude-after-${lineIdx}`}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 border border-sky-500/20 transition-all cursor-pointer active:scale-95"
+                          >
+                            <span className="material-symbols-rounded text-xs">timer</span>
+                            <span>+ Interlude</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -2063,6 +2322,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     {/* Add Interlude */}
                     <button
                       type="button"
+                      data-testid="toolbar-add-interlude-btn"
                       onClick={() => {
                         handleAddInterludeLine();
                         setActivePopover(null);
