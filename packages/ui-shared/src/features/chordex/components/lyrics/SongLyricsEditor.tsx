@@ -36,6 +36,7 @@ import {
   searchChords,
   ROOTS,
   type Chord,
+  shiftChordOffsets,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import ChordDiagram from '../../diagrams/ChordDiagram';
@@ -230,8 +231,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Line currently in direct text typing mode (null = word targeting mode)
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
-  // Read-only by default in Both mode: editing mode requires explicit user activation
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const targetCursorOffsetRef = useRef<number | null>(null);
+  // Always-editable mode across Both view
+  const isEditMode = true;
 
   // Active popover in the compact bottom capsule dock: 'chords' | 'style' | 'roles' | 'more' | null
   const [activePopover, setActivePopover] = useState<'chords' | 'style' | 'roles' | 'more' | null>(null);
@@ -382,18 +384,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 ...sec,
                 lines: sec.lines.map((l) => {
                   if (l.id !== lineId) return l;
-                  // Gracefully adjust chord character offsets so chords aren't lost
-                  const maxOffset = Math.max(0, newText.length);
-                  const clampedChords = l.chords
-                    ? l.chords.map((c) => ({
-                        ...c,
-                        offset: Math.min(Math.max(0, c.offset), maxOffset),
-                      }))
-                    : undefined;
+                  const shiftedChords = shiftChordOffsets(l.text, newText, l.chords);
                   return {
                     ...l,
                     text: newText,
-                    chords: clampedChords,
+                    chords: shiftedChords,
                     spans: l.spans ? [{ text: newText }] : undefined,
                   };
                 }),
@@ -1755,6 +1750,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 data-testid="active-line-input"
                                 value={line.text}
                                 autoFocus={editingLineId === line.id}
+                                ref={(el) => {
+                                  if (el && targetCursorOffsetRef.current !== null) {
+                                    const pos = Math.min(line.text.length, Math.max(0, targetCursorOffsetRef.current));
+                                    targetCursorOffsetRef.current = null;
+                                    try {
+                                      el.setSelectionRange(pos, pos);
+                                    } catch (_) {}
+                                  }
+                                }}
                                 onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
                                 onChange={(e) => {
                                   setLastActivePosition(section.id, lineIdx, line.id);
@@ -1812,13 +1816,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             className="flex-1 py-1 cursor-pointer"
                             onClick={() => {
                               setLastActivePosition(section.id, lineIdx, line.id);
-                              if (isEditMode && activeColorTool === null) {
-                                setEditingLineId(line.id);
-                              }
+                              targetCursorOffsetRef.current = 0;
+                              setEditingLineId(line.id);
                             }}
                           >
                             <span className="text-gray-500/50 italic text-sm select-none">
-                              {isEditMode ? 'Tap to write line...' : 'Empty line'}
+                              {isLyricsEmpty ? 'Tap to write line...' : 'Empty line'}
                             </span>
                           </div>
                         ) : (
@@ -1834,10 +1837,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           return (
                             <div
                               className="flex-1 flex flex-wrap items-end select-text cursor-pointer"
-                              title={isEditMode ? 'Tap to edit line' : "Tap 'Edit' in toolbar to edit text"}
+                              title="Tap to edit line"
                               onClick={() => {
                                 setLastActivePosition(section.id, lineIdx, line.id);
-                                if (isEditMode && activeColorTool === null && !activePlacementChord) {
+                                if (activeColorTool === null && !activePlacementChord) {
+                                  targetCursorOffsetRef.current = line.text.length;
                                   setEditingLineId(line.id);
                                 }
                               }}
@@ -1905,7 +1909,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                             handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
                                             return;
                                           }
-                                          if (!isEditMode) return;
                                           if (activeColorTool !== null) {
                                             e.stopPropagation();
                                             updateDoc((doc) => ({
@@ -1929,6 +1932,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                               }),
                                             }));
                                           } else {
+                                            e.stopPropagation();
+                                            targetCursorOffsetRef.current = w.start;
+                                            setLastActivePosition(section.id, lineIdx, line.id);
+                                            setEditingLineId(line.id);
                                             setActiveSelection({
                                               sectionId: section.id,
                                               lineId: line.id,
@@ -1940,9 +1947,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                         }}
                                         onDoubleClick={(e) => {
                                           e.stopPropagation();
-                                          if (isEditMode) {
-                                            setEditingLineId(line.id);
-                                          }
+                                          targetCursorOffsetRef.current = w.start;
+                                          setEditingLineId(line.id);
                                         }}
                                       >
                                         {w.word.split('').map((char, charIdx) => {
@@ -2161,50 +2167,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </div>
         )}
 
-        {/* ── VIEW MODE: Floating Pencil Button at Bottom Right ── */}
-        {!isEditMode &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <aside
-              data-testid="both-floating-edit-dock"
-              style={{
-                position: 'fixed',
-                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-                right: '20px',
-                zIndex: 50,
-                pointerEvents: 'auto',
-              }}
-            >
-              <button
-                type="button"
-                data-testid="both-floating-edit-btn"
-                onClick={() => {
-                  setIsEditMode(true);
-                }}
-                aria-label="Edit Chords & Lyrics"
-                title="Edit Chords & Lyrics"
-                className="rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer select-none"
-                style={{
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '50%',
-                  background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
-                  border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
-                  backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                  WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                  boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
-                  color: 'var(--c-text-primary, #ffffff)',
-                }}
-              >
-                <span className="material-symbols-rounded text-2xl font-bold">edit</span>
-              </button>
-            </aside>,
-            document.body
-          )}
-
-        {/* ── EDIT MODE: Dedicated Bottom Action Dock ── */}
-        {isEditMode &&
-          typeof document !== 'undefined' &&
+        {/* ── Floating Controls: Bottom Action Dock Always Accessible ── */}
+        {typeof document !== 'undefined' &&
           createPortal(
             <aside
               ref={dockRef}
@@ -2760,12 +2724,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 }}
               />
 
-              {/* ── RIGHTMOST: Done / Exit Edit Mode Button ── */}
+              {/* ── RIGHTMOST: Done / Exit Line Focus Button ── */}
               <button
                 type="button"
                 data-testid="both-toolbar-done-btn"
                 onClick={() => {
-                  setIsEditMode(false);
+                  (document.activeElement as HTMLElement)?.blur();
                   setEditingLineId(null);
                   setActivePopover(null);
                   setActiveColorTool(null);

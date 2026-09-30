@@ -4,6 +4,7 @@ import {
   findWordBoundaries,
   snapToWordStart,
   getAdjacentWordOffset,
+  shiftChordOffsets,
 } from '../lyricSegments';
 import type { LyricChordPlacement } from '../../../types/lyrics';
 
@@ -98,6 +99,71 @@ describe('lyricSegments', () => {
       expect(getAdjacentWordOffset(text, 6, 'next')).toBe(13); // From "parado" to "sobre"
       expect(getAdjacentWordOffset(text, 13, 'prev')).toBe(6); // From "sobre" back to "parado"
       expect(getAdjacentWordOffset(text, 6, 'prev')).toBe(0); // From "parado" back to "Estoy"
+    });
+  });
+
+  describe('shiftChordOffsets', () => {
+    it('returns original chords if chords is empty or undefined', () => {
+      expect(shiftChordOffsets('old', 'new', undefined)).toBeUndefined();
+      expect(shiftChordOffsets('old', 'new', [])).toEqual([]);
+    });
+
+    it('returns original chords if text is unchanged', () => {
+      const chords: LyricChordPlacement[] = [{ id: 'c1', chord: 'G', offset: 5 }];
+      expect(shiftChordOffsets('Hello world', 'Hello world', chords)).toEqual(chords);
+    });
+
+    it('preserves chord offsets before the insertion point and shifts chords after', () => {
+      const oldText = 'Here we stand';
+      const newText = 'Here we all stand'; // inserted " all" (4 chars) at offset 7
+      const chords: LyricChordPlacement[] = [
+        { id: 'c1', chord: 'G', offset: 0 },
+        { id: 'c2', chord: 'C', offset: 8 }, // was on 'stand'
+      ];
+
+      const shifted = shiftChordOffsets(oldText, newText, chords)!;
+      expect(shifted).toHaveLength(2);
+      expect(shifted[0].offset).toBe(0); // G remains on 'Here' (0)
+      expect(shifted[1].offset).toBe(12); // C shifted to 12 ('stand' in 'Here we all stand')
+    });
+
+    it('shifts chords back when characters are deleted/backspaced', () => {
+      const oldText = 'Here we all stand';
+      const newText = 'Here we stand'; // deleted "all " (4 chars) starting at offset 8
+      const chords: LyricChordPlacement[] = [
+        { id: 'c1', chord: 'G', offset: 0 },
+        { id: 'c2', chord: 'C', offset: 12 }, // was on 'stand'
+      ];
+
+      const shifted = shiftChordOffsets(oldText, newText, chords)!;
+      expect(shifted).toHaveLength(2);
+      expect(shifted[0].offset).toBe(0);
+      expect(shifted[1].offset).toBe(8); // C shifted back to 8 ('stand')
+    });
+
+    it('anchors chord safely if the word it was attached to was deleted', () => {
+      const oldText = 'Here we all stand';
+      const newText = 'Here we stand'; // deleted "all "
+      const chords: LyricChordPlacement[] = [
+        { id: 'c-mid', chord: 'Am', offset: 8 }, // was on 'all'
+      ];
+
+      const shifted = shiftChordOffsets(oldText, newText, chords)!;
+      expect(shifted).toHaveLength(1);
+      expect(shifted[0].offset).toBe(8); // Clamped safely to the edit boundary
+    });
+
+    it('clamps chords to valid string bounds without crashing on total text replacement', () => {
+      const oldText = 'A very long lyric sentence with lots of words';
+      const newText = 'Short';
+      const chords: LyricChordPlacement[] = [
+        { id: 'c1', chord: 'Em', offset: 35 },
+      ];
+
+      const shifted = shiftChordOffsets(oldText, newText, chords)!;
+      expect(shifted).toHaveLength(1);
+      expect(shifted[0].offset).toBeLessThanOrEqual(newText.length);
+      expect(shifted[0].offset).toBeGreaterThanOrEqual(0);
     });
   });
 });

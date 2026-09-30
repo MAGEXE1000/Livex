@@ -155,3 +155,57 @@ export function getAdjacentWordOffset(
     return Math.max(0, text.length - 1);
   }
 }
+
+/**
+ * Intelligently shifts and preserves chord character offsets when lyric line text changes.
+ * Automatically detects whether characters were inserted or deleted and adjusts
+ * chords after the edit point while keeping chords before the edit point intact.
+ */
+export function shiftChordOffsets(
+  oldText: string,
+  newText: string,
+  chords?: LyricChordPlacement[]
+): LyricChordPlacement[] | undefined {
+  if (!chords || chords.length === 0) return chords;
+  if (oldText === newText) return chords;
+
+  // 1. Find common prefix
+  let start = 0;
+  const oldLen = oldText.length;
+  const newLen = newText.length;
+  while (start < oldLen && start < newLen && oldText[start] === newText[start]) {
+    start++;
+  }
+
+  // 2. Find common suffix
+  let oldEnd = oldLen;
+  let newEnd = newLen;
+  while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] === newText[newEnd - 1]) {
+    oldEnd--;
+    newEnd--;
+  }
+
+  const charsDeleted = oldEnd - start;
+  const charsInserted = newEnd - start;
+  const delta = charsInserted - charsDeleted;
+
+  return chords.map((chord) => {
+    let nextOffset = chord.offset;
+    if (chord.offset < start) {
+      // Before edit point - remains unchanged
+      nextOffset = chord.offset;
+    } else if (chord.offset >= oldEnd) {
+      // After edit point - shifts by delta
+      nextOffset = chord.offset + delta;
+    } else {
+      // Inside replaced/deleted range - anchors at edit start
+      nextOffset = start;
+    }
+
+    // Clamp to valid range [0, newLen]
+    return {
+      ...chord,
+      offset: Math.max(0, Math.min(newLen, nextOffset)),
+    };
+  });
+}

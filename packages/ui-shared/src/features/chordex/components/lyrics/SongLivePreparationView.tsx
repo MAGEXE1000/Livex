@@ -14,6 +14,7 @@ import {
   generateLyricId,
   getCombinedVocalRoles,
   splitLineIntoSegments,
+  shiftChordOffsets,
 } from '@workspace/livex-core';
 import { toast } from 'sonner';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
@@ -65,14 +66,12 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     return c;
   });
 
-  const [isEditing, setIsEditing] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSectionMorph, setShowSectionMorph] = useState(false);
   const [showTextMorph, setShowTextMorph] = useState(false);
   const [selectedSectionForRole, setSelectedSectionForRole] = useState<string | null>(null);
 
-  // Floating pencil & dock geometry anchor for contextual morphing popup
-  const pencilButtonRef = useRef<HTMLButtonElement | null>(null);
+  // Dock geometry anchor for contextual morphing popup
   const dockAddButtonRef = useRef<HTMLButtonElement | null>(null);
   const [pencilRect, setPencilRect] = useState<{
     top: number;
@@ -250,7 +249,15 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         if (sec.id !== sectionId) return sec;
         return {
           ...sec,
-          lines: sec.lines.map((l) => (l.id === lineId ? { ...l, text } : l)),
+          lines: sec.lines.map((l) => {
+            if (l.id !== lineId) return l;
+            const shiftedChords = shiftChordOffsets(l.text, text, l.chords);
+            return {
+              ...l,
+              text,
+              chords: shiftedChords,
+            };
+          }),
         };
       });
       onUpdateLyrics({
@@ -391,21 +398,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     [draggedLine, handleMoveLine]
   );
 
-  const handlePencilClick = useCallback(() => {
-    if (pencilButtonRef.current) {
-      const r = pencilButtonRef.current.getBoundingClientRect();
-      setPencilRect({
-        top: r.top,
-        left: r.left,
-        right: r.right,
-        bottom: r.bottom,
-        width: r.width,
-        height: r.height,
-      });
-    }
-    setIsEditing(true);
-    setShowAddMenu(true);
-  }, []);
 
   const handleDockAddClick = useCallback(() => {
     if (dockAddButtonRef.current) {
@@ -621,19 +613,17 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              {isEditing && (
-                                <div
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, section.id, line.id)}
-                                  onDragEnd={handleDragEnd}
-                                  data-testid={`interlude-drag-handle-${lIdx}`}
-                                  className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0"
-                                  title="Drag to reposition interlude"
-                                  aria-label="Drag to reposition interlude"
-                                >
-                                  <GripVertical className="w-4 h-4" />
-                                </div>
-                              )}
+                              <div
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, section.id, line.id)}
+                                onDragEnd={handleDragEnd}
+                                data-testid={`interlude-drag-handle-${lIdx}`}
+                                className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0"
+                                title="Drag to reposition interlude"
+                                aria-label="Drag to reposition interlude"
+                              >
+                                <GripVertical className="w-4 h-4" />
+                              </div>
                               <div
                                 className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{
@@ -643,35 +633,23 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               >
                                 <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
                               </div>
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={line.text || '(Solo)'}
-                                  onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
-                                  onChange={(e) => {
-                                    setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
-                                    handleUpdateInterludeLabel(section.id, line.id, e.target.value);
-                                  }}
-                                  className="px-2 py-1 rounded-lg text-sm font-bold border outline-none"
-                                  style={{
-                                    backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
-                                    borderColor: 'var(--c-border, #E3E6EB)',
-                                    color: 'var(--c-text-primary, #111827)',
-                                    fontFamily: 'var(--font-headline)',
-                                  }}
-                                  placeholder="(Solo)"
-                                />
-                              ) : (
-                                <span
-                                  className="text-sm font-bold"
-                                  style={{
-                                    fontFamily: 'var(--font-headline)',
-                                    color: 'var(--c-text-primary, #111827)',
-                                  }}
-                                >
-                                  {line.text || '(Solo)'}
-                                </span>
-                              )}
+                              <input
+                                type="text"
+                                value={line.text || '(Solo)'}
+                                onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
+                                onChange={(e) => {
+                                  setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
+                                  handleUpdateInterludeLabel(section.id, line.id, e.target.value);
+                                }}
+                                className="px-2 py-1 rounded-lg text-sm font-bold border outline-none"
+                                style={{
+                                  backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
+                                  borderColor: 'var(--c-border, #E3E6EB)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                  fontFamily: 'var(--font-headline)',
+                                }}
+                                placeholder="(Solo)"
+                              />
                             </div>
 
                             <div className="flex items-center gap-1.5">
@@ -685,102 +663,92 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               >
                                 {durSec}s
                               </span>
-                              {isEditing && (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMoveLineRelative(section.id, lIdx, -1)}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
-                                    title="Move interlude up"
-                                    aria-label="Move interlude up"
-                                  >
-                                    <span className="material-symbols-rounded text-base">arrow_upward</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMoveLineRelative(section.id, lIdx, 1)}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
-                                    title="Move interlude down"
-                                    aria-label="Move interlude down"
-                                  >
-                                    <span className="material-symbols-rounded text-base">arrow_downward</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteLine(section.id, line.id)}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer"
-                                    title="Delete interlude"
-                                    aria-label="Delete interlude"
-                                  >
-                                    <span className="material-symbols-rounded text-base">delete</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {isEditing && (
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t" style={{ borderColor: 'var(--c-border, #E3E6EB)' }}>
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => handleUpdateInterludeDuration(section.id, line.id, Math.max(1, durSec - 1))}
-                                  className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs border active:scale-90 transition-all cursor-pointer"
-                                  style={{
-                                    backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
-                                    borderColor: 'var(--c-border, #E3E6EB)',
-                                    color: 'var(--c-text-primary, #111827)',
-                                  }}
-                                  title="Decrease 1s"
+                                  onClick={() => handleMoveLineRelative(section.id, lIdx, -1)}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                  title="Move interlude up"
+                                  aria-label="Move interlude up"
                                 >
-                                  -
+                                  <span className="material-symbols-rounded text-base">arrow_upward</span>
                                 </button>
-                                <span className="font-mono text-xs font-bold px-1">{durSec}s</span>
                                 <button
                                   type="button"
-                                  onClick={() => handleUpdateInterludeDuration(section.id, line.id, Math.min(600, durSec + 1))}
-                                  className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs border active:scale-90 transition-all cursor-pointer"
-                                  style={{
-                                    backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
-                                    borderColor: 'var(--c-border, #E3E6EB)',
-                                    color: 'var(--c-text-primary, #111827)',
-                                  }}
-                                  title="Increase 1s"
+                                  onClick={() => handleMoveLineRelative(section.id, lIdx, 1)}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                  title="Move interlude down"
+                                  aria-label="Move interlude down"
                                 >
-                                  +
+                                  <span className="material-symbols-rounded text-base">arrow_downward</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLine(section.id, line.id)}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer"
+                                  title="Delete interlude"
+                                  aria-label="Delete interlude"
+                                >
+                                  <span className="material-symbols-rounded text-base">delete</span>
                                 </button>
                               </div>
-
-                              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                                {[5, 10, 15, 20, 30, 45, 60].map((presetSec) => (
-                                  <button
-                                    key={presetSec}
-                                    type="button"
-                                    onClick={() => handleUpdateInterludeDuration(section.id, line.id, presetSec)}
-                                    className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95"
-                                    style={{
-                                      backgroundColor: durSec === presetSec ? accent.from : 'var(--surface-container-low, rgba(0,0,0,0.04))',
-                                      color: durSec === presetSec ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
-                                      border: '1px solid var(--c-border, #E3E6EB)',
-                                    }}
-                                  >
-                                    {presetSec}s
-                                  </button>
-                                ))}
-                              </div>
                             </div>
-                          )}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t" style={{ borderColor: 'var(--c-border, #E3E6EB)' }}>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateInterludeDuration(section.id, line.id, Math.max(1, durSec - 1))}
+                                className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs border active:scale-90 transition-all cursor-pointer"
+                                style={{
+                                  backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
+                                  borderColor: 'var(--c-border, #E3E6EB)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                }}
+                                title="Decrease 1s"
+                              >
+                                -
+                              </button>
+                              <span className="font-mono text-xs font-bold px-1">{durSec}s</span>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateInterludeDuration(section.id, line.id, Math.min(600, durSec + 1))}
+                                className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs border active:scale-90 transition-all cursor-pointer"
+                                style={{
+                                  backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
+                                  borderColor: 'var(--c-border, #E3E6EB)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                }}
+                                title="Increase 1s"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                              {[5, 10, 15, 20, 30, 45, 60].map((presetSec) => (
+                                <button
+                                  key={presetSec}
+                                  type="button"
+                                  onClick={() => handleUpdateInterludeDuration(section.id, line.id, presetSec)}
+                                  className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                                  style={{
+                                    backgroundColor: durSec === presetSec ? accent.from : 'var(--surface-container-low, rgba(0,0,0,0.04))',
+                                    color: durSec === presetSec ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                                    border: '1px solid var(--c-border, #E3E6EB)',
+                                  }}
+                                >
+                                  {presetSec}s
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       );
                     }
 
                     const showChords = displayMode === 'chords_lyrics' && line.chords && line.chords.length > 0;
-                    const isBlank = !line.text.trim() && (!line.chords || line.chords.length === 0);
-
-                    if (isBlank && !isEditing) {
-                      return <div key={line.id || `blank-${lIdx}`} className="h-4" />;
-                    }
-
                     const lineTextColor = line.format?.color || resolvedColor;
 
                     return (
@@ -793,111 +761,83 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                         }}
                         onDrop={(e) => handleDropOnLine(e, section.id, lIdx)}
                       >
-                        {isEditing ? (
-                          <div className="flex items-center gap-2 w-full group/line">
-                            <input
-                              type="text"
-                              data-testid={`lyrics-line-input-${lIdx}`}
-                              value={line.text}
-                              onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
-                              onChange={(e) => {
-                                setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
-                                handleUpdateLineText(section.id, line.id, e.target.value);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddLine(section.id, lIdx);
-                                } else if (e.key === 'Backspace' && line.text === '' && section.lines.length > 1) {
-                                  e.preventDefault();
-                                  handleDeleteLine(section.id, line.id);
-                                }
-                              }}
-                              placeholder="Type lyric line..."
-                              className="flex-1 bg-transparent border-0 border-b outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
-                              style={{
-                                borderBottom: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.25)',
-                                color: lineTextColor,
-                                fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
-                                fontSize: `${fontSize}px`,
-                                fontFamily: 'inherit',
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteLine(section.id, line.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer opacity-40 hover:opacity-100 flex-shrink-0"
-                              title="Delete line"
-                              aria-label="Delete line"
-                            >
-                              <span className="material-symbols-outlined text-base">close</span>
-                            </button>
-                          </div>
-                        ) : showChords ? (
-                          <div className="flex flex-wrap items-end gap-x-1 gap-y-1 select-text">
-                            {splitLineIntoSegments(line.text, line.chords).map((seg) => (
-                              <div
-                                key={seg.id}
-                                className="inline-flex flex-col items-start align-bottom"
+                        {showChords && (
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1 select-none">
+                            {line.chords!.map((c) => (
+                              <span
+                                key={c.id}
+                                className="font-mono text-xs font-black tracking-tight px-1.5 py-0.5 rounded"
+                                style={{
+                                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
+                                  color: 'var(--c-accent-from, #2563EB)',
+                                }}
                               >
-                                {seg.chord ? (
-                                  <span
-                                    className="font-mono text-xs font-black tracking-tight select-none mb-0.5 px-1 py-0.2 rounded"
-                                    style={{
-                                      backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
-                                      color: 'var(--c-accent-from, #2563EB)',
-                                    }}
-                                  >
-                                    {seg.chord.chord}
-                                  </span>
-                                ) : (
-                                  <span className="h-5 mb-0.5 select-none pointer-events-none" />
-                                )}
-                                <span
-                                  style={{
-                                    fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
-                                    color: lineTextColor,
-                                  }}
-                                  className="whitespace-pre"
-                                >
-                                  {seg.text || '\u00A0'}
-                                </span>
-                              </div>
+                                {c.chord}
+                              </span>
                             ))}
                           </div>
-                        ) : (
-                          <div
-                            style={{
-                              fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
-                              color: lineTextColor,
-                            }}
-                          >
-                            {line.text || '\u00A0'}
-                          </div>
                         )}
+
+                        <div className="flex items-center gap-2 w-full group/line">
+                          <input
+                            type="text"
+                            data-testid={`lyrics-line-input-${lIdx}`}
+                            value={line.text}
+                            onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
+                            onChange={(e) => {
+                              setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
+                              handleUpdateLineText(section.id, line.id, e.target.value);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddLine(section.id, lIdx);
+                              } else if (e.key === 'Backspace' && line.text === '' && section.lines.length > 1) {
+                                e.preventDefault();
+                                handleDeleteLine(section.id, line.id);
+                              }
+                            }}
+                            placeholder="Type lyric line..."
+                            className="flex-1 bg-transparent border-0 border-b outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
+                            style={{
+                              borderBottom: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.25)',
+                              color: lineTextColor,
+                              fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                              fontSize: `${fontSize}px`,
+                              fontFamily: 'inherit',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLine(section.id, line.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer opacity-40 hover:opacity-100 flex-shrink-0"
+                            title="Delete line"
+                            aria-label="Delete line"
+                          >
+                            <span className="material-symbols-outlined text-base">close</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
 
-                  {isEditing && (
-                    <div
-                      className="flex items-center gap-2 mt-2 pt-1.5 border-t border-dashed border-white/10"
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                      }}
-                      onDrop={(e) => handleDropOnLine(e, section.id, section.lines.length)}
+                  <div
+                    className="flex items-center gap-2 mt-2 pt-1.5 border-t border-dashed border-white/10"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={(e) => handleDropOnLine(e, section.id, section.lines.length)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleAddLine(section.id)}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
                     >
-                      <button
-                        type="button"
-                        onClick={() => handleAddLine(section.id)}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
-                      >
-                        <span className="material-symbols-rounded text-sm">add</span>
-                        <span>Add Line</span>
-                      </button>
-                    </div>
-                  )}
+                      <span className="material-symbols-rounded text-sm">add</span>
+                      <span>Add Line</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -905,83 +845,49 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         </div>
       )}
 
-      {/* ── Floating Controls: View Mode Floating Edit FAB / Edit Mode Action Dock ── */}
+      {/* ── Floating Controls: Bottom Action Dock Always Accessible ── */}
       {typeof document !== 'undefined' &&
         createPortal(
-          !isEditing ? (
+          <aside
+            aria-label="Song Lyrics edit toolbar"
+            data-testid="lyrics-editing-bottom-dock"
+            data-purpose="lyrics-editing-bottom-dock"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-full border shadow-2xl backdrop-blur-xl pointer-events-auto select-none"
+            style={{
+              position: 'fixed',
+              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+              left: '50%',
+              transform: 'translateX(-50%) translateZ(0)',
+              willChange: 'transform, backdrop-filter',
+              zIndex: 45,
+              width: 'fit-content',
+              maxWidth: 'calc(100vw - 32px)',
+              backgroundColor: 'var(--surface-float-bg, rgba(20, 20, 26, 0.85))',
+              borderColor: 'var(--surface-topbar-border, rgba(255, 255, 255, 0.15))',
+              boxShadow: 'var(--surface-topbar-shadow, 0 10px 30px rgba(0, 0, 0, 0.45))',
+              backdropFilter: 'var(--surface-topbar-backdrop)',
+              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+              pointerEvents: 'auto',
+            }}
+          >
+            {/* Exit Edit Mode / Done (Blurs Keyboard) */}
             <button
-              ref={pencilButtonRef}
               type="button"
-              data-testid="lyrics-floating-edit-btn"
-              onClick={handlePencilClick}
-              style={{
-                position: 'fixed',
-                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-                right: '20px',
-                zIndex: 50,
-                width: '50px',
-                height: '50px',
-                borderRadius: '50%',
-                background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
-                border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
-                backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--c-text-primary, #ffffff)',
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease, background 0.15s ease',
+              data-testid="lyrics-edit-done-btn"
+              onClick={() => {
+                (document.activeElement as HTMLElement)?.blur();
+                setShowAddMenu(false);
               }}
-              onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
-              onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-              onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-              title="Edit Lyrics"
-              aria-label="Edit Lyrics"
+              className="px-3.5 h-9 rounded-full flex items-center justify-center gap-1.5 font-bold text-xs transition active:scale-90 cursor-pointer"
+              style={{
+                backgroundColor: `${accent.from}22`,
+                border: `1px solid ${accent.from}44`,
+                color: accent.from,
+              }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
-                edit
-              </span>
+              <span className="material-symbols-rounded text-base">check</span>
+              <span>Done</span>
             </button>
-          ) : (
-            <aside
-              aria-label="Song Lyrics edit toolbar"
-              data-testid="lyrics-editing-bottom-dock"
-              data-purpose="lyrics-editing-bottom-dock"
-              className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-full border shadow-2xl backdrop-blur-xl pointer-events-auto select-none"
-              style={{
-                position: 'fixed',
-                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
-                left: '50%',
-                transform: 'translateX(-50%) translateZ(0)',
-                willChange: 'transform, backdrop-filter',
-                zIndex: 45,
-                width: 'fit-content',
-                maxWidth: 'calc(100vw - 32px)',
-                backgroundColor: 'var(--surface-float-bg, rgba(20, 20, 26, 0.85))',
-                borderColor: 'var(--surface-topbar-border, rgba(255, 255, 255, 0.15))',
-                boxShadow: 'var(--surface-topbar-shadow, 0 10px 30px rgba(0, 0, 0, 0.45))',
-                backdropFilter: 'var(--surface-topbar-backdrop)',
-                WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-                pointerEvents: 'auto',
-              }}
-            >
-              {/* Exit Edit Mode (Done) */}
-              <button
-                type="button"
-                data-testid="lyrics-edit-done-btn"
-                onClick={() => setIsEditing(false)}
-                className="px-3.5 h-9 rounded-full flex items-center justify-center gap-1.5 font-bold text-xs transition active:scale-90 cursor-pointer"
-                style={{
-                  backgroundColor: `${accent.from}22`,
-                  border: `1px solid ${accent.from}44`,
-                  color: accent.from,
-                }}
-              >
-                <span className="material-symbols-rounded text-base">check</span>
-                <span>Done</span>
-              </button>
 
               {/* Divider */}
               <div
@@ -1043,10 +949,9 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
               >
                 <span className="material-symbols-rounded text-lg">palette</span>
               </button>
-            </aside>
-          ),
-          document.body
-        )}
+            </aside>,
+            document.body
+          )}
 
       {/* ── Unified Contextual Morphing Popup (Add Section, Add Timed Interlude, Text Styling) ── */}
       <MorphingActionSurface
