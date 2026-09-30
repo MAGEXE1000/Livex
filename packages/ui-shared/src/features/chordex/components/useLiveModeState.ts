@@ -870,6 +870,19 @@ export function useLiveModeState(
     [shownChord]
   );
 
+  const findChordIdx = useCallback(
+    (chordSymOrId: string | undefined) => {
+      if (!chordSymOrId) return -1;
+      const lower = chordSymOrId.toLowerCase();
+      return chords.findIndex((cId) => {
+        if (cId.toLowerCase() === lower) return true;
+        const def = getChordById(cId) || getChordByName(cId);
+        return Boolean(def && def.name.toLowerCase() === lower);
+      });
+    },
+    [chords]
+  );
+
   const setCurrentWordIdx = useCallback(
     (targetIdx: number) => {
       if (allWords.length === 0) return;
@@ -881,14 +894,14 @@ export function useLiveModeState(
         setCurrentLineIdx(targetWord.lineIdx);
       }
       if (targetWord?.chord) {
-        const chordIdx = chords.indexOf(targetWord.chord);
+        const chordIdx = findChordIdx(targetWord.chord);
         if (chordIdx !== -1) {
           setCurrentIdx(chordIdx);
         }
       }
       setSeekToken((t) => t + 1);
     },
-    [allWords, currentLineIdx, chords]
+    [allWords, currentLineIdx, findChordIdx]
   );
 
   const stepWordForward = useCallback(() => {
@@ -901,12 +914,12 @@ export function useLiveModeState(
         setCurrentLineIdx(targetWord.lineIdx);
       }
       if (targetWord?.chord) {
-        const chordIdx = chords.indexOf(targetWord.chord);
+        const chordIdx = findChordIdx(targetWord.chord);
         if (chordIdx !== -1) setCurrentIdx(chordIdx);
       }
       return next;
     });
-  }, [allWords, currentLineIdx, chords]);
+  }, [allWords, currentLineIdx, findChordIdx]);
 
   const stepWordBackward = useCallback(() => {
     if (allWords.length === 0) return;
@@ -918,12 +931,12 @@ export function useLiveModeState(
         setCurrentLineIdx(targetWord.lineIdx);
       }
       if (targetWord?.chord) {
-        const chordIdx = chords.indexOf(targetWord.chord);
+        const chordIdx = findChordIdx(targetWord.chord);
         if (chordIdx !== -1) setCurrentIdx(chordIdx);
       }
       return prevIdx;
     });
-  }, [allWords, currentLineIdx, chords]);
+  }, [allWords, currentLineIdx, findChordIdx]);
 
   const goToLine = useCallback(
     (idx: number) => {
@@ -934,14 +947,14 @@ export function useLiveModeState(
         if (firstWord) {
           setCurrentWordIdxState(firstWord.globalWordIdx);
           if (firstWord.chord) {
-            const chordIdx = chords.indexOf(firstWord.chord);
+            const chordIdx = findChordIdx(firstWord.chord);
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
         setSeekToken((t) => t + 1);
       }
     },
-    [totalLines, currentLineIdx, allWords, chords]
+    [totalLines, currentLineIdx, allWords, findChordIdx]
   );
 
   const nextPhrase = useCallback(() => {
@@ -1225,7 +1238,7 @@ export function useLiveModeState(
           currentWordIdxRef.current = nextWord.globalWordIdx;
           setCurrentWordIdxState(nextWord.globalWordIdx);
           if (nextWord.chord) {
-            const chordIdx = chords.indexOf(nextWord.chord);
+            const chordIdx = findChordIdx(nextWord.chord);
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
@@ -1245,7 +1258,7 @@ export function useLiveModeState(
           currentWordIdxRef.current = firstWord.globalWordIdx;
           setCurrentWordIdxState(firstWord.globalWordIdx);
           if (firstWord.chord) {
-            const chordIdx = chords.indexOf(firstWord.chord);
+            const chordIdx = findChordIdx(firstWord.chord);
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
@@ -1271,6 +1284,7 @@ export function useLiveModeState(
     teleprompterLines,
     allWords,
     chords,
+    findChordIdx,
   ]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────

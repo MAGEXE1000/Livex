@@ -5190,11 +5190,6 @@ export default function SongsPanel() {
           }
 
           if (editorViewMode === 'both') {
-            const allSongChordNames = [
-              ...activePreset.chords,
-              ...(activePreset.sections ?? []).flatMap((s) => s.chords),
-            ];
-
             return (
               <div
                 ref={editorScrollRef}

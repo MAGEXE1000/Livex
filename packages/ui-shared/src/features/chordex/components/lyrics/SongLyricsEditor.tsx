@@ -186,6 +186,48 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     return getChordById(sym) || getChordByName(sym) || null;
   }, [selectedChordForEdit]);
 
+  // ── UNASSIGNED CHORDS QUEUE & PLACEMENT MODE STATE ─────────────────
+  const songChords = useMemo(() => {
+    const raw = (availableChords || [])
+      .map((c) => getChordById(c)?.name || getChordByName(c)?.name || c)
+      .filter(Boolean);
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const c of raw) {
+      const lower = c.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        unique.push(c);
+      }
+    }
+    return unique;
+  }, [availableChords]);
+
+  const allAssignedChords = useMemo(() => {
+    return currentDoc.sections.flatMap((s) => s.lines.flatMap((l) => l.chords || []));
+  }, [currentDoc]);
+
+  const unassignedChords = useMemo(() => {
+    const remaining = [...songChords];
+    for (const assigned of allAssignedChords) {
+      const idx = remaining.findIndex(
+        (c) => c.toLowerCase() === assigned.chord.toLowerCase()
+      );
+      if (idx !== -1) {
+        remaining.splice(idx, 1);
+      }
+    }
+    return remaining;
+  }, [songChords, allAssignedChords]);
+
+  const [activePlacementChord, setActivePlacementChord] = useState<string | null>(null);
+  const [movingChordInfo, setMovingChordInfo] = useState<{
+    sectionId: string;
+    lineId: string;
+    chordId: string;
+    chord: string;
+  } | null>(null);
+
   // Line currently in direct text typing mode (null = word targeting mode)
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   // Read-only by default in Both mode: editing mode requires explicit user activation
@@ -340,10 +382,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 ...sec,
                 lines: sec.lines.map((l) => {
                   if (l.id !== lineId) return l;
-                  // If line had spans, update or reset spans to match new text
+                  // Gracefully adjust chord character offsets so chords aren't lost
+                  const maxOffset = Math.max(0, newText.length);
+                  const clampedChords = l.chords
+                    ? l.chords.map((c) => ({
+                        ...c,
+                        offset: Math.min(Math.max(0, c.offset), maxOffset),
+                      }))
+                    : undefined;
                   return {
                     ...l,
                     text: newText,
+                    chords: clampedChords,
                     spans: l.spans ? [{ text: newText }] : undefined,
                   };
                 }),
@@ -786,6 +836,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
+  const handleAnchorChord = useCallback(
+    (sectionId: string, lineId: string, chordSymbol: string, characterOffset: number) => {
+      if (movingChordInfo) {
+        handleRemoveChordFromLine(movingChordInfo.sectionId, movingChordInfo.lineId, movingChordInfo.chordId);
+        setMovingChordInfo(null);
+      }
+      handleAddChordToLine(sectionId, lineId, chordSymbol, characterOffset);
+      setActivePlacementChord(null);
+      toast.success(`Anchored [${chordSymbol}] at position ${characterOffset}`);
+    },
+    [movingChordInfo, handleAddChordToLine]
+  );
+
   const handleRemoveChordFromLine = useCallback(
     (sectionId: string, lineId: string, chordMarkerId: string) => {
       updateDoc((doc) => ({
@@ -1109,6 +1172,148 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }
         }}
       >
+        {/* Unassigned Chords Queue & Placement Mode Bar */}
+        {songChords.length > 0 && (
+          <div
+            data-testid="unassigned-chords-queue"
+            className="w-full mb-3 p-3 rounded-2xl border transition-all"
+            style={{
+              backgroundColor: isEffectiveLight
+                ? 'rgba(0, 0, 0, 0.02)'
+                : isEffectiveAmoled
+                ? '#000000'
+                : 'rgba(255, 255, 255, 0.03)',
+              borderColor: isEffectiveLight
+                ? 'rgba(0, 0, 0, 0.08)'
+                : isEffectiveAmoled
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span
+                  data-testid="unassigned-chords-count"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide transition-all border"
+                  style={{
+                    backgroundColor: unassignedChords.length > 0
+                      ? isEffectiveLight ? 'rgba(37, 99, 235, 0.10)' : 'rgba(56, 189, 248, 0.15)'
+                      : isEffectiveLight ? 'rgba(16, 185, 129, 0.10)' : 'rgba(16, 185, 129, 0.15)',
+                    borderColor: unassignedChords.length > 0
+                      ? isEffectiveLight ? 'rgba(37, 99, 235, 0.30)' : 'rgba(56, 189, 248, 0.35)'
+                      : isEffectiveLight ? 'rgba(16, 185, 129, 0.30)' : 'rgba(16, 185, 129, 0.35)',
+                    color: unassignedChords.length > 0
+                      ? isEffectiveLight ? '#1d4ed8' : '#38bdf8'
+                      : isEffectiveLight ? '#047857' : '#34d399',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-sm">
+                    {unassignedChords.length > 0 ? 'queue_music' : 'check_circle'}
+                  </span>
+                  <span>
+                    {unassignedChords.length > 0
+                      ? `${unassignedChords.length} unassigned chords`
+                      : 'All chords assigned'}
+                  </span>
+                </span>
+                <span className="text-[11px] font-medium text-gray-400 hidden sm:inline">
+                  {unassignedChords.length > 0
+                    ? 'Tap a chord to enter Placement Mode, then tap any word or letter'
+                    : 'All song chords are anchored to lyrics'}
+                </span>
+              </div>
+
+              {unassignedChords.length > 0 && (
+                <span className="text-[11px] font-mono font-semibold text-gray-500">
+                  {unassignedChords.length} / {songChords.length} pending
+                </span>
+              )}
+            </div>
+
+            {/* Horizontal Chip Carousel of Pending Unassigned Chords */}
+            {unassignedChords.length > 0 ? (
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {unassignedChords.map((chord, cIdx) => {
+                  const isSelected = activePlacementChord === chord;
+                  return (
+                    <button
+                      key={`${chord}-${cIdx}`}
+                      type="button"
+                      data-testid={`unassigned-chord-${chord}`}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', chord);
+                        setActivePlacementChord(chord);
+                      }}
+                      onClick={() => {
+                        if (isSelected) {
+                          setActivePlacementChord(null);
+                          setMovingChordInfo(null);
+                        } else {
+                          setActivePlacementChord(chord);
+                          setMovingChordInfo(null);
+                          toast.info(`Placement Mode active: Tap any word or syllable to anchor [${chord}]`);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-black border transition-all cursor-pointer select-none active:scale-95 shadow-sm whitespace-nowrap"
+                      style={{
+                        backgroundColor: isSelected
+                          ? isEffectiveLight ? '#2563eb' : '#0284c7'
+                          : isEffectiveLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(56, 189, 248, 0.12)',
+                        borderColor: isSelected
+                          ? '#ffffff'
+                          : isEffectiveLight ? 'rgba(37, 99, 235, 0.30)' : 'rgba(56, 189, 248, 0.35)',
+                        color: isSelected
+                          ? '#ffffff'
+                          : isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                        boxShadow: isSelected ? '0 0 12px rgba(37, 99, 235, 0.5)' : undefined,
+                        transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                      }}
+                      title={`Tap to place [${chord}] above lyrics`}
+                    >
+                      <span className="material-symbols-rounded text-sm">
+                        {isSelected ? 'pin_drop' : 'music_note'}
+                      </span>
+                      <span>{chord}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {/* Placement Mode Active Guidance Banner */}
+            {activePlacementChord && (
+              <div
+                data-testid="placement-mode-banner"
+                className="mt-2.5 flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold animate-fadeIn"
+                style={{
+                  backgroundColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(56, 189, 248, 0.12)',
+                  borderColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.3)' : 'rgba(56, 189, 248, 0.35)',
+                  color: isEffectiveLight ? '#1d4ed8' : '#7dd3fc',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-rounded text-base animate-pulse">touch_app</span>
+                  <span>
+                    Placement Mode: Tap directly above any word or letter to anchor{' '}
+                    <span className="font-mono font-black underline text-sm">{activePlacementChord}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActivePlacementChord(null);
+                    setMovingChordInfo(null);
+                  }}
+                  className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-white/10 hover:bg-white/20 transition active:scale-95 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* If completely empty: Show pristine writing invitation without forced sections */}
         {isLyricsEmpty && (
           <div
@@ -1617,152 +1822,92 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </span>
                           </div>
                         ) : (
-                          /* Responsive Word-Segment Surface with Lead-Sheet Chord Alignment */
-                          <div
-                            className="flex-1 flex flex-wrap items-end gap-x-1 gap-y-2 select-text cursor-pointer"
-                            title={isEditMode ? 'Tap to edit line' : "Tap 'Edit' in toolbar to edit text"}
-                            onClick={() => {
-                              setLastActivePosition(section.id, lineIdx, line.id);
-                              if (isEditMode && activeColorTool === null) {
-                                setEditingLineId(line.id);
-                              }
-                            }}
-                          >
-                            {segments.map((seg, sIdx) => {
-                              const segWords = findWordBoundaries(seg.text);
+                        /* Responsive Songsterr-Style Word & Letter Surface with Lead-Sheet Chord Alignment */
+                        (() => {
+                          const lineWords = findWordBoundaries(line.text);
+                          const lineChords = line.chords || [];
+                          const hasAnyChordsOnLine = lineChords.length > 0;
+                          const hasChordsGlobal = allAssignedChords.length > 0 || songChords.length > 0;
+                          const isPlacementActive = Boolean(activePlacementChord);
+                          const slotHeight = (hasAnyChordsOnLine || hasChordsGlobal || isPlacementActive) ? '24px' : '0px';
 
-                              return (
-                                <div
-                                  key={seg.id || sIdx}
-                                  className="inline-flex flex-col items-start align-bottom"
-                                >
-                                  {/* Placed Chord Chip */}
-                                  {seg.chord ? (
-                                    <div className="flex items-center gap-0.5 select-none mb-1">
-                                      <button
-                                        type="button"
-                                        data-testid={`placed-chord-${seg.chord.chord}`}
-                                        data-chord-id={seg.chord.id}
-                                        data-chord-offset={seg.chord.offset}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedChordForEdit({
-                                            sectionId: section.id,
-                                            lineId: line.id,
-                                            chord: seg.chord!,
-                                          });
-                                        }}
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110"
+                          return (
+                            <div
+                              className="flex-1 flex flex-wrap items-end select-text cursor-pointer"
+                              title={isEditMode ? 'Tap to edit line' : "Tap 'Edit' in toolbar to edit text"}
+                              onClick={() => {
+                                setLastActivePosition(section.id, lineIdx, line.id);
+                                if (isEditMode && activeColorTool === null && !activePlacementChord) {
+                                  setEditingLineId(line.id);
+                                }
+                              }}
+                            >
+                              {lineWords.length > 0 ? (
+                                lineWords.map((w, wIdx) => {
+                                  const prevWordEnd = wIdx > 0 ? lineWords[wIdx - 1].end : 0;
+
+                                  return (
+                                    <div
+                                      key={`w-${wIdx}`}
+                                      data-testid={`lyric-word-${w.word}`}
+                                      className="inline-flex flex-col items-start relative select-text"
+                                      style={{
+                                        marginRight: '0.45em',
+                                        marginBottom: '0.25rem',
+                                      }}
+                                    >
+                                      {/* Chord/Syllable Target Slot Directly Above Word */}
+                                      <div
+                                        data-testid={`chord-anchor-slot-${w.word}`}
+                                        className="w-full flex items-end relative select-none"
                                         style={{
-                                          backgroundColor: isEffectiveLight
-                                            ? 'rgba(37, 99, 235, 0.10)'
-                                            : 'rgba(56, 189, 248, 0.18)',
-                                          borderColor: isEffectiveLight
-                                            ? 'rgba(37, 99, 235, 0.35)'
-                                            : 'rgba(56, 189, 248, 0.40)',
-                                          color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                          minHeight: slotHeight,
+                                          cursor: isPlacementActive ? 'pointer' : 'default',
                                         }}
-                                        title="Tap to view chord diagram or edit placement"
-                                      >
-                                        <span>{seg.chord.chord}</span>
-                                        {isEditMode && (
-                                          <span
-                                            className="text-[10px] opacity-40 hover:opacity-100 hover:text-rose-400 font-sans ml-0.5 cursor-pointer"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleRemoveChordFromLine(section.id, line.id, seg.chord!.id);
-                                            }}
-                                            title="Quick remove"
-                                          >
-                                            ×
-                                          </span>
-                                        )}
-                                      </button>
-                                    </div>
-                                  ) : hasChords ? (
-                                    /* Spacer keeping text baselines aligned */
-                                    <div className="h-[23px] mb-1 select-none pointer-events-none" />
-                                  ) : null}
-
-                                  {/* Segment Words / Text */}
-                                  <div className="inline-flex items-center flex-wrap">
-                                    {segWords.length > 0 ? (
-                                      segWords.map((w, wIdx) => {
-                                        const globalStart = seg.startOffset + w.start;
-                                        const globalEnd = seg.startOffset + w.end;
-                                        const spanColor = getCharacterColor(line.spans, globalStart);
-                                        const spanBold = getCharacterBold(line.spans, globalStart);
-                                        const wordColor = spanColor || resolvedColor;
-                                        const wordBold = isLineBold || spanBold;
-
-                                        return (
-                                          <React.Fragment key={wIdx}>
-                                            <span
-                                              data-testid={`lyric-word-${w.word}`}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (!isEditMode) return;
-                                                if (activeColorTool !== null) {
-                                                  // Apply active color tool to this word
-                                                  updateDoc((doc) => ({
-                                                    ...doc,
-                                                    sections: doc.sections.map((sec) => {
-                                                      if (sec.id !== section.id) return sec;
-                                                      return {
-                                                        ...sec,
-                                                        lines: sec.lines.map((l) => {
-                                                          if (l.id !== line.id) return l;
-                                                          const nextSpans = setColorOnSelection(
-                                                            l.spans,
-                                                            l.text,
-                                                            globalStart,
-                                                            globalEnd,
-                                                            activeColorTool
-                                                          );
-                                                          return { ...l, spans: nextSpans };
-                                                        }),
-                                                      };
-                                                    }),
-                                                  }));
-                                                } else {
-                                                  // Target this word for chord insertion and open line edit mode
-                                                  setActiveSelection({
-                                                    sectionId: section.id,
-                                                    lineId: line.id,
-                                                    start: globalStart,
-                                                    end: globalEnd,
-                                                    text: w.word,
-                                                  });
-                                                  setEditingLineId(line.id);
-                                                }
-                                              }}
-                                              onDoubleClick={(e) => {
-                                                e.stopPropagation();
-                                                if (isEditMode) {
-                                                  setEditingLineId(line.id);
-                                                }
-                                              }}
-                                              className={`${isEditMode ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'} rounded px-0.5 transition-all`}
-                                              style={{
-                                                color: wordColor,
-                                                fontWeight: wordBold ? 800 : 500,
-                                                fontFamily: 'inherit',
-                                              }}
-                                              title={isEditMode ? (activeColorTool !== null ? `Tap to color [${w.word}]` : `Target "${w.word}" for chord`) : undefined}
-                                            >
-                                              {w.word}
-                                            </span>
-                                            {/* Space after word if not last */}
-                                            {wIdx < segWords.length - 1 && <span>&nbsp;</span>}
-                                          </React.Fragment>
-                                        );
-                                      })
-                                    ) : (
-                                      <span
                                         onClick={(e) => {
-                                          e.stopPropagation();
+                                          if (activePlacementChord) {
+                                            e.stopPropagation();
+                                            handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
+                                          }
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (isPlacementActive) {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = 'copy';
+                                          }
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          const chordToDrop = e.dataTransfer.getData('text/plain') || activePlacementChord;
+                                          if (chordToDrop) {
+                                            handleAnchorChord(section.id, line.id, chordToDrop, w.start);
+                                          }
+                                        }}
+                                      >
+                                        {isPlacementActive && (
+                                          <div
+                                            className="w-full h-5 rounded border border-dashed border-sky-400/50 bg-sky-400/10 opacity-70 hover:opacity-100 flex items-center justify-center transition-opacity mb-0.5"
+                                            title={`Anchor [${activePlacementChord}] directly above "${w.word}"`}
+                                          >
+                                            <span className="text-[10px] font-mono font-bold text-sky-400 leading-none">
+                                              + {activePlacementChord}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Word Characters Track with Letter-Targeted Anchors */}
+                                      <div
+                                        className={`inline-flex items-center ${isPlacementActive ? 'hover:bg-sky-500/10 rounded cursor-pointer' : ''}`}
+                                        onClick={(e) => {
+                                          if (activePlacementChord) {
+                                            e.stopPropagation();
+                                            handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
+                                            return;
+                                          }
                                           if (!isEditMode) return;
                                           if (activeColorTool !== null) {
+                                            e.stopPropagation();
                                             updateDoc((doc) => ({
                                               ...doc,
                                               sections: doc.sections.map((sec) => {
@@ -1774,8 +1919,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                                     const nextSpans = setColorOnSelection(
                                                       l.spans,
                                                       l.text,
-                                                      seg.startOffset,
-                                                      seg.endOffset,
+                                                      w.start,
+                                                      w.end,
                                                       activeColorTool
                                                     );
                                                     return { ...l, spans: nextSpans };
@@ -1787,30 +1932,162 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                             setActiveSelection({
                                               sectionId: section.id,
                                               lineId: line.id,
-                                              start: seg.startOffset,
-                                              end: seg.endOffset,
-                                              text: seg.text,
+                                              start: w.start,
+                                              end: w.end,
+                                              text: w.word,
                                             });
+                                          }
+                                        }}
+                                        onDoubleClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isEditMode) {
                                             setEditingLineId(line.id);
                                           }
                                         }}
-                                        className={`whitespace-pre rounded px-0.5 ${isEditMode ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'}`}
+                                      >
+                                        {w.word.split('').map((char, charIdx) => {
+                                          const globalOffset = w.start + charIdx;
+                                          // Find chord placed at this exact character, or before first char of word
+                                          const chordAtChar = lineChords.find((c) =>
+                                            c.offset === globalOffset ||
+                                            (wIdx === 0 && charIdx === 0 && c.offset < w.start) ||
+                                            (charIdx === 0 && c.offset > prevWordEnd && c.offset < w.start)
+                                          );
+                                          const spanColor = getCharacterColor(line.spans, globalOffset);
+                                          const spanBold = getCharacterBold(line.spans, globalOffset);
+                                          const charColor = spanColor || resolvedColor;
+                                          const charBold = isLineBold || spanBold;
+
+                                          return (
+                                            <span
+                                              key={charIdx}
+                                              data-testid={`lyric-char-${globalOffset}`}
+                                              className="relative inline-block"
+                                              onClick={(e) => {
+                                                if (activePlacementChord) {
+                                                  e.stopPropagation();
+                                                  handleAnchorChord(section.id, line.id, activePlacementChord, globalOffset);
+                                                }
+                                              }}
+                                              onDragOver={(e) => {
+                                                if (isPlacementActive) {
+                                                  e.preventDefault();
+                                                  e.dataTransfer.dropEffect = 'copy';
+                                                }
+                                              }}
+                                              onDrop={(e) => {
+                                                e.preventDefault();
+                                                const chordToDrop = e.dataTransfer.getData('text/plain') || activePlacementChord;
+                                                if (chordToDrop) {
+                                                  handleAnchorChord(section.id, line.id, chordToDrop, globalOffset);
+                                                }
+                                              }}
+                                              style={{
+                                                color: charColor,
+                                                fontWeight: charBold ? 800 : 500,
+                                                fontFamily: 'inherit',
+                                                cursor: isPlacementActive ? 'pointer' : 'inherit',
+                                              }}
+                                              title={isPlacementActive ? `Anchor [${activePlacementChord}] at '${char}'` : undefined}
+                                            >
+                                              {/* Placed Chord Badge floating directly above the target character */}
+                                              {chordAtChar && (
+                                                <button
+                                                  type="button"
+                                                  data-testid={`placed-chord-${chordAtChar.chord}`}
+                                                  data-chord-id={chordAtChar.id}
+                                                  data-chord-offset={chordAtChar.offset}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedChordForEdit({
+                                                      sectionId: section.id,
+                                                      lineId: line.id,
+                                                      chord: chordAtChar,
+                                                    });
+                                                  }}
+                                                  className="absolute bottom-full left-0 mb-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
+                                                  style={{
+                                                    backgroundColor: isEffectiveLight
+                                                      ? 'rgba(37, 99, 235, 0.12)'
+                                                      : 'rgba(56, 189, 248, 0.20)',
+                                                    borderColor: isEffectiveLight
+                                                      ? 'rgba(37, 99, 235, 0.40)'
+                                                      : 'rgba(56, 189, 248, 0.45)',
+                                                    color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                                  }}
+                                                  title="Tap to view chord diagram, move, or reassign"
+                                                >
+                                                  <span>{chordAtChar.chord}</span>
+                                                  {isEditMode && (
+                                                    <span
+                                                      className="text-[10px] opacity-40 hover:opacity-100 hover:text-rose-400 font-sans ml-0.5 cursor-pointer"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveChordFromLine(section.id, line.id, chordAtChar.id);
+                                                      }}
+                                                      title="Quick remove to queue"
+                                                    >
+                                                      ×
+                                                    </span>
+                                                  )}
+                                                </button>
+                                              )}
+                                              {char}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <span
+                                  className="whitespace-pre rounded px-0.5"
+                                  style={{ color: resolvedColor, fontFamily: 'inherit' }}
+                                >
+                                  {line.text || '\u00A0'}
+                                </span>
+                              )}
+
+                              {/* Trailing chords placed beyond line.text length */}
+                              {lineChords.some((c) => c.offset >= line.text.length) && (
+                                <div className="inline-flex items-center gap-1 ml-2 mb-1">
+                                  {lineChords
+                                    .filter((c) => c.offset >= line.text.length)
+                                    .map((c) => (
+                                      <button
+                                        key={c.id}
+                                        type="button"
+                                        data-testid={`placed-chord-${c.chord}`}
+                                        data-chord-id={c.id}
+                                        data-chord-offset={c.offset}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedChordForEdit({
+                                            sectionId: section.id,
+                                            lineId: line.id,
+                                            chord: c,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 select-none"
                                         style={{
-                                          color: getCharacterColor(line.spans, seg.startOffset) || resolvedColor,
-                                          fontWeight: isLineBold || getCharacterBold(line.spans, seg.startOffset) ? 800 : 500,
-                                          fontFamily: 'inherit',
+                                          backgroundColor: isEffectiveLight
+                                            ? 'rgba(37, 99, 235, 0.12)'
+                                            : 'rgba(56, 189, 248, 0.20)',
+                                          borderColor: isEffectiveLight
+                                            ? 'rgba(37, 99, 235, 0.40)'
+                                            : 'rgba(56, 189, 248, 0.45)',
+                                          color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
                                         }}
                                       >
-                                        {seg.text || '\u00A0'}
-                                      </span>
-                                    )}
-                                    {/* Trailing space if segment ends with whitespace */}
-                                    {seg.text.endsWith(' ') && <span>&nbsp;</span>}
-                                  </div>
+                                        <span>{c.chord}</span>
+                                      </button>
+                                    ))}
                                 </div>
-                              );
-                            })}
-                          </div>
+                              )}
+                            </div>
+                          );
+                        })()
                         )}
 
                         {/* Line Vocal Role badge (No permanent edit pencil!) */}
@@ -2616,6 +2893,31 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     <span className="material-symbols-rounded text-sm">arrow_forward</span>
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  data-testid="chord-reanchor-btn"
+                  onClick={() => {
+                    setMovingChordInfo({
+                      sectionId: selectedChordForEdit.sectionId,
+                      lineId: selectedChordForEdit.lineId,
+                      chordId: selectedChordForEdit.chord.id,
+                      chord: selectedChordForEdit.chord.chord,
+                    });
+                    setActivePlacementChord(selectedChordForEdit.chord.chord);
+                    setSelectedChordForEdit(null);
+                    toast.info(`Tap any letter or syllable to re-anchor [${selectedChordForEdit.chord.chord}]`);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+                  style={{
+                    backgroundColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.10)' : 'rgba(56, 189, 248, 0.15)',
+                    borderColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.35)' : 'rgba(56, 189, 248, 0.40)',
+                    color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-sm">pin_drop</span>
+                  <span>Re-anchor / Move to letter</span>
+                </button>
               </div>
 
               {/* Replace Chord */}
@@ -2676,17 +2978,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   type="button"
                   data-testid="chord-delete-btn"
                   onClick={() => {
+                    const chordName = selectedChordForEdit.chord.chord;
                     handleRemoveChordFromLine(
                       selectedChordForEdit.sectionId,
                       selectedChordForEdit.lineId,
                       selectedChordForEdit.chord.id
                     );
                     setSelectedChordForEdit(null);
+                    toast.info(`Chord [${chordName}] returned to unassigned queue`);
                   }}
                   className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <span className="material-symbols-rounded text-base">delete</span>
-                  <span>Remove Chord</span>
+                  <span>Remove Chord (Return to Queue)</span>
                 </button>
                 <button
                   type="button"
