@@ -478,6 +478,72 @@ describe('SongTimingEngine Verification Suite', () => {
       const sched120 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 120, targetDurationOverride: undefined });
       expect(sched120.lines[0].durationMs).toBe(4000);
     });
+
+    it('Bars per Line configurations execute correct timings', () => {
+      const songWithoutTarget: SongPreset = {
+        ...mockSong,
+        targetDurationSeconds: undefined,
+      };
+
+      // 120 BPM:
+      const bpm = 120;
+      const b1 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: bpm, beatsPerLine: 4, targetDurationOverride: undefined });
+      const b2 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: bpm, beatsPerLine: 8, targetDurationOverride: undefined });
+      const b3 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: bpm, beatsPerLine: 12, targetDurationOverride: undefined });
+      const b4 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: bpm, beatsPerLine: 16, targetDurationOverride: undefined });
+      
+      expect(b1.lines[0].durationMs).toBe(2000);
+      expect(b2.lines[0].durationMs).toBe(4000);
+      expect(b3.lines[0].durationMs).toBe(6000);
+      expect(b4.lines[0].durationMs).toBe(8000);
+
+      // 192 BPM
+      const b1_192 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 192, beatsPerLine: 4, targetDurationOverride: undefined });
+      const b2_192 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 192, beatsPerLine: 8, targetDurationOverride: undefined });
+      
+      expect(b1_192.lines[0].durationMs).toBe(1250);
+      expect(b2_192.lines[0].durationMs).toBe(2500);
+    });
+
+    it('preset barsPerLine default and overrides', () => {
+      const songBars3: SongPreset = {
+        ...mockSong,
+        barsPerLine: 3,
+        targetDurationSeconds: undefined,
+      };
+      
+      const s1 = calculateSongTimingSchedule(songBars3, { bpmOverride: 120, targetDurationOverride: undefined });
+      expect(s1.lines[0].durationMs).toBe(6000);
+
+      // Override via options
+      const s2 = calculateSongTimingSchedule(songBars3, { bpmOverride: 120, beatsPerLine: 16, targetDurationOverride: undefined });
+      expect(s2.lines[0].durationMs).toBe(8000);
+    });
+
+    it('Timed interludes (15s) are unaffected by barsPerLine', () => {
+      const presetWithInterlude = {
+        ...mockSong,
+        targetDurationSeconds: undefined,
+        barsPerLine: 4,
+        lyrics: {
+          version: 1,
+          sections: [
+            {
+              id: 'sec-1',
+              type: 'interlude',
+              name: 'Guitar Solo',
+              lines: [
+                { id: 'l-interlude', text: '(Solo)', type: 'interlude', explicitDurationMs: 15000 }
+              ]
+            }
+          ]
+        }
+      } as unknown as SongPreset;
+
+      const schedule = calculateSongTimingSchedule(presetWithInterlude, { bpmOverride: 120 });
+      const interludeLine = schedule.lines.find(l => l.id === 'l-interlude');
+      expect(interludeLine!.durationMs).toBe(15000);
+    });
   });
 });
 

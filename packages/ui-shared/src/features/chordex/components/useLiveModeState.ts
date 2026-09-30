@@ -138,6 +138,8 @@ export interface LiveModeState {
   setShowQuickActions: (v: boolean | ((prev: boolean) => boolean)) => void;
   beatsPerChord: BeatsPerChord;
   setBeatsPerChord: (v: BeatsPerChord) => void;
+  barsPerLine: number;
+  setBarsPerLine: (action: number | ((prev: number) => number)) => void;
   beatsPerLine: number;
   setBeatsPerLine: (v: number) => void;
   showContext: boolean;
@@ -359,7 +361,46 @@ export function useLiveModeState(
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [beatsPerChord, setBeatsPerChord] = useState<BeatsPerChord>(4);
-  const [beatsPerLine, setBeatsPerLine] = useState<number>(8);
+  const [barsPerLine, setBarsPerLineState] = useState<number>(() => {
+    const b = preset.barsPerLine;
+    return (b === 1 || b === 2 || b === 3 || b === 4) ? b : 2;
+  });
+
+  useEffect(() => {
+    if (preset.barsPerLine) {
+      setBarsPerLineState(preset.barsPerLine);
+    }
+  }, [preset.barsPerLine]);
+
+  const setBarsPerLine = useCallback(
+    (action: number | ((prev: number) => number)) => {
+      let nextBars = 2;
+      setBarsPerLineState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextBars = Math.max(1, Math.min(4, Math.round(raw)));
+        return nextBars;
+      });
+
+      wordRemainingMsRef.current = 0;
+      wordStartTimestampRef.current = 0;
+
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, {
+              barsPerLine: nextBars,
+            });
+          } catch (_) {}
+        });
+      }
+    },
+    [preset?.id]
+  );
+
+  const beatsPerLine = barsPerLine * 4;
+  const setBeatsPerLine = useCallback((b: number) => {
+    setBarsPerLine(Math.round(b / 4));
+  }, [setBarsPerLine]);
 
   // Teleprompter presentation states with local storage persistence
   const [teleprompterFontSize, setTeleprompterFontSizeState] = useState<TeleprompterFontSize>(() => {
@@ -472,6 +513,8 @@ export function useLiveModeState(
 
   const wordRemainingMsRef = useRef<number>(0);
   const wordStartTimestampRef = useRef<number>(0);
+  const beatRemainingMsRef = useRef<number>(0);
+  const beatStartTimestampRef = useRef<number>(0);
 
   // Sync if preset.speed or preset.bpm changes externally
   useEffect(() => {
@@ -575,7 +618,7 @@ export function useLiveModeState(
   // ── Deterministic Musical Timing Schedule ────────────────────────
   const timingSchedule = useMemo(() => {
     return calculateSongTimingSchedule(
-      { ...preset, targetDurationSeconds },
+      { ...preset, targetDurationSeconds, barsPerLine },
       {
         bpmOverride,
         beatsPerChord,
@@ -583,13 +626,13 @@ export function useLiveModeState(
         targetDurationOverride: targetDurationSeconds,
       }
     );
-  }, [preset, bpmOverride, beatsPerChord, beatsPerLine, targetDurationSeconds]);
+  }, [preset, bpmOverride, beatsPerChord, barsPerLine, beatsPerLine, targetDurationSeconds]);
 
   // ── Teleprompter Lines Data ─────────────────────────────────────
   const lineDurationMs = useMemo(() => {
     const nominal = (60000 / (bpmOverride || 120)) * beatsPerLine;
     return nominal * (timingSchedule.pacingFactor || 1);
-  }, [bpmOverride, beatsPerLine, timingSchedule.pacingFactor]);
+  }, [bpmOverride, barsPerLine, beatsPerLine, timingSchedule.pacingFactor]);
 
   const teleprompterLines = useMemo<TeleprompterLineItem[]>(() => {
     const sections = preset.lyrics?.sections;
@@ -943,6 +986,8 @@ export function useLiveModeState(
       if (idx >= 0 && idx < totalLines) {
         setDirection(idx >= currentLineIdx ? 'forward' : 'backward');
         setCurrentLineIdx(idx);
+        setCurrentBeat(0);
+        setCurrentBar(1);
         const firstWord = allWords.find((w) => w.lineIdx === idx);
         if (firstWord) {
           setCurrentWordIdxState(firstWord.globalWordIdx);
@@ -1088,33 +1133,58 @@ export function useLiveModeState(
 
   // ── Precision Musical Beat Clock (Decoupled & Drift-Compensated) ──
   useEffect(() => {
-    if (!autoPlay || bpmOverride <= 0) return;
-    let expectedTime = performance.now() + beatDurationMs;
+    beatRemainingMsRef.current = 0;
+    beatStartTimestampRef.current = 0;
+  }, [seekToken, currentLineIdx]);
+
+  useEffect(() => {
+    if (!autoPlay || bpmOverride <= 0) {
+      if (beatStartTimestampRef.current > 0) {
+        const passed = performance.now() - beatStartTimestampRef.current;
+        beatRemainingMsRef.current = Math.max(0, (beatRemainingMsRef.current || 0) - passed);
+        beatStartTimestampRef.current = 0;
+      }
+      return;
+    }
+
+    let currentWaitMs = beatDurationMs;
+    if (beatRemainingMsRef.current > 0) {
+      currentWaitMs = beatRemainingMsRef.current;
+    } else {
+      beatRemainingMsRef.current = beatDurationMs;
+    }
+
+    beatStartTimestampRef.current = performance.now();
+    let expectedTime = performance.now() + currentWaitMs;
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const tickBeat = () => {
+      beatRemainingMsRef.current = 0;
+      beatStartTimestampRef.current = performance.now();
+
       const now = performance.now();
       const drift = now - expectedTime;
 
       setCurrentBeat((b) => {
         const next = (b + 1) % 4;
         if (next === 0) {
-          setCurrentBar((bar) => bar + 1);
+          setCurrentBar((bar) => ((bar % barsPerLine) + 1));
         }
         return next;
       });
 
+      beatRemainingMsRef.current = beatDurationMs;
       expectedTime += beatDurationMs;
       const nextDelay = Math.max(0, beatDurationMs - drift);
       timerId = setTimeout(tickBeat, nextDelay);
     };
 
-    timerId = setTimeout(tickBeat, beatDurationMs);
+    timerId = setTimeout(tickBeat, currentWaitMs);
 
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-  }, [autoPlay, bpmOverride, playbackSpeed, beatDurationMs]);
+  }, [autoPlay, bpmOverride, playbackSpeed, beatDurationMs, barsPerLine, currentLineIdx]);
 
   // ── Precision Chords Auto-Play Timer (Drift-Compensated) ─────────
   useEffect(() => {
@@ -1252,6 +1322,8 @@ export function useLiveModeState(
         const nextLineIdx = (currentLineIdx + 1) % totalLines;
         setDirection('forward');
         setCurrentLineIdx(nextLineIdx);
+        setCurrentBeat(0);
+        setCurrentBar(1);
         const nextLineWords = teleprompterLines[nextLineIdx]?.words || [];
         if (nextLineWords.length > 0) {
           const firstWord = nextLineWords[0];
@@ -1450,6 +1522,8 @@ export function useLiveModeState(
     setShowQuickActions,
     beatsPerChord,
     setBeatsPerChord,
+    barsPerLine,
+    setBarsPerLine,
     beatsPerLine,
     setBeatsPerLine,
     showContext,

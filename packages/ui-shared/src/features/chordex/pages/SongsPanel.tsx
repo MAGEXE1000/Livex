@@ -2335,6 +2335,7 @@ export interface ChordexJsonFile {
   artist: string;
   bpm: number;
   speed?: number;
+  barsPerLine?: number;
   key: string;
   notes: string;
   chords: { id?: string; name: string; position: number }[];
@@ -2362,6 +2363,7 @@ async function exportPresetToJSON(
     artist: preset.artist,
     bpm: preset.bpm,
     speed: preset.speed || preset.bpm,
+    barsPerLine: preset.barsPerLine,
     key: preset.key,
     notes: preset.notes,
     chords: preset.chords.map((id, i) => ({
@@ -2478,6 +2480,7 @@ interface ParsedImport {
   name: string;
   artist: string;
   bpm: number;
+  barsPerLine?: number;
   key: string;
   notes: string;
   chords: string[]; // resolved chord IDs
@@ -2610,6 +2613,7 @@ export function ImportSongContent({
             name: songName,
             artist: (raw.artist ?? '').trim(),
             bpm: Math.max(40, Math.min(400, parseInt(raw.bpm || raw.speed) || 120)),
+            barsPerLine: typeof raw.barsPerLine === 'number' ? raw.barsPerLine : undefined,
             key: (raw.key ?? '').trim() || 'C',
             notes: (raw.notes ?? '').trim(),
             chords: resolvedIds,

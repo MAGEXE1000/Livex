@@ -114,7 +114,7 @@ export function calculateSongTimingSchedule(
   );
   const referenceBpm = referenceSpeed;
   const beatsPerChord = options?.beatsPerChord || 4;
-  const beatsPerLine = options?.beatsPerLine || 8;
+  const beatsPerLine = options?.beatsPerLine || (preset.barsPerLine ? preset.barsPerLine * 4 : 8);
   const beatDurationMs = 60000 / referenceSpeed;
 
   const targetSec =
@@ -154,10 +154,7 @@ export function calculateSongTimingSchedule(
           lineNominalMs = Math.max(0, line.explicitDurationMs || 0);
           totalFixedDurationMs += lineNominalMs;
         } else {
-          const chordCount = (line.chords || []).length;
-          // Lines with chords naturally share beats within measures (e.g. 2 beats per chord or 1-2 bars) rather than multiplying full 4-beat bars
-          const lineBeats = Math.max(beatsPerLine, Math.ceil(chordCount * (beatsPerChord / 2)));
-          lineNominalMs = Math.round(lineBeats * beatDurationMs);
+          lineNominalMs = Math.round(beatsPerLine * beatDurationMs);
         }
 
         secNominalDuration += lineNominalMs;

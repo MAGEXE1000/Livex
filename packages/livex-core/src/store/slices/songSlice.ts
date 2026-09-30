@@ -13,6 +13,7 @@ export interface SongPreset {
   artist: string;
   bpm: number;
   speed?: number;
+  barsPerLine?: number;
   key: string;
   notes: string;
   chords: string[];
@@ -29,6 +30,7 @@ export interface PendingSongImport {
   artist?: string;
   bpm?: number;
   speed?: number;
+  barsPerLine?: number;
   key?: string;
   notes?: string;
   chordIds: string[];
