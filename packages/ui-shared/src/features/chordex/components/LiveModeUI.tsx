@@ -58,23 +58,40 @@ const liveModeStyles = `
               transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.karaoke-word {
+.karaoke-word,
+.lyric-word {
   display: inline-block;
-  color: var(--c-text-secondary, #94a3b8);
+  color: var(--lyric-unfilled, var(--c-text-secondary, #94a3b8));
+  -webkit-text-fill-color: var(--lyric-unfilled, var(--c-text-secondary, #94a3b8));
   font-family: var(--studio-font-body, "Inter Tight", sans-serif);
   letter-spacing: -0.015em;
   transform-origin: left center;
-  transition: color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-              transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-              filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Active Word in Sung Focus (Apple Music lyric aesthetic) */
+/* Active Word in Sung Focus: Butter-Smooth Sliding Highlight across Letters */
 .chord-cell.active .karaoke-word,
+.karaoke-word.active,
 .lyric-word.word-active {
   font-weight: 800 !important;
-  transform: scale(1.06) translateY(-1px);
-  filter: drop-shadow(0 2px 10px rgba(37, 99, 235, 0.35));
+  transform: scale(1.05) translateY(-1px);
+  background: linear-gradient(
+    90deg,
+    var(--lyric-fill, var(--c-text-primary, #ffffff)) 0%,
+    var(--lyric-fill, var(--c-text-primary, #ffffff)) 45%,
+    var(--lyric-glow, var(--c-accent-from, #3b82f6)) 48%,
+    var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45))) 52%,
+    var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45))) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  will-change: background-position;
+  animation: lyric-word-wipe var(--word-duration, 350ms) linear forwards;
+  filter: drop-shadow(0 2px 12px var(--lyric-glow-shadow, rgba(59, 130, 246, 0.3)));
 }
 
 /* Active Chord Highlight */
@@ -82,22 +99,36 @@ const liveModeStyles = `
   color: var(--c-primary, #2563eb) !important;
   font-weight: 800;
   transform: translateY(-2px);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease;
 }
 
 /* Passed words in current/prior context */
 .chord-cell.passed .karaoke-word,
+.karaoke-word.passed,
 .lyric-word.word-past {
   font-weight: 600;
+  color: var(--lyric-fill, var(--c-text-primary, #ffffff));
+  -webkit-text-fill-color: var(--lyric-fill, var(--c-text-primary, #ffffff));
+  background: none;
   opacity: 0.95;
+  filter: none;
+  transform: none;
 }
 .chord-cell.passed .chord-tag {
   color: var(--c-primary, #3b82f6);
+  opacity: 0.8;
 }
 
 /* Upcoming words */
-.lyric-word.word-upcoming {
+.lyric-word.word-upcoming,
+.karaoke-word:not(.active):not(.passed) {
   opacity: 0.55;
   font-weight: 500;
+  color: var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45)));
+  -webkit-text-fill-color: var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45)));
+  background: none;
+  filter: none;
+  transform: none;
 }
 
 /* Active line focus */
@@ -1337,13 +1368,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   item.words.map((w) => {
                     const isWordActive = w.globalWordIdx === currentWordIdx;
                     const isWordPassed = w.globalWordIdx < currentWordIdx;
-                    const wordColor = w.color
-                      ? w.color
-                      : isWordActive
-                      ? 'var(--c-text-primary)'
-                      : isWordPassed
-                      ? 'var(--c-text-primary)'
-                      : 'var(--c-text-secondary)';
+                    const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
+                    const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
+                    const lyricGlow = w.color || accent.from;
+                    const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
+                    const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
 
                     return (
                       <div
@@ -1368,15 +1397,18 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                           {w.chord || '\u00A0'}
                         </span>
                         <span
-                          className="karaoke-word"
+                          className={`karaoke-word ${isWordActive ? 'active' : isWordPassed ? 'passed' : ''}`}
                           style={{
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
-                            fontWeight: isWordActive ? 800 : 600,
-                            color: wordColor,
-                            opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
-                            filter: isWordActive && w.color ? `drop-shadow(0 2px 10px ${w.color}88)` : undefined,
-                          }}
+                            cursor: 'pointer',
+                            '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
+                            '--lyric-fill': lyricFill,
+                            '--lyric-glow': lyricGlow,
+                            '--lyric-glow-shadow': lyricGlowShadow,
+                            '--lyric-unfilled': lyricUnfilled,
+                            animationPlayState: autoPlay ? 'running' : 'paused',
+                          } as React.CSSProperties}
                         >
                           {w.text}&nbsp;
                         </span>
@@ -1387,13 +1419,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   item.words.map((w) => {
                     const isWordActive = w.globalWordIdx === currentWordIdx;
                     const isWordPassed = w.globalWordIdx < currentWordIdx;
-                    const wordColor = w.color
-                      ? w.color
-                      : isWordActive
-                      ? 'var(--c-text-primary)'
-                      : isWordPassed
-                      ? 'var(--c-text-primary)'
-                      : 'var(--c-text-secondary)';
+                    const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
+                    const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
+                    const lyricGlow = w.color || accent.from;
+                    const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
+                    const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
 
                     return (
                       <span
@@ -1408,12 +1438,14 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                         style={{
                           fontFamily: resolvedFontFamily,
                           fontSize: fontSizes.text,
-                          fontWeight: isWordActive ? 800 : 600,
-                          color: wordColor,
-                          opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
-                          filter: isWordActive && w.color ? `drop-shadow(0 2px 10px ${w.color}88)` : undefined,
                           cursor: 'pointer',
-                        }}
+                          '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
+                          '--lyric-fill': lyricFill,
+                          '--lyric-glow': lyricGlow,
+                          '--lyric-glow-shadow': lyricGlowShadow,
+                          '--lyric-unfilled': lyricUnfilled,
+                          animationPlayState: autoPlay ? 'running' : 'paused',
+                        } as React.CSSProperties}
                       >
                         {w.text}&nbsp;
                       </span>
@@ -1920,13 +1952,11 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             currentLine.words.map((w) => {
               const isWordActive = w.globalWordIdx === currentWordIdx;
               const isWordPassed = w.globalWordIdx < currentWordIdx;
-              const wordColor = w.color
-                ? w.color
-                : isWordActive
-                ? accent.from
-                : isWordPassed
-                ? 'var(--c-text-primary)'
-                : 'var(--c-text-secondary)';
+              const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
+              const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
+              const lyricGlow = w.color || accent.from;
+              const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
+              const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
 
               return (
                 <span
@@ -1942,12 +1972,14 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                   style={{
                     fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
                     fontSize: 'clamp(24px, 5.5vw, 36px)',
-                    fontWeight: isWordActive ? 800 : isWordPassed ? 600 : 500,
-                    color: wordColor,
-                    opacity: w.color && !isWordActive ? (isWordPassed ? 0.75 : 0.6) : undefined,
-                    filter: isWordActive && w.color ? `drop-shadow(0 2px 14px ${w.color}88)` : undefined,
                     cursor: 'pointer',
-                  }}
+                    '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
+                    '--lyric-fill': lyricFill,
+                    '--lyric-glow': lyricGlow,
+                    '--lyric-glow-shadow': lyricGlowShadow,
+                    '--lyric-unfilled': lyricUnfilled,
+                    animationPlayState: autoPlay ? 'running' : 'paused',
+                  } as React.CSSProperties}
                 >
                   {w.text}
                 </span>

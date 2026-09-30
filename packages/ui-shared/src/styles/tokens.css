@@ -1589,6 +1589,16 @@ html[data-perf-mode='on'] *::after {
     }
   }
 
+  /* ===== Teleprompter & Karaoke Butter-Smooth Sliding Highlight ===== */
+  @keyframes lyric-word-wipe {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: 0% 0;
+    }
+  }
+
   /* ===== Live Mode BPM progress bar ===== */
   @keyframes live-progress {
     from {
