@@ -1798,37 +1798,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 pointerEvents: 'auto',
               }}
             >
-              {/* Done / Exit Edit Mode Button */}
-              <button
-                type="button"
-                data-testid="both-toolbar-done-btn"
-                onClick={() => {
-                  setIsEditMode(false);
-                  setEditingLineId(null);
-                  setActivePopover(null);
-                  setActiveColorTool(null);
-                }}
-                aria-label="Done editing"
-                title="Done editing"
-                className="px-3 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs"
-                style={{
-                  backgroundColor: accent.from,
-                  color: '#ffffff',
-                  boxShadow: `0 2px 8px ${accent.to}44`,
-                }}
-              >
-                <span className="material-symbols-rounded text-base font-bold">check</span>
-                <span>Done</span>
-              </button>
-
-              {/* Vertical Divider */}
-              <div
-                className="w-[1px] h-5 mx-0.5"
-                style={{
-                  backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
-                }}
-              />
-
               {/* ── LEFT CLUSTER: Undo / Redo ── */}
               <div className="flex items-center gap-1">
                 {/* Undo */}
@@ -2351,6 +2320,37 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Vertical Divider */}
+              <div
+                className="w-[1px] h-5 mx-0.5"
+                style={{
+                  backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.12)',
+                }}
+              />
+
+              {/* ── RIGHTMOST: Done / Exit Edit Mode Button ── */}
+              <button
+                type="button"
+                data-testid="both-toolbar-done-btn"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setEditingLineId(null);
+                  setActivePopover(null);
+                  setActiveColorTool(null);
+                }}
+                aria-label="Done editing"
+                title="Done editing"
+                className="px-3 h-9 rounded-full flex items-center justify-center gap-1 transition active:scale-90 cursor-pointer font-bold text-xs shrink-0"
+                style={{
+                  backgroundColor: accent.from,
+                  color: '#ffffff',
+                  boxShadow: `0 2px 8px ${accent.to}44`,
+                }}
+              >
+                <span className="material-symbols-rounded text-base font-bold">check</span>
+                <span>Done</span>
+              </button>
             </aside>,
             document.body
           )}
