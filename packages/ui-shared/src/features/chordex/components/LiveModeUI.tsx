@@ -200,6 +200,28 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     </button>
   );
 
+  const bpmBadge = (
+    <span
+      data-testid="header-bpm-badge"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px',
+        padding: '2px 7px',
+        borderRadius: '6px',
+        background: 'rgba(255, 255, 255, 0.08)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        color: 'var(--c-text-primary, #ffffff)',
+        fontSize: '11px',
+        fontWeight: 700,
+        letterSpacing: '0.02em',
+      }}
+    >
+      <span style={{ color: accent.from, fontWeight: 800 }}>BPM</span>
+      <span>{currentSpeed}</span>
+    </span>
+  );
+
   const subtitle = (() => {
     if (isHybridMode) {
       return (
@@ -208,7 +230,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <span style={{ opacity: 0.4 }}>•</span>
           <span>KEY {preset.key || 'C'}</span>
           <span style={{ opacity: 0.4 }}>•</span>
-          <span>Speed {currentSpeed}</span>
+          {bpmBadge}
           <span style={{ opacity: 0.4 }}>•</span>
           {durationBadge}
         </span>
@@ -219,7 +241,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
           <span style={{ opacity: 0.4 }}>•</span>
-          <span>Speed {currentSpeed}</span>
+          {bpmBadge}
           <span style={{ opacity: 0.4 }}>•</span>
           {durationBadge}
           {preset.artist ? (
@@ -250,7 +272,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         <span style={{ opacity: 0.4 }}>•</span>
         <span>KEY {preset.key || 'C'}</span>
         <span style={{ opacity: 0.4 }}>•</span>
-        <span>Speed {currentSpeed}</span>
+        {bpmBadge}
         <span style={{ opacity: 0.4 }}>•</span>
         {durationBadge}
       </span>
@@ -871,11 +893,11 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
               boxShadow: 'var(--surface-topbar-shadow)',
             }}
           >
-            {/* Speed Adjuster */}
+            {/* BPM Adjuster */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
                 type="button"
-                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.max(20, b - 1))}
+                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.max(40, b - 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -888,17 +910,17 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   border: 'none',
                   cursor: 'pointer',
                 }}
-                title="Decrease Speed"
-                aria-label="Decrease Speed"
+                title="Decrease BPM"
+                aria-label="Decrease BPM"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>remove</span>
               </button>
               <span style={{ fontSize: '11px', fontWeight: 800, color: accent.from, minWidth: '48px', textAlign: 'center' }}>
-                Speed {speed || bpmOverride}
+                BPM {speed || bpmOverride}
               </span>
               <button
                 type="button"
-                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.min(1000, b + 1))}
+                onClick={() => (setSpeed || setBpmOverride)((b: number) => Math.min(400, b + 1))}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -911,8 +933,8 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                   border: 'none',
                   cursor: 'pointer',
                 }}
-                title="Increase Speed"
-                aria-label="Increase Speed"
+                title="Increase BPM"
+                aria-label="Increase BPM"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
               </button>
@@ -2924,7 +2946,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
           </div>
 
-          {/* ── 3. SPEED ────────────────────────────────────────── */}
+          {/* ── 3. BPM ────────────────────────────────────────── */}
           <div>
             <div
               style={{
@@ -2944,7 +2966,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   letterSpacing: '0.15em',
                 }}
               >
-                Speed
+                BPM
               </p>
               <p
                 style={{
@@ -2960,8 +2982,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 type="button"
-                aria-label="Decrease Speed"
-                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.max(20, b - 1))}
+                aria-label="Decrease BPM"
+                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.max(40, b - 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',
@@ -2982,8 +3004,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 </span>
               </button>
               <ElasticSlider
-                min={20}
-                max={1000}
+                min={40}
+                max={400}
                 step={1}
                 value={state.speed || state.bpmOverride}
                 onChange={(state.setSpeed || state.setBpmOverride) as any}
@@ -2992,8 +3014,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               />
               <button
                 type="button"
-                aria-label="Increase Speed"
-                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.min(1000, b + 1))}
+                aria-label="Increase BPM"
+                onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.min(400, b + 1))}
                 className="btn-smooth"
                 style={{
                   width: '36px',

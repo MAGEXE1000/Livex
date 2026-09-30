@@ -466,7 +466,7 @@ async function exportPresetToPDF(
     cfg.includeKey && preset.key
       ? `<span style="${badgeStyle}">Tonalidad de ${preset.key}</span>`
       : '',
-    cfg.includeBPM && (preset.speed || preset.bpm) ? `<span style="${badgeStyle}">Speed ${preset.speed || preset.bpm}</span>` : '',
+    cfg.includeBPM && (preset.speed || preset.bpm) ? `<span style="${badgeStyle}">BPM ${preset.speed || preset.bpm}</span>` : '',
   ]
     .filter(Boolean)
     .join('');
@@ -3960,7 +3960,7 @@ const PresetCard = React.memo(
                   }}
                 >
                   <span className="material-symbols-rounded text-[11px]">speed</span>
-                  Speed {preset.speed || preset.bpm}
+                  BPM {preset.speed || preset.bpm}
                 </span>
               )}
               <span
@@ -4907,7 +4907,18 @@ export default function SongsPanel() {
                   ) : null}
                   <span>{displayKey}</span>
                   <span className="opacity-40">•</span>
-                  <span>Speed {activePreset.speed || activePreset.bpm || 120}</span>
+                  <span
+                    data-testid="editor-header-bpm"
+                    className="px-2 py-0.5 rounded-md text-xs font-bold"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'var(--c-text-primary)',
+                    }}
+                  >
+                    <span style={{ color: 'var(--c-accent-from, #2563EB)', marginRight: '3px' }}>BPM</span>
+                    {activePreset.speed || activePreset.bpm || 120}
+                  </span>
                   {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
                     <>
                       <span className="opacity-40">•</span>
@@ -5258,7 +5269,7 @@ export default function SongsPanel() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    Speed {activePreset.speed || activePreset.bpm || 120}
+                    BPM {activePreset.speed || activePreset.bpm || 120}
                   </span>
                 )}
                 <SongViewModeSelector

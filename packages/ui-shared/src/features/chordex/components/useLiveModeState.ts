@@ -464,11 +464,10 @@ export function useLiveModeState(
       let nextSpeed = 120;
       setSpeedState((prev) => {
         const raw = typeof action === 'function' ? action(prev) : action;
-        nextSpeed = Math.max(20, Math.min(1200, Math.round(raw)));
+        nextSpeed = Math.max(40, Math.min(400, Math.round(raw)));
         return nextSpeed;
       });
       
-      setTargetDurationSecondsState(undefined);
       wordRemainingMsRef.current = 0;
       wordStartTimestampRef.current = 0;
 
@@ -477,8 +476,7 @@ export function useLiveModeState(
           try {
             useChordStore.getState().updatePreset(preset.id, { 
               speed: nextSpeed, 
-              bpm: nextSpeed, 
-              targetDurationSeconds: undefined 
+              bpm: nextSpeed 
             });
           } catch (_) {}
         });
