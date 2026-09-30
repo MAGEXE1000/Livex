@@ -2359,19 +2359,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       <span>+ Add Section</span>
                     </button>
 
-                    {/* Add Line */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleAddLine();
-                        setActivePopover(null);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer hover:bg-white/5 text-left"
-                      style={{ color: 'var(--c-text-primary)' }}
-                    >
-                      <span className="material-symbols-rounded text-base text-gray-400">add</span>
-                      <span>+ Add Lyric Line</span>
-                    </button>
 
                     {/* Add Interlude */}
                     <button

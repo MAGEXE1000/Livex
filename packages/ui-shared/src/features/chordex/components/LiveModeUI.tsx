@@ -1204,49 +1204,34 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               >
                 {displayMode === 'lyrics_chord_name' ? (
                   item.words.map((w) => {
-                    const isWordActive = w.globalWordIdx === currentWordIdx;
-                    const isWordPassed = w.globalWordIdx < currentWordIdx;
-                    const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
                     const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
-                    const lyricGlow = w.color || accent.from;
-                    const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
-                    const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
-
                     return (
                       <div
                         key={w.id}
-                        className={`chord-cell ${isWordActive ? 'active' : isWordPassed ? 'passed' : ''}`}
+                        className="chord-cell"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCurrentWordIdx(w.globalWordIdx);
+                          handleLineClick(idx);
                         }}
                       >
                         <span
                           className="chord-tag"
                           style={{
                             fontSize: fontSizes.chord,
-                            color: isWordActive
-                              ? accent.from
-                              : isWordPassed
-                              ? `${accent.from}dd`
-                              : 'var(--c-text-secondary)',
+                            color: isActive ? accent.from : 'var(--c-text-secondary)',
+                            fontWeight: 700,
                           }}
                         >
                           {w.chord || '\u00A0'}
                         </span>
                         <span
-                          className={`karaoke-word ${isWordActive ? 'active' : isWordPassed ? 'passed' : ''}`}
                           style={{
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
                             cursor: 'pointer',
-                            '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
-                            '--lyric-fill': lyricFill,
-                            '--lyric-glow': lyricGlow,
-                            '--lyric-glow-shadow': lyricGlowShadow,
-                            '--lyric-unfilled': lyricUnfilled,
-                            animationPlayState: autoPlay ? 'running' : 'paused',
-                          } as React.CSSProperties}
+                            color: isActive ? lyricFill : 'inherit',
+                            fontWeight: isActive ? 600 : 400,
+                          }}
                         >
                           {w.text}&nbsp;
                         </span>
@@ -1255,35 +1240,21 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   })
                 ) : (
                   item.words.map((w) => {
-                    const isWordActive = w.globalWordIdx === currentWordIdx;
-                    const isWordPassed = w.globalWordIdx < currentWordIdx;
-                    const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
                     const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
-                    const lyricGlow = w.color || accent.from;
-                    const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
-                    const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
-
                     return (
                       <span
                         key={w.id}
-                        className={`karaoke-word ${
-                          isWordActive ? 'active' : isWordPassed ? 'passed' : ''
-                        }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCurrentWordIdx(w.globalWordIdx);
+                          handleLineClick(idx);
                         }}
                         style={{
                           fontFamily: resolvedFontFamily,
                           fontSize: fontSizes.text,
                           cursor: 'pointer',
-                          '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
-                          '--lyric-fill': lyricFill,
-                          '--lyric-glow': lyricGlow,
-                          '--lyric-glow-shadow': lyricGlowShadow,
-                          '--lyric-unfilled': lyricUnfilled,
-                          animationPlayState: autoPlay ? 'running' : 'paused',
-                        } as React.CSSProperties}
+                          color: isActive ? lyricFill : 'inherit',
+                          fontWeight: isActive ? 600 : 400,
+                        }}
                       >
                         {w.text}&nbsp;
                       </span>

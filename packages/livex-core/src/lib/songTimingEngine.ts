@@ -155,8 +155,8 @@ export function calculateSongTimingSchedule(
           totalFixedDurationMs += lineNominalMs;
         } else {
           const chordCount = (line.chords || []).length;
-          // Lines with more chords naturally carry more musical weight
-          const lineBeats = Math.max(beatsPerLine, chordCount * beatsPerChord);
+          // Lines with chords naturally share beats within measures (e.g. 2 beats per chord or 1-2 bars) rather than multiplying full 4-beat bars
+          const lineBeats = Math.max(beatsPerLine, Math.ceil(chordCount * (beatsPerChord / 2)));
           lineNominalMs = Math.round(lineBeats * beatDurationMs);
         }
 
