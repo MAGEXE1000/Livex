@@ -1747,7 +1747,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 position: 'fixed',
                 bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
                 right: '20px',
-                zIndex: 45,
+                zIndex: 50,
                 pointerEvents: 'auto',
               }}
             >
@@ -1759,10 +1759,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 }}
                 aria-label="Edit Chords & Lyrics"
                 title="Edit Chords & Lyrics"
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white transition active:scale-90 cursor-pointer shadow-xl hover:scale-105"
+                className="rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer select-none"
                 style={{
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                  boxShadow: `0 6px 24px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.25)`,
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
+                  border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
+                  backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                  WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                  boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
+                  color: 'var(--c-text-primary, #ffffff)',
                 }}
               >
                 <span className="material-symbols-rounded text-2xl font-bold">edit</span>

@@ -5969,10 +5969,10 @@ export default function SongsPanel() {
         {/* ── UNIFIED COMPACT MORPHING "+" ACTION CONTROL ── */}
         {editorViewMode === 'chords' && (
           <div
-            className="fixed z-40 pointer-events-auto"
+            className="fixed z-50 pointer-events-auto"
             style={{
               bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-              right: '24px',
+              right: '20px',
             }}
             data-purpose="song-creation-action-menu"
           >
@@ -5987,10 +5987,17 @@ export default function SongsPanel() {
                   {...triggerProps}
                   aria-label="Add Action"
                   data-testid="song-add-actions-btn"
-                  className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all border border-white/20"
+                  className="rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-all select-none"
                   style={{
-                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                    boxShadow: `0 8px 24px -4px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.15)`,
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
+                    border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
+                    backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                    boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
+                    color: 'var(--c-text-primary, #ffffff)',
                   }}
                   type="button"
                 >

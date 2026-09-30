@@ -35,6 +35,7 @@ export type LiveDisplayMode =
   | 'lyrics_only';
 
 export type BeatsPerChord = 1 | 2 | 4 | 8;
+export type ChordDiagramScale = 'large' | 'medium' | 'small';
 export type TeleprompterFontSize = 'normal' | 'large' | 'huge';
 export type TeleprompterFontFamily = 'studio' | 'sans' | 'serif' | 'mono';
 export type TeleprompterLineHeight = 'compact' | 'normal' | 'relaxed';
@@ -83,6 +84,8 @@ export interface LiveModeState {
   setDisplayMode: (mode: LiveDisplayMode) => void;
   visualStyle: VisualStyle;
   setVisualStyle: (v: VisualStyle) => void;
+  chordDiagramScale: ChordDiagramScale;
+  setChordDiagramScale: (scale: ChordDiagramScale) => void;
 
   // Content classification
   hasChords: boolean;
@@ -442,6 +445,24 @@ export function useLiveModeState(
       } catch (_) {}
       return next;
     });
+  }, []);
+
+  // Live Chords diagram scale with local storage persistence ('large' | 'medium' | 'small')
+  const [chordDiagramScale, setChordDiagramScaleState] = useState<ChordDiagramScale>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_chord_diagram_scale');
+      if (saved === 'large' || saved === 'medium' || saved === 'small') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'large';
+  });
+
+  const setChordDiagramScale = useCallback((scale: ChordDiagramScale) => {
+    setChordDiagramScaleState(scale);
+    try {
+      localStorage.setItem('chordex_chord_diagram_scale', scale);
+    } catch (_) {}
   }, []);
 
   const [showContext, setShowContext] = useState(true);
@@ -1368,6 +1389,8 @@ export function useLiveModeState(
     setDisplayMode,
     visualStyle,
     setVisualStyle,
+    chordDiagramScale,
+    setChordDiagramScale,
     hasChords,
     hasLyrics,
     hasLiveContent,

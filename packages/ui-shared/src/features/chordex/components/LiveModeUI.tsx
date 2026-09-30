@@ -604,6 +604,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
     setShowSettings,
     displayMode,
     transposeOffset = 0,
+    chordDiagramScale = 'large',
   } = state;
 
   const customChords = useChordStore((s) => s.customChords);
@@ -723,6 +724,57 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
 
   const totalChords = sections.reduce((acc, s) => acc + s.chords.length, 0);
 
+  const scaleConfig = useMemo(() => {
+    switch (chordDiagramScale) {
+      case 'small':
+        return {
+          gridTemplate: 'repeat(auto-fill, minmax(72px, 1fr))',
+          gap: '6px',
+          cardPadding: '6px 4px 5px',
+          nameSize: '13px',
+          nameMarginBottom: '3px',
+          diagramMaxWidth: '68px',
+          diagramPadding: '2px',
+          noteMarginTop: '3px',
+          noteFontSize: '8px',
+          notePadding: '1px 3px',
+          showNotes: false,
+          cardRadius: '12px',
+        };
+      case 'medium':
+        return {
+          gridTemplate: 'repeat(auto-fill, minmax(100px, 1fr))',
+          gap: '8px',
+          cardPadding: '8px 6px 6px',
+          nameSize: '15px',
+          nameMarginBottom: '4px',
+          diagramMaxWidth: '96px',
+          diagramPadding: '4px',
+          noteMarginTop: '4px',
+          noteFontSize: '8.5px',
+          notePadding: '1px 4px',
+          showNotes: true,
+          cardRadius: '14px',
+        };
+      case 'large':
+      default:
+        return {
+          gridTemplate: 'repeat(auto-fill, minmax(140px, 1fr))',
+          gap: '12px',
+          cardPadding: '12px 10px 10px',
+          nameSize: '18px',
+          nameMarginBottom: '6px',
+          diagramMaxWidth: '136px',
+          diagramPadding: '5px',
+          noteMarginTop: '6px',
+          noteFontSize: '9px',
+          notePadding: '1px 5px',
+          showNotes: true,
+          cardRadius: '18px',
+        };
+    }
+  }, [chordDiagramScale]);
+
   return (
     <div
       data-purpose="live-chords-grid-view"
@@ -806,9 +858,10 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                  gap: '12px',
+                  gridTemplateColumns: scaleConfig.gridTemplate,
+                  gap: scaleConfig.gap,
                   width: '100%',
+                  transition: 'grid-template-columns 0.25s ease, gap 0.25s ease',
                 }}
               >
                 {section.chords.map((chordItem, cIdx) => {
@@ -834,15 +887,15 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        padding: '12px 10px 10px',
-                        borderRadius: '18px',
+                        padding: scaleConfig.cardPadding,
+                        borderRadius: scaleConfig.cardRadius,
                         background: 'var(--c-surface-card, var(--app-surface-card, rgba(255,255,255,0.05)))',
                         border: '1px solid var(--c-border-subtle, var(--c-border, rgba(255,255,255,0.08)))',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
                         cursor: 'pointer',
                         position: 'relative',
                         userSelect: 'none',
-                        transition: 'border-color 0.2s ease, transform 0.15s ease',
+                        transition: 'border-color 0.2s ease, transform 0.15s ease, padding 0.2s ease',
                       }}
                     >
                       {/* Chord Name Header */}
@@ -852,14 +905,14 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                           alignItems: 'center',
                           justifyContent: 'center',
                           width: '100%',
-                          marginBottom: '6px',
+                          marginBottom: scaleConfig.nameMarginBottom,
                         }}
                       >
                         <span
                           style={{
                             fontFamily: 'var(--font-headline, sans-serif)',
                             fontWeight: 900,
-                            fontSize: '18px',
+                            fontSize: scaleConfig.nameSize,
                             letterSpacing: '-0.02em',
                             color: 'var(--c-text-primary, currentColor)',
                             textAlign: 'center',
@@ -871,7 +924,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
 
                       {/* Canonical DetailFretboardDiagram */}
                       {displayMode !== 'chords_name' && (
-                        <div style={{ width: '100%', maxWidth: '136px', pointerEvents: 'none' }}>
+                        <div style={{ width: '100%', maxWidth: scaleConfig.diagramMaxWidth, pointerEvents: 'none', transition: 'max-width 0.2s ease' }}>
                           <DetailFretboardDiagram
                             chordData={guitarData}
                             maxWidth="100%"
@@ -880,33 +933,33 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
                             surfaceStyle={{
                               backgroundColor: 'var(--c-surface-lowest, var(--app-surface-lowest, rgba(0,0,0,0.05)))',
                               borderColor: 'var(--c-border-subtle, var(--c-border, rgba(0,0,0,0.08)))',
-                              padding: '5px',
-                              borderRadius: '12px',
+                              padding: scaleConfig.diagramPadding,
+                              borderRadius: scaleConfig.cardRadius === '18px' ? '12px' : '8px',
                             }}
                           />
                         </div>
                       )}
 
                       {/* Note badges (if present) */}
-                      {chordItem.chord?.notes && chordItem.chord.notes.length > 0 && (
+                      {scaleConfig.showNotes && chordItem.chord?.notes && chordItem.chord.notes.length > 0 && (
                         <div
                           style={{
                             display: 'flex',
                             gap: '3px',
                             flexWrap: 'wrap',
                             justifyContent: 'center',
-                            marginTop: '6px',
+                            marginTop: scaleConfig.noteMarginTop,
                           }}
                         >
                           {chordItem.chord.notes.map((note: string, nIdx: number) => (
                             <span
                               key={nIdx}
                               style={{
-                                fontSize: '9px',
+                                fontSize: scaleConfig.noteFontSize,
                                 fontWeight: 700,
                                 color: 'var(--c-text-secondary, #6B7280)',
                                 background: 'var(--c-surface-low, rgba(128,128,128,0.1))',
-                                padding: '1px 5px',
+                                padding: scaleConfig.notePadding,
                                 borderRadius: '4px',
                                 border: '1px solid var(--c-border-subtle, rgba(128,128,128,0.15))',
                               }}
@@ -932,7 +985,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         onClick={() => setShowSettings(true)}
         style={{
           position: 'fixed',
-          bottom: 'calc(max(20px, env(safe-area-inset-bottom, 20px)) + 16px)',
+          bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
           right: '20px',
           zIndex: 50,
           width: '50px',
@@ -2237,6 +2290,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     setTeleprompterAlignment,
     teleprompterMirror,
     setTeleprompterMirror,
+    chordDiagramScale,
+    setChordDiagramScale,
     hasChords,
     hasLyrics,
     isTeleprompterMode,
@@ -2632,6 +2687,94 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Diagram Scale Selector */}
+            <div
+              style={{
+                marginTop: '12px',
+                opacity: hasChords ? 1 : 0.35,
+                pointerEvents: hasChords ? 'all' : 'none',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '6px',
+                }}
+              >
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                  }}
+                >
+                  Diagram Scale
+                </p>
+                <span
+                  style={{
+                    color: accent.from,
+                    fontSize: '10.5px',
+                    fontWeight: 700,
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {chordDiagramScale}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr',
+                  gap: '6px',
+                  padding: '4px',
+                  background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                  borderRadius: '14px',
+                  border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
+                }}
+              >
+                {(['large', 'medium', 'small'] as const).map((sc) => {
+                  const isCurrent = chordDiagramScale === sc;
+                  return (
+                    <button
+                      key={sc}
+                      type="button"
+                      data-testid={`setting-scale-${sc}`}
+                      onClick={() => setChordDiagramScale(sc)}
+                      className="btn-smooth"
+                      style={{
+                        padding: '8px 4px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: isCurrent ? accent.from : 'transparent',
+                        color: isCurrent ? '#ffffff' : 'var(--c-text-primary)',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        fontFamily: 'var(--studio-font-body)',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        transition: 'background 200ms ease, color 200ms ease',
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                        {sc === 'large' ? 'view_agenda' : sc === 'medium' ? 'grid_view' : 'apps'}
+                      </span>
+                      {sc}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

@@ -593,7 +593,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
               onClick={() => setIsEditing(true)}
               style={{
                 position: 'fixed',
-                bottom: 'calc(max(20px, env(safe-area-inset-bottom, 20px)) + 16px)',
+                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
                 right: '20px',
                 zIndex: 50,
                 width: '50px',
