@@ -447,7 +447,7 @@ export function StageChordCard({
         }}
         title="Tap to hear chord"
       >
-        <div className="flex items-baseline gap-1.5 mb-2">
+        <div data-purpose="stage-chord-title" className="flex items-baseline gap-1.5 mb-2">
           <span
             className={`${size === 'large' ? 'text-7xl sm:text-8xl' : 'text-5xl sm:text-6xl'} font-extrabold tracking-tight`}
             style={{
@@ -509,7 +509,7 @@ export function StageChordCard({
     >
       {/* Chord Name Header (rendered in 'both' style, or compact in 'diagram' style) */}
       {visualStyle === 'both' ? (
-        <div className="flex items-baseline gap-1.5 mb-2.5">
+        <div data-purpose="stage-chord-title" className="flex items-baseline gap-1.5 mb-2.5">
           <span
             className={`${size === 'large' ? 'text-6xl sm:text-7xl' : 'text-5xl sm:text-6xl'} font-black tracking-tight`}
             style={{
@@ -620,6 +620,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
 
       {/* Centered Chord Display */}
       <div
+        key={shownIdx}
         style={{
           zIndex: 1,
           display: 'flex',

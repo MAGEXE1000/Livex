@@ -350,8 +350,6 @@ export function useLiveModeState(
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [autoPlay, setAutoPlay] = useState(false);
   const [shownIdx, setShownIdx] = useState(0);
-  const [phase, setPhase] = useState<'idle' | 'exit' | 'enter-prep'>('idle');
-  const [, setTransDir] = useState<'forward' | 'backward'>('forward');
   const [showSettings, setShowSettings] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1256,36 +1254,9 @@ export function useLiveModeState(
   ]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────
-  const prevIdxRef = useRef<number>(-1);
   useEffect(() => {
-    if (prevIdxRef.current === -1) {
-      prevIdxRef.current = currentIdx;
-      setShownIdx(currentIdx);
-      return;
-    }
-    if (currentIdx === prevIdxRef.current) return;
-    prevIdxRef.current = currentIdx;
-
-    if (!settings.liveModeAnimations) {
-      setShownIdx(currentIdx);
-      return;
-    }
-
-    setTransDir(direction);
-    setPhase('exit');
-
-    const t = setTimeout(() => {
-      setShownIdx(currentIdx);
-      setPhase('enter-prep');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setPhase('idle');
-        });
-      });
-    }, 170);
-
-    return () => clearTimeout(t);
-  }, [currentIdx, direction, settings.liveModeAnimations]);
+    setShownIdx(currentIdx);
+  }, [currentIdx]);
 
   // ── Keyboard Navigation ──────────────────────────────────────────
   useEffect(() => {
@@ -1380,26 +1351,8 @@ export function useLiveModeState(
 
   const chordStyle: React.CSSProperties = (() => {
     if (!settings.liveModeAnimations) return {};
-    if (phase === 'exit')
-      return {
-        opacity: 0,
-        transform: 'scale(0.82) translateY(10px)',
-        filter: 'blur(4px)',
-        transition: 'opacity 170ms ease-in, transform 170ms ease-in, filter 170ms ease-in',
-      };
-    if (phase === 'enter-prep')
-      return {
-        opacity: 0,
-        transform: 'scale(1.10) translateY(-14px)',
-        filter: 'blur(6px)',
-        transition: 'none',
-      };
     return {
-      opacity: 1,
-      transform: 'scale(1) translateY(0)',
-      filter: 'blur(0px)',
-      transition:
-        'opacity 320ms ease-out, transform 420ms cubic-bezier(0.34, 1.42, 0.64, 1), filter 280ms ease-out',
+      animation: 'live-mode-chord-enter 120ms ease-out both',
     };
   })();
 
