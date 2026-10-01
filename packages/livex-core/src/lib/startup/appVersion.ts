@@ -101,16 +101,18 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      "Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.",
-      'Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.',
-      'Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.',
+      'Unified Canonical Floating Glass Topbar in Live Mode: Restyled the Live mode top navigation capsule across Chords, Lyrics, and Both modes using the canonical `SharedFloatingHeader` design system tokens, responsive backdrop blur, and SVG back navigation chevron.',
+      'Icon-Only Live Spectator Sync Indicator: Streamlined the spectator follow pill into a sleek circular link icon button on the right header boundary, eliminating header clutter while preserving instant tap-to-unlock behavior.',
+      'Line-Level Teleprompter Focus: Transitioned active lyric line emphasis from character/syllable breaks to unified full-line focus framing with high-contrast active text and smooth verse transitions.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.',
-      'Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.',
+      'Live Mode Topbar Mathematical Center Alignment: Centered song titles and live playback subtitles with symmetric horizontal clearance across all screen sizes and mobile aspect ratios.',
+      'Compact Live Topbar Height: Reduced header height across all Live modes to an unobtrusive 48px profile, optimizing screen real estate for chords, teleprompter lyrics, and stage performance.',
+      'Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.',
+      'Timed Interlude Card Layout: Resolved header overflow issues where trash can and reorder buttons clipped outside card bounds.',
     ],
   },
 ];
@@ -122,6 +124,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.71',
+    date: '2026-09-30',
+    highlights: [
+      'Unified Canonical Floating Glass Topbar in Live Mode: Restyled the Live mode top navigation capsule across Chords, Lyrics, and Both modes using the canonical `SharedFloatingHeader` design system tokens, responsive backdrop blur, and SVG back navigation chevron.',
+      'Icon-Only Live Spectator Sync Indicator: Streamlined the spectator follow pill into a sleek circular link icon button on the right header boundary, eliminating header clutter while preserving instant tap-to-unlock behavior.',
+      'Line-Level Teleprompter Focus: Transitioned active lyric line emphasis from character/syllable breaks to unified full-line focus framing with high-contrast active text and smooth verse transitions.',
+      'Live Mode Topbar Mathematical Center Alignment: Centered song titles and live playback subtitles with symmetric horizontal clearance across all screen sizes and mobile aspect ratios.',
+      'Compact Live Topbar Height: Reduced header height across all Live modes to an unobtrusive 48px profile, optimizing screen real estate for chords, teleprompter lyrics, and stage performance.',
+      'Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.',
+    ],
+  },
   {
     version: '4.6.70',
     date: '2026-09-30',
@@ -217,16 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.',
       'Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.',
       'View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.',
-    ],
-  },
-  {
-    version: '4.6.61',
-    date: '2026-09-27',
-    highlights: [
-      'Synchronize Lyrics Live Timing to Song BPM: Replaced arbitrary speed multipliers and static fallbacks with exact mathematical timing derivations (`beatDurationMs = 60000 / BPM / playbackSpeed`, `lineDurationMs = beatDurationMs * beatsPerLine`, `wordDurationMs = lineDurationMs / wordCount`).',
-      'Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.',
-      'Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.',
-      'Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.',
     ],
   },
 ];
