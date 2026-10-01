@@ -85,7 +85,7 @@ export default function LiveMode({
 
   const showWaitingLobby = state.isLockedToLeader && state.isInLobby;
   const showLeaderPresenceBar =
-    state.isBroadcasting && state.isInLobby && !state.autoPlay;
+    state.isBandLeader && state.isBroadcasting && state.isInLobby && !state.autoPlay;
 
   const liveNode = (
     <div

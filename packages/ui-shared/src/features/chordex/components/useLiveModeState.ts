@@ -206,6 +206,7 @@ export interface LiveModeState {
   // Stage Band Live Sync Session
   hasActiveBand: boolean;
   bandName: string;
+  isBandLeader: boolean;
   isBroadcasting: boolean;
   setIsBroadcasting: (v: boolean) => void;
   isLockedToLeader: boolean;
@@ -427,6 +428,10 @@ export function useLiveModeState(
 
   // Band Stage Collaboration Store
   const currentBand = useBandStore((s) => s.currentBand);
+  const currentUserId = useBandStore((s) => s.currentUserId) || 'local-user';
+  const isBandLeader = Boolean(
+    currentBand && (currentBand.leaderId === currentUserId || !currentBand.leaderId)
+  );
   const isBroadcasting = useBandStore((s) => s.isBroadcasting);
   const setIsBroadcasting = useBandStore((s) => s.setIsBroadcasting);
   const isLockedToLeader = useBandStore((s) => s.isLockedToLeader);
@@ -575,8 +580,10 @@ export function useLiveModeState(
   }, [emitLiveSync, isBroadcasting, currentBand, isLockedToLeader, setIsBroadcasting]);
 
   const callBandSession = useCallback(() => {
-    const leaderId = currentBand?.leaderId || 'local-leader';
-    const leaderName = 'Band Leader';
+    const leaderId = currentBand?.leaderId || currentUserId;
+    const leaderName = currentBand
+      ? useBandStore.getState().members.find((m) => m.userId === leaderId)?.displayName || 'Band Leader'
+      : 'Band Leader';
     const initialAttendee: LobbyAttendee = {
       userId: leaderId,
       displayName: leaderName,
@@ -590,7 +597,7 @@ export function useLiveModeState(
       autoPlay: false,
       lobbyAttendees: [initialAttendee],
     });
-  }, [currentBand?.leaderId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
+  }, [currentBand, currentUserId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
 
   useEffect(() => {
     if (preset.barsPerLine) {
@@ -1060,8 +1067,10 @@ export function useLiveModeState(
     setIsExiting(true);
     setNavLocked(false);
     setNavHidden(false);
+    setIsBroadcasting(false);
+    setIsInLobby(false);
     exitTimerRef.current = setTimeout(() => onClose(), 290);
-  }, [isExiting, onClose]);
+  }, [isExiting, onClose, setIsBroadcasting]);
 
   useEffect(
     () => () => {
@@ -1934,6 +1943,7 @@ export function useLiveModeState(
     currentSectionName,
     hasActiveBand: Boolean(currentBand),
     bandName: currentBand?.name || 'Band',
+    isBandLeader,
     isBroadcasting,
     setIsBroadcasting,
     isLockedToLeader,

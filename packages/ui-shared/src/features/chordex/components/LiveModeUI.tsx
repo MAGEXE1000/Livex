@@ -317,7 +317,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             marginRight: '2px',
           }}
         >
-          {state.hasActiveBand && !state.isLockedToLeader && (
+          {state.isBandLeader && !state.isLockedToLeader && (
             <button
               type="button"
               data-testid="live-call-band-btn"
@@ -3619,44 +3619,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 </span>
               </div>
 
-              {/* Mode Toggles */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {/* Broadcast Toggle (Leader) */}
-                <button
-                  type="button"
-                  data-testid="band-sync-broadcast-btn"
-                  onClick={() => {
-                    const next = !state.isBroadcasting;
-                    state.setIsBroadcasting(next);
-                    if (next) state.setIsLockedToLeader(false);
-                  }}
-                  className="btn-smooth"
-                  style={{
-                    padding: '10px 8px',
-                    borderRadius: '12px',
-                    background: state.isBroadcasting
-                      ? 'rgba(34, 197, 94, 0.16)'
-                      : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
-                    border: `1px solid ${state.isBroadcasting ? 'rgba(34, 197, 94, 0.4)' : 'var(--c-border, transparent)'}`,
-                    color: state.isBroadcasting ? '#4ade80' : 'var(--c-text-primary)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                    sensors
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700 }}>
-                    {state.isBroadcasting ? 'Broadcasting ON' : 'Broadcast Live'}
-                  </span>
-                  <span style={{ fontSize: '9px', opacity: 0.7 }}>Leader session</span>
-                </button>
-
-                {/* Follower Toggle (Member) */}
+              {/* Follower Sync Status / Toggle */}
+              <div>
                 <button
                   type="button"
                   data-testid="band-sync-follow-btn"
@@ -3667,7 +3631,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   }}
                   className="btn-smooth"
                   style={{
-                    padding: '10px 8px',
+                    width: '100%',
+                    padding: '10px 14px',
                     borderRadius: '12px',
                     background: state.isLockedToLeader
                       ? 'rgba(59, 130, 246, 0.16)'
@@ -3675,20 +3640,23 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     border: `1px solid ${state.isLockedToLeader ? 'rgba(59, 130, 246, 0.4)' : 'var(--c-border, transparent)'}`,
                     color: state.isLockedToLeader ? '#60a5fa' : 'var(--c-text-primary)',
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '4px',
+                    justifyContent: 'space-between',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                    link
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                      link
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: 700 }}>
+                      {state.isLockedToLeader ? 'Locked to Leader' : 'Follow Leader'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '10px', opacity: 0.7 }}>
+                    {state.isLockedToLeader ? 'ACTIVE' : 'OFF'}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700 }}>
-                    {state.isLockedToLeader ? 'Locked to Leader' : 'Follow Leader'}
-                  </span>
-                  <span style={{ fontSize: '9px', opacity: 0.7 }}>Band member</span>
                 </button>
               </div>
             </div>

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import {
   useBandStore,
-  useChordStore,
   type Band,
   type BandMember,
-  type SharedSong,
-  type SongPreset,
-  NavigationDispatcher,
 } from '@workspace/livex-core';
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { toast } from '../../../components/ui/sonner';
 
 export interface BandHubModalProps {
   isOpen: boolean;
@@ -36,14 +33,10 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
   const {
     currentBand,
     members,
-    sharedSongs,
     events,
     createBand,
     joinBandByCode,
     leaveBand,
-    shareSongFromPreset,
-    importSharedSongToLibrary,
-    removeSharedSong,
     addEvent,
     deleteEvent,
     isLoading,
@@ -51,19 +44,13 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     setError,
   } = useBandStore();
 
-  const presets = useChordStore((s) => s.presets);
-  const createPreset = useChordStore((s) => s.createPreset);
-  const setActivePreset = useChordStore((s) => s.setActivePreset);
-
   const [noBandTab, setNoBandTab] = useState<'create' | 'join'>('create');
   const [bandTab, setBandTab] = useState<'members' | 'calendar'>('members');
   const [bandNameInput, setBandNameInput] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [showSongPicker, setShowSongPicker] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // New Event Form State
   const [eventTitle, setEventTitle] = useState('');
@@ -79,8 +66,7 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
   const [eventNotes, setEventNotes] = useState('');
 
   const showToast = (msg: string) => {
-    setFeedbackToast(msg);
-    setTimeout(() => setFeedbackToast(null), 3000);
+    toast.success(msg);
   };
 
   const handleCreate = (e?: React.FormEvent) => {
@@ -112,54 +98,9 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     try {
       navigator.clipboard.writeText(currentBand.code);
       setCopiedCode(true);
+      showToast(isSpanish ? 'Código copiado al portapapeles' : 'Code copied to clipboard');
       setTimeout(() => setCopiedCode(false), 2000);
     } catch (_) {}
-  };
-
-  const handleSharePreset = (preset: SongPreset) => {
-    if (!currentBand) return;
-    shareSongFromPreset(preset, currentBand.id, currentUserId, currentUserName);
-    setShowSongPicker(false);
-    showToast(
-      isSpanish
-        ? `Canción "${preset.name}" compartida con la banda`
-        : `Song "${preset.name}" shared with band`
-    );
-  };
-
-  const handleImportToLibrary = (song: SharedSong) => {
-    const existing = presets.find(
-      (p) => p.name.toLowerCase() === song.title.toLowerCase() || p.id === song.songId
-    );
-    if (existing) {
-      showToast(
-        isSpanish
-          ? `"${song.title}" ya está en tu biblioteca`
-          : `"${song.title}" is already in your library`
-      );
-      return;
-    }
-
-    importSharedSongToLibrary(song, (data) => createPreset(data));
-    showToast(
-      isSpanish
-        ? `"${song.title}" guardada en tu biblioteca local (Offline)`
-        : `"${song.title}" saved to local library (Offline)`
-    );
-  };
-
-  const handleOpenSong = (song: SharedSong) => {
-    let targetId = song.songId;
-    const existing = presets.find((p) => p.id === song.songId || p.name === song.title);
-    if (existing) {
-      targetId = existing.id;
-    } else {
-      targetId = importSharedSongToLibrary(song, (data) => createPreset(data));
-    }
-
-    setActivePreset(targetId);
-    onClose();
-    NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
   };
 
   const handleSaveEvent = (e?: React.FormEvent) => {
@@ -193,7 +134,6 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
       onClose={() => {
         setError(null);
         setShowLeaveConfirm(false);
-        setShowSongPicker(false);
         setShowAddEvent(false);
         onClose();
       }}
@@ -229,30 +169,14 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
             <p className="text-xs text-zinc-400 truncate">
               {currentBand
                 ? isSpanish
-                  ? `${members.length} miembros • ${sharedSongs.length} canciones • Código: ${currentBand.code}`
-                  : `${members.length} members • ${sharedSongs.length} songs • Code: ${currentBand.code}`
+                  ? `${members.length} miembros • Código: ${currentBand.code}`
+                  : `${members.length} members • Code: ${currentBand.code}`
                 : isSpanish
-                  ? 'Sincroniza canciones, ensayos y eventos de la banda'
-                  : 'Sync songs, rehearsals, and stage gigs with your team'}
+                  ? 'Sincroniza ensayos, conciertos y eventos de la banda'
+                  : 'Sync rehearsals, gigs, and stage events with your team'}
             </p>
           </div>
         </div>
-
-        {/* Toast Notification */}
-        {feedbackToast && (
-          <div
-            data-testid="band-feedback-toast"
-            className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold shadow-md animate-fade-in"
-            style={{
-              background: `${accent.from}20`,
-              border: `1px solid ${accent.from}50`,
-              color: accent.from,
-            }}
-          >
-            <StudioIcon name="check_circle" size={16} />
-            <span className="flex-1">{feedbackToast}</span>
-          </div>
-        )}
 
         {/* Error Alert */}
         {error && (
@@ -321,7 +245,6 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
                 data-testid="band-tab-members"
                 onClick={() => {
                   setBandTab('members');
-                  setShowSongPicker(false);
                   setShowAddEvent(false);
                 }}
                 className="flex-1 py-1.5 text-xs font-bold rounded-lg transition active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1"
@@ -339,7 +262,6 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
                 data-testid="band-tab-calendar"
                 onClick={() => {
                   setBandTab('calendar');
-                  setShowSongPicker(false);
                   setShowAddEvent(false);
                 }}
                 className="flex-1 py-1.5 text-xs font-bold rounded-lg transition active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1"
