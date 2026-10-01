@@ -93,11 +93,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
     preset,
     accent,
     autoPlay,
-    bpmOverride,
     handleClose,
     displayMode,
-    currentSectionName,
-    setShowSettings,
   } = state;
 
   const isLyricsMode = displayMode === 'lyrics_only';
@@ -110,109 +107,24 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
   const durationText = `${formatDurationMmSs(elapsedSec)} / ${formatDurationMmSs(totalSec)}`;
   const currentSpeed = state.speed || state.bpmOverride;
 
-  const durationBadge = (
-    <button
-      type="button"
-      data-testid="live-header-duration"
-      onClick={() => setShowSettings(true)}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '3px',
-        padding: '0',
-        background: 'none',
-        border: 'none',
-        color: 'inherit',
-        cursor: 'pointer',
-        font: 'inherit',
-      }}
-      title="Adjust song duration"
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>
-        timer
-      </span>
-      <span>{durationText}</span>
-    </button>
-  );
+  const modeLabel = isHybridMode ? 'BOTH' : isLyricsMode ? 'LYRICS' : 'CHORDS';
+  const keyLabel = preset.key ? `KEY ${preset.key}` : null;
 
-  const bpmBadge = (
-    <span
-      data-testid="header-bpm-badge"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '3px',
-        padding: '2px 7px',
-        borderRadius: '6px',
-        background: 'rgba(255, 255, 255, 0.08)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        color: 'var(--c-text-primary, #ffffff)',
-        fontSize: '11px',
-        fontWeight: 700,
-        letterSpacing: '0.02em',
-      }}
-    >
-      <span style={{ color: accent.from, fontWeight: 800 }}>BPM</span>
-      <span>{currentSpeed}</span>
+  const subtitle = (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10.5px' }}>
+      <span style={{ color: accent.from, fontWeight: 700 }}>{modeLabel}</span>
+      {keyLabel && (
+        <>
+          <span style={{ opacity: 0.35 }}>•</span>
+          <span>{keyLabel}</span>
+        </>
+      )}
+      <span style={{ opacity: 0.35 }}>•</span>
+      <span style={{ fontWeight: 700 }}>BPM {currentSpeed}</span>
+      <span style={{ opacity: 0.35 }}>•</span>
+      <span>{durationText}</span>
     </span>
   );
-
-  const subtitle = (() => {
-    if (isHybridMode) {
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: accent.from, fontWeight: 700 }}>CHORDS + LYRICS</span>
-          <span style={{ opacity: 0.4 }}>•</span>
-          <span>KEY {preset.key || 'C'}</span>
-          <span style={{ opacity: 0.4 }}>•</span>
-          {bpmBadge}
-          <span style={{ opacity: 0.4 }}>•</span>
-          {durationBadge}
-        </span>
-      );
-    }
-    if (isLyricsMode) {
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: accent.from, fontWeight: 700 }}>LYRICS</span>
-          <span style={{ opacity: 0.4 }}>•</span>
-          {bpmBadge}
-          <span style={{ opacity: 0.4 }}>•</span>
-          {durationBadge}
-          {preset.artist ? (
-            <>
-              <span style={{ opacity: 0.4 }}>•</span>
-              <span style={{ opacity: 0.7 }}>{preset.artist}</span>
-            </>
-          ) : null}
-          <span style={{ opacity: 0.4 }}>•</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: autoPlay ? '#22c55e' : accent.from,
-                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
-              }}
-            />
-            {currentSectionName || 'Lyrics'}
-          </span>
-        </span>
-      );
-    }
-    return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ color: accent.from, fontWeight: 700 }}>CHORDS</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <span>KEY {preset.key || 'C'}</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        {bpmBadge}
-        <span style={{ opacity: 0.4 }}>•</span>
-        {durationBadge}
-      </span>
-    );
-  })();
 
   return (
     <>
@@ -222,7 +134,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         data-testid="live-mode-topbar"
         style={{
           position: 'absolute',
-          top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
+          top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px)',
           left: '50%',
           transform: state.isHeaderHidden ? 'translate(-50%, -125%)' : 'translate(-50%, 0)',
           opacity: state.isHeaderHidden ? 0 : 1,
@@ -231,21 +143,23 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           zIndex: 100,
           width: 'calc(100% - 32px)',
           maxWidth: '560px',
-          minHeight: '50px',
-          borderRadius: '26px',
-          padding: '6px 12px 6px 8px',
+          height: '46px',
+          minHeight: '46px',
+          borderRadius: '9999px',
+          padding: '0 8px 0 4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--surface-container-high, rgba(30, 30, 30, 0.72))',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.36), 0 2px 8px rgba(0, 0, 0, 0.2)',
+          background: 'var(--surface-topbar-bg)',
+          border: 'var(--surface-topbar-border)',
+          backdropFilter: 'var(--surface-topbar-backdrop)',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+          boxShadow: 'var(--surface-topbar-shadow)',
           boxSizing: 'border-box',
+          userSelect: 'none',
         }}
       >
-        {/* Left: Back button */}
+        {/* Left: Back button (Matching SharedFloatingHeader canonical style) */}
         <button
           type="button"
           data-testid="live-mode-back-btn"
@@ -253,34 +167,59 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
             color: 'var(--c-text-primary, #ffffff)',
             cursor: 'pointer',
             flexShrink: 0,
-            transition: 'all 0.15s ease',
+            zIndex: 2,
+            pointerEvents: 'auto',
+            outline: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            padding: 0,
+            marginLeft: '2px',
           }}
           title="Exit Live Mode"
+          aria-label="Exit Live Mode"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '19px' }}>
-            arrow_back
-          </span>
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ display: 'block', pointerEvents: 'none' }}
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
 
-        {/* Center: Song title & Live status subtitle */}
+        {/* Center: Mathematically centered Song title & Live status subtitle */}
         <div
           style={{
-            flex: 1,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: 0,
-            padding: '0 10px',
+            paddingLeft: '44px',
+            paddingRight: '44px',
+            pointerEvents: 'none',
+            zIndex: 1,
             textAlign: 'center',
           }}
         >
@@ -288,17 +227,17 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               maxWidth: '100%',
             }}
           >
             <span
               style={{
-                width: '7px',
-                height: '7px',
+                width: '6px',
+                height: '6px',
                 borderRadius: '50%',
                 backgroundColor: autoPlay ? '#22c55e' : accent.from,
-                boxShadow: autoPlay ? '0 0 8px #22c55e' : `0 0 8px ${accent.from}`,
+                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
                 animation: autoPlay ? 'live-dot-pulse 1.5s infinite' : 'none',
                 flexShrink: 0,
               }}
@@ -306,7 +245,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             <h1
               data-testid="live-mode-title"
               style={{
-                fontSize: '15px',
+                fontSize: '13.5px',
                 fontWeight: 700,
                 color: 'var(--c-text-primary, #ffffff)',
                 fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
@@ -315,6 +254,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                 textOverflow: 'ellipsis',
                 margin: 0,
                 padding: 0,
+                letterSpacing: '-0.01em',
               }}
             >
               {preset.name}
@@ -323,76 +263,62 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <div
             data-testid="live-mode-subtitle"
             style={{
-              fontSize: '11px',
+              fontSize: '10.5px',
               color: 'var(--c-text-secondary, #94a3b8)',
               fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               maxWidth: '100%',
-              marginTop: '2px',
+              marginTop: '1px',
             }}
           >
             {subtitle}
           </div>
         </div>
 
-        {/* Right: Live Sync Pill (when locked as spectator) + Settings button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {/* Right: Only compact Sync Icon when locked to leader (no preferences button) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            flexShrink: 0,
+            zIndex: 2,
+            pointerEvents: 'auto',
+            minWidth: '36px',
+            justifyContent: 'flex-end',
+            marginRight: '2px',
+          }}
+        >
           {state.hasActiveBand && state.isLockedToLeader && (
             <button
               type="button"
               data-testid="live-follow-toggle"
               onClick={() => state.setIsLockedToLeader(false)}
               style={{
-                display: 'inline-flex',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                padding: '5px 10px',
-                borderRadius: '16px',
-                background: 'rgba(59, 130, 246, 0.16)',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
+                justifyContent: 'center',
+                background: 'rgba(59, 130, 246, 0.18)',
+                border: '1px solid rgba(59, 130, 246, 0.35)',
                 color: '#60a5fa',
-                fontSize: '11px',
-                fontWeight: 800,
-                letterSpacing: '0.03em',
                 cursor: 'pointer',
-                boxShadow: '0 0 14px rgba(59, 130, 246, 0.28)',
-                transition: 'all 0.2s ease',
+                boxShadow: '0 0 10px rgba(59, 130, 246, 0.25)',
+                transition: 'all 0.15s ease',
+                padding: 0,
               }}
-              title="Locked to Leader's Live Session (Tap to Unlock)"
+              title="Synced with Band Leader (Tap to unlock)"
+              aria-label="Synced with Band Leader (Tap to unlock)"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
                 link
               </span>
-              <span>SYNCED</span>
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => setShowSettings(true)}
-            data-testid="live-mode-settings-btn"
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: 'var(--c-text-primary, #ffffff)',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-            title="Live Settings"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              tune
-            </span>
-          </button>
         </div>
       </header>
     </>
