@@ -357,22 +357,20 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(59, 130, 246, 0.18)',
-                border: '1px solid rgba(59, 130, 246, 0.35)',
-                color: '#60a5fa',
+                background: 'transparent',
+                border: 'none',
+                color: '#FFFFFF',
                 cursor: 'pointer',
-                boxShadow: '0 0 10px rgba(59, 130, 246, 0.25)',
                 transition: 'all 0.15s ease',
                 padding: 0,
               }}
               title="Synced with Band Leader (Tap to unlock)"
               aria-label="Synced with Band Leader (Tap to unlock)"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
                 link
               </span>
             </button>

@@ -690,16 +690,16 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <div
                 style={{
-                  width: 'clamp(34px, 4.6vh, 40px)',
-                  height: 'clamp(34px, 4.6vh, 40px)',
+                  width: 24,
+                  height: 24,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: color,
+                  color: isLight ? '#000000' : '#FFFFFF',
                   flexShrink: 0,
                 }}
               >
-                <Logo size={28} />
+                <Logo size={24} />
               </div>
               <div
                 style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
@@ -767,15 +767,8 @@ const HubModuleCards = React.memo(function HubModuleCards({
 
             <div
               style={{
-                width: 'clamp(28px, 3.4vh, 32px)',
-                height: 'clamp(28px, 3.4vh, 32px)',
-                borderRadius: '50%',
-                background: isLight
-                  ? 'rgba(0,0,0,0.035)'
-                  : 'rgba(255,255,255,0.05)',
-                border: isLight
-                  ? '1px solid rgba(0,0,0,0.06)'
-                  : '1px solid rgba(255,255,255,0.08)',
+                width: 24,
+                height: 24,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -785,10 +778,10 @@ const HubModuleCards = React.memo(function HubModuleCards({
             >
               <StudioIcon
                 name="chevron_right"
-                size={17}
+                size={20}
                 style={{
-                  color: 'var(--c-text-secondary)',
-                  opacity: 0.75,
+                  color: isLight ? '#000000' : '#FFFFFF',
+                  opacity: 0.5,
                 }}
               />
             </div>
@@ -2011,37 +2004,19 @@ export default function LivexHub() {
                                         : { rotate: 0 }
                                     }
                                     style={{
-                                      width: 'clamp(50px, 6.2vh, 58px)',
-                                      height: 'clamp(50px, 6.2vh, 58px)',
-                                      borderRadius: '9999px',
-                                      background: isLight
-                                        ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.90) 0%, rgba(240, 244, 255, 0.75) 100%)'
-                                        : 'linear-gradient(160deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                                      border: isLight
-                                        ? '1px solid rgba(255, 255, 255, 0.95)'
-                                        : '1px solid rgba(255, 255, 255, 0.12)',
-                                      boxShadow: 'var(--shadow-control-raised)',
+                                      width: 'clamp(44px, 5.5vh, 48px)',
+                                      height: 'clamp(44px, 5.5vh, 48px)',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      boxShadow: 'none',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       position: 'relative',
-                                      overflow: 'hidden',
+                                      color: isLight ? '#000000' : '#FFFFFF',
                                     }}
                                   >
-                                    {/* Top Specular Rim */}
-                                    <div
-                                      style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 4,
-                                        right: 4,
-                                        height: '1px',
-                                        background: 'var(--surface-glass-rim)',
-                                        pointerEvents: 'none',
-                                        opacity: 0.8,
-                                      }}
-                                    />
-                                    {renderShortcutIcon(opt.icon, 25)}
+                                    {renderShortcutIcon(opt.icon, 24, isLight ? '#000000' : '#FFFFFF')}
 
                                     {isEditMode && (
                                       <button

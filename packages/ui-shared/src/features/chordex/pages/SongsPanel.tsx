@@ -46,6 +46,7 @@ import {
   SetlistNavSwitcher,
   SetlistLibraryView,
   SetlistDetailView,
+  SetlistFormContent,
 } from '../components/setlists';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -3859,6 +3860,8 @@ export default function SongsPanel() {
   const setActiveSetlistId = useChordStore((s) => s.setActiveSetlistId);
   const songsSubTab = useChordStore((s) => s.songsSubTab || 'all');
   const setSongsSubTab = useChordStore((s) => s.setSongsSubTab);
+  const createSetlist = useChordStore((s) => s.createSetlist);
+  const isLight = useSettingsStore((s) => s.settings.theme === 'light');
 
   // Live Setlist Playback State
   const [liveSetlistQueue, setLiveSetlistQueue] = useState<SetlistQueueItem[] | null>(null);
@@ -4564,6 +4567,29 @@ export default function SongsPanel() {
     [accent, presets, handleImport]
   );
 
+  const renderCreateSetlistForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <SetlistFormContent
+        accentColor={accent.from}
+        onSave={(data) => {
+          const newId = createSetlist({
+            title: data.title,
+            description: data.description,
+            date: data.date,
+            sections: data.initialSectionName
+              ? [{ name: data.initialSectionName, songIds: [] }]
+              : [{ name: 'Set 1', songIds: [] }],
+          });
+          setActiveSetlistId(newId);
+          close?.();
+        }}
+        onClose={() => close?.()}
+        showFooterButtons={true}
+      />
+    ),
+    [accent.from, createSetlist, setActiveSetlistId]
+  );
+
   // Sync localSections from store when not dragging
   useEffect(() => {
     if (secDragIdx === null) {
@@ -4883,7 +4909,7 @@ export default function SongsPanel() {
               backBtnTestId="editor-back-btn"
               scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
               toolbarActions={
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <motion.button
                     whileTap={{ scale: 0.92 }}
                     aria-label="Edit song details"
@@ -4892,16 +4918,16 @@ export default function SongsPanel() {
                       setEditingId(activePreset.id);
                       setShowForm(true);
                     }}
-                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer"
+                    className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      color: 'var(--c-text-primary, #FFFFFF)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: isLight ? '#000000' : '#FFFFFF',
                     }}
                     type="button"
                     title="Edit song details"
                   >
-                    <span className="material-symbols-rounded text-[18px]">edit</span>
+                    <span className="material-symbols-rounded text-[20px]">edit</span>
                   </motion.button>
 
                   {hasLiveContent && (
@@ -4910,17 +4936,19 @@ export default function SongsPanel() {
                       aria-label="Live Mode"
                       onClick={() => setShowLive(true)}
                       data-testid="enter-live-mode"
-                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                      className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
                       style={{
-                        background: 'rgba(255, 255, 255, 0.12)',
-                        backdropFilter: 'blur(8px)',
-                        border: '1px solid rgba(255, 255, 255, 0.18)',
-                        color: '#FFFFFF',
+                        background: 'transparent',
+                        border: 'none',
+                        color: isLight ? '#000000' : '#FFFFFF',
                       }}
                       type="button"
                       title="Start live performance"
                     >
-                      <span className="material-symbols-rounded text-[20px]" style={{ color: '#FFFFFF' }}>
+                      <span
+                        className="material-symbols-rounded text-[22px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
                         play_arrow
                       </span>
                     </motion.button>
@@ -6355,7 +6383,7 @@ export default function SongsPanel() {
                 }}
               >
                 <SharedFloatingHeader
-                  title="Songs"
+                  title={songsSubTab === 'setlists' ? 'Setlists' : 'Songs'}
                   hideBack={true}
                   scrollContainerRef={listScrollRef}
                 />
@@ -6621,17 +6649,17 @@ export default function SongsPanel() {
                 )}
 
                 {/* Floating Action Buttons (FAB Stack) */}
-                {songsSubTab === 'all' && (
-                  <aside
-                    className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
-                    style={{
-                      bottom:
-                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
-                      zIndex: 40,
-                    }}
-                    data-purpose="action-buttons"
-                  >
-                    {/* Secondary FAB: Import */}
+                <aside
+                  className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
+                  style={{
+                    bottom:
+                      'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
+                    zIndex: 40,
+                  }}
+                  data-purpose="action-buttons"
+                >
+                  {/* Secondary FAB: Import (All Songs only) */}
+                  {songsSubTab === 'all' && (
                     <MorphingActionSurface
                       placement="center"
                       maxWidth={420}
@@ -6658,8 +6686,10 @@ export default function SongsPanel() {
                     >
                       {renderImportSongForm}
                     </MorphingActionSurface>
+                  )}
 
-                    {/* Primary FAB: Create Song */}
+                  {/* Primary FAB: Create Song or Create Setlist */}
+                  {songsSubTab === 'all' ? (
                     <MorphingActionSurface
                       placement="center"
                       maxWidth={400}
@@ -6689,8 +6719,38 @@ export default function SongsPanel() {
                     >
                       {renderCreateSongForm}
                     </MorphingActionSurface>
-                  </aside>
-                )}
+                  ) : (
+                    <MorphingActionSurface
+                      placement="center"
+                      maxWidth={400}
+                      title="New Setlist"
+                      subtitle="Create a structured repertoire"
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
+                          whileTap={{ scale: 0.92 }}
+                          type="button"
+                          data-testid="btn-create-setlist"
+                          aria-label="Create new setlist"
+                          title="Create new setlist"
+                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            backgroundColor: 'var(--c-accent-from, #2563EB)',
+                            boxShadow:
+                              '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                          }}
+                        >
+                          <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                        </motion.button>
+                      )}
+                    >
+                      {renderCreateSetlistForm}
+                    </MorphingActionSurface>
+                  )}
+                </aside>
               </div>
             );
           }}

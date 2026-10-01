@@ -70,58 +70,38 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto pb-32 px-4 space-y-4" data-purpose="setlists-library-view">
-      {/* Search & Actions Top Bar */}
-      <div className="flex items-center gap-2.5">
-        <div className="relative flex-1 flex items-center" data-purpose="search-bar">
-          <span
-            className="material-symbols-rounded absolute left-4 pointer-events-none text-lg select-none"
+    <div className="w-full space-y-3" data-purpose="setlists-library-view">
+      {/* Search Bar */}
+      <div className="relative flex items-center" data-purpose="search-bar">
+        <span
+          className="material-symbols-rounded absolute left-4 pointer-events-none text-lg select-none"
+          style={{ color: 'var(--c-text-muted, #94A3B8)' }}
+        >
+          search
+        </span>
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search setlists, dates, sections..."
+          className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
+          style={{
+            backgroundColor: 'var(--surface-card-bg, #ffffff)',
+            borderColor: 'var(--c-border, #E3E6EB)',
+            color: 'var(--c-text-primary, #111827)',
+          }}
+        />
+        {searchQuery && (
+          <button
+            aria-label="Clear search"
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
             style={{ color: 'var(--c-text-muted, #94A3B8)' }}
           >
-            search
-          </span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search setlists, dates, sections..."
-            className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
-            style={{
-              backgroundColor: 'var(--surface-card-bg, #ffffff)',
-              borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-text-primary, #111827)',
-            }}
-          />
-          {searchQuery && (
-            <button
-              aria-label="Clear search"
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
-              style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-            >
-              <span className="material-symbols-rounded text-base">close</span>
-            </button>
-          )}
-        </div>
-
-        <motion.button
-          whileTap={{ scale: 0.94 }}
-          type="button"
-          onClick={() => {
-            setEditingSetlist(null);
-            setShowCreateModal(true);
-          }}
-          data-testid="btn-create-setlist"
-          className="h-[46px] px-4 rounded-full text-xs font-bold text-white shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 transition-transform"
-          style={{
-            backgroundColor: accentColor,
-            boxShadow: `0 4px 14px color-mix(in srgb, ${accentColor} 35%, transparent)`,
-          }}
-        >
-          <span className="material-symbols-rounded text-lg">add</span>
-          <span>New Setlist</span>
-        </motion.button>
+            <span className="material-symbols-rounded text-base">close</span>
+          </button>
+        )}
       </div>
 
       {/* Setlists Content or Empty States */}

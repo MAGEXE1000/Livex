@@ -5,6 +5,7 @@ import {
   type SongPreset,
   type SetlistSection,
   useChordStore,
+  useSettingsStore,
   calculateSetlistStats,
   formatDurationMmSs,
 } from '@workspace/livex-core';
@@ -32,6 +33,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   onOpenSongInEditor,
 }) => {
   const setlist = useChordStore((s) => (s.setlists || []).find((st: Setlist) => st.id === setlistId));
+  const isLight = useSettingsStore((s) => s.settings.theme === 'light');
   const updateSetlist = useChordStore((s) => s.updateSetlist);
   const deleteSetlist = useChordStore((s) => s.deleteSetlist);
   const duplicateSetlist = useChordStore((s) => s.duplicateSetlist);
@@ -120,7 +122,20 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
       data-purpose="setlist-detail-screen"
     >
       <SharedFloatingHeader
-        title={setlist.title}
+        title={
+          <button
+            type="button"
+            onClick={() => setShowEditInfoModal(true)}
+            title="Edit setlist info"
+            className="truncate font-extrabold text-[17px] tracking-tight hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 pointer-events-auto text-center"
+            style={{
+              fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+              color: 'var(--c-text-primary)',
+            }}
+          >
+            {setlist.title}
+          </button>
+        }
         subtitle={
           <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
             {setlist.date && (
@@ -137,41 +152,49 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
         onBack={onBack}
         backBtnTestId="setlist-detail-back-btn"
         toolbarActions={
-          <div className="flex items-center gap-1.5">
+          stats.totalSongs > 0 ? (
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              type="button"
+              data-testid="setlist-start-live-btn"
+              onClick={() => onPlayLiveSetlist(setlist, 0)}
+              title="Start live setlist rehearsal"
+              className="h-[34px] px-3.5 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0 active:scale-95"
+              style={{
+                backgroundColor: 'var(--c-accent-from, #2563EB)',
+                color: '#FFFFFF',
+                boxShadow: '0 2px 10px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                fontFamily: 'var(--font-headline)',
+                fontWeight: 700,
+                fontSize: '11px',
+                letterSpacing: '0.03em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <span
+                className="material-symbols-rounded text-[18px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                play_arrow
+              </span>
+              <span>Play Live</span>
+            </motion.button>
+          ) : (
             <motion.button
               whileTap={{ scale: 0.92 }}
               type="button"
               onClick={() => setShowEditInfoModal(true)}
               title="Edit setlist info"
-              className="w-[34px] h-[34px] rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0"
+              className="w-[34px] h-[34px] flex items-center justify-center transition-all cursor-pointer shrink-0"
               style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: 'var(--c-text-primary, #FFFFFF)',
+                background: 'transparent',
+                border: 'none',
+                color: isLight ? '#000000' : '#FFFFFF',
               }}
             >
-              <span className="material-symbols-rounded text-[17px]">edit</span>
+              <span className="material-symbols-rounded text-[20px]">edit</span>
             </motion.button>
-
-            {stats.totalSongs > 0 && (
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                type="button"
-                data-testid="setlist-start-live-btn"
-                onClick={() => onPlayLiveSetlist(setlist, 0)}
-                title="Start live setlist rehearsal"
-                className="h-[34px] px-4 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${accentColor}, color-mix(in srgb, ${accentColor} 80%, #000))`,
-                  color: '#FFFFFF',
-                  boxShadow: `0 3px 12px color-mix(in srgb, ${accentColor} 35%, transparent)`,
-                }}
-              >
-                <span className="material-symbols-rounded text-[18px]">play_arrow</span>
-                <span className="text-[11px] font-bold tracking-tight uppercase">Play Live</span>
-              </motion.button>
-            )}
-          </div>
+          )
         }
       />
 
@@ -184,38 +207,6 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
           }}
           data-purpose="setlist-detail-content"
         >
-          {/* Setlist Summary Card */}
-          <div
-            className="p-4 rounded-3xl border shadow-soft-card flex flex-col gap-2.5"
-            style={{
-              backgroundColor: 'var(--surface-card-bg, #1e1e24)',
-              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.09))',
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-rounded text-xl" style={{ color: accentColor }}>
-                  queue_music
-                </span>
-                <h2 className="text-sm font-black tracking-tight">{setlist.title}</h2>
-              </div>
-              {setlist.date && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-300">
-                  {setlist.date}
-                </span>
-              )}
-            </div>
-
-            {setlist.description && (
-              <p className="text-xs text-slate-400 leading-relaxed">{setlist.description}</p>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-slate-400">
-              <span>{stats.sectionCount} {stats.sectionCount === 1 ? 'Section' : 'Sections'} • {stats.totalSongs} Songs</span>
-              <span className="font-semibold text-slate-200">Total: {formattedTotalDuration}</span>
-            </div>
-          </div>
-
           {/* Sections List */}
           <div className="space-y-4" data-purpose="setlist-sections-container">
             {(!setlist.sections || setlist.sections.length === 0 || stats.totalSongs === 0) && (

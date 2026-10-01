@@ -52,8 +52,8 @@ export const SetlistCard: React.FC<SetlistCardProps> = ({
       onClick={() => onOpen(setlist.id)}
       className="group relative rounded-3xl p-4 sm:p-5 border shadow-soft-card flex flex-col justify-between transition-all cursor-pointer select-none overflow-hidden"
       style={{
-        backgroundColor: 'var(--surface-card-bg, #1e1e24)',
-        borderColor: 'var(--c-border, rgba(255, 255, 255, 0.09))',
+        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+        borderColor: 'var(--c-border, #E3E6EB)',
       }}
       data-testid={`setlist-card-${setlist.id}`}
       data-purpose="setlist-card"

@@ -399,74 +399,82 @@ export function SharedFloatingHeader({
         ) : null}
 
         {/* Mathematically Centered Section Title across complete top bar */}
-        <div
-          ref={actualTitleRef}
-          data-testid="shared-floating-header-title"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingLeft: onBack && !hideBack ? '48px' : '16px',
-            paddingRight: toolbarActions ? '140px' : (onBack && !hideBack ? '48px' : '16px'),
-            pointerEvents: 'none',
-            zIndex: 1,
-            willChange: 'transform',
-          }}
-        >
-          {typeof title === 'string' ? (
-            <span
-              data-testid={
-                titleTestId ||
-                (title === 'Production Document' || title === 'Production' || title === 'Producción'
-                  ? 'production-document-title'
-                  : undefined)
-              }
-              style={{
-                fontSize: 'var(--type-title-size, 19px)',
-                lineHeight: subtitle ? '20px' : 'var(--type-title-lh, 26px)',
-                fontWeight: 700,
-                color: 'var(--c-text-primary)',
-                letterSpacing: 'var(--type-title-tracking, -0.4px)',
-                fontFamily:
-                  'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                textAlign: 'center',
-                maxWidth: '100%',
-              }}
-            >
-              {title}
-            </span>
-          ) : (
-            title
-          )}
-          {subtitle ? (
+        {(() => {
+          const sideClearance = Math.max(
+            onBack && !hideBack ? 52 : 20,
+            toolbarActions ? 116 : 20
+          );
+          return (
             <div
+              ref={actualTitleRef}
+              data-testid="shared-floating-header-title"
               style={{
-                fontSize: '11px',
-                lineHeight: '14px',
-                color: 'var(--c-text-secondary)',
-                letterSpacing: '0.04em',
-                fontWeight: 600,
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-                marginTop: '1px',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingLeft: `${sideClearance}px`,
+                paddingRight: `${sideClearance}px`,
+                pointerEvents: 'none',
+                zIndex: 1,
+                willChange: 'transform',
               }}
             >
-              {subtitle}
+              {typeof title === 'string' ? (
+                <span
+                  data-testid={
+                    titleTestId ||
+                    (title === 'Production Document' || title === 'Production' || title === 'Producción'
+                      ? 'production-document-title'
+                      : undefined)
+                  }
+                  style={{
+                    fontSize: 'var(--type-title-size, 19px)',
+                    lineHeight: subtitle ? '20px' : 'var(--type-title-lh, 26px)',
+                    fontWeight: 700,
+                    color: 'var(--c-text-primary)',
+                    letterSpacing: 'var(--type-title-tracking, -0.4px)',
+                    fontFamily:
+                      'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    textAlign: 'center',
+                    maxWidth: '100%',
+                  }}
+                >
+                  {title}
+                </span>
+              ) : (
+                title
+              )}
+              {subtitle ? (
+                <div
+                  style={{
+                    fontSize: '11px',
+                    lineHeight: '14px',
+                    color: 'var(--c-text-secondary)',
+                    letterSpacing: '0.04em',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    marginTop: '1px',
+                  }}
+                >
+                  {subtitle}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
+          );
+        })()}
 
         {/* Right Toolbar Actions Layer */}
         {toolbarActions ? (

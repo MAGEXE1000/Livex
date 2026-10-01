@@ -363,12 +363,13 @@ export const createSongSlice: StateCreator<
   deduplicateAllPresets: () => {
     set((state: any) => {
       let hasDuplicates = false;
-      const nextPresets = state.presets.map((p: SongPreset) => {
+      const nextPresets = (state.presets || []).map((p: SongPreset) => {
         if (p.sections && p.sections.length > 0) {
           let sectionChanged = false;
           const nextSections = p.sections.map((s) => {
-            const nextChords = s.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
-            if (nextChords.length !== s.chords.length) {
+            const chords = s.chords || [];
+            const nextChords = chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
+            if (nextChords.length !== chords.length) {
               sectionChanged = true;
               return { ...s, chords: nextChords };
             }
@@ -384,8 +385,9 @@ export const createSongSlice: StateCreator<
           }
           return p;
         }
-        const nextChords = p.chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
-        if (nextChords.length !== p.chords.length) {
+        const chords = p.chords || [];
+        const nextChords = chords.filter((c, i, arr) => i === 0 || c !== arr[i - 1]);
+        if (nextChords.length !== chords.length) {
           hasDuplicates = true;
           return {
             ...p,
