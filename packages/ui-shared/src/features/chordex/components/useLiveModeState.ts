@@ -638,16 +638,14 @@ export function useLiveModeState(
         bpmOverride,
         beatsPerChord,
         beatsPerLine,
-        targetDurationOverride: targetDurationSeconds,
       }
     );
   }, [preset, bpmOverride, beatsPerChord, barsPerLine, beatsPerLine, targetDurationSeconds]);
 
   // ── Teleprompter Lines Data ─────────────────────────────────────
   const lineDurationMs = useMemo(() => {
-    const nominal = (60000 / (bpmOverride || 120)) * beatsPerLine;
-    return nominal * (timingSchedule.pacingFactor || 1);
-  }, [bpmOverride, barsPerLine, beatsPerLine, timingSchedule.pacingFactor]);
+    return (60000 / (bpmOverride || 120)) * beatsPerLine;
+  }, [bpmOverride, beatsPerLine]);
 
   const teleprompterLines = useMemo<TeleprompterLineItem[]>(() => {
     const sections = preset.lyrics?.sections;
@@ -1114,8 +1112,7 @@ export function useLiveModeState(
   }, [currentLineIdx, isTeleprompterMode, autoPlay]);
 
   // ── Musical Timing Constants ─────────────────────────────────────
-  const pacingFactor = timingSchedule.pacingFactor || 1.0;
-  const beatDurationMs = ((60000 / (bpmOverride || 120)) * pacingFactor) / (playbackSpeed || 1);
+  const beatDurationMs = (60000 / (bpmOverride || 120)) / (playbackSpeed || 1);
   const msPerChord = beatDurationMs * beatsPerChord;
   const msPerLine = beatDurationMs * beatsPerLine;
 
@@ -1272,10 +1269,16 @@ export function useLiveModeState(
       return;
     }
 
-    const scheduledLine = timingSchedule.lines[currentLineIdx];
-    const actualLineMs = (scheduledLine ? scheduledLine.durationMs : msPerLine) / (playbackSpeed || 1);
-
     const activeLine = teleprompterLines[currentLineIdx];
+    const isInterlude =
+      activeLine?.sectionType === 'interlude' ||
+      activeLine?.line?.type === 'interlude' ||
+      activeLine?.line?.explicitDurationMs !== undefined;
+
+    const actualLineMs = (isInterlude
+      ? Math.max(1000, activeLine?.line?.explicitDurationMs || 15000)
+      : msPerLine) / (playbackSpeed || 1);
+
     const lineWords = activeLine?.words || [];
     const wordCount = Math.max(1, lineWords.length);
     const wordDurationMs = actualLineMs / wordCount;

@@ -289,27 +289,26 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         data-testid="live-mode-topbar"
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          transform: state.isHeaderHidden ? 'translateY(-100%)' : 'translateY(0)',
+          top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
+          left: '50%',
+          transform: state.isHeaderHidden ? 'translate(-50%, -125%)' : 'translate(-50%, 0)',
           opacity: state.isHeaderHidden ? 0 : 1,
           pointerEvents: state.isHeaderHidden ? 'none' : 'auto',
-          transition: 'transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease',
-          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px)',
-          paddingBottom: '8px',
-          paddingLeft: '16px',
-          paddingRight: '16px',
-          minHeight: '56px',
+          transition: 'transform 340ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 100,
+          width: 'calc(100% - 32px)',
+          maxWidth: '560px',
+          minHeight: '50px',
+          borderRadius: '26px',
+          padding: '6px 12px 6px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--surface-topbar-bg)',
-          backdropFilter: 'var(--surface-topbar-backdrop)',
-          WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-          borderBottom: 'var(--surface-topbar-border)',
-          boxShadow: 'var(--surface-topbar-shadow)',
+          background: 'var(--surface-container-high, rgba(30, 30, 30, 0.72))',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.36), 0 2px 8px rgba(0, 0, 0, 0.2)',
           boxSizing: 'border-box',
         }}
       >
@@ -319,14 +318,14 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           data-testid="live-mode-back-btn"
           onClick={handleClose}
           style={{
-            width: '38px',
-            height: '38px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             color: 'var(--c-text-primary, #ffffff)',
             cursor: 'pointer',
             flexShrink: 0,
@@ -334,7 +333,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           }}
           title="Exit Live Mode"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '19px' }}>
             arrow_back
           </span>
         </button>
@@ -348,7 +347,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             alignItems: 'center',
             justifyContent: 'center',
             minWidth: 0,
-            padding: '0 12px',
+            padding: '0 10px',
             textAlign: 'center',
           }}
         >
@@ -356,7 +355,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px',
+              gap: '6px',
               maxWidth: '100%',
             }}
           >
@@ -374,7 +373,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             <h1
               data-testid="live-mode-title"
               style={{
-                fontSize: '16px',
+                fontSize: '15px',
                 fontWeight: 700,
                 color: 'var(--c-text-primary, #ffffff)',
                 fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
@@ -405,8 +404,31 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           </div>
         </div>
 
-        {/* Right: Symmetrical balancing spacer (single entry point for settings is the bottom transport dock gear) */}
-        <div style={{ width: '38px', height: '38px', flexShrink: 0 }} aria-hidden="true" />
+        {/* Right: Settings button */}
+        <button
+          type="button"
+          onClick={() => setShowSettings(true)}
+          data-testid="live-mode-settings-btn"
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: 'var(--c-text-primary, #ffffff)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+          }}
+          title="Live Settings"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+            tune
+          </span>
+        </button>
       </header>
     </>
   );
@@ -790,7 +812,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        padding: '16px 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
+        padding: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 76px) 16px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
         width: '100%',
         boxSizing: 'border-box',
       }}
@@ -1133,7 +1155,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 76px)',
           paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 100px)',
           paddingLeft: '20px',
           paddingRight: '20px',
@@ -1150,14 +1172,21 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           const isActive = idx === currentLineIdx;
           const isPast = idx < currentLineIdx;
 
-          const isTextColorWhite = !item.color || item.color.toLowerCase() === '#ffffff' || item.color.toLowerCase() === '#fff' || item.color.toLowerCase().startsWith('rgb(255');
-          const highlightBorderColor = isTextColorWhite ? accent.from : item.color;
+          const isTextColorWhite =
+            !item.color ||
+            item.color.toLowerCase() === '#ffffff' ||
+            item.color.toLowerCase() === '#fff' ||
+            item.color.toLowerCase().startsWith('rgb(255');
+          const highlightBorderColor = isTextColorWhite ? 'var(--c-accent-from, #3b82f6)' : item.color;
           const highlightBg = isTextColorWhite
-            ? `color-mix(in srgb, ${accent.from} 18%, rgba(255, 255, 255, 0.08))`
-            : `color-mix(in srgb, ${item.color} 14%, rgba(255, 255, 255, 0.03))`;
-          const highlightShadow = isTextColorWhite
-            ? `0 0 24px ${accent.from}28, inset 0 0 12px ${accent.from}14`
-            : `0 0 24px ${item.color}1a, inset 0 0 12px ${item.color}0d`;
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(255, 255, 255, 0.05)';
+          const highlightBorder = isActive
+            ? `1px solid ${isTextColorWhite ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.08)'}`
+            : '1px solid transparent';
+          const highlightShadow = isActive
+            ? '0 4px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
+            : 'none';
 
           return (
             <div
@@ -1174,11 +1203,12 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 borderRadius: '16px',
                 padding: '12px 16px',
                 background: isActive ? highlightBg : 'transparent',
+                border: highlightBorder,
                 borderLeft: isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent',
-                boxShadow: isActive ? highlightShadow : 'none',
+                boxShadow: highlightShadow,
                 opacity: isActive ? 1 : isPast ? 0.42 : 0.75,
                 transition:
-                  'background 250ms ease, opacity 250ms ease, transform 250ms ease, border-color 250ms ease',
+                  'background 250ms ease, opacity 250ms ease, transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
                 cursor: 'pointer',
                 textAlign: isCentered ? 'center' : 'left',
               }}
@@ -1307,10 +1337,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 {displayMode === 'lyrics_chord_name' ? (
                   item.words.map((w) => {
                     const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
+                    const isWordActive = isActive && w.globalWordIdx === currentWordIdx;
                     return (
                       <div
                         key={w.id}
-                        className="chord-cell"
+                        className={`chord-cell ${isWordActive ? 'active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleLineClick(idx);
@@ -1327,6 +1358,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                           {w.chord || '\u00A0'}
                         </span>
                         <span
+                          className={`karaoke-word ${isWordActive ? 'active' : ''}`}
                           style={{
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
@@ -1343,9 +1375,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 ) : (
                   item.words.map((w) => {
                     const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
+                    const isWordActive = isActive && w.globalWordIdx === currentWordIdx;
                     return (
                       <span
                         key={w.id}
+                        className={`lyric-word ${isWordActive ? 'word-active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleLineClick(idx);
@@ -1752,7 +1786,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 76px)',
           paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 104px)',
           paddingLeft: '16px',
           paddingRight: '16px',

@@ -503,6 +503,13 @@ describe('SongTimingEngine Verification Suite', () => {
       
       expect(b1_192.lines[0].durationMs).toBe(1250);
       expect(b2_192.lines[0].durationMs).toBe(2500);
+
+      // 152 BPM: 1 Bar = 1579ms (~1.58s), 2 Bars = 3158ms (~3.16s)
+      const b1_152 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 152, beatsPerLine: 4, targetDurationOverride: undefined });
+      const b2_152 = calculateSongTimingSchedule(songWithoutTarget, { bpmOverride: 152, beatsPerLine: 8, targetDurationOverride: undefined });
+
+      expect(b1_152.lines[0].durationMs).toBe(1579);
+      expect(b2_152.lines[0].durationMs).toBe(3158);
     });
 
     it('preset barsPerLine default and overrides', () => {
