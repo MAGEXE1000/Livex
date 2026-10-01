@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.72';
-export const NATIVE_VERSION_CODE = 40672;
-export const WEB_VERSION = '4.6.72';
+export const NATIVE_VERSION = '4.6.73';
+export const NATIVE_VERSION_CODE = 40673;
+export const WEB_VERSION = '4.6.73';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/1/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'af773ac1';
+export const APP_COMMIT_SHA = 'ec5f4424';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/1/2026, 1:11:11 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/1/2026, 9:30:00 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
-      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
-      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
+      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
+      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
-      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
+      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
+      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
+      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
+      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
     ],
   },
 ];
@@ -122,6 +123,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.73',
+    date: '2026-10-01',
+    highlights: [
+      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
+      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
+      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
+      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
+      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
+      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
+    ],
+  },
   {
     version: '4.6.72',
     date: '2026-10-01',
@@ -221,16 +234,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Unified Live Display Mode Guard: Fixed mode-synchronization in useLiveModeState to prevent initialMode from overriding manual user mode switches in the Live Settings sheet.',
     ],
   },
-  {
-    version: '4.6.63',
-    date: '2026-09-28',
-    highlights: [
-      'Canonical Library Fretboard in Both Live Mode: Integrated the full-fidelity DetailFretboardDiagram directly from the Chordex Library into Both Live mode, featuring realistic vector strings, fret wires, base fret indicators, nut bar, barre pills, and finger dots with note labels.',
-      'Large Stage-Ready Chord Diagram: Generously sized the live chord diagram (max-w-[360px], 312px × 304px SVG surface) for maximum stage and music stand visibility.',
-      'Centered Stage Presentation: Centered the live chord card and synchronized teleprompter with auto margins, eliminating crowding against the top header and establishing balanced vertical alignment.',
-      'Harmonized Vertical Layout: Unified vertical rhythm and eliminated dead gaps across Chords, Lyrics, Both, and Live modes.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
@@ -238,16 +241,17 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
-      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
-      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
+      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
+      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
-      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
+      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
+      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
+      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
+      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
     ],
   },
 ];
@@ -258,16 +262,17 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
     heading: 'Novedades',
     items: [
-      'Subsistema de Repertorios y Setlists: Gestión integral de repertorios en Canciones con secciones personalizadas (Bloque 1, Acústico, Encore), selector por lotes desde la biblioteca y controles de arrastre y reordenación.',
-      'Reproducción Secuencial en Vivo de Setlists: Controles de cambio de pista en el teleprónter de Modo En Vivo ([⏮ Ant: Título] y [Sig: Título ⏭]) con indicador de sección y posición en tiempo real.',
-      'Previsualización y Bloqueo de Portadas: Redimensionamiento JPEG asíncrono y previsualización instantánea en el editor de canciones con indicador de progreso.',
+      'Integración de Llamar Banda en Cabecera: Botón de ensayo "Llamar Banda" integrado directamente en la cabecera superior de Modo En Vivo para líderes de banda con diseño de cristal.',
+      'Interfaz de Repertorios Pulida: Vista de repertorio optimizada con controles de 34px, holgura de cabecera dinámica (140px) que previene colisiones de texto, insignias uniformes (#Tonalidad, BPM, Duración) y estados vacíos intuitivos.',
     ],
   },
   {
     heading: 'Correcciones',
     items: [
-      'Persistencia de Portadas Personalizadas: Corregida condición de carrera donde el re-renderizado eliminaba portadas seleccionadas al guardar, asegurando guardado local permanente.',
-      'Renderizado Seguro de Miniaturas: Manejo de errores de imagen y marcadores de posición en tarjetas de canciones, filas de repertorio y selector.',
+      'Bloqueo de Progresión del Teleprónter: Referencias de sincronización estabilizadas, eliminando reinicios prematuros del temporizador para garantizar el avance continuo y automático de letras.',
+      'Canal de Eliminación de Canciones e Integridad Relacional: Reparada acción de confirmación de eliminación con restablecimiento de canción activa, limpieza en repertorios y notificaciones toast.',
+      'Ciclo de Vida de Sala de Espera Aislado: Sala de espera restringida estrictamente a sesiones de llamada multidispositivo activas, eliminando ventanas emergentes en modo individual o pausas.',
+      'Hub de Banda Simplificado: Eliminada gestión redundante de repertorios en el modal para enfocarse exclusivamente en Miembros (con Código de Unión) y Calendario de Gigs.',
     ],
   },
 ];
@@ -277,16 +282,17 @@ export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
     heading: 'Neu',
     items: [
-      'Setlist- und Repertoire-Subsystem: Umfassende Repertoire-Verwaltung in Songs mit benutzerdefinierten Abschnitten (Set 1, Akustik, Zugabe), Stapelauswahl und Drag-and-Drop.',
-      'Sequenzielle Live-Setlist-Wiedergabe: Nahtlose Titelsteuerung im Live-Modus-Teleprompter ([⏮ Vorheriger: Titel] und [Nächster: Titel ⏭]).',
-      'Cover-Bild-Vorschau: Asynchrones JPEG-Downsampling und sofortige Vorschau im Song-Editor mit Ladeanzeige.',
+      'Live-Header-Band-Aufruf: "Band anrufen"-Button direkt in den oberen Live-Modus-Header für Bandleiter integriert.',
+      'Optimierte Setlist-Oberfläche: Optimierte Setlist-Detailansicht mit 34-px-Bedienelementen, dynamischem Header-Abstand (140 px) zur Vermeidung von Titelkollisionen und einheitlichen Song-Badges.',
     ],
   },
   {
     heading: 'Fehlerbehebungen',
     items: [
-      'Persistenz benutzerdefinierter Song-Cover: Behebung von Race-Conditions beim Speichern zur dauerhaften lokalen Speicherung über Neustarts hinweg.',
-      'Zuverlässiges Thumbnail-Rendering: Fehlerbehandlung für Bildladefehler und Platzhalter in allen Song-Ansichten.',
+      'Teleprompter-Fortschritts-Fix: Stabilisierte Synchronisations-Refs für kontinuierliches automatisches Weiterschalten der Songtexte.',
+      'Song-Löschungs-Pipeline: Zuverlässiges Löschen mit Bereinigung in Setlists und Toast-Benachrichtigung.',
+      'Isolierte Proberaum-Lobby: Keine störenden Solo-Lobby-Popups mehr bei Pausen.',
+      'Optimierter Band-Hub: Fokussierung auf Mitglieder und Gigs/Kalender.',
     ],
   },
 ];

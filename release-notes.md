@@ -1,12 +1,13 @@
-# Version 4.6.72
+# Version 4.6.73
 
 Release Date: 2026-10-01
 
 ### Added
-- Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.
-- Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.
-- Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.
+- Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.
+- Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.
 
 ### Fixed
-- Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.
-- Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.
+- Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.
+- Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.
+- Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.
+- Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.
