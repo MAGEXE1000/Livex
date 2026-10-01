@@ -244,6 +244,26 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                 flexShrink: 0,
               }}
             />
+            {state.isInSetlist && (
+              <span
+                data-testid="live-setlist-badge"
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  color: accent.from,
+                  padding: '1px 5px',
+                  borderRadius: '4px',
+                  background: `${accent.from}22`,
+                  border: `1px solid ${accent.from}44`,
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {state.setlistTitle} ({state.currentSetlistIndex + 1}/{state.totalSetlistSongs})
+              </span>
+            )}
             <h1
               data-testid="live-mode-title"
               style={{
@@ -277,7 +297,9 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
               marginTop: '1px',
             }}
           >
-            {subtitle}
+            {state.isInSetlist && state.currentSetlistSectionName
+              ? `${state.currentSetlistSectionName} • ${subtitle}`
+              : subtitle}
           </div>
         </div>
 
@@ -898,6 +920,89 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         )}
       </div>
 
+      {/* Floating Bottom Setlist Controls when in Setlist */}
+      {state.isInSetlist && (
+        <nav
+          style={{
+            position: 'fixed',
+            bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 45,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 12px',
+            borderRadius: '9999px',
+            background: 'var(--surface-topbar-bg)',
+            border: 'var(--surface-topbar-border)',
+            backdropFilter: 'var(--surface-topbar-backdrop)',
+            WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
+            boxShadow: 'var(--surface-topbar-shadow)',
+          }}
+        >
+          {state.prevSetlistSong && (
+            <button
+              type="button"
+              data-testid="chords-prev-setlist-btn"
+              onClick={state.goToPrevSetlistSong}
+              style={{
+                height: '32px',
+                padding: '0 8px',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+                fontSize: '10px',
+                fontWeight: 700,
+              }}
+              title={`Previous Song: ${state.prevSetlistSong.name}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>skip_previous</span>
+              <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {state.prevSetlistSong.name}
+              </span>
+            </button>
+          )}
+
+          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--c-text-secondary)', padding: '0 4px' }}>
+            {state.currentSetlistIndex + 1} / {state.totalSetlistSongs}
+          </span>
+
+          {state.nextSetlistSong && (
+            <button
+              type="button"
+              data-testid="chords-next-setlist-btn"
+              onClick={state.goToNextSetlistSong}
+              style={{
+                height: '32px',
+                padding: '0 9px',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+                border: `1px solid ${accent.from}66`,
+                color: 'var(--c-text-primary)',
+                cursor: 'pointer',
+                fontSize: '10px',
+                fontWeight: 800,
+              }}
+              title={`Next Song: ${state.nextSetlistSong.name}`}
+            >
+              <span style={{ maxWidth: '75px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Next: {state.nextSetlistSong.name}
+              </span>
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>skip_next</span>
+            </button>
+          )}
+        </nav>
+      )}
+
       {/* Floating Settings FAB in Bottom-Right Corner */}
       <button
         type="button"
@@ -1478,6 +1583,34 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           </span>
         </button>
 
+        {state.isInSetlist && state.prevSetlistSong && (
+          <button
+            type="button"
+            data-testid="lyrics-prev-setlist-btn"
+            onClick={state.goToPrevSetlistSong}
+            style={{
+              height: '34px',
+              padding: '0 8px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+              fontSize: '10px',
+              fontWeight: 700,
+            }}
+            title={`Previous Song: ${state.prevSetlistSong.name}`}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>skip_previous</span>
+            <span style={{ maxWidth: '55px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {state.prevSetlistSong.name}
+            </span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={prevPhrase}
@@ -1545,6 +1678,34 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             fast_forward
           </span>
         </button>
+
+        {state.isInSetlist && state.nextSetlistSong && (
+          <button
+            type="button"
+            data-testid="lyrics-next-setlist-btn"
+            onClick={state.goToNextSetlistSong}
+            style={{
+              height: '34px',
+              padding: '0 9px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+              border: `1px solid ${accent.from}66`,
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+              fontSize: '10px',
+              fontWeight: 800,
+            }}
+            title={`Next Song: ${state.nextSetlistSong.name}`}
+          >
+            <span style={{ maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Next: {state.nextSetlistSong.name}
+            </span>
+            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>skip_next</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -2095,6 +2256,34 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           </span>
         </button>
 
+        {state.isInSetlist && state.prevSetlistSong && (
+          <button
+            type="button"
+            data-testid="hybrid-prev-setlist-btn"
+            onClick={state.goToPrevSetlistSong}
+            style={{
+              height: '34px',
+              padding: '0 8px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+              fontSize: '10px',
+              fontWeight: 700,
+            }}
+            title={`Previous Song: ${state.prevSetlistSong.name}`}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>skip_previous</span>
+            <span style={{ maxWidth: '55px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {state.prevSetlistSong.name}
+            </span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={prevPhrase}
@@ -2161,6 +2350,34 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             skip_next
           </span>
         </button>
+
+        {state.isInSetlist && state.nextSetlistSong && (
+          <button
+            type="button"
+            data-testid="hybrid-next-setlist-btn"
+            onClick={state.goToNextSetlistSong}
+            style={{
+              height: '34px',
+              padding: '0 9px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+              border: `1px solid ${accent.from}66`,
+              color: 'var(--c-text-primary)',
+              cursor: 'pointer',
+              fontSize: '10px',
+              fontWeight: 800,
+            }}
+            title={`Next Song: ${state.nextSetlistSong.name}`}
+          >
+            <span style={{ maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Next: {state.nextSetlistSong.name}
+            </span>
+            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>skip_next</span>
+          </button>
+        )}
 
         <button
           type="button"

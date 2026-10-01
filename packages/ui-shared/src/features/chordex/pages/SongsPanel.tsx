@@ -37,7 +37,16 @@ import {
   formatDurationMmSs,
   useBottomNavigationStore,
   useBandStore,
+  type Setlist,
+  type SetlistSection,
+  type SetlistQueueItem,
+  flattenSetlistToQueue,
 } from '@workspace/livex-core';
+import {
+  SetlistNavSwitcher,
+  SetlistLibraryView,
+  SetlistDetailView,
+} from '../components/setlists';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -45,6 +54,7 @@ import { SongViewModeSelector, type SongViewMode } from '../components/SongViewM
 import { SongDurationModal } from '../components/SongDurationModal';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
+
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
 if (typeof window !== 'undefined') {
@@ -55,6 +65,7 @@ import { Capacitor } from '@capacitor/core';
 import SuccessLottie from '../../../shared/lottie/SuccessLottie';
 import MusicNotesLottie from '../../../shared/lottie/MusicNotesLottie';
 import LiveMode from '../../chordex/components/LiveMode';
+import { type LiveSetlistContext } from '../components/useLiveModeState';
 import CustomChordBuilder, { CustomMiniDiagram } from '../../chordex/components/CustomChordBuilder';
 import ChordDiagram from '../../chordex/diagrams/ChordDiagram';
 import { DetailFretboardDiagram, buildDetailFretboardSvgString } from '../../chordex/diagrams/DetailFretboardDiagram';
@@ -3950,6 +3961,17 @@ export default function SongsPanel() {
   const transpositions = useChordStore(useShallow((s) => s.transpositions));
   const customChords = useChordStore(useShallow((s) => s.customChords));
   const pendingImport = useChordStore(useShallow((s) => s.pendingImport));
+  const setlists = useChordStore(useShallow((s) => s.setlists || []));
+  const activeSetlistId = useChordStore((s) => s.activeSetlistId);
+  const setActiveSetlistId = useChordStore((s) => s.setActiveSetlistId);
+  const songsSubTab = useChordStore((s) => s.songsSubTab || 'all');
+  const setSongsSubTab = useChordStore((s) => s.setSongsSubTab);
+
+  // Live Setlist Playback State
+  const [liveSetlistQueue, setLiveSetlistQueue] = useState<SetlistQueueItem[] | null>(null);
+  const [liveSetlistIndex, setLiveSetlistIndex] = useState(0);
+  const [liveSetlistTitle, setLiveSetlistTitle] = useState('');
+  const [liveSetlistId, setLiveSetlistId] = useState<string | null>(null);
 
   const {
     setActivePreset,
@@ -4008,6 +4030,43 @@ export default function SongsPanel() {
       updateSongLyrics: s.updateSongLyrics,
     }))
   );
+
+  const handlePlayLiveSetlist = useCallback((setlist: Setlist, startingSongIndex: number = 0) => {
+    const queue = flattenSetlistToQueue(setlist, presets);
+    if (!queue.length) {
+      toast.error('Setlist has no songs to play');
+      return;
+    }
+    const safeIndex = Math.max(0, Math.min(queue.length - 1, startingSongIndex));
+    setLiveSetlistQueue(queue);
+    setLiveSetlistIndex(safeIndex);
+    setLiveSetlistTitle(setlist.title);
+    setLiveSetlistId(setlist.id);
+    const targetPreset = queue[safeIndex]?.song;
+    if (targetPreset) {
+      setActivePreset(targetPreset.id);
+    }
+    setShowLive(true);
+  }, [presets, setActivePreset]);
+
+  const liveSetlistContextValue: LiveSetlistContext | undefined = useMemo(() => {
+    if (!liveSetlistQueue || !liveSetlistId) return undefined;
+    return {
+      setlistId: liveSetlistId,
+      setlistTitle: liveSetlistTitle,
+      queue: liveSetlistQueue,
+      currentIndex: liveSetlistIndex,
+      onSelectIndex: (index: number) => {
+        if (liveSetlistQueue[index]) {
+          setLiveSetlistIndex(index);
+          const nextPreset = liveSetlistQueue[index].song;
+          if (nextPreset) {
+            setActivePreset(nextPreset.id);
+          }
+        }
+      },
+    };
+  }, [liveSetlistQueue, liveSetlistId, liveSetlistTitle, liveSetlistIndex, setActivePreset]);
   const accent = useMemo(() => resolveAccent(settings.accentColor), [settings.accentColor]);
   const preferFlats = settings.preferFlats ?? false;
   const isNative =
@@ -4268,6 +4327,7 @@ export default function SongsPanel() {
       }
       if (showLive) {
         setShowLive(false);
+        setLiveSetlistQueue(null);
         return true;
       }
       if (showForm) {
@@ -4296,6 +4356,10 @@ export default function SongsPanel() {
         setActivePreset(null);
         return true;
       }
+      if (activeSetlistId) {
+        setActiveSetlistId(null);
+        return true;
+      }
       return false;
     },
     [
@@ -4310,6 +4374,8 @@ export default function SongsPanel() {
       showImport,
       showDeleteId,
       activePresetId,
+      activeSetlistId,
+      setActiveSetlistId,
       editorViewMode,
       setActivePreset,
       clearPendingImport,
@@ -4751,8 +4817,18 @@ export default function SongsPanel() {
           <LiveMode
             preset={activePreset}
             initialMode={editorViewMode}
-            onClose={() => setShowLive(false)}
+            onClose={() => {
+              setShowLive(false);
+              if (liveSetlistQueue) {
+                setLiveSetlistQueue(null);
+                if (liveSetlistId) {
+                  setActivePreset(null);
+                  setActiveSetlistId(liveSetlistId);
+                }
+              }
+            }}
             transposeOffset={transposeOffset}
+            setlistContext={liveSetlistContextValue}
           />
         )}
         {showDurationModal && activePreset && (
@@ -6277,7 +6353,12 @@ export default function SongsPanel() {
   };
 
   const isEditingMobilePreset = !isWebDesktop && !!activePreset && !showForm;
-  const songsMobileView = isEditingMobilePreset ? 'editor' : 'list';
+  const isViewingSetlistDetail = !isWebDesktop && !!activeSetlistId && !activePreset;
+  const songsMobileView = isEditingMobilePreset
+    ? 'editor'
+    : isViewingSetlistDetail
+    ? 'setlistDetail'
+    : 'list';
 
   /* â•â•â•â•â•â•â• VIEW: PRESET LIST â•â•â•â•â•â•â• */
   if (isWebDesktop) {
@@ -6432,370 +6513,417 @@ export default function SongsPanel() {
       >
         <SharedNavigationContainer
           activeView={songsMobileView}
-          viewOrder={['list', 'editor']}
+          viewOrder={['list', 'setlistDetail', 'editor']}
           variant="drilldown"
         >
-          {(view) =>
-            view === 'editor' ? (
-              renderEditor()
-            ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                height: '100%',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <SharedFloatingHeader
-                title="Songs"
-                hideBack={true}
-                scrollContainerRef={listScrollRef}
-              />
-
-              {/* Main scrollable viewport */}
-              <div
-                ref={listScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar"
-                style={{ background: 'var(--app-bg)' }}
-                data-purpose="songs-screen"
-              >
-                <main
-                  className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
+          {(view) => {
+            if (view === 'editor') {
+              return renderEditor();
+            }
+            if (view === 'setlistDetail' && activeSetlistId) {
+              return (
+                <div
                   style={{
-                    paddingTop:
-                      'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
-                  data-purpose="mobile-viewport"
                 >
+                  <SetlistDetailView
+                    setlistId={activeSetlistId}
+                    allPresets={presets}
+                    accentColor={accent.from}
+                    onBack={() => setActiveSetlistId(null)}
+                    onPlayLiveSetlist={handlePlayLiveSetlist}
+                    onOpenSongInEditor={(songId) => setActivePreset(songId)}
+                  />
+                </div>
+              );
+            }
+            return (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '100%',
+                  height: '100%',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <SharedFloatingHeader
+                  title="Songs"
+                  hideBack={true}
+                  scrollContainerRef={listScrollRef}
+                />
 
-                  {/* Capsule Search Bar */}
-                  <div className="relative flex items-center" data-purpose="search-bar">
-                    <span
-                      className="material-symbols-rounded absolute left-4 pointer-events-none text-lg select-none"
-                      style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-                    >
-                      search
-                    </span>
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search titles, keys, or tags..."
-                      className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
-                      style={{
-                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                        borderColor: 'var(--c-border, #E3E6EB)',
-                        color: 'var(--c-text-primary, #111827)',
-                      }}
+                {/* Main scrollable viewport */}
+                <div
+                  ref={listScrollRef}
+                  className="flex-1 overflow-y-auto no-scrollbar"
+                  style={{ background: 'var(--app-bg)' }}
+                  data-purpose="songs-screen"
+                >
+                  <main
+                    className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
+                    style={{
+                      paddingTop:
+                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+                    }}
+                    data-purpose="mobile-viewport"
+                  >
+                    {/* Top Segmented Switcher: All Songs vs Setlists */}
+                    <SetlistNavSwitcher
+                      activeTab={songsSubTab}
+                      onTabChange={setSongsSubTab}
+                      songsCount={presets.length}
+                      setlistsCount={setlists.length}
+                      accentColor={accent.from}
                     />
-                    {searchQuery && (
-                      <button
-                        aria-label="Clear search"
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
-                        style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-                      >
-                        <span className="material-symbols-rounded text-base">close</span>
-                      </button>
-                    )}
-                  </div>
 
-                  {/* Empty states or song list */}
-                  {filteredPresets.length === 0 ? (
-                    presets.length === 0 ? (
-                      /* No songs yet in library */
-                      <section
-                        className="flex flex-col items-center justify-center text-center px-4 py-16"
-                        data-purpose="empty-state"
-                      >
-                        <div
-                          className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
-                          style={{
-                            backgroundColor:
-                              'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
-                            borderColor:
-                              'color-mix(in srgb, var(--c-accent-from, #2563EB) 22%, transparent)',
-                            color: 'var(--c-accent-from, #2563EB)',
-                          }}
-                        >
-                          <span className="material-symbols-rounded text-3xl">library_music</span>
-                        </div>
-                        <h2
-                          className="text-xl font-bold tracking-tight"
-                          style={{
-                            fontFamily: 'var(--font-headline)',
-                            color: 'var(--c-text-primary, #111827)',
-                          }}
-                        >
-                          No songs yet
-                        </h2>
-                        <p
-                          className="text-xs font-normal max-w-[240px] mt-1.5 leading-relaxed"
-                          style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                        >
-                          Tap the{' '}
+                    {songsSubTab === 'setlists' ? (
+                      <SetlistLibraryView
+                        setlists={setlists}
+                        allPresets={presets}
+                        accentColor={accent.from}
+                        onOpenSetlist={(id) => setActiveSetlistId(id)}
+                        onPlayLiveSetlist={handlePlayLiveSetlist}
+                      />
+                    ) : (
+                      <>
+                        {/* Capsule Search Bar */}
+                        <div className="relative flex items-center" data-purpose="search-bar">
                           <span
-                            className="font-semibold"
-                            style={{ color: 'var(--c-text-primary)' }}
+                            className="material-symbols-rounded absolute left-4 pointer-events-none text-lg select-none"
+                            style={{ color: 'var(--c-text-muted, #94A3B8)' }}
                           >
-                            '+'
-                          </span>{' '}
-                          button to create your first progression
-                        </p>
-                        <div className="flex items-center gap-2.5 mt-6">
-                          <MorphingActionSurface
-                            placement="center"
-                            maxWidth={400}
-                            title={t.songs.newSong || 'New Song'}
-                            subtitle="Create a new chord progression"
-                            accentColor={accent.from}
-                            customTrigger={({ triggerProps }) => (
-                              <motion.button
-                                {...triggerProps}
-                                whileTap={{ scale: 0.96 }}
-                                type="button"
-                                className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
-                                style={{
-                                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                                  boxShadow:
-                                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
-                                }}
-                                data-purpose="empty-create-song-btn"
-                              >
-                                <span className="material-symbols-rounded text-base">add</span>
-                                <span>Create Song</span>
-                              </motion.button>
-                            )}
-                          >
-                            {renderCreateSongForm}
-                          </MorphingActionSurface>
+                            search
+                          </span>
+                          <input
+                            type="search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search titles, keys, or tags..."
+                            className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
+                            style={{
+                              backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                              borderColor: 'var(--c-border, #E3E6EB)',
+                              color: 'var(--c-text-primary, #111827)',
+                            }}
+                          />
+                          {searchQuery && (
+                            <button
+                              aria-label="Clear search"
+                              type="button"
+                              onClick={() => setSearchQuery('')}
+                              className="absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
+                              style={{ color: 'var(--c-text-muted, #94A3B8)' }}
+                            >
+                              <span className="material-symbols-rounded text-base">close</span>
+                            </button>
+                          )}
+                        </div>
 
-                          <MorphingActionSurface
-                            placement="center"
-                            maxWidth={420}
-                            title={t.songs.importSong}
-                            subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
-                            accentColor={accent.from}
-                            customTrigger={({ triggerProps }) => (
-                              <motion.button
-                                {...triggerProps}
+                        {/* Empty states or song list */}
+                        {filteredPresets.length === 0 ? (
+                          presets.length === 0 ? (
+                            /* No songs yet in library */
+                            <section
+                              className="flex flex-col items-center justify-center text-center px-4 py-16"
+                              data-purpose="empty-state"
+                            >
+                              <div
+                                className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
+                                style={{
+                                  backgroundColor:
+                                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
+                                  borderColor:
+                                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 22%, transparent)',
+                                  color: 'var(--c-accent-from, #2563EB)',
+                                }}
+                              >
+                                <span className="material-symbols-rounded text-3xl">library_music</span>
+                              </div>
+                              <h2
+                                className="text-xl font-bold tracking-tight"
+                                style={{
+                                  fontFamily: 'var(--font-headline)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                }}
+                              >
+                                No songs yet
+                              </h2>
+                              <p
+                                className="text-xs font-normal max-w-[240px] mt-1.5 leading-relaxed"
+                                style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                              >
+                                Tap the{' '}
+                                <span
+                                  className="font-semibold"
+                                  style={{ color: 'var(--c-text-primary)' }}
+                                >
+                                  '+'
+                                </span>{' '}
+                                button to create your first progression
+                              </p>
+                              <div className="flex items-center gap-2.5 mt-6">
+                                <MorphingActionSurface
+                                  placement="center"
+                                  maxWidth={400}
+                                  title={t.songs.newSong || 'New Song'}
+                                  subtitle="Create a new chord progression"
+                                  accentColor={accent.from}
+                                  customTrigger={({ triggerProps }) => (
+                                    <motion.button
+                                      {...triggerProps}
+                                      whileTap={{ scale: 0.96 }}
+                                      type="button"
+                                      className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+                                      style={{
+                                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                                        boxShadow:
+                                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                                      }}
+                                      data-purpose="empty-create-song-btn"
+                                    >
+                                      <span className="material-symbols-rounded text-base">add</span>
+                                      <span>Create Song</span>
+                                    </motion.button>
+                                  )}
+                                >
+                                  {renderCreateSongForm}
+                                </MorphingActionSurface>
+
+                                <MorphingActionSurface
+                                  placement="center"
+                                  maxWidth={420}
+                                  title={t.songs.importSong}
+                                  subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
+                                  accentColor={accent.from}
+                                  customTrigger={({ triggerProps }) => (
+                                    <motion.button
+                                      {...triggerProps}
+                                      type="button"
+                                      className="px-4 py-2 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-1.5"
+                                      style={{
+                                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                                        borderColor: 'var(--c-border, #E3E6EB)',
+                                        color: 'var(--c-text-primary, #111827)',
+                                      }}
+                                      data-purpose="empty-import-btn"
+                                    >
+                                      <span className="material-symbols-rounded text-base">
+                                        cloud_download
+                                      </span>
+                                      <span>Import</span>
+                                    </motion.button>
+                                  )}
+                                >
+                                  {renderImportSongForm}
+                                </MorphingActionSurface>
+                              </div>
+                            </section>
+                          ) : (
+                            /* Search yields no results */
+                            <section
+                              className="flex flex-col items-center justify-center text-center px-4 py-16"
+                              data-purpose="search-empty-state"
+                            >
+                              <div
+                                className="w-14 h-14 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
+                                style={{
+                                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                                  borderColor: 'var(--c-border, #E3E6EB)',
+                                  color: 'var(--c-text-muted, #8A92A6)',
+                                }}
+                              >
+                                <span className="material-symbols-rounded text-2xl">search_off</span>
+                              </div>
+                              <h3
+                                className="text-lg font-bold tracking-tight"
+                                style={{
+                                  fontFamily: 'var(--font-headline)',
+                                  color: 'var(--c-text-primary, #111827)',
+                                }}
+                              >
+                                No matching songs
+                              </h3>
+                              <p
+                                className="text-xs font-medium mt-1 max-w-[240px]"
+                                style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                              >
+                                No songs found for &ldquo;{searchQuery}&rdquo;
+                              </p>
+                              <button
                                 type="button"
-                                className="px-4 py-2 rounded-full text-xs font-semibold border shadow-sm cursor-pointer flex items-center gap-1.5"
+                                onClick={() => setSearchQuery('')}
+                                className="mt-4 px-3.5 py-1.5 rounded-full border text-xs font-semibold active:scale-95 transition-all cursor-pointer"
                                 style={{
                                   backgroundColor: 'var(--surface-card-bg, #ffffff)',
                                   borderColor: 'var(--c-border, #E3E6EB)',
                                   color: 'var(--c-text-primary, #111827)',
                                 }}
-                                data-purpose="empty-import-btn"
+                                data-purpose="clear-search-btn"
                               >
-                                <span className="material-symbols-rounded text-base">
-                                  cloud_download
-                                </span>
-                                <span>Import</span>
-                              </motion.button>
-                            )}
-                          >
-                            {renderImportSongForm}
-                          </MorphingActionSurface>
-                        </div>
-                      </section>
-                    ) : (
-                      /* Search yields no results */
-                      <section
-                        className="flex flex-col items-center justify-center text-center px-4 py-16"
-                        data-purpose="search-empty-state"
-                      >
-                        <div
-                          className="w-14 h-14 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
+                                Clear Search
+                              </button>
+                            </section>
+                          )
+                        ) : (
+                          /* Scalable Song List */
+                          <div className="space-y-2.5" data-purpose="song-list">
+                            <StaggeredReveal staggerInterval={30}>
+                              {filteredPresets.map((preset) => (
+                                <PresetCard
+                                  key={preset.id}
+                                  preset={preset}
+                                  accent={accent}
+                                  t={t}
+                                  setActivePreset={setActivePreset}
+                                  setShowLive={setShowLive}
+                                  setExportModal={setExportModal}
+                                  setEditingId={setEditingId}
+                                  setShowForm={setShowForm}
+                                  setShowDeleteId={setShowDeleteId}
+                                />
+                              ))}
+                            </StaggeredReveal>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </main>
+                </div>
+
+                {/* Delete confirmation sheet */}
+                {showDeleteId && (
+                  <Dialog
+                    open={true}
+                    onClose={() => setShowDeleteId(null)}
+                    title={t.songs.confirmDelete}
+                    footer={
+                      <>
+                        <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
+                        <Button
+                          onClick={() => {
+                            deletePreset(showDeleteId);
+                            setShowDeleteId(null);
+                          }}
                           style={{
-                            backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                            borderColor: 'var(--c-border, #E3E6EB)',
-                            color: 'var(--c-text-muted, #8A92A6)',
+                            backgroundColor: 'rgba(238,125,119,0.12)',
+                            color: '#ee7d77',
+                            border: '1px solid rgba(238,125,119,0.3)',
                           }}
                         >
-                          <span className="material-symbols-rounded text-2xl">search_off</span>
-                        </div>
-                        <h3
-                          className="text-lg font-bold tracking-tight"
-                          style={{
-                            fontFamily: 'var(--font-headline)',
-                            color: 'var(--c-text-primary, #111827)',
-                          }}
-                        >
-                          No matching songs
-                        </h3>
-                        <p
-                          className="text-xs font-medium mt-1 max-w-[240px]"
-                          style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                        >
-                          No songs found for &ldquo;{searchQuery}&rdquo;
-                        </p>
-                        <button
+                          {t.songs.delete}
+                        </Button>
+                      </>
+                    }
+                  >
+                    <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
+                      Are you sure you want to delete this song preset? This action cannot be undone.
+                    </p>
+                  </Dialog>
+                )}
+
+                {/* Export config modal */}
+                {exportModalPreset && (
+                  <ExportModal
+                    preset={exportModalPreset}
+                    accent={accent}
+                    onClose={() => setExportModal(null)}
+                    transposeOffset={transposeOffset}
+                    storedCustomChords={customChords}
+                  />
+                )}
+
+                {/* Import song modal */}
+                {showImport && (
+                  <ImportSongModal
+                    accent={accent}
+                    existingPresets={presets}
+                    onImport={handleImport}
+                    onClose={() => setShowImport(false)}
+                  />
+                )}
+
+                {/* Floating Action Buttons (FAB Stack) */}
+                {songsSubTab === 'all' && (
+                  <aside
+                    className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
+                    style={{
+                      bottom:
+                        'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
+                      zIndex: 40,
+                    }}
+                    data-purpose="action-buttons"
+                  >
+                    {/* Secondary FAB: Import */}
+                    <MorphingActionSurface
+                      placement="center"
+                      maxWidth={420}
+                      title={t.songs.importSong}
+                      subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
                           type="button"
-                          onClick={() => setSearchQuery('')}
-                          className="mt-4 px-3.5 py-1.5 rounded-full border text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                          data-testid="import-preset-btn"
+                          aria-label="Import or Backup Cloud"
+                          title="Import or Backup Cloud"
+                          className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
                           style={{
                             backgroundColor: 'var(--surface-card-bg, #ffffff)',
                             borderColor: 'var(--c-border, #E3E6EB)',
-                            color: 'var(--c-text-primary, #111827)',
+                            color: 'var(--c-text-secondary, #6B7280)',
                           }}
-                          data-purpose="clear-search-btn"
                         >
-                          Clear Search
-                        </button>
-                      </section>
-                    )
-                  ) : (
-                    /* Scalable Song List */
-                    <div className="space-y-2.5" data-purpose="song-list">
-                      <StaggeredReveal staggerInterval={30}>
-                        {filteredPresets.map((preset) => (
-                          <PresetCard
-                            key={preset.id}
-                            preset={preset}
-                            accent={accent}
-                            t={t}
-                            setActivePreset={setActivePreset}
-                            setShowLive={setShowLive}
-                            setExportModal={setExportModal}
-                            setEditingId={setEditingId}
-                            setShowForm={setShowForm}
-                            setShowDeleteId={setShowDeleteId}
-                          />
-                        ))}
-                      </StaggeredReveal>
-                    </div>
-                  )}
-                </main>
+                          <span className="material-symbols-rounded text-xl">cloud_download</span>
+                        </motion.button>
+                      )}
+                    >
+                      {renderImportSongForm}
+                    </MorphingActionSurface>
+
+                    {/* Primary FAB: Create Song */}
+                    <MorphingActionSurface
+                      placement="center"
+                      maxWidth={400}
+                      title={t.songs.newSong || 'New Song'}
+                      subtitle="Create a new chord progression"
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
+                          whileTap={{ scale: 0.92 }}
+                          type="button"
+                          data-testid="new-preset-btn"
+                          aria-label="Create new progression"
+                          title="Create new progression"
+                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            backgroundColor: 'var(--c-accent-from, #2563EB)',
+                            boxShadow:
+                              '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                          }}
+                        >
+                          <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                        </motion.button>
+                      )}
+                    >
+                      {renderCreateSongForm}
+                    </MorphingActionSurface>
+                  </aside>
+                )}
               </div>
-
-              {/* Delete confirmation sheet */}
-              {showDeleteId && (
-                <Dialog
-                  open={true}
-                  onClose={() => setShowDeleteId(null)}
-                  title={t.songs.confirmDelete}
-                  footer={
-                    <>
-                      <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
-                      <Button
-                        onClick={() => {
-                          deletePreset(showDeleteId);
-                          setShowDeleteId(null);
-                        }}
-                        style={{
-                          backgroundColor: 'rgba(238,125,119,0.12)',
-                          color: '#ee7d77',
-                          border: '1px solid rgba(238,125,119,0.3)',
-                        }}
-                      >
-                        {t.songs.delete}
-                      </Button>
-                    </>
-                  }
-                >
-                  <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
-                    Are you sure you want to delete this song preset? This action cannot be undone.
-                  </p>
-                </Dialog>
-              )}
-
-              {/* Export config modal */}
-              {exportModalPreset && (
-                <ExportModal
-                  preset={exportModalPreset}
-                  accent={accent}
-                  onClose={() => setExportModal(null)}
-                  transposeOffset={transposeOffset}
-                  storedCustomChords={customChords}
-                />
-              )}
-
-              {/* Import song modal */}
-              {showImport && (
-                <ImportSongModal
-                  accent={accent}
-                  existingPresets={presets}
-                  onImport={handleImport}
-                  onClose={() => setShowImport(false)}
-                />
-              )}
-
-              {/* Floating Action Buttons (FAB Stack) */}
-              <aside
-                className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
-                style={{
-                  bottom:
-                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
-                  zIndex: 40,
-                }}
-                data-purpose="action-buttons"
-              >
-                {/* Secondary FAB: Import */}
-                <MorphingActionSurface
-                  placement="center"
-                  maxWidth={420}
-                  title={t.songs.importSong}
-                  subtitle={t.songs.supportsJson || 'Import a Chordex JSON song file'}
-                  accentColor={accent.from}
-                  customTrigger={({ triggerProps }) => (
-                    <motion.button
-                      {...triggerProps}
-                      type="button"
-                      data-testid="import-preset-btn"
-                      aria-label="Import or Backup Cloud"
-                      title="Import or Backup Cloud"
-                      className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                        borderColor: 'var(--c-border, #E3E6EB)',
-                        color: 'var(--c-text-secondary, #6B7280)',
-                      }}
-                    >
-                      <span className="material-symbols-rounded text-xl">cloud_download</span>
-                    </motion.button>
-                  )}
-                >
-                  {renderImportSongForm}
-                </MorphingActionSurface>
-
-                {/* Primary FAB: Create Song */}
-                <MorphingActionSurface
-                  placement="center"
-                  maxWidth={400}
-                  title={t.songs.newSong || 'New Song'}
-                  subtitle="Create a new chord progression"
-                  accentColor={accent.from}
-                  customTrigger={({ triggerProps }) => (
-                    <motion.button
-                      {...triggerProps}
-                      whileTap={{ scale: 0.92 }}
-                      type="button"
-                      data-testid="new-preset-btn"
-                      aria-label="Create new progression"
-                      title="Create new progression"
-                      className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        backgroundColor: 'var(--c-accent-from, #2563EB)',
-                        boxShadow:
-                          '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
-                      }}
-                    >
-                      <span className="material-symbols-rounded text-2xl font-bold">add</span>
-                    </motion.button>
-                  )}
-                >
-                  {renderCreateSongForm}
-                </MorphingActionSurface>
-              </aside>
-            </div>
-          )}
+            );
+          }}
         </SharedNavigationContainer>
       </div>
 

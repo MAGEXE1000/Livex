@@ -29,7 +29,17 @@ import {
   type LiveBandSyncPacket,
   type LiveSyncAction,
   type LobbyAttendee,
+  type SetlistQueueItem,
 } from '@workspace/livex-core';
+
+export interface LiveSetlistContext {
+  setlistId: string;
+  setlistTitle: string;
+  queue: SetlistQueueItem[];
+  currentIndex: number;
+  onSelectIndex: (index: number) => void;
+}
+
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
 
@@ -208,6 +218,18 @@ export interface LiveModeState {
   startSongFromLobby: () => void;
   callBandSession: () => void;
 
+  // Setlist Repertoire Context & Controls
+  setlistContext?: LiveSetlistContext;
+  isInSetlist: boolean;
+  setlistTitle?: string;
+  currentSetlistIndex: number;
+  totalSetlistSongs: number;
+  currentSetlistSectionName?: string;
+  prevSetlistSong?: SongPreset;
+  nextSetlistSong?: SongPreset;
+  goToPrevSetlistSong: () => void;
+  goToNextSetlistSong: () => void;
+
   // Animations & visuals
   overlayAnim: React.CSSProperties;
   chordStyle: React.CSSProperties;
@@ -365,8 +387,36 @@ export function useLiveModeState(
   preset: SongPreset,
   onClose: () => void,
   transposeOffset: number = 0,
-  initialMode?: 'chords' | 'lyrics' | 'both'
+  initialMode?: 'chords' | 'lyrics' | 'both',
+  setlistContext?: LiveSetlistContext
 ): LiveModeState {
+  // Setlist Repertoire State & Navigation
+  const isInSetlist = Boolean(setlistContext && setlistContext.queue.length > 0);
+  const setlistTitle = setlistContext?.setlistTitle;
+  const currentSetlistIndex = setlistContext?.currentIndex ?? 0;
+  const totalSetlistSongs = setlistContext?.queue.length ?? 0;
+  const currentSetlistSectionName = setlistContext?.queue[currentSetlistIndex]?.sectionName;
+  const prevSetlistSong =
+    setlistContext && currentSetlistIndex > 0
+      ? setlistContext.queue[currentSetlistIndex - 1]?.song
+      : undefined;
+  const nextSetlistSong =
+    setlistContext && currentSetlistIndex < totalSetlistSongs - 1
+      ? setlistContext.queue[currentSetlistIndex + 1]?.song
+      : undefined;
+
+  const goToPrevSetlistSong = useCallback(() => {
+    if (setlistContext && currentSetlistIndex > 0) {
+      setlistContext.onSelectIndex(currentSetlistIndex - 1);
+    }
+  }, [setlistContext, currentSetlistIndex]);
+
+  const goToNextSetlistSong = useCallback(() => {
+    if (setlistContext && currentSetlistIndex < totalSetlistSongs - 1) {
+      setlistContext.onSelectIndex(currentSetlistIndex + 1);
+    }
+  }, [setlistContext, currentSetlistIndex, totalSetlistSongs]);
+
   const settings = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
@@ -1877,6 +1927,16 @@ export function useLiveModeState(
     lobbyAttendees,
     startSongFromLobby,
     callBandSession,
+    setlistContext,
+    isInSetlist,
+    setlistTitle,
+    currentSetlistIndex,
+    totalSetlistSongs,
+    currentSetlistSectionName,
+    prevSetlistSong,
+    nextSetlistSong,
+    goToPrevSetlistSong,
+    goToNextSetlistSong,
     overlayAnim,
     chordStyle,
     isExiting,

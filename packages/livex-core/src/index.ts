@@ -144,3 +144,7 @@ export * from './types/band';
 export * from './store/useBandStore';
 export * from './lib/bandSyncService';
 export * from './lib/lyrics/lyricSegments';
+
+// Setlists & Repertoire Subsystem
+export * from './types/setlist';
+

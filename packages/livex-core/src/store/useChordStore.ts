@@ -5,11 +5,13 @@ import { useSettingsStore, settingsController } from './useSettingsStore';
 import { NavigationDispatcher } from '../lib/navigation/NavigationDispatcher';
 import { createChordSlice, type ChordSliceState, type ChordSliceActions, type CustomChord, type Progression, type BarreDef } from './slices/chordSlice';
 import { createSongSlice, type SongSliceState, type SongSliceActions, type SongPreset, type SongSection, type PendingSongImport } from './slices/songSlice';
+import { createSetlistSlice, type SetlistSliceState, type SetlistSliceActions } from './slices/setlistSlice';
+import type { Setlist, SetlistSection, SetlistQueueItem, SetlistStats } from '../types/setlist';
 
-export type { CustomChord, Progression, BarreDef, SongPreset, SongSection, PendingSongImport };
-export type { ChordSliceState as ChordState, SongSliceState as SongState };
+export type { CustomChord, Progression, BarreDef, SongPreset, SongSection, PendingSongImport, Setlist, SetlistSection, SetlistQueueItem, SetlistStats };
+export type { ChordSliceState as ChordState, SongSliceState as SongState, SetlistSliceState as SetlistState };
 
-interface ChordStore extends SongSliceState, SongSliceActions, ChordSliceState, ChordSliceActions {
+interface ChordStore extends SongSliceState, SongSliceActions, ChordSliceState, ChordSliceActions, SetlistSliceState, SetlistSliceActions {
   activityLog?: any[];
   
   get settings(): any;
@@ -22,6 +24,7 @@ export const useChordStore = create<ChordStore>()(
     (set, get, store) => ({
       ...createChordSlice(set, get, store),
       ...createSongSlice(set, get, store),
+      ...createSetlistSlice(set, get, store),
       
       activityLog: [],
 

@@ -5,7 +5,7 @@ import { calculateSongTimingSchedule, type SongPreset } from '@workspace/livex-c
 if (typeof window !== 'undefined') {
   (window as any).calculateSongTimingSchedule = calculateSongTimingSchedule;
 }
-import { useLiveModeState } from './useLiveModeState';
+import { useLiveModeState, type LiveSetlistContext } from './useLiveModeState';
 import {
   LiveModeHeader,
   ChordsLiveView,
@@ -21,6 +21,7 @@ interface LiveModeProps {
   initialMode?: 'chords' | 'lyrics' | 'both';
   onClose: () => void;
   transposeOffset?: number;
+  setlistContext?: LiveSetlistContext;
 }
 
 export default function LiveMode({
@@ -28,8 +29,9 @@ export default function LiveMode({
   initialMode,
   onClose,
   transposeOffset = 0,
+  setlistContext,
 }: LiveModeProps) {
-  const state = useLiveModeState(preset, onClose, transposeOffset, initialMode);
+  const state = useLiveModeState(preset, onClose, transposeOffset, initialMode, setlistContext);
 
   if (!state.hasLiveContent) {
     const emptyNode = (
