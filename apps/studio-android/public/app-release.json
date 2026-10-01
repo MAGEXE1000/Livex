@@ -1,25 +1,15 @@
 {
   "platform": "android",
-  "version": "4.6.70",
-  "versionName": "4.6.70",
-  "versionCode": 40670,
-  "version_code": 40670,
-  "commit": "45902dc2",
-  "releasedAt": "9/30/2026, 9:42:53 PM CST",
-  "buildTimestamp": "9/30/2026, 9:42:53 PM CST",
+  "version": "4.6.71",
+  "versionName": "4.6.71",
+  "versionCode": 40671,
+  "version_code": 40671,
+  "commit": "bd63ea59",
+  "releasedAt": "9/30/2026, 11:07:25 PM CST",
+  "buildTimestamp": "9/30/2026, 11:07:25 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.\n• Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.\n• Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.\n• StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.\n• Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.",
-  "whatsNew": "• Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.\n• Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.\n• Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.\n• StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.\n• Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.",
-  "releaseNotes": {
-    "added": [
-      "Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.",
-      "Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.",
-      "Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet."
-    ],
-    "fixed": [
-      "StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.",
-      "Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader."
-    ]
-  },
+  "changelog": "",
+  "whatsNew": "",
+  "releaseNotes": {},
   "mandatory": false
 }
