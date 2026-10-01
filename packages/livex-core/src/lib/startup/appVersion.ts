@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.71';
-export const NATIVE_VERSION_CODE = 40671;
-export const WEB_VERSION = '4.6.71';
+export const NATIVE_VERSION = '4.6.72';
+export const NATIVE_VERSION_CODE = 40672;
+export const WEB_VERSION = '4.6.72';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,19 +70,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/30/2026';
+export const APP_VERSION_DATE = '10/1/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'bd63ea59';
+export const APP_COMMIT_SHA = 'af773ac1';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/30/2026, 11:07:25 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/1/2026, 1:11:11 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,18 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Unified Canonical Floating Glass Topbar in Live Mode: Restyled the Live mode top navigation capsule across Chords, Lyrics, and Both modes using the canonical `SharedFloatingHeader` design system tokens, responsive backdrop blur, and SVG back navigation chevron.',
-      'Icon-Only Live Spectator Sync Indicator: Streamlined the spectator follow pill into a sleek circular link icon button on the right header boundary, eliminating header clutter while preserving instant tap-to-unlock behavior.',
-      'Line-Level Teleprompter Focus: Transitioned active lyric line emphasis from character/syllable breaks to unified full-line focus framing with high-contrast active text and smooth verse transitions.',
+      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
+      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
+      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Live Mode Topbar Mathematical Center Alignment: Centered song titles and live playback subtitles with symmetric horizontal clearance across all screen sizes and mobile aspect ratios.',
-      'Compact Live Topbar Height: Reduced header height across all Live modes to an unobtrusive 48px profile, optimizing screen real estate for chords, teleprompter lyrics, and stage performance.',
-      'Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.',
-      'Timed Interlude Card Layout: Resolved header overflow issues where trash can and reorder buttons clipped outside card bounds.',
+      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
+      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
     ],
   },
 ];
@@ -124,6 +122,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.72',
+    date: '2026-10-01',
+    highlights: [
+      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
+      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
+      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
+      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
+      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
+    ],
+  },
   {
     version: '4.6.71',
     date: '2026-09-30',
@@ -222,17 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Harmonized Vertical Layout: Unified vertical rhythm and eliminated dead gaps across Chords, Lyrics, Both, and Live modes.',
     ],
   },
-  {
-    version: '4.6.62',
-    date: '2026-09-28',
-    highlights: [
-      'Precise Word-Level Chord Placement: Integrated semantic lyric segmentation allowing chords to be targeted, inserted, repositioned, or replaced directly at word-level positions anywhere within lyric lines rather than restricted to line starts.',
-      'Word Repositioning Actions: Direct navigation controls ("← Prev Word", "Next Word →") within the chord adjustment modal to shift chords across lyrics with instant visual preview.',
-      'Ergonomic Floating Bottom Toolbar: Redesigned Song Both view to a compact, non-intrusive floating transport capsule docked at the exact baseline height matching Drumex beats, eliminating overlapping and vertical clutter.',
-      'Full-Height Screen Teleprompter Canvas: Reclaimed vertical canvas space by eliminating redundant stacking bottom padding, allowing lyrics to occupy the entire viewport height down to the bottom.',
-      'View Mode Transitions: Unified mode selector transitions across Chords, Lyrics, and Both modes with smooth directional spring animations.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
@@ -240,14 +238,16 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Drumex Beat-Editor Contextual Action Toolbar: Transformed the top-right menu in Drumex beat-editor into a seamless contextual toolbar morph for instant access to beat actions.',
-      'Reusable Morph Interaction Pattern: Established shared animated morph primitive in `ui-shared` for expandable contextual tool surfaces.',
+      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
+      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
+      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Bottom Navigation Fixed Geometric Highlight: Enforced strict canonical geometry for the selected-tab highlight indicator across all Livex applications.',
+      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
+      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
     ],
   },
 ];
@@ -258,14 +258,16 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
     heading: 'Novedades',
     items: [
-      'Barra de herramientas contextual en Drumex: Transformación del menú superior derecho del editor de ritmos en una barra de herramientas contextual fluida para acceder instantáneamente a las acciones del ritmo.',
-      'Patrón de interacción de metamorfosis reutilizable: Establecido componente de animación compartido en `ui-shared` para superficies de herramientas expandibles.',
+      'Subsistema de Repertorios y Setlists: Gestión integral de repertorios en Canciones con secciones personalizadas (Bloque 1, Acústico, Encore), selector por lotes desde la biblioteca y controles de arrastre y reordenación.',
+      'Reproducción Secuencial en Vivo de Setlists: Controles de cambio de pista en el teleprónter de Modo En Vivo ([⏮ Ant: Título] y [Sig: Título ⏭]) con indicador de sección y posición en tiempo real.',
+      'Previsualización y Bloqueo de Portadas: Redimensionamiento JPEG asíncrono y previsualización instantánea en el editor de canciones con indicador de progreso.',
     ],
   },
   {
     heading: 'Correcciones',
     items: [
-      'Indicador de navegación inferior con geometría fija: Establecida una geometría canónica estricta para el indicador de pestaña seleccionada en todas las aplicaciones de Livex.',
+      'Persistencia de Portadas Personalizadas: Corregida condición de carrera donde el re-renderizado eliminaba portadas seleccionadas al guardar, asegurando guardado local permanente.',
+      'Renderizado Seguro de Miniaturas: Manejo de errores de imagen y marcadores de posición en tarjetas de canciones, filas de repertorio y selector.',
     ],
   },
 ];
@@ -275,14 +277,16 @@ export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
     heading: 'Neu',
     items: [
-      'Kontextuelle Aktions-Toolbar im Drumex Beat-Editor: Das Menü oben rechts wurde in eine nahtlose kontextuelle Toolbar umgewandelt.',
-      'Wiederverwendbares Morph-Interaktionsmuster: Gemeinsames animiertes Morph-Primitiv in `ui-shared` für erweiterbare Werkzeugoberflächen etabliert.',
+      'Setlist- und Repertoire-Subsystem: Umfassende Repertoire-Verwaltung in Songs mit benutzerdefinierten Abschnitten (Set 1, Akustik, Zugabe), Stapelauswahl und Drag-and-Drop.',
+      'Sequenzielle Live-Setlist-Wiedergabe: Nahtlose Titelsteuerung im Live-Modus-Teleprompter ([⏮ Vorheriger: Titel] und [Nächster: Titel ⏭]).',
+      'Cover-Bild-Vorschau: Asynchrones JPEG-Downsampling und sofortige Vorschau im Song-Editor mit Ladeanzeige.',
     ],
   },
   {
     heading: 'Fehlerbehebungen',
     items: [
-      'Feste geometrische Hervorhebung der unteren Navigation: Strikte kanonische Geometrie für den Tab-Auswahlindikator in allen Livex-Anwendungen durchgesetzt.',
+      'Persistenz benutzerdefinierter Song-Cover: Behebung von Race-Conditions beim Speichern zur dauerhaften lokalen Speicherung über Neustarts hinweg.',
+      'Zuverlässiges Thumbnail-Rendering: Fehlerbehandlung für Bildladefehler und Platzhalter in allen Song-Ansichten.',
     ],
   },
 ];

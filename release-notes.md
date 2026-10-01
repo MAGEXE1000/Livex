@@ -1,14 +1,12 @@
-# Version 4.6.71
+# Version 4.6.72
 
-Release Date: 2026-09-30
+Release Date: 2026-10-01
 
 ### Added
-- Unified Canonical Floating Glass Topbar in Live Mode: Restyled the Live mode top navigation capsule across Chords, Lyrics, and Both modes using the canonical `SharedFloatingHeader` design system tokens, responsive backdrop blur, and SVG back navigation chevron.
-- Icon-Only Live Spectator Sync Indicator: Streamlined the spectator follow pill into a sleek circular link icon button on the right header boundary, eliminating header clutter while preserving instant tap-to-unlock behavior.
-- Line-Level Teleprompter Focus: Transitioned active lyric line emphasis from character/syllable breaks to unified full-line focus framing with high-contrast active text and smooth verse transitions.
+- Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.
+- Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.
+- Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.
 
 ### Fixed
-- Live Mode Topbar Mathematical Center Alignment: Centered song titles and live playback subtitles with symmetric horizontal clearance across all screen sizes and mobile aspect ratios.
-- Compact Live Topbar Height: Reduced header height across all Live modes to an unobtrusive 48px profile, optimizing screen real estate for chords, teleprompter lyrics, and stage performance.
-- Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.
-- Timed Interlude Card Layout: Resolved header overflow issues where trash can and reorder buttons clipped outside card bounds.
+- Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.
+- Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.
