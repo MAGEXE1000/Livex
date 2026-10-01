@@ -22,6 +22,12 @@ import {
   parseDurationMmSs,
   type SongTimingSchedule,
   getCharacterColor,
+  useBandStore,
+  broadcastBandLivePacket,
+  subscribeToBandLiveSession,
+  calculateTransitDrift,
+  type LiveBandSyncPacket,
+  type LiveSyncAction,
 } from '@workspace/livex-core';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
@@ -185,6 +191,16 @@ export interface LiveModeState {
   nextPreviewChord: any;
   nextPreviewLyrics: string;
   currentSectionName: string;
+
+  // Stage Band Live Sync Session
+  hasActiveBand: boolean;
+  bandName: string;
+  isBroadcasting: boolean;
+  setIsBroadcasting: (v: boolean) => void;
+  isLockedToLeader: boolean;
+  setIsLockedToLeader: (v: boolean) => void;
+  activeLiveSession: LiveBandSyncPacket | null;
+  emitLiveSync: (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => void;
 
   // Animations & visuals
   overlayAnim: React.CSSProperties;
@@ -353,11 +369,28 @@ export function useLiveModeState(
   );
   const accent = resolveAccent(settings.accentColor);
 
+  // Band Stage Collaboration Store
+  const currentBand = useBandStore((s) => s.currentBand);
+  const isBroadcasting = useBandStore((s) => s.isBroadcasting);
+  const setIsBroadcasting = useBandStore((s) => s.setIsBroadcasting);
+  const isLockedToLeader = useBandStore((s) => s.isLockedToLeader);
+  const setIsLockedToLeader = useBandStore((s) => s.setIsLockedToLeader);
+  const activeLiveSession = useBandStore((s) => s.activeLiveSession);
+  const setActiveLiveSession = useBandStore((s) => s.setActiveLiveSession);
+
+  const packetVersionRef = useRef(1);
+  const currentLineIdxRef = useRef(0);
+  const currentWordIdxRef = useRef(0);
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [currentLineIdx, setCurrentLineIdx] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [autoPlay, setAutoPlay] = useState(false);
+  const [autoPlay, setAutoPlayState] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+
+  useEffect(() => {
+    currentLineIdxRef.current = currentLineIdx;
+  }, [currentLineIdx]);
 
   useEffect(() => {
     if (!autoPlay) {
@@ -381,6 +414,64 @@ export function useLiveModeState(
     return (b === 1 || b === 2 || b === 3 || b === 4) ? b : 2;
   });
 
+  const initialSpeed = preset.speed || preset.bpm || 120;
+  const [speed, setSpeedState] = useState(initialSpeed);
+  const [currentBeat, setCurrentBeat] = useState(0);
+  const [currentBar, setCurrentBar] = useState(1);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  const emitLiveSync = useCallback(
+    (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
+      if (!currentBand) return;
+      const nextVersion = packetVersionRef.current++;
+      const packet: LiveBandSyncPacket = {
+        bandId: currentBand.id,
+        leaderId: currentBand.leaderId || 'local-leader',
+        leaderName: 'Leader',
+        songId: preset.id,
+        songTitle: preset.name || 'Untitled Song',
+        action,
+        timestamp: Date.now(),
+        currentLineIdx: overrides?.currentLineIdx ?? currentLineIdxRef.current,
+        currentWordIdx: overrides?.currentWordIdx ?? currentWordIdxRef.current,
+        currentBeat: overrides?.currentBeat ?? currentBeat,
+        currentBar: overrides?.currentBar ?? currentBar,
+        bpm: overrides?.bpm ?? speed,
+        barsPerLine: overrides?.barsPerLine ?? barsPerLine,
+        elapsedMs: overrides?.elapsedMs ?? elapsedMs,
+        autoPlay: overrides?.autoPlay ?? autoPlay,
+        version: nextVersion,
+        songPayload: {
+          title: preset.name,
+          artist: preset.artist,
+          key: preset.key,
+          bpm: preset.bpm,
+          speed: preset.speed,
+          barsPerLine: preset.barsPerLine,
+          targetDurationSeconds: preset.targetDurationSeconds,
+          sections: preset.sections,
+          lyrics: preset.lyrics,
+          chords: preset.chords,
+        },
+      };
+      broadcastBandLivePacket(packet);
+    },
+    [currentBand, preset, currentBeat, currentBar, speed, barsPerLine, elapsedMs, autoPlay]
+  );
+
+  const setAutoPlay = useCallback(
+    (action: boolean | ((prev: boolean) => boolean)) => {
+      setAutoPlayState((prev) => {
+        const next = typeof action === 'function' ? action(prev) : action;
+        if (isBroadcasting) {
+          emitLiveSync(next ? 'PLAY' : 'PAUSE', { autoPlay: next });
+        }
+        return next;
+      });
+    },
+    [isBroadcasting, emitLiveSync]
+  );
+
   useEffect(() => {
     if (preset.barsPerLine) {
       setBarsPerLineState(preset.barsPerLine);
@@ -399,6 +490,10 @@ export function useLiveModeState(
       wordRemainingMsRef.current = 0;
       wordStartTimestampRef.current = 0;
 
+      if (isBroadcasting) {
+        emitLiveSync('BARS_CHANGE', { barsPerLine: nextBars });
+      }
+
       if (preset?.id) {
         queueMicrotask(() => {
           try {
@@ -409,7 +504,7 @@ export function useLiveModeState(
         });
       }
     },
-    [preset?.id]
+    [preset?.id, isBroadcasting, emitLiveSync]
   );
 
   const beatsPerLine = barsPerLine * 4;
@@ -522,8 +617,6 @@ export function useLiveModeState(
   }, []);
 
   const [showContext, setShowContext] = useState(true);
-  const initialSpeed = preset.speed || preset.bpm || 120;
-  const [speed, setSpeedState] = useState(initialSpeed);
   const [seekToken, setSeekToken] = useState(0);
 
   const wordRemainingMsRef = useRef<number>(0);
@@ -551,6 +644,10 @@ export function useLiveModeState(
       wordRemainingMsRef.current = 0;
       wordStartTimestampRef.current = 0;
 
+      if (isBroadcasting) {
+        emitLiveSync('TEMPO_CHANGE', { bpm: nextSpeed });
+      }
+
       if (preset?.id) {
         queueMicrotask(() => {
           try {
@@ -562,7 +659,7 @@ export function useLiveModeState(
         });
       }
     },
-    [preset?.id]
+    [preset?.id, isBroadcasting, emitLiveSync]
   );
 
   const bpmOverride = speed;
@@ -897,8 +994,6 @@ export function useLiveModeState(
   // ── Word, Beat & Section Navigation ─────────────────────────────
   const [currentWordIdx, setCurrentWordIdxState] = useState(0);
   const [playbackSpeed, setPlaybackSpeedState] = useState(1.0);
-  const [currentBeat, setCurrentBeat] = useState(0);
-  const [currentBar, setCurrentBar] = useState(1);
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   const cyclePlaybackSpeed = useCallback(() => {
@@ -1011,9 +1106,13 @@ export function useLiveModeState(
           }
         }
         setSeekToken((t) => t + 1);
+
+        if (isBroadcasting) {
+          emitLiveSync('SEEK', { currentLineIdx: idx, currentBeat: 0, currentBar: 1 });
+        }
       }
     },
-    [totalLines, currentLineIdx, allWords, findChordIdx]
+    [totalLines, currentLineIdx, allWords, findChordIdx, isBroadcasting, emitLiveSync]
   );
 
   const nextPhrase = useCallback(() => {
@@ -1021,16 +1120,22 @@ export function useLiveModeState(
       goToLine(currentLineIdx + 1);
       const nextFirstWord = allWords.find((w) => w.lineIdx === currentLineIdx + 1);
       if (nextFirstWord) setCurrentWordIdxState(nextFirstWord.globalWordIdx);
+      if (isBroadcasting) {
+        emitLiveSync('CUE', { currentLineIdx: currentLineIdx + 1, currentBeat: 0, currentBar: 1 });
+      }
     }
-  }, [currentLineIdx, totalLines, goToLine, allWords]);
+  }, [currentLineIdx, totalLines, goToLine, allWords, isBroadcasting, emitLiveSync]);
 
   const prevPhrase = useCallback(() => {
     if (currentLineIdx > 0) {
       goToLine(currentLineIdx - 1);
       const prevFirstWord = allWords.find((w) => w.lineIdx === currentLineIdx - 1);
       if (prevFirstWord) setCurrentWordIdxState(prevFirstWord.globalWordIdx);
+      if (isBroadcasting) {
+        emitLiveSync('CUE', { currentLineIdx: currentLineIdx - 1, currentBeat: 0, currentBar: 1 });
+      }
     }
-  }, [currentLineIdx, goToLine, allWords]);
+  }, [currentLineIdx, goToLine, allWords, isBroadcasting, emitLiveSync]);
 
   const goToNextSection = useCallback(() => {
     const nextSecLine = teleprompterLines.find(
@@ -1117,7 +1222,6 @@ export function useLiveModeState(
   const msPerLine = beatDurationMs * beatsPerLine;
 
   // ── Monotonic Elapsed Performance Time Tracking ──────────────────
-  const [elapsedMs, setElapsedMs] = useState(0);
 
   // Sync elapsed progress to start timestamp of active item on seek/jump
   useEffect(() => {
@@ -1242,12 +1346,6 @@ export function useLiveModeState(
 
   const [interludeRemainingSec, setInterludeRemainingSec] = useState<number | null>(null);
 
-  const currentLineIdxRef = useRef(currentLineIdx);
-  const currentWordIdxRef = useRef(currentWordIdx);
-
-  useEffect(() => {
-    currentLineIdxRef.current = currentLineIdx;
-  }, [currentLineIdx]);
   useEffect(() => {
     currentWordIdxRef.current = currentWordIdx;
   }, [currentWordIdx]);
@@ -1357,6 +1455,9 @@ export function useLiveModeState(
             if (chordIdx !== -1) setCurrentIdx(chordIdx);
           }
         }
+        if (isBroadcasting) {
+          emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
+        }
       }
     };
 
@@ -1380,6 +1481,100 @@ export function useLiveModeState(
     allWords,
     chords,
     findChordIdx,
+    isBroadcasting,
+    emitLiveSync,
+  ]);
+
+  // ── Leader Heartbeat Broadcast ──────────────────────────────────
+  useEffect(() => {
+    if (!isBroadcasting || !autoPlay || !currentBand?.id) return;
+    const interval = setInterval(() => {
+      emitLiveSync('HEARTBEAT');
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isBroadcasting, autoPlay, currentBand?.id, emitLiveSync]);
+
+  // ── Follower / Band Member Live Session Synchronization ─────────
+  useEffect(() => {
+    if (!isLockedToLeader || isBroadcasting || !currentBand?.id) return;
+
+    const unsub = subscribeToBandLiveSession(currentBand.id, (packet) => {
+      if (!packet || packet.bandId !== currentBand.id) return;
+
+      setActiveLiveSession(packet);
+
+      const { isStale } = calculateTransitDrift(packet);
+      if (isStale && packet.action !== 'PLAY' && packet.action !== 'PAUSE') return;
+
+      if (packet.bpm && packet.bpm >= 40 && packet.bpm <= 400 && packet.bpm !== speed) {
+        setSpeedState(packet.bpm);
+      }
+      if (
+        packet.barsPerLine &&
+        packet.barsPerLine >= 1 &&
+        packet.barsPerLine <= 4 &&
+        packet.barsPerLine !== barsPerLine
+      ) {
+        setBarsPerLineState(packet.barsPerLine);
+      }
+
+      switch (packet.action) {
+        case 'PLAY':
+          if (packet.currentLineIdx !== currentLineIdxRef.current) {
+            goToLine(packet.currentLineIdx);
+          }
+          setAutoPlayState(true);
+          setCurrentBeat(packet.currentBeat || 0);
+          setCurrentBar(packet.currentBar || 1);
+          break;
+
+        case 'PAUSE':
+          setAutoPlayState(false);
+          if (packet.currentLineIdx !== currentLineIdxRef.current) {
+            goToLine(packet.currentLineIdx);
+          }
+          setCurrentBeat(packet.currentBeat || 0);
+          setCurrentBar(packet.currentBar || 1);
+          break;
+
+        case 'SEEK':
+        case 'CUE':
+          goToLine(packet.currentLineIdx);
+          setCurrentBeat(packet.currentBeat || 0);
+          setCurrentBar(packet.currentBar || 1);
+          if (typeof packet.autoPlay === 'boolean') {
+            setAutoPlayState(packet.autoPlay);
+          }
+          break;
+
+        case 'TEMPO_CHANGE':
+          if (packet.bpm) setSpeedState(packet.bpm);
+          break;
+
+        case 'BARS_CHANGE':
+          if (packet.barsPerLine) setBarsPerLineState(packet.barsPerLine);
+          break;
+
+        case 'HEARTBEAT':
+          if (packet.autoPlay) {
+            setAutoPlayState(true);
+            if (Math.abs(packet.currentLineIdx - currentLineIdxRef.current) >= 1) {
+              goToLine(packet.currentLineIdx);
+            }
+          }
+          break;
+      }
+    });
+
+    return unsub;
+  }, [
+    isLockedToLeader,
+    isBroadcasting,
+    currentBand?.id,
+    speed,
+    barsPerLine,
+    goToLine,
+    setActiveLiveSession,
   ]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────
@@ -1586,6 +1781,14 @@ export function useLiveModeState(
     nextPreviewChord,
     nextPreviewLyrics,
     currentSectionName,
+    hasActiveBand: Boolean(currentBand),
+    bandName: currentBand?.name || 'Band',
+    isBroadcasting,
+    setIsBroadcasting,
+    isLockedToLeader,
+    setIsLockedToLeader,
+    activeLiveSession,
+    emitLiveSync,
     overlayAnim,
     chordStyle,
     isExiting,

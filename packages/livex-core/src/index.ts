@@ -142,4 +142,5 @@ export * from './lib/lyrics/spanFormatting';
 // Band & Team Collaboration System
 export * from './types/band';
 export * from './store/useBandStore';
+export * from './lib/bandSyncService';
 export * from './lib/lyrics/lyricSegments';

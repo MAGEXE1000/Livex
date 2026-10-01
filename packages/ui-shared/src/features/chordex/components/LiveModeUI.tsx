@@ -404,31 +404,127 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           </div>
         </div>
 
-        {/* Right: Settings button */}
-        <button
-          type="button"
-          onClick={() => setShowSettings(true)}
-          data-testid="live-mode-settings-btn"
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            color: 'var(--c-text-primary, #ffffff)',
-            cursor: 'pointer',
-            flexShrink: 0,
-            transition: 'all 0.15s ease',
-          }}
-          title="Live Settings"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-            tune
-          </span>
-        </button>
+        {/* Right: Live Sync Pill + Settings button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {state.hasActiveBand && (
+            state.isBroadcasting ? (
+              <button
+                type="button"
+                data-testid="live-broadcast-toggle"
+                onClick={() => state.setIsBroadcasting(false)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 10px',
+                  borderRadius: '16px',
+                  background: 'rgba(34, 197, 94, 0.16)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  color: '#4ade80',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 14px rgba(34, 197, 94, 0.28)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Broadcasting Live Session to Band (Tap to Stop)"
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: '#22c55e',
+                    boxShadow: '0 0 8px #22c55e',
+                    animation: 'live-dot-pulse 1.2s infinite',
+                  }}
+                />
+                <span>LIVE</span>
+              </button>
+            ) : state.isLockedToLeader ? (
+              <button
+                type="button"
+                data-testid="live-follow-toggle"
+                onClick={() => state.setIsLockedToLeader(false)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '5px 10px',
+                  borderRadius: '16px',
+                  background: 'rgba(59, 130, 246, 0.16)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  color: '#60a5fa',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.03em',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 14px rgba(59, 130, 246, 0.28)',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Locked to Leader's Live Session (Tap to Unlock)"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+                  link
+                </span>
+                <span>SYNCED</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="live-broadcast-toggle"
+                onClick={() => state.setIsBroadcasting(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '5px 9px',
+                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.14)',
+                  color: 'var(--c-text-primary, #ffffff)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                title="Broadcast Live Session to Band Members"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px', color: accent.from }}>
+                  sensors
+                </span>
+                <span>Broadcast</span>
+              </button>
+            )
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            data-testid="live-mode-settings-btn"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: 'var(--c-text-primary, #ffffff)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+            title="Live Settings"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              tune
+            </span>
+          </button>
+        </div>
       </header>
     </>
   );
@@ -3451,6 +3547,147 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               })}
             </div>
           </div>
+
+          {/* ── STAGE BAND LIVE SYNC CARD ────────────────────────── */}
+          {state.hasActiveBand && (
+            <div
+              data-testid="live-settings-band-sync-card"
+              style={{
+                padding: '14px',
+                borderRadius: '16px',
+                background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+                border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px', color: accent.from }}>
+                      groups
+                    </span>
+                    <p
+                      style={{
+                        color: 'var(--c-text-primary)',
+                        fontFamily: 'var(--studio-font-body)',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                      }}
+                    >
+                      Stage Band Live Sync
+                    </p>
+                  </div>
+                  <p
+                    style={{
+                      color: 'var(--c-text-secondary)',
+                      fontSize: '11px',
+                      fontFamily: 'Inter',
+                      marginTop: '2px',
+                    }}
+                  >
+                    Synchronize teleprompters & cues in real time
+                  </p>
+                </div>
+                <span
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: accent.from,
+                    fontFamily: 'var(--studio-font-mono, monospace)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {state.bandName}
+                </span>
+              </div>
+
+              {/* Mode Toggles */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {/* Broadcast Toggle (Leader) */}
+                <button
+                  type="button"
+                  data-testid="band-sync-broadcast-btn"
+                  onClick={() => {
+                    const next = !state.isBroadcasting;
+                    state.setIsBroadcasting(next);
+                    if (next) state.setIsLockedToLeader(false);
+                  }}
+                  className="btn-smooth"
+                  style={{
+                    padding: '10px 8px',
+                    borderRadius: '12px',
+                    background: state.isBroadcasting
+                      ? 'rgba(34, 197, 94, 0.16)'
+                      : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
+                    border: `1px solid ${state.isBroadcasting ? 'rgba(34, 197, 94, 0.4)' : 'var(--c-border, transparent)'}`,
+                    color: state.isBroadcasting ? '#4ade80' : 'var(--c-text-primary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                    sensors
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700 }}>
+                    {state.isBroadcasting ? 'Broadcasting ON' : 'Broadcast Live'}
+                  </span>
+                  <span style={{ fontSize: '9px', opacity: 0.7 }}>Leader session</span>
+                </button>
+
+                {/* Follower Toggle (Member) */}
+                <button
+                  type="button"
+                  data-testid="band-sync-follow-btn"
+                  onClick={() => {
+                    const next = !state.isLockedToLeader;
+                    state.setIsLockedToLeader(next);
+                    if (next) state.setIsBroadcasting(false);
+                  }}
+                  className="btn-smooth"
+                  style={{
+                    padding: '10px 8px',
+                    borderRadius: '12px',
+                    background: state.isLockedToLeader
+                      ? 'rgba(59, 130, 246, 0.16)'
+                      : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
+                    border: `1px solid ${state.isLockedToLeader ? 'rgba(59, 130, 246, 0.4)' : 'var(--c-border, transparent)'}`,
+                    color: state.isLockedToLeader ? '#60a5fa' : 'var(--c-text-primary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                    link
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700 }}>
+                    {state.isLockedToLeader ? 'Locked to Leader' : 'Follow Leader'}
+                  </span>
+                  <span style={{ fontSize: '9px', opacity: 0.7 }}>Band member</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── 5. VIEW & TELEPROMPTER OPTIONS ─────────────────────── */}
           {isTeleprompterMode ? (

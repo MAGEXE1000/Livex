@@ -52,6 +52,45 @@ export interface SharedSong {
   uploaderName?: string;
 }
 
+export type LiveSyncAction =
+  | 'PLAY'
+  | 'PAUSE'
+  | 'SEEK'
+  | 'CUE'
+  | 'SONG_SELECT'
+  | 'TEMPO_CHANGE'
+  | 'BARS_CHANGE'
+  | 'HEARTBEAT';
+
+export interface LiveBandSyncPacket {
+  bandId: string;
+  leaderId: string;
+  leaderName: string;
+  songId: string;
+  songTitle: string;
+  action: LiveSyncAction;
+  timestamp: number; // UTC ms
+  currentLineIdx: number;
+  currentWordIdx: number;
+  currentBeat: number;
+  currentBar: number;
+  bpm: number;
+  speed?: number;
+  barsPerLine: number;
+  elapsedMs?: number;
+  autoPlay: boolean;
+  version: number;
+  songPayload?: Partial<SharedSong>;
+}
+
+export interface LiveBandSessionState {
+  isBroadcasting: boolean;
+  isLockedToLeader: boolean;
+  activeSessionPacket: LiveBandSyncPacket | null;
+  lastPacketReceivedAt: number | null;
+  networkLatencyMs: number;
+}
+
 export interface BandState {
   currentBand: Band | null;
   members: BandMember[];
@@ -59,6 +98,11 @@ export interface BandState {
   userBands: Band[];
   isLoading: boolean;
   error: string | null;
+  // Live stage sync session state
+  isBroadcasting: boolean;
+  isLockedToLeader: boolean;
+  activeLiveSession: LiveBandSyncPacket | null;
+  lastSyncTimestamp: number | null;
 }
 
 export interface BandActions {
@@ -74,4 +118,8 @@ export interface BandActions {
   removeSharedSong: (sharedSongId: string) => void;
   updateBandName: (name: string) => void;
   setError: (err: string | null) => void;
+  // Live session actions
+  setIsBroadcasting: (broadcasting: boolean) => void;
+  setIsLockedToLeader: (locked: boolean) => void;
+  setActiveLiveSession: (packet: LiveBandSyncPacket | null) => void;
 }

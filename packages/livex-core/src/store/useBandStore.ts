@@ -29,6 +29,10 @@ const DEFAULT_BAND_STATE: BandState = {
   userBands: [],
   isLoading: false,
   error: null,
+  isBroadcasting: false,
+  isLockedToLeader: false,
+  activeLiveSession: null,
+  lastSyncTimestamp: null,
 };
 
 export const useBandStore = create<BandStore>()(
@@ -262,6 +266,21 @@ export const useBandStore = create<BandStore>()(
             currentBand: updatedBand,
             userBands: state.userBands.map((b) => (b.id === updatedBand.id ? updatedBand : b)),
           };
+        });
+      },
+
+      setIsBroadcasting: (isBroadcasting) => {
+        set({ isBroadcasting });
+      },
+
+      setIsLockedToLeader: (isLockedToLeader) => {
+        set({ isLockedToLeader });
+      },
+
+      setActiveLiveSession: (packet) => {
+        set({
+          activeLiveSession: packet,
+          lastSyncTimestamp: packet ? Date.now() : null,
         });
       },
     }),
