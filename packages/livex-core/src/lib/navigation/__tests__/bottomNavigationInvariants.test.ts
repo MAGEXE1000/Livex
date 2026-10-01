@@ -118,7 +118,7 @@ function resolveActiveNavItems(currentRoute: any) {
 describe('Bottom Navigation Active State Invariants & Test Matrix', () => {
   let originalDocument: any;
   let originalWindow: any;
-  let eventListeners: Record<string, Function[]> = {};
+  let eventListeners: Record<string, ((...args: any[]) => void)[]> = {};
 
   beforeEach(() => {
     originalDocument = (globalThis as any).document;

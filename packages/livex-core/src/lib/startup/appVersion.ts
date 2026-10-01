@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.68';
-export const NATIVE_VERSION_CODE = 40668;
-export const WEB_VERSION = '4.6.68';
+export const NATIVE_VERSION = '4.6.69';
+export const NATIVE_VERSION_CODE = 40669;
+export const WEB_VERSION = '4.6.69';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '9/28/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '5fa0b50d';
+export const APP_COMMIT_SHA = 'f048630d';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/30/2026, 1:39:39 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/30/2026, 7:18:40 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,17 +101,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Above-Word Inline Chord Badges in Both Mode: Replaced the vertical stacked chord list with compact inline chord chips anchored directly above specific lyrics/words with character-offset synchronization.',
-      'Canonical Fretboard Diagram Preview in Song Editor: Tapping any inline chord tag displays the full-fidelity DetailFretboardDiagram showing guitar fingerings, muted strings, and note positions.',
-      'Clean View Mode & Floating Edit Button: In view mode, the bottom toolbar is hidden and a single floating Pencil FAB is rendered in the bottom right, with lyrics protected against accidental touch/keyboard editing.',
+      'Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.',
+      'Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.',
+      'Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Reorganized Both-Mode Edit Toolbar: Placed Undo and Redo on the left, a neutral standard Chord tool in the center, Text Styling/Color tool and clean More menu on the right-center, and anchored the primary Done action all the way to the far right.',
-      'Cleaned More Action Menu: Removed redundant "Enter edit mode" and "Add lyric line" items, retaining "+ Add Section" (with layers icon), "+ Add Timed Interlude", and essential song actions.',
-      'Unobscured Viewport Docking: Removed intrusive mode toggle toasts and anchored the bottom dock persistently as a mobile floating navbar.',
+      'Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.',
+      'Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.',
+      'Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.',
     ],
   },
 ];
@@ -123,6 +123,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.69',
+    date: '2026-09-30',
+    highlights: [
+      'Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.',
+      'Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.',
+      'Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.',
+      'Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.',
+      'Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.',
+      'Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.',
+    ],
+  },
   {
     version: '4.6.68',
     date: '2026-09-30',
@@ -214,16 +226,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Hub Profile Back-Navigation Canonical Restoration: Resolved the navigation regression where entering Profile from the Hub broke Android hardware back and predictive swipe-back gesture unwinding.',
       'De-coupled Sheet and Domain Priority: Removed artificial root-level back interception in AccountCard, ensuring active sheets (Avatar Picker, Account Details, Danger Zone) cleanly close without altering route history, while Profile root delegates to canonical BackDispatcher pop.',
       'Elimination of Forward Push on Back: Corrected goBack in HubSettings and pageProps to cleanly pop the navigation history stack rather than pushing duplicate Home routes, eliminating navigation ping-pong loops and preserving cross-app domain containment.',
-    ],
-  },
-  {
-    version: '4.6.59',
-    date: '2026-09-27',
-    highlights: [
-      'Android Back Navigation Containment (Option A1): Enforced strict intra-app domain containment across all sub-apps (Chordex, Drumex, StageX, Groovex, Vocalex) on system back gesture and edge swipe.',
-      'Chordex Filter & Search Back Interception: Back gesture now clears active search queries in SongsPanel and resets chord/category filters in LibraryPanel before unwinding, preventing premature fallthrough to Hub.',
-      'Sub-App Coordinator Back Handlers: Integrated coordinator panel handlers in StageCorePanel, DrumEditor, GroovexApp, and VocalexApp to cleanly unwind sub-views to root without crossing app boundaries.',
-      'Hub Shell & Settings Navigation: Maintained Settings root navigation popping to Hub Home tab, allowing native application backgrounding only from the Hub Home tab.',
     ],
   },
 ];

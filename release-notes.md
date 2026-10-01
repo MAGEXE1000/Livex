@@ -1,13 +1,13 @@
-# Version 4.6.68
+# Version 4.6.69
 
 Release Date: 2026-09-30
 
 ### Added
-- Above-Word Inline Chord Badges in Both Mode: Replaced the vertical stacked chord list with compact inline chord chips anchored directly above specific lyrics/words with character-offset synchronization.
-- Canonical Fretboard Diagram Preview in Song Editor: Tapping any inline chord tag displays the full-fidelity DetailFretboardDiagram showing guitar fingerings, muted strings, and note positions.
-- Clean View Mode & Floating Edit Button: In view mode, the bottom toolbar is hidden and a single floating Pencil FAB is rendered in the bottom right, with lyrics protected against accidental touch/keyboard editing.
+- Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.
+- Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.
+- Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.
 
 ### Fixed
-- Reorganized Both-Mode Edit Toolbar: Placed Undo and Redo on the left, a neutral standard Chord tool in the center, Text Styling/Color tool and clean More menu on the right-center, and anchored the primary Done action all the way to the far right.
-- Cleaned More Action Menu: Removed redundant "Enter edit mode" and "Add lyric line" items, retaining "+ Add Section" (with layers icon), "+ Add Timed Interlude", and essential song actions.
-- Unobscured Viewport Docking: Removed intrusive mode toggle toasts and anchored the bottom dock persistently as a mobile floating navbar.
+- Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.
+- Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.
+- Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.
