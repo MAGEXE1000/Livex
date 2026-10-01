@@ -143,8 +143,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           zIndex: 100,
           width: 'calc(100% - 32px)',
           maxWidth: '560px',
-          height: '46px',
-          minHeight: '46px',
+          height: '48px',
+          minHeight: '48px',
           borderRadius: '9999px',
           padding: '0 8px 0 4px',
           display: 'flex',
@@ -165,10 +165,10 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           data-testid="live-mode-back-btn"
           onClick={handleClose}
           style={{
-            width: '36px',
-            height: '36px',
-            minWidth: '36px',
-            minHeight: '36px',
+            width: '34px',
+            height: '34px',
+            minWidth: '34px',
+            minHeight: '34px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -246,6 +246,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
               data-testid="live-mode-title"
               style={{
                 fontSize: '13.5px',
+                lineHeight: '16px',
                 fontWeight: 700,
                 color: 'var(--c-text-primary, #ffffff)',
                 fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
@@ -263,7 +264,8 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           <div
             data-testid="live-mode-subtitle"
             style={{
-              fontSize: '10.5px',
+              fontSize: '10px',
+              lineHeight: '13px',
               color: 'var(--c-text-secondary, #94a3b8)',
               fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
               whiteSpace: 'nowrap',
