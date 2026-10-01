@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useBandStore, generateBandCode } from '../useBandStore';
+import type { SongPreset } from '../slices/songSlice';
 
 describe('Band & Team Store (useBandStore)', () => {
   beforeEach(() => {
@@ -32,16 +33,16 @@ describe('Band & Team Store (useBandStore)', () => {
     expect(state.members[0].role).toBe('leader');
   });
 
-  it('joins a band with code and adds member', async () => {
+  it('joins a band with code and adds member with normalized code', async () => {
     const res = await useBandStore.getState().joinBandByCode(
-      'LVX999',
+      'band-4x29',
       'user-456',
       'Sarah Bass'
     );
 
     expect(res.success).toBe(true);
     const state = useBandStore.getState();
-    expect(state.currentBand?.code).toBe('LVX999');
+    expect(state.currentBand?.code).toBe('BAND4X29');
     expect(state.members.some((m) => m.userId === 'user-456')).toBe(true);
   });
 
@@ -61,22 +62,49 @@ describe('Band & Team Store (useBandStore)', () => {
     expect(useBandStore.getState().sharedSongs.length).toBe(0);
   });
 
-  it('adds and removes shared songs', () => {
+  it('shares song from preset and imports to library', () => {
     const band = useBandStore.getState().createBand('Groove Collective', 'u1', 'Leader');
-    const song = useBandStore.getState().addSharedSong({
-      bandId: band.id,
-      songId: 'song-101',
-      title: 'Midnight Jam',
-      key: 'Am',
-      bpm: 110,
-      updatedBy: 'u1',
-    });
+    const mockPreset: SongPreset = {
+      id: 'local-song-1',
+      name: 'Starlight Groove',
+      artist: 'Solaris',
+      bpm: 128,
+      key: 'G',
+      notes: 'Solo at bar 32',
+      chords: ['G', 'Em', 'C', 'D'],
+      sections: [{ id: 's1', name: 'Verse', chords: ['G', 'Em'] }],
+      createdAt: 1000,
+      updatedAt: 1000,
+    };
 
-    expect(song.id).toBeTruthy();
-    expect(song.title).toBe('Midnight Jam');
+    const sharedSong = useBandStore.getState().shareSongFromPreset(
+      mockPreset,
+      band.id,
+      'u1',
+      'Alex Drummer'
+    );
+
+    expect(sharedSong.id).toBeTruthy();
+    expect(sharedSong.title).toBe('Starlight Groove');
+    expect(sharedSong.artist).toBe('Solaris');
+    expect(sharedSong.bpm).toBe(128);
     expect(useBandStore.getState().sharedSongs.length).toBe(1);
 
-    useBandStore.getState().removeSharedSong(song.id);
+    // Test importSharedSongToLibrary
+    let createdPresetData: any = null;
+    const newId = useBandStore.getState().importSharedSongToLibrary(sharedSong, (data) => {
+      createdPresetData = data;
+      return 'imported-id-123';
+    });
+
+    expect(newId).toBe('imported-id-123');
+    expect(createdPresetData.name).toBe('Starlight Groove');
+    expect(createdPresetData.artist).toBe('Solaris');
+    expect(createdPresetData.key).toBe('G');
+    expect(createdPresetData.chords).toEqual(['G', 'Em', 'C', 'D']);
+
+    // Test remove
+    useBandStore.getState().removeSharedSong(sharedSong.id);
     expect(useBandStore.getState().sharedSongs.length).toBe(0);
   });
 });

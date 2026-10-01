@@ -1,11 +1,12 @@
 import type { SongLyricsDocument } from './lyrics';
+import type { SongPreset, SongSection } from '../store/slices/songSlice';
 
 export type BandRole = 'leader' | 'member' | 'admin';
 
 export interface Band {
   id: string;
   name: string;
-  code: string; // 6-character alphanumeric join code (e.g., 'LVX901')
+  code: string; // 6-character alphanumeric join code (e.g., 'LVX702')
   leaderId: string;
   createdAt: number;
   updatedAt?: number;
@@ -34,15 +35,21 @@ export interface SharedSong {
   artist?: string;
   key: string;
   bpm: number;
+  speed?: number;
   duration?: number;
+  targetDurationSeconds?: number;
   barsPerLine?: number;
-  lyrics?: SongLyricsDocument | any;
+  notes?: string;
+  lyrics?: SongLyricsDocument;
   chords?: string[];
+  sections?: SongSection[];
   interludes?: any[];
   coverUri?: string;
+  coverImage?: string;
   version: number;
   updatedAt: number;
   updatedBy: string;
+  uploaderName?: string;
 }
 
 export interface BandState {
@@ -62,6 +69,8 @@ export interface BandActions {
   joinBandByCode: (code: string, userId: string, userName: string) => Promise<{ success: boolean; message?: string }>;
   leaveBand: () => void;
   addSharedSong: (song: Omit<SharedSong, 'id' | 'version' | 'updatedAt'>) => SharedSong;
+  shareSongFromPreset: (preset: SongPreset, bandId: string, userId: string, userName: string) => SharedSong;
+  importSharedSongToLibrary: (sharedSong: SharedSong, createPresetFn: (data: any) => string) => string;
   removeSharedSong: (sharedSongId: string) => void;
   updateBandName: (name: string) => void;
   setError: (err: string | null) => void;

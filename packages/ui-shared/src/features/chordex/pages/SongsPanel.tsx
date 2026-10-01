@@ -36,6 +36,7 @@ import {
   useSettingsStore,
   formatDurationMmSs,
   useBottomNavigationStore,
+  useBandStore,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -3671,6 +3672,29 @@ const PresetCard = React.memo(
       [setShowDeleteId, preset.id]
     );
 
+    const currentBand = useBandStore((s) => s.currentBand);
+    const sharedSongs = useBandStore((s) => s.sharedSongs);
+    const shareSongFromPreset = useBandStore((s) => s.shareSongFromPreset);
+
+    const isSharedWithBand = useMemo(
+      () =>
+        currentBand &&
+        sharedSongs.some(
+          (s) => s.songId === preset.id || s.title.toLowerCase() === preset.name.toLowerCase()
+        ),
+      [currentBand, sharedSongs, preset.id, preset.name]
+    );
+
+    const handleShareToBandClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!currentBand) return;
+        shareSongFromPreset(preset, currentBand.id, 'local-user', 'Band Leader');
+        toast.success(`Song "${preset.name}" shared to ${currentBand.name}!`);
+      },
+      [currentBand, preset, shareSongFromPreset]
+    );
+
     return (
       <article
         className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row"
@@ -3737,6 +3761,20 @@ const PresetCard = React.memo(
                 scrollbarWidth: 'none',
               }}
             >
+              {currentBand && isSharedWithBand && (
+                <span
+                  data-testid={`preset-band-badge-${preset.id}`}
+                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
+                  style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'var(--c-accent-from, #2563eb)',
+                  }}
+                >
+                  <span className="material-symbols-rounded text-[11px]">groups</span>
+                  <span>{currentBand.name}</span>
+                </span>
+              )}
               {preset.key && (
                 <span
                   data-testid={`preset-key-${preset.id}`}
@@ -3804,11 +3842,28 @@ const PresetCard = React.memo(
           </span>
         </button>
 
-        {/* Quick action row: Export | PDF | Edit | Delete */}
+        {/* Quick action row: Share to Band (if active) | Export | PDF | Edit | Delete */}
         <div
           className="flex items-center border-t text-xs font-semibold"
           style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
         >
+          {currentBand && (
+            <button
+              type="button"
+              onClick={handleShareToBandClick}
+              data-testid={`share-band-${preset.id}`}
+              className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
+              style={{
+                borderColor: 'var(--c-border, #E3E6EB)',
+                color: 'var(--c-accent-from, #2563EB)',
+              }}
+              title={`Share to ${currentBand.name}`}
+              aria-label={`Share ${preset.name} to ${currentBand.name}`}
+            >
+              <span className="material-symbols-rounded text-base">groups</span>
+              <span>Band</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleExportClick}

@@ -89,7 +89,7 @@ export const useBandStore = create<BandStore>()(
       },
 
       joinBandByCode: async (rawCode, userId, userName) => {
-        const code = rawCode.trim().toUpperCase();
+        const code = rawCode.trim().replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (!code || code.length < 4) {
           return { success: false, message: 'Invalid join code. Must be at least 4 characters.' };
         }
@@ -100,8 +100,10 @@ export const useBandStore = create<BandStore>()(
           const now = Date.now();
           const state = get();
 
-          // Check if code matches an existing band in userBands
-          const existing = state.userBands.find((b) => b.code.toUpperCase() === code);
+          // Check if code matches an existing band in userBands (case/dash normalized)
+          const existing = state.userBands.find(
+            (b) => b.code.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === code
+          );
           const bandId = existing ? existing.id : `band-joined-${Date.now()}`;
           const bandName = existing ? existing.name : `Band #${code}`;
 
@@ -184,6 +186,59 @@ export const useBandStore = create<BandStore>()(
         }));
 
         return newSong;
+      },
+
+      shareSongFromPreset: (preset, bandId, userId, userName) => {
+        const id = `shared-song-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const now = Date.now();
+        const sharedSong: SharedSong = {
+          id,
+          bandId,
+          songId: preset.id,
+          title: preset.name || 'Untitled Song',
+          artist: preset.artist || '',
+          key: preset.key || 'C',
+          bpm: preset.bpm || preset.speed || 120,
+          speed: preset.speed || preset.bpm || 120,
+          targetDurationSeconds: preset.targetDurationSeconds,
+          barsPerLine: preset.barsPerLine || 2,
+          notes: preset.notes || '',
+          chords: preset.chords || [],
+          sections: preset.sections || [],
+          lyrics: preset.lyrics,
+          coverImage: preset.coverImage,
+          version: 1,
+          updatedAt: now,
+          updatedBy: userId || 'local-user',
+          uploaderName: userName || 'Musician',
+        };
+
+        set((state) => ({
+          sharedSongs: [
+            sharedSong,
+            ...state.sharedSongs.filter((s) => s.songId !== preset.id && s.id !== id),
+          ],
+        }));
+
+        return sharedSong;
+      },
+
+      importSharedSongToLibrary: (sharedSong, createPresetFn) => {
+        const presetData = {
+          name: sharedSong.title,
+          artist: sharedSong.artist || '',
+          key: sharedSong.key || 'C',
+          bpm: sharedSong.bpm || 120,
+          speed: sharedSong.speed || sharedSong.bpm || 120,
+          barsPerLine: sharedSong.barsPerLine || 2,
+          targetDurationSeconds: sharedSong.targetDurationSeconds,
+          notes: sharedSong.notes || '',
+          chords: sharedSong.chords || [],
+          sections: sharedSong.sections || [],
+          lyrics: sharedSong.lyrics,
+          coverImage: sharedSong.coverImage || sharedSong.coverUri,
+        };
+        return createPresetFn(presetData);
       },
 
       removeSharedSong: (sharedSongId) => {
