@@ -4,7 +4,7 @@ import { SongEditorForm, PresetFormContent, FormData } from '../components/SongE
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog, activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
-import { SongLyricsEditor, SongLyricsComposer, SongLivePreparationView } from '../components/lyrics';
+import { SongLyricsEditor, SongLyricsComposer } from '../components/lyrics';
 import {
   getAllChords,
   getChordById,
@@ -5186,16 +5186,6 @@ export default function SongsPanel() {
                   style={{ borderRadius: '50%', width: 34, height: 34 }}
                   icon="picture_as_pdf"
                 />
-                {hasLyrics && editorViewMode !== 'lyrics' && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => handleEditLyricsComposer(activePreset.id)}
-                    title="Edit lyrics in composer"
-                    style={{ borderRadius: '50%', width: 34, height: 34 }}
-                    icon="edit_note"
-                  />
-                )}
                 <Button
                   variant="secondary"
                   size="icon"
@@ -5376,20 +5366,14 @@ export default function SongsPanel() {
                   </div>
                 )}
 
-                <SongLivePreparationView
-                  preset={activePreset}
-                  accent={accent}
-                  transposeOffset={transposeOffset}
-                  preferFlats={preferFlats}
-                  onEditLyrics={() => handleEditLyricsComposer(activePreset.id)}
-                  onLaunchLive={() => setShowLive(true)}
-                  onUpdateLyrics={(nextLyrics) => {
+                <SongLyricsEditor
+                  mode="lyrics"
+                  lyrics={activePreset.lyrics}
+                  onChange={(nextLyrics) => {
                     setSongLyrics(activePreset.id, nextLyrics);
                   }}
-                  onEditDetails={() => {
-                    setEditingId(activePreset.id);
-                    setShowForm(true);
-                  }}
+                  availableChords={allSongChordNames}
+                  accent={accent}
                 />
               </div>
             );
@@ -5422,6 +5406,7 @@ export default function SongsPanel() {
                 )}
 
                 <SongLyricsEditor
+                  mode="both"
                   lyrics={activePreset.lyrics}
                   onChange={(nextLyrics) => {
                     setSongLyrics(activePreset.id, nextLyrics);
