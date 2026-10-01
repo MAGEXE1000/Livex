@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import {
   type Setlist,
   type SongPreset,
@@ -24,6 +24,186 @@ interface SetlistDetailViewProps {
   onOpenSongInEditor?: (songId: string) => void;
 }
 
+interface SetlistSongRowProps {
+  songId: string;
+  songIdx: number;
+  song?: SongPreset;
+  globalSongCounter: number;
+  totalSections: number;
+  onOpenSongInEditor?: (songId: string) => void;
+  onPlayLiveFromHere: () => void;
+  onMoveToSection: () => void;
+  onRemove: () => void;
+}
+
+const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
+  songId,
+  songIdx,
+  song,
+  globalSongCounter,
+  totalSections,
+  onOpenSongInEditor,
+  onPlayLiveFromHere,
+  onMoveToSection,
+  onRemove,
+}) => {
+  const dragControls = useDragControls();
+
+  if (!song) {
+    return (
+      <Reorder.Item
+        value={songId}
+        id={songId}
+        className="p-2.5 rounded-xl border border-dashed border-red-500/30 flex items-center justify-between text-xs text-red-400"
+      >
+        <span>Deleted Song (ID: {songId})</span>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-xs font-bold"
+        >
+          Remove
+        </button>
+      </Reorder.Item>
+    );
+  }
+
+  const durStr =
+    song.targetDurationSeconds && song.targetDurationSeconds > 0
+      ? formatDurationMmSs(song.targetDurationSeconds)
+      : undefined;
+
+  return (
+    <Reorder.Item
+      value={songId}
+      id={songId}
+      dragListener={false}
+      dragControls={dragControls}
+      className="flex items-center justify-between gap-2 p-2.5 rounded-2xl border transition-all hover:border-white/20 select-none group"
+      style={{
+        backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+        borderColor: 'var(--c-border, rgba(255, 255, 255, 0.06))',
+        position: 'relative',
+      }}
+      whileDrag={{
+        scale: 1.025,
+        boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'var(--surface-container-high, rgba(30, 35, 45, 0.98))',
+        borderColor: 'var(--c-accent-from, rgba(59, 130, 246, 0.6))',
+        zIndex: 50,
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+      data-testid={`setlist-song-${song.id}`}
+    >
+      {/* Left: Drag Handle + Number / Cover Thumbnail + Song Info */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        {/* Drag Grip Handle */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-slate-400 hover:text-white transition-colors shrink-0 flex items-center justify-center rounded-lg hover:bg-white/5"
+          style={{ touchAction: 'none' }}
+          title="Drag to reorder"
+          data-testid={`drag-handle-${song.id}`}
+        >
+          <span
+            className="material-symbols-rounded text-lg opacity-40 group-hover:opacity-80 transition-opacity"
+            style={{ userSelect: 'none' }}
+          >
+            drag_indicator
+          </span>
+        </div>
+
+        {/* Thumbnail / Song Number */}
+        <div
+          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden relative"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+          }}
+        >
+          {song.coverImage ? (
+            <img
+              src={song.coverImage}
+              alt={song.name}
+              className="w-full h-full object-cover rounded-xl"
+              loading="lazy"
+            />
+          ) : (
+            <span
+              className="text-[10px] font-black"
+              style={{ color: 'var(--c-text-primary, #FFFFFF)' }}
+            >
+              {globalSongCounter}
+            </span>
+          )}
+        </div>
+
+        {/* Details */}
+        <div
+          className="min-w-0 cursor-pointer flex-1"
+          onClick={() => onOpenSongInEditor?.(song.id)}
+          title="Open in song editor"
+        >
+          <h4 className="text-xs font-bold truncate leading-tight group-hover:text-blue-400 transition-colors">
+            {song.name}
+          </h4>
+          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 flex-wrap">
+            {song.artist && <span className="truncate max-w-[100px]">{song.artist}</span>}
+            {song.key && (
+              <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+                #{song.key}
+              </span>
+            )}
+            <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+              {song.bpm || song.speed || 120} BPM
+            </span>
+            {durStr && (
+              <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-blue-400">
+                {durStr}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Actions: Play, Move, Remove */}
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Quick Play from this song */}
+        <button
+          type="button"
+          onClick={onPlayLiveFromHere}
+          title={`Play live starting from "${song.name}"`}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/10 transition-colors"
+        >
+          <span className="material-symbols-rounded text-base">play_arrow</span>
+        </button>
+
+        {/* Move to another section */}
+        {totalSections > 1 && (
+          <button
+            type="button"
+            onClick={onMoveToSection}
+            title="Move to another section"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <span className="material-symbols-rounded text-sm">drive_file_move</span>
+          </button>
+        )}
+
+        {/* Remove from setlist */}
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Remove song from setlist (keeps song in library)"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        >
+          <span className="material-symbols-rounded text-sm">close</span>
+        </button>
+      </div>
+    </Reorder.Item>
+  );
+};
+
 export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   setlistId,
   allPresets,
@@ -43,7 +223,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   const reorderSetlistSections = useChordStore((s) => s.reorderSetlistSections);
   const addSongsToSetlistSection = useChordStore((s) => s.addSongsToSetlistSection);
   const removeSongFromSetlistSection = useChordStore((s) => s.removeSongFromSetlistSection);
-  const reorderSongsInSetlistSection = useChordStore((s) => s.reorderSongsInSetlistSection);
+  const updateSectionSongsOrder = useChordStore((s) => s.updateSectionSongsOrder);
   const moveSongBetweenSetlistSections = useChordStore((s) => s.moveSongBetweenSetlistSections);
 
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
@@ -113,9 +293,6 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')} min`;
   })();
 
-  // Global song numbering tracking
-  let globalSongCounter = 0;
-
   return (
     <div
       className="flex flex-col w-full h-full relative overflow-hidden"
@@ -154,30 +331,25 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
         toolbarActions={
           stats.totalSongs > 0 ? (
             <motion.button
-              whileTap={{ scale: 0.94 }}
+              whileTap={{ scale: 0.92 }}
               type="button"
               data-testid="setlist-start-live-btn"
               onClick={() => onPlayLiveSetlist(setlist, 0)}
               title="Start live setlist rehearsal"
-              className="h-[34px] px-3.5 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0 active:scale-95"
+              aria-label="Start live rehearsal"
+              className="w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md shrink-0 active:scale-95"
               style={{
                 backgroundColor: 'var(--c-accent-from, #2563EB)',
                 color: '#FFFFFF',
-                boxShadow: '0 2px 10px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-                fontFamily: 'var(--font-headline)',
-                fontWeight: 700,
-                fontSize: '11px',
-                letterSpacing: '0.03em',
-                textTransform: 'uppercase',
+                boxShadow: '0 3px 12px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
               }}
             >
               <span
-                className="material-symbols-rounded text-[18px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+                className="material-symbols-rounded text-[22px]"
+                style={{ fontVariationSettings: "'FILL' 1", marginLeft: '2px' }}
               >
                 play_arrow
               </span>
-              <span>Play Live</span>
             </motion.button>
           ) : (
             <motion.button
@@ -185,7 +357,8 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
               type="button"
               onClick={() => setShowEditInfoModal(true)}
               title="Edit setlist info"
-              className="w-[34px] h-[34px] flex items-center justify-center transition-all cursor-pointer shrink-0"
+              aria-label="Edit setlist info"
+              className="w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0"
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -196,6 +369,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
             </motion.button>
           )
         }
+        sideClearance={52}
       />
 
       {/* Main Content Area */}
@@ -263,6 +437,11 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
               const isLastSec = secIdx === (setlist.sections.length - 1);
               const isEditing = editingSectionId === section.id;
               const sectionSongs = (section.songIds || []).map((sId) => presetMap.get(sId)).filter(Boolean) as SongPreset[];
+
+              let precedingSongsCount = 0;
+              for (let i = 0; i < secIdx; i++) {
+                precedingSongsCount += (setlist.sections[i]?.songIds || []).length;
+              }
 
               let sectionDurationSec = 0;
               sectionSongs.forEach((s) => {
@@ -405,157 +584,40 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                       </span>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {section.songIds.map((songId, songIdx) => {
-                        globalSongCounter += 1;
-                        const currentGlobalIdx = globalSongCounter - 1;
+                    <Reorder.Group
+                      axis="y"
+                      values={section.songIds || []}
+                      onReorder={(newSongIds) => updateSectionSongsOrder(setlist.id, section.id, newSongIds)}
+                      className="space-y-2"
+                      style={{ listStyle: 'none', padding: 0, margin: 0 }}
+                    >
+                      {(section.songIds || []).map((songId, songIdx) => {
+                        const globalSongNumber = precedingSongsCount + songIdx + 1;
+                        const currentGlobalIdx = precedingSongsCount + songIdx;
                         const song = presetMap.get(songId);
-                        const isFirstSong = songIdx === 0;
-                        const isLastSong = songIdx === section.songIds.length - 1;
-
-                        if (!song) {
-                          return (
-                            <div
-                              key={`${songId}-${songIdx}`}
-                              className="p-2.5 rounded-xl border border-dashed border-red-500/30 flex items-center justify-between text-xs text-red-400"
-                            >
-                              <span>Deleted Song (ID: {songId})</span>
-                              <button
-                                type="button"
-                                onClick={() => removeSongFromSetlistSection(setlist.id, section.id, songIdx)}
-                                className="text-xs font-bold"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          );
-                        }
-
-                        const durStr = song.targetDurationSeconds && song.targetDurationSeconds > 0
-                          ? formatDurationMmSs(song.targetDurationSeconds)
-                          : undefined;
 
                         return (
-                          <div
-                            key={`${song.id}-${songIdx}`}
-                            className="flex items-center justify-between gap-2 p-2.5 rounded-2xl border transition-all hover:border-white/20 select-none group"
-                            style={{
-                              backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
-                              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.06))',
-                            }}
-                            data-testid={`setlist-song-${song.id}`}
-                          >
-                            {/* Left: Number / Cover Thumbnail + Song Info */}
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div
-                                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden relative"
-                                style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                                  borderColor: 'rgba(255, 255, 255, 0.12)',
-                                }}
-                              >
-                                {song.coverImage ? (
-                                  <img
-                                    src={song.coverImage}
-                                    alt={song.name}
-                                    className="w-full h-full object-cover rounded-xl"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <span
-                                    className="text-[10px] font-black"
-                                    style={{ color: 'var(--c-text-primary, #FFFFFF)' }}
-                                  >
-                                    {globalSongCounter}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div
-                                className="min-w-0 cursor-pointer"
-                                onClick={() => onOpenSongInEditor?.(song.id)}
-                                title="Open in song editor"
-                              >
-                                <h4 className="text-xs font-bold truncate leading-tight group-hover:text-blue-400 transition-colors">
-                                  {song.name}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 flex-wrap">
-                                  {song.artist && <span className="truncate max-w-[100px]">{song.artist}</span>}
-                                  {song.key && (
-                                    <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
-                                      #{song.key}
-                                    </span>
-                                  )}
-                                  <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
-                                    {song.bpm || song.speed || 120} BPM
-                                  </span>
-                                  {durStr && (
-                                    <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-blue-400">
-                                      {durStr}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Right Actions: Reorder, Move, Play, Remove */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              {/* Quick Play from this song */}
-                              <button
-                                type="button"
-                                onClick={() => onPlayLiveSetlist(setlist, currentGlobalIdx)}
-                                title={`Play live starting from "${song.name}"`}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/10 transition-colors"
-                              >
-                                <span className="material-symbols-rounded text-base">play_arrow</span>
-                              </button>
-
-                              {/* Song Up / Down */}
-                              <button
-                                type="button"
-                                disabled={isFirstSong}
-                                onClick={() => reorderSongsInSetlistSection(setlist.id, section.id, songIdx, songIdx - 1)}
-                                title="Move song up"
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-colors"
-                              >
-                                <span className="material-symbols-rounded text-sm">keyboard_arrow_up</span>
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isLastSong}
-                                onClick={() => reorderSongsInSetlistSection(setlist.id, section.id, songIdx, songIdx + 1)}
-                                title="Move song down"
-                                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-colors"
-                              >
-                                <span className="material-symbols-rounded text-sm">keyboard_arrow_down</span>
-                              </button>
-
-                              {/* Move to another section */}
-                              {setlist.sections.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setMovingSong({ sectionId: section.id, songIndex: songIdx, songName: song.name })}
-                                  title="Move to another section"
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                                >
-                                  <span className="material-symbols-rounded text-sm">drive_file_move</span>
-                                </button>
-                              )}
-
-                              {/* Remove from setlist */}
-                              <button
-                                type="button"
-                                onClick={() => removeSongFromSetlistSection(setlist.id, section.id, songIdx)}
-                                title="Remove song from setlist (keeps song in library)"
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                              >
-                                <span className="material-symbols-rounded text-sm">close</span>
-                              </button>
-                            </div>
-                          </div>
+                          <SetlistSongRow
+                            key={songId}
+                            songId={songId}
+                            songIdx={songIdx}
+                            song={song}
+                            globalSongCounter={globalSongNumber}
+                            totalSections={setlist.sections.length}
+                            onOpenSongInEditor={onOpenSongInEditor}
+                            onPlayLiveFromHere={() => onPlayLiveSetlist(setlist, currentGlobalIdx)}
+                            onMoveToSection={() =>
+                              setMovingSong({
+                                sectionId: section.id,
+                                songIndex: songIdx,
+                                songName: song?.name || 'Song',
+                              })
+                            }
+                            onRemove={() => removeSongFromSetlistSection(setlist.id, section.id, songIdx)}
+                          />
                         );
                       })}
-                    </div>
+                    </Reorder.Group>
                   )}
                 </div>
               );

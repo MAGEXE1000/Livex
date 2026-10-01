@@ -33,6 +33,11 @@ export interface SetlistSliceActions {
     fromIdx: number,
     toIdx: number
   ) => void;
+  updateSectionSongsOrder: (
+    setlistId: string,
+    sectionId: string,
+    newSongIds: string[]
+  ) => void;
   moveSongBetweenSetlistSections: (
     setlistId: string,
     fromSectionId: string,
@@ -257,6 +262,22 @@ export const createSetlistSlice: StateCreator<any, [], [], SetlistSlice> = (set,
             const [moved] = songIds.splice(fromIdx, 1);
             songIds.splice(toIdx, 0, moved);
             return { ...sec, songIds };
+          }),
+          updatedAt: Date.now(),
+        };
+      }),
+    }));
+  },
+
+  updateSectionSongsOrder: (setlistId, sectionId, newSongIds) => {
+    set((state: any) => ({
+      setlists: (state.setlists || []).map((s: Setlist) => {
+        if (s.id !== setlistId) return s;
+        return {
+          ...s,
+          sections: (s.sections || []).map((sec: SetlistSection) => {
+            if (sec.id !== sectionId) return sec;
+            return { ...sec, songIds: newSongIds };
           }),
           updatedAt: Date.now(),
         };

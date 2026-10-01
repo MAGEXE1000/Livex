@@ -189,6 +189,7 @@ export interface SharedFloatingHeaderProps {
   morphDistance?: number;
   startOffset?: number;
   alwaysShowGlass?: boolean;
+  sideClearance?: number;
 }
 
 // ── Livex Liquid Glass SVG Filter (Displacement mapping via feTurbulence & feDisplacementMap) ──
@@ -214,6 +215,7 @@ export function SharedFloatingHeader({
   morphDistance = 86,
   startOffset = 14,
   alwaysShowGlass = false,
+  sideClearance: sideClearanceProp,
 }: SharedFloatingHeaderProps) {
   const canHover = useHoverCapable();
   const prefersReduced = useAppReducedMotion();
@@ -400,10 +402,13 @@ export function SharedFloatingHeader({
 
         {/* Mathematically Centered Section Title across complete top bar */}
         {(() => {
-          const sideClearance = Math.max(
-            onBack && !hideBack ? 52 : 20,
-            toolbarActions ? 116 : 20
-          );
+          const calculatedClearance =
+            sideClearanceProp !== undefined
+              ? sideClearanceProp
+              : Math.max(
+                  onBack && !hideBack ? 52 : 20,
+                  toolbarActions ? 86 : 20
+                );
           return (
             <div
               ref={actualTitleRef}
@@ -418,8 +423,8 @@ export function SharedFloatingHeader({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingLeft: `${sideClearance}px`,
-                paddingRight: `${sideClearance}px`,
+                paddingLeft: `${calculatedClearance}px`,
+                paddingRight: `${calculatedClearance}px`,
                 pointerEvents: 'none',
                 zIndex: 1,
                 willChange: 'transform',
