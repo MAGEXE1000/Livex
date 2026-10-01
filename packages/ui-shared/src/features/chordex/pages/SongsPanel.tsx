@@ -4993,32 +4993,6 @@ export default function SongsPanel() {
               scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
               toolbarActions={
                 <div className="flex items-center gap-1.5">
-                  {currentBand && hasLiveContent && (
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      aria-label="Call Band for Rehearsal"
-                      data-testid="song-call-band-btn"
-                      onClick={() => {
-                        callBand(activePreset, currentUserId, currentUserName);
-                        setShowLive(true);
-                      }}
-                      className="h-9 px-3 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                      style={{
-                        background: `linear-gradient(135deg, ${accent.from}2c, ${accent.to}18)`,
-                        backdropFilter: 'blur(8px)',
-                        border: `1px solid ${accent.from}66`,
-                        color: 'var(--c-text-primary, #FFFFFF)',
-                      }}
-                      type="button"
-                      title="Call Band for Live Rehearsal"
-                    >
-                      <span className="material-symbols-rounded text-[18px]" style={{ color: accent.from }}>
-                        cell_tower
-                      </span>
-                      <span className="text-[11px] font-bold tracking-tight">Call Band</span>
-                    </motion.button>
-                  )}
-
                   <motion.button
                     whileTap={{ scale: 0.92 }}
                     aria-label="Edit song details"
@@ -5150,26 +5124,7 @@ export default function SongsPanel() {
 
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {currentBand && (
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            callBand(activePreset, currentUserId, currentUserName);
-                            setShowLive(true);
-                          }}
-                          data-testid="song-call-band-desktop-btn"
-                          style={{
-                            height: '34px',
-                            padding: '0 11px 0 9px',
-                            background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
-                            border: `1px solid ${accent.from}66`,
-                            color: 'var(--c-text-primary, #FFFFFF)',
-                          }}
-                          icon="cell_tower"
-                        >
-                          Call Band
-                        </Button>
-                      )}
+
                       <Button
                         variant="primary"
                         onClick={() => setShowLive(true)}
@@ -6466,8 +6421,13 @@ export default function SongsPanel() {
                 <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
                 <Button
                   onClick={() => {
-                    deletePreset(showDeleteId);
+                    const targetId = showDeleteId;
+                    deletePreset(targetId);
+                    if (activePreset?.id === targetId) {
+                      setActivePreset(null);
+                    }
                     setShowDeleteId(null);
+                    toast.success('Song deleted');
                   }}
                   style={{
                     backgroundColor: 'rgba(238,125,119,0.12)',
@@ -6827,8 +6787,13 @@ export default function SongsPanel() {
                         <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
                         <Button
                           onClick={() => {
-                            deletePreset(showDeleteId);
+                            const targetId = showDeleteId;
+                            deletePreset(targetId);
+                            if (activePreset?.id === targetId) {
+                              setActivePreset(null);
+                            }
                             setShowDeleteId(null);
+                            toast.success('Song deleted');
                           }}
                           style={{
                             backgroundColor: 'rgba(238,125,119,0.12)',

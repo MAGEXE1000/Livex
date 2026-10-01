@@ -134,8 +134,15 @@ export const createSongSlice: StateCreator<
 
   deletePreset: (id) => {
     set((state: any) => ({
-      presets: state.presets.filter((p: SongPreset) => p.id !== id),
+      presets: (state.presets || []).filter((p: SongPreset) => p.id !== id),
       activePresetId: state.activePresetId === id ? null : state.activePresetId,
+      setlists: (state.setlists || []).map((s: any) => ({
+        ...s,
+        sections: (s.sections || []).map((sec: any) => ({
+          ...sec,
+          songIds: (sec.songIds || []).filter((sId: string) => sId !== id),
+        })),
+      })),
     }));
   },
 

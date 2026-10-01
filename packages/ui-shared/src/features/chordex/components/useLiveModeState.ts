@@ -476,6 +476,24 @@ export function useLiveModeState(
   const [currentBar, setCurrentBar] = useState(1);
   const [elapsedMs, setElapsedMs] = useState(0);
 
+  const currentBeatRef = useRef(currentBeat);
+  currentBeatRef.current = currentBeat;
+
+  const currentBarRef = useRef(currentBar);
+  currentBarRef.current = currentBar;
+
+  const elapsedMsRef = useRef(elapsedMs);
+  elapsedMsRef.current = elapsedMs;
+
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
+
+  const barsPerLineRef = useRef(barsPerLine);
+  barsPerLineRef.current = barsPerLine;
+
+  const autoPlayRef = useRef(autoPlay);
+  autoPlayRef.current = autoPlay;
+
   const emitLiveSync = useCallback(
     (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
       if (!currentBand) return;
@@ -490,12 +508,12 @@ export function useLiveModeState(
         timestamp: Date.now(),
         currentLineIdx: overrides?.currentLineIdx ?? currentLineIdxRef.current,
         currentWordIdx: overrides?.currentWordIdx ?? currentWordIdxRef.current,
-        currentBeat: overrides?.currentBeat ?? currentBeat,
-        currentBar: overrides?.currentBar ?? currentBar,
-        bpm: overrides?.bpm ?? speed,
-        barsPerLine: overrides?.barsPerLine ?? barsPerLine,
-        elapsedMs: overrides?.elapsedMs ?? elapsedMs,
-        autoPlay: overrides?.autoPlay ?? autoPlay,
+        currentBeat: overrides?.currentBeat ?? currentBeatRef.current,
+        currentBar: overrides?.currentBar ?? currentBarRef.current,
+        bpm: overrides?.bpm ?? speedRef.current,
+        barsPerLine: overrides?.barsPerLine ?? barsPerLineRef.current,
+        elapsedMs: overrides?.elapsedMs ?? elapsedMsRef.current,
+        autoPlay: overrides?.autoPlay ?? autoPlayRef.current,
         version: nextVersion,
         songPayload: {
           title: preset.name,
@@ -512,7 +530,7 @@ export function useLiveModeState(
       };
       broadcastBandLivePacket(packet);
     },
-    [currentBand, preset, currentBeat, currentBar, speed, barsPerLine, elapsedMs, autoPlay]
+    [currentBand, preset]
   );
 
   const setAutoPlay = useCallback(
@@ -533,7 +551,7 @@ export function useLiveModeState(
   const setLobbyAttendees = useBandStore((s) => s.setLobbyAttendees);
 
   const [isInLobby, setIsInLobby] = useState<boolean>(() => {
-    return Boolean(isLockedToLeader && (activeLiveSession?.action === 'CALL_BAND' || !activeLiveSession?.autoPlay));
+    return Boolean(isLockedToLeader && activeLiveSession?.action === 'CALL_BAND');
   });
 
   const startSongFromLobby = useCallback(() => {
@@ -1125,18 +1143,18 @@ export function useLiveModeState(
     [shownChord]
   );
 
-  const findChordIdx = useCallback(
-    (chordSymOrId: string | undefined) => {
-      if (!chordSymOrId) return -1;
-      const lower = chordSymOrId.toLowerCase();
-      return chords.findIndex((cId) => {
-        if (cId.toLowerCase() === lower) return true;
-        const def = getChordById(cId) || getChordByName(cId);
-        return Boolean(def && def.name.toLowerCase() === lower);
-      });
-    },
-    [chords]
-  );
+  const chordsRef = useRef(chords);
+  chordsRef.current = chords;
+
+  const findChordIdx = useCallback((chordSymOrId: string | undefined) => {
+    if (!chordSymOrId) return -1;
+    const lower = chordSymOrId.toLowerCase();
+    return chordsRef.current.findIndex((cId) => {
+      if (cId.toLowerCase() === lower) return true;
+      const def = getChordById(cId) || getChordByName(cId);
+      return Boolean(def && def.name.toLowerCase() === lower);
+    });
+  }, []);
 
   const setCurrentWordIdx = useCallback(
     (targetIdx: number) => {

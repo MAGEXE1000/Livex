@@ -317,6 +317,38 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             marginRight: '2px',
           }}
         >
+          {state.hasActiveBand && !state.isLockedToLeader && (
+            <button
+              type="button"
+              data-testid="live-call-band-btn"
+              onClick={state.callBandSession}
+              style={{
+                height: '30px',
+                padding: '0 10px',
+                borderRadius: '9999px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+                border: `1px solid ${accent.from}66`,
+                color: 'var(--c-text-primary, #ffffff)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                boxShadow: `0 2px 8px ${accent.from}22`,
+                transition: 'all 0.15s ease',
+              }}
+              title="Call Band for Live Rehearsal"
+              aria-label="Call Band for Live Rehearsal"
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: '15px', color: accent.from }}>
+                cell_tower
+              </span>
+              <span className="hidden sm:inline">Call Band</span>
+            </button>
+          )}
+
           {state.hasActiveBand && state.isLockedToLeader && (
             <button
               type="button"
