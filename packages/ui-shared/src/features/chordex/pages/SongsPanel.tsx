@@ -3706,6 +3706,12 @@ const PresetCard = React.memo(
       [currentBand, preset, shareSongFromPreset]
     );
 
+    const [coverError, setCoverError] = useState(false);
+    useEffect(() => {
+      setCoverError(false);
+    }, [preset.coverImage]);
+    const hasValidCover = Boolean(preset.coverImage && !coverError);
+
     return (
       <article
         className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row"
@@ -3730,12 +3736,14 @@ const PresetCard = React.memo(
               color: 'var(--c-accent-from, #2563EB)',
             }}
           >
-            {preset.coverImage ? (
+            {hasValidCover ? (
               <img
                 src={preset.coverImage}
                 alt={preset.name}
                 data-testid={`preset-cover-${preset.id}`}
+                onError={() => setCoverError(true)}
                 className="w-full h-full object-cover rounded-2xl"
+                loading="lazy"
               />
             ) : (
               <span
@@ -4527,9 +4535,13 @@ export default function SongsPanel() {
   );
 
 
-  const editingPreset = editingId ? presets.find((p) => p.id === editingId) : null;
-  const editingFormData: FormData | undefined = editingPreset
-    ? {
+  const editingPreset = useMemo(
+    () => (editingId ? presets.find((p) => p.id === editingId) : null),
+    [editingId, presets]
+  );
+  const editingFormData: FormData | undefined = useMemo(() => {
+    if (editingPreset) {
+      return {
         name: editingPreset.name,
         artist: editingPreset.artist,
         speed: String(editingPreset.speed || editingPreset.bpm || 120),
@@ -4545,26 +4557,29 @@ export default function SongsPanel() {
             ? String(editingPreset.targetDurationSeconds % 60)
             : '',
         coverImage: editingPreset.coverImage,
-      }
-    : pendingImport
-      ? {
-          name: pendingImport.title,
-          artist: pendingImport.artist || '',
-          speed: String(pendingImport.speed || pendingImport.bpm || 120),
-          bpm: String(pendingImport.speed || pendingImport.bpm || 120),
-          key: pendingImport.key || 'C',
-          notes: pendingImport.notes || '',
-          durationMinutes:
-            pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
-              ? String(Math.floor(pendingImport.targetDurationSeconds / 60))
-              : '',
-          durationSeconds:
-            pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
-              ? String(pendingImport.targetDurationSeconds % 60)
-              : '',
-          coverImage: pendingImport.coverImage,
-        }
-      : undefined;
+      };
+    }
+    if (pendingImport) {
+      return {
+        name: pendingImport.title,
+        artist: pendingImport.artist || '',
+        speed: String(pendingImport.speed || pendingImport.bpm || 120),
+        bpm: String(pendingImport.speed || pendingImport.bpm || 120),
+        key: pendingImport.key || 'C',
+        notes: pendingImport.notes || '',
+        durationMinutes:
+          pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
+            ? String(Math.floor(pendingImport.targetDurationSeconds / 60))
+            : '',
+        durationSeconds:
+          pendingImport.targetDurationSeconds && pendingImport.targetDurationSeconds > 0
+            ? String(pendingImport.targetDurationSeconds % 60)
+            : '',
+        coverImage: pendingImport.coverImage,
+      };
+    }
+    return undefined;
+  }, [editingPreset, pendingImport]);
 
   const handleFormSave = (data: FormData) => {
     const speed = parseInt(data.speed || data.bpm) || 120;
@@ -6325,6 +6340,7 @@ export default function SongsPanel() {
 
         {showForm && (
           <SongEditorForm
+            key={editingId ? `edit-${editingId}` : 'new-song'}
             accent={accent}
             initial={editingFormData}
             isEditing={Boolean(editingId)}
@@ -6427,6 +6443,7 @@ export default function SongsPanel() {
         {/* Form and Modals */}
         {showForm && (
           <SongEditorForm
+            key={editingId ? `edit-${editingId}` : 'new-song'}
             accent={accent}
             initial={editingFormData}
             isEditing={Boolean(editingId)}
@@ -6495,6 +6512,7 @@ export default function SongsPanel() {
     <div className="flex flex-col h-full overflow-hidden app-bg" style={{ position: 'relative' }}>
       {showForm && (
         <SongEditorForm
+          key={editingId ? `edit-${editingId}` : 'new-song'}
           accent={accent}
           initial={editingFormData}
           isEditing={Boolean(editingId)}

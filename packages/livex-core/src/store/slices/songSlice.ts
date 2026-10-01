@@ -21,6 +21,7 @@ export interface SongPreset {
   lyrics?: SongLyricsDocument;
   targetDurationSeconds?: number;
   coverImage?: string;
+  coverUri?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -37,6 +38,7 @@ export interface PendingSongImport {
   chordNames: string[];
   targetDurationSeconds?: number;
   coverImage?: string;
+  coverUri?: string;
   recommendation?: any;
 }
 

@@ -405,17 +405,31 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                             }}
                             data-testid={`setlist-song-${song.id}`}
                           >
-                            {/* Left: Number + Song Info */}
+                            {/* Left: Number / Cover Thumbnail + Song Info */}
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <span
-                                className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0"
+                              <div
+                                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden relative"
                                 style={{
                                   backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                                  color: 'var(--c-text-primary, #FFFFFF)',
+                                  borderColor: 'rgba(255, 255, 255, 0.12)',
                                 }}
                               >
-                                {globalSongCounter}
-                              </span>
+                                {song.coverImage ? (
+                                  <img
+                                    src={song.coverImage}
+                                    alt={song.name}
+                                    className="w-full h-full object-cover rounded-xl"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <span
+                                    className="text-[10px] font-black"
+                                    style={{ color: 'var(--c-text-primary, #FFFFFF)' }}
+                                  >
+                                    {globalSongCounter}
+                                  </span>
+                                )}
+                              </div>
 
                               <div
                                 className="min-w-0 cursor-pointer"

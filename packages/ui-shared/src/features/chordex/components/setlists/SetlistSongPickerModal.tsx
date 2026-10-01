@@ -229,6 +229,27 @@ export const SetlistSongPickerModal: React.FC<SetlistSongPickerModalProps> = ({
                         )}
                       </div>
 
+                      <div
+                        className="w-7 h-7 rounded-lg border overflow-hidden flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+                        }}
+                      >
+                        {song.coverImage ? (
+                          <img
+                            src={song.coverImage}
+                            alt={song.name}
+                            className="w-full h-full object-cover rounded-lg"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="material-symbols-rounded text-sm opacity-40">
+                            music_note
+                          </span>
+                        )}
+                      </div>
+
                       <div className="min-w-0">
                         <h4 className="text-xs font-bold truncate leading-tight">{song.name}</h4>
                         <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">

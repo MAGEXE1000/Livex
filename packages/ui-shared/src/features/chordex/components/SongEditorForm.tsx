@@ -59,42 +59,84 @@ export function PresetFormContent({
   showFooterButtons = true,
 }: PresetFormContentProps) {
   const t = useT();
-  const [form, setForm] = useState<FormData>(
-    initial || { name: '', artist: '', bpm: '120', key: 'C', notes: '', durationMinutes: '', durationSeconds: '', coverImage: undefined }
+  const [form, setForm] = useState<FormData>(() =>
+    initial || {
+      name: '',
+      artist: '',
+      bpm: '120',
+      key: 'C',
+      notes: '',
+      durationMinutes: '',
+      durationSeconds: '',
+      coverImage: undefined,
+    }
   );
+  const [isProcessingCover, setIsProcessingCover] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+      setCoverError('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    setCoverError(null);
+    setIsProcessingCover(true);
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      setIsProcessingCover(false);
+      setCoverError('Failed to read image file.');
+    };
     reader.onload = (event) => {
+      const src = event.target?.result as string;
+      if (!src) {
+        setIsProcessingCover(false);
+        setCoverError('Failed to load image.');
+        return;
+      }
       const img = new Image();
+      img.onerror = () => {
+        setIsProcessingCover(false);
+        setCoverError('Unsupported or corrupted image file.');
+      };
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxDim = 512;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
+        try {
+          const canvas = document.createElement('canvas');
+          const maxDim = 512;
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
           }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          setForm((f) => ({ ...f, coverImage: dataUrl }));
+          canvas.width = Math.max(1, w);
+          canvas.height = Math.max(1, h);
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setForm((f) => ({ ...f, coverImage: dataUrl }));
+          } else {
+            setForm((f) => ({ ...f, coverImage: src }));
+          }
+        } catch (err) {
+          // Fallback to raw dataUrl if canvas operations fail
+          setForm((f) => ({ ...f, coverImage: src }));
+        } finally {
+          setIsProcessingCover(false);
         }
       };
-      img.src = event.target?.result as string;
+      img.src = src;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -110,13 +152,6 @@ export function PresetFormContent({
   const [durationStr, setDurationStr] = useState<string>(() =>
     getFormattedDuration(initial?.durationMinutes, initial?.durationSeconds)
   );
-
-  useEffect(() => {
-    if (initial) {
-      setForm(initial);
-      setDurationStr(getFormattedDuration(initial.durationMinutes, initial.durationSeconds));
-    }
-  }, [initial]);
 
   const selectStyle: React.CSSProperties = {
     width: '100%',
@@ -161,7 +196,17 @@ export function PresetFormContent({
               position: 'relative',
             }}
           >
-            {form.coverImage ? (
+            {isProcessingCover ? (
+              <span
+                className="material-symbols-rounded animate-spin"
+                style={{
+                  fontSize: '24px',
+                  color: accent.from,
+                }}
+              >
+                progress_activity
+              </span>
+            ) : form.coverImage ? (
               <img
                 src={form.coverImage}
                 alt="Song cover"
@@ -190,10 +235,11 @@ export function PresetFormContent({
               onChange={handleCoverSelect}
               data-testid="song-cover-file-input"
             />
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 data-testid="upload-song-cover-btn"
+                disabled={isProcessingCover}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   padding: '6px 12px',
@@ -204,18 +250,27 @@ export function PresetFormContent({
                   fontFamily: 'var(--font-headline)',
                   fontSize: '11px',
                   fontWeight: 700,
-                  cursor: 'pointer',
+                  cursor: isProcessingCover ? 'wait' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
+                  opacity: isProcessingCover ? 0.7 : 1,
                 }}
               >
                 <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                  {form.coverImage ? 'edit' : 'add_photo_alternate'}
+                  {isProcessingCover
+                    ? 'hourglass_top'
+                    : form.coverImage
+                    ? 'edit'
+                    : 'add_photo_alternate'}
                 </span>
-                {form.coverImage ? 'Change Cover' : 'Add Cover Image'}
+                {isProcessingCover
+                  ? 'Optimizing...'
+                  : form.coverImage
+                  ? 'Change Cover'
+                  : 'Add Cover Image'}
               </button>
-              {form.coverImage && (
+              {form.coverImage && !isProcessingCover && (
                 <button
                   type="button"
                   data-testid="remove-song-cover-btn"
@@ -243,15 +298,28 @@ export function PresetFormContent({
                 </button>
               )}
             </div>
-            <span
-              style={{
-                fontSize: '10px',
-                color: 'var(--c-text-secondary)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              JPG or PNG (auto-optimized max 512×512)
-            </span>
+            {coverError ? (
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#EF4444',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                }}
+              >
+                {coverError}
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--c-text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                JPG or PNG (auto-optimized max 512×512)
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -386,13 +454,13 @@ export function PresetFormContent({
           </Button>
           <Button
             variant="primary"
-            disabled={!form.name.trim()}
+            disabled={!form.name.trim() || isProcessingCover}
             onClick={() => {
-              if (form.name.trim()) onSave(form);
+              if (form.name.trim() && !isProcessingCover) onSave(form);
             }}
             style={{ flex: 1 }}
           >
-            {isEditing ? t.songs.save : t.songs.newSong}
+            {isProcessingCover ? 'Optimizing...' : isEditing ? t.songs.save : t.songs.newSong}
           </Button>
         </div>
       )}
@@ -414,6 +482,12 @@ export function SongEditorForm({
   accent: { from: string; to: string; mid: string };
 }) {
   const t = useT();
+  const formKey = isEditing
+    ? `edit-${initial?.name || 'edit'}`
+    : initial?.name
+    ? `import-${initial.name}`
+    : 'new-song';
+
   return (
     <Dialog
       open={true}
@@ -421,7 +495,7 @@ export function SongEditorForm({
       title={isEditing ? t.songs.editSong : t.songs.newSong}
     >
       <PresetFormContent
-        key={isEditing ? 'edit' : initial?.name ? `import-${initial.name}` : 'new'}
+        key={formKey}
         initial={initial}
         isEditing={isEditing}
         onSave={onSave}
