@@ -1,13 +1,12 @@
-# Version 4.6.69
+# Version 4.6.70
 
 Release Date: 2026-09-30
 
 ### Added
-- Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.
-- Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.
-- Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.
+- Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.
+- Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.
+- Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.
 
 ### Fixed
-- Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.
-- Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.
-- Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.
+- StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.
+- Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.

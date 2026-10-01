@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.69';
-export const NATIVE_VERSION_CODE = 40669;
-export const WEB_VERSION = '4.6.69';
+export const NATIVE_VERSION = '4.6.70';
+export const NATIVE_VERSION_CODE = 40670;
+export const WEB_VERSION = '4.6.70';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,7 +70,7 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '9/28/2026';
+export const APP_VERSION_DATE = '9/30/2026';
 
 /**
  * Git commit hash this build was generated from.
@@ -101,17 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.',
-      'Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.',
-      'Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.',
+      "Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.",
+      'Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.',
+      'Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.',
-      'Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.',
-      'Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.',
+      'StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.',
+      'Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.',
     ],
   },
 ];
@@ -123,6 +122,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.70',
+    date: '2026-09-30',
+    highlights: [
+      "Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.",
+      'Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.',
+      'Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.',
+      'StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.',
+      'Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.',
+    ],
+  },
   {
     version: '4.6.69',
     date: '2026-09-30',
@@ -217,15 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Drift-Compensated Auto-Play Scheduling: Implemented three dedicated drift-compensated clocks (musical beat clock, chords auto-play clock, and teleprompter lyrics clock) to eliminate cumulative JavaScript event-loop timer drift.',
       'Fine-Grained 1-BPM Increment Controls: Converted all BPM controls across Live Mode HUD, Live Settings modal, and elastic sliders from coarse 5-step increments to fine-grained 1-BPM increments (+1/-1), with reactive persistence back to the song preset.',
       'Immediate Seek Recalibration: Added reactive seek tokens so tapping any word or line resets the auto-play timer immediately with zero latency.',
-    ],
-  },
-  {
-    version: '4.6.60',
-    date: '2026-09-27',
-    highlights: [
-      'Hub Profile Back-Navigation Canonical Restoration: Resolved the navigation regression where entering Profile from the Hub broke Android hardware back and predictive swipe-back gesture unwinding.',
-      'De-coupled Sheet and Domain Priority: Removed artificial root-level back interception in AccountCard, ensuring active sheets (Avatar Picker, Account Details, Danger Zone) cleanly close without altering route history, while Profile root delegates to canonical BackDispatcher pop.',
-      'Elimination of Forward Push on Back: Corrected goBack in HubSettings and pageProps to cleanly pop the navigation history stack rather than pushing duplicate Home routes, eliminating navigation ping-pong loops and preserving cross-app domain containment.',
     ],
   },
 ];
