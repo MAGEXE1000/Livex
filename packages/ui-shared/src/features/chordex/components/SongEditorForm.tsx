@@ -13,6 +13,7 @@ export interface FormData {
   durationMinutes?: string;
   durationSeconds?: string;
   coverImage?: string;
+  coverUri?: string;
 }
 const KEYS = [
   'C',
@@ -60,16 +61,23 @@ export function PresetFormContent({
 }: PresetFormContentProps) {
   const t = useT();
   const [form, setForm] = useState<FormData>(() =>
-    initial || {
-      name: '',
-      artist: '',
-      bpm: '120',
-      key: 'C',
-      notes: '',
-      durationMinutes: '',
-      durationSeconds: '',
-      coverImage: undefined,
-    }
+    initial
+      ? {
+          ...initial,
+          coverImage: initial.coverImage || initial.coverUri,
+          coverUri: initial.coverUri || initial.coverImage,
+        }
+      : {
+          name: '',
+          artist: '',
+          bpm: '120',
+          key: 'C',
+          notes: '',
+          durationMinutes: '',
+          durationSeconds: '',
+          coverImage: undefined,
+          coverUri: undefined,
+        }
   );
   const [isProcessingCover, setIsProcessingCover] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
@@ -125,13 +133,13 @@ export function PresetFormContent({
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            setForm((f) => ({ ...f, coverImage: dataUrl }));
+            setForm((f) => ({ ...f, coverImage: dataUrl, coverUri: dataUrl }));
           } else {
-            setForm((f) => ({ ...f, coverImage: src }));
+            setForm((f) => ({ ...f, coverImage: src, coverUri: src }));
           }
         } catch (err) {
           // Fallback to raw dataUrl if canvas operations fail
-          setForm((f) => ({ ...f, coverImage: src }));
+          setForm((f) => ({ ...f, coverImage: src, coverUri: src }));
         } finally {
           setIsProcessingCover(false);
         }
@@ -206,9 +214,9 @@ export function PresetFormContent({
               >
                 progress_activity
               </span>
-            ) : form.coverImage ? (
+            ) : (form.coverUri || form.coverImage) ? (
               <img
-                src={form.coverImage}
+                src={form.coverUri || form.coverImage}
                 alt="Song cover"
                 data-testid="song-cover-preview"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -260,21 +268,21 @@ export function PresetFormContent({
                 <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                   {isProcessingCover
                     ? 'hourglass_top'
-                    : form.coverImage
+                    : (form.coverUri || form.coverImage)
                     ? 'edit'
                     : 'add_photo_alternate'}
                 </span>
                 {isProcessingCover
                   ? 'Optimizing...'
-                  : form.coverImage
+                  : (form.coverUri || form.coverImage)
                   ? 'Change Cover'
                   : 'Add Cover Image'}
               </button>
-              {form.coverImage && !isProcessingCover && (
+              {(form.coverUri || form.coverImage) && !isProcessingCover && (
                 <button
                   type="button"
                   data-testid="remove-song-cover-btn"
-                  onClick={() => setForm((f) => ({ ...f, coverImage: undefined }))}
+                  onClick={() => setForm((f) => ({ ...f, coverImage: undefined, coverUri: undefined }))}
                   style={{
                     padding: '6px 10px',
                     borderRadius: 'var(--radius-md, 8px)',

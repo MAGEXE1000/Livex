@@ -102,6 +102,24 @@ export function Dialog({
     return undefined;
   }, [open, onClose]);
 
+  // Safety guard: ensure document body and root clean up pointer-events and aria-hidden locks
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        setTimeout(() => {
+          if (activeOverlaysRegistry.modals.size === 0 && activeOverlaysRegistry.sheets.size === 0) {
+            document.body.style.removeProperty('pointer-events');
+            document.body.style.removeProperty('overflow');
+            const root = document.getElementById('root');
+            if (root && root.getAttribute('aria-hidden') === 'true') {
+              root.removeAttribute('aria-hidden');
+            }
+          }
+        }, 30);
+      }
+    };
+  }, []);
+
   // Determine semantic status: if explicit status is passed, use it. Otherwise infer from isDestructive or title keywords.
   const isDestructiveInferred =
     isDestructive ||

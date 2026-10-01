@@ -3642,6 +3642,7 @@ const PresetCard = React.memo(
     t,
     setActivePreset,
     setShowLive,
+    setShareModalPreset,
     setExportModal,
     setEditingId,
     setShowForm,
@@ -3651,8 +3652,9 @@ const PresetCard = React.memo(
     accent: { from: string; to: string; mid: string };
     t: any;
     setActivePreset: (id: string) => void;
-    setShowLive: (v: boolean) => void;
-    setExportModal: (p: SongPreset) => void;
+    setShowLive?: (v: boolean) => void;
+    setShareModalPreset?: (p: SongPreset) => void;
+    setExportModal?: (p: SongPreset) => void;
     setEditingId: (id: string) => void;
     setShowForm: (v: boolean) => void;
     setShowDeleteId: (id: string) => void;
@@ -3661,56 +3663,42 @@ const PresetCard = React.memo(
       () => setActivePreset(preset.id),
       [setActivePreset, preset.id]
     );
-    const [isExporting, setIsExporting] = useState(false);
-    const handleExportClick = useCallback(async () => {
-      setIsExporting(true);
-      try {
-        await exportPresetToJSON(preset, 'share');
-        toast.success(`Exported ${preset.name}`);
-      } catch (err) {
-        toast.error('Failed to export song package');
-      } finally {
-        setIsExporting(false);
-      }
-    }, [preset]);
-    const handlePdfClick = useCallback(() => setExportModal(preset), [setExportModal, preset]);
-    const handleEditClick = useCallback(() => {
-      setEditingId(preset.id);
-      setShowForm(true);
-    }, [setEditingId, preset.id, setShowForm]);
+
+    const handleShareClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (setShareModalPreset) {
+          setShareModalPreset(preset);
+        } else if (setExportModal) {
+          setExportModal(preset);
+        }
+      },
+      [setShareModalPreset, setExportModal, preset]
+    );
+
+    const handleEditClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingId(preset.id);
+        setShowForm(true);
+      },
+      [setEditingId, preset.id, setShowForm]
+    );
+
     const handleDeleteClick = useCallback(
-      () => setShowDeleteId(preset.id),
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setShowDeleteId(preset.id);
+      },
       [setShowDeleteId, preset.id]
     );
 
-    const currentBand = useBandStore((s) => s.currentBand);
-    const sharedSongs = useBandStore((s) => s.sharedSongs);
-    const shareSongFromPreset = useBandStore((s) => s.shareSongFromPreset);
-
-    const isSharedWithBand = useMemo(
-      () =>
-        currentBand &&
-        sharedSongs.some(
-          (s) => s.songId === preset.id || s.title.toLowerCase() === preset.name.toLowerCase()
-        ),
-      [currentBand, sharedSongs, preset.id, preset.name]
-    );
-
-    const handleShareToBandClick = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!currentBand) return;
-        shareSongFromPreset(preset, currentBand.id, 'local-user', 'Band Leader');
-        toast.success(`Song "${preset.name}" shared to ${currentBand.name}!`);
-      },
-      [currentBand, preset, shareSongFromPreset]
-    );
-
+    const coverSrc = preset.coverUri || preset.coverImage;
     const [coverError, setCoverError] = useState(false);
     useEffect(() => {
       setCoverError(false);
-    }, [preset.coverImage]);
-    const hasValidCover = Boolean(preset.coverImage && !coverError);
+    }, [coverSrc]);
+    const hasValidCover = Boolean(coverSrc && !coverError);
 
     return (
       <article
@@ -3738,7 +3726,7 @@ const PresetCard = React.memo(
           >
             {hasValidCover ? (
               <img
-                src={preset.coverImage}
+                src={coverSrc}
                 alt={preset.name}
                 data-testid={`preset-cover-${preset.id}`}
                 onError={() => setCoverError(true)}
@@ -3772,86 +3760,6 @@ const PresetCard = React.memo(
                 {preset.artist}
               </p>
             )}
-            {/* Single uniform horizontal metadata row */}
-            <div
-              className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap"
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
-              }}
-            >
-              {currentBand && isSharedWithBand && (
-                <span
-                  data-testid={`preset-band-badge-${preset.id}`}
-                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
-                  style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                    borderColor: 'rgba(59, 130, 246, 0.3)',
-                    color: 'var(--c-accent-from, #2563eb)',
-                  }}
-                >
-                  <span className="material-symbols-rounded text-[11px]">groups</span>
-                  <span>{currentBand.name}</span>
-                </span>
-              )}
-              {preset.key && (
-                <span
-                  data-testid={`preset-key-${preset.id}`}
-                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
-                  style={{
-                    backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  <span style={{ color: 'var(--c-text-secondary, #6B7280)' }}>#</span>
-                  <span>{preset.key}</span>
-                </span>
-              )}
-              {(preset.speed || preset.bpm) && (preset.speed || preset.bpm) > 0 && (
-                <span
-                  data-testid={`preset-bpm-${preset.id}`}
-                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
-                  style={{
-                    backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
-                    borderColor: 'var(--c-border, #E3E6EB)',
-                    color: 'var(--c-text-secondary, #6B7280)',
-                  }}
-                >
-                  <span className="material-symbols-rounded text-[11px]">speed</span>
-                  <span>{preset.speed || preset.bpm} BPM</span>
-                </span>
-              )}
-              {preset.targetDurationSeconds && preset.targetDurationSeconds > 0 ? (
-                <span
-                  data-testid={`preset-duration-${preset.id}`}
-                  className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
-                  style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                    borderColor: 'rgba(59, 130, 246, 0.25)',
-                    color: 'var(--c-accent-from, #2563eb)',
-                  }}
-                >
-                  <span className="material-symbols-outlined text-[11px]">timer</span>
-                  <span>{formatDurationMmSs(preset.targetDurationSeconds)}</span>
-                </span>
-              ) : null}
-              <span
-                data-testid={`preset-chords-${preset.id}`}
-                className="h-5 px-2 rounded-full text-[10px] font-bold border inline-flex items-center justify-center gap-1 shrink-0"
-                style={{
-                  backgroundColor: 'var(--c-surface-lowest, #ECEEF2)',
-                  borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-text-secondary, #6B7280)',
-                }}
-              >
-                <span>
-                  {preset.sections && preset.sections.length > 0
-                    ? `${preset.sections.length} ${preset.sections.length === 1 ? 'Section' : 'Sections'}`
-                    : t.songs.chordsLabel(preset.chords.length)}
-                </span>
-              </span>
-            </div>
           </div>
           <span
             className="material-symbols-rounded text-xl shrink-0 group-hover:translate-x-0.5 transition-transform"
@@ -3861,65 +3769,37 @@ const PresetCard = React.memo(
           </span>
         </button>
 
-        {/* Quick action row: Share to Band (if active) | Export | PDF | Edit | Delete */}
+        {/* Canonical action row: Share | Edit | Delete */}
         <div
           className="flex items-center border-t text-xs font-semibold"
           style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
         >
-          {currentBand && (
-            <button
-              type="button"
-              onClick={handleShareToBandClick}
-              data-testid={`share-band-${preset.id}`}
-              className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
-              style={{
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-accent-from, #2563EB)',
-              }}
-              title={`Share to ${currentBand.name}`}
-              aria-label={`Share ${preset.name} to ${currentBand.name}`}
-            >
-              <span className="material-symbols-rounded text-base">groups</span>
-              <span>Band</span>
-            </button>
-          )}
           <button
             type="button"
-            onClick={handleExportClick}
-            disabled={isExporting}
-            data-testid={`export-${preset.id}`}
-            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75 disabled:opacity-50"
+            onClick={handleShareClick}
+            data-testid={`share-${preset.id}`}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
             style={{
               borderColor: 'var(--c-border, #E3E6EB)',
               color: 'var(--c-accent-from, #2563EB)',
             }}
-            title="Export full song package (.livex)"
-            aria-label={`Export ${preset.name}`}
+            title="Share song"
+            aria-label={`Share ${preset.name}`}
           >
-            <span className="material-symbols-rounded text-base">ios_share</span>
-            <span>Export</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePdfClick}
-            data-testid={`pdf-${preset.id}`}
-            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
-            style={{
-              borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-text-secondary, #6B7280)',
-            }}
-          >
-            <span className="material-symbols-rounded text-base">picture_as_pdf</span>
-            <span>PDF</span>
+            <span className="material-symbols-rounded text-base">share</span>
+            <span>Share</span>
           </button>
           <button
             type="button"
             onClick={handleEditClick}
+            data-testid={`edit-${preset.id}`}
             className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
             style={{
               borderColor: 'var(--c-border, #E3E6EB)',
               color: 'var(--c-text-secondary, #6B7280)',
             }}
+            title="Edit song metadata"
+            aria-label={`Edit ${preset.name}`}
           >
             <span className="material-symbols-rounded text-base">edit</span>
             <span>Edit</span>
@@ -3927,10 +3807,13 @@ const PresetCard = React.memo(
           <button
             type="button"
             onClick={handleDeleteClick}
+            data-testid={`delete-${preset.id}`}
             className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:opacity-75"
             style={{
               color: '#EF4444',
             }}
+            title="Delete song"
+            aria-label={`Delete ${preset.name}`}
           >
             <span className="material-symbols-rounded text-base">delete</span>
             <span>Delete</span>
@@ -3943,7 +3826,9 @@ const PresetCard = React.memo(
     return (
       prev.preset.id === next.preset.id &&
       prev.preset.updatedAt === next.preset.updatedAt &&
-      prev.preset.coverImage === next.preset.coverImage &&
+      (prev.preset.coverUri || prev.preset.coverImage) === (next.preset.coverUri || next.preset.coverImage) &&
+      prev.preset.name === next.preset.name &&
+      prev.preset.artist === next.preset.artist &&
       prev.accent.from === next.accent.from
     );
   }
@@ -4097,11 +3982,13 @@ export default function SongsPanel() {
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
+  const [shareModalPreset, setShareModalPreset] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showLyricsComposer, setShowLyricsComposer] = useState(false);
   const [composerSongId, setComposerSongId] = useState<string | null>(null);
 
   const currentBand = useBandStore((s) => s.currentBand);
+  const shareSongFromPreset = useBandStore((s) => s.shareSongFromPreset);
   const callBand = useBandStore((s) => s.callBand);
   const currentUserId = useBandStore((s) => s.currentUserId);
   const currentUserName = useBandStore((s) => s.currentUserName);
@@ -4556,7 +4443,8 @@ export default function SongsPanel() {
           editingPreset.targetDurationSeconds && editingPreset.targetDurationSeconds > 0
             ? String(editingPreset.targetDurationSeconds % 60)
             : '',
-        coverImage: editingPreset.coverImage,
+        coverImage: editingPreset.coverImage || editingPreset.coverUri,
+        coverUri: editingPreset.coverUri || editingPreset.coverImage,
       };
     }
     if (pendingImport) {
@@ -4576,6 +4464,7 @@ export default function SongsPanel() {
             ? String(pendingImport.targetDurationSeconds % 60)
             : '',
         coverImage: pendingImport.coverImage,
+        coverUri: (pendingImport as any).coverUri || pendingImport.coverImage,
       };
     }
     return undefined;
@@ -4602,6 +4491,7 @@ export default function SongsPanel() {
         notes: data.notes,
         targetDurationSeconds,
         coverImage: data.coverImage,
+        coverUri: data.coverUri || data.coverImage,
       });
     } else {
       const chordsToImport = pendingImport?.chordIds || [];
@@ -4627,6 +4517,7 @@ export default function SongsPanel() {
         sections: sectionsToImport,
         targetDurationSeconds,
         coverImage: data.coverImage,
+        coverUri: data.coverUri || data.coverImage,
       });
 
       clearPendingImport();
@@ -5037,6 +4928,19 @@ export default function SongsPanel() {
                 </div>
               }
             />
+            {/* Sticky segmented mode switcher permanently pinned below SharedFloatingHeader */}
+            <div
+              className="w-full flex items-center justify-center pointer-events-auto py-1"
+              style={{
+                position: 'fixed',
+                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 54px)',
+                left: 0,
+                right: 0,
+                zIndex: 35,
+              }}
+            >
+              <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+            </div>
           </>
         ) : (
           /* Desktop Title and Meta Header */
@@ -5348,7 +5252,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5357,15 +5261,6 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-lyrics-area"
               >
-                {!isWebDesktop && (
-                  <div
-                    className="w-full flex items-center justify-center pointer-events-auto mb-2"
-                    style={{ flexShrink: 0 }}
-                  >
-                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-                  </div>
-                )}
-
                 <SongLyricsEditor
                   mode="lyrics"
                   lyrics={activePreset.lyrics}
@@ -5387,7 +5282,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5396,15 +5291,6 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-both-area"
               >
-                {!isWebDesktop && (
-                  <div
-                    className="w-full flex items-center justify-center pointer-events-auto mb-2"
-                    style={{ flexShrink: 0 }}
-                  >
-                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-                  </div>
-                )}
-
                 <SongLyricsEditor
                   mode="both"
                   lyrics={activePreset.lyrics}
@@ -5424,18 +5310,12 @@ export default function SongsPanel() {
                 ref={editorScrollRef}
                 className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
                 style={{
-                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
+                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
                   paddingBottom:
                     'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                 }}
                 data-purpose="empty-chord-progression"
               >
-                <div
-                  className="w-full flex items-center justify-center pointer-events-auto mb-2"
-                  style={{ flexShrink: 0 }}
-                >
-                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-                </div>
                 {/* Musical Icon Graphic */}
                 <div className="relative flex items-center justify-center mb-6">
                   {/* Soft glowing aura */}
@@ -5487,7 +5367,7 @@ export default function SongsPanel() {
               style={{
                 paddingTop: isWebDesktop
                   ? '16px'
-                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
+                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
@@ -5496,14 +5376,6 @@ export default function SongsPanel() {
               }}
               data-purpose="editor-content-area"
             >
-              {!isWebDesktop && (
-                <div
-                  className="w-full flex items-center justify-center pointer-events-auto mb-2"
-                  style={{ flexShrink: 0 }}
-                >
-                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-                </div>
-              )}
               {/* Optional Lyrics / Notes Card */}
               {activePreset.notes && (
                 <div
@@ -6396,41 +6268,6 @@ export default function SongsPanel() {
           />
         )}
 
-        {showDeleteId && (
-          <Dialog
-            open={true}
-            onClose={() => setShowDeleteId(null)}
-            title={t.songs.confirmDelete}
-            footer={
-              <>
-                <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
-                <Button
-                  onClick={() => {
-                    const targetId = showDeleteId;
-                    deletePreset(targetId);
-                    if (activePreset?.id === targetId) {
-                      setActivePreset(null);
-                    }
-                    setShowDeleteId(null);
-                    toast.success('Song deleted');
-                  }}
-                  style={{
-                    backgroundColor: 'rgba(238,125,119,0.12)',
-                    color: '#ee7d77',
-                    border: '1px solid rgba(238,125,119,0.3)',
-                  }}
-                >
-                  {t.songs.delete}
-                </Button>
-              </>
-            }
-          >
-            <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
-              Are you sure you want to delete this song preset? This action cannot be undone.
-            </p>
-          </Dialog>
-        )}
-
         {exportModalPreset && (
           <ExportModal
             preset={exportModalPreset}
@@ -6747,6 +6584,7 @@ export default function SongsPanel() {
                                   t={t}
                                   setActivePreset={setActivePreset}
                                   setShowLive={setShowLive}
+                                  setShareModalPreset={setShareModalPreset}
                                   setExportModal={setExportModal}
                                   setEditingId={setEditingId}
                                   setShowForm={setShowForm}
@@ -6760,42 +6598,6 @@ export default function SongsPanel() {
                     )}
                   </main>
                 </div>
-
-                {/* Delete confirmation sheet */}
-                {showDeleteId && (
-                  <Dialog
-                    open={true}
-                    onClose={() => setShowDeleteId(null)}
-                    title={t.songs.confirmDelete}
-                    footer={
-                      <>
-                        <Button onClick={() => setShowDeleteId(null)}>{t.songs.cancel}</Button>
-                        <Button
-                          onClick={() => {
-                            const targetId = showDeleteId;
-                            deletePreset(targetId);
-                            if (activePreset?.id === targetId) {
-                              setActivePreset(null);
-                            }
-                            setShowDeleteId(null);
-                            toast.success('Song deleted');
-                          }}
-                          style={{
-                            backgroundColor: 'rgba(238,125,119,0.12)',
-                            color: '#ee7d77',
-                            border: '1px solid rgba(238,125,119,0.3)',
-                          }}
-                        >
-                          {t.songs.delete}
-                        </Button>
-                      </>
-                    }
-                  >
-                    <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
-                      Are you sure you want to delete this song preset? This action cannot be undone.
-                    </p>
-                  </Dialog>
-                )}
 
                 {/* Export config modal */}
                 {exportModalPreset && (
@@ -6907,6 +6709,191 @@ export default function SongsPanel() {
           accent={accent}
         />
       )}
+
+      {/* Root-level Delete Confirmation Dialog (Single Controlled Instance) */}
+      <Dialog
+        open={Boolean(showDeleteId)}
+        onClose={() => setShowDeleteId(null)}
+        title={t.songs.confirmDelete}
+        isDestructive={true}
+        footer={
+          <>
+            <Button
+              onClick={() => setShowDeleteId(null)}
+              data-testid="cancel-delete-btn"
+            >
+              {t.songs.cancel}
+            </Button>
+            <Button
+              variant="danger"
+              data-testid="confirm-delete-btn"
+              onClick={() => {
+                if (showDeleteId) {
+                  const targetId = showDeleteId;
+                  deletePreset(targetId);
+                  if (activePreset?.id === targetId) {
+                    setActivePreset(null);
+                  }
+                  setShowDeleteId(null);
+                  toast.success('Song deleted');
+                }
+              }}
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                color: '#EF4444',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              {t.songs.delete}
+            </Button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
+          Are you sure you want to delete this song preset? This action cannot be undone.
+        </p>
+      </Dialog>
+
+      {/* Root-level Unified Share Sheet */}
+      <Dialog
+        open={Boolean(shareModalPreset)}
+        onClose={() => setShareModalPreset(null)}
+        title="Share Song"
+      >
+        {shareModalPreset && (
+          <div className="flex flex-col gap-2.5 py-1">
+            <p className="text-xs font-medium text-[var(--c-text-secondary)] mb-1">
+              Choose how you want to share{' '}
+              <span className="font-bold text-[var(--c-text-primary)]">{shareModalPreset.name}</span>:
+            </p>
+
+            {/* 1. Share with Band */}
+            <button
+              type="button"
+              data-testid="share-option-band"
+              onClick={() => {
+                if (!currentBand) {
+                  toast.error('No active band selected. Join or create a band first.');
+                  return;
+                }
+                shareSongFromPreset(
+                  shareModalPreset,
+                  currentBand.id,
+                  currentUserId || 'local-user',
+                  currentUserName || 'Band Leader'
+                );
+                toast.success(`Song "${shareModalPreset.name}" shared to ${currentBand.name}!`);
+                setShareModalPreset(null);
+              }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  color: 'var(--c-accent-from, #2563EB)',
+                }}
+              >
+                <span className="material-symbols-rounded text-xl">groups</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
+                  Share with Band
+                </div>
+                <div className="text-xs text-[var(--c-text-secondary)] truncate">
+                  {currentBand ? `Sync to ${currentBand.name} repertoire` : 'Send song to active band repertoire'}
+                </div>
+              </div>
+              <span className="material-symbols-rounded text-lg text-[var(--c-text-muted)]">
+                chevron_right
+              </span>
+            </button>
+
+            {/* 2. Export as .livex */}
+            <button
+              type="button"
+              data-testid="share-option-export"
+              onClick={async () => {
+                const target = shareModalPreset;
+                setShareModalPreset(null);
+                try {
+                  await exportPresetToJSON(target, 'share');
+                  toast.success(`Exported ${target.name}`);
+                } catch (err) {
+                  toast.error('Failed to export song package');
+                }
+              }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10B981',
+                }}
+              >
+                <span className="material-symbols-rounded text-xl">ios_share</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
+                  Export as .livex
+                </div>
+                <div className="text-xs text-[var(--c-text-secondary)] truncate">
+                  Lossless full song package export
+                </div>
+              </div>
+              <span className="material-symbols-rounded text-lg text-[var(--c-text-muted)]">
+                chevron_right
+              </span>
+            </button>
+
+            {/* 3. Save / Export PDF */}
+            <button
+              type="button"
+              data-testid="share-option-pdf"
+              onClick={() => {
+                const target = shareModalPreset;
+                setShareModalPreset(null);
+                setExportModal(target);
+              }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                  color: '#F59E0B',
+                }}
+              >
+                <span className="material-symbols-rounded text-xl">picture_as_pdf</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
+                  Save / Export PDF
+                </div>
+                <div className="text-xs text-[var(--c-text-secondary)] truncate">
+                  Printable chord sheet with diagrams
+                </div>
+              </div>
+              <span className="material-symbols-rounded text-lg text-[var(--c-text-muted)]">
+                chevron_right
+              </span>
+            </button>
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }
