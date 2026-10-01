@@ -138,4 +138,8 @@ export * from './types/lyrics';
 export * from './lib/lyrics/lyricsParser';
 export * from './lib/lyrics/vocalRoles';
 export * from './lib/lyrics/spanFormatting';
+
+// Band & Team Collaboration System
+export * from './types/band';
+export * from './store/useBandStore';
 export * from './lib/lyrics/lyricSegments';

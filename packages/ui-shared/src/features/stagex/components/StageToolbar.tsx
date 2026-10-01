@@ -8,8 +8,6 @@ interface StageToolbarProps {
   callIframe: (fn: string, arg?: string | number) => void;
   transitionToView: (view: string) => void;
   openPdfSheet: () => void;
-  collabState?: string;
-  onOpenCollab?: () => void;
   onOpenHistory?: () => void;
 }
 
@@ -20,8 +18,6 @@ export const StageToolbar: React.FC<StageToolbarProps> = ({
   callIframe,
   transitionToView,
   openPdfSheet,
-  collabState,
-  onOpenCollab,
   onOpenHistory,
 }) => {
   return (
@@ -104,25 +100,6 @@ export const StageToolbar: React.FC<StageToolbarProps> = ({
           >
             {tr.stagex?.productionDocShort || 'Production Document'}
           </Button>
-          {onOpenCollab && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={onOpenCollab}
-              icon={
-                <span
-                  className="material-symbols-outlined text-[15px]"
-                  style={{ color: collabState === 'connected' ? '#10b981' : undefined }}
-                >
-                  {collabState === 'connected' ? 'cloud' : 'cloud_queue'}
-                </span>
-              }
-            >
-              {collabState === 'connected'
-                ? tr.stagex?.collabLive || 'Live'
-                : tr.stagex?.collab || 'Collab'}
-            </Button>
-          )}
         </div>
       )}
 

@@ -56,6 +56,7 @@ import {
   EasingPresets,
   SpringPresets,
   authRepository,
+  useBandStore,
 } from '@workspace/livex-core';
 import {
   getUpdateHistory,
@@ -90,6 +91,7 @@ import { SpotlightLogo } from '../../../components/spotlight-logo';
 
 const HubSettings = lazy(() => import('../settings/HubSettings'));
 const HubHelp = lazy(() => import('./HubHelp'));
+import { BandHubModal } from './BandHubModal';
 import {
   Toggle,
   SectionHeader,
@@ -871,6 +873,8 @@ export default function LivexHub() {
   const [langQuery, setLangQuery] = useState('');
   const [shortcutPickerOpen, setShortcutPickerOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState<string[]>([]);
+  const currentBand = useBandStore((s) => s.currentBand);
+  const [bandModalOpen, setBandModalOpen] = useState(false);
 
   // Drag-to-reorder state variables
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1402,70 +1406,99 @@ export default function LivexHub() {
                           >
                             {lang === 'es' ? 'Acciones Fijadas' : 'Pinned Actions'}
                           </h3>
-                          {isEditMode ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {/* 👥 Dedicated Band/Team Entry Pill */}
                             <button
-                              onClick={() => setIsEditMode(false)}
-                              className="active:scale-[0.92] transition-transform duration-200"
+                              type="button"
+                              data-testid="home-band-pill"
+                              onClick={() => setBandModalOpen(true)}
+                              className="active:scale-[0.95] md:hover:scale-[1.03] transition-transform duration-200 cursor-pointer"
                               style={{
-                                background: accent.from,
-                                border: 'none',
-                                color: '#000',
+                                background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+                                border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.10)',
+                                color: currentBand ? accent.from : 'var(--c-text-primary, #ffffff)',
                                 fontFamily: 'Inter, sans-serif',
                                 fontSize: '11px',
-                                fontWeight: 750,
+                                fontWeight: 650,
                                 borderRadius: 9999,
-                                padding: '3px 12px',
-                                cursor: 'pointer',
+                                padding: '3px 10px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 3,
-                                boxShadow: `0 2px 8px ${accent.from}40`,
+                                gap: '4.5px',
+                                backdropFilter: 'var(--surface-pill-backdrop, blur(12px))',
+                                WebkitBackdropFilter: 'var(--surface-pill-backdrop, blur(12px))',
                               }}
+                              aria-label={lang === 'es' ? 'Banda y Equipo' : 'Band & Team'}
+                              title={currentBand ? currentBand.name : (lang === 'es' ? 'Banda y Equipo' : 'Band & Team')}
                             >
-                              <StudioIcon
-                                name="check"
-                                size={13}
-                              />
-                              {lang === 'es' ? 'Listo' : 'Done'}
+                              <StudioIcon name="groups" size={14} />
+                              <span>{currentBand ? currentBand.name : (lang === 'es' ? 'Banda' : 'Band')}</span>
                             </button>
-                          ) : (
-                            <MorphingActionSurface
-                              isOpen={shortcutPickerOpen}
-                              onOpenChange={setShortcutPickerOpen}
-                              placement="bottom"
-                              maxWidth={440}
-                              maxHeight="80vh"
-                              title={lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
-                              subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
-                              accentColor={accent.from}
-                              customTrigger={({ open, surfaceId, triggerProps }) => (
-                                <button
-                                  {...triggerProps}
-                                  onClick={open}
-                                  className="active:scale-[0.95] transition-transform duration-200"
-                                  style={{
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid rgba(255, 255, 255, 0.10)',
-                                    color: accent.from,
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontSize: '11px',
-                                    fontWeight: 650,
-                                    borderRadius: 9999,
-                                    padding: '3px 10px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 3,
-                                  }}
-                                >
-                                  <StudioIcon
-                                    name="add"
-                                    size={13}
-                                  />
-                                  {lang === 'es' ? 'Fijar' : 'Pin'}
-                                </button>
-                              )}
-                            >
+
+                            {isEditMode ? (
+                              <button
+                                onClick={() => setIsEditMode(false)}
+                                className="active:scale-[0.92] transition-transform duration-200"
+                                style={{
+                                  background: accent.from,
+                                  border: 'none',
+                                  color: '#000',
+                                  fontFamily: 'Inter, sans-serif',
+                                  fontSize: '11px',
+                                  fontWeight: 750,
+                                  borderRadius: 9999,
+                                  padding: '3px 12px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  boxShadow: `0 2px 8px ${accent.from}40`,
+                                }}
+                              >
+                                <StudioIcon
+                                  name="check"
+                                  size={13}
+                                />
+                                {lang === 'es' ? 'Listo' : 'Done'}
+                              </button>
+                            ) : (
+                              <MorphingActionSurface
+                                isOpen={shortcutPickerOpen}
+                                onOpenChange={setShortcutPickerOpen}
+                                placement="bottom"
+                                maxWidth={440}
+                                maxHeight="80vh"
+                                title={lang === 'es' ? 'Acciones Rápidas' : 'Customize Quick Actions'}
+                                subtitle={`${shortcuts.length}/5 ${lang === 'es' ? 'activos' : 'active'}`}
+                                accentColor={accent.from}
+                                customTrigger={({ open, surfaceId, triggerProps }) => (
+                                  <button
+                                    {...triggerProps}
+                                    onClick={open}
+                                    className="active:scale-[0.95] transition-transform duration-200"
+                                    style={{
+                                      background: 'rgba(255, 255, 255, 0.05)',
+                                      border: '1px solid rgba(255, 255, 255, 0.10)',
+                                      color: accent.from,
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: '11px',
+                                      fontWeight: 650,
+                                      borderRadius: 9999,
+                                      padding: '3px 10px',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 3,
+                                    }}
+                                  >
+                                    <StudioIcon
+                                      name="add"
+                                      size={13}
+                                    />
+                                    {lang === 'es' ? 'Fijar' : 'Pin'}
+                                  </button>
+                                )}
+                              >
                               {({ close }) => (
                                 <div
                                   style={{
@@ -1899,6 +1932,7 @@ export default function LivexHub() {
                               )}
                             </MorphingActionSurface>
                           )}
+                          </div>
                         </div>
 
                         <div ref={gridRef} style={{ position: 'relative', width: '100%' }}>
@@ -2352,6 +2386,18 @@ export default function LivexHub() {
           every screen, not just the Hub. */}
 
       {devToast && renderDevToast()}
+
+      {/* ── 👥 Band & Team Hub Modal ── */}
+      <BandHubModal
+        isOpen={bandModalOpen}
+        onClose={() => setBandModalOpen(false)}
+        isLight={isLight}
+        isAmoled={!!useSettingsStore.getState().settings.amoledMode}
+        accent={accent}
+        lang={lang}
+        currentUserName={authUser?.displayName || hubUserName}
+        currentUserId={authUser?.uid}
+      />
     </div>
   );
 }

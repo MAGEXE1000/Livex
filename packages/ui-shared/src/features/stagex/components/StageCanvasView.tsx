@@ -3,12 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   useIsWebDesktop,
   useT,
-  authRepository,
-  CollaborationService,
   registerStageIframe,
-  getFirebaseConfigDetails,
-  getFirestoreDiagnostics,
-  APP_VERSION,
   lockOrientation,
   setNavHidden,
   setNavLocked,
@@ -23,7 +18,6 @@ import { StageBottomPanelSlot } from './StageBottomPanelSlot';
 import { StageElementLibrarySurface } from './StageElementLibrarySurface';
 import { StageHistorySurface } from './StageHistorySurface';
 import { StageElementSpecsEditor } from './StageElementSpecsEditor';
-import { StageCollabDialog } from './dialogs/StageCollabDialog';
 import {
   StageBridge,
   injectTheme,
@@ -323,19 +317,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
     };
   }, [isWebDesktop]);
-
-  // Collaboration state
-  const [collabModalOpen, setCollabModalOpen] = useState(false);
-  const [shortCodeInput, setShortCodeInput] = useState('');
-  const [collabRoom, setCollabRoom] = useState<any>(null);
-  const [collabParticipants, setCollabParticipants] = useState<any[]>([]);
-  const [collabState, setCollabState] = useState<any>('disconnected');
-  const [collabError, setCollabError] = useState<string | null>(null);
-  const [collabErrorTimestamp, setCollabErrorTimestamp] = useState<string | null>(null);
-  const [collabLoading, setCollabLoading] = useState(false);
-  const [collabDiagExpanded, setCollabDiagExpanded] = useState(false);
-  const [pendingOpsCount, setPendingOpsCount] = useState(0);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const callIframe = useCallback((fn: string, arg?: any) => {
     const iframe = iframeRef.current;
@@ -730,27 +711,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     return () => registerStageIframe(null);
   }, []);
 
-  // Collaboration subscriptions
-  useEffect(() => {
-    const unsubAuth = authRepository.subscribeAuth(setCurrentUser);
-    const service = CollaborationService.getInstance();
-
-    setCollabState(service.getConnectionState());
-    setCollabRoom(service.getActiveRoom());
-    setCollabParticipants(service.getParticipants());
-
-    const unsubState = service.subscribeConnectionState(setCollabState);
-    const unsubRoom = service.subscribeRoom(setCollabRoom);
-    const unsubPresence = service.subscribePresence(setCollabParticipants);
-
-    return () => {
-      unsubAuth();
-      unsubState();
-      unsubRoom();
-      unsubPresence();
-    };
-  }, []);
-
   const openProductionDocumentWorkflow = useCallback(() => {
     StageBridge.syncCurrentProjectState(iframeRef.current);
     onNavigateView?.('Export');
@@ -819,8 +779,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
             v === 'Export' ? openProductionDocumentWorkflow() : onNavigateView?.(v)
           }
           openPdfSheet={openProductionDocumentWorkflow}
-          collabState={collabState}
-          onOpenCollab={() => setCollabModalOpen(true)}
           onOpenHistory={handleToggleHistory}
         />
       )}
@@ -889,30 +847,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
                 </span>
               </button>
 
-              {/* 2. Cloud (Collaboration) */}
-              <button
-                type="button"
-                data-testid="stagex-collab-btn"
-                onClick={() => setCollabModalOpen(true)}
-                title="Collaboration"
-                aria-label="Collaboration"
-                className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all"
-                style={{
-                  color:
-                    collabState === 'connected'
-                      ? '#10b981'
-                      : isLight
-                        ? 'rgba(0,0,0,0.75)'
-                        : 'rgba(255,255,255,0.85)',
-                  background: collabState === 'connected' ? 'rgba(16,185,129,0.15)' : undefined,
-                }}
-              >
-                <span className="material-symbols-outlined text-[17px] select-none block overflow-hidden leading-none">
-                  {collabState === 'connected' ? 'cloud' : 'cloud_queue'}
-                </span>
-              </button>
-
-              {/* 3. History */}
+              {/* 2. History */}
               <button
                 type="button"
                 data-testid="stagex-history-btn"
@@ -1456,90 +1391,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           accent={accent}
         />
       )}
-
-
-      {/* Collaboration Dialog */}
-      <StageCollabDialog
-        open={collabModalOpen}
-        onClose={() => !collabLoading && setCollabModalOpen(false)}
-        currentUser={currentUser}
-        collabState={collabState}
-        collabRoom={collabRoom}
-        collabParticipants={collabParticipants}
-        collabLoading={collabLoading}
-        collabError={collabError}
-        collabErrorTimestamp={collabErrorTimestamp}
-        collabDiagExpanded={collabDiagExpanded}
-        setCollabDiagExpanded={setCollabDiagExpanded}
-        pendingOpsCount={pendingOpsCount}
-        shortCodeInput={shortCodeInput}
-        setShortCodeInput={setShortCodeInput}
-        onHostSession={async () => {
-          if (!currentUser?.uid) return;
-          setCollabLoading(true);
-          setCollabError(null);
-          try {
-            await CollaborationService.getInstance().createRoom(
-              currentUser.uid,
-              {
-                displayName: currentUser.displayName || 'Stage Host',
-                avatar: currentUser.photoURL || '',
-              },
-              accent.from
-            );
-          } catch (err: any) {
-            setCollabError(err.message || 'Failed to create room');
-            setCollabErrorTimestamp(new Date().toISOString());
-          } finally {
-            setCollabLoading(false);
-          }
-        }}
-        onJoinSession={async () => {
-          if (!currentUser?.uid || !shortCodeInput || shortCodeInput.length !== 6) return;
-          setCollabLoading(true);
-          setCollabError(null);
-          try {
-            await CollaborationService.getInstance().joinRoom(
-              shortCodeInput,
-              currentUser.uid,
-              {
-                displayName: currentUser.displayName || 'Stage Guest',
-                avatar: currentUser.photoURL || '',
-              },
-              accent.from
-            );
-          } catch (err: any) {
-            setCollabError(err.message || 'Failed to join room');
-            setCollabErrorTimestamp(new Date().toISOString());
-          } finally {
-            setCollabLoading(false);
-          }
-        }}
-        onLeaveSession={async () => {
-          setCollabLoading(true);
-          try {
-            await CollaborationService.getInstance().leaveRoom();
-          } finally {
-            setCollabLoading(false);
-          }
-        }}
-        generateDiagnosticsReport={() => {
-          const fbConfig = getFirebaseConfigDetails();
-          const fsDiag = getFirestoreDiagnostics();
-          return [
-            `=== STAGEX COLLABORATION DIAGNOSTICS ===`,
-            `Generated: ${new Date().toISOString()}`,
-            `App Version: ${APP_VERSION}`,
-            `Firebase Project: ${fbConfig.projectId}`,
-            `Connection: ${collabState}`,
-            `Active Room: ${collabRoom?.shortCode || 'None'}`,
-            `Participants: ${collabParticipants.length}`,
-            `Pending Ops: ${pendingOpsCount}`,
-            `Cache State: ${fsDiag.firestoreRuntimeActive ? 'Active' : 'Offline'}`,
-            `=========================================`,
-          ].join('\n');
-        }}
-      />
     </div>
   );
 };
