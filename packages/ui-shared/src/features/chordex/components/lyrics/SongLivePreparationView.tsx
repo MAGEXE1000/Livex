@@ -89,6 +89,9 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     lineId?: string;
   } | null>(null);
 
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const pendingFocusLineIdRef = useRef<string | null>(null);
+
   // Drag and drop state for interludes
   const [draggedLine, setDraggedLine] = useState<{ sectionId: string; lineId: string } | null>(null);
 
@@ -276,6 +279,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         type: 'lyric',
         text: '',
       };
+      pendingFocusLineIdRef.current = newLine.id;
       const nextSections = sections.map((sec) => {
         if (sec.id !== sectionId) return sec;
         const newLines = [...sec.lines];
@@ -465,8 +469,11 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
   );
 
   const handleDeleteLine = useCallback(
-    (sectionId: string, lineId: string) => {
+    (sectionId: string, lineId: string, prevLineIdToFocus?: string) => {
       if (!lyricsDoc) return;
+      if (prevLineIdToFocus) {
+        pendingFocusLineIdRef.current = prevLineIdToFocus;
+      }
       const nextSections = sections.map((sec) => {
         if (sec.id !== sectionId) return sec;
         return {
@@ -478,7 +485,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         ...lyricsDoc,
         sections: nextSections,
       });
-      toast.success('Line removed');
     },
     [lyricsDoc, sections, onUpdateLyrics]
   );
@@ -778,8 +784,17 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                           </div>
                         )}
 
-                        <div className="flex items-center gap-2 w-full group/line">
+                        <div className="flex items-center gap-2 w-full">
                           <input
+                            ref={(el) => {
+                              inputRefs.current[line.id] = el;
+                              if (el && pendingFocusLineIdRef.current === line.id) {
+                                pendingFocusLineIdRef.current = null;
+                                el.focus();
+                                const len = el.value.length;
+                                el.setSelectionRange(len, len);
+                              }
+                            }}
                             type="text"
                             data-testid={`lyrics-line-input-${lIdx}`}
                             value={line.text}
@@ -792,52 +807,28 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 handleAddLine(section.id, lIdx);
-                              } else if (e.key === 'Backspace' && line.text === '' && section.lines.length > 1) {
+                              } else if (e.key === 'Backspace' && line.text === '' && (section.lines.length > 1 || sections.length > 1)) {
                                 e.preventDefault();
-                                handleDeleteLine(section.id, line.id);
+                                const prevLine = lIdx > 0 ? section.lines[lIdx - 1] : undefined;
+                                handleDeleteLine(section.id, line.id, prevLine?.id);
                               }
                             }}
                             placeholder="Type lyric line..."
-                            className="flex-1 bg-transparent border-0 border-b outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
+                            className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
                             style={{
-                              borderBottom: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.25)' : '1px solid rgba(255, 255, 255, 0.25)',
+                              border: 'none',
+                              outline: 'none',
+                              boxShadow: 'none',
                               color: lineTextColor,
                               fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
                               fontSize: `${fontSize}px`,
                               fontFamily: 'inherit',
                             }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLine(section.id, line.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer opacity-40 hover:opacity-100 flex-shrink-0"
-                            title="Delete line"
-                            aria-label="Delete line"
-                          >
-                            <span className="material-symbols-outlined text-base">close</span>
-                          </button>
                         </div>
                       </div>
                     );
                   })}
-
-                  <div
-                    className="flex items-center gap-2 mt-2 pt-1.5 border-t border-dashed border-white/10"
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                    }}
-                    onDrop={(e) => handleDropOnLine(e, section.id, section.lines.length)}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleAddLine(section.id)}
-                      className="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
-                    >
-                      <span className="material-symbols-rounded text-sm">add</span>
-                      <span>Add Line</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             );
@@ -845,157 +836,78 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
         </div>
       )}
 
-      {/* ── Floating Controls: Bottom Action Dock Always Accessible ── */}
+      {/* ── UNIFIED BLACK FLOATING ADD (+) BUTTON (MATCHING CHORDS) ── */}
       {typeof document !== 'undefined' &&
         createPortal(
-          <aside
-            aria-label="Song Lyrics edit toolbar"
-            data-testid="lyrics-editing-bottom-dock"
-            data-purpose="lyrics-editing-bottom-dock"
-            className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-full border shadow-2xl backdrop-blur-xl pointer-events-auto select-none"
+          <div
+            className="fixed z-50 pointer-events-auto"
             style={{
-              position: 'fixed',
-              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
-              left: '50%',
-              transform: 'translateX(-50%) translateZ(0)',
-              willChange: 'transform, backdrop-filter',
-              zIndex: 45,
-              width: 'fit-content',
-              maxWidth: 'calc(100vw - 32px)',
-              backgroundColor: 'var(--surface-float-bg, rgba(20, 20, 26, 0.85))',
-              borderColor: 'var(--surface-topbar-border, rgba(255, 255, 255, 0.15))',
-              boxShadow: 'var(--surface-topbar-shadow, 0 10px 30px rgba(0, 0, 0, 0.45))',
-              backdropFilter: 'var(--surface-topbar-backdrop)',
-              WebkitBackdropFilter: 'var(--surface-topbar-backdrop)',
-              pointerEvents: 'auto',
+              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+              right: '20px',
             }}
+            data-purpose="lyrics-action-menu"
           >
-            {/* Exit Edit Mode / Done (Blurs Keyboard) */}
-            <button
-              type="button"
-              data-testid="lyrics-edit-done-btn"
-              onClick={() => {
-                (document.activeElement as HTMLElement)?.blur();
-                setShowAddMenu(false);
-              }}
-              className="px-3.5 h-9 rounded-full flex items-center justify-center gap-1.5 font-bold text-xs transition active:scale-90 cursor-pointer"
-              style={{
-                backgroundColor: `${accent.from}22`,
-                border: `1px solid ${accent.from}44`,
-                color: accent.from,
-              }}
-            >
-              <span className="material-symbols-rounded text-base">check</span>
-              <span>Done</span>
-            </button>
-
-              {/* Divider */}
-              <div
-                className="w-[1px] h-5 mx-0.5"
-                style={{
-                  backgroundColor:
-                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
-                      ? 'rgba(0,0,0,0.10)'
-                      : 'rgba(255,255,255,0.12)',
-                }}
-              />
-
-              {/* Unified + Action Button */}
-              <button
-                ref={dockAddButtonRef}
-                type="button"
-                data-testid="lyrics-edit-unified-add-btn"
-                onClick={handleDockAddClick}
-                aria-label="Add to Lyrics"
-                title="Add Options"
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white transition active:scale-95 cursor-pointer shadow-lg"
-                style={{
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                  boxShadow: `0 4px 16px ${accent.to}66, 0 0 0 1px rgba(255,255,255,0.25)`,
-                }}
-              >
-                <span className="material-symbols-rounded text-2xl font-bold">add</span>
-              </button>
-
-              {/* Divider */}
-              <div
-                className="w-[1px] h-5 mx-0.5"
-                style={{
-                  backgroundColor:
-                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
-                      ? 'rgba(0,0,0,0.10)'
-                      : 'rgba(255,255,255,0.12)',
-                }}
-              />
-
-              {/* Text Presentation / Typography Button with Palette Icon */}
-              <button
-                type="button"
-                data-testid="lyrics-toolbar-text-btn"
-                onClick={() => setShowTextMorph(true)}
-                aria-label="Text & Color Styling"
-                title="Text & Color Styling"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer"
-                style={{
-                  backgroundColor:
-                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
-                      ? 'rgba(0,0,0,0.04)'
-                      : 'rgba(255,255,255,0.06)',
-                  color:
-                    typeof document !== 'undefined' && document.documentElement.classList.contains('light')
-                      ? '#334155'
-                      : '#cbd5e1',
-                }}
-              >
-                <span className="material-symbols-rounded text-lg">palette</span>
-              </button>
-            </aside>,
-            document.body
-          )}
-
-      {/* ── Unified Contextual Morphing Popup (Add Section, Add Timed Interlude, Text Styling) ── */}
-      <MorphingActionSurface
-        isOpen={showAddMenu}
-        onOpenChange={setShowAddMenu}
-        placement="anchor"
-        originRect={pencilRect}
-        compact
-        maxWidth={260}
-        title="Add to Lyrics"
-        accentColor={accent.from}
-        rows={[
-          {
-            id: 'add-section',
-            label: 'Add Section',
-            icon: 'layers',
-            sublabel: 'Verse, Chorus, Bridge...',
-            onPress: () => {
-              setShowAddMenu(false);
-              setShowSectionMorph(true);
-            },
-          },
-          {
-            id: 'add-interlude',
-            label: 'Add Timed Interlude',
-            icon: 'timer',
-            sublabel: 'Timed silence / solo (e.g. 15s)',
-            onPress: () => {
-              setShowAddMenu(false);
-              handleAddInterludeLine(activePosition?.sectionId, activePosition?.lineIndex);
-            },
-          },
-          {
-            id: 'text-styling',
-            label: 'Text Styling',
-            icon: 'palette',
-            sublabel: 'Font size, spacing, colors',
-            onPress: () => {
-              setShowAddMenu(false);
-              setShowTextMorph(true);
-            },
-          },
-        ]}
-      />
+            <MorphingActionSurface
+              placement="anchor"
+              compact
+              maxWidth={260}
+              title="Add to Lyrics"
+              accentColor={accent.from}
+              customTrigger={({ triggerProps }) => (
+                <motion.button
+                  {...triggerProps}
+                  aria-label="Add Action"
+                  data-testid="lyrics-add-actions-btn"
+                  className="rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-all select-none"
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
+                    border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
+                    backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
+                    boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
+                    color: 'var(--c-text-primary, #ffffff)',
+                  }}
+                  type="button"
+                >
+                  <span className="material-symbols-rounded text-2xl font-bold">add</span>
+                </motion.button>
+              )}
+              rows={[
+                {
+                  id: 'action-section',
+                  label: 'Add Section',
+                  icon: 'layers',
+                  sublabel: 'Verse, Chorus, Bridge...',
+                  onPress: () => {
+                    setShowSectionMorph(true);
+                  },
+                },
+                {
+                  id: 'action-interlude',
+                  label: 'Add Timed Interlude',
+                  icon: 'timer',
+                  sublabel: 'Timed silence / solo (e.g. 15s)',
+                  onPress: () => {
+                    handleAddInterludeLine(activePosition?.sectionId, activePosition?.lineIndex);
+                  },
+                },
+                {
+                  id: 'action-styling',
+                  label: 'Text Styling',
+                  icon: 'palette',
+                  sublabel: 'Font size, spacing, colors',
+                  onPress: () => {
+                    setShowTextMorph(true);
+                  },
+                },
+              ]}
+            />
+          </div>,
+          document.body
+        )}
 
       {/* ── Morphing Section Picker (With proper section icons) ── */}
       <MorphingActionSurface
