@@ -1442,15 +1442,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           e.dataTransfer.dropEffect = 'move';
                         }}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-2xl transition-all border my-2 shadow-xs"
+                        className="group/line relative flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-2xl transition-all border my-2 shadow-xs overflow-hidden"
                         style={{
                           backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.08)',
                           borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.30)',
+                          boxSizing: 'border-box',
+                          width: '100%',
                         }}
                       >
-                        {/* Top row: Icon, Label Input, Duration Pill, Delete Button */}
-                        <div className="flex items-center justify-between gap-2.5 flex-wrap">
-                          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                        {/* Top row: Icon, Label Input, Duration Pill, Action Buttons */}
+                        <div className="flex items-center justify-between gap-2 w-full min-w-0">
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
                             {/* Drag handle */}
                             <div
                               draggable
@@ -1465,16 +1467,16 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </div>
 
                             <div
-                              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs"
+                              className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs"
                               style={{
                                 backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.22)',
                                 color: isEffectiveLight ? '#2563eb' : '#60a5fa',
                               }}
                             >
-                              <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
+                              <span className="material-symbols-rounded text-base">hourglass_bottom</span>
                             </div>
 
-                            <div className="flex-1 flex items-center gap-2">
+                            <div className="flex-1 min-w-0 flex items-center">
                               <input
                                 type="text"
                                 value={line.text}
@@ -1486,7 +1488,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 placeholder="Event Label (e.g. Solo)"
                                 aria-label="Interlude event label"
                                 data-testid={`interlude-label-input-${lineIdx}`}
-                                className="bg-transparent border-0 border-b outline-none text-sm font-bold pb-0.5 w-36 sm:w-44 transition-colors"
+                                className="bg-transparent border-0 border-b outline-none text-xs sm:text-sm font-bold pb-0.5 w-full max-w-[140px] sm:max-w-[200px] transition-colors truncate"
                                 style={{
                                   color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
                                   borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
@@ -1495,10 +1497,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                             {/* Formatted live duration indicator badge */}
                             <div
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg border shadow-2xs"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-lg border shadow-2xs flex-shrink-0"
                               style={{
                                 backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.10)' : 'rgba(59, 130, 246, 0.18)',
                                 borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.35)',
@@ -1523,11 +1525,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 e.stopPropagation();
                                 handleMoveLineRelative(section.id, lineIdx, -1);
                               }}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                               title="Move interlude up"
                               aria-label="Move interlude up"
                             >
-                              <span className="material-symbols-rounded text-base">arrow_upward</span>
+                              <span className="material-symbols-rounded text-sm sm:text-base">arrow_upward</span>
                             </button>
                             <button
                               type="button"
@@ -1535,11 +1537,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 e.stopPropagation();
                                 handleMoveLineRelative(section.id, lineIdx, 1);
                               }}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                               title="Move interlude down"
                               aria-label="Move interlude down"
                             >
-                              <span className="material-symbols-rounded text-base">arrow_downward</span>
+                              <span className="material-symbols-rounded text-sm sm:text-base">arrow_downward</span>
                             </button>
 
                             {/* Delete Button */}
@@ -1551,13 +1553,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               }}
                               aria-label="Remove interlude event"
                               data-testid={`interlude-delete-btn-${lineIdx}`}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer hover:bg-rose-500/10 active:scale-95"
-                              style={{
-                                color: isEffectiveLight ? '#e11d48' : '#fb7185',
-                              }}
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer text-rose-500 hover:bg-rose-500/15 active:scale-95 flex-shrink-0"
                               title="Remove Interlude"
                             >
-                              <span className="material-symbols-rounded text-lg">close</span>
+                              <span className="material-symbols-rounded text-sm sm:text-base">delete</span>
                             </button>
                           </div>
                         </div>

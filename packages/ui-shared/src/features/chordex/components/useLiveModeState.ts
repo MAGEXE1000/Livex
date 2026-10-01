@@ -1209,22 +1209,28 @@ export function useLiveModeState(
   // ── Smooth Teleprompter Auto-Scroll ──────────────────────────────
   useEffect(() => {
     if (!isTeleprompterMode) return;
-    const lineEl = document.getElementById(`live-line-${currentLineIdx}`);
     const container = teleprompterContainerRef.current;
-    if (lineEl && container) {
-      const containerHeight = container.clientHeight;
-      const lineTop = lineEl.offsetTop;
-      const lineHeight = lineEl.clientHeight;
-      // Position active line at ~35% from top so upcoming lyrics have ample viewport space
-      const targetScroll = Math.max(0, lineTop - containerHeight * 0.35 + lineHeight / 2);
-      container.scrollTo({
-        top: targetScroll,
-        behavior: 'smooth',
-      });
-      if (autoPlay && targetScroll > 20) {
-        setIsHeaderHidden(true);
+    if (!container) return;
+
+    const rafId = requestAnimationFrame(() => {
+      const lineEl = document.getElementById(`live-line-${currentLineIdx}`);
+      if (lineEl && container) {
+        const containerHeight = container.clientHeight;
+        const lineTop = lineEl.offsetTop;
+        const lineHeight = lineEl.clientHeight;
+        // Position active line at ~35% from top so upcoming lyrics have ample viewport space
+        const targetScroll = Math.max(0, lineTop - containerHeight * 0.35 + lineHeight / 2);
+        container.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth',
+        });
+        if (autoPlay && targetScroll > 20) {
+          setIsHeaderHidden(true);
+        }
       }
-    }
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [currentLineIdx, isTeleprompterMode, autoPlay]);
 
   // ── Musical Timing Constants ─────────────────────────────────────
@@ -1388,26 +1394,22 @@ export function useLiveModeState(
       ? Math.max(1000, activeLine?.line?.explicitDurationMs || 15000)
       : msPerLine) / (playbackSpeed || 1);
 
+    // Sync active chord for this line if present
     const lineWords = activeLine?.words || [];
-    const wordCount = Math.max(1, lineWords.length);
-    const wordDurationMs = actualLineMs / wordCount;
-
-    // Find current word's relative index in activeLine
-    let localWordIdx = 0;
-    const currentWord = allWords[currentWordIdxRef.current];
-    if (currentWord && currentWord.lineIdx === currentLineIdx) {
-      localWordIdx = currentWord.wordIdxInLine;
+    const firstWordWithChord = lineWords.find((w) => Boolean(w.chord));
+    if (firstWordWithChord?.chord) {
+      const chordIdx = findChordIdx(firstWordWithChord.chord);
+      if (chordIdx !== -1) setCurrentIdx(chordIdx);
     }
 
-    let currentWaitMs = wordDurationMs;
+    let currentWaitMs = actualLineMs;
     if (wordRemainingMsRef.current > 0) {
       currentWaitMs = wordRemainingMsRef.current;
     } else {
-      wordRemainingMsRef.current = wordDurationMs;
+      wordRemainingMsRef.current = actualLineMs;
     }
 
     wordStartTimestampRef.current = performance.now();
-    let expectedTime = performance.now() + currentWaitMs;
     let timerId: ReturnType<typeof setTimeout> | null = null;
     let interludeInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -1424,55 +1426,31 @@ export function useLiveModeState(
       setInterludeRemainingSec(null);
     }
 
-    const tickWord = () => {
+    const tickLine = () => {
       setIsHeaderHidden(true);
-      wordRemainingMsRef.current = 0; // reset for next word
+      wordRemainingMsRef.current = 0;
       wordStartTimestampRef.current = performance.now();
 
-      const now = performance.now();
-      const drift = now - expectedTime;
+      // Line completed its allotted musical duration! Advance directly to next line
+      const nextLineIdx = (currentLineIdx + 1) % totalLines;
+      setDirection('forward');
+      setCurrentLineIdx(nextLineIdx);
+      setCurrentBeat(0);
+      setCurrentBar(1);
 
-      localWordIdx++;
-      if (localWordIdx < lineWords.length) {
-        // Advance to next word within current line
-        const nextWord = lineWords[localWordIdx];
-        if (nextWord) {
-          currentWordIdxRef.current = nextWord.globalWordIdx;
-          setCurrentWordIdxState(nextWord.globalWordIdx);
-          if (nextWord.chord) {
-            const chordIdx = findChordIdx(nextWord.chord);
-            if (chordIdx !== -1) setCurrentIdx(chordIdx);
-          }
-        }
-        wordRemainingMsRef.current = wordDurationMs;
-        currentWaitMs = wordDurationMs;
-        expectedTime += wordDurationMs;
-        const nextDelay = Math.max(0, wordDurationMs - drift);
-        timerId = setTimeout(tickWord, nextDelay);
-      } else {
-        // Line completed its allotted musical duration! Advance to next line
-        const nextLineIdx = (currentLineIdx + 1) % totalLines;
-        setDirection('forward');
-        setCurrentLineIdx(nextLineIdx);
-        setCurrentBeat(0);
-        setCurrentBar(1);
-        const nextLineWords = teleprompterLines[nextLineIdx]?.words || [];
-        if (nextLineWords.length > 0) {
-          const firstWord = nextLineWords[0];
-          currentWordIdxRef.current = firstWord.globalWordIdx;
-          setCurrentWordIdxState(firstWord.globalWordIdx);
-          if (firstWord.chord) {
-            const chordIdx = findChordIdx(firstWord.chord);
-            if (chordIdx !== -1) setCurrentIdx(chordIdx);
-          }
-        }
-        if (isBroadcasting) {
-          emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
-        }
+      const nextLineWords = teleprompterLines[nextLineIdx]?.words || [];
+      const nextWordWithChord = nextLineWords.find((w) => Boolean(w.chord));
+      if (nextWordWithChord?.chord) {
+        const chordIdx = findChordIdx(nextWordWithChord.chord);
+        if (chordIdx !== -1) setCurrentIdx(chordIdx);
+      }
+
+      if (isBroadcasting) {
+        emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
       }
     };
 
-    timerId = setTimeout(tickWord, currentWaitMs);
+    timerId = setTimeout(tickLine, currentWaitMs);
 
     return () => {
       if (timerId) clearTimeout(timerId);
@@ -1489,8 +1467,6 @@ export function useLiveModeState(
     seekToken,
     totalLines,
     teleprompterLines,
-    allWords,
-    chords,
     findChordIdx,
     isBroadcasting,
     emitLiveSync,

@@ -610,15 +610,15 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                             e.dataTransfer.dropEffect = 'move';
                           }}
                           onDrop={(e) => handleDropOnLine(e, section.id, lIdx)}
-                          className="w-full my-2 p-3.5 rounded-2xl border flex flex-col gap-2 transition-all"
+                          className="w-full my-2 p-3 sm:p-3.5 rounded-2xl border flex flex-col gap-2 transition-all overflow-hidden box-border"
                           style={{
                             backgroundColor: 'var(--surface-card-bg, #ffffff)',
                             borderColor: `${accent.from}33`,
                             boxShadow: 'var(--shadow-soft-card, none)',
                           }}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2 w-full min-w-0">
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
                               <div
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, section.id, line.id)}
@@ -631,13 +631,13 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 <GripVertical className="w-4 h-4" />
                               </div>
                               <div
-                                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                                className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{
                                   backgroundColor: `${accent.from}18`,
                                   color: accent.from,
                                 }}
                               >
-                                <span className="material-symbols-rounded text-lg">hourglass_bottom</span>
+                                <span className="material-symbols-rounded text-base">hourglass_bottom</span>
                               </div>
                               <input
                                 type="text"
@@ -647,7 +647,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                   setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
                                   handleUpdateInterludeLabel(section.id, line.id, e.target.value);
                                 }}
-                                className="px-2 py-1 rounded-lg text-sm font-bold border outline-none"
+                                className="px-2 py-1 rounded-lg text-xs sm:text-sm font-bold border outline-none flex-1 min-w-0 max-w-[140px] sm:max-w-[200px] truncate"
                                 style={{
                                   backgroundColor: 'var(--surface-container-low, rgba(0,0,0,0.04))',
                                   borderColor: 'var(--c-border, #E3E6EB)',
@@ -658,9 +658,9 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               />
                             </div>
 
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                               <span
-                                className="font-mono text-xs font-black px-2.5 py-1 rounded-full border"
+                                className="font-mono text-xs font-black px-2 py-0.5 rounded-full border flex-shrink-0"
                                 style={{
                                   backgroundColor: `${accent.from}18`,
                                   borderColor: `${accent.from}44`,
@@ -669,33 +669,33 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               >
                                 {durSec}s
                               </span>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5 flex-shrink-0">
                                 <button
                                   type="button"
                                   onClick={() => handleMoveLineRelative(section.id, lIdx, -1)}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                                   title="Move interlude up"
                                   aria-label="Move interlude up"
                                 >
-                                  <span className="material-symbols-rounded text-base">arrow_upward</span>
+                                  <span className="material-symbols-rounded text-sm sm:text-base">arrow_upward</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleMoveLineRelative(section.id, lIdx, 1)}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                                   title="Move interlude down"
                                   aria-label="Move interlude down"
                                 >
-                                  <span className="material-symbols-rounded text-base">arrow_downward</span>
+                                  <span className="material-symbols-rounded text-sm sm:text-base">arrow_downward</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteLine(section.id, line.id)}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer"
+                                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                                   title="Delete interlude"
                                   aria-label="Delete interlude"
                                 >
-                                  <span className="material-symbols-rounded text-base">delete</span>
+                                  <span className="material-symbols-rounded text-sm sm:text-base">delete</span>
                                 </button>
                               </div>
                             </div>

@@ -51,92 +51,25 @@ const liveModeStyles = `
 /* Chords typography */
 .chord-tag {
   font-family: var(--studio-font-mono, monospace);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.1;
   margin-bottom: 0.25rem;
   min-height: 1.25rem;
   color: var(--c-text-secondary, #94a3b8);
-  transition: color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-              transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.karaoke-word,
-.lyric-word {
-  display: inline-block;
-  color: var(--lyric-unfilled, var(--c-text-secondary, #94a3b8));
-  -webkit-text-fill-color: var(--lyric-unfilled, var(--c-text-secondary, #94a3b8));
-  font-family: var(--studio-font-body, "Inter Tight", sans-serif);
-  letter-spacing: -0.015em;
-  transform-origin: left center;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* Active Word in Sung Focus: Butter-Smooth Sliding Highlight across Letters */
-.chord-cell.active .karaoke-word,
-.karaoke-word.active,
-.lyric-word.word-active {
-  font-weight: 800 !important;
-  transform: scale(1.05) translateY(-1px);
-  background: linear-gradient(
-    90deg,
-    var(--lyric-fill, var(--c-text-primary, #ffffff)) 0%,
-    var(--lyric-fill, var(--c-text-primary, #ffffff)) 45%,
-    var(--lyric-glow, var(--c-accent-from, #3b82f6)) 48%,
-    var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45))) 52%,
-    var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45))) 100%
-  );
-  background-size: 220% 100%;
-  background-position: 100% 0;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  will-change: background-position;
-  animation: lyric-word-wipe var(--word-duration, 350ms) linear forwards;
-  filter: drop-shadow(0 2px 12px var(--lyric-glow-shadow, rgba(59, 130, 246, 0.3)));
-}
-
-/* Active Chord Highlight */
-.chord-cell.active .chord-tag {
-  color: var(--c-primary, #2563eb) !important;
-  font-weight: 800;
-  transform: translateY(-2px);
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease;
-}
-
-/* Passed words in current/prior context */
-.chord-cell.passed .karaoke-word,
-.karaoke-word.passed,
-.lyric-word.word-past {
-  font-weight: 600;
-  color: var(--lyric-fill, var(--c-text-primary, #ffffff));
-  -webkit-text-fill-color: var(--lyric-fill, var(--c-text-primary, #ffffff));
-  background: none;
-  opacity: 0.95;
-  filter: none;
-  transform: none;
-}
-.chord-cell.passed .chord-tag {
-  color: var(--c-primary, #3b82f6);
-  opacity: 0.8;
-}
-
-/* Upcoming words */
-.lyric-word.word-upcoming,
-.karaoke-word:not(.active):not(.passed) {
-  opacity: 0.55;
-  font-weight: 500;
-  color: var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45)));
-  -webkit-text-fill-color: var(--lyric-unfilled, var(--c-text-secondary, rgba(255, 255, 255, 0.45)));
-  background: none;
-  filter: none;
-  transform: none;
+.chord-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 0.35rem;
 }
 
 /* Active line focus */
 .lyric-line.active-line {
   opacity: 1 !important;
-  transform: scale(1.01);
+  transform: scale(1.008);
 }
 
 .beat-dot {
@@ -1194,7 +1127,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           display: 'flex',
           flexDirection: 'column',
           gap: fontSizes.lineGap,
-          scrollBehavior: 'smooth',
           WebkitOverflowScrolling: 'touch',
           transform: teleprompterMirror ? 'scaleX(-1)' : 'none',
           boxSizing: 'border-box',
@@ -1209,15 +1141,15 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             item.color.toLowerCase() === '#ffffff' ||
             item.color.toLowerCase() === '#fff' ||
             item.color.toLowerCase().startsWith('rgb(255');
-          const highlightBorderColor = isTextColorWhite ? 'var(--c-accent-from, #3b82f6)' : item.color;
+          const highlightBorderColor = isTextColorWhite ? accent.from : item.color;
           const highlightBg = isTextColorWhite
             ? 'rgba(255, 255, 255, 0.08)'
             : 'rgba(255, 255, 255, 0.05)';
           const highlightBorder = isActive
-            ? `1px solid ${isTextColorWhite ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.08)'}`
+            ? `1px solid ${isTextColorWhite ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.1)'}`
             : '1px solid transparent';
           const highlightShadow = isActive
-            ? '0 4px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
+            ? '0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
             : 'none';
 
           return (
@@ -1238,9 +1170,9 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 border: highlightBorder,
                 borderLeft: isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent',
                 boxShadow: highlightShadow,
-                opacity: isActive ? 1 : isPast ? 0.42 : 0.75,
+                opacity: isActive ? 1 : isPast ? 0.45 : 0.72,
                 transition:
-                  'background 250ms ease, opacity 250ms ease, transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
+                  'background 220ms ease, opacity 220ms ease, transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease',
                 cursor: 'pointer',
                 textAlign: isCentered ? 'center' : 'left',
               }}
@@ -1368,12 +1300,10 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               >
                 {displayMode === 'lyrics_chord_name' ? (
                   item.words.map((w) => {
-                    const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
-                    const isWordActive = isActive && w.globalWordIdx === currentWordIdx;
                     return (
                       <div
                         key={w.id}
-                        className={`chord-cell ${isWordActive ? 'active' : ''}`}
+                        className="chord-cell"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleLineClick(idx);
@@ -1384,19 +1314,21 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                           style={{
                             fontSize: fontSizes.chord,
                             color: isActive ? accent.from : 'var(--c-text-secondary)',
-                            fontWeight: 700,
+                            fontWeight: 800,
                           }}
                         >
                           {w.chord || '\u00A0'}
                         </span>
                         <span
-                          className={`karaoke-word ${isWordActive ? 'active' : ''}`}
                           style={{
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
                             cursor: 'pointer',
-                            color: isActive ? lyricFill : 'inherit',
-                            fontWeight: isActive ? 600 : 400,
+                            color: isActive
+                              ? (item.color || 'var(--c-text-primary, #ffffff)')
+                              : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))',
+                            fontWeight: isActive ? 700 : 500,
+                            transition: 'color 0.2s ease',
                           }}
                         >
                           {w.text}&nbsp;
@@ -1405,29 +1337,21 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                     );
                   })
                 ) : (
-                  item.words.map((w) => {
-                    const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
-                    const isWordActive = isActive && w.globalWordIdx === currentWordIdx;
-                    return (
-                      <span
-                        key={w.id}
-                        className={`lyric-word ${isWordActive ? 'word-active' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLineClick(idx);
-                        }}
-                        style={{
-                          fontFamily: resolvedFontFamily,
-                          fontSize: fontSizes.text,
-                          cursor: 'pointer',
-                          color: isActive ? lyricFill : 'inherit',
-                          fontWeight: isActive ? 600 : 400,
-                        }}
-                      >
-                        {w.text}&nbsp;
-                      </span>
-                    );
-                  })
+                  <span
+                    style={{
+                      fontFamily: resolvedFontFamily,
+                      fontSize: fontSizes.text,
+                      cursor: 'pointer',
+                      color: isActive
+                        ? (item.color || 'var(--c-text-primary, #ffffff)')
+                        : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))',
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: '-0.01em',
+                      transition: 'color 0.2s ease',
+                    }}
+                  >
+                    {item.line.text}
+                  </span>
                 )}
               </div>
               )}
@@ -1942,54 +1866,22 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                 </span>
               </div>
             </div>
-          ) : currentLine?.words && currentLine.words.length > 0 ? (
-            currentLine.words.map((w) => {
-              const isWordActive = w.globalWordIdx === currentWordIdx;
-              const isWordPassed = w.globalWordIdx < currentWordIdx;
-              const wordDuration = Math.max(100, Math.round((w.durationMs || 350) / (playbackSpeed || 1)));
-              const lyricFill = w.color || 'var(--c-text-primary, #ffffff)';
-              const lyricGlow = w.color || accent.from;
-              const lyricGlowShadow = w.color ? `${w.color}55` : `${accent.from}55`;
-              const lyricUnfilled = w.color ? `${w.color}88` : 'var(--c-text-secondary, rgba(255, 255, 255, 0.45))';
-
-              return (
-                <span
-                  key={w.id}
-                  onClick={() => setCurrentWordIdx(w.globalWordIdx)}
-                  className={`lyric-word ${
-                    isWordActive
-                      ? 'word-active'
-                      : isWordPassed
-                      ? 'word-past'
-                      : 'word-upcoming'
-                  }`}
-                  style={{
-                    fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-                    fontSize: 'clamp(24px, 5.5vw, 36px)',
-                    cursor: 'pointer',
-                    '--word-duration': autoPlay ? `${wordDuration}ms` : '180ms',
-                    '--lyric-fill': lyricFill,
-                    '--lyric-glow': lyricGlow,
-                    '--lyric-glow-shadow': lyricGlowShadow,
-                    '--lyric-unfilled': lyricUnfilled,
-                    animationPlayState: autoPlay ? 'running' : 'paused',
-                  } as React.CSSProperties}
-                >
-                  {w.text}
-                </span>
-              );
-            })
           ) : (
-            <span
+            <div
               style={{
                 fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-                fontSize: '28px',
-                fontWeight: 700,
-                color: currentLine?.color || 'var(--c-text-secondary)',
+                fontSize: 'clamp(26px, 6vw, 40px)',
+                fontWeight: 800,
+                color: currentLine?.color || 'var(--c-text-primary, #ffffff)',
+                letterSpacing: '-0.02em',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                padding: '0 12px',
+                transition: 'color 0.2s ease',
               }}
             >
               {currentLine?.line.text || '...'}
-            </span>
+            </div>
           )}
         </div>
 
