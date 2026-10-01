@@ -107,4 +107,39 @@ describe('Band & Team Store (useBandStore)', () => {
     useBandStore.getState().removeSharedSong(sharedSong.id);
     expect(useBandStore.getState().sharedSongs.length).toBe(0);
   });
+
+  it('manages shared band calendar events (gigs, rehearsals, call times)', () => {
+    const band = useBandStore.getState().createBand('Retro Nova', 'u1', 'Alex');
+
+    const newEvent = useBandStore.getState().addEvent({
+      bandId: band.id,
+      title: 'Saturday Night Stage Performance',
+      type: 'gig',
+      date: '2026-10-15',
+      time: '21:00',
+      callTime: '19:30',
+      location: 'Electric Garden Main Stage',
+      notes: 'Bring spare cables and IEMs',
+      createdBy: 'u1',
+    });
+
+    expect(newEvent.id).toBeTruthy();
+    expect(newEvent.title).toBe('Saturday Night Stage Performance');
+    expect(newEvent.type).toBe('gig');
+    expect(newEvent.callTime).toBe('19:30');
+
+    const state = useBandStore.getState();
+    expect(state.events.length).toBe(1);
+    expect(state.events[0].location).toBe('Electric Garden Main Stage');
+
+    // Update event
+    useBandStore.getState().updateEvent(newEvent.id, { time: '21:30', callTime: '20:00' });
+    const updatedState = useBandStore.getState();
+    expect(updatedState.events[0].time).toBe('21:30');
+    expect(updatedState.events[0].callTime).toBe('20:00');
+
+    // Delete event
+    useBandStore.getState().deleteEvent(newEvent.id);
+    expect(useBandStore.getState().events.length).toBe(0);
+  });
 });

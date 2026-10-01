@@ -83,6 +83,24 @@ export interface LiveBandSyncPacket {
   songPayload?: Partial<SharedSong>;
 }
 
+export type BandEventType = 'rehearsal' | 'gig' | 'recording' | 'meeting' | 'other';
+
+export interface BandEvent {
+  id: string;
+  bandId: string;
+  title: string;
+  type: BandEventType;
+  date: string; // ISO date format YYYY-MM-DD
+  time?: string; // e.g. "19:00" or "7:00 PM"
+  callTime?: string; // e.g. "18:30"
+  location?: string;
+  notes?: string;
+  setlistSongIds?: string[]; // IDs of shared songs scheduled for this event
+  createdBy: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 export interface LiveBandSessionState {
   isBroadcasting: boolean;
   isLockedToLeader: boolean;
@@ -95,6 +113,7 @@ export interface BandState {
   currentBand: Band | null;
   members: BandMember[];
   sharedSongs: SharedSong[];
+  events: BandEvent[];
   userBands: Band[];
   isLoading: boolean;
   error: string | null;
@@ -109,6 +128,7 @@ export interface BandActions {
   setCurrentBand: (band: Band | null) => void;
   setMembers: (members: BandMember[]) => void;
   setSharedSongs: (songs: SharedSong[]) => void;
+  setEvents: (events: BandEvent[]) => void;
   createBand: (name: string, leaderId: string, leaderName: string, description?: string) => Band;
   joinBandByCode: (code: string, userId: string, userName: string) => Promise<{ success: boolean; message?: string }>;
   leaveBand: () => void;
@@ -116,6 +136,9 @@ export interface BandActions {
   shareSongFromPreset: (preset: SongPreset, bandId: string, userId: string, userName: string) => SharedSong;
   importSharedSongToLibrary: (sharedSong: SharedSong, createPresetFn: (data: any) => string) => string;
   removeSharedSong: (sharedSongId: string) => void;
+  addEvent: (event: Omit<BandEvent, 'id' | 'createdAt'>) => BandEvent;
+  updateEvent: (eventId: string, updates: Partial<BandEvent>) => void;
+  deleteEvent: (eventId: string) => void;
   updateBandName: (name: string) => void;
   setError: (err: string | null) => void;
   // Live session actions
@@ -123,3 +146,4 @@ export interface BandActions {
   setIsLockedToLeader: (locked: boolean) => void;
   setActiveLiveSession: (packet: LiveBandSyncPacket | null) => void;
 }
+

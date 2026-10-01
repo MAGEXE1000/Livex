@@ -404,100 +404,36 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
           </div>
         </div>
 
-        {/* Right: Live Sync Pill + Settings button */}
+        {/* Right: Live Sync Pill (when locked as spectator) + Settings button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          {state.hasActiveBand && (
-            state.isBroadcasting ? (
-              <button
-                type="button"
-                data-testid="live-broadcast-toggle"
-                onClick={() => state.setIsBroadcasting(false)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 10px',
-                  borderRadius: '16px',
-                  background: 'rgba(34, 197, 94, 0.16)',
-                  border: '1px solid rgba(34, 197, 94, 0.4)',
-                  color: '#4ade80',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 14px rgba(34, 197, 94, 0.28)',
-                  transition: 'all 0.2s ease',
-                }}
-                title="Broadcasting Live Session to Band (Tap to Stop)"
-              >
-                <span
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: '#22c55e',
-                    boxShadow: '0 0 8px #22c55e',
-                    animation: 'live-dot-pulse 1.2s infinite',
-                  }}
-                />
-                <span>LIVE</span>
-              </button>
-            ) : state.isLockedToLeader ? (
-              <button
-                type="button"
-                data-testid="live-follow-toggle"
-                onClick={() => state.setIsLockedToLeader(false)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '5px 10px',
-                  borderRadius: '16px',
-                  background: 'rgba(59, 130, 246, 0.16)',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
-                  color: '#60a5fa',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.03em',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 14px rgba(59, 130, 246, 0.28)',
-                  transition: 'all 0.2s ease',
-                }}
-                title="Locked to Leader's Live Session (Tap to Unlock)"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
-                  link
-                </span>
-                <span>SYNCED</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                data-testid="live-broadcast-toggle"
-                onClick={() => state.setIsBroadcasting(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '5px 9px',
-                  borderRadius: '16px',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.14)',
-                  color: 'var(--c-text-primary, #ffffff)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                title="Broadcast Live Session to Band Members"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '14px', color: accent.from }}>
-                  sensors
-                </span>
-                <span>Broadcast</span>
-              </button>
-            )
+          {state.hasActiveBand && state.isLockedToLeader && (
+            <button
+              type="button"
+              data-testid="live-follow-toggle"
+              onClick={() => state.setIsLockedToLeader(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 10px',
+                borderRadius: '16px',
+                background: 'rgba(59, 130, 246, 0.16)',
+                border: '1px solid rgba(59, 130, 246, 0.4)',
+                color: '#60a5fa',
+                fontSize: '11px',
+                fontWeight: 800,
+                letterSpacing: '0.03em',
+                cursor: 'pointer',
+                boxShadow: '0 0 14px rgba(59, 130, 246, 0.28)',
+                transition: 'all 0.2s ease',
+              }}
+              title="Locked to Leader's Live Session (Tap to Unlock)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>
+                link
+              </span>
+              <span>SYNCED</span>
+            </button>
           )}
 
           <button

@@ -3,6 +3,8 @@
 // Components
 export { default as LivexHub, default as StudioHub } from './components/LivexHub';
 export { HubAppGrid } from './components/HubAppGrid';
+export { BandHubModal } from './components/BandHubModal';
+export { BandLiveSyncToast } from './components/BandLiveSyncToast';
 
 // Navigation
 export { SharedNavigationBar } from './navigation/SharedNavigationBar';

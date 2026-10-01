@@ -61,6 +61,7 @@ import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
 import { SharedNavigationContainer } from '../../navigation/SharedNavigationContainer';
 import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/animation';
 import { Toaster } from '../../components/ui/sonner';
+import { BandLiveSyncToast } from '../../features/hub/components/BandLiveSyncToast';
 
 const ALL_PANELS = ['songs', 'library', 'practice', 'preferences'] as const;
 const CANONICAL_APP_ORDER = ['hub', 'chordex', 'drumex', 'stagex', 'groovex', 'vocalex', 'devtools'] as const;
@@ -496,6 +497,7 @@ export function SharedAppShell({
         {renderBottomNav?.()}
       </ErrorBoundary>
       <Toaster />
+      <BandLiveSyncToast />
       {renderLaunchOverlay?.()}
       <AnimatePresence>
         {!isWebDesktop && launchingApp && launchingApp !== 'hub' && (

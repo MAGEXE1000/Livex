@@ -4,6 +4,7 @@ import type {
   Band,
   BandMember,
   SharedSong,
+  BandEvent,
   BandState,
   BandActions,
 } from '../types/band';
@@ -26,6 +27,7 @@ const DEFAULT_BAND_STATE: BandState = {
   currentBand: null,
   members: [],
   sharedSongs: [],
+  events: [],
   userBands: [],
   isLoading: false,
   error: null,
@@ -50,6 +52,10 @@ export const useBandStore = create<BandStore>()(
 
       setSharedSongs: (sharedSongs) => {
         set({ sharedSongs });
+      },
+
+      setEvents: (events) => {
+        set({ events });
       },
 
       setError: (error) => {
@@ -171,6 +177,7 @@ export const useBandStore = create<BandStore>()(
           currentBand: null,
           members: [],
           sharedSongs: [],
+          events: [],
           error: null,
         });
       },
@@ -251,6 +258,39 @@ export const useBandStore = create<BandStore>()(
         }));
       },
 
+      addEvent: (eventData) => {
+        const id = `event-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const now = Date.now();
+        const newEvent: BandEvent = {
+          ...eventData,
+          id,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set((state) => ({
+          events: [newEvent, ...state.events.filter((e) => e.id !== id)],
+        }));
+
+        return newEvent;
+      },
+
+      updateEvent: (eventId, updates) => {
+        set((state) => ({
+          events: state.events.map((e) =>
+            e.id === eventId
+              ? { ...e, ...updates, updatedAt: Date.now() }
+              : e
+          ),
+        }));
+      },
+
+      deleteEvent: (eventId) => {
+        set((state) => ({
+          events: state.events.filter((e) => e.id !== eventId),
+        }));
+      },
+
       updateBandName: (name) => {
         const trimmed = name.trim();
         if (!trimmed) return;
@@ -291,6 +331,7 @@ export const useBandStore = create<BandStore>()(
         currentBand: state.currentBand,
         members: state.members,
         sharedSongs: state.sharedSongs,
+        events: state.events,
         userBands: state.userBands,
       }),
     }

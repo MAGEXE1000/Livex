@@ -4034,6 +4034,25 @@ export default function SongsPanel() {
   const [showLyricsComposer, setShowLyricsComposer] = useState(false);
   const [composerSongId, setComposerSongId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const handleOpenSpectator = () => {
+      setShowLive(true);
+    };
+    window.addEventListener('livex:open-live-spectator', handleOpenSpectator);
+
+    try {
+      const autoOpen = sessionStorage.getItem('livex_auto_open_live');
+      if (autoOpen) {
+        sessionStorage.removeItem('livex_auto_open_live');
+        setShowLive(true);
+      }
+    } catch (_) {}
+
+    return () => {
+      window.removeEventListener('livex:open-live-spectator', handleOpenSpectator);
+    };
+  }, []);
+
   const composerSongPreset = useMemo(
     () => (composerSongId ? presets.find((p) => p.id === composerSongId) : undefined),
     [composerSongId, presets]

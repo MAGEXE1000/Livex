@@ -461,6 +461,7 @@ export function useLiveModeState(
 
   const setAutoPlay = useCallback(
     (action: boolean | ((prev: boolean) => boolean)) => {
+      if (isLockedToLeader) return;
       setAutoPlayState((prev) => {
         const next = typeof action === 'function' ? action(prev) : action;
         if (isBroadcasting) {
@@ -469,8 +470,16 @@ export function useLiveModeState(
         return next;
       });
     },
-    [isBroadcasting, emitLiveSync]
+    [isLockedToLeader, isBroadcasting, emitLiveSync]
   );
+
+  // When leader enters Live mode with an active band, auto-enable broadcasting and emit session ping
+  useEffect(() => {
+    if (currentBand && !isLockedToLeader) {
+      setIsBroadcasting(true);
+      emitLiveSync('SONG_SELECT', { autoPlay: false });
+    }
+  }, [currentBand?.id, isLockedToLeader, emitLiveSync, setIsBroadcasting]);
 
   useEffect(() => {
     if (preset.barsPerLine) {
@@ -480,6 +489,7 @@ export function useLiveModeState(
 
   const setBarsPerLine = useCallback(
     (action: number | ((prev: number) => number)) => {
+      if (isLockedToLeader) return;
       let nextBars = 2;
       setBarsPerLineState((prev) => {
         const raw = typeof action === 'function' ? action(prev) : action;
@@ -504,7 +514,7 @@ export function useLiveModeState(
         });
       }
     },
-    [preset?.id, isBroadcasting, emitLiveSync]
+    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
   );
 
   const beatsPerLine = barsPerLine * 4;
@@ -634,6 +644,7 @@ export function useLiveModeState(
 
   const setSpeed = useCallback(
     (action: number | ((prev: number) => number)) => {
+      if (isLockedToLeader) return;
       let nextSpeed = 120;
       setSpeedState((prev) => {
         const raw = typeof action === 'function' ? action(prev) : action;
@@ -659,7 +670,7 @@ export function useLiveModeState(
         });
       }
     },
-    [preset?.id, isBroadcasting, emitLiveSync]
+    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
   );
 
   const bpmOverride = speed;
