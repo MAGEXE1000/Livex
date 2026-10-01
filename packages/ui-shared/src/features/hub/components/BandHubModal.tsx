@@ -56,7 +56,7 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
   const setActivePreset = useChordStore((s) => s.setActivePreset);
 
   const [noBandTab, setNoBandTab] = useState<'create' | 'join'>('create');
-  const [bandTab, setBandTab] = useState<'repertoire' | 'calendar' | 'members'>('repertoire');
+  const [bandTab, setBandTab] = useState<'members' | 'calendar'>('members');
   const [bandNameInput, setBandNameInput] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
@@ -90,7 +90,7 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
 
     createBand(name, currentUserId, currentUserName);
     setBandNameInput('');
-    setBandTab('repertoire');
+    setBandTab('members');
     showToast(isSpanish ? '¡Banda creada exitosamente!' : 'Band created successfully!');
   };
 
@@ -102,7 +102,7 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     const res = await joinBandByCode(code, currentUserId, currentUserName);
     if (res.success) {
       setJoinCodeInput('');
-      setBandTab('repertoire');
+      setBandTab('members');
       showToast(isSpanish ? '¡Te has unido a la banda!' : 'Joined band successfully!');
     }
   };
@@ -318,21 +318,21 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
             >
               <button
                 type="button"
-                data-testid="band-tab-songs"
+                data-testid="band-tab-members"
                 onClick={() => {
-                  setBandTab('repertoire');
+                  setBandTab('members');
                   setShowSongPicker(false);
                   setShowAddEvent(false);
                 }}
                 className="flex-1 py-1.5 text-xs font-bold rounded-lg transition active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1"
                 style={{
-                  background: bandTab === 'repertoire' ? accent.from : 'transparent',
-                  color: bandTab === 'repertoire' ? '#ffffff' : 'var(--c-text-secondary)',
-                  boxShadow: bandTab === 'repertoire' ? `0 2px 8px ${accent.from}33` : 'none',
+                  background: bandTab === 'members' ? accent.from : 'transparent',
+                  color: bandTab === 'members' ? '#ffffff' : 'var(--c-text-secondary)',
+                  boxShadow: bandTab === 'members' ? `0 2px 8px ${accent.from}33` : 'none',
                 }}
               >
-                <StudioIcon name="library_music" size={13} />
-                <span>{isSpanish ? 'Repertorio' : 'Songs'} ({sharedSongs.length})</span>
+                <StudioIcon name="groups" size={13} />
+                <span>{isSpanish ? 'Miembros' : 'Members'} ({members.length})</span>
               </button>
               <button
                 type="button"
@@ -352,225 +352,8 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
                 <StudioIcon name="calendar_month" size={13} />
                 <span>{isSpanish ? 'Gigs / Fechas' : 'Gigs'} ({events.length})</span>
               </button>
-              <button
-                type="button"
-                data-testid="band-tab-members"
-                onClick={() => {
-                  setBandTab('members');
-                  setShowSongPicker(false);
-                  setShowAddEvent(false);
-                }}
-                className="flex-1 py-1.5 text-xs font-bold rounded-lg transition active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1"
-                style={{
-                  background: bandTab === 'members' ? accent.from : 'transparent',
-                  color: bandTab === 'members' ? '#ffffff' : 'var(--c-text-secondary)',
-                  boxShadow: bandTab === 'members' ? `0 2px 8px ${accent.from}33` : 'none',
-                }}
-              >
-                <StudioIcon name="groups" size={13} />
-                <span>{isSpanish ? 'Miembros' : 'Members'} ({members.length})</span>
-              </button>
             </div>
 
-            {/* ── SUB-VIEW 1: REPERTOIRE / SHARED SONGS ── */}
-            {bandTab === 'repertoire' && (
-              <div className="flex flex-col gap-2.5">
-                {/* Repertoire Header Action */}
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                    {isSpanish ? 'Repertorio de la Banda' : 'Band Repertoire'}
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="band-share-song-btn"
-                    onClick={() => setShowSongPicker((v) => !v)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer"
-                    style={{
-                      background: showSongPicker ? `${accent.from}22` : 'rgba(255, 255, 255, 0.08)',
-                      borderColor: showSongPicker ? accent.from : 'rgba(255, 255, 255, 0.12)',
-                      borderWidth: '1px',
-                      color: showSongPicker ? accent.from : 'var(--c-text-primary)',
-                    }}
-                  >
-                    <StudioIcon name={showSongPicker ? 'close' : 'add'} size={14} />
-                    <span>{showSongPicker ? (isSpanish ? 'Cerrar' : 'Close') : (isSpanish ? '+ Compartir' : '+ Share Song')}</span>
-                  </button>
-                </div>
-
-                {/* Song Picker: Share from user's local presets */}
-                {showSongPicker && (
-                  <div
-                    data-testid="band-song-picker"
-                    className="p-2.5 rounded-xl border flex flex-col gap-2"
-                    style={{
-                      background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-                      borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
-                    }}
-                  >
-                    <span className="text-[11px] font-semibold text-zinc-400">
-                      {isSpanish ? 'Selecciona una canción de tu biblioteca:' : 'Select a song from your library to publish:'}
-                    </span>
-                    {presets.length === 0 ? (
-                      <p className="text-xs text-zinc-500 italic py-2 text-center">
-                        {isSpanish ? 'No tienes canciones en tu biblioteca.' : 'No local songs found in library.'}
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
-                        {presets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            data-testid={`pick-song-${preset.id}`}
-                            onClick={() => handleSharePreset(preset)}
-                            className="flex items-center justify-between p-2 rounded-lg border text-left transition active:scale-[0.98] cursor-pointer"
-                            style={{
-                              background: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.04)',
-                              borderColor: 'var(--c-border, rgba(255, 255, 255, 0.08))',
-                            }}
-                          >
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
-                                {preset.name}
-                              </span>
-                              <span className="text-[10px] text-zinc-400">
-                                {preset.key || 'C'} • {preset.bpm || 120} BPM
-                              </span>
-                            </div>
-                            <span
-                              className="text-[11px] font-bold px-2 py-0.5 rounded-md"
-                              style={{ background: `${accent.from}22`, color: accent.from }}
-                            >
-                              {isSpanish ? 'Compartir' : 'Share'}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Shared Songs List */}
-                {sharedSongs.length === 0 ? (
-                  <div
-                    data-testid="band-empty-songs"
-                    className="flex flex-col items-center justify-center p-6 rounded-2xl border text-center"
-                    style={{
-                      background: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
-                      borderColor: 'var(--c-border, rgba(255, 255, 255, 0.06))',
-                    }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                      style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--c-text-tertiary)' }}
-                    >
-                      <StudioIcon name="music_note" size={20} />
-                    </div>
-                    <p className="text-xs font-bold" style={{ color: 'var(--c-text-secondary)' }}>
-                      {isSpanish ? 'Sin canciones compartidas todavía' : 'No shared band songs yet'}
-                    </p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      {isSpanish
-                        ? 'Publica una canción desde tu biblioteca para que todos puedan ensayar.'
-                        : 'Publish a song from your library so the band can rehearse in sync.'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-                    {sharedSongs.map((song) => {
-                      const isLocal = presets.some(
-                        (p) => p.name.toLowerCase() === song.title.toLowerCase() || p.id === song.songId
-                      );
-                      const canDelete = isLeader || song.updatedBy === currentUserId;
-
-                      return (
-                        <div
-                          key={song.id}
-                          data-testid={`band-shared-song-${song.id}`}
-                          className="flex flex-col gap-2 p-2.5 rounded-xl border"
-                          style={{
-                            background: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.03)',
-                            borderColor: 'var(--c-border, rgba(255, 255, 255, 0.08))',
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
-                                {song.title}
-                              </span>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span
-                                  className="text-[10px] font-bold px-1.5 py-0.2 rounded"
-                                  style={{ background: 'rgba(255, 255, 255, 0.06)', color: 'var(--c-text-secondary)' }}
-                                >
-                                  #{song.key}
-                                </span>
-                                <span
-                                  className="text-[10px] font-bold px-1.5 py-0.2 rounded"
-                                  style={{ background: 'rgba(255, 255, 255, 0.06)', color: 'var(--c-text-secondary)' }}
-                                >
-                                  {song.bpm} BPM
-                                </span>
-                                {song.barsPerLine && (
-                                  <span
-                                    className="text-[10px] font-bold px-1.5 py-0.2 rounded"
-                                    style={{ background: 'rgba(255, 255, 255, 0.06)', color: 'var(--c-text-secondary)' }}
-                                  >
-                                    {song.barsPerLine} Bars
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Open in Live Mode or Chordex */}
-                            <button
-                              type="button"
-                              data-testid={`open-shared-song-${song.id}`}
-                              onClick={() => handleOpenSong(song)}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-white transition active:scale-95 cursor-pointer shadow-sm flex items-center gap-1"
-                              style={{ background: accent.from }}
-                              title={isSpanish ? 'Abrir en Vivo' : 'Open in Live Mode'}
-                            >
-                              <StudioIcon name="play_arrow" size={14} />
-                              <span>{isSpanish ? 'Abrir' : 'Open'}</span>
-                            </button>
-                          </div>
-
-                          {/* Footer: Caching State & Delete */}
-                          <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-zinc-400">
-                            <span className="truncate">
-                              {song.uploaderName ? `${isSpanish ? 'Por' : 'By'} ${song.uploaderName}` : ''}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {!isLocal && (
-                                <button
-                                  type="button"
-                                  data-testid={`cache-song-${song.id}`}
-                                  onClick={() => handleImportToLibrary(song)}
-                                  className="text-zinc-300 hover:text-white font-semibold cursor-pointer underline"
-                                >
-                                  {isSpanish ? 'Guardar Copia' : 'Save Offline'}
-                                </button>
-                              )}
-                              {canDelete && (
-                                <button
-                                  type="button"
-                                  data-testid={`delete-shared-song-${song.id}`}
-                                  onClick={() => removeSharedSong(song.id)}
-                                  className="text-rose-400 hover:text-rose-300 cursor-pointer"
-                                  title={isSpanish ? 'Eliminar del repertorio' : 'Remove from band'}
-                                >
-                                  <StudioIcon name="delete" size={13} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* ── SUB-VIEW 2: CALENDAR / GIGS & REHEARSALS ── */}
             {bandTab === 'calendar' && (

@@ -143,14 +143,14 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
               type="button"
               onClick={() => setShowEditInfoModal(true)}
               title="Edit setlist info"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer"
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0"
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
                 color: 'var(--c-text-primary, #FFFFFF)',
               }}
             >
-              <span className="material-symbols-rounded text-lg">edit</span>
+              <span className="material-symbols-rounded text-[17px]">edit</span>
             </motion.button>
 
             {stats.totalSongs > 0 && (
@@ -160,15 +160,15 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                 data-testid="setlist-start-live-btn"
                 onClick={() => onPlayLiveSetlist(setlist, 0)}
                 title="Start live setlist rehearsal"
-                className="h-9 px-3.5 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                className="h-[34px] px-4 rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${accentColor}, color-mix(in srgb, ${accentColor} 80%, #000))`,
                   color: '#FFFFFF',
                   boxShadow: `0 3px 12px color-mix(in srgb, ${accentColor} 35%, transparent)`,
                 }}
               >
-                <span className="material-symbols-rounded text-xl">play_arrow</span>
-                <span className="text-xs font-bold tracking-tight">Play Live</span>
+                <span className="material-symbols-rounded text-[18px]">play_arrow</span>
+                <span className="text-[11px] font-bold tracking-tight uppercase">Play Live</span>
               </motion.button>
             )}
           </div>
@@ -218,6 +218,55 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
 
           {/* Sections List */}
           <div className="space-y-4" data-purpose="setlist-sections-container">
+            {(!setlist.sections || setlist.sections.length === 0 || stats.totalSongs === 0) && (
+              <div
+                className="p-8 rounded-3xl border flex flex-col items-center justify-center text-center gap-4 mt-4"
+                style={{
+                  backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.02))',
+                  borderColor: 'var(--c-border, rgba(255, 255, 255, 0.06))',
+                }}
+              >
+                <span className="material-symbols-rounded text-[40px] text-slate-500 mb-1 opacity-80">
+                  queue_music
+                </span>
+                <div>
+                  <p className="text-[15px] font-bold text-slate-200">Your setlist is empty</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[240px] mx-auto">
+                    Start building your setlist by adding a section or dropping in your first songs.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 w-full max-w-[280px] mx-auto flex-col sm:flex-row mt-2">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    type="button"
+                    onClick={() => setShowNewSectionDialog(true)}
+                    className="w-full h-10 px-4 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold shadow-md transition-colors"
+                    style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#fff' }}
+                  >
+                    <span className="material-symbols-rounded text-sm">view_agenda</span>
+                    <span>Add First Section</span>
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    type="button"
+                    onClick={() => {
+                      if (!setlist.sections || setlist.sections.length === 0) {
+                        addSectionToSetlist(setlist.id, 'Main Set');
+                        // Small delay to let the store update before opening picker, or just open picker for the new section
+                        setTimeout(() => handleOpenSongPicker(setlist.sections?.[0]?.id || 'default'), 100);
+                      } else {
+                        handleOpenSongPicker(setlist.sections[0].id);
+                      }
+                    }}
+                    className="w-full h-10 px-4 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-white shadow-md transition-colors"
+                    style={{ background: accentColor }}
+                  >
+                    <span className="material-symbols-rounded text-sm">library_music</span>
+                    <span>Add Songs</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
             {(setlist.sections || []).map((section, secIdx) => {
               const isFirstSec = secIdx === 0;
               const isLastSec = secIdx === (setlist.sections.length - 1);
@@ -442,13 +491,17 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                                 <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 flex-wrap">
                                   {song.artist && <span className="truncate max-w-[100px]">{song.artist}</span>}
                                   {song.key && (
-                                    <span className="px-1 py-0.2 rounded font-bold bg-white/10 text-slate-200">
-                                      {song.key}
+                                    <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+                                      #{song.key}
                                     </span>
                                   )}
-                                  <span>{song.bpm || song.speed || 120} BPM</span>
+                                  <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+                                    {song.bpm || song.speed || 120} BPM
+                                  </span>
                                   {durStr && (
-                                    <span className="text-blue-400 font-medium">{durStr}</span>
+                                    <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-blue-400">
+                                      {durStr}
+                                    </span>
                                   )}
                                 </div>
                               </div>
