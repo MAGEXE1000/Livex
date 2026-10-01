@@ -874,6 +874,7 @@ export default function LivexHub() {
   const [shortcutPickerOpen, setShortcutPickerOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState<string[]>([]);
   const currentBand = useBandStore((s) => s.currentBand);
+  const bandMembers = useBandStore((s) => s.members);
   const [bandModalOpen, setBandModalOpen] = useState(false);
 
   // Drag-to-reorder state variables
@@ -1432,7 +1433,11 @@ export default function LivexHub() {
                               title={currentBand ? currentBand.name : (lang === 'es' ? 'Banda y Equipo' : 'Band & Team')}
                             >
                               <StudioIcon name="groups" size={14} />
-                              <span>{currentBand ? currentBand.name : (lang === 'es' ? 'Banda' : 'Band')}</span>
+                              <span>
+                                {currentBand
+                                  ? (bandMembers.length > 0 ? `${currentBand.name} • ${bandMembers.length}` : currentBand.name)
+                                  : (lang === 'es' ? 'Banda' : 'Band')}
+                              </span>
                             </button>
 
                             {isEditMode ? (

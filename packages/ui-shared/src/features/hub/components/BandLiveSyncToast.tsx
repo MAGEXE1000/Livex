@@ -9,8 +9,23 @@ import {
   subscribeToBandLiveSession,
   NavigationDispatcher,
   type LiveBandSyncPacket,
+  type BandMember,
 } from '@workspace/livex-core';
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
+
+export type ToastPayload =
+  | {
+      type: 'live';
+      songTitle: string;
+      songId: string;
+      leaderName: string;
+      packet: LiveBandSyncPacket;
+    }
+  | {
+      type: 'member_joined';
+      memberName: string;
+      memberRole?: string;
+    };
 
 export const BandLiveSyncToast: React.FC = () => {
   const currentBand = useBandStore((s) => s.currentBand);
@@ -19,26 +34,24 @@ export const BandLiveSyncToast: React.FC = () => {
   const setIsLockedToLeader = useBandStore((s) => s.setIsLockedToLeader);
   const setActiveLiveSession = useBandStore((s) => s.setActiveLiveSession);
   const sharedSongs = useBandStore((s) => s.sharedSongs);
+  const attachRealtimeSync = useBandStore((s) => s.attachRealtimeSync);
 
   const presets = useChordStore((s) => s.presets);
   const createPreset = useChordStore((s) => s.createPreset);
   const setActivePreset = useChordStore((s) => s.setActivePreset);
 
-  const { accentColor, language } = useSettingsStore(
+  const { accentColor, language, theme } = useSettingsStore(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
       language: s.settings.language,
+      theme: s.settings.theme,
     }))
   );
   const accent = resolveAccent(accentColor);
   const isSpanish = language === 'es';
+  const isLight = theme === 'light';
 
-  const [activeToast, setActiveToast] = useState<{
-    songTitle: string;
-    songId: string;
-    leaderName: string;
-    packet: LiveBandSyncPacket;
-  } | null>(null);
+  const [activeToast, setActiveToast] = useState<ToastPayload | null>(null);
 
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastToastSongIdRef = useRef<string>('');
@@ -55,15 +68,50 @@ export const BandLiveSyncToast: React.FC = () => {
     setActiveToast(null);
   }, []);
 
+  // 1. Maintain active realtime subscription for the current band
   useEffect(() => {
-    if (!currentBand?.id || isBroadcasting || isLockedToLeader) {
+    if (!currentBand?.id) return () => {};
+    const unsub = attachRealtimeSync();
+    return () => {
+      unsub();
+    };
+  }, [currentBand?.id, attachRealtimeSync]);
+
+  // 2. Subscribe to live session broadcasts and member join events
+  useEffect(() => {
+    if (!currentBand?.id) {
       setActiveToast(null);
       return () => {};
     }
 
     const unsub = subscribeToBandLiveSession(currentBand.id, (packet) => {
-      // Don't toast if we are already locked or broadcasting or if the packet is just a heartbeat
-      if (!packet || isBroadcasting || isLockedToLeader) return;
+      if (!packet) return;
+
+      // Handle Member Joined notification
+      if (packet.action === 'MEMBER_JOINED' && packet.memberPayload) {
+        clearDismissTimer();
+        setActiveToast({
+          type: 'member_joined',
+          memberName: packet.memberPayload.displayName || 'Musician',
+          memberRole: packet.memberPayload.role,
+        });
+
+        const member = packet.memberPayload as BandMember;
+        if (member.id) {
+          const currentMembers = useBandStore.getState().members;
+          if (!currentMembers.some((m) => m.id === member.id || (member.userId && m.userId === member.userId))) {
+            useBandStore.getState().setMembers([...currentMembers, member]);
+          }
+        }
+
+        dismissTimerRef.current = setTimeout(() => {
+          setActiveToast(null);
+        }, 4000);
+        return;
+      }
+
+      // Handle Live Rehearsal broadcast
+      if (isBroadcasting || isLockedToLeader) return;
       if (packet.action !== 'PLAY' && packet.action !== 'SONG_SELECT' && packet.action !== 'CUE') {
         return;
       }
@@ -77,13 +125,14 @@ export const BandLiveSyncToast: React.FC = () => {
       clearDismissTimer();
 
       setActiveToast({
+        type: 'live',
         songTitle: packet.songTitle || 'Live Rehearsal',
         songId: packet.songId,
         leaderName: packet.leaderName || 'Band Leader',
         packet,
       });
 
-      // Auto-dismiss smoothly after 6 seconds
+      // Auto-dismiss after 6 seconds
       dismissTimerRef.current = setTimeout(() => {
         setActiveToast(null);
       }, 6000);
@@ -96,7 +145,7 @@ export const BandLiveSyncToast: React.FC = () => {
   }, [currentBand?.id, isBroadcasting, isLockedToLeader]);
 
   const handleJoin = useCallback(() => {
-    if (!activeToast) return;
+    if (!activeToast || activeToast.type !== 'live') return;
     const { packet } = activeToast;
 
     clearDismissTimer();
@@ -111,7 +160,6 @@ export const BandLiveSyncToast: React.FC = () => {
     if (existing) {
       targetId = existing.id;
     } else {
-      // Look in shared songs
       const shared = sharedSongs.find(
         (s) => s.songId === packet.songId || s.title.toLowerCase() === packet.songTitle.toLowerCase()
       );
@@ -163,9 +211,11 @@ export const BandLiveSyncToast: React.FC = () => {
 
   if (!activeToast || typeof document === 'undefined') return null;
 
+  const isLiveToast = activeToast.type === 'live';
+
   return createPortal(
     <div
-      data-testid="band-live-sync-top-toast"
+      data-testid={isLiveToast ? 'band-live-sync-top-toast' : 'band-member-joined-toast'}
       role="alert"
       style={{
         position: 'fixed',
@@ -177,19 +227,21 @@ export const BandLiveSyncToast: React.FC = () => {
         maxWidth: '480px',
         minHeight: '46px',
         borderRadius: '24px',
-        padding: '6px 8px 6px 12px',
+        padding: '6px 10px 6px 12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '8px',
-        background: 'rgba(24, 24, 27, 0.88)',
+        background: isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(24, 24, 27, 0.88)',
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        border: '1px solid rgba(255, 255, 255, 0.16)',
-        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(34, 197, 94, 0.22)',
+        border: isLight ? '1px solid rgba(0, 0, 0, 0.12)' : '1px solid rgba(255, 255, 255, 0.16)',
+        boxShadow: isLight
+          ? '0 10px 30px rgba(0, 0, 0, 0.15), 0 0 16px rgba(59, 130, 246, 0.18)'
+          : '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.22)',
         animation: 'slide-down-spring 360ms cubic-bezier(0.16, 1, 0.3, 1)',
         boxSizing: 'border-box',
-        color: '#ffffff',
+        color: isLight ? '#0f172a' : '#ffffff',
       }}
     >
       <style>{`
@@ -205,74 +257,124 @@ export const BandLiveSyncToast: React.FC = () => {
         }
       `}</style>
 
-      {/* Left: Pulsing Live Dot + Message */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-        <span
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: '#22c55e',
-            boxShadow: '0 0 10px #22c55e',
-            flexShrink: 0,
-            animation: 'live-dot-pulse 1.2s infinite',
-          }}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      {/* Content */}
+      {isLiveToast ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
           <span
             style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              color: '#4ade80',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              boxShadow: '0 0 10px #22c55e',
+              flexShrink: 0,
+              animation: 'live-dot-pulse 1.2s infinite',
             }}
-          >
-            {isSpanish ? 'En Vivo • Banda' : 'Live • Band Rehearsal'}
-          </span>
-          <span
-            style={{
-              fontSize: '12px',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              color: '#ffffff',
-            }}
-          >
-            {isSpanish
-              ? `Tocando: ${activeToast.songTitle}`
-              : `Playing: ${activeToast.songTitle}`}
-          </span>
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: '#22c55e',
+              }}
+            >
+              {isSpanish ? 'En Vivo • Banda' : 'Live • Band Rehearsal'}
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: isLight ? '#0f172a' : '#ffffff',
+              }}
+            >
+              {isSpanish
+                ? `Tocando: ${activeToast.songTitle}`
+                : `Playing: ${activeToast.songTitle}`}
+            </span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: `${accent.from}22`,
+              border: `1px solid ${accent.from}44`,
+              color: accent.from,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <StudioIcon name="person_add" size={15} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: accent.from,
+              }}
+            >
+              {isSpanish ? 'Nuevo Integrante' : 'Member Joined'}
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: isLight ? '#0f172a' : '#ffffff',
+              }}
+            >
+              {isSpanish
+                ? `${activeToast.memberName} se unió a la banda`
+                : `${activeToast.memberName} joined the band`}
+            </span>
+          </div>
+        </div>
+      )}
 
-      {/* Right: Join Action Button + Close */}
+      {/* Right Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-        <button
-          type="button"
-          data-testid="band-live-toast-join-btn"
-          onClick={handleJoin}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '6px 12px',
-            borderRadius: '16px',
-            background: accent.from,
-            border: 'none',
-            color: '#ffffff',
-            fontSize: '11px',
-            fontWeight: 800,
-            letterSpacing: '0.02em',
-            cursor: 'pointer',
-            boxShadow: `0 2px 10px ${accent.from}44`,
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <StudioIcon name="play_arrow" size={13} />
-          <span>{isSpanish ? 'Unirse' : 'Join'}</span>
-        </button>
+        {isLiveToast && (
+          <button
+            type="button"
+            data-testid="band-live-toast-join-btn"
+            onClick={handleJoin}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '16px',
+              background: accent.from,
+              border: 'none',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.02em',
+              cursor: 'pointer',
+              boxShadow: `0 2px 10px ${accent.from}44`,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <StudioIcon name="play_arrow" size={13} />
+            <span>{isSpanish ? 'Unirse' : 'Join'}</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -285,9 +387,9 @@ export const BandLiveSyncToast: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.08)',
+            background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
             border: 'none',
-            color: 'rgba(255, 255, 255, 0.6)',
+            color: isLight ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.6)',
             cursor: 'pointer',
             padding: 0,
           }}

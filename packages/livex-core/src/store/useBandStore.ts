@@ -8,8 +8,20 @@ import type {
   BandState,
   BandActions,
 } from '../types/band';
+import {
+  createBandRemote,
+  lookupBandByCodeRemote,
+  joinBandRemote,
+  shareSongRemote,
+  removeSharedSongRemote,
+  saveEventRemote,
+  deleteEventRemote,
+  subscribeToBandRealtimeData,
+} from '../lib/bandSyncService';
 
-export type BandStore = BandState & BandActions;
+export type BandStore = BandState & BandActions & {
+  attachRealtimeSync: (currentUserId?: string) => () => void;
+};
 
 /**
  * Generate a 6-character clean alphanumeric uppercase join code (e.g. 'LVX702')
@@ -22,6 +34,8 @@ export function generateBandCode(): string {
   }
   return code;
 }
+
+let _currentBandUnsub: (() => void) | null = null;
 
 const DEFAULT_BAND_STATE: BandState = {
   currentBand: null,
@@ -44,6 +58,12 @@ export const useBandStore = create<BandStore>()(
 
       setCurrentBand: (band) => {
         set({ currentBand: band });
+        if (band?.id) {
+          get().attachRealtimeSync();
+        } else if (_currentBandUnsub) {
+          _currentBandUnsub();
+          _currentBandUnsub = null;
+        }
       },
 
       setMembers: (members) => {
@@ -60,6 +80,42 @@ export const useBandStore = create<BandStore>()(
 
       setError: (error) => {
         set({ error });
+      },
+
+      attachRealtimeSync: (currentUserId?: string) => {
+        const state = get();
+        const bandId = state.currentBand?.id;
+        if (!bandId) return () => {};
+
+        if (_currentBandUnsub) {
+          _currentBandUnsub();
+          _currentBandUnsub = null;
+        }
+
+        const unsub = subscribeToBandRealtimeData(
+          bandId,
+          {
+            onBandUpdate: (band) => {
+              set((s) => ({
+                currentBand: band,
+                userBands: s.userBands.map((b) => (b.id === band.id ? band : b)),
+              }));
+            },
+            onMembersUpdate: (members) => {
+              set({ members });
+            },
+            onSongsUpdate: (sharedSongs) => {
+              set({ sharedSongs });
+            },
+            onEventsUpdate: (events) => {
+              set({ events });
+            },
+          },
+          currentUserId
+        );
+
+        _currentBandUnsub = unsub;
+        return unsub;
       },
 
       createBand: (name, leaderId, leaderName, description) => {
@@ -91,9 +147,14 @@ export const useBandStore = create<BandStore>()(
           currentBand: newBand,
           members: [leaderMember],
           sharedSongs: [],
+          events: [],
           userBands: [newBand, ...state.userBands.filter((b) => b.id !== bandId)],
           error: null,
         }));
+
+        // Fire-and-forget remote persistence & realtime subscription
+        createBandRemote(newBand, leaderMember).catch(() => {});
+        get().attachRealtimeSync(leaderId);
 
         return newBand;
       },
@@ -110,46 +171,56 @@ export const useBandStore = create<BandStore>()(
           const now = Date.now();
           const state = get();
 
-          // Check if code matches an existing band in userBands (case/dash normalized)
-          const existing = state.userBands.find(
-            (b) => b.code.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === code
-          );
-          const bandId = existing ? existing.id : `band-joined-${Date.now()}`;
-          const bandName = existing ? existing.name : `Band #${code}`;
+          // 1. Try remote lookup from Firestore
+          const remoteData = await lookupBandByCodeRemote(code);
 
-          const joinedBand: Band = existing || {
-            id: bandId,
-            name: bandName,
-            code,
-            leaderId: 'remote-leader',
-            createdAt: now,
-            updatedAt: now,
-          };
+          let joinedBand: Band;
+          let currentMembers: BandMember[] = [];
+
+          if (remoteData?.band) {
+            joinedBand = remoteData.band;
+            currentMembers = remoteData.members || [];
+          } else {
+            // 2. Offline fallback: check local userBands
+            const existing = state.userBands.find(
+              (b) => b.code.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === code
+            );
+            const bandId = existing ? existing.id : `band-joined-${Date.now()}`;
+            const bandName = existing ? existing.name : `Band #${code}`;
+
+            joinedBand = existing || {
+              id: bandId,
+              name: bandName,
+              code,
+              leaderId: 'remote-leader',
+              createdAt: now,
+              updatedAt: now,
+            };
+
+            currentMembers = existing && state.currentBand?.id === existing.id
+              ? state.members
+              : [
+                  {
+                    id: `member-leader-${Date.now()}`,
+                    bandId,
+                    userId: joinedBand.leaderId,
+                    displayName: 'Band Leader',
+                    role: 'leader' as const,
+                    joinedAt: joinedBand.createdAt,
+                    isOnline: true,
+                  },
+                ];
+          }
 
           const newMember: BandMember = {
             id: `member-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            bandId,
+            bandId: joinedBand.id,
             userId: userId || 'local-user',
             displayName: userName.trim() || 'Musician',
             role: 'member',
             joinedAt: now,
             isOnline: true,
           };
-
-          // Combine with existing members if any, or create initial squad
-          const currentMembers = existing && state.currentBand?.id === existing.id
-            ? state.members
-            : [
-                {
-                  id: `member-leader-${Date.now()}`,
-                  bandId,
-                  userId: joinedBand.leaderId,
-                  displayName: 'Band Leader',
-                  role: 'leader' as const,
-                  joinedAt: joinedBand.createdAt,
-                  isOnline: true,
-                },
-              ];
 
           const updatedMembers = [
             ...currentMembers.filter((m) => m.userId !== (userId || 'local-user')),
@@ -164,6 +235,10 @@ export const useBandStore = create<BandStore>()(
             error: null,
           }));
 
+          // 3. Persist member remotely & attach realtime sync
+          joinBandRemote(joinedBand.id, newMember).catch(() => {});
+          get().attachRealtimeSync(userId);
+
           return { success: true };
         } catch (err: any) {
           const msg = err?.message || 'Failed to join band with code.';
@@ -173,6 +248,11 @@ export const useBandStore = create<BandStore>()(
       },
 
       leaveBand: () => {
+        if (_currentBandUnsub) {
+          _currentBandUnsub();
+          _currentBandUnsub = null;
+        }
+
         set({
           currentBand: null,
           members: [],
@@ -195,6 +275,10 @@ export const useBandStore = create<BandStore>()(
         set((state) => ({
           sharedSongs: [newSong, ...state.sharedSongs.filter((s) => s.id !== id)],
         }));
+
+        if (newSong.bandId) {
+          shareSongRemote(newSong.bandId, newSong).catch(() => {});
+        }
 
         return newSong;
       },
@@ -231,6 +315,8 @@ export const useBandStore = create<BandStore>()(
           ],
         }));
 
+        shareSongRemote(bandId, sharedSong).catch(() => {});
+
         return sharedSong;
       },
 
@@ -253,9 +339,14 @@ export const useBandStore = create<BandStore>()(
       },
 
       removeSharedSong: (sharedSongId) => {
+        const bandId = get().currentBand?.id;
         set((state) => ({
           sharedSongs: state.sharedSongs.filter((s) => s.id !== sharedSongId),
         }));
+
+        if (bandId) {
+          removeSharedSongRemote(bandId, sharedSongId).catch(() => {});
+        }
       },
 
       addEvent: (eventData) => {
@@ -272,23 +363,41 @@ export const useBandStore = create<BandStore>()(
           events: [newEvent, ...state.events.filter((e) => e.id !== id)],
         }));
 
+        if (newEvent.bandId) {
+          saveEventRemote(newEvent.bandId, newEvent).catch(() => {});
+        }
+
         return newEvent;
       },
 
       updateEvent: (eventId, updates) => {
+        const bandId = get().currentBand?.id;
+        let updatedItem: BandEvent | null = null;
+
         set((state) => ({
-          events: state.events.map((e) =>
-            e.id === eventId
-              ? { ...e, ...updates, updatedAt: Date.now() }
-              : e
-          ),
+          events: state.events.map((e) => {
+            if (e.id === eventId) {
+              updatedItem = { ...e, ...updates, updatedAt: Date.now() };
+              return updatedItem;
+            }
+            return e;
+          }),
         }));
+
+        if (bandId && updatedItem) {
+          saveEventRemote(bandId, updatedItem).catch(() => {});
+        }
       },
 
       deleteEvent: (eventId) => {
+        const bandId = get().currentBand?.id;
         set((state) => ({
           events: state.events.filter((e) => e.id !== eventId),
         }));
+
+        if (bandId) {
+          deleteEventRemote(bandId, eventId).catch(() => {});
+        }
       },
 
       updateBandName: (name) => {

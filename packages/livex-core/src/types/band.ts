@@ -60,7 +60,9 @@ export type LiveSyncAction =
   | 'SONG_SELECT'
   | 'TEMPO_CHANGE'
   | 'BARS_CHANGE'
-  | 'HEARTBEAT';
+  | 'HEARTBEAT'
+  | 'MEMBER_JOINED'
+  | 'SONG_SHARED';
 
 export interface LiveBandSyncPacket {
   bandId: string;
@@ -81,6 +83,7 @@ export interface LiveBandSyncPacket {
   autoPlay: boolean;
   version: number;
   songPayload?: Partial<SharedSong>;
+  memberPayload?: Partial<BandMember>;
 }
 
 export type BandEventType = 'rehearsal' | 'gig' | 'recording' | 'meeting' | 'other';

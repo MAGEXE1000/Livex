@@ -168,4 +168,51 @@ describe('Band Live Sync Engine', () => {
       expect(() => unsub()).not.toThrow();
     });
   });
+
+  describe('Realtime Band Data Layer Operations', () => {
+    it('creates and joins remote band gracefully without errors in test environment', async () => {
+      const band = useBandStore.getState().createBand('Solar Flare', 'u-leader', 'Alex');
+      expect(band.id).toBeTruthy();
+      expect(band.code).toBeTruthy();
+
+      const joinRes = await useBandStore.getState().joinBandByCode(band.code, 'u-member', 'Sarah');
+      expect(joinRes.success).toBe(true);
+
+      const state = useBandStore.getState();
+      expect(state.members.length).toBe(2);
+      expect(state.members.some((m) => m.displayName === 'Sarah')).toBe(true);
+    });
+
+    it('manages shared songs and events across the realtime data layer', async () => {
+      const band = useBandStore.getState().createBand('Lunar Echoes', 'u-leader', 'Alex');
+      const song = useBandStore.getState().addSharedSong({
+        bandId: band.id,
+        songId: 'song-1',
+        title: 'Cosmic Drift',
+        key: 'Em',
+        bpm: 120,
+        updatedBy: 'u-leader',
+      });
+
+      expect(song.id).toBeTruthy();
+      expect(useBandStore.getState().sharedSongs.length).toBe(1);
+
+      const event = useBandStore.getState().addEvent({
+        bandId: band.id,
+        title: 'Friday Rehearsal',
+        type: 'rehearsal',
+        date: '2026-10-02',
+        createdBy: 'u-leader',
+      });
+
+      expect(event.id).toBeTruthy();
+      expect(useBandStore.getState().events.length).toBe(1);
+
+      useBandStore.getState().removeSharedSong(song.id);
+      expect(useBandStore.getState().sharedSongs.length).toBe(0);
+
+      useBandStore.getState().deleteEvent(event.id);
+      expect(useBandStore.getState().events.length).toBe(0);
+    });
+  });
 });
