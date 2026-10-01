@@ -7,7 +7,10 @@ import type {
   BandEvent,
   BandState,
   BandActions,
+  LobbyAttendee,
+  LiveBandSyncPacket,
 } from '../types/band';
+import type { SongPreset } from './slices/songSlice';
 import {
   createBandRemote,
   lookupBandByCodeRemote,
@@ -17,6 +20,9 @@ import {
   saveEventRemote,
   deleteEventRemote,
   subscribeToBandRealtimeData,
+  broadcastBandLivePacket,
+  joinLobbyRemote,
+  leaveLobbyRemote,
 } from '../lib/bandSyncService';
 
 export type BandStore = BandState & BandActions & {
@@ -39,6 +45,8 @@ let _currentBandUnsub: (() => void) | null = null;
 
 const DEFAULT_BAND_STATE: BandState = {
   currentBand: null,
+  currentUserId: 'local-user',
+  currentUserName: 'Musician',
   members: [],
   sharedSongs: [],
   events: [],
@@ -49,6 +57,7 @@ const DEFAULT_BAND_STATE: BandState = {
   isLockedToLeader: false,
   activeLiveSession: null,
   lastSyncTimestamp: null,
+  lobbyAttendees: [],
 };
 
 export const useBandStore = create<BandStore>()(
@@ -66,6 +75,10 @@ export const useBandStore = create<BandStore>()(
         }
       },
 
+      setCurrentUser: (userId: string, userName: string) => {
+        set({ currentUserId: userId, currentUserName: userName });
+      },
+
       setMembers: (members) => {
         set({ members });
       },
@@ -76,6 +89,10 @@ export const useBandStore = create<BandStore>()(
 
       setEvents: (events) => {
         set({ events });
+      },
+
+      setLobbyAttendees: (lobbyAttendees) => {
+        set({ lobbyAttendees });
       },
 
       setError: (error) => {
@@ -432,12 +449,136 @@ export const useBandStore = create<BandStore>()(
           lastSyncTimestamp: packet ? Date.now() : null,
         });
       },
+
+      callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => {
+        const state = get();
+        const band = state.currentBand;
+        if (!band) return;
+
+        const effectiveLeaderId = leaderId || state.currentUserId || band.leaderId || 'local-leader';
+        const effectiveLeaderName = leaderName || state.currentUserName || 'Band Leader';
+
+        const initialAttendee: LobbyAttendee = {
+          userId: effectiveLeaderId,
+          displayName: effectiveLeaderName,
+          role: 'leader',
+          joinedAt: Date.now(),
+        };
+
+        const packet: LiveBandSyncPacket = {
+          bandId: band.id,
+          leaderId: effectiveLeaderId,
+          leaderName: effectiveLeaderName,
+          songId: preset.id,
+          songTitle: preset.name || 'Untitled Song',
+          action: 'CALL_BAND',
+          timestamp: Date.now(),
+          currentLineIdx: 0,
+          currentWordIdx: 0,
+          currentBeat: 0,
+          currentBar: 1,
+          bpm: preset.speed || preset.bpm || 120,
+          barsPerLine: preset.barsPerLine || 2,
+          autoPlay: false,
+          version: Date.now(),
+          songPayload: {
+            id: preset.id,
+            bandId: band.id,
+            songId: preset.id,
+            title: preset.name,
+            artist: preset.artist,
+            key: preset.key || 'C',
+            bpm: preset.bpm || 120,
+            speed: preset.speed || 120,
+            barsPerLine: preset.barsPerLine || 2,
+            targetDurationSeconds: preset.targetDurationSeconds,
+            sections: preset.sections,
+            lyrics: preset.lyrics,
+            chords: preset.chords,
+            version: 1,
+            updatedAt: Date.now(),
+            updatedBy: effectiveLeaderId,
+          },
+          lobbyAttendees: [initialAttendee],
+        };
+
+        set({
+          isBroadcasting: true,
+          isLockedToLeader: false,
+          activeLiveSession: packet,
+          lobbyAttendees: [initialAttendee],
+        });
+
+        broadcastBandLivePacket(packet).catch(() => {});
+      },
+
+      joinLobby: (bandId: string, attendee: LobbyAttendee) => {
+        set((state) => {
+          const exists = state.lobbyAttendees.some((a) => a.userId === attendee.userId);
+          const updated = exists
+            ? state.lobbyAttendees.map((a) => (a.userId === attendee.userId ? attendee : a))
+            : [...state.lobbyAttendees, attendee];
+          return {
+            isLockedToLeader: true,
+            isBroadcasting: false,
+            lobbyAttendees: updated,
+          };
+        });
+
+        joinLobbyRemote(bandId, attendee).catch(() => {});
+      },
+
+      leaveLobby: (bandId: string, userId: string) => {
+        set((state) => ({
+          lobbyAttendees: state.lobbyAttendees.filter((a) => a.userId !== userId),
+        }));
+
+        leaveLobbyRemote(bandId, userId).catch(() => {});
+      },
+
+      startPlaybackFromLobby: (preset: SongPreset) => {
+        const state = get();
+        const band = state.currentBand;
+        if (!band) return;
+
+        const effectiveLeaderId = state.currentUserId || band.leaderId || 'local-leader';
+        const effectiveLeaderName = state.currentUserName || 'Band Leader';
+
+        const packet: LiveBandSyncPacket = {
+          bandId: band.id,
+          leaderId: effectiveLeaderId,
+          leaderName: effectiveLeaderName,
+          songId: preset.id,
+          songTitle: preset.name || 'Untitled Song',
+          action: 'START_PLAYBACK',
+          timestamp: Date.now(),
+          currentLineIdx: 0,
+          currentWordIdx: 0,
+          currentBeat: 0,
+          currentBar: 1,
+          bpm: preset.speed || preset.bpm || 120,
+          barsPerLine: preset.barsPerLine || 2,
+          autoPlay: true,
+          version: Date.now(),
+          lobbyAttendees: state.lobbyAttendees,
+        };
+
+        set({
+          isBroadcasting: true,
+          isLockedToLeader: false,
+          activeLiveSession: packet,
+        });
+
+        broadcastBandLivePacket(packet).catch(() => {});
+      },
     }),
     {
       name: 'livex_band_store',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentBand: state.currentBand,
+        currentUserId: state.currentUserId,
+        currentUserName: state.currentUserName,
         members: state.members,
         sharedSongs: state.sharedSongs,
         events: state.events,

@@ -58,11 +58,22 @@ export type LiveSyncAction =
   | 'SEEK'
   | 'CUE'
   | 'SONG_SELECT'
+  | 'CALL_BAND'
+  | 'LOBBY_JOIN'
+  | 'LOBBY_LEAVE'
+  | 'START_PLAYBACK'
   | 'TEMPO_CHANGE'
   | 'BARS_CHANGE'
   | 'HEARTBEAT'
   | 'MEMBER_JOINED'
   | 'SONG_SHARED';
+
+export interface LobbyAttendee {
+  userId: string;
+  displayName: string;
+  role?: BandRole;
+  joinedAt: number;
+}
 
 export interface LiveBandSyncPacket {
   bandId: string;
@@ -84,6 +95,8 @@ export interface LiveBandSyncPacket {
   version: number;
   songPayload?: Partial<SharedSong>;
   memberPayload?: Partial<BandMember>;
+  lobbyAttendees?: LobbyAttendee[];
+  sessionId?: string;
 }
 
 export type BandEventType = 'rehearsal' | 'gig' | 'recording' | 'meeting' | 'other';
@@ -114,6 +127,8 @@ export interface LiveBandSessionState {
 
 export interface BandState {
   currentBand: Band | null;
+  currentUserId: string;
+  currentUserName: string;
   members: BandMember[];
   sharedSongs: SharedSong[];
   events: BandEvent[];
@@ -125,13 +140,16 @@ export interface BandState {
   isLockedToLeader: boolean;
   activeLiveSession: LiveBandSyncPacket | null;
   lastSyncTimestamp: number | null;
+  lobbyAttendees: LobbyAttendee[];
 }
 
 export interface BandActions {
   setCurrentBand: (band: Band | null) => void;
+  setCurrentUser: (userId: string, userName: string) => void;
   setMembers: (members: BandMember[]) => void;
   setSharedSongs: (songs: SharedSong[]) => void;
   setEvents: (events: BandEvent[]) => void;
+  setLobbyAttendees: (attendees: LobbyAttendee[]) => void;
   createBand: (name: string, leaderId: string, leaderName: string, description?: string) => Band;
   joinBandByCode: (code: string, userId: string, userName: string) => Promise<{ success: boolean; message?: string }>;
   leaveBand: () => void;
@@ -148,5 +166,9 @@ export interface BandActions {
   setIsBroadcasting: (broadcasting: boolean) => void;
   setIsLockedToLeader: (locked: boolean) => void;
   setActiveLiveSession: (packet: LiveBandSyncPacket | null) => void;
+  callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => void;
+  joinLobby: (bandId: string, attendee: LobbyAttendee) => void;
+  leaveLobby: (bandId: string, userId: string) => void;
+  startPlaybackFromLobby: (preset: SongPreset) => void;
 }
 

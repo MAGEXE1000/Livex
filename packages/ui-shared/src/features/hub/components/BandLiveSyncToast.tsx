@@ -19,6 +19,7 @@ export type ToastPayload =
       songTitle: string;
       songId: string;
       leaderName: string;
+      isCallBand?: boolean;
       packet: LiveBandSyncPacket;
     }
   | {
@@ -110,32 +111,50 @@ export const BandLiveSyncToast: React.FC = () => {
         return;
       }
 
-      // Handle Live Rehearsal broadcast
-      if (isBroadcasting || isLockedToLeader) return;
-      if (packet.action !== 'PLAY' && packet.action !== 'SONG_SELECT' && packet.action !== 'CUE') {
+      // Handle Live Rehearsal broadcast & Call Band
+      const currentUserId = useBandStore.getState().currentUserId || 'local-user';
+      const isLeaderDevice = Boolean(
+        isBroadcasting ||
+        (currentBand && currentBand.leaderId === currentUserId) ||
+        packet.leaderId === currentUserId
+      );
+
+      // Strict Leader Filtering: The device initiating or leading the session must NEVER display an invitation toast to itself
+      if (isLeaderDevice || isBroadcasting || isLockedToLeader) return;
+
+      if (
+        packet.action !== 'PLAY' &&
+        packet.action !== 'SONG_SELECT' &&
+        packet.action !== 'CALL_BAND' &&
+        packet.action !== 'CUE'
+      ) {
         return;
       }
 
-      // Check if this is the same song notification within 10 seconds
-      if (lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
+      // Check if this is the same song notification within 10 seconds (unless it's an explicit CALL_BAND)
+      if (packet.action !== 'CALL_BAND' && lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
         return;
       }
 
       lastToastSongIdRef.current = `${packet.songId}_${packet.songTitle}`;
       clearDismissTimer();
 
+      const isCallBand = packet.action === 'CALL_BAND';
+
       setActiveToast({
         type: 'live',
         songTitle: packet.songTitle || 'Live Rehearsal',
         songId: packet.songId,
         leaderName: packet.leaderName || 'Band Leader',
+        isCallBand,
         packet,
       });
 
-      // Auto-dismiss after 6 seconds
+      // Auto-dismiss after 8 seconds for CALL_BAND, 6 seconds for passive session
+      const timeoutMs = isCallBand ? 8000 : 6000;
       dismissTimerRef.current = setTimeout(() => {
         setActiveToast(null);
-      }, 6000);
+      }, timeoutMs);
     });
 
     return () => {
@@ -196,6 +215,18 @@ export const BandLiveSyncToast: React.FC = () => {
     }
 
     // 2. Lock to leader and set spectator session state
+    const currentUserId = useBandStore.getState().currentUserId || 'local-user';
+    const currentUserName = useBandStore.getState().currentUserName || 'Musician';
+
+    if (currentBand?.id) {
+      useBandStore.getState().joinLobby(currentBand.id, {
+        userId: currentUserId,
+        displayName: currentUserName,
+        role: 'member',
+        joinedAt: Date.now(),
+      });
+    }
+
     setIsLockedToLeader(true);
     setActiveLiveSession(packet);
     setActivePreset(targetId);
@@ -207,7 +238,7 @@ export const BandLiveSyncToast: React.FC = () => {
 
     window.dispatchEvent(new CustomEvent('livex:open-live-spectator', { detail: { songId: targetId } }));
     NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
-  }, [activeToast, presets, sharedSongs, createPreset, setActivePreset, setIsLockedToLeader, setActiveLiveSession]);
+  }, [activeToast, presets, sharedSongs, currentBand?.id, createPreset, setActivePreset, setIsLockedToLeader, setActiveLiveSession]);
 
   if (!activeToast || typeof document === 'undefined') return null;
 
@@ -278,10 +309,16 @@ export const BandLiveSyncToast: React.FC = () => {
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                color: '#22c55e',
+                color: activeToast.isCallBand ? accent.from : '#22c55e',
               }}
             >
-              {isSpanish ? 'En Vivo • Banda' : 'Live • Band Rehearsal'}
+              {activeToast.isCallBand
+                ? isSpanish
+                  ? 'Llamado de Banda'
+                  : 'Band Call'
+                : isSpanish
+                  ? 'En Vivo • Banda'
+                  : 'Live • Band Rehearsal'}
             </span>
             <span
               style={{
@@ -293,9 +330,13 @@ export const BandLiveSyncToast: React.FC = () => {
                 color: isLight ? '#0f172a' : '#ffffff',
               }}
             >
-              {isSpanish
-                ? `Tocando: ${activeToast.songTitle}`
-                : `Playing: ${activeToast.songTitle}`}
+              {activeToast.isCallBand
+                ? isSpanish
+                  ? `${activeToast.leaderName || 'Líder'} llamó para ${activeToast.songTitle}`
+                  : `${activeToast.leaderName || 'Band Leader'} called for ${activeToast.songTitle}`
+                : isSpanish
+                  ? `Tocando: ${activeToast.songTitle}`
+                  : `Playing: ${activeToast.songTitle}`}
             </span>
           </div>
         </div>

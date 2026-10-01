@@ -15,11 +15,13 @@ import {
 import {
   useSettingsStore,
   useChordStore,
+  useBandStore,
   getChordById,
   getChordByName,
   transposeChordId,
   type LyricTextSpan,
   type GuitarChordData,
+  type LobbyAttendee,
   formatDurationMmSs,
   parseDurationMmSs,
 } from '@workspace/livex-core';
@@ -3755,3 +3757,571 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
   </>
 );
 }
+
+/* ── REHEARSAL WAITING LOBBY (FOLLOWER SPECTATOR VIEW) ────────── */
+export function RehearsalWaitingLobby({ state }: { state: LiveModeState }) {
+  const currentBand = useBandStore((s) => s.currentBand);
+  const bandMembers = useBandStore((s) => s.members);
+  const currentUserId = useBandStore((s) => s.currentUserId);
+  const leaveLobby = useBandStore((s) => s.leaveLobby);
+
+  const {
+    preset,
+    accent,
+    speed,
+    bpmOverride,
+    barsPerLine,
+    bandName,
+    lobbyAttendees,
+    handleClose,
+    setIsInLobby,
+    setIsLockedToLeader,
+  } = state;
+
+  const currentBpm = speed || bpmOverride || 120;
+  const totalBandCount = Math.max(1, bandMembers.length || 1);
+  const attendeesCount = lobbyAttendees.length || 1;
+
+  const handleLeaveLobby = () => {
+    if (currentBand?.id && currentUserId) {
+      leaveLobby(currentBand.id, currentUserId);
+    }
+    setIsInLobby(false);
+    setIsLockedToLeader(false);
+    handleClose();
+  };
+
+  return (
+    <div
+      data-testid="rehearsal-waiting-lobby"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: 'var(--c-background, #0A0D14)',
+        color: 'var(--c-text-primary, #ffffff)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 24px) 20px calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 24px) 20px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        userSelect: 'none',
+      }}
+    >
+      {/* Top Bar / Band Pill */}
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 16px',
+          borderRadius: '9999px',
+          background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.05))',
+          backdropFilter: 'var(--surface-topbar-backdrop, blur(16px))',
+          WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(16px))',
+          border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.12))',
+          boxShadow: 'var(--surface-topbar-shadow, 0 4px 20px rgba(0, 0, 0, 0.25))',
+        }}
+      >
+        <span
+          className="material-symbols-rounded"
+          style={{ fontSize: '18px', color: accent.from }}
+        >
+          cell_tower
+        </span>
+        <span
+          style={{
+            fontSize: '12px',
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--c-text-primary, #ffffff)',
+          }}
+        >
+          Live Rehearsal Lobby • {bandName}
+        </span>
+      </div>
+
+      {/* Hero Center Card */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          maxWidth: '480px',
+          width: '100%',
+          margin: '24px 0',
+        }}
+      >
+        {/* Animated Pulsing Metronome / Orb */}
+        <div
+          style={{
+            position: 'relative',
+            width: '96px',
+            height: '96px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.35, 0.7, 0.35] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute',
+              inset: '-12px',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${accent.from}55 0%, transparent 70%)`,
+            }}
+          />
+          <motion.div
+            animate={{ rotate: [0, 180, 360] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${accent.from}22, ${accent.to}44)`,
+              border: `2px solid ${accent.from}66`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: `0 0 24px ${accent.from}33`,
+            }}
+          >
+            <span
+              className="material-symbols-rounded"
+              style={{ fontSize: '36px', color: accent.from }}
+            >
+              hourglass_top
+            </span>
+          </motion.div>
+        </div>
+
+        {/* Song Title & Metadata */}
+        <h1
+          style={{
+            fontSize: 'clamp(24px, 6vw, 34px)',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            color: 'var(--c-text-primary, #ffffff)',
+            margin: '0 0 6px 0',
+            lineHeight: 1.15,
+          }}
+        >
+          {preset.name || 'Untitled Song'}
+        </h1>
+        {preset.artist && (
+          <p
+            style={{
+              fontSize: '15px',
+              color: 'var(--c-text-secondary, #94a3b8)',
+              margin: '0 0 16px 0',
+              fontWeight: 500,
+            }}
+          >
+            {preset.artist}
+          </p>
+        )}
+
+        {/* Badges Row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'wrap',
+            marginBottom: '24px',
+          }}
+        >
+          {preset.key && (
+            <span
+              style={{
+                padding: '4px 10px',
+                borderRadius: '8px',
+                background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.08))',
+                border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.12))',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: 'var(--c-text-primary, #ffffff)',
+              }}
+            >
+              KEY {preset.key}
+            </span>
+          )}
+          <span
+            style={{
+              padding: '4px 10px',
+              borderRadius: '8px',
+              background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.08))',
+              border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.12))',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: 'var(--c-text-primary, #ffffff)',
+            }}
+          >
+            BPM {currentBpm}
+          </span>
+          <span
+            style={{
+              padding: '4px 10px',
+              borderRadius: '8px',
+              background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.08))',
+              border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.12))',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: 'var(--c-text-primary, #ffffff)',
+            }}
+          >
+            {barsPerLine || 2} Bars/Line
+          </span>
+        </div>
+
+        {/* Waiting Status Callout */}
+        <div
+          style={{
+            width: '100%',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            background: `color-mix(in srgb, ${accent.from} 14%, var(--surface-topbar-bg, rgba(255, 255, 255, 0.04)))`,
+            border: `1px solid ${accent.from}55`,
+            marginBottom: '16px',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'var(--c-text-primary, #ffffff)',
+              margin: '0 0 6px 0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#10B981',
+                boxShadow: '0 0 10px #10B981',
+                display: 'inline-block',
+                animation: 'live-dot-pulse 1.6s infinite ease-in-out',
+              }}
+            />
+            Waiting for leader to start...
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: 'var(--c-text-secondary, #94a3b8)',
+              margin: 0,
+              lineHeight: 1.4,
+            }}
+          >
+            Playback, chords, and teleprompter will launch in perfect sync on beat 1.
+          </p>
+        </div>
+
+        {/* Spectator Lock Note */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '11px',
+            color: 'var(--c-text-secondary, #94a3b8)',
+            opacity: 0.9,
+          }}
+        >
+          <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+            lock
+          </span>
+          <span>Spectator Mode: Controls locked to band leader</span>
+        </div>
+      </div>
+
+      {/* Attendee Roster & Bottom Actions */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '480px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+        }}
+      >
+        {/* Attendees Card */}
+        <div
+          style={{
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
+            border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.08))',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '10px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color: 'var(--c-text-secondary, #94a3b8)',
+              }}
+            >
+              Lobby Attendees ({attendeesCount} / {totalBandCount} Ready)
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {lobbyAttendees.length > 0 ? (
+              lobbyAttendees.map((att) => (
+                <div
+                  key={att.userId}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    background:
+                      att.role === 'leader'
+                        ? `${accent.from}22`
+                        : 'rgba(16, 185, 129, 0.15)',
+                    border: `1px solid ${
+                      att.role === 'leader' ? `${accent.from}55` : 'rgba(16, 185, 129, 0.35)'
+                    }`,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: att.role === 'leader' ? accent.from : '#10B981',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: 'var(--c-text-primary, #ffffff)',
+                    }}
+                  >
+                    {att.displayName}{' '}
+                    {att.userId === currentUserId
+                      ? '(You)'
+                      : att.role === 'leader'
+                      ? '(Leader)'
+                      : ''}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span style={{ fontSize: '12px', color: 'var(--c-text-secondary)' }}>
+                Waiting for members to connect...
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Leave Lobby Button */}
+        <button
+          data-testid="leave-lobby-btn"
+          type="button"
+          onClick={handleLeaveLobby}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '9999px',
+            background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.06))',
+            border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.12))',
+            color: 'var(--c-text-secondary, #94a3b8)',
+            fontSize: '13px',
+            fontWeight: 700,
+            letterSpacing: '0.02em',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+            logout
+          </span>
+          <span>Leave Lobby</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── LEADER LOBBY PRESENCE BAR (SYNCHRONIZED LAUNCH BAR) ──────── */
+export function LeaderLobbyPresenceBar({ state }: { state: LiveModeState }) {
+  const bandMembers = useBandStore((s) => s.members);
+  const { lobbyAttendees, startSongFromLobby, accent } = state;
+
+  const totalBandCount = Math.max(1, bandMembers.length || 1);
+  const attendeesCount = lobbyAttendees.length || 1;
+
+  return (
+    <motion.div
+      initial={{ x: '-50%', y: 50, opacity: 0 }}
+      animate={{ x: '-50%', y: 0, opacity: 1 }}
+      exit={{ x: '-50%', y: 50, opacity: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      data-testid="leader-lobby-presence-bar"
+      style={{
+        position: 'fixed',
+        bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 80px)',
+        left: '50%',
+        zIndex: 90,
+        width: 'calc(100% - 32px)',
+        maxWidth: '460px',
+        borderRadius: '20px',
+        padding: '12px 16px',
+        background: 'var(--surface-topbar-bg, rgba(15, 23, 42, 0.94))',
+        backdropFilter: 'var(--surface-topbar-backdrop, blur(24px))',
+        WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(24px))',
+        border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
+        boxShadow: 'var(--surface-topbar-shadow, 0 12px 36px rgba(0, 0, 0, 0.5))',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              boxShadow: '0 0 10px #10B981',
+              display: 'inline-block',
+              animation: 'live-dot-pulse 1.8s infinite ease-in-out',
+            }}
+          />
+          <span
+            data-testid="leader-lobby-ready-counter"
+            style={{
+              fontSize: '13px',
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--c-text-primary, #ffffff)',
+            }}
+          >
+            Lobby: {attendeesCount} / {totalBandCount} Ready
+          </span>
+        </div>
+
+        <button
+          data-testid="leader-start-song-btn"
+          type="button"
+          onClick={startSongFromLobby}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            color: '#ffffff',
+            border: 'none',
+            fontSize: '13px',
+            fontWeight: 800,
+            letterSpacing: '0.02em',
+            boxShadow: `0 4px 14px ${accent.to}66`,
+            cursor: 'pointer',
+          }}
+        >
+          <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+            play_arrow
+          </span>
+          <span>Start Song</span>
+        </button>
+      </div>
+
+      {lobbyAttendees.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '2px',
+          }}
+        >
+          {lobbyAttendees.map((att) => (
+            <span
+              key={att.userId}
+              data-testid={`lobby-attendee-chip-${att.userId}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 9px',
+                borderRadius: '9999px',
+                background:
+                  att.role === 'leader'
+                    ? `${accent.from}26`
+                    : 'rgba(16, 185, 129, 0.16)',
+                border: `1px solid ${
+                  att.role === 'leader' ? `${accent.from}55` : 'rgba(16, 185, 129, 0.35)'
+                }`,
+                color: 'var(--c-text-primary, #ffffff)',
+                fontSize: '11px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: att.role === 'leader' ? accent.from : '#10B981',
+                }}
+              />
+              {att.displayName} {att.role === 'leader' ? '(Leader)' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+

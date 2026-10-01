@@ -12,6 +12,8 @@ import {
   LyricsLiveView,
   HybridLiveView,
   LiveModeSettings,
+  RehearsalWaitingLobby,
+  LeaderLobbyPresenceBar,
 } from './LiveModeUI';
 
 interface LiveModeProps {
@@ -79,6 +81,10 @@ export default function LiveMode({
     state.displayMode === 'lyrics_chord_diagram' ||
     state.displayMode === 'lyrics_chord_name';
 
+  const showWaitingLobby = state.isLockedToLeader && state.isInLobby;
+  const showLeaderPresenceBar =
+    state.isBroadcasting && (state.isInLobby || state.lobbyAttendees.length > 0) && !state.autoPlay;
+
   const liveNode = (
     <div
       style={{
@@ -93,17 +99,25 @@ export default function LiveMode({
         ...state.overlayAnim,
       }}
     >
-      <LiveModeHeader state={state} />
-
-      {isChordsOnly ? (
-        <ChordsLiveView state={state} />
-      ) : isHybrid ? (
-        <HybridLiveView state={state} />
+      {showWaitingLobby ? (
+        <RehearsalWaitingLobby state={state} />
       ) : (
-        <LyricsLiveView state={state} />
-      )}
+        <>
+          <LiveModeHeader state={state} />
 
-      {state.showSettings && <LiveModeSettings state={state} />}
+          {isChordsOnly ? (
+            <ChordsLiveView state={state} />
+          ) : isHybrid ? (
+            <HybridLiveView state={state} />
+          ) : (
+            <LyricsLiveView state={state} />
+          )}
+
+          {showLeaderPresenceBar && <LeaderLobbyPresenceBar state={state} />}
+
+          {state.showSettings && <LiveModeSettings state={state} />}
+        </>
+      )}
     </div>
   );
 

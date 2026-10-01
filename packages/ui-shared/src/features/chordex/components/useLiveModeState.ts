@@ -28,6 +28,7 @@ import {
   calculateTransitDrift,
   type LiveBandSyncPacket,
   type LiveSyncAction,
+  type LobbyAttendee,
 } from '@workspace/livex-core';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
@@ -201,6 +202,11 @@ export interface LiveModeState {
   setIsLockedToLeader: (v: boolean) => void;
   activeLiveSession: LiveBandSyncPacket | null;
   emitLiveSync: (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => void;
+  isInLobby: boolean;
+  setIsInLobby: (v: boolean) => void;
+  lobbyAttendees: LobbyAttendee[];
+  startSongFromLobby: () => void;
+  callBandSession: () => void;
 
   // Animations & visuals
   overlayAnim: React.CSSProperties;
@@ -473,13 +479,50 @@ export function useLiveModeState(
     [isLockedToLeader, isBroadcasting, emitLiveSync]
   );
 
-  // When leader enters Live mode with an active band, auto-enable broadcasting and emit session ping
-  useEffect(() => {
-    if (currentBand && !isLockedToLeader) {
+  const lobbyAttendees = useBandStore((s) => s.lobbyAttendees);
+  const setLobbyAttendees = useBandStore((s) => s.setLobbyAttendees);
+
+  const [isInLobby, setIsInLobby] = useState<boolean>(() => {
+    return Boolean(isLockedToLeader && (activeLiveSession?.action === 'CALL_BAND' || !activeLiveSession?.autoPlay));
+  });
+
+  const startSongFromLobby = useCallback(() => {
+    setIsInLobby(false);
+    setCurrentLineIdx(0);
+    setCurrentBeat(0);
+    setCurrentBar(1);
+    setAutoPlayState(true);
+    wordRemainingMsRef.current = 0;
+    wordStartTimestampRef.current = performance.now();
+    if (isBroadcasting || (currentBand && !isLockedToLeader)) {
       setIsBroadcasting(true);
-      emitLiveSync('SONG_SELECT', { autoPlay: false });
+      emitLiveSync('START_PLAYBACK', {
+        currentLineIdx: 0,
+        currentBeat: 0,
+        currentBar: 1,
+        autoPlay: true,
+        timestamp: Date.now(),
+      });
     }
-  }, [currentBand?.id, isLockedToLeader, emitLiveSync, setIsBroadcasting]);
+  }, [emitLiveSync, isBroadcasting, currentBand, isLockedToLeader, setIsBroadcasting]);
+
+  const callBandSession = useCallback(() => {
+    const leaderId = currentBand?.leaderId || 'local-leader';
+    const leaderName = 'Band Leader';
+    const initialAttendee: LobbyAttendee = {
+      userId: leaderId,
+      displayName: leaderName,
+      role: 'leader',
+      joinedAt: Date.now(),
+    };
+    setLobbyAttendees([initialAttendee]);
+    setIsBroadcasting(true);
+    setIsInLobby(true);
+    emitLiveSync('CALL_BAND', {
+      autoPlay: false,
+      lobbyAttendees: [initialAttendee],
+    });
+  }, [currentBand?.leaderId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
 
   useEffect(() => {
     if (preset.barsPerLine) {
@@ -1481,12 +1524,44 @@ export function useLiveModeState(
     return () => clearInterval(interval);
   }, [isBroadcasting, autoPlay, currentBand?.id, emitLiveSync]);
 
-  // ── Follower / Band Member Live Session Synchronization ─────────
+  // ── Follower & Leader Live Session Synchronization ─────────
   useEffect(() => {
-    if (!isLockedToLeader || isBroadcasting || !currentBand?.id) return;
+    if (!currentBand?.id) return;
+    if (!isLockedToLeader && !isBroadcasting) return;
 
     const unsub = subscribeToBandLiveSession(currentBand.id, (packet) => {
       if (!packet || packet.bandId !== currentBand.id) return;
+
+      // Handle Lobby presence for both Leader and Followers
+      if (packet.action === 'LOBBY_JOIN') {
+        if (packet.lobbyAttendees) {
+          useBandStore.getState().setLobbyAttendees(packet.lobbyAttendees);
+        } else if (packet.memberPayload) {
+          const att: LobbyAttendee = {
+            userId: packet.memberPayload.userId || packet.memberPayload.id || 'unknown-user',
+            displayName: packet.memberPayload.displayName || 'Member',
+            role: packet.memberPayload.role || 'member',
+            joinedAt: Date.now(),
+          };
+          const current = useBandStore.getState().lobbyAttendees;
+          if (!current.some((a) => a.userId === att.userId)) {
+            useBandStore.getState().setLobbyAttendees([...current, att]);
+          }
+        }
+        return;
+      }
+
+      if (packet.action === 'LOBBY_LEAVE') {
+        if (packet.memberPayload?.userId) {
+          const uid = packet.memberPayload.userId;
+          const current = useBandStore.getState().lobbyAttendees;
+          useBandStore.getState().setLobbyAttendees(current.filter((a) => a.userId !== uid));
+        }
+        return;
+      }
+
+      // Leader broadcasts playback controls; follower applies incoming controls
+      if (isBroadcasting || !isLockedToLeader) return;
 
       setActiveLiveSession(packet);
 
@@ -1506,7 +1581,26 @@ export function useLiveModeState(
       }
 
       switch (packet.action) {
+        case 'CALL_BAND':
+          setIsInLobby(true);
+          setAutoPlayState(false);
+          if (packet.lobbyAttendees) {
+            useBandStore.getState().setLobbyAttendees(packet.lobbyAttendees);
+          }
+          break;
+
+        case 'START_PLAYBACK':
+          setIsInLobby(false);
+          goToLine(packet.currentLineIdx || 0);
+          setCurrentBeat(packet.currentBeat || 0);
+          setCurrentBar(packet.currentBar || 1);
+          setAutoPlayState(true);
+          wordRemainingMsRef.current = 0;
+          wordStartTimestampRef.current = performance.now();
+          break;
+
         case 'PLAY':
+          setIsInLobby(false);
           if (packet.currentLineIdx !== currentLineIdxRef.current) {
             goToLine(packet.currentLineIdx);
           }
@@ -1526,6 +1620,7 @@ export function useLiveModeState(
 
         case 'SEEK':
         case 'CUE':
+          setIsInLobby(false);
           goToLine(packet.currentLineIdx);
           setCurrentBeat(packet.currentBeat || 0);
           setCurrentBar(packet.currentBar || 1);
@@ -1544,6 +1639,7 @@ export function useLiveModeState(
 
         case 'HEARTBEAT':
           if (packet.autoPlay) {
+            setIsInLobby(false);
             setAutoPlayState(true);
             if (Math.abs(packet.currentLineIdx - currentLineIdxRef.current) >= 1) {
               goToLine(packet.currentLineIdx);
@@ -1776,6 +1872,11 @@ export function useLiveModeState(
     setIsLockedToLeader,
     activeLiveSession,
     emitLiveSync,
+    isInLobby,
+    setIsInLobby,
+    lobbyAttendees,
+    startSongFromLobby,
+    callBandSession,
     overlayAnim,
     chordStyle,
     isExiting,

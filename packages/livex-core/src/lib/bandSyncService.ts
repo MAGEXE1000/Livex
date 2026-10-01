@@ -1,4 +1,11 @@
-import type { Band, BandMember, SharedSong, BandEvent, LiveBandSyncPacket } from '../types/band';
+import type {
+  Band,
+  BandMember,
+  SharedSong,
+  BandEvent,
+  LiveBandSyncPacket,
+  LobbyAttendee,
+} from '../types/band';
 import { getFirebaseDb } from './services/firebase';
 import {
   doc,
@@ -83,6 +90,103 @@ export async function broadcastBandLivePacket(packet: LiveBandSyncPacket): Promi
   } catch (err) {
     console.debug('[BandSyncService] Firestore session update skipped:', err);
   }
+}
+
+/**
+ * Register member presence in the active rehearsal lobby
+ */
+export async function joinLobbyRemote(bandId: string, attendee: LobbyAttendee): Promise<void> {
+  if (!bandId || !attendee || !attendee.userId) return;
+
+  // 1. Local BroadcastChannel trigger
+  try {
+    const ch = getOrCreateChannel(_liveSyncChannels, `livex_band_live_sync_${bandId}`);
+    if (ch) {
+      ch.postMessage({
+        type: 'LIVEX_BAND_STAGE_SYNC',
+        packet: {
+          bandId,
+          leaderId: '',
+          leaderName: '',
+          songId: '',
+          songTitle: '',
+          action: 'LOBBY_JOIN',
+          timestamp: Date.now(),
+          currentLineIdx: 0,
+          currentWordIdx: 0,
+          currentBeat: 0,
+          currentBar: 0,
+          bpm: 120,
+          barsPerLine: 2,
+          autoPlay: false,
+          version: Date.now(),
+          lobbyAttendees: [attendee],
+          memberPayload: {
+            id: attendee.userId,
+            bandId,
+            userId: attendee.userId,
+            displayName: attendee.displayName,
+            role: attendee.role || 'member',
+            joinedAt: attendee.joinedAt || Date.now(),
+            isOnline: true,
+          },
+        },
+      });
+    }
+  } catch (_) {}
+
+  // 2. Persist presence in Firestore
+  try {
+    const db = getFirebaseDb();
+    if (db) {
+      const attendeeRef = doc(db, 'liveBandSessions', bandId, 'lobby', attendee.userId);
+      setDoc(attendeeRef, cleanPayload(attendee), { merge: true }).catch(() => {});
+    }
+  } catch (_) {}
+}
+
+/**
+ * Remove member presence from rehearsal lobby
+ */
+export async function leaveLobbyRemote(bandId: string, userId: string): Promise<void> {
+  if (!bandId || !userId) return;
+
+  try {
+    const ch = getOrCreateChannel(_liveSyncChannels, `livex_band_live_sync_${bandId}`);
+    if (ch) {
+      ch.postMessage({
+        type: 'LIVEX_BAND_STAGE_SYNC',
+        packet: {
+          bandId,
+          leaderId: '',
+          leaderName: '',
+          songId: '',
+          songTitle: '',
+          action: 'LOBBY_LEAVE',
+          timestamp: Date.now(),
+          currentLineIdx: 0,
+          currentWordIdx: 0,
+          currentBeat: 0,
+          currentBar: 0,
+          bpm: 120,
+          barsPerLine: 2,
+          autoPlay: false,
+          version: Date.now(),
+          memberPayload: {
+            userId,
+          } as any,
+        },
+      });
+    }
+  } catch (_) {}
+
+  try {
+    const db = getFirebaseDb();
+    if (db) {
+      const attendeeRef = doc(db, 'liveBandSessions', bandId, 'lobby', userId);
+      deleteDoc(attendeeRef).catch(() => {});
+    }
+  } catch (_) {}
 }
 
 /**
