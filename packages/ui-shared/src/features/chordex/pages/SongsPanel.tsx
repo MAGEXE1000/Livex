@@ -4324,6 +4324,15 @@ export default function SongsPanel() {
     return Array.from(chordSet);
   }, [activePreset]);
 
+  const handleLyricsChange = useCallback(
+    (nextLyrics: SongLyricsDocument | undefined) => {
+      if (activePresetId) {
+        setSongLyrics(activePresetId, nextLyrics);
+      }
+    },
+    [activePresetId, setSongLyrics]
+  );
+
   // Drag & drop
   const { localChords, dragIdx, dragDeltaY, dragNodeRef, instanceKeys, onDragStart } = useDragReorder({
     activePreset,
@@ -4909,15 +4918,12 @@ export default function SongsPanel() {
               backBtnTestId="editor-back-btn"
               scrollContainerRef={editorViewMode === 'lyrics' ? lyricsScrollRef : editorScrollRef}
               toolbarActions={
-                <div className="flex items-center gap-1">
+                hasLiveContent ? (
                   <motion.button
                     whileTap={{ scale: 0.92 }}
-                    aria-label="Edit song details"
-                    data-purpose="edit-song-details-btn"
-                    onClick={() => {
-                      setEditingId(activePreset.id);
-                      setShowForm(true);
-                    }}
+                    aria-label="Live Mode"
+                    onClick={() => setShowLive(true)}
+                    data-testid="enter-live-mode"
                     className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
                     style={{
                       background: 'transparent',
@@ -4925,35 +4931,16 @@ export default function SongsPanel() {
                       color: isLight ? '#000000' : '#FFFFFF',
                     }}
                     type="button"
-                    title="Edit song details"
+                    title="Start live performance"
                   >
-                    <span className="material-symbols-rounded text-[20px]">edit</span>
-                  </motion.button>
-
-                  {hasLiveContent && (
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      aria-label="Live Mode"
-                      onClick={() => setShowLive(true)}
-                      data-testid="enter-live-mode"
-                      className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: isLight ? '#000000' : '#FFFFFF',
-                      }}
-                      type="button"
-                      title="Start live performance"
+                    <span
+                      className="material-symbols-rounded text-[22px]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
                     >
-                      <span
-                        className="material-symbols-rounded text-[22px]"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        play_arrow
-                      </span>
-                    </motion.button>
-                  )}
-                </div>
+                      play_arrow
+                    </span>
+                  </motion.button>
+                ) : undefined
               }
             />
             {/* Sticky segmented mode switcher permanently pinned below SharedFloatingHeader */}
@@ -5287,15 +5274,15 @@ export default function SongsPanel() {
                     'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 84px)',
                   position: 'relative',
                   background: 'transparent',
+                  WebkitUserSelect: 'text',
+                  userSelect: 'text',
                 }}
                 data-purpose="editor-lyrics-area"
               >
                 <SongLyricsEditor
                   mode="lyrics"
                   lyrics={activePreset.lyrics}
-                  onChange={(nextLyrics) => {
-                    setSongLyrics(activePreset.id, nextLyrics);
-                  }}
+                  onChange={handleLyricsChange}
                   availableChords={allSongChordNames}
                   accent={accent}
                 />
@@ -5307,7 +5294,7 @@ export default function SongsPanel() {
             return (
               <div
                 ref={editorScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 w-full"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 w-full select-text"
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
@@ -5318,15 +5305,15 @@ export default function SongsPanel() {
                     'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 84px)',
                   position: 'relative',
                   background: 'transparent',
+                  WebkitUserSelect: 'text',
+                  userSelect: 'text',
                 }}
                 data-purpose="editor-both-area"
               >
                 <SongLyricsEditor
                   mode="both"
                   lyrics={activePreset.lyrics}
-                  onChange={(nextLyrics) => {
-                    setSongLyrics(activePreset.id, nextLyrics);
-                  }}
+                  onChange={handleLyricsChange}
                   availableChords={allSongChordNames}
                   accent={accent}
                 />

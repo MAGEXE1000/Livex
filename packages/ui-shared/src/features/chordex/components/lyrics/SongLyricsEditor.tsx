@@ -176,6 +176,61 @@ interface ActiveSelection {
   text: string;
 }
 
+function areLyricsEqual(a: SongLyricsDocument | undefined, b: SongLyricsDocument | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.sections.length !== b.sections.length) return false;
+  if (a.formatting?.bold !== b.formatting?.bold || a.formatting?.defaultColor !== b.formatting?.defaultColor) return false;
+
+  for (let i = 0; i < a.sections.length; i++) {
+    const sa = a.sections[i];
+    const sb = b.sections[i];
+    if (sa.id !== sb.id || sa.name !== sb.name || sa.type !== sb.type) return false;
+    if (
+      sa.vocalRole?.type !== sb.vocalRole?.type ||
+      sa.vocalRole?.label !== sb.vocalRole?.label ||
+      sa.vocalRole?.color !== sb.vocalRole?.color
+    ) {
+      return false;
+    }
+    if (sa.lines.length !== sb.lines.length) return false;
+
+    for (let j = 0; j < sa.lines.length; j++) {
+      const la = sa.lines[j];
+      const lb = sb.lines[j];
+      if (la.id !== lb.id || la.text !== lb.text || la.type !== lb.type) return false;
+      if (la.format?.bold !== lb.format?.bold || la.format?.color !== lb.format?.color) return false;
+      if (la.explicitDurationMs !== lb.explicitDurationMs) return false;
+      if (
+        la.vocalRole?.type !== lb.vocalRole?.type ||
+        la.vocalRole?.label !== lb.vocalRole?.label ||
+        la.vocalRole?.color !== lb.vocalRole?.color
+      ) {
+        return false;
+      }
+
+      const chordsA = la.chords ?? [];
+      const chordsB = lb.chords ?? [];
+      if (chordsA.length !== chordsB.length) return false;
+      for (let k = 0; k < chordsA.length; k++) {
+        if (chordsA[k].id !== chordsB[k].id || chordsA[k].chord !== chordsB[k].chord || chordsA[k].offset !== chordsB[k].offset) {
+          return false;
+        }
+      }
+
+      const spansA = la.spans ?? [];
+      const spansB = lb.spans ?? [];
+      if (spansA.length !== spansB.length) return false;
+      for (let k = 0; k < spansA.length; k++) {
+        if (spansA[k].text !== spansB[k].text || spansA[k].format?.bold !== spansB[k].format?.bold || spansA[k].format?.color !== spansB[k].format?.color) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   lyrics,
   onChange,
@@ -185,6 +240,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   isAmoled = false,
   mode = 'both',
 }) => {
+  // Stable onChange reference to decouple store dispatches from component effects & handlers
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   // Local document state initialized from props
   const [localDoc, setLocalDoc] = useState<SongLyricsDocument>(() => {
     const initial = lyrics && Array.isArray(lyrics.sections) ? lyrics : createEmptyLyricsDocument();
@@ -193,9 +252,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const localDocRef = useRef<SongLyricsDocument>(localDoc);
   localDocRef.current = localDoc;
 
-  // Keep localDoc in sync when external lyrics prop updates
+  // Keep localDoc in sync when external lyrics prop updates (bailing out when identical to eliminate loops)
   useEffect(() => {
-    if (lyrics && Array.isArray(lyrics.sections) && lyrics !== localDocRef.current) {
+    if (lyrics && Array.isArray(lyrics.sections)) {
+      if (lyrics === localDocRef.current) return;
+      if (areLyricsEqual(lyrics, localDocRef.current)) return;
       const normalized = normalizeLyricsDocumentStructure(lyrics);
       setLocalDoc(normalized);
       localDocRef.current = normalized;
@@ -218,15 +279,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
 
       if (immediate) {
-        onChange(nextDoc);
+        onChangeRef.current(nextDoc);
       } else {
         debounceTimerRef.current = setTimeout(() => {
-          onChange(nextDoc);
+          onChangeRef.current(nextDoc);
           debounceTimerRef.current = null;
         }, 400);
       }
     },
-    [onChange]
+    []
   );
 
   // Clear All Lyrics confirmation dialog state & handler
@@ -246,17 +307,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     toast.success('Lyrics cleared');
   }, [triggerChange]);
 
-  // Flush debounced change on unmount
+  // Flush debounced change strictly on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
         if (localDocRef.current) {
-          onChange(localDocRef.current);
+          onChangeRef.current(localDocRef.current);
         }
       }
     };
-  }, [onChange]);
+  }, []);
 
   // Undo / Redo history stacks
   const historyRef = useRef<SongLyricsDocument[]>([]);
@@ -1165,23 +1226,35 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       setDraggedLine({ sectionId, lineId });
       setDragOverTarget(null);
 
+      // Cache target coordinates at drag initiation to prevent transform-induced flapping / recursive render storm
+      const cachedTargets = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-line-id]')
+      ).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          sectionId: el.dataset.sectionId || '',
+          lineIndex: parseInt(el.dataset.lineIndex || '0', 10),
+          midY: (rect.top + rect.bottom) / 2,
+        };
+      });
+
       const onPointerMove = (moveEvent: PointerEvent) => {
-        const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
-        if (!el) return;
-        const lineEl = el.closest('[data-line-id]') as HTMLElement | null;
-        if (lineEl) {
-          const targetSecId = lineEl.dataset.sectionId;
-          const targetLineIdxStr = lineEl.dataset.lineIndex;
-          if (targetSecId && targetLineIdxStr !== undefined) {
-            const targetIdx = parseInt(targetLineIdxStr, 10);
-            if (!isNaN(targetIdx)) {
-              const current = dragOverTargetRef.current;
-              if (!current || current.sectionId !== targetSecId || current.lineIdx !== targetIdx) {
-                const nextTarget = { sectionId: targetSecId, lineIdx: targetIdx };
-                dragOverTargetRef.current = nextTarget;
-                setDragOverTarget(nextTarget);
-              }
-            }
+        if (cachedTargets.length === 0) return;
+        let closest = cachedTargets[0];
+        let minDiff = Infinity;
+        for (const target of cachedTargets) {
+          const diff = Math.abs(moveEvent.clientY - target.midY);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = target;
+          }
+        }
+        if (closest.sectionId) {
+          const current = dragOverTargetRef.current;
+          if (!current || current.sectionId !== closest.sectionId || current.lineIdx !== closest.lineIndex) {
+            const nextTarget = { sectionId: closest.sectionId, lineIdx: closest.lineIndex };
+            dragOverTargetRef.current = nextTarget;
+            setDragOverTarget(nextTarget);
           }
         }
       };
@@ -1275,6 +1348,26 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 ...l,
                 format: { ...l.format, color: color || undefined },
               };
+            }),
+          };
+        }),
+      }));
+    },
+    [updateDoc]
+  );
+
+  const handleApplyColorToWord = useCallback(
+    (sectionId: string, lineId: string, start: number, end: number, color: string) => {
+      updateDoc((doc) => ({
+        ...doc,
+        sections: doc.sections.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            lines: sec.lines.map((l) => {
+              if (l.id !== lineId) return l;
+              const nextSpans = setColorOnSelection(l.spans, l.text, start, end, color);
+              return { ...l, spans: nextSpans };
             }),
           };
         }),
@@ -1670,13 +1763,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       style={{
         color: 'var(--c-text-primary, #ffffff)',
         fontFamily: 'var(--studio-font-body, var(--font-body))',
+        WebkitUserSelect: 'text',
+        userSelect: 'text',
       }}
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        className="flex flex-col gap-4 outline-none w-full"
+        className="flex flex-col gap-4 outline-none w-full select-text"
         style={{
           paddingBottom: '24px',
+          WebkitUserSelect: 'text',
+          userSelect: 'text',
         }}
         data-purpose="teleprompter-writing-canvas"
       >
@@ -1858,7 +1955,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <section
               key={section.id || secIdx}
               data-testid={`lyric-section-${secIdx}`}
-              className="flex flex-col gap-2 relative group/sec"
+              className="flex flex-col gap-2 relative group/sec select-text"
+              style={{
+                WebkitUserSelect: 'text',
+                userSelect: 'text',
+              }}
             >
               {/* Canonical Section Header Strip */}
               {hasSectionHeader && (
@@ -1960,7 +2061,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
-                        onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                        onClick={() => {
+                          const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+                          if (sel && sel.toString().length > 0) return;
+                          setLastActivePosition(section.id, lineIdx, line.id);
+                        }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="group/line relative flex flex-col gap-2 p-2.5 sm:p-3 rounded-2xl transition-all border my-2 shadow-xs"
@@ -2262,13 +2367,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
-                        onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                        onClick={() => {
+                          const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+                          if (sel && sel.toString().length > 0) return;
+                          setLastActivePosition(section.id, lineIdx, line.id);
+                        }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex items-center py-1 px-1 transition-all rounded-lg"
+                        className="group/line relative flex items-center py-1 px-1 transition-all rounded-lg select-text"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                          WebkitUserSelect: 'text',
+                          userSelect: 'text',
                         }}
                       >
                         <input
@@ -2310,6 +2421,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             border: 'none',
                             boxShadow: 'none',
                             WebkitTapHighlightColor: 'transparent',
+                            WebkitUserSelect: 'text',
+                            userSelect: 'text',
                           }}
                           autoCapitalize="sentences"
                           autoCorrect="on"
@@ -2407,13 +2520,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       data-line-id={line.id}
                       data-section-id={section.id}
                       data-line-index={lineIdx}
-                      onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                      onClick={() => {
+                        const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+                        if (sel && sel.toString().length > 0) return;
+                        setLastActivePosition(section.id, lineIdx, line.id);
+                      }}
                       onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                       onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-1 transition-all rounded-lg select-none"
+                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-1 transition-all rounded-lg select-text"
                       style={{
                         transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                         transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                        WebkitUserSelect: 'text',
+                        userSelect: 'text',
                       }}
                     >
                       {words.map((w, wIdx) => {
@@ -2422,11 +2541,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             (c.offset >= w.start && c.offset < w.end) ||
                             (wIdx === 0 && c.offset < w.start)
                         );
+                        const wordColor = getCharacterColor(line.spans, w.start) || resolvedColor;
+                        const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
 
                         return (
                           <div
                             key={`${w.start}-${w.end}-${wIdx}`}
-                            className="inline-flex flex-col items-start relative group/word"
+                            className="inline-flex flex-col items-start relative group/word select-text"
+                            style={{
+                              WebkitUserSelect: 'text',
+                              userSelect: 'text',
+                            }}
                           >
                             {/* Chord Lane */}
                             <div className="h-6 flex items-center gap-1 select-none">
@@ -2461,28 +2586,38 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 </button>
                               ))}
                               {isPlacementActive && wordChords.length === 0 && (
-                                <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400">
+                                <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400 select-none">
                                   +
                                 </span>
                               )}
                             </div>
 
-                            {/* Word Text (Tap in placement mode anchors the chord!) */}
+                            {/* Word Text (Tap in placement mode anchors the chord, or paints in color tool mode!) */}
                             <span
                               onClick={() => {
+                                const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+                                if (sel && sel.toString().length > 0) return;
+                                if (activeColorTool !== null) {
+                                  handleApplyColorToWord(section.id, line.id, w.start, w.end, activeColorTool);
+                                  return;
+                                }
                                 if (activePlacementChord) {
                                   handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
                                 }
                               }}
-                              className={`text-base tracking-wide transition-all ${
-                                activePlacementChord
+                              className={`text-base tracking-wide transition-all select-text ${
+                                activeColorTool !== null
+                                  ? 'cursor-pointer hover:opacity-80 active:scale-95'
+                                  : activePlacementChord
                                   ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted'
                                   : ''
                               }`}
                               style={{
-                                color: resolvedColor,
-                                fontWeight: isLineBold ? 800 : 500,
+                                color: wordColor,
+                                fontWeight: isWordBold ? 800 : 500,
                                 fontFamily: 'inherit',
+                                WebkitUserSelect: 'text',
+                                userSelect: 'text',
                               }}
                             >
                               {w.word}

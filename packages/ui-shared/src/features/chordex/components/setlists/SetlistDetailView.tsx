@@ -329,14 +329,14 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
         onBack={onBack}
         backBtnTestId="setlist-detail-back-btn"
         toolbarActions={
-          <div className="flex items-center gap-1">
+          stats.totalSongs > 0 ? (
             <motion.button
               whileTap={{ scale: 0.92 }}
               type="button"
-              data-testid="setlist-edit-info-btn"
-              onClick={() => setShowEditInfoModal(true)}
-              title="Edit setlist info"
-              aria-label="Edit setlist info"
+              data-testid="setlist-start-live-btn"
+              onClick={() => onPlayLiveSetlist(setlist, 0)}
+              title="Start live setlist rehearsal"
+              aria-label="Start live rehearsal"
               className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
               style={{
                 background: 'transparent',
@@ -344,33 +344,14 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                 color: isLight ? '#000000' : '#FFFFFF',
               }}
             >
-              <span className="material-symbols-rounded text-[20px]">edit</span>
-            </motion.button>
-
-            {stats.totalSongs > 0 && (
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                type="button"
-                data-testid="setlist-start-live-btn"
-                onClick={() => onPlayLiveSetlist(setlist, 0)}
-                title="Start live setlist rehearsal"
-                aria-label="Start live rehearsal"
-                className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: isLight ? '#000000' : '#FFFFFF',
-                }}
+              <span
+                className="material-symbols-rounded text-[22px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
               >
-                <span
-                  className="material-symbols-rounded text-[22px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  play_arrow
-                </span>
-              </motion.button>
-            )}
-          </div>
+                play_arrow
+              </span>
+            </motion.button>
+          ) : undefined
         }
         sideClearance={stats.totalSongs > 0 ? 80 : 52}
       />
