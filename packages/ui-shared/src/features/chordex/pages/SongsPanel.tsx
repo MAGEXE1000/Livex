@@ -4961,7 +4961,7 @@ export default function SongsPanel() {
               className="w-full flex items-center justify-center pointer-events-auto py-1"
               style={{
                 position: 'fixed',
-                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 54px)',
+                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
                 left: 0,
                 right: 0,
                 zIndex: 35,
@@ -5280,7 +5280,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5310,7 +5310,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5338,7 +5338,7 @@ export default function SongsPanel() {
                 ref={editorScrollRef}
                 className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
                 style={{
-                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
+                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
                   paddingBottom:
                     'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                 }}
@@ -5395,7 +5395,7 @@ export default function SongsPanel() {
               style={{
                 paddingTop: isWebDesktop
                   ? '16px'
-                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 104px)',
+                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:

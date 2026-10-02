@@ -813,7 +813,6 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 handleDeleteLine(section.id, line.id, prevLine?.id);
                               }
                             }}
-                            placeholder="Type lyric line..."
                             className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
                             style={{
                               border: 'none',

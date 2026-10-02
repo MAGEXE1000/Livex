@@ -2004,11 +2004,14 @@ export default function LivexHub() {
                                         : { rotate: 0 }
                                     }
                                     style={{
-                                      width: 'clamp(44px, 5.5vh, 48px)',
-                                      height: 'clamp(44px, 5.5vh, 48px)',
-                                      background: 'transparent',
-                                      border: 'none',
-                                      boxShadow: 'none',
+                                      width: 'clamp(48px, 5.5vh, 52px)',
+                                      height: 'clamp(48px, 5.5vh, 52px)',
+                                      borderRadius: '9999px',
+                                      background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                                      border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.12)',
+                                      backdropFilter: 'blur(16px)',
+                                      WebkitBackdropFilter: 'blur(16px)',
+                                      boxShadow: isLight ? '0 2px 8px rgba(0, 0, 0, 0.04)' : '0 4px 16px rgba(0, 0, 0, 0.25)',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -2090,8 +2093,8 @@ export default function LivexHub() {
                                 <div
                                   className="active:scale-[0.9] md:hover:scale-[1.06] md:hover:-translate-y-[2px] transition-transform duration-200"
                                   style={{
-                                    width: 'clamp(50px, 6.2vh, 58px)',
-                                    height: 'clamp(50px, 6.2vh, 58px)',
+                                    width: 'clamp(48px, 5.5vh, 52px)',
+                                    height: 'clamp(48px, 5.5vh, 52px)',
                                     borderRadius: '9999px',
                                     background: 'rgba(255, 255, 255, 0.02)',
                                     border: '1.5px dashed rgba(255, 255, 255, 0.20)',

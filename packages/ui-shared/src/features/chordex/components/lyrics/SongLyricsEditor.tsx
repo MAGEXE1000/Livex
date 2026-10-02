@@ -15,6 +15,8 @@ import {
   LYRIC_SECTION_TYPES,
   parsePastedLyrics,
   lyricsDocumentToPlainText,
+  continuousTextToLyricsDocument,
+  lyricsDocumentToContinuousText,
   createEmptyLyricsDocument,
   generateLyricId,
   getCombinedVocalRoles,
@@ -39,6 +41,7 @@ import {
   shiftChordOffsets,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
+import { Button } from '../../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
 import ChordDiagram from '../../diagrams/ChordDiagram';
 import DetailFretboardDiagram from '../../diagrams/DetailFretboardDiagram';
@@ -215,11 +218,73 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         debounceTimerRef.current = setTimeout(() => {
           onChange(nextDoc);
           debounceTimerRef.current = null;
-        }, 250);
+        }, 400);
       }
     },
     [onChange]
   );
+
+  // Continuous plain-text document state (Samsung Notes / multi-line textarea canvas)
+  const [continuousText, setContinuousText] = useState<string>(() => {
+    return lyricsDocumentToContinuousText(localDoc, false);
+  });
+  const continuousTextRef = useRef<string>(continuousText);
+  continuousTextRef.current = continuousText;
+  const isUserTypingTextareaRef = useRef(false);
+  const continuousTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync continuousText when localDoc updates externally
+  useEffect(() => {
+    if (!isUserTypingTextareaRef.current) {
+      const serialized = lyricsDocumentToContinuousText(localDoc, false);
+      if (serialized !== continuousTextRef.current) {
+        setContinuousText(serialized);
+        continuousTextRef.current = serialized;
+      }
+    }
+  }, [localDoc]);
+
+  // Auto-resize continuous textarea to eliminate internal scrolling
+  const adjustTextareaHeight = useCallback(() => {
+    const el = continuousTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(380, el.scrollHeight)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [continuousText, mode, adjustTextareaHeight]);
+
+  const handleContinuousTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      isUserTypingTextareaRef.current = true;
+      const nextVal = e.target.value;
+      setContinuousText(nextVal);
+      continuousTextRef.current = nextVal;
+      adjustTextareaHeight();
+
+      // Convert continuous plain text to structured SongLyricsDocument
+      const nextDoc = continuousTextToLyricsDocument(nextVal, localDocRef.current);
+      triggerChange(nextDoc, false); // Debounced 400ms
+
+      setTimeout(() => {
+        isUserTypingTextareaRef.current = false;
+      }, 450);
+    },
+    [adjustTextareaHeight, triggerChange]
+  );
+
+  // Clear All Lyrics confirmation dialog state & handler
+  const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
+  const handleClearAllLyrics = useCallback(() => {
+    setContinuousText('');
+    continuousTextRef.current = '';
+    const emptyDoc = createEmptyLyricsDocument();
+    setLocalDoc(emptyDoc);
+    localDocRef.current = emptyDoc;
+    triggerChange(emptyDoc, true);
+  }, [triggerChange]);
 
   // Flush debounced change on unmount
   useEffect(() => {
@@ -1551,37 +1616,68 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </div>
         )}
 
-        {/* If completely empty: Show pristine writing invitation without forced sections */}
-        {isLyricsEmpty && (
+        {mode === 'lyrics' ? (
           <div
-            onClick={() => handleAddLine()}
-            className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all cursor-text text-center my-4 group hover:border-blue-500/40"
-            style={{
-              backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
-              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
-            }}
+            data-purpose="continuous-lyrics-canvas"
+            className="w-full flex-1 flex flex-col relative"
+            style={{ minHeight: '60vh' }}
           >
-            <span
-              className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full mb-3 border"
+            <textarea
+              ref={continuousTextareaRef}
+              value={continuousText}
+              onChange={handleContinuousTextChange}
+              placeholder="Write or paste lyrics here... (Enter for new lines)"
+              data-testid="lyrics-continuous-textarea"
+              className="w-full flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide resize-none no-scrollbar"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.04)',
-                borderColor: 'rgba(255,255,255,0.08)',
-                color: 'var(--c-text-muted, #8A92A6)',
+                border: 'none',
+                outline: 'none',
+                boxShadow: 'none',
+                color: documentColor || (isEffectiveLight ? '#111827' : '#f8fafc'),
+                fontWeight: currentDoc.formatting?.bold ? 700 : 500,
+                fontSize: '16px',
+                lineHeight: 1.65,
+                fontFamily: 'var(--font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+                caretColor: accent.from || '#2563EB',
+                paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
               }}
-            >
-              [empty document]
-            </span>
-            <p className="text-base font-semibold text-gray-400 group-hover:text-gray-200 transition-colors">
-              Type or paste lyrics...
-            </p>
-            <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
-              Start writing freely. Sections, vocal roles, and chords are completely optional.
-            </p>
+              autoCapitalize="sentences"
+              autoCorrect="on"
+              spellCheck="false"
+            />
           </div>
-        )}
+        ) : (
+          /* mode === 'both' */
+          <>
+            {isLyricsEmpty && (
+              <div
+                className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all text-center my-4 group"
+                style={{
+                  backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
+                  borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+                }}
+              >
+                <span
+                  className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full mb-3 border"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    color: 'var(--c-text-muted, #8A92A6)',
+                  }}
+                >
+                  [No lyrics]
+                </span>
+                <p className="text-base font-semibold text-gray-400 group-hover:text-gray-200 transition-colors">
+                  No lyrics in this song yet.
+                </p>
+                <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
+                  Switch to Lyrics mode to write or paste lyrics, then return to Both mode to anchor chords.
+                </p>
+              </div>
+            )}
 
-        {/* Render sections & lines */}
-        {currentDoc.sections.map((section, secIdx) => {
+            {/* Render sections & lines */}
+            {currentDoc.sections.map((section, secIdx) => {
           const hasSectionHeader = Boolean(section.name && section.name.trim().length > 0);
           const sectionColor = section.vocalRole?.color || accent.from;
 
@@ -1959,211 +2055,154 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
+                  // Empty line: clean paragraph break, ZERO ghost containers, ZERO placeholders
+                  if (!line.text || line.text.trim().length === 0) {
+                    const hasChords = line.chords && line.chords.length > 0;
+                    if (!hasChords) {
+                      return <div key={line.id || lineIdx} className="h-5 w-full select-none" />;
+                    }
+                    // Instrumental line with chords only
+                    return (
+                      <div
+                        key={line.id || lineIdx}
+                        data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                        className="relative flex items-center gap-2 py-1 px-1 rounded-lg"
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {line.chords!.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              data-testid={`placed-chord-${c.chord}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedChordForEdit({
+                                  sectionId: section.id,
+                                  lineId: line.id,
+                                  chord: c,
+                                });
+                              }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
+                              style={{
+                                backgroundColor: isEffectiveLight
+                                  ? 'rgba(37, 99, 235, 0.12)'
+                                  : 'rgba(56, 189, 248, 0.20)',
+                                borderColor: isEffectiveLight
+                                  ? 'rgba(37, 99, 235, 0.40)'
+                                  : 'rgba(56, 189, 248, 0.45)',
+                                color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                              }}
+                            >
+                              <span>{c.chord}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const resolvedColor =
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
-                  const isLineBold = Boolean(line.format?.bold);
+                  const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
                   const lineChords = line.chords || [];
-                  const hasLineChords = lineChords.length > 0;
                   const isPlacementActive = Boolean(activePlacementChord);
-                  const showChordLane = mode === 'both' && (hasLineChords || isPlacementActive);
+                  const words = findWordBoundaries(line.text);
 
                   return (
                     <div
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
                       onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
-                      style={{
-                        transform: translateYOffset ? `translateY(${translateYOffset}px)` : undefined,
-                        transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        if (draggedLine && (draggedLine.sectionId !== section.id || draggedLine.lineId !== line.id)) {
-                          setDragOverTarget({ sectionId: section.id, lineIdx });
-                        }
-                      }}
-                      onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                      className="group/line relative flex flex-col py-1 px-1 transition-all rounded-lg"
+                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-1 transition-all rounded-lg select-none"
                     >
-                      {/* ── CHORD LANE DIRECTLY ABOVE INPUT (BOTH MODE) ── */}
-                      {showChordLane && (
-                        <div
-                          data-testid={`chord-lane-${lineIdx}`}
-                          className="relative w-full h-6 select-none flex items-center mb-0.5"
+                      {words.map((w, wIdx) => {
+                        const wordChords = lineChords.filter(
+                          (c) =>
+                            (c.offset >= w.start && c.offset < w.end) ||
+                            (wIdx === 0 && c.offset < w.start)
+                        );
+
+                        return (
+                          <div
+                            key={`${w.start}-${w.end}-${wIdx}`}
+                            className="inline-flex flex-col items-start relative group/word"
+                          >
+                            {/* Chord Lane */}
+                            <div className="h-6 flex items-center gap-1 select-none">
+                              {wordChords.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  data-testid={`placed-chord-${c.chord}`}
+                                  data-chord-id={c.id}
+                                  data-chord-offset={c.offset}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedChordForEdit({
+                                      sectionId: section.id,
+                                      lineId: line.id,
+                                      chord: c,
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
+                                  style={{
+                                    backgroundColor: isEffectiveLight
+                                      ? 'rgba(37, 99, 235, 0.12)'
+                                      : 'rgba(56, 189, 248, 0.20)',
+                                    borderColor: isEffectiveLight
+                                      ? 'rgba(37, 99, 235, 0.40)'
+                                      : 'rgba(56, 189, 248, 0.45)',
+                                    color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                  }}
+                                  title={`Chord [${c.chord}] - Tap to inspect or move`}
+                                >
+                                  <span>{c.chord}</span>
+                                </button>
+                              ))}
+                              {isPlacementActive && wordChords.length === 0 && (
+                                <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400">
+                                  +
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Word Text (Tap in placement mode anchors the chord!) */}
+                            <span
+                              onClick={() => {
+                                if (activePlacementChord) {
+                                  handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
+                                }
+                              }}
+                              className={`text-base tracking-wide transition-all ${
+                                activePlacementChord
+                                  ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted'
+                                  : ''
+                              }`}
+                              style={{
+                                color: resolvedColor,
+                                fontWeight: isLineBold ? 800 : 500,
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              {w.word}
+                            </span>
+                          </div>
+                        );
+                      })}
+
+                      {/* Vocal Role badge if present on line */}
+                      {line.vocalRole && (
+                        <span
+                          className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center mb-1"
                           style={{
-                            cursor: isPlacementActive ? 'pointer' : 'default',
-                          }}
-                          onClick={(e) => {
-                            if (activePlacementChord) {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const clickX = e.clientX - rect.left;
-                              const offset = getCharOffsetFromClickX(line.text, clickX, inputRefs.current[line.id]);
-                              handleAnchorChord(section.id, line.id, activePlacementChord, offset);
-                            }
+                            backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
+                            borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
+                            color: line.vocalRole.color || '#3b82f6',
                           }}
                         >
-                          {isPlacementActive && !hasLineChords && (
-                            <div className="w-full h-5 rounded border border-dashed border-sky-400/40 bg-sky-400/5 flex items-center px-2">
-                              <span className="text-[10px] font-mono text-sky-400 font-semibold">
-                                + Tap above letter to place [{activePlacementChord}]
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Anchored Chords positioned directly above target characters */}
-                          {lineChords.map((c) => {
-                            const leftPx = measureSubstrWidth(line.text.slice(0, c.offset), inputRefs.current[line.id]);
-                            return (
-                              <button
-                                key={c.id}
-                                type="button"
-                                data-testid={`placed-chord-${c.chord}`}
-                                data-chord-id={c.id}
-                                data-chord-offset={c.offset}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedChordForEdit({
-                                    sectionId: section.id,
-                                    lineId: line.id,
-                                    chord: c,
-                                  });
-                                }}
-                                className="absolute top-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
-                                style={{
-                                  left: `${Math.max(0, leftPx)}px`,
-                                  backgroundColor: isEffectiveLight
-                                    ? 'rgba(37, 99, 235, 0.12)'
-                                    : 'rgba(56, 189, 248, 0.20)',
-                                  borderColor: isEffectiveLight
-                                    ? 'rgba(37, 99, 235, 0.40)'
-                                    : 'rgba(56, 189, 248, 0.45)',
-                                  color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
-                                }}
-                                title={`Chord [${c.chord}] - Tap to inspect or move`}
-                              >
-                                <span>{c.chord}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                          {line.vocalRole.label || line.vocalRole.type}
+                        </span>
                       )}
-
-                      {/* ── ALWAYS-EDITABLE NATIVE INPUT CANVAS ── */}
-                      <div className="flex items-center gap-2 w-full">
-                        <input
-                          ref={(el) => {
-                            inputRefs.current[line.id] = el;
-                            if (el && pendingFocusLineIdRef.current === line.id) {
-                              pendingFocusLineIdRef.current = null;
-                              el.focus();
-                              const pos =
-                                targetCursorOffsetRef.current !== null
-                                  ? Math.min(el.value.length, Math.max(0, targetCursorOffsetRef.current))
-                                  : el.value.length;
-                              targetCursorOffsetRef.current = null;
-                              try {
-                                el.setSelectionRange(pos, pos);
-                              } catch (_) {}
-                            }
-                          }}
-                          type="text"
-                          data-testid={`lyrics-line-input-${lineIdx}`}
-                          value={line.text}
-                          onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
-                          onClick={(e) => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                            if (activePlacementChord) {
-                              e.preventDefault();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const clickX = e.clientX - rect.left;
-                              const offset = getCharOffsetFromClickX(line.text, clickX, e.currentTarget);
-                              handleAnchorChord(section.id, line.id, activePlacementChord, offset);
-                            }
-                          }}
-                          onChange={(e) => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                            handleUpdateLineText(section.id, line.id, e.target.value);
-                          }}
-                          onSelect={(e) => {
-                            const target = e.target as HTMLInputElement;
-                            setActiveSelection({
-                              sectionId: section.id,
-                              lineId: line.id,
-                              start: target.selectionStart ?? 0,
-                              end: target.selectionEnd ?? 0,
-                              text: line.text,
-                            });
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                          }}
-                          onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const target = e.target as HTMLInputElement;
-                              const cursorPos = target.selectionStart ?? line.text.length;
-                              handleSplitLine(section.id, lineIdx, line.id, cursorPos);
-                            } else if (e.key === 'Backspace') {
-                              const target = e.target as HTMLInputElement;
-                              const cursorPos = target.selectionStart ?? 0;
-                              if (cursorPos === 0 && target.selectionEnd === 0) {
-                                if (line.text === '') {
-                                  if (section.lines.length > 1 || currentDoc.sections.length > 1) {
-                                    e.preventDefault();
-                                    const prevLine = lineIdx > 0 ? section.lines[lineIdx - 1] : undefined;
-                                    handleDeleteLine(section.id, line.id, prevLine?.id);
-                                  }
-                                } else if (lineIdx > 0 || secIdx > 0) {
-                                  e.preventDefault();
-                                  handleMergeWithPrevious(section.id, lineIdx, line.id);
-                                }
-                              }
-                            } else if (e.key === 'ArrowUp' && lineIdx > 0) {
-                              const prevLine = section.lines[lineIdx - 1];
-                              if (prevLine && inputRefs.current[prevLine.id]) {
-                                const target = e.target as HTMLInputElement;
-                                const pos = target.selectionStart ?? 0;
-                                inputRefs.current[prevLine.id]?.focus();
-                                inputRefs.current[prevLine.id]?.setSelectionRange(pos, pos);
-                              }
-                            } else if (e.key === 'ArrowDown' && lineIdx < section.lines.length - 1) {
-                              const nextLine = section.lines[lineIdx + 1];
-                              if (nextLine && inputRefs.current[nextLine.id]) {
-                                const target = e.target as HTMLInputElement;
-                                const pos = target.selectionStart ?? 0;
-                                inputRefs.current[nextLine.id]?.focus();
-                                inputRefs.current[nextLine.id]?.setSelectionRange(pos, pos);
-                              }
-                            }
-                          }}
-                          placeholder={isLyricsEmpty ? 'Type or paste lyrics...' : 'Type lyric line...'}
-                          className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
-                          style={{
-                            border: 'none',
-                            outline: 'none',
-                            boxShadow: 'none',
-                            color: resolvedColor,
-                            fontWeight: isLineBold ? 800 : 500,
-                            fontFamily: 'inherit',
-                            cursor: isPlacementActive ? 'pointer' : 'text',
-                          }}
-                        />
-
-                        {/* Vocal Role badge if present on line */}
-                        {line.vocalRole && (
-                          <span
-                            className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0"
-                            style={{
-                              backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
-                              borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
-                              color: line.vocalRole.color || '#3b82f6',
-                            }}
-                          >
-                            {line.vocalRole.label || line.vocalRole.type}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   );
                 })}
@@ -2171,6 +2210,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             </section>
           );
         })}
+      </>
+    )}
 
         {/* ── ACTIVE COLOR TOOL BANNER (BRUSH MODE) ── */}
         {activeColorTool !== null && (
@@ -2239,6 +2280,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   </motion.button>
                 )}
                 rows={[
+                  ...(mode === 'lyrics'
+                    ? [
+                        {
+                          id: 'action-clear-lyrics',
+                          label: 'Clear All Lyrics',
+                          icon: 'delete',
+                          destructive: true,
+                          sublabel: 'Permanently remove all text',
+                          onPress: () => {
+                            setShowClearLyricsConfirm(true);
+                          },
+                        },
+                      ]
+                    : []),
                   ...(mode === 'both'
                     ? [
                         {
@@ -2293,7 +2348,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <div
               className="fixed z-50 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-2xl backdrop-blur-xl select-none transition-all"
               style={{
-                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 58px)',
+                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 backgroundColor: isEffectiveAmoled ? 'rgba(10, 10, 14, 0.95)' : 'rgba(20, 20, 26, 0.92)',
@@ -2319,6 +2374,44 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             </div>,
             document.body
           )}
+
+        {/* ── DIALOG: CLEAR ALL LYRICS CONFIRMATION ── */}
+        <Dialog
+          open={showClearLyricsConfirm}
+          onClose={() => setShowClearLyricsConfirm(false)}
+          title="Clear Lyrics?"
+          isDestructive={true}
+          footer={
+            <>
+              <Button
+                onClick={() => setShowClearLyricsConfirm(false)}
+                data-testid="cancel-clear-lyrics-btn"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                data-testid="confirm-clear-lyrics-btn"
+                onClick={() => {
+                  handleClearAllLyrics();
+                  setShowClearLyricsConfirm(false);
+                  toast.success('Lyrics cleared');
+                }}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  color: '#EF4444',
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                }}
+              >
+                Clear All
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-[var(--c-text-secondary)]">
+            This will permanently remove all text from this song. This action cannot be undone.
+          </p>
+        </Dialog>
 
         {/* ── DIALOG: CHORD SELECTION PALETTE ── */}
         <Dialog
