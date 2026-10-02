@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.80';
-export const NATIVE_VERSION_CODE = 40680;
-export const WEB_VERSION = '4.6.80';
+export const NATIVE_VERSION = '4.6.81';
+export const NATIVE_VERSION_CODE = 40681;
+export const WEB_VERSION = '4.6.81';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '0739598a';
+export const APP_COMMIT_SHA = 'dc99f7bb';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 4:40:54 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 5:36:48 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,20 +101,21 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Continuous Multiline Document Engine: Transitioned lyrics rendering from single-line text inputs and click-to-edit word fragments to continuous auto-growing textareas, preserving verse layouts and natural stanza breaks.',
-      'True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.',
+      'Unified Lyrics & Both Document State: Merged editor canvas render pipelines so character-level formatting (custom colors, bold, italic, underline) renders with 100% visual parity across both Lyrics and Both workspaces.',
+      'Discrete Line-by-Line Live Teleprompter: Parsed multi-line lyrics into distinct individual verse containers with targeted focus highlight boxes advancing line-by-line during playback, rendering stanza breaks as clean layout spacing gaps.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.',
+      'Tab Switch State Preservation: Stabilized workspace container mounting so switching between Chords, Lyrics, and Both modes never unmounts the active document or causes text truncation.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.',
+      'Tab Switch Text Truncation: Fixed document flattening and race condition where switching out of Both mode previously truncated multi-stanza lyrics to a single line.',
+      'Lyrics Rich-Text Canvas Parity: Eliminated plain HTML textarea restriction in Lyrics mode, restoring colored and styled character ranges without losing editability.',
     ],
   },
 ];
@@ -126,6 +127,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.81',
+    date: '2026-10-02',
+    highlights: [
+      'Unified Lyrics & Both Document State: Merged editor canvas render pipelines so character-level formatting (custom colors, bold, italic, underline) renders with 100% visual parity across both Lyrics and Both workspaces.',
+      'Discrete Line-by-Line Live Teleprompter: Parsed multi-line lyrics into distinct individual verse containers with targeted focus highlight boxes advancing line-by-line during playback, rendering stanza breaks as clean layout spacing gaps.',
+      'Tab Switch State Preservation: Stabilized workspace container mounting so switching between Chords, Lyrics, and Both modes never unmounts the active document or causes text truncation.',
+      'Tab Switch Text Truncation: Fixed document flattening and race condition where switching out of Both mode previously truncated multi-stanza lyrics to a single line.',
+      'Lyrics Rich-Text Canvas Parity: Eliminated plain HTML textarea restriction in Lyrics mode, restoring colored and styled character ranges without losing editability.',
+    ],
+  },
   {
     version: '4.6.80',
     date: '2026-10-02',
@@ -224,18 +236,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
       'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
       'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
-    ],
-  },
-  {
-    version: '4.6.71',
-    date: '2026-09-30',
-    highlights: [
-      'Unified Canonical Floating Glass Topbar in Live Mode: Restyled the Live mode top navigation capsule across Chords, Lyrics, and Both modes using the canonical `SharedFloatingHeader` design system tokens, responsive backdrop blur, and SVG back navigation chevron.',
-      'Icon-Only Live Spectator Sync Indicator: Streamlined the spectator follow pill into a sleek circular link icon button on the right header boundary, eliminating header clutter while preserving instant tap-to-unlock behavior.',
-      'Line-Level Teleprompter Focus: Transitioned active lyric line emphasis from character/syllable breaks to unified full-line focus framing with high-contrast active text and smooth verse transitions.',
-      'Live Mode Topbar Mathematical Center Alignment: Centered song titles and live playback subtitles with symmetric horizontal clearance across all screen sizes and mobile aspect ratios.',
-      'Compact Live Topbar Height: Reduced header height across all Live modes to an unobtrusive 48px profile, optimizing screen real estate for chords, teleprompter lyrics, and stage performance.',
-      'Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.',
     ],
   },
 ];
