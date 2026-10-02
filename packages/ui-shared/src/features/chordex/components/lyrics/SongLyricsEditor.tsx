@@ -16,7 +16,6 @@ import {
   parsePastedLyrics,
   lyricsDocumentToPlainText,
   continuousTextToLyricsDocument,
-  lyricsDocumentToContinuousText,
   createEmptyLyricsDocument,
   generateLyricId,
   getCombinedVocalRoles,
@@ -163,7 +162,7 @@ const CUSTOM_ROLE_COLORS = [
 ];
 
 const INTERLUDE_PRESET_DURATIONS = [5, 10, 15, 20, 30, 45, 60];
-const INTERLUDE_PRESET_LABELS = ['(Solo)', '(Interlude)', '(Guitar Solo)', '(Intro)', '(Bridge)', '(Outro)'];
+const INTERLUDE_PRESET_LABELS = ['Solo', 'Guitar Solo', 'Interlude', 'Intro', 'Outro', 'Bridge'];
 
 interface ActiveSelection {
   sectionId: string;
@@ -224,66 +223,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [onChange]
   );
 
-  // Continuous plain-text document state (Samsung Notes / multi-line textarea canvas)
-  const [continuousText, setContinuousText] = useState<string>(() => {
-    return lyricsDocumentToContinuousText(localDoc, false);
-  });
-  const continuousTextRef = useRef<string>(continuousText);
-  continuousTextRef.current = continuousText;
-  const isUserTypingTextareaRef = useRef(false);
-  const continuousTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Sync continuousText when localDoc updates externally
-  useEffect(() => {
-    if (!isUserTypingTextareaRef.current) {
-      const serialized = lyricsDocumentToContinuousText(localDoc, false);
-      if (serialized !== continuousTextRef.current) {
-        setContinuousText(serialized);
-        continuousTextRef.current = serialized;
-      }
-    }
-  }, [localDoc]);
-
-  // Auto-resize continuous textarea to eliminate internal scrolling
-  const adjustTextareaHeight = useCallback(() => {
-    const el = continuousTextareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.max(380, el.scrollHeight)}px`;
-  }, []);
-
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [continuousText, mode, adjustTextareaHeight]);
-
-  const handleContinuousTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      isUserTypingTextareaRef.current = true;
-      const nextVal = e.target.value;
-      setContinuousText(nextVal);
-      continuousTextRef.current = nextVal;
-      adjustTextareaHeight();
-
-      // Convert continuous plain text to structured SongLyricsDocument
-      const nextDoc = continuousTextToLyricsDocument(nextVal, localDocRef.current);
-      triggerChange(nextDoc, false); // Debounced 400ms
-
-      setTimeout(() => {
-        isUserTypingTextareaRef.current = false;
-      }, 450);
-    },
-    [adjustTextareaHeight, triggerChange]
-  );
-
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
   const handleClearAllLyrics = useCallback(() => {
-    setContinuousText('');
-    continuousTextRef.current = '';
     const emptyDoc = createEmptyLyricsDocument();
+    const initialSec: SongLyricSection = {
+      id: generateLyricId('sec'),
+      type: 'verse',
+      name: 'Verse 1',
+      lines: [{ id: generateLyricId('line'), text: '' }],
+    };
+    emptyDoc.sections = [initialSec];
     setLocalDoc(emptyDoc);
     localDocRef.current = emptyDoc;
     triggerChange(emptyDoc, true);
+    toast.success('Lyrics cleared');
   }, [triggerChange]);
 
   // Flush debounced change on unmount
@@ -307,9 +261,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const pendingFocusLineIdRef = useRef<string | null>(null);
   const targetCursorOffsetRef = useRef<number | null>(null);
 
+  // Focus management effect for newly created or targeted lines
+  useEffect(() => {
+    if (pendingFocusLineIdRef.current) {
+      const lineId = pendingFocusLineIdRef.current;
+      pendingFocusLineIdRef.current = null;
+      const el = inputRefs.current[lineId];
+      if (el) {
+        el.focus();
+        const offset = targetCursorOffsetRef.current ?? el.value.length;
+        targetCursorOffsetRef.current = null;
+        try {
+          const clamped = Math.min(el.value.length, Math.max(0, offset));
+          el.setSelectionRange(clamped, clamped);
+        } catch (_) {}
+      }
+    }
+  }, [currentDoc]);
+
   // Drag and drop state for interludes and lines
   const [draggedLine, setDraggedLine] = useState<{ sectionId: string; lineId: string } | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<{ sectionId: string; lineIdx: number } | null>(null);
+  const dragOverTargetRef = useRef<{ sectionId: string; lineIdx: number } | null>(null);
+  dragOverTargetRef.current = dragOverTarget;
 
   // Active line selection state for toolbar operations
   const [activeSelection, setActiveSelection] = useState<ActiveSelection | null>(null);
@@ -477,7 +451,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const isLyricsEmpty = useMemo(() => {
     if (currentDoc.sections.length === 0) return true;
-    return currentDoc.sections.every((s) => s.lines.every((l) => l.text.trim().length === 0));
+    return currentDoc.sections.every((s) =>
+      s.lines.every((l) => l.text.trim().length === 0 && l.type !== 'interlude')
+    );
   }, [currentDoc.sections]);
 
   // ── FREEFORM LINE MUTATIONS ─────────────────────────────────────────
@@ -620,7 +596,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         const newLine: SongLyricLine = {
           id: generateLyricId('line'),
           type: 'interlude',
-          text: initialLabel || '(Solo)',
+          text: initialLabel || 'Solo',
           explicitDurationMs: durMs,
         };
         createdLineId = newLine.id;
@@ -638,6 +614,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
         return { ...doc, sections: updatedSections };
       }, true);
+      toast.success('Timed interlude added');
     },
     [updateDoc]
   );
@@ -843,6 +820,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
 
       e.preventDefault();
+
+      if (pastedText.includes('[') && pastedText.includes(']')) {
+        const parsedDoc = continuousTextToLyricsDocument(pastedText, localDocRef.current);
+        updateDoc(() => parsedDoc, true);
+        return;
+      }
+
       const rawLines = pastedText.split(/\r?\n/).map((l) => l.trimEnd());
       if (rawLines.length === 0) return;
 
@@ -898,6 +882,67 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
     },
     [updateDoc]
+  );
+
+  const handleLineKeyDown = useCallback(
+    (
+      e: React.KeyboardEvent<HTMLInputElement>,
+      sectionId: string,
+      lineIdx: number,
+      lineId: string
+    ) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const target = e.currentTarget;
+        const splitPos = target.selectionStart ?? target.value.length;
+        handleSplitLine(sectionId, lineIdx, lineId, splitPos);
+      } else if (e.key === 'Backspace') {
+        const target = e.currentTarget;
+        const selStart = target.selectionStart ?? 0;
+        const selEnd = target.selectionEnd ?? 0;
+        if (selStart === 0 && selEnd === 0) {
+          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+          const currentLine = currentSec?.lines[lineIdx];
+          if (currentLine && currentLine.text.length === 0) {
+            e.preventDefault();
+            const prevLine = lineIdx > 0 ? currentSec?.lines[lineIdx - 1] : undefined;
+            handleDeleteLine(sectionId, lineId, prevLine?.id);
+          } else if (lineIdx > 0 || (currentDoc.sections.length > 1 && currentDoc.sections[0].id !== sectionId)) {
+            e.preventDefault();
+            handleMergeWithPrevious(sectionId, lineIdx, lineId);
+          }
+        }
+      } else if (e.key === 'ArrowUp') {
+        const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+        if (lineIdx > 0 && currentSec) {
+          const prevLine = currentSec.lines[lineIdx - 1];
+          if (prevLine && inputRefs.current[prevLine.id]) {
+            e.preventDefault();
+            const target = e.currentTarget;
+            const pos = target.selectionStart ?? 0;
+            inputRefs.current[prevLine.id]?.focus();
+            try {
+              inputRefs.current[prevLine.id]?.setSelectionRange(pos, pos);
+            } catch (_) {}
+          }
+        }
+      } else if (e.key === 'ArrowDown') {
+        const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+        if (currentSec && lineIdx < currentSec.lines.length - 1) {
+          const nextLine = currentSec.lines[lineIdx + 1];
+          if (nextLine && inputRefs.current[nextLine.id]) {
+            e.preventDefault();
+            const target = e.currentTarget;
+            const pos = target.selectionStart ?? 0;
+            inputRefs.current[nextLine.id]?.focus();
+            try {
+              inputRefs.current[nextLine.id]?.setSelectionRange(pos, pos);
+            } catch (_) {}
+          }
+        }
+      }
+    },
+    [currentDoc.sections, handleSplitLine, handleDeleteLine, handleMergeWithPrevious]
   );
 
   const handleMoveLine = useCallback(
@@ -988,6 +1033,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             handleMoveLine(data.fromSectionId, data.fromLineId, targetSectionId, targetLineIdx);
             setDraggedLine(null);
             setDragOverTarget(null);
+            dragOverTargetRef.current = null;
             return;
           }
         }
@@ -997,8 +1043,74 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
       setDraggedLine(null);
       setDragOverTarget(null);
+      dragOverTargetRef.current = null;
     },
     [draggedLine, handleMoveLine]
+  );
+
+  const handleDragOverLine = useCallback(
+    (e: React.DragEvent, sectionId: string, lineIdx: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (
+        !dragOverTargetRef.current ||
+        dragOverTargetRef.current.sectionId !== sectionId ||
+        dragOverTargetRef.current.lineIdx !== lineIdx
+      ) {
+        const next = { sectionId, lineIdx };
+        dragOverTargetRef.current = next;
+        setDragOverTarget(next);
+      }
+    },
+    []
+  );
+
+  const handlePointerDragStart = useCallback(
+    (e: React.PointerEvent, sectionId: string, lineId: string, _lineIdx: number) => {
+      e.preventDefault();
+      setDraggedLine({ sectionId, lineId });
+      setDragOverTarget(null);
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+        if (!el) return;
+        const lineEl = el.closest('[data-line-id]') as HTMLElement | null;
+        if (lineEl) {
+          const targetSecId = lineEl.dataset.sectionId;
+          const targetLineIdxStr = lineEl.dataset.lineIndex;
+          if (targetSecId && targetLineIdxStr !== undefined) {
+            const targetIdx = parseInt(targetLineIdxStr, 10);
+            if (!isNaN(targetIdx)) {
+              const current = dragOverTargetRef.current;
+              if (!current || current.sectionId !== targetSecId || current.lineIdx !== targetIdx) {
+                const nextTarget = { sectionId: targetSecId, lineIdx: targetIdx };
+                dragOverTargetRef.current = nextTarget;
+                setDragOverTarget(nextTarget);
+              }
+            }
+          }
+        }
+      };
+
+      const onPointerUp = (_upEvent: PointerEvent) => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        const target = dragOverTargetRef.current;
+        if (target) {
+          handleMoveLine(sectionId, lineId, target.sectionId, target.lineIdx);
+        }
+        setDraggedLine(null);
+        setDragOverTarget(null);
+        dragOverTargetRef.current = null;
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [handleMoveLine]
   );
 
   // ── INLINE FORMATTING (BOLD & COLOR) ────────────────────────────────
@@ -1151,7 +1263,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
       handleAddChordToLine(sectionId, lineId, chordSymbol, characterOffset);
       setActivePlacementChord(null);
-      toast.success(`Anchored [${chordSymbol}] at position ${characterOffset}`);
+      toast.success('Chord placed');
     },
     [movingChordInfo, handleAddChordToLine]
   );
@@ -1470,7 +1582,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       <main
         className="flex flex-col gap-4 outline-none w-full"
         style={{
-          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
+          paddingBottom: '24px',
         }}
         data-purpose="teleprompter-writing-canvas"
       >
@@ -1554,7 +1666,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         } else {
                           setActivePlacementChord(chord);
                           setMovingChordInfo(null);
-                          toast.info(`Placement Mode active: Tap any word or syllable to anchor [${chord}]`);
+                          toast.info(`Tap letter to place [${chord}]`);
                         }
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-black border transition-all cursor-pointer select-none active:scale-95 shadow-sm whitespace-nowrap"
@@ -1616,68 +1728,35 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </div>
         )}
 
-        {mode === 'lyrics' ? (
+        {isLyricsEmpty && mode === 'both' && (
           <div
-            data-purpose="continuous-lyrics-canvas"
-            className="w-full flex-1 flex flex-col relative"
-            style={{ minHeight: '60vh' }}
+            className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all text-center my-4 group"
+            style={{
+              backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
+              borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+            }}
           >
-            <textarea
-              ref={continuousTextareaRef}
-              value={continuousText}
-              onChange={handleContinuousTextChange}
-              placeholder="Write or paste lyrics here... (Enter for new lines)"
-              data-testid="lyrics-continuous-textarea"
-              className="w-full flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide resize-none no-scrollbar"
+            <span
+              className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full mb-3 border"
               style={{
-                border: 'none',
-                outline: 'none',
-                boxShadow: 'none',
-                color: documentColor || (isEffectiveLight ? '#111827' : '#f8fafc'),
-                fontWeight: currentDoc.formatting?.bold ? 700 : 500,
-                fontSize: '16px',
-                lineHeight: 1.65,
-                fontFamily: 'var(--font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
-                caretColor: accent.from || '#2563EB',
-                paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 120px)',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderColor: 'rgba(255,255,255,0.08)',
+                color: 'var(--c-text-muted, #8A92A6)',
               }}
-              autoCapitalize="sentences"
-              autoCorrect="on"
-              spellCheck="false"
-            />
+            >
+              [No lyrics]
+            </span>
+            <p className="text-base font-semibold text-gray-400 group-hover:text-gray-200 transition-colors">
+              No lyrics in this song yet.
+            </p>
+            <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
+              Switch to Lyrics mode to write or paste lyrics, then return to Both mode to anchor chords.
+            </p>
           </div>
-        ) : (
-          /* mode === 'both' */
-          <>
-            {isLyricsEmpty && (
-              <div
-                className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all text-center my-4 group"
-                style={{
-                  backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
-                  borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
-                }}
-              >
-                <span
-                  className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full mb-3 border"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.04)',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    color: 'var(--c-text-muted, #8A92A6)',
-                  }}
-                >
-                  [No lyrics]
-                </span>
-                <p className="text-base font-semibold text-gray-400 group-hover:text-gray-200 transition-colors">
-                  No lyrics in this song yet.
-                </p>
-                <p className="text-xs text-gray-500 mt-1 max-w-xs leading-relaxed">
-                  Switch to Lyrics mode to write or paste lyrics, then return to Both mode to anchor chords.
-                </p>
-              </div>
-            )}
+        )}
 
-            {/* Render sections & lines */}
-            {currentDoc.sections.map((section, secIdx) => {
+        {/* Render sections & lines for both Lyrics and Both modes */}
+        {currentDoc.sections.map((section, secIdx) => {
           const hasSectionHeader = Boolean(section.name && section.name.trim().length > 0);
           const sectionColor = section.vocalRole?.color || accent.from;
 
@@ -1731,7 +1810,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteSection(section.id)}
-                    className="opacity-0 group-hover/sec:opacity-100 text-gray-500 hover:text-rose-400 transition-opacity p-1 rounded-md"
+                    className="opacity-0 group-hover/sec:opacity-100 text-gray-500 hover:text-rose-400 transition-opacity p-1 rounded-md cursor-pointer"
                     title="Delete section container"
                   >
                     <span className="material-symbols-rounded text-sm">close</span>
@@ -1755,6 +1834,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       } else if (lineIdx < fromIdx && lineIdx >= dragOverTarget.lineIdx) {
                         translateYOffset = 48;
                       }
+                    } else {
+                      if (lineIdx >= dragOverTarget.lineIdx) {
+                        translateYOffset = 48;
+                      }
                     }
                   }
 
@@ -1763,14 +1846,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       <div
                         key={line.id || lineIdx}
                         data-testid={`lyric-line-interlude-${section.id}-${lineIdx}`}
+                        data-line-id={line.id}
+                        data-section-id={section.id}
+                        data-line-index={lineIdx}
                         onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          if (draggedLine && (draggedLine.sectionId !== section.id || draggedLine.lineId !== line.id)) {
-                            setDragOverTarget({ sectionId: section.id, lineIdx });
-                          }
-                        }}
+                        onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="group/line relative flex flex-col gap-2 p-2.5 sm:p-3 rounded-2xl transition-all border my-2 shadow-xs"
                         style={{
@@ -1799,8 +1879,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               draggable
                               onDragStart={(e) => handleDragStart(e, section.id, line.id)}
                               onDragEnd={handleDragEnd}
+                              onPointerDown={(e) => handlePointerDragStart(e, section.id, line.id, lineIdx)}
                               data-testid={`interlude-drag-handle-${lineIdx}`}
-                              className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0"
+                              className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0 touch-none"
                               title="Drag to reposition interlude"
                               aria-label="Drag to reposition interlude"
                             >
@@ -1836,7 +1917,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             />
                           </div>
 
-                          {/* Right Action Cluster: ZERO OVERFLOW DOWN TO 320px */}
+                          {/* Right Action Cluster */}
                           <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ml-auto">
                             {/* Duration Indicator Badge */}
                             <div
@@ -1903,9 +1984,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
                         {/* Middle row: Label quick preset chips */}
                         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full">
-                          <span
-                            className="text-[10px] font-bold uppercase tracking-wider flex-shrink-0 text-slate-400"
-                          >
+                          <span className="text-[10px] font-bold uppercase tracking-wider flex-shrink-0 text-slate-400">
                             Preset:
                           </span>
                           {INTERLUDE_PRESET_LABELS.map((presetLabel) => {
@@ -1941,9 +2020,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 flex-wrap">
                           {/* Duration Stepper Controls */}
                           <div className="flex items-center gap-1">
-                            <span
-                              className="text-[10px] font-bold uppercase tracking-wider mr-0.5 text-slate-400"
-                            >
+                            <span className="text-[10px] font-bold uppercase tracking-wider mr-0.5 text-slate-400">
                               Duration:
                             </span>
 
@@ -2013,9 +2090,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               +
                             </button>
 
-                            <span
-                              className="text-[10px] font-mono font-semibold ml-0.5 text-slate-400"
-                            >
+                            <span className="text-[10px] font-mono font-semibold ml-0.5 text-slate-400">
                               sec
                             </span>
                           </div>
@@ -2055,18 +2130,102 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
-                  // Empty line: clean paragraph break, ZERO ghost containers, ZERO placeholders
-                  if (!line.text || line.text.trim().length === 0) {
-                    const hasChords = line.chords && line.chords.length > 0;
-                    if (!hasChords) {
-                      return <div key={line.id || lineIdx} className="h-5 w-full select-none" />;
-                    }
-                    // Instrumental line with chords only
+                  const resolvedColor =
+                    line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
+                  const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
+
+                  // In LYRICS mode: render editable input line
+                  if (mode === 'lyrics') {
                     return (
                       <div
                         key={line.id || lineIdx}
                         data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                        data-line-id={line.id}
+                        data-section-id={section.id}
+                        data-line-index={lineIdx}
+                        onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                        onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
+                        onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
+                        className="group/line relative flex items-center py-1 px-1 transition-all rounded-lg"
+                        style={{
+                          transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
+                          transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                        }}
+                      >
+                        <input
+                          ref={(el) => { inputRefs.current[line.id] = el; }}
+                          type="text"
+                          value={line.text}
+                          onFocus={() => {
+                            setLastActivePosition(section.id, lineIdx, line.id);
+                            setActiveSelection({ sectionId: section.id, lineId: line.id, start: 0, end: line.text.length, text: line.text });
+                          }}
+                          onChange={(e) => {
+                            setLastActivePosition(section.id, lineIdx, line.id);
+                            handleUpdateLineText(section.id, line.id, e.target.value);
+                          }}
+                          onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
+                          onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
+                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here... (Enter for new lines)' : ''}
+                          data-testid={`lyric-line-input-${lineIdx}`}
+                          className="w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors"
+                          style={{
+                            color: resolvedColor,
+                            fontWeight: isLineBold ? 700 : 500,
+                            fontFamily: 'inherit',
+                            caretColor: accent.from || '#2563EB',
+                          }}
+                          autoCapitalize="sentences"
+                          autoCorrect="on"
+                          spellCheck="false"
+                        />
+                        {line.vocalRole && (
+                          <span
+                            className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2"
+                            style={{
+                              backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
+                              borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
+                              color: line.vocalRole.color || '#3b82f6',
+                            }}
+                          >
+                            {line.vocalRole.label || line.vocalRole.type}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // In BOTH mode: render words with chord lanes
+                  // Empty line: clean paragraph break
+                  if (!line.text || line.text.trim().length === 0) {
+                    const hasChords = line.chords && line.chords.length > 0;
+                    if (!hasChords) {
+                      return (
+                        <div
+                          key={line.id || lineIdx}
+                          data-line-id={line.id}
+                          data-section-id={section.id}
+                          data-line-index={lineIdx}
+                          onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
+                          onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
+                          className="h-5 w-full select-none"
+                        />
+                      );
+                    }
+                    return (
+                      <div
+                        key={line.id || lineIdx}
+                        data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                        data-line-id={line.id}
+                        data-section-id={section.id}
+                        data-line-index={lineIdx}
+                        onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
+                        onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="relative flex items-center gap-2 py-1 px-1 rounded-lg"
+                        style={{
+                          transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
+                          transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                        }}
                       >
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {line.chords!.map((c) => (
@@ -2101,9 +2260,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
-                  const resolvedColor =
-                    line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
-                  const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
                   const lineChords = line.chords || [];
                   const isPlacementActive = Boolean(activePlacementChord);
                   const words = findWordBoundaries(line.text);
@@ -2112,8 +2268,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     <div
                       key={line.id || lineIdx}
                       data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                      data-line-id={line.id}
+                      data-section-id={section.id}
+                      data-line-index={lineIdx}
                       onClick={() => setLastActivePosition(section.id, lineIdx, line.id)}
+                      onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
+                      onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                       className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-1 transition-all rounded-lg select-none"
+                      style={{
+                        transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
+                        transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                      }}
                     >
                       {words.map((w, wIdx) => {
                         const wordChords = lineChords.filter(
@@ -2210,8 +2375,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             </section>
           );
         })}
-      </>
-    )}
 
         {/* ── ACTIVE COLOR TOOL BANNER (BRUSH MODE) ── */}
         {activeColorTool !== null && (
@@ -2343,41 +2506,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             document.body
           )}
 
-        {/* ── INTERACTIVE TOP PLACEMENT PILL BANNER (BOTH MODE ONLY) ── */}
-        {mode === 'both' &&
-          activePlacementChord &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <div
-              className="fixed z-50 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-2xl backdrop-blur-xl select-none transition-all"
-              style={{
-                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                backgroundColor: isEffectiveAmoled ? 'rgba(10, 10, 14, 0.95)' : 'rgba(20, 20, 26, 0.92)',
-                borderColor: 'rgba(56, 189, 248, 0.5)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.25)',
-                color: '#ffffff',
-              }}
-            >
-              <span className="material-symbols-rounded text-sky-400 text-base">pin_drop</span>
-              <span className="text-xs font-medium">
-                Tap on a letter to place{' '}
-                <span className="text-sky-400 font-mono font-black">[{activePlacementChord}]</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setActivePlacementChord(null)}
-                className="ml-1 w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
-                title="Cancel chord placement"
-                aria-label="Cancel chord placement"
-              >
-                ✕
-              </button>
-            </div>,
-            document.body
-          )}
-
         {/* ── DIALOG: CLEAR ALL LYRICS CONFIRMATION ── */}
         <Dialog
           open={showClearLyricsConfirm}
@@ -2440,7 +2568,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     onClick={() => {
                       setActivePlacementChord(chord);
                       setShowChordPalette(false);
-                      toast.info(`Tap on a letter to place [${chord}]`);
+                      toast.info(`Tap letter to place [${chord}]`);
                     }}
                     className="h-10 px-2.5 rounded-xl font-mono font-black text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border"
                     style={{
@@ -2777,7 +2905,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     });
                     setActivePlacementChord(selectedChordForEdit.chord.chord);
                     setSelectedChordForEdit(null);
-                    toast.info(`Tap any letter or syllable to re-anchor [${selectedChordForEdit.chord.chord}]`);
+                    toast.info(`Tap letter to place [${selectedChordForEdit.chord.chord}]`);
                   }}
                   className="w-full py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 mt-1"
                   style={{
@@ -3038,7 +3166,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     } else {
                       setActivePlacementChord(chord.name);
                       setShowChordPicker(false);
-                      toast.info(`Tap on a letter to place [${chord.name}]`);
+                      toast.info(`Tap letter to place [${chord.name}]`);
                     }
                   }}
                   className="flex items-center gap-2 p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/10 group"

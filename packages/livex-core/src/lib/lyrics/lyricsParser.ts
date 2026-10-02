@@ -265,6 +265,26 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
       continue;
     }
 
+    // 2.5 Check for Interlude line: [Interlude: Solo (15s)] or [Interlude] or [Solo (15s)]
+    const interludeMatch = trimmed.match(/^\[(?:Interlude(?::\s*([^(]+?)(?:\s*\((\d+)s?\))?)?|Solo(?:\s*\((\d+)s?\))?)\]$/i);
+    if (interludeMatch) {
+      flushPendingBlankLines();
+      const sec = ensureCurrentSection();
+      const label = interludeMatch[1]?.trim() || 'Solo';
+      const durSec = interludeMatch[2]
+        ? parseInt(interludeMatch[2], 10)
+        : interludeMatch[3]
+        ? parseInt(interludeMatch[3], 10)
+        : 15;
+      sec.lines.push({
+        id: generateLyricId('line'),
+        type: 'interlude',
+        text: label,
+        explicitDurationMs: Math.max(1000, durSec * 1000),
+      });
+      continue;
+    }
+
     // 3. Check for ChordPro notation inside the line: e.g. [C]When I [G]wake up
     if (trimmed.includes('[') && trimmed.includes(']')) {
       const { text, chords } = parseChordProLine(rawLine);
@@ -367,6 +387,12 @@ export function lyricsDocumentToPlainText(
     }
 
     for (const line of section.lines) {
+      if (line.type === 'interlude') {
+        const durSec = Math.round((line.explicitDurationMs || 15000) / 1000);
+        output.push(`[Interlude: ${line.text || 'Solo'} (${durSec}s)]`);
+        continue;
+      }
+
       if (includeChords && line.chords && line.chords.length > 0) {
         // Construct chord line above text
         let chordLine = '';

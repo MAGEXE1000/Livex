@@ -1164,12 +1164,14 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         overflow: 'hidden',
       }}
     >
+      {/* Tap-to-restore top zone when header is hidden */}
       <div
         style={{
           position: 'absolute',
           top: 0, left: 0, right: 0,
           height: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
           zIndex: 90,
+          background: 'transparent',
           pointerEvents: state.isHeaderHidden ? 'auto' : 'none',
         }}
         onClick={() => state.setIsHeaderHidden(false)}
@@ -1185,8 +1187,8 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           margin: '0 auto',
           overflowY: 'auto',
           overflowX: 'hidden',
-          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 76px)',
-          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 100px)',
+          paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px)',
+          paddingBottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)',
           paddingLeft: '20px',
           paddingRight: '20px',
           display: 'flex',
@@ -1195,6 +1197,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           WebkitOverflowScrolling: 'touch',
           transform: teleprompterMirror ? 'scaleX(-1)' : 'none',
           boxSizing: 'border-box',
+          background: 'transparent',
         }}
       >
         {teleprompterLines.map((item, idx) => {

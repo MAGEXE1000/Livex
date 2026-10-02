@@ -5276,16 +5276,17 @@ export default function SongsPanel() {
             return (
               <div
                 ref={lyricsScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 w-full"
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 116px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
-                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)',
+                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 84px)',
                   position: 'relative',
+                  background: 'transparent',
                 }}
                 data-purpose="editor-lyrics-area"
               >
@@ -5306,16 +5307,17 @@ export default function SongsPanel() {
             return (
               <div
                 ref={editorScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 w-full"
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 116px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
-                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 92px)',
+                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 84px)',
                   position: 'relative',
+                  background: 'transparent',
                 }}
                 data-purpose="editor-both-area"
               >
