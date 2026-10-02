@@ -117,10 +117,13 @@ Line three without section
     expect(doc.sections[0].lines[0].text).toBe('Line one without section');
   });
 
-  it('creates an empty document with 0 sections by default', () => {
+  it('creates an empty document with 1 freeform section by default', () => {
     const doc = createEmptyLyricsDocument();
     expect(doc.version).toBe(1);
-    expect(doc.sections).toEqual([]);
+    expect(doc.sections).toHaveLength(1);
+    expect(doc.sections[0].name).toBe('');
+    expect(doc.sections[0].lines).toHaveLength(1);
+    expect(doc.sections[0].lines[0].text).toBe('');
   });
 
   it('serializes SongLyricsDocument back to plain text for clipboard copy', () => {

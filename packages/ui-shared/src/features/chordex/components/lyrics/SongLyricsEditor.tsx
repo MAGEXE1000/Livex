@@ -280,17 +280,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
   const handleClearAllLyrics = useCallback(() => {
-    const emptyDoc = createEmptyLyricsDocument();
-    const initialSec: SongLyricSection = {
-      id: generateLyricId('sec'),
-      type: 'verse',
-      name: 'Verse 1',
-      lines: [{ id: generateLyricId('line'), text: '' }],
+    const emptyDoc: SongLyricsDocument = {
+      version: 1,
+      sections: [
+        {
+          id: generateLyricId('sec'),
+          type: 'verse',
+          name: '',
+          lines: [{ id: generateLyricId('line'), text: '' }],
+        },
+      ],
     };
-    emptyDoc.sections = [initialSec];
     setLocalDoc(emptyDoc);
     localDocRef.current = emptyDoc;
     triggerChange(emptyDoc, true);
+    setEditingLineId(null);
     toast.success('Lyrics cleared');
   }, [triggerChange]);
 
@@ -341,6 +345,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [dragOverTarget, setDragOverTarget] = useState<{ sectionId: string; lineIdx: number } | null>(null);
   const dragOverTargetRef = useRef<{ sectionId: string; lineIdx: number } | null>(null);
   dragOverTargetRef.current = dragOverTarget;
+
+  // Drag and drop state for whole section modular containers
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [dragOverSectionIdx, setDragOverSectionIdx] = useState<number | null>(null);
+  const dragOverSectionIdxRef = useRef<number | null>(null);
+  dragOverSectionIdxRef.current = dragOverSectionIdx;
 
   // Captured selection reference for selection-first formatting operations
   const capturedSelectionRef = useRef<CapturedSelectionData | null>(null);
@@ -1821,11 +1831,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
-  // ── SECTION MANAGEMENT ───────────────────────────────────────────────
+  // ── SECTION MANAGEMENT & REORDERING ──────────────────────────────────
 
   const handleCreateSection = useCallback(
     (name: string, type: StandardLyricSectionType = 'custom') => {
       updateDoc((doc) => {
+        // If document only has 1 empty unnamed section, name and type it
+        if (
+          doc.sections.length === 1 &&
+          (!doc.sections[0].name || doc.sections[0].name.trim().length === 0) &&
+          doc.sections[0].lines.length <= 1 &&
+          (!doc.sections[0].lines[0] || !doc.sections[0].lines[0].text.trim())
+        ) {
+          return {
+            ...doc,
+            sections: [
+              {
+                ...doc.sections[0],
+                type,
+                name: name.trim(),
+              },
+            ],
+          };
+        }
         const newSec: SongLyricSection = {
           id: generateLyricId('sec'),
           type,
@@ -1838,6 +1866,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         };
       });
       setShowAddSectionModal(false);
+      setShowSectionMorph(false);
       toast.success(`Added ${name} section`);
     },
     [updateDoc]
@@ -1895,12 +1924,159 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     (sectionId: string) => {
       updateDoc((doc) => {
         const sections = doc.sections.filter((s) => s.id !== sectionId);
+        // Fail-safe: Never leave sections empty! If all sections are removed, keep 1 blank canvas section
+        if (sections.length === 0) {
+          return {
+            ...doc,
+            sections: [
+              {
+                id: generateLyricId('sec'),
+                type: 'verse' as StandardLyricSectionType,
+                name: '',
+                lines: [{ id: generateLyricId('line'), text: '' }],
+              },
+            ],
+          };
+        }
         return { ...doc, sections };
       });
       setRenameSectionTarget(null);
       toast.success('Section deleted');
     },
     [updateDoc]
+  );
+
+  const handleMoveSection = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+      updateDoc((doc) => {
+        if (fromIndex >= doc.sections.length || toIndex >= doc.sections.length) return doc;
+        const nextSections = [...doc.sections];
+        const [moved] = nextSections.splice(fromIndex, 1);
+        nextSections.splice(toIndex, 0, moved);
+        return { ...doc, sections: nextSections };
+      }, true);
+      toast.success('Section repositioned');
+    },
+    [updateDoc]
+  );
+
+  const handleMoveSectionRelative = useCallback(
+    (secIdx: number, delta: number) => {
+      const targetIdx = secIdx + delta;
+      if (targetIdx >= 0 && targetIdx < currentDoc.sections.length) {
+        handleMoveSection(secIdx, targetIdx);
+      }
+    },
+    [currentDoc.sections.length, handleMoveSection]
+  );
+
+  const handleSectionDragStart = useCallback((e: React.DragEvent, sectionId: string, secIdx: number) => {
+    setDraggedSectionId(sectionId);
+    setDragOverSectionIdx(null);
+    try {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ fromSectionId: sectionId, fromSectionIdx: secIdx }));
+      e.dataTransfer.effectAllowed = 'move';
+    } catch (_) {}
+  }, []);
+
+  const handleSectionDragEnd = useCallback(() => {
+    setDraggedSectionId(null);
+    setDragOverSectionIdx(null);
+    dragOverSectionIdxRef.current = null;
+  }, []);
+
+  const handleSectionDragOver = useCallback((e: React.DragEvent, secIdx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverSectionIdxRef.current !== secIdx) {
+      dragOverSectionIdxRef.current = secIdx;
+      setDragOverSectionIdx(secIdx);
+    }
+  }, []);
+
+  const handleSectionDrop = useCallback(
+    (e: React.DragEvent, targetSecIdx: number) => {
+      e.preventDefault();
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data.fromSectionId && typeof data.fromSectionIdx === 'number') {
+            handleMoveSection(data.fromSectionIdx, targetSecIdx);
+            setDraggedSectionId(null);
+            setDragOverSectionIdx(null);
+            dragOverSectionIdxRef.current = null;
+            return;
+          }
+        }
+      } catch (_) {}
+      if (draggedSectionId) {
+        const fromSecIdx = currentDoc.sections.findIndex((s) => s.id === draggedSectionId);
+        if (fromSecIdx !== -1) {
+          handleMoveSection(fromSecIdx, targetSecIdx);
+        }
+      }
+      setDraggedSectionId(null);
+      setDragOverSectionIdx(null);
+      dragOverSectionIdxRef.current = null;
+    },
+    [draggedSectionId, currentDoc.sections, handleMoveSection]
+  );
+
+  const handleSectionPointerDragStart = useCallback(
+    (e: React.PointerEvent, sectionId: string, secIdx: number) => {
+      e.preventDefault();
+      setDraggedSectionId(sectionId);
+      setDragOverSectionIdx(null);
+
+      const cachedTargets = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-section-index]')
+      ).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          sectionId: el.dataset.sectionId || '',
+          sectionIndex: parseInt(el.dataset.sectionIndex || '0', 10),
+          midY: (rect.top + rect.bottom) / 2,
+        };
+      });
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        if (cachedTargets.length === 0) return;
+        let closest = cachedTargets[0];
+        let minDiff = Infinity;
+        for (const target of cachedTargets) {
+          const diff = Math.abs(moveEvent.clientY - target.midY);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = target;
+          }
+        }
+        if (dragOverSectionIdxRef.current !== closest.sectionIndex) {
+          dragOverSectionIdxRef.current = closest.sectionIndex;
+          setDragOverSectionIdx(closest.sectionIndex);
+        }
+      };
+
+      const onPointerUp = () => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        const targetIdx = dragOverSectionIdxRef.current;
+        if (targetIdx !== null && targetIdx !== undefined && targetIdx !== secIdx) {
+          handleMoveSection(secIdx, targetIdx);
+        }
+        setDraggedSectionId(null);
+        setDragOverSectionIdx(null);
+        dragOverSectionIdxRef.current = null;
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [handleMoveSection]
   );
 
   // ── VOCAL ROLE ASSIGNMENT ────────────────────────────────────────────
@@ -2190,13 +2366,23 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        className="flex flex-col gap-4 outline-none w-full select-text"
+        className="flex flex-col gap-4 outline-none w-full select-text min-h-[300px] cursor-text"
         style={{
           paddingBottom: '24px',
           WebkitUserSelect: 'text',
           userSelect: 'text',
         }}
         data-purpose="teleprompter-writing-canvas"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            const lastSec = currentDoc.sections[currentDoc.sections.length - 1];
+            if (lastSec && lastSec.lines.length > 0) {
+              const lastLine = lastSec.lines[lastSec.lines.length - 1];
+              setLastActivePosition(lastSec.id, lastSec.lines.length - 1, lastLine.id);
+              setEditingLineId(lastLine.id);
+            }
+          }
+        }}
       >
         {/* Unassigned Chords Queue & Placement Mode Bar (Both Mode Only) */}
         {mode === 'both' && songChords.length > 0 && (
@@ -2372,24 +2558,90 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           const hasSectionHeader = Boolean(section.name && section.name.trim().length > 0);
           const sectionColor = section.vocalRole?.color || accent.from;
 
+          // Dynamic real-time drag-and-drop spring shift for sections
+          let sectionTranslateYOffset = 0;
+          const isSectionDragged = draggedSectionId === section.id;
+          if (draggedSectionId && dragOverSectionIdx !== null && !isSectionDragged) {
+            const fromSecIdx = currentDoc.sections.findIndex((s) => s.id === draggedSectionId);
+            if (fromSecIdx !== -1) {
+              if (secIdx > fromSecIdx && secIdx <= dragOverSectionIdx) {
+                sectionTranslateYOffset = -48;
+              } else if (secIdx < fromSecIdx && secIdx >= dragOverSectionIdx) {
+                sectionTranslateYOffset = 48;
+              }
+            }
+          }
+
           return (
             <section
               key={section.id || secIdx}
               data-testid={`lyric-section-${secIdx}`}
-              className="flex flex-col gap-2 relative group/sec select-text"
+              data-section-index={secIdx}
+              data-section-id={section.id}
+              onDragOver={(e) => handleSectionDragOver(e, secIdx)}
+              onDrop={(e) => handleSectionDrop(e, secIdx)}
+              onClick={(e) => {
+                if (e.target === e.currentTarget && section.lines.length > 0) {
+                  const targetLine = section.lines[section.lines.length - 1];
+                  setLastActivePosition(section.id, section.lines.length - 1, targetLine.id);
+                  setEditingLineId(targetLine.id);
+                }
+              }}
+              className={`flex flex-col relative group/sec select-text transition-all ${
+                hasSectionHeader
+                  ? 'rounded-2xl p-3 sm:p-4 my-2 border shadow-xs'
+                  : 'gap-2 my-1'
+              }`}
               style={{
+                transform: isSectionDragged
+                  ? 'scale(1.02)'
+                  : sectionTranslateYOffset !== 0
+                  ? `translateY(${sectionTranslateYOffset}px)`
+                  : undefined,
+                transition: isSectionDragged
+                  ? 'none'
+                  : 'transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms ease',
+                opacity: isSectionDragged ? 0.45 : 1,
+                zIndex: isSectionDragged ? 30 : 1,
+                backgroundColor: hasSectionHeader
+                  ? isEffectiveLight
+                    ? 'rgba(0, 0, 0, 0.02)'
+                    : isEffectiveAmoled
+                    ? '#000000'
+                    : 'rgba(255, 255, 255, 0.03)'
+                  : 'transparent',
+                borderColor: hasSectionHeader
+                  ? isEffectiveLight
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : isEffectiveAmoled
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : 'rgba(255, 255, 255, 0.08)'
+                  : 'transparent',
+                borderLeftWidth: hasSectionHeader ? '4px' : undefined,
+                borderLeftColor: hasSectionHeader ? sectionColor : undefined,
                 WebkitUserSelect: 'text',
                 userSelect: 'text',
               }}
             >
               {/* Canonical Section Header Strip */}
               {hasSectionHeader && (
-                <div className="flex items-center justify-between gap-2 pt-3 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-1.5 h-4 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: sectionColor }}
-                    />
+                <div className="flex items-center justify-between gap-2 pb-2 mb-1 border-b border-white/5 select-none">
+                  {/* Left Cluster: Drag Handle, Name & Vocal Role */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {/* Section Drag Handle */}
+                    <div
+                      draggable
+                      onDragStart={(e) => handleSectionDragStart(e, section.id, secIdx)}
+                      onDragEnd={handleSectionDragEnd}
+                      onPointerDown={(e) => handleSectionPointerDragStart(e, section.id, secIdx)}
+                      data-testid={`section-drag-handle-${secIdx}`}
+                      className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-white rounded transition-colors flex items-center justify-center flex-shrink-0 touch-none"
+                      title="Drag to reposition section"
+                      aria-label="Drag to reposition section"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+
                     <button
                       type="button"
                       data-testid={`section-rename-btn-${secIdx}`}
@@ -2439,16 +2691,46 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     )}
                   </div>
 
-                  {/* Section Manage / Delete button */}
-                  <button
-                    type="button"
-                    data-testid={`section-options-btn-${secIdx}`}
-                    onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
-                    className="opacity-70 hover:opacity-100 group-hover/sec:opacity-100 text-gray-400 hover:text-rose-400 active:scale-90 transition-all p-1 rounded-md cursor-pointer flex items-center justify-center"
-                    title="Manage or remove section"
-                  >
-                    <span className="material-symbols-rounded text-sm">more_vert</span>
-                  </button>
+                  {/* Right Cluster: Up/Down Shift Arrows & Manage Menu */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      disabled={secIdx === 0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveSectionRelative(secIdx, -1);
+                      }}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move section up"
+                      aria-label="Move section up"
+                    >
+                      <span className="material-symbols-rounded text-sm">arrow_upward</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={secIdx === currentDoc.sections.length - 1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveSectionRelative(secIdx, 1);
+                      }}
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move section down"
+                      aria-label="Move section down"
+                    >
+                      <span className="material-symbols-rounded text-sm">arrow_downward</span>
+                    </button>
+
+                    {/* Section Manage / Delete button */}
+                    <button
+                      type="button"
+                      data-testid={`section-options-btn-${secIdx}`}
+                      onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
+                      className="opacity-70 hover:opacity-100 group-hover/sec:opacity-100 text-gray-400 hover:text-rose-400 active:scale-90 transition-all p-1 rounded-md cursor-pointer flex items-center justify-center"
+                      title="Manage or remove section"
+                    >
+                      <span className="material-symbols-rounded text-sm">more_vert</span>
+                    </button>
+                  </div>
                 </div>
               )}
 

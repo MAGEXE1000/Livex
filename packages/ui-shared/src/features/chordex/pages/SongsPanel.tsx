@@ -5340,7 +5340,7 @@ export default function SongsPanel() {
             return (
               <main
                 ref={editorScrollRef}
-                className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
+                className="flex-1 flex flex-col items-center px-4 overflow-y-auto no-scrollbar"
                 style={{
                   paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingBottom:
@@ -5348,49 +5348,51 @@ export default function SongsPanel() {
                 }}
                 data-purpose="empty-chord-progression"
               >
-                <div className="w-full flex items-center justify-center pt-1 pb-4 select-none flex-shrink-0">
+                <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
                   <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
                 </div>
-                {/* Musical Icon Graphic */}
-                <div className="relative flex items-center justify-center mb-6">
-                  {/* Soft glowing aura */}
-                  <div
-                    className="absolute w-28 h-28 rounded-full filter blur-xl animate-pulse"
+                <div className="flex-1 flex flex-col items-center justify-center text-center my-auto">
+                  {/* Musical Icon Graphic */}
+                  <div className="relative flex items-center justify-center mb-6">
+                    {/* Soft glowing aura */}
+                    <div
+                      className="absolute w-28 h-28 rounded-full filter blur-xl animate-pulse"
+                      style={{
+                        backgroundColor:
+                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 18%, transparent)',
+                      }}
+                    />
+                    {/* Clean glyph composition */}
+                    <div
+                      className="relative flex items-center justify-center w-16 h-16 rounded-3xl border shadow-soft-card"
+                      style={{
+                        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                        borderColor:
+                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
+                        color: 'var(--c-accent-from, #2563EB)',
+                      }}
+                    >
+                      <span className="material-symbols-rounded text-3xl">music_note</span>
+                    </div>
+                  </div>
+
+                  {/* Descriptive Text */}
+                  <h2
+                    className="text-base sm:text-lg font-bold text-center tracking-tight mb-2"
                     style={{
-                      backgroundColor:
-                        'color-mix(in srgb, var(--c-accent-from, #2563EB) 18%, transparent)',
-                    }}
-                  />
-                  {/* Clean glyph composition */}
-                  <div
-                    className="relative flex items-center justify-center w-16 h-16 rounded-3xl border shadow-soft-card"
-                    style={{
-                      backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                      borderColor:
-                        'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
-                      color: 'var(--c-accent-from, #2563EB)',
+                      fontFamily: 'var(--font-headline)',
+                      color: 'var(--c-text-primary, #111827)',
                     }}
                   >
-                    <span className="material-symbols-rounded text-3xl">music_note</span>
-                  </div>
+                    No chords in this song yet.
+                  </h2>
+                  <p
+                    className="text-xs sm:text-sm text-center max-w-[260px] leading-relaxed font-normal"
+                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                  >
+                    Add sections like Verse and Chorus, or insert chords directly using the action dock below.
+                  </p>
                 </div>
-
-                {/* Descriptive Text */}
-                <h2
-                  className="text-base sm:text-lg font-bold text-center tracking-tight mb-2"
-                  style={{
-                    fontFamily: 'var(--font-headline)',
-                    color: 'var(--c-text-primary, #111827)',
-                  }}
-                >
-                  No chords in this song yet.
-                </h2>
-                <p
-                  className="text-xs sm:text-sm text-center max-w-[260px] leading-relaxed font-normal"
-                  style={{ color: 'var(--c-text-secondary, #6B7280)' }}
-                >
-                  Add sections like Verse and Chorus, or insert chords directly using the action dock below.
-                </p>
               </main>
             );
           }

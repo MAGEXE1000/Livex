@@ -238,7 +238,7 @@ export function normalizeLyricsDocumentStructure(doc: SongLyricsDocument): SongL
         {
           id: generateLyricId('sec'),
           type: 'verse',
-          name: 'Verse 1',
+          name: '',
           lines: [{ id: generateLyricId('line'), text: '' }],
         },
       ],
@@ -644,6 +644,13 @@ export function lyricsDocumentToContinuousText(
 export function createEmptyLyricsDocument(): SongLyricsDocument {
   return {
     version: 1,
-    sections: [],
+    sections: [
+      {
+        id: generateLyricId('sec'),
+        type: 'verse',
+        name: '',
+        lines: [{ id: generateLyricId('line'), text: '' }],
+      },
+    ],
   };
 }
