@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { type Setlist, type SongPreset, useChordStore } from '@workspace/livex-core';
 import { SetlistCard } from './SetlistCard';
 import { SetlistCreateModal } from './SetlistCreateModal';
+import { SetlistShareModal } from './SetlistShareModal';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/StudioDesignSystem';
 
@@ -24,6 +25,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSetlist, setEditingSetlist] = useState<Setlist | null>(null);
+  const [sharingSetlist, setSharingSetlist] = useState<Setlist | null>(null);
   const [deletingSetlistId, setDeletingSetlistId] = useState<string | null>(null);
 
   const createSetlist = useChordStore((s) => s.createSetlist);
@@ -212,17 +214,24 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
               allPresets={allPresets}
               accentColor={accentColor}
               onOpen={onOpenSetlist}
-              onPlayLive={onPlayLiveSetlist}
+              onShare={(s) => setSharingSetlist(s)}
               onEdit={(s) => {
                 setEditingSetlist(s);
                 setShowCreateModal(true);
               }}
-              onDuplicate={(id) => duplicateSetlist(id)}
               onDelete={(id) => setDeletingSetlistId(id)}
             />
           ))}
         </div>
       )}
+
+      {/* Dedicated Setlist Share Modal */}
+      <SetlistShareModal
+        isOpen={Boolean(sharingSetlist)}
+        setlist={sharingSetlist}
+        allPresets={allPresets}
+        onClose={() => setSharingSetlist(null)}
+      />
 
       {/* Setlist Create / Edit Modal */}
       <SetlistCreateModal

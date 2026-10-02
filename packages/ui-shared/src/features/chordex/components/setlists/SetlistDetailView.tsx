@@ -304,7 +304,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
             type="button"
             onClick={() => setShowEditInfoModal(true)}
             title="Edit setlist info"
-            className="truncate font-extrabold text-[17px] tracking-tight hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 pointer-events-auto text-center"
+            className="truncate max-w-[210px] font-extrabold text-[17px] tracking-tight hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 pointer-events-auto text-center"
             style={{
               fontFamily: 'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
               color: 'var(--c-text-primary)',
@@ -314,10 +314,10 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
           </button>
         }
         subtitle={
-          <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold">
+          <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold max-w-[220px] truncate">
             {setlist.date && (
               <>
-                <span className="truncate max-w-[100px]">{setlist.date}</span>
+                <span className="truncate max-w-[90px]">{setlist.date}</span>
                 <span className="opacity-40">•</span>
               </>
             )}

@@ -1,78 +1,124 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useCallback, useMemo } from 'react';
 import {
   type Setlist,
   type SongPreset,
   calculateSetlistStats,
-  formatDurationMmSs,
 } from '@workspace/livex-core';
 
-interface SetlistCardProps {
+export interface SetlistCardProps {
   setlist: Setlist;
   allPresets: SongPreset[];
   accentColor?: string;
   onOpen: (id: string) => void;
-  onPlayLive: (setlist: Setlist) => void;
+  onShare: (setlist: Setlist) => void;
   onEdit: (setlist: Setlist) => void;
-  onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onPlayLive?: (setlist: Setlist) => void;
+  onDuplicate?: (id: string) => void;
 }
 
-export const SetlistCard: React.FC<SetlistCardProps> = ({
-  setlist,
-  allPresets,
-  accentColor = '#2563EB',
-  onOpen,
-  onPlayLive,
-  onEdit,
-  onDuplicate,
-  onDelete,
-}) => {
-  const stats = React.useMemo(
-    () => calculateSetlistStats(setlist, allPresets),
-    [setlist, allPresets]
-  );
+export const SetlistCard: React.FC<SetlistCardProps> = React.memo(
+  function SetlistCard({
+    setlist,
+    allPresets,
+    accentColor = '#2563EB',
+    onOpen,
+    onShare,
+    onEdit,
+    onDelete,
+  }) {
+    const stats = useMemo(
+      () => calculateSetlistStats(setlist, allPresets),
+      [setlist, allPresets]
+    );
 
-  const formattedDuration = React.useMemo(() => {
-    if (stats.totalDurationSeconds === 0) return '0:00';
-    const mins = Math.floor(stats.totalDurationSeconds / 60);
-    const secs = stats.totalDurationSeconds % 60;
-    if (mins >= 60) {
-      const hours = Math.floor(mins / 60);
-      const remainingMins = mins % 60;
-      return `${hours}h ${remainingMins}m`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')} min`;
-  }, [stats.totalDurationSeconds]);
+    const formattedDuration = useMemo(() => {
+      if (stats.totalDurationSeconds === 0) return '0:00';
+      const mins = Math.floor(stats.totalDurationSeconds / 60);
+      const secs = stats.totalDurationSeconds % 60;
+      if (mins >= 60) {
+        const hours = Math.floor(mins / 60);
+        const remainingMins = mins % 60;
+        return `${hours}h ${remainingMins}m`;
+      }
+      return `${mins}:${secs.toString().padStart(2, '0')} min`;
+    }, [stats.totalDurationSeconds]);
 
-  return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={() => onOpen(setlist.id)}
-      className="group relative rounded-3xl p-4 sm:p-5 border shadow-soft-card flex flex-col justify-between transition-all cursor-pointer select-none overflow-hidden"
-      style={{
-        backgroundColor: 'var(--surface-card-bg, #ffffff)',
-        borderColor: 'var(--c-border, #E3E6EB)',
-      }}
-      data-testid={`setlist-card-${setlist.id}`}
-      data-purpose="setlist-card"
-    >
-      {/* Subtle top ambient accent gradient */}
-      <div
-        className="absolute top-0 left-0 right-0 h-1 opacity-60 transition-opacity group-hover:opacity-100"
+    const handleMainClick = useCallback(() => {
+      onOpen(setlist.id);
+    }, [onOpen, setlist.id]);
+
+    const handleShareClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onShare(setlist);
+      },
+      [onShare, setlist]
+    );
+
+    const handleEditClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onEdit(setlist);
+      },
+      [onEdit, setlist]
+    );
+
+    const handleDeleteClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onDelete(setlist.id);
+      },
+      [onDelete, setlist.id]
+    );
+
+    return (
+      <article
+        className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row relative"
         style={{
-          background: `linear-gradient(90deg, ${accentColor}, transparent 80%)`,
+          backgroundColor: 'var(--surface-card-bg, #ffffff)',
+          borderColor: 'var(--c-border, #E3E6EB)',
         }}
-      />
+        data-purpose="setlist-card"
+        data-testid={`setlist-card-${setlist.id}`}
+      >
+        {/* Subtle top ambient accent gradient */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1 opacity-60 transition-opacity group-hover:opacity-100 pointer-events-none"
+          style={{
+            background: `linear-gradient(90deg, ${accentColor}, transparent 80%)`,
+          }}
+        />
 
-      <div>
-        {/* Header row: Title & quick action menu */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
+        {/* Clickable main area to navigate to Setlist detail view */}
+        <button
+          type="button"
+          onClick={handleMainClick}
+          data-testid={`setlist-${setlist.id}`}
+          className="w-full text-left p-3.5 sm:p-4 flex items-center gap-3.5 active:scale-[0.99] transition-transform cursor-pointer"
+        >
+          {/* Left Thumbnail with Playlist Play Icon */}
+          <div
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border overflow-hidden relative"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${accentColor} 10%, transparent)`,
+              borderColor: `color-mix(in srgb, ${accentColor} 20%, transparent)`,
+              color: accentColor,
+            }}
+          >
+            <span
+              className="material-symbols-rounded text-2xl"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              playlist_play
+            </span>
+          </div>
+
+          {/* Center Info */}
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3
-                className="text-base sm:text-lg font-black tracking-tight truncate leading-snug"
+                className="text-base font-extrabold tracking-tight truncate leading-tight"
                 style={{
                   fontFamily: 'var(--font-headline)',
                   color: 'var(--c-text-primary, #FFFFFF)',
@@ -97,138 +143,105 @@ export const SetlistCard: React.FC<SetlistCardProps> = ({
 
             {setlist.description && (
               <p
-                className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed"
-                style={{ color: 'var(--c-text-secondary, #94A3B8)' }}
+                className="text-xs font-medium mt-0.5 truncate leading-relaxed"
+                style={{ color: 'var(--c-text-secondary, #6B7280)' }}
               >
                 {setlist.description}
               </p>
             )}
-          </div>
 
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => onDuplicate(setlist.id)}
-              title="Duplicate setlist"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-rounded text-base">content_copy</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(setlist)}
-              title="Edit setlist info"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-rounded text-base">edit</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(setlist.id)}
-              title="Delete setlist"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-rounded text-base">delete</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Badges metadata row */}
-        <div className="flex items-center gap-2 mt-3.5 flex-wrap">
-          <div
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold"
-            style={{
-              backgroundColor: `color-mix(in srgb, ${accentColor} 12%, var(--surface-card-bg, #1e1e24))`,
-              border: `1px solid color-mix(in srgb, ${accentColor} 25%, transparent)`,
-              color: accentColor,
-            }}
-          >
-            <span className="material-symbols-rounded text-sm">queue_music</span>
-            <span>{stats.totalSongs} {stats.totalSongs === 1 ? 'Song' : 'Songs'}</span>
-          </div>
-
-          <div
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold"
-            style={{
-              backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.05))',
-              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
-              color: 'var(--c-text-secondary, #94A3B8)',
-            }}
-          >
-            <span className="material-symbols-rounded text-sm">layers</span>
-            <span>{stats.sectionCount} {stats.sectionCount === 1 ? 'Section' : 'Sections'}</span>
-          </div>
-
-          <div
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold"
-            style={{
-              backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.05))',
-              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
-              color: 'var(--c-text-secondary, #94A3B8)',
-            }}
-          >
-            <span className="material-symbols-rounded text-sm">timer</span>
-            <span>{formattedDuration}</span>
-          </div>
-        </div>
-
-        {/* Section chips preview */}
-        {setlist.sections && setlist.sections.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-            {setlist.sections.slice(0, 4).map((sec) => (
-              <span
-                key={sec.id}
-                className="px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide"
+            {/* Refined Metadata Chips: ONLY X Songs and Total Duration */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {/* Song count badge */}
+              <div
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold"
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  color: 'var(--c-text-muted, #94A3B8)',
+                  backgroundColor: `color-mix(in srgb, ${accentColor} 12%, var(--surface-card-bg, #1e1e24))`,
+                  border: `1px solid color-mix(in srgb, ${accentColor} 25%, transparent)`,
+                  color: accentColor,
                 }}
               >
-                {sec.name} ({sec.songIds.length})
-              </span>
-            ))}
-            {setlist.sections.length > 4 && (
-              <span className="text-[10px] text-slate-500 font-medium">
-                +{setlist.sections.length - 4} more
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+                <span className="material-symbols-rounded text-sm">queue_music</span>
+                <span>
+                  {stats.totalSongs} {stats.totalSongs === 1 ? 'Song' : 'Songs'}
+                </span>
+              </div>
 
-      {/* Bottom Action Footer */}
-      <div
-        className="flex items-center justify-between gap-2 mt-4 pt-3 border-t"
-        style={{ borderColor: 'var(--c-border, rgba(255, 255, 255, 0.07))' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={() => onOpen(setlist.id)}
-          className="text-xs font-bold flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer py-1"
-        >
-          <span>Open Repertoire</span>
-          <span className="material-symbols-rounded text-sm">arrow_forward</span>
+              {/* Total Duration badge */}
+              <div
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold"
+                style={{
+                  backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.05))',
+                  border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+                  color: 'var(--c-text-secondary, #94A3B8)',
+                }}
+              >
+                <span className="material-symbols-rounded text-sm">schedule</span>
+                <span>{formattedDuration}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Drill-down chevron */}
+          <span
+            className="material-symbols-rounded text-xl shrink-0 group-hover:translate-x-0.5 transition-transform"
+            style={{ color: 'var(--c-text-muted, #8A92A6)' }}
+          >
+            chevron_right
+          </span>
         </button>
 
-        {stats.totalSongs > 0 && (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+        {/* Canonical 3-Action Bottom Strip: Share | Edit | Delete */}
+        <div
+          className="flex items-center border-t text-xs font-semibold"
+          style={{ borderColor: 'var(--c-border, #E3E6EB)' }}
+        >
+          <button
             type="button"
-            onClick={() => onPlayLive(setlist)}
-            data-testid={`setlist-play-live-${setlist.id}`}
-            className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white flex items-center gap-1.5 shadow-md cursor-pointer transition-transform"
+            onClick={handleShareClick}
+            data-testid={`share-${setlist.id}`}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
             style={{
-              background: `linear-gradient(135deg, ${accentColor}, color-mix(in srgb, ${accentColor} 80%, #000))`,
-              boxShadow: `0 3px 12px color-mix(in srgb, ${accentColor} 35%, transparent)`,
+              borderColor: 'var(--c-border, #E3E6EB)',
+              color: 'var(--c-accent-from, #2563EB)',
             }}
+            title="Share setlist"
+            aria-label={`Share ${setlist.title}`}
           >
-            <span className="material-symbols-rounded text-base">play_arrow</span>
-            <span>Play Live</span>
-          </motion.button>
-        )}
-      </div>
-    </motion.div>
-  );
-};
+            <span className="material-symbols-rounded text-base">share</span>
+            <span>Share</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleEditClick}
+            data-testid={`edit-${setlist.id}`}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
+            style={{
+              borderColor: 'var(--c-border, #E3E6EB)',
+              color: 'var(--c-text-secondary, #6B7280)',
+            }}
+            title="Edit setlist metadata"
+            aria-label={`Edit ${setlist.title}`}
+          >
+            <span className="material-symbols-rounded text-base">edit</span>
+            <span>Edit</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            data-testid={`delete-${setlist.id}`}
+            className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:opacity-75"
+            style={{
+              color: '#EF4444',
+            }}
+            title="Delete setlist"
+            aria-label={`Delete ${setlist.title}`}
+          >
+            <span className="material-symbols-rounded text-base">delete</span>
+            <span>Delete</span>
+          </button>
+        </div>
+      </article>
+    );
+  }
+);
