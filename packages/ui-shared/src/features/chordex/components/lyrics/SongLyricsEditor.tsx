@@ -1649,7 +1649,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             };
           }),
         }));
-        toast.success('Line bold toggled');
+        // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
 
@@ -1658,7 +1658,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         ...doc,
         formatting: { ...doc.formatting, bold: !doc.formatting?.bold },
       }));
-      toast.success('Song bold toggled');
+      // No toast — formatting feedback is visual-only (zero-toast policy)
       return;
     }
 
@@ -1714,9 +1714,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         };
       }),
     }));
-
-    const count = sel.lines.length;
-    toast.success(`Bold ${nextBold ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
+    // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
   const handleFormatItalic = useCallback(() => {
@@ -1741,7 +1739,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             };
           }),
         }));
-        toast.success('Line italic toggled');
+        // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
       return;
@@ -1798,9 +1796,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         };
       }),
     }));
-
-    const count = sel.lines.length;
-    toast.success(`Italic ${nextItalic ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
+    // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
   const handleFormatUnderline = useCallback(() => {
@@ -1825,7 +1821,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             };
           }),
         }));
-        toast.success('Line underline toggled');
+        // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
       return;
@@ -1882,9 +1878,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         };
       }),
     }));
-
-    const count = sel.lines.length;
-    toast.success(`Underline ${nextUnderline ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
+    // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
   const handleFormatColor = useCallback(
@@ -1909,7 +1903,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               };
             }),
           }));
-          toast.success(color ? 'Line color updated' : 'Line color reset');
+          // No toast — formatting feedback is visual-only (zero-toast policy)
           return;
         }
 
@@ -1918,7 +1912,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           ...doc,
           formatting: { ...doc.formatting, defaultColor: color || undefined },
         }));
-        toast.success(color ? 'Song color updated' : 'Song color reset');
+        // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
 
@@ -1955,12 +1949,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         }),
       }));
 
-      const count = sel.lines.length;
-      if (color) {
-        toast.success(`Color applied to ${count} ${count === 1 ? 'line' : 'lines'}`);
-      } else {
-        toast.info(`Color reset on ${count} ${count === 1 ? 'line' : 'lines'}`);
-      }
+      // No toast — formatting feedback is visual-only (zero-toast policy)
     },
     [updateDoc]
   );
@@ -1980,7 +1969,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           })),
         })),
       }));
-      toast.success('Formatting reset to default');
+      // No toast — formatting feedback is visual-only (zero-toast policy)
       return;
     }
 
@@ -2017,8 +2006,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }),
     }));
 
-    const count = sel.lines.length;
-    toast.success(`Formatting reset for ${count} ${count === 1 ? 'line' : 'lines'}`);
+    // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
   // ── CHORD PLACEMENT HELPERS ──────────────────────────────────────────
@@ -4115,6 +4103,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     type="button"
                     data-testid="toolbar-bold-btn"
                     onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       handleFormatBold();
                     }}
@@ -4136,6 +4125,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     type="button"
                     data-testid="toolbar-italic-btn"
                     onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       handleFormatItalic();
                     }}
@@ -4157,6 +4147,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     type="button"
                     data-testid="toolbar-underline-btn"
                     onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       handleFormatUnderline();
                     }}
@@ -4187,6 +4178,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       type="button"
                       data-testid="toolbar-color-btn"
                       onMouseDown={(e) => e.preventDefault()}
+                      onPointerDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setShowToolbarColorPicker((prev) => !prev);
                         setShowToolbarRolePicker(false);
@@ -4232,6 +4224,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 type="button"
                                 data-testid={`toolbar-color-swatch-${c.label.toLowerCase().replace(/\s+/g, '-')}`}
                                 onMouseDown={(e) => e.preventDefault()}
+                                onPointerDown={(e) => e.preventDefault()}
                                 onClick={() => {
                                   handleFormatColor(c.value || '');
                                   setShowToolbarColorPicker(false);
@@ -4260,6 +4253,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       type="button"
                       data-testid="toolbar-vocal-role-btn"
                       onMouseDown={(e) => e.preventDefault()}
+                      onPointerDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setShowToolbarRolePicker((prev) => !prev);
                         setShowToolbarColorPicker(false);
@@ -4305,6 +4299,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 type="button"
                                 data-testid={`toolbar-role-option-${role.type}`}
                                 onMouseDown={(e) => e.preventDefault()}
+                                onPointerDown={(e) => e.preventDefault()}
                                 onClick={() => {
                                   handleAssignRole(role);
                                   setShowToolbarRolePicker(false);
@@ -4327,6 +4322,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               type="button"
                               data-testid="toolbar-role-clear-btn"
                               onMouseDown={(e) => e.preventDefault()}
+                              onPointerDown={(e) => e.preventDefault()}
                               onClick={() => {
                                 handleAssignRole(undefined);
                                 setShowToolbarRolePicker(false);
@@ -4347,6 +4343,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     type="button"
                     data-testid="toolbar-reset-formatting-btn"
                     onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       handleResetFormatting();
                       setShowToolbarColorPicker(false);
@@ -4368,6 +4365,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     type="button"
                     data-testid="toolbar-close-btn"
                     onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       if (typeof window !== 'undefined') {
                         window.getSelection()?.removeAllRanges();
