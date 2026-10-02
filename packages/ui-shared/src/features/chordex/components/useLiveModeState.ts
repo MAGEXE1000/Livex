@@ -24,6 +24,7 @@ import {
   getCharacterColor,
   getCharacterBackgroundColor,
   getCharacterVocalRole,
+  splitLineByNewlines,
   useBandStore,
   broadcastBandLivePacket,
   subscribeToBandLiveSession,
@@ -95,6 +96,7 @@ export interface TeleprompterLineItem {
   chunks: TeleprompterLineChunk[];
   words: TeleprompterWord[];
   color?: string;
+  hasLeadingGap?: boolean;
 }
 
 export interface LiveModeState {
@@ -891,9 +893,34 @@ export function useLiveModeState(
     let runningWordGlobalIdx = 0;
 
     sections.forEach((sec) => {
-      const lines = sec.lines || [];
+      const rawLines = sec.lines || [];
       const sectionRole = sec.vocalRole || preset.lyrics?.defaultVocalRole;
-      lines.forEach((line, lIdx) => {
+
+      // Expand any lines with embedded \n
+      const expandedLines: SongLyricLine[] = [];
+      rawLines.forEach((l) => {
+        if (l.text && l.text.includes('\n')) {
+          expandedLines.push(...splitLineByNewlines(l));
+        } else {
+          expandedLines.push(l);
+        }
+      });
+
+      let pendingLeadingGap = false;
+      let playableLinesInSection = 0;
+      const sectionStartIndex = items.length;
+
+      expandedLines.forEach((line, lIdx) => {
+        const isBlank =
+          (!line.text || line.text.trim().length === 0) &&
+          (!line.chords || line.chords.length === 0) &&
+          line.type !== 'interlude';
+
+        if (isBlank) {
+          pendingLeadingGap = true;
+          return; // Skip blank line so it never receives active focus highlight box
+        }
+
         const lineChords = (line.chords || []).map((c) => ({
           ...c,
           chord: transposeOffset !== 0 ? transposeChordId(c.chord, transposeOffset) : c.chord,
@@ -925,15 +952,24 @@ export function useLiveModeState(
           sectionName: sec.name,
           sectionType: sec.type,
           sectionVocalRole: lineRole,
-          isFirstLineOfSection: lIdx === 0,
-          isLastLineOfSection: lIdx === lines.length - 1,
+          isFirstLineOfSection: playableLinesInSection === 0,
+          isLastLineOfSection: false,
+          hasLeadingGap: pendingLeadingGap,
           line,
           chunks,
           words,
           color: defaultLineColor,
         });
+
+        pendingLeadingGap = false;
+        playableLinesInSection++;
         globalIndex++;
       });
+
+      // Mark the last line of this section
+      if (items.length > sectionStartIndex) {
+        items[items.length - 1].isLastLineOfSection = true;
+      }
     });
 
     return items;

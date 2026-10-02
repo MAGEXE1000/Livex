@@ -5264,43 +5264,7 @@ export default function SongsPanel() {
           const hasSections = !!(activePreset.sections && activePreset.sections.length > 0);
           const isEmptyProgression = totalChordsCount === 0;
 
-          if (editorViewMode === 'lyrics') {
-            return (
-              <div
-                ref={lyricsScrollRef}
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 w-full"
-                style={{
-                  paddingTop: isWebDesktop
-                    ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
-                  paddingLeft: '16px',
-                  paddingRight: '16px',
-                  paddingBottom:
-                    'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 84px)',
-                  position: 'relative',
-                  background: 'transparent',
-                  WebkitUserSelect: 'text',
-                  userSelect: 'text',
-                }}
-                data-purpose="editor-lyrics-area"
-              >
-                {!isWebDesktop && (
-                  <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
-                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-                  </div>
-                )}
-                <SongLyricsEditor
-                  mode="lyrics"
-                  lyrics={activePreset.lyrics}
-                  onChange={handleLyricsChange}
-                  availableChords={allSongChordNames}
-                  accent={accent}
-                />
-              </div>
-            );
-          }
-
-          if (editorViewMode === 'both') {
+          if (editorViewMode === 'lyrics' || editorViewMode === 'both') {
             return (
               <div
                 ref={editorScrollRef}
@@ -5318,7 +5282,7 @@ export default function SongsPanel() {
                   WebkitUserSelect: 'text',
                   userSelect: 'text',
                 }}
-                data-purpose="editor-both-area"
+                data-purpose={`editor-${editorViewMode}-area`}
               >
                 {!isWebDesktop && (
                   <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
@@ -5326,7 +5290,8 @@ export default function SongsPanel() {
                   </div>
                 )}
                 <SongLyricsEditor
-                  mode="both"
+                  key="unified-song-lyrics-editor"
+                  mode={editorViewMode}
                   lyrics={activePreset.lyrics}
                   onChange={handleLyricsChange}
                   availableChords={allSongChordNames}

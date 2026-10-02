@@ -7,6 +7,8 @@ import {
   createEmptyLyricsDocument,
   continuousTextToLyricsDocument,
   lyricsDocumentToContinuousText,
+  splitLineByNewlines,
+  normalizeLyricsDocumentStructure,
 } from '../lyricsParser';
 import type { SongLyricsDocument } from '../../../types/lyrics';
 
@@ -236,6 +238,61 @@ Chorus without header line 2`;
     it('returns empty string when serializing undefined or empty document', () => {
       expect(lyricsDocumentToContinuousText(undefined)).toBe('');
       expect(lyricsDocumentToContinuousText(createEmptyLyricsDocument())).toBe('');
+    });
+  });
+
+  describe('splitLineByNewlines & Multiline Normalization', () => {
+    it('splits a single line with newlines into discrete lines with preserved formatting spans and chords', () => {
+      const line = {
+        id: 'line-1',
+        text: 'Hello world\nSecond verse\nThird verse',
+        chords: [
+          { id: 'c1', chord: 'C', offset: 0 },
+          { id: 'c2', chord: 'G', offset: 12 }, // On "Second verse"
+        ],
+        spans: [
+          { text: 'Hello ', format: { bold: true } },
+          { text: 'world\nSecond ', format: { color: '#3b82f6' } },
+          { text: 'verse\nThird verse' },
+        ],
+      };
+
+      const result = splitLineByNewlines(line);
+      expect(result).toHaveLength(3);
+      expect(result[0].text).toBe('Hello world');
+      expect(result[0].id).toBe('line-1');
+      expect(result[0].chords).toHaveLength(1);
+      expect(result[0].chords![0].chord).toBe('C');
+      expect(result[0].spans).toBeDefined();
+
+      expect(result[1].text).toBe('Second verse');
+      expect(result[1].chords).toHaveLength(1);
+      expect(result[1].chords![0].chord).toBe('G');
+      expect(result[1].chords![0].offset).toBe(0); // Offset shifted from 12 to 0
+
+      expect(result[2].text).toBe('Third verse');
+    });
+
+    it('normalizeLyricsDocumentStructure normalizes multiline text in section lines into discrete lines', () => {
+      const doc: SongLyricsDocument = {
+        version: 1,
+        sections: [
+          {
+            id: 'sec-1',
+            type: 'verse',
+            name: 'Verse 1',
+            lines: [
+              { id: 'l1', text: 'Io sono il capone della mafia\nSecond line\nThird line' },
+            ],
+          },
+        ],
+      };
+
+      const normalized = normalizeLyricsDocumentStructure(doc);
+      expect(normalized.sections[0].lines).toHaveLength(3);
+      expect(normalized.sections[0].lines[0].text).toBe('Io sono il capone della mafia');
+      expect(normalized.sections[0].lines[1].text).toBe('Second line');
+      expect(normalized.sections[0].lines[2].text).toBe('Third line');
     });
   });
 });

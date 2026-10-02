@@ -20,6 +20,7 @@ import {
   generateLyricId,
   parseLineStructuralElement,
   normalizeLyricsDocumentStructure,
+  splitLineByNewlines,
   parseVocalRoleFromHeader,
   detectSectionType,
   getCombinedVocalRoles,
@@ -751,6 +752,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const handleUpdateLineText = useCallback(
     (sectionId: string, lineId: string, newText: string) => {
+      if (newText.includes('\n')) {
+        updateDoc((doc) => ({
+          ...doc,
+          sections: doc.sections.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const newLines: SongLyricLine[] = [];
+            for (const l of sec.lines) {
+              if (l.id !== lineId) {
+                newLines.push(l);
+              } else {
+                const subLines = splitLineByNewlines({ ...l, text: newText });
+                newLines.push(...subLines);
+              }
+            }
+            return {
+              ...sec,
+              lines: newLines,
+            };
+          }),
+        }));
+        return;
+      }
+
       updateDoc((doc) => ({
         ...doc,
         sections: doc.sections.map((sec) =>
@@ -760,11 +784,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 lines: sec.lines.map((l) => {
                   if (l.id !== lineId) return l;
                   const shiftedChords = shiftChordOffsets(l.text, newText, l.chords);
+                  let nextSpans = l.spans;
+                  if (l.spans && l.spans.length > 0) {
+                    if (newText === l.text) {
+                      nextSpans = l.spans;
+                    } else if (l.spans.length === 1) {
+                      nextSpans = [{ text: newText, format: l.spans[0].format }];
+                    } else {
+                      // Multi-span line: update leading span text length or preserve spans
+                      nextSpans = l.spans.map((s, idx) =>
+                        idx === 0 ? { ...s, text: newText.slice(0, Math.max(1, s.text.length)) } : s
+                      );
+                    }
+                  }
                   return {
                     ...l,
                     text: newText,
                     chords: shiftedChords,
-                    spans: l.spans ? [{ text: newText }] : undefined,
+                    spans: nextSpans,
                   };
                 }),
               }
@@ -1660,7 +1697,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               }),
             };
           }),
-        }));
+        }), true);
         // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
@@ -1669,7 +1706,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       updateDoc((doc) => ({
         ...doc,
         formatting: { ...doc.formatting, bold: !doc.formatting?.bold },
-      }));
+      }), true);
       // No toast — formatting feedback is visual-only (zero-toast policy)
       return;
     }
@@ -1725,7 +1762,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }),
         };
       }),
-    }));
+    }), true);
     // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
@@ -1750,7 +1787,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               }),
             };
           }),
-        }));
+        }), true);
         // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
@@ -1807,7 +1844,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }),
         };
       }),
-    }));
+    }), true);
     // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
@@ -1832,7 +1869,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               }),
             };
           }),
-        }));
+        }), true);
         // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
@@ -1889,7 +1926,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }),
         };
       }),
-    }));
+    }), true);
     // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
@@ -1914,7 +1951,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 }),
               };
             }),
-          }));
+          }), true);
           // No toast — formatting feedback is visual-only (zero-toast policy)
           return;
         }
@@ -1923,7 +1960,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         updateDoc((doc) => ({
           ...doc,
           formatting: { ...doc.formatting, defaultColor: color || undefined },
-        }));
+        }), true);
         // No toast — formatting feedback is visual-only (zero-toast policy)
         return;
       }
@@ -1959,7 +1996,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             }),
           };
         }),
-      }));
+      }), true);
 
       // No toast — formatting feedback is visual-only (zero-toast policy)
     },
@@ -1980,7 +2017,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             spans: undefined,
           })),
         })),
-      }));
+      }), true);
       // No toast — formatting feedback is visual-only (zero-toast policy)
       return;
     }
@@ -2016,7 +2053,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }),
         };
       }),
-    }));
+    }), true);
 
     // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
@@ -3413,11 +3450,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
                   const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
 
-                  // In LYRICS mode: single always-visible auto-growing textarea per line.
-                  // Using <textarea> instead of <input type="text"> is the root-cause fix:
-                  // the HTML spec strips embedded \n from single-line inputs, which flattened
-                  // entire songs into one wall of text. A textarea preserves every newline natively.
-                  if (mode === 'lyrics') {
+                  const isEditing = editingLineId === line.id;
+
+                  // ── INLINE EDITING STATE (when tapped/focused) ──
+                  if (isEditing) {
                     return (
                       <div
                         key={line.id || lineIdx}
@@ -3436,12 +3472,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         }}
                       >
                         <textarea
-                          ref={(el) => { inputRefs.current[line.id] = el; }}
+                          ref={(el) => {
+                            inputRefs.current[line.id] = el;
+                            if (el) {
+                              el.style.height = 'auto';
+                              el.style.height = `${el.scrollHeight}px`;
+                            }
+                          }}
                           rows={1}
+                          autoFocus
                           value={line.text}
                           onFocus={() => {
                             setLastActivePosition(section.id, lineIdx, line.id);
-                            setEditingLineId(line.id);
                           }}
                           onBlur={(e) => {
                             setEditingLineId(null);
@@ -3458,7 +3500,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           onChange={(e) => {
                             setLastActivePosition(section.id, lineIdx, line.id);
                             handleUpdateLineText(section.id, line.id, e.target.value);
-                            // Auto-resize: collapse then grow to content height
                             const el = e.target;
                             el.style.height = 'auto';
                             el.style.height = `${el.scrollHeight}px`;
@@ -3523,21 +3564,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
-                  // In BOTH mode: render words with chord lanes
-                  // Empty line: clean paragraph break
+                  // ── EMPTY LINE RENDERING (SHARED ACROSS MODES) ──
                   if (!line.text || line.text.trim().length === 0) {
-                    const hasChords = line.chords && line.chords.length > 0;
+                    const hasChords = mode === 'both' && line.chords && line.chords.length > 0;
                     if (!hasChords) {
+                      const isInitialEmpty = secIdx === 0 && lineIdx === 0 && section.lines.length === 1;
                       return (
                         <div
                           key={line.id || lineIdx}
                           data-line-id={line.id}
                           data-section-id={section.id}
                           data-line-index={lineIdx}
+                          onClick={() => {
+                            setLastActivePosition(section.id, lineIdx, line.id);
+                            setEditingLineId(line.id);
+                          }}
                           onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                           onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                          className="h-5 w-full select-none"
-                        />
+                          className="h-7 w-full flex items-center px-2 py-0.5 select-none cursor-text rounded-lg hover:bg-white/5 transition-colors"
+                        >
+                          <span className="text-base text-gray-500/40 italic select-none">
+                            {isInitialEmpty ? 'Write or paste lyrics here...' : 'Empty line (tap to write)'}
+                          </span>
+                        </div>
                       );
                     }
                     return (
@@ -3588,8 +3637,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
+                  // ── SHARED RICH-TEXT WORD & SPAN RENDERING (LYRICS & BOTH PARITY) ──
                   const lineChords = line.chords || [];
-                  const isPlacementActive = Boolean(activePlacementChord);
+                  const isPlacementActive = mode === 'both' && Boolean(activePlacementChord);
                   const words = findWordBoundaries(line.text);
 
                   return (
@@ -3603,6 +3653,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                         if (sel && sel.toString().length > 0) return;
                         setLastActivePosition(section.id, lineIdx, line.id);
+                        if (mode === 'lyrics' && !isPlacementActive) {
+                          setEditingLineId(line.id);
+                        }
+                      }}
+                      onDoubleClick={() => {
+                        setLastActivePosition(section.id, lineIdx, line.id);
+                        setEditingLineId(line.id);
                       }}
                       onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                       onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
@@ -3638,58 +3695,61 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               userSelect: 'text',
                             }}
                           >
-                            {/* Chord Lane */}
-                            <div className="h-6 flex items-center gap-1 select-none">
-                              {wordChords.map((c) => (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  data-testid={`placed-chord-${c.chord}`}
-                                  data-chord-id={c.id}
-                                  data-chord-offset={c.offset}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedChordForEdit({
-                                      sectionId: section.id,
-                                      lineId: line.id,
-                                      chord: c,
-                                    });
-                                  }}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
-                                  style={{
-                                    backgroundColor: isEffectiveLight
-                                      ? 'rgba(37, 99, 235, 0.12)'
-                                      : 'rgba(56, 189, 248, 0.20)',
-                                    borderColor: isEffectiveLight
-                                      ? 'rgba(37, 99, 235, 0.40)'
-                                      : 'rgba(56, 189, 248, 0.45)',
-                                    color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
-                                  }}
-                                  title={`Chord [${c.chord}] - Tap to inspect or move`}
-                                >
-                                  <span>{c.chord}</span>
-                                </button>
-                              ))}
-                              {isPlacementActive && wordChords.length === 0 && (
-                                <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400 select-none">
-                                  +
-                                </span>
-                              )}
-                            </div>
+                            {/* Chord Lane (only in BOTH mode) */}
+                            {mode === 'both' && (
+                              <div className="h-6 flex items-center gap-1 select-none">
+                                {wordChords.map((c) => (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    data-testid={`placed-chord-${c.chord}`}
+                                    data-chord-id={c.id}
+                                    data-chord-offset={c.offset}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedChordForEdit({
+                                        sectionId: section.id,
+                                        lineId: line.id,
+                                        chord: c,
+                                      });
+                                    }}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
+                                    style={{
+                                      backgroundColor: isEffectiveLight
+                                        ? 'rgba(37, 99, 235, 0.12)'
+                                        : 'rgba(56, 189, 248, 0.20)',
+                                      borderColor: isEffectiveLight
+                                        ? 'rgba(37, 99, 235, 0.40)'
+                                        : 'rgba(56, 189, 248, 0.45)',
+                                      color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                    }}
+                                    title={`Chord [${c.chord}] - Tap to inspect or move`}
+                                  >
+                                    <span>{c.chord}</span>
+                                  </button>
+                                ))}
+                                {isPlacementActive && wordChords.length === 0 && (
+                                  <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400 select-none">
+                                    +
+                                  </span>
+                                )}
+                              </div>
+                            )}
 
-                            {/* Word Text (Tap in placement mode anchors the chord) */}
+                            {/* Word Text */}
                             <span
-                              onClick={() => {
+                              onClick={(e) => {
                                 const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                                 if (sel && sel.toString().length > 0) return;
-                                if (activePlacementChord) {
+                                if (mode === 'both' && activePlacementChord) {
+                                  e.stopPropagation();
                                   handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
                                 }
                               }}
                               className={`text-base tracking-wide transition-all select-text ${
-                                activePlacementChord
+                                mode === 'both' && activePlacementChord
                                   ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted'
-                                  : ''
+                                  : 'cursor-text'
                               }`}
                               style={{
                                 color: effectiveWordColor,

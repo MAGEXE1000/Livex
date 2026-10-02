@@ -3,6 +3,7 @@ import type {
   SongLyricSection,
   SongLyricLine,
   LyricChordPlacement,
+  LyricTextSpan,
   StandardLyricSectionType,
   VocalRoleAnnotation,
   StandardVocalRole,
@@ -227,8 +228,83 @@ export function parseLineStructuralElement(lineText: string): StructuralLinePars
 }
 
 /**
+ * Splits a single SongLyricLine containing newlines (\n) into multiple discrete
+ * SongLyricLine elements, correctly redistributing character-offset chords and formatting spans.
+ */
+export function splitLineByNewlines(line: SongLyricLine): SongLyricLine[] {
+  if (!line || !line.text || !line.text.includes('\n')) {
+    return [line];
+  }
+
+  const rawSegments = line.text.split('\n');
+  const result: SongLyricLine[] = [];
+  let currentStartOffset = 0;
+
+  for (let sIdx = 0; sIdx < rawSegments.length; sIdx++) {
+    const segmentText = rawSegments[sIdx];
+    const segmentEndOffset = currentStartOffset + segmentText.length;
+
+    // Filter and shift chords
+    const segmentChords: LyricChordPlacement[] = [];
+    if (line.chords && line.chords.length > 0) {
+      for (const chord of line.chords) {
+        if (
+          chord.offset >= currentStartOffset &&
+          (chord.offset < segmentEndOffset || (sIdx === rawSegments.length - 1 && chord.offset <= segmentEndOffset))
+        ) {
+          segmentChords.push({
+            ...chord,
+            id: generateLyricId('chord'),
+            offset: Math.max(0, chord.offset - currentStartOffset),
+          });
+        }
+      }
+    }
+
+    // Filter and slice spans
+    let segmentSpans: LyricTextSpan[] | undefined;
+    if (line.spans && line.spans.length > 0) {
+      const extracted: LyricTextSpan[] = [];
+      let spanOffset = 0;
+      for (const span of line.spans) {
+        const spanEnd = spanOffset + span.text.length;
+        const overlapStart = Math.max(currentStartOffset, spanOffset);
+        const overlapEnd = Math.min(segmentEndOffset, spanEnd);
+        if (overlapStart < overlapEnd) {
+          const sliceFrom = overlapStart - spanOffset;
+          const sliceTo = overlapEnd - spanOffset;
+          extracted.push({
+            text: span.text.slice(sliceFrom, sliceTo),
+            format: span.format ? { ...span.format } : undefined,
+          });
+        }
+        spanOffset = spanEnd;
+      }
+      if (extracted.length > 0) {
+        segmentSpans = extracted;
+      }
+    }
+
+    result.push({
+      id: sIdx === 0 ? line.id : generateLyricId('line'),
+      type: line.type,
+      text: segmentText,
+      chords: segmentChords.length > 0 ? segmentChords : undefined,
+      spans: segmentSpans,
+      format: line.format ? { ...line.format } : undefined,
+      vocalRole: line.vocalRole ? { ...line.vocalRole } : undefined,
+    });
+
+    currentStartOffset = segmentEndOffset + 1; // +1 for the '\n'
+  }
+
+  return result;
+}
+
+/**
  * Normalizes a SongLyricsDocument, converting any raw section headers or
- * bracketed interludes within line text into proper structured sections and cards.
+ * bracketed interludes within line text into proper structured sections and cards,
+ * and splitting any multiline strings into discrete line elements.
  */
 export function normalizeLyricsDocumentStructure(doc: SongLyricsDocument): SongLyricsDocument {
   if (!doc || !Array.isArray(doc.sections) || doc.sections.length === 0) {
@@ -256,44 +332,52 @@ export function normalizeLyricsDocumentStructure(doc: SongLyricsDocument): SongL
     newSections.push(currentSec);
 
     for (let lIdx = 0; lIdx < section.lines.length; lIdx++) {
-      const line = section.lines[lIdx];
-      if (line.type === 'interlude') {
-        currentSec.lines.push(line);
-        continue;
+      const rawLine = section.lines[lIdx];
+      const expandedLines =
+        rawLine.text && rawLine.text.includes('\n') ? splitLineByNewlines(rawLine) : [rawLine];
+      if (expandedLines.length > 1) {
+        hasStructuralChanges = true;
       }
 
-      const parseResult = parseLineStructuralElement(line.text);
-      if (parseResult.kind === 'interlude') {
-        hasStructuralChanges = true;
-        currentSec.lines.push({
-          id: line.id || generateLyricId('line'),
-          type: 'interlude',
-          text: parseResult.interludeLabel || 'Solo',
-          explicitDurationMs: (parseResult.interludeDurationSec || 15) * 1000,
-        });
-      } else if (parseResult.kind === 'section') {
-        hasStructuralChanges = true;
-        if (
-          currentSec.lines.length === 0 &&
-          (!currentSec.name || currentSec.name === 'Verse 1' || currentSec.name.trim().length === 0)
-        ) {
-          currentSec.name = parseResult.sectionName || 'Section';
-          currentSec.type = parseResult.sectionType || detectSectionType(currentSec.name);
-          if (parseResult.vocalRole) {
-            currentSec.vocalRole = parseResult.vocalRole;
+      for (const line of expandedLines) {
+        if (line.type === 'interlude') {
+          currentSec.lines.push(line);
+          continue;
+        }
+
+        const parseResult = parseLineStructuralElement(line.text);
+        if (parseResult.kind === 'interlude') {
+          hasStructuralChanges = true;
+          currentSec.lines.push({
+            id: line.id || generateLyricId('line'),
+            type: 'interlude',
+            text: parseResult.interludeLabel || 'Solo',
+            explicitDurationMs: (parseResult.interludeDurationSec || 15) * 1000,
+          });
+        } else if (parseResult.kind === 'section') {
+          hasStructuralChanges = true;
+          if (
+            currentSec.lines.length === 0 &&
+            (!currentSec.name || currentSec.name === 'Verse 1' || currentSec.name.trim().length === 0)
+          ) {
+            currentSec.name = parseResult.sectionName || 'Section';
+            currentSec.type = parseResult.sectionType || detectSectionType(currentSec.name);
+            if (parseResult.vocalRole) {
+              currentSec.vocalRole = parseResult.vocalRole;
+            }
+          } else {
+            currentSec = {
+              id: generateLyricId('sec'),
+              name: parseResult.sectionName || 'Section',
+              type: parseResult.sectionType || detectSectionType(parseResult.sectionName || 'Section'),
+              vocalRole: parseResult.vocalRole,
+              lines: [],
+            };
+            newSections.push(currentSec);
           }
         } else {
-          currentSec = {
-            id: generateLyricId('sec'),
-            name: parseResult.sectionName || 'Section',
-            type: parseResult.sectionType || detectSectionType(parseResult.sectionName || 'Section'),
-            vocalRole: parseResult.vocalRole,
-            lines: [],
-          };
-          newSections.push(currentSec);
+          currentSec.lines.push(line);
         }
-      } else {
-        currentSec.lines.push(line);
       }
     }
 

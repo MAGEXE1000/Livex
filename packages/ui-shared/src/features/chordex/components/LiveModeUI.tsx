@@ -1222,17 +1222,23 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             : 'none';
 
           return (
-            <div
-              key={item.id}
-              id={`live-line-${idx}`}
-              data-testid={`teleprompter-line-${idx}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLineClick(idx);
-              }}
-              className={`lyric-line ${isActive ? 'active-line' : ''}`}
-              style={{
-                position: 'relative',
+            <React.Fragment key={item.id}>
+              {item.hasLeadingGap && !item.isFirstLineOfSection && (
+                <div
+                  className="h-6 w-full select-none pointer-events-none"
+                  aria-hidden="true"
+                />
+              )}
+              <div
+                id={`live-line-${idx}`}
+                data-testid={`teleprompter-line-${idx}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLineClick(idx);
+                }}
+                className={`lyric-line ${isActive ? 'active-line' : ''}`}
+                style={{
+                  position: 'relative',
                 borderRadius: '16px',
                 padding: '12px 16px',
                 background: isActive ? highlightBg : nonActiveBg,
@@ -1499,8 +1505,9 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
               </div>
               )}
             </div>
-          );
-        })}
+          </React.Fragment>
+        );
+      })}
       </div>
 
       {/* Preferences / Quick Controls HUD Bar (Anchored directly above Bottom Transport Dock) */}
