@@ -1,13 +1,16 @@
-# Version 4.6.77
+# Version 4.6.78
 
 Release Date: 2026-10-02
 
 ### Added
-- Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.
-- Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.
+- Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.
+- Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.
+- Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.
+- Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.
 
 ### Improved
-- Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.
+- Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.
+- Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.
 
 ### Fixed
-- Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.
+- Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift.

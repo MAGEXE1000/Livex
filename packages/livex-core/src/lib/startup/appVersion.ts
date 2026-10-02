@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.77';
-export const NATIVE_VERSION_CODE = 40677;
-export const WEB_VERSION = '4.6.77';
+export const NATIVE_VERSION = '4.6.78';
+export const NATIVE_VERSION_CODE = 40678;
+export const WEB_VERSION = '4.6.78';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '2a9076b2';
+export const APP_COMMIT_SHA = 'a4a1e4d9';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 2:15:00 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 3:20:40 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,20 +101,23 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.',
-      'Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.',
+      'Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.',
+      'Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.',
+      'Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.',
+      'Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.',
+      "Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.",
+      'Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.',
+      'Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift.',
     ],
   },
 ];
@@ -126,6 +129,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.78',
+    date: '2026-10-02',
+    highlights: [
+      'Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.',
+      'Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.',
+      'Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.',
+      'Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.',
+      "Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.",
+      'Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.',
+    ],
+  },
   {
     version: '4.6.77',
     date: '2026-10-02',
@@ -227,18 +242,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.',
       'Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.',
       'Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.',
-    ],
-  },
-  {
-    version: '4.6.68',
-    date: '2026-09-30',
-    highlights: [
-      'Above-Word Inline Chord Badges in Both Mode: Replaced the vertical stacked chord list with compact inline chord chips anchored directly above specific lyrics/words with character-offset synchronization.',
-      'Canonical Fretboard Diagram Preview in Song Editor: Tapping any inline chord tag displays the full-fidelity DetailFretboardDiagram showing guitar fingerings, muted strings, and note positions.',
-      'Clean View Mode & Floating Edit Button: In view mode, the bottom toolbar is hidden and a single floating Pencil FAB is rendered in the bottom right, with lyrics protected against accidental touch/keyboard editing.',
-      'Reorganized Both-Mode Edit Toolbar: Placed Undo and Redo on the left, a neutral standard Chord tool in the center, Text Styling/Color tool and clean More menu on the right-center, and anchored the primary Done action all the way to the far right.',
-      'Cleaned More Action Menu: Removed redundant "Enter edit mode" and "Add lyric line" items, retaining "+ Add Section" (with layers icon), "+ Add Timed Interlude", and essential song actions.',
-      'Unobscured Viewport Docking: Removed intrusive mode toggle toasts and anchored the bottom dock persistently as a mobile floating navbar.',
     ],
   },
 ];

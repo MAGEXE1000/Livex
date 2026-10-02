@@ -1,25 +1,28 @@
 {
   "platform": "android",
-  "version": "4.6.77",
-  "versionName": "4.6.77",
-  "versionCode": 40677,
-  "version_code": 40677,
-  "commit": "2a9076b2",
-  "releasedAt": "10/2/2026, 2:17:00 PM CST",
-  "buildTimestamp": "10/2/2026, 2:17:00 PM CST",
+  "version": "4.6.78",
+  "versionName": "4.6.78",
+  "versionCode": 40678,
+  "version_code": 40678,
+  "commit": "a4a1e4d9",
+  "releasedAt": "10/2/2026, 3:20:40 PM CST",
+  "buildTimestamp": "10/2/2026, 3:20:40 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.\n• Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.\n• Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.\n• Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.",
-  "whatsNew": "• Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.\n• Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.\n• Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.\n• Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.",
+  "changelog": "• Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.\n• Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.\n• Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.\n• Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.\n• Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.\n• Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.\n• Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift.",
+  "whatsNew": "• Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.\n• Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.\n• Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.\n• Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.\n• Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.\n• Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.\n• Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift.",
   "releaseNotes": {
     "added": [
-      "Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.",
-      "Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away."
+      "Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.",
+      "Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.",
+      "Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.",
+      "Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses."
     ],
     "improved": [
-      "Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area."
+      "Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.",
+      "Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes."
     ],
     "fixed": [
-      "Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned."
+      "Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift."
     ]
   },
   "mandatory": false
