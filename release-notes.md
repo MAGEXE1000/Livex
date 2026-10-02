@@ -1,13 +1,19 @@
-# Version 4.6.73
+# Version 4.6.74
 
 Release Date: 2026-10-01
 
 ### Added
-- Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.
-- Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.
+- Docked Floating Toast Manager: Unified notification system anchored directly above the bottom navbar with frosted-glass styling, spring animations, and multi-theme support (Light, Dark, AMOLED).
+- Synchronized Rehearsal Lobby: Multi-device synchronized waiting lobby mode triggered via "Call Band" header action with automatic spectator lock and synchronized start.
+- Drag-and-Drop Song Reordering: Smooth reordering for song setlists and song repertoire with direct drag-and-drop handles.
+- Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.
+
+### Improved
+- Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.
+- Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.
+- Repertoire & Editor Canvas: Borderless chord editor canvas with unified floating action button and letter-anchored chord placement.
 
 ### Fixed
-- Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.
-- Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.
-- Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.
-- Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.
+- Leader Self-Toast Echo: Enforced unconditional filter preventing band session leaders from receiving self-invitation toasts during band calls.
+- Solo Lobby Card Suppression: Eliminated persistent solo lobby bar popups during paused playback in solo live sessions.
+- Song Deletion & Preset Sync: Repaired active preset reset on song deletion and prevented stale references in setlist sections.

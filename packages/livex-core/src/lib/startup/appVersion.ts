@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.73';
-export const NATIVE_VERSION_CODE = 40673;
-export const WEB_VERSION = '4.6.73';
+export const NATIVE_VERSION = '4.6.74';
+export const NATIVE_VERSION_CODE = 40674;
+export const WEB_VERSION = '4.6.74';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/1/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'ec5f4424';
+export const APP_COMMIT_SHA = '10fc935e';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/1/2026, 9:30:00 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/1/2026, 6:02:47 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,17 +101,26 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
-      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
+      'Docked Floating Toast Manager: Unified notification system anchored directly above the bottom navbar with frosted-glass styling, spring animations, and multi-theme support (Light, Dark, AMOLED).',
+      'Synchronized Rehearsal Lobby: Multi-device synchronized waiting lobby mode triggered via "Call Band" header action with automatic spectator lock and synchronized start.',
+      'Drag-and-Drop Song Reordering: Smooth reordering for song setlists and song repertoire with direct drag-and-drop handles.',
+      'Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.',
+    ],
+  },
+  {
+    heading: 'Improved',
+    items: [
+      'Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.',
+      'Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.',
+      'Repertoire & Editor Canvas: Borderless chord editor canvas with unified floating action button and letter-anchored chord placement.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
-      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
-      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
-      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
+      'Leader Self-Toast Echo: Enforced unconditional filter preventing band session leaders from receiving self-invitation toasts during band calls.',
+      'Solo Lobby Card Suppression: Eliminated persistent solo lobby bar popups during paused playback in solo live sessions.',
+      'Song Deletion & Preset Sync: Repaired active preset reset on song deletion and prevented stale references in setlist sections.',
     ],
   },
 ];
@@ -123,6 +132,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.74',
+    date: '2026-10-01',
+    highlights: [
+      'Docked Floating Toast Manager: Unified notification system anchored directly above the bottom navbar with frosted-glass styling, spring animations, and multi-theme support (Light, Dark, AMOLED).',
+      'Synchronized Rehearsal Lobby: Multi-device synchronized waiting lobby mode triggered via "Call Band" header action with automatic spectator lock and synchronized start.',
+      'Drag-and-Drop Song Reordering: Smooth reordering for song setlists and song repertoire with direct drag-and-drop handles.',
+      'Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.',
+      'Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.',
+      'Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.',
+    ],
+  },
   {
     version: '4.6.73',
     date: '2026-10-01',
@@ -222,16 +243,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.',
       'First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.',
       'Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.',
-    ],
-  },
-  {
-    version: '4.6.64',
-    date: '2026-09-28',
-    highlights: [
-      'Colored Lyrics in Live Modes: Preserved inline text span colors, line formatting colors, and vocal role colors across both Lyrics Live mode (LyricsLiveView) and Both Live mode (HybridLiveView), enabling performers to visually differentiate vocal parts and performers in real-time with drop-shadow bloom on active words.',
-      'Floating Viewport Bottom Toolbar in Both Mode: Re-architected HybridLiveView layout with dedicated scroll isolation, ensuring the transport and HUD controls remain persistently anchored at the viewport bottom above the safe area, matching bottom navbar behavior across all scrolling states.',
-      'Clean Line Editing in Song Lyrics Editor: Polished inline lyric editing by removing word selection highlight rectangles, eliminating the explicit Done button, adding clean baseline indicators, and auto-committing edits on blur or clicking away.',
-      'Unified Live Display Mode Guard: Fixed mode-synchronization in useLiveModeState to prevent initialMode from overriding manual user mode switches in the Live Settings sheet.',
     ],
   },
 ];
