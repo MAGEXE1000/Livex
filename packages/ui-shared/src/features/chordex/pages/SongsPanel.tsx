@@ -4961,19 +4961,6 @@ export default function SongsPanel() {
                 ) : undefined
               }
             />
-            {/* Sticky segmented mode switcher permanently pinned below SharedFloatingHeader */}
-            <div
-              className="w-full flex items-center justify-center pointer-events-auto py-1"
-              style={{
-                position: 'fixed',
-                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 74px)',
-                left: 0,
-                right: 0,
-                zIndex: 35,
-              }}
-            >
-              <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
-            </div>
           </>
         ) : (
           /* Desktop Title and Meta Header */
@@ -5285,7 +5272,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 116px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5297,6 +5284,11 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-lyrics-area"
               >
+                {!isWebDesktop && (
+                  <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
+                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                  </div>
+                )}
                 <SongLyricsEditor
                   mode="lyrics"
                   lyrics={activePreset.lyrics}
@@ -5316,7 +5308,7 @@ export default function SongsPanel() {
                 style={{
                   paddingTop: isWebDesktop
                     ? '16px'
-                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 116px)',
+                    : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingBottom:
@@ -5328,6 +5320,11 @@ export default function SongsPanel() {
                 }}
                 data-purpose="editor-both-area"
               >
+                {!isWebDesktop && (
+                  <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
+                    <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                  </div>
+                )}
                 <SongLyricsEditor
                   mode="both"
                   lyrics={activePreset.lyrics}
@@ -5345,12 +5342,15 @@ export default function SongsPanel() {
                 ref={editorScrollRef}
                 className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto no-scrollbar"
                 style={{
-                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
+                  paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                   paddingBottom:
                     'calc(max(14px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 14px))) + 64px)',
                 }}
                 data-purpose="empty-chord-progression"
               >
+                <div className="w-full flex items-center justify-center pt-1 pb-4 select-none flex-shrink-0">
+                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                </div>
                 {/* Musical Icon Graphic */}
                 <div className="relative flex items-center justify-center mb-6">
                   {/* Soft glowing aura */}
@@ -5402,7 +5402,7 @@ export default function SongsPanel() {
               style={{
                 paddingTop: isWebDesktop
                   ? '16px'
-                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 120px)',
+                  : 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 68px)',
                 paddingLeft: '16px',
                 paddingRight: '16px',
                 paddingBottom:
@@ -5411,6 +5411,11 @@ export default function SongsPanel() {
               }}
               data-purpose="editor-content-area"
             >
+              {!isWebDesktop && (
+                <div className="w-full flex items-center justify-center pt-1 pb-3 select-none flex-shrink-0">
+                  <SongViewModeSelector mode={editorViewMode} onChange={handleModeChange} />
+                </div>
+              )}
               {/* Optional Lyrics / Notes Card */}
               {activePreset.notes && (
                 <div

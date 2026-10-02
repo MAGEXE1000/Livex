@@ -1843,12 +1843,49 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
+  const handleRemoveSectionHeader = useCallback(
+    (sectionId: string) => {
+      updateDoc((doc) => {
+        const secIdx = doc.sections.findIndex((s) => s.id === sectionId);
+        if (secIdx === -1) return doc;
+        const targetSec = doc.sections[secIdx];
+
+        // If there is a previous section, merge targetSec's lines into the previous section
+        if (secIdx > 0) {
+          const prevSec = doc.sections[secIdx - 1];
+          const updatedPrev = {
+            ...prevSec,
+            lines: [...prevSec.lines, ...targetSec.lines],
+          };
+          const nextSections = [...doc.sections];
+          nextSections.splice(secIdx - 1, 2, updatedPrev);
+          return { ...doc, sections: nextSections };
+        }
+
+        // If it's the first or only section, clear the section name and vocal role
+        const updatedSec = {
+          ...targetSec,
+          name: '',
+          vocalRole: undefined,
+        };
+        const nextSections = [...doc.sections];
+        nextSections[0] = updatedSec;
+        return { ...doc, sections: nextSections };
+      });
+      setRenameSectionTarget(null);
+      toast.success('Section header removed (lyrics preserved)');
+    },
+    [updateDoc]
+  );
+
   const handleDeleteSection = useCallback(
     (sectionId: string) => {
       updateDoc((doc) => {
         const sections = doc.sections.filter((s) => s.id !== sectionId);
         return { ...doc, sections };
       });
+      setRenameSectionTarget(null);
+      toast.success('Section deleted');
     },
     [updateDoc]
   );
@@ -2345,7 +2382,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => setRolePickerTarget({ sectionId: section.id })}
-                        className="opacity-0 group-hover/sec:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10"
+                        className="opacity-70 group-hover/sec:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10"
                         style={{
                           backgroundColor: 'rgba(255,255,255,0.04)',
                           borderColor: 'rgba(255,255,255,0.08)',
@@ -2359,14 +2396,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     )}
                   </div>
 
-                  {/* Section Delete button */}
+                  {/* Section Manage / Delete button */}
                   <button
                     type="button"
-                    onClick={() => handleDeleteSection(section.id)}
-                    className="opacity-0 group-hover/sec:opacity-100 text-gray-500 hover:text-rose-400 transition-opacity p-1 rounded-md cursor-pointer"
-                    title="Delete section container"
+                    data-testid={`section-options-btn-${secIdx}`}
+                    onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
+                    className="opacity-70 hover:opacity-100 group-hover/sec:opacity-100 text-gray-400 hover:text-rose-400 active:scale-90 transition-all p-1 rounded-md cursor-pointer flex items-center justify-center"
+                    title="Manage or remove section"
                   >
-                    <span className="material-symbols-rounded text-sm">close</span>
+                    <span className="material-symbols-rounded text-sm">more_vert</span>
                   </button>
                 </div>
               )}
@@ -2769,20 +2807,30 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             spellCheck="false"
                           />
                           {activeRole && (
-                            <span
-                              className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none"
+                            <button
+                              type="button"
+                              data-testid={`vocal-role-chip-${line.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRolePickerTarget({
+                                  sectionId: section.id,
+                                  lineId: line.id,
+                                });
+                              }}
+                              className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                               style={{
                                 backgroundColor: `${activeRole.color || '#3b82f6'}26`,
                                 borderColor: `${activeRole.color || '#3b82f6'}66`,
                                 color: activeRole.color || '#3b82f6',
                               }}
+                              title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
                             >
                               <span
                                 className="w-1.5 h-1.5 rounded-full"
                                 style={{ backgroundColor: activeRole.color || '#3b82f6' }}
                               />
-                              {activeRole.label || activeRole.type}
-                            </span>
+                              <span>{activeRole.label || activeRole.type}</span>
+                            </button>
                           )}
                         </div>
                       );
@@ -2855,20 +2903,30 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           })
                         )}
                         {activeRole && (
-                          <span
-                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none"
+                          <button
+                            type="button"
+                            data-testid={`vocal-role-chip-${line.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRolePickerTarget({
+                                sectionId: section.id,
+                                lineId: line.id,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                             style={{
                               backgroundColor: `${activeRole.color || '#3b82f6'}26`,
                               borderColor: `${activeRole.color || '#3b82f6'}66`,
                               color: activeRole.color || '#3b82f6',
                             }}
+                            title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
                           >
                             <span
                               className="w-1.5 h-1.5 rounded-full"
                               style={{ backgroundColor: activeRole.color || '#3b82f6' }}
                             />
-                            {activeRole.label || activeRole.type}
-                          </span>
+                            <span>{activeRole.label || activeRole.type}</span>
+                          </button>
                         )}
                       </div>
                     );
@@ -3061,20 +3119,30 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
                       {/* Vocal Role badge if present on line */}
                       {activeRole && (
-                        <span
-                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none"
+                        <button
+                          type="button"
+                          data-testid={`vocal-role-chip-${line.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRolePickerTarget({
+                              sectionId: section.id,
+                              lineId: line.id,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                           style={{
                             backgroundColor: `${activeRole.color || '#3b82f6'}26`,
                             borderColor: `${activeRole.color || '#3b82f6'}66`,
                             color: activeRole.color || '#3b82f6',
                           }}
+                          title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
                         >
                           <span
                             className="w-1.5 h-1.5 rounded-full"
                             style={{ backgroundColor: activeRole.color || '#3b82f6' }}
                           />
-                          {activeRole.label || activeRole.type}
-                        </span>
+                          <span>{activeRole.label || activeRole.type}</span>
+                        </button>
                       )}
                     </div>
                   );
@@ -4001,12 +4069,32 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         <div className="flex flex-col gap-3 py-1">
           <p className="text-xs text-gray-400">Select which performer should sing this part:</p>
 
+          {/* Remove / Clear Role option at top */}
+          <button
+            type="button"
+            data-testid="remove-vocal-role-btn"
+            onClick={() => handleAssignRole(undefined)}
+            className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-rose-500/40"
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              borderColor: 'rgba(239, 68, 68, 0.25)',
+              color: '#ef4444',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-rounded text-base">block</span>
+              <span>Remove Role / Clear</span>
+            </div>
+            <span className="text-[10px] uppercase font-mono opacity-80">Clear</span>
+          </button>
+
           {/* Canonical 5 default roles */}
           <div className="flex flex-col gap-1.5">
             {defaultVocalRoles.map((role) => (
               <button
                 key={role.type}
                 type="button"
+                data-testid={`assign-role-${role.type}`}
                 onClick={() => handleAssignRole(role)}
                 className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
                 style={{
@@ -4036,6 +4124,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 <button
                   key={role.label}
                   type="button"
+                  data-testid={`assign-custom-role-${role.label}`}
                   onClick={() => handleAssignRole(role)}
                   className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
                   style={{
@@ -4108,16 +4197,94 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               </div>
             </div>
           )}
-
-          {/* Remove Role */}
-          <button
-            type="button"
-            onClick={() => handleAssignRole(undefined)}
-            className="mt-1 text-xs text-gray-400 hover:text-rose-400 text-center py-1 transition-colors"
-          >
-            Clear Assigned Role
-          </button>
         </div>
+      </Dialog>
+
+      {/* ── DIALOG: RENAME & MANAGE SECTION ───────────────────────────── */}
+      <Dialog
+        open={Boolean(renameSectionTarget)}
+        onClose={() => setRenameSectionTarget(null)}
+        title="Manage Section"
+      >
+        {renameSectionTarget && (
+          <div className="flex flex-col gap-3 py-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-300">Section Name</label>
+              <input
+                type="text"
+                value={renameSectionTarget.name}
+                onChange={(e) =>
+                  setRenameSectionTarget({ ...renameSectionTarget, name: e.target.value })
+                }
+                placeholder="e.g. Verse 1, Chorus, Bridge"
+                data-testid="rename-section-input"
+                className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                data-testid="save-section-name-btn"
+                onClick={() => {
+                  handleRenameSection(renameSectionTarget.id, renameSectionTarget.name);
+                }}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-white shadow-sm cursor-pointer"
+                style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
+              >
+                Save Name
+              </button>
+              <button
+                type="button"
+                onClick={() => setRenameSectionTarget(null)}
+                className="py-2 px-3 rounded-xl text-xs font-semibold text-gray-400 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Remove Section Header option (preserves lyrics & chords) */}
+            <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+              <button
+                type="button"
+                data-testid="btn-remove-section-header"
+                onClick={() => handleRemoveSectionHeader(renameSectionTarget.id)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition active:scale-95 cursor-pointer hover:border-amber-500/40"
+                style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                  borderColor: 'rgba(245, 158, 11, 0.25)',
+                  color: '#f59e0b',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-rounded text-base">layers_clear</span>
+                  <span>Remove Section Header (Keep Lyrics)</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono opacity-80">Dissolve</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="btn-delete-section-and-lyrics"
+                onClick={() => {
+                  handleDeleteSection(renameSectionTarget.id);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition active:scale-95 cursor-pointer hover:border-rose-500/40"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  borderColor: 'rgba(239, 68, 68, 0.25)',
+                  color: '#ef4444',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-rounded text-base">delete</span>
+                  <span>Delete Section & All Lyrics</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono opacity-80">Delete</span>
+              </button>
+            </div>
+          </div>
+        )}
       </Dialog>
 
       {/* ── DIALOG: PASTE MODAL FALLBACK ─────────────────────────────── */}
