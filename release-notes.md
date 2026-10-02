@@ -1,13 +1,13 @@
-# Version 4.6.79
+# Version 4.6.80
 
 Release Date: 2026-10-02
 
 ### Added
-- Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.
-- Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.
+- Continuous Multiline Document Engine: Transitioned lyrics rendering from single-line text inputs and click-to-edit word fragments to continuous auto-growing textareas, preserving verse layouts and natural stanza breaks.
+- True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.
 
 ### Improved
-- Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).
+- Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.
 
 ### Fixed
-- Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\r\n / \r -> \n) and seamless multiline text insertion at cursor without corrupting underlying section structures.
+- Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.

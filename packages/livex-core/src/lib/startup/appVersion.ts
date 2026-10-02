@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.79';
-export const NATIVE_VERSION_CODE = 40679;
-export const WEB_VERSION = '4.6.79';
+export const NATIVE_VERSION = '4.6.80';
+export const NATIVE_VERSION_CODE = 40680;
+export const WEB_VERSION = '4.6.80';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '51f74191';
+export const APP_COMMIT_SHA = '0739598a';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 4:01:31 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 4:40:54 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,20 +101,20 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
-      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
+      'Continuous Multiline Document Engine: Transitioned lyrics rendering from single-line text inputs and click-to-edit word fragments to continuous auto-growing textareas, preserving verse layouts and natural stanza breaks.',
+      'True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
+      'Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
+      'Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.',
     ],
   },
 ];
@@ -126,6 +126,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.80',
+    date: '2026-10-02',
+    highlights: [
+      'Continuous Multiline Document Engine: Transitioned lyrics rendering from single-line text inputs and click-to-edit word fragments to continuous auto-growing textareas, preserving verse layouts and natural stanza breaks.',
+      'True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.',
+      'Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.',
+      'Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.',
+    ],
+  },
   {
     version: '4.6.79',
     date: '2026-10-02',
@@ -228,17 +238,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Live Topbar Settings De-Cluttering: Removed the redundant tune/preferences button from the top header in favor of primary dock controls in the bottom action bar.',
     ],
   },
-  {
-    version: '4.6.70',
-    date: '2026-09-30',
-    highlights: [
-      "Live Band Stage Teleprompter Sync: Real-time dual-transport synchronization for band members to lock onto the band leader's Live session with sub-100ms cueing, play/pause synchronization, and drift compensation.",
-      'Band & Team Collaboration Hub: Create bands with 6-character join codes, manage member rosters, and share song repertoires with automatic offline caching.',
-      'Live Session Broadcast & Follow Capsules: Integrated live broadcast and synced follower capsules directly into the Live mode top header and Live Settings sheet.',
-      'StageX Topbar Navigation Streamlining: Cleaned up redundant collaboration controls in favor of the canonical Band Hub access point on the Home screen.',
-      'Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
@@ -246,15 +245,15 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
-      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
+      'Continuous Multiline Document Engine: Transitioned lyrics rendering from single-line text inputs and click-to-edit word fragments to continuous auto-growing textareas, preserving verse layouts and natural stanza breaks.',
+      'True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
-      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
+      'Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.',
+      'Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.',
     ],
   },
 ];
@@ -265,15 +264,15 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
     heading: 'Novedades',
     items: [
-      'Formato de Selección Silencioso por Carácter: Política estricta de cero alertas toast para acciones de formato contextual (Negrita, Cursiva, Subrayado, Paleta de Color, Limpiar Formato) con respuesta visual instantánea en el texto.',
-      'Estabilidad Táctil y de Selección: Prevensión onPointerDown en los 10 botones de la barra de formato para evitar pérdida de foco o colapso de la selección nativa en Android WebView.',
+      'Motor de Documento Multilínea Continuo: Transición de inputs de texto de una línea y fragmentos a textareas continuas de crecimiento automático, preservando versos y saltos de estrofa.',
+      'Resaltado de Teleprónter Línea por Línea: Resaltado individual de tarjetas de línea durante la reproducción en vivo, evitando bloques monolíticos de párrafos.',
     ],
   },
   {
     heading: 'Correcciones',
     items: [
-      'Motor de Toast Exclusivo para Acciones Macro: Notificaciones toast reservadas exclusivamente para acciones estructurales del sistema.',
-      'Integridad de Pegado Multilínea: Normalización CRLF (\\r\\n / \\r -> \\n) e inserción multilínea fluida en la posición del cursor sin alterar estructuras de secciones.',
+      'Aplanamiento de Párrafos Eliminado: Solucionada la eliminación de saltos de línea del estándar HTML que fusionaba canciones completas en un solo bloque continuo.',
+      'Navegación Multilínea Nativa: Restaurada la navegación entre líneas con flechas arriba/abajo, borrado al inicio para unir líneas y división con Enter.',
     ],
   },
 ];
@@ -283,15 +282,15 @@ export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
     heading: 'Neu',
     items: [
-      'Lautlose zeichengenaue Textformatierung: Strenge Zero-Toast-Richtlinie für alle Formatierungsaktionen (Fett, Kursiv, Unterstrichen, Farbpalette, Formatierung löschen) mit sofortigem visuellem Feedback.',
-      'Touch- & Auswahl-Stabilität: onPointerDown-Prävention auf allen 10 Symbolleisten-Schaltflächen zur Verhinderung des Auswahlverlusts in Android WebView.',
+      'Kontinuierliche mehrzeilige Dokument-Engine: Übergang von einzeiligen Eingabefeldern zu automatisch wachsenden Textareas, die Strophen und Zeilenumbrüche erhalten.',
+      'Zeilenweises Teleprompter-Highlighting: Isolierte Hervorhebung einzelner Zeilen während der Live-Wiedergabe statt monolithischer Textblöcke.',
     ],
   },
   {
     heading: 'Fehlerbehebungen',
     items: [
-      'Toast-Benachrichtigungen nur für Systemaktionen: Toast-Engine ausschließlich für Makro-Systemaktionen reserviert.',
-      'Mehrzeilige Zwischenablage-Korrektur: CRLF-Normalisierung (\\r\\n / \\r -> \\n) und nahtloses Einfügen an der Cursorposition.',
+      'Absatzverschmelzung behoben: Entfernung von Zeilenumbrüchen durch HTML-Eingabefelder behoben, die Songs zu einem einzigen Textblock zusammengefasst hatten.',
+      'Native mehrzeilige Cursor-Navigation: Wiederherstellung der Navigation mit Pfeiltasten, Zusammenfügen von Zeilen mit der Rücktaste und Teilen mit der Eingabetaste.',
     ],
   },
 ];
