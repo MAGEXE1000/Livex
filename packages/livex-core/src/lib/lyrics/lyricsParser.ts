@@ -77,7 +77,7 @@ export function extractChordsFromLine(chordLine: string): LyricChordPlacement[] 
  * Parse vocal role from section header string
  * E.g. "Verse 1 - Lead", "Chorus — All", "Bridge [Lead + Group]"
  */
-function parseVocalRoleFromHeader(headerText: string): {
+export function parseVocalRoleFromHeader(headerText: string): {
   cleanName: string;
   vocalRole?: VocalRoleAnnotation;
 } {
@@ -121,7 +121,7 @@ function parseVocalRoleFromHeader(headerText: string): {
 /**
  * Detect standard section type from section name
  */
-function detectSectionType(name: string): StandardLyricSectionType {
+export function detectSectionType(name: string): StandardLyricSectionType {
   const lower = name.toLowerCase();
   if (lower.includes('intro')) return 'intro';
   if (lower.includes('verse') || lower.includes('verso') || lower.includes('estrofa')) return 'verse';
@@ -132,6 +132,190 @@ function detectSectionType(name: string): StandardLyricSectionType {
   if (lower.includes('solo')) return 'solo';
   if (lower.includes('interlude') || lower.includes('interludio')) return 'interlude';
   return 'custom';
+}
+
+export interface StructuralLineParseResult {
+  kind: 'section' | 'interlude' | 'none';
+  sectionName?: string;
+  sectionType?: StandardLyricSectionType;
+  vocalRole?: VocalRoleAnnotation;
+  interludeLabel?: string;
+  interludeDurationSec?: number;
+}
+
+/**
+ * Detect if a user-entered line is a structural element (section header or timed interlude)
+ * so it can be transformed immediately into a visual component rather than remaining raw text.
+ */
+export function parseLineStructuralElement(lineText: string): StructuralLineParseResult {
+  const trimmed = lineText.trim();
+  if (!trimmed) return { kind: 'none' };
+
+  // 1. Interlude patterns:
+  // e.g. [Interlude: Solo (15s)], [Solo (20s)], [Interlude (10s)], [Solo], [Interlude], [Guitar Solo]
+  // or Interlude:, Solo:, Guitar Solo:
+  const bracketInterlude = trimmed.match(
+    /^\[(?:Interlude(?::\s*([^(]+?)(?:\s*\((\d+)s?\))?)?|Solo(?:\s*\((\d+)s?\))?|Guitar\s+Solo(?:\s*\((\d+)s?\))?|Piano\s+Solo(?:\s*\((\d+)s?\))?|Instrumental(?:\s*\((\d+)s?\))?)\]$/i
+  );
+  if (bracketInterlude) {
+    const label = (bracketInterlude[1] || 'Solo').trim();
+    const durSec = bracketInterlude[2]
+      ? parseInt(bracketInterlude[2], 10)
+      : bracketInterlude[3]
+      ? parseInt(bracketInterlude[3], 10)
+      : bracketInterlude[4]
+      ? parseInt(bracketInterlude[4], 10)
+      : bracketInterlude[5]
+      ? parseInt(bracketInterlude[5], 10)
+      : bracketInterlude[6]
+      ? parseInt(bracketInterlude[6], 10)
+      : 15;
+    return {
+      kind: 'interlude',
+      interludeLabel: label,
+      interludeDurationSec: isNaN(durSec) ? 15 : durSec,
+    };
+  }
+
+  const colonInterlude = trimmed.match(
+    /^(?:Interlude|Solo|Guitar\s+Solo|Piano\s+Solo|Instrumental):\s*(?:([^(]+?)(?:\s*\((\d+)s?\))?)?$/i
+  );
+  if (colonInterlude) {
+    const label = (colonInterlude[1] || 'Solo').trim();
+    const durSec = colonInterlude[2] ? parseInt(colonInterlude[2], 10) : 15;
+    return {
+      kind: 'interlude',
+      interludeLabel: label,
+      interludeDurationSec: isNaN(durSec) ? 15 : durSec,
+    };
+  }
+
+  // 2. Section Header patterns:
+  // Bracket: [Verse 1], [Chorus - Lead], [Bridge], [Intro], etc.
+  const bracketMatch = trimmed.match(/^\[([^\]]+)\]$/);
+  let rawHeaderContent: string | null = null;
+  if (bracketMatch) {
+    rawHeaderContent = bracketMatch[1].trim();
+  } else {
+    // Colon: Verse 1:, Chorus:, Bridge:, Intro:, Outro:, Pre-Chorus:, etc.
+    const colonMatch = trimmed.match(/^([A-Za-z0-9\s_—–-]+):$/);
+    if (colonMatch) {
+      rawHeaderContent = colonMatch[1].trim();
+    } else {
+      // Standalone keyword check: e.g. "Verse 1", "Verse 2", "Chorus", "Bridge", "Intro", "Outro", "Pre-Chorus", "Verso 1", "Coro"
+      const keywordMatch = trimmed.match(
+        /^(verse(?:\s*\d+)?|chorus(?:\s*\d+)?|bridge(?:\s*\d+)?|intro|outro|pre-?chorus(?:\s*\d+)?|hook|tag|ending|coro(?:\s*\d+)?|verso(?:\s*\d+)?|puente(?:\s*\d+)?|estrofa(?:\s*\d+)?)$/i
+      );
+      if (keywordMatch) {
+        rawHeaderContent = keywordMatch[1].trim();
+      }
+    }
+  }
+
+  if (rawHeaderContent) {
+    const { cleanName, vocalRole } = parseVocalRoleFromHeader(rawHeaderContent);
+    const secType = detectSectionType(cleanName);
+    return {
+      kind: 'section',
+      sectionName: cleanName,
+      sectionType: secType,
+      vocalRole,
+    };
+  }
+
+  return { kind: 'none' };
+}
+
+/**
+ * Normalizes a SongLyricsDocument, converting any raw section headers or
+ * bracketed interludes within line text into proper structured sections and cards.
+ */
+export function normalizeLyricsDocumentStructure(doc: SongLyricsDocument): SongLyricsDocument {
+  if (!doc || !Array.isArray(doc.sections) || doc.sections.length === 0) {
+    return {
+      version: 1,
+      sections: [
+        {
+          id: generateLyricId('sec'),
+          type: 'verse',
+          name: 'Verse 1',
+          lines: [{ id: generateLyricId('line'), text: '' }],
+        },
+      ],
+    };
+  }
+
+  let hasStructuralChanges = false;
+  const newSections: SongLyricSection[] = [];
+
+  for (const section of doc.sections) {
+    let currentSec: SongLyricSection = {
+      ...section,
+      lines: [],
+    };
+    newSections.push(currentSec);
+
+    for (let lIdx = 0; lIdx < section.lines.length; lIdx++) {
+      const line = section.lines[lIdx];
+      if (line.type === 'interlude') {
+        currentSec.lines.push(line);
+        continue;
+      }
+
+      const parseResult = parseLineStructuralElement(line.text);
+      if (parseResult.kind === 'interlude') {
+        hasStructuralChanges = true;
+        currentSec.lines.push({
+          id: line.id || generateLyricId('line'),
+          type: 'interlude',
+          text: parseResult.interludeLabel || 'Solo',
+          explicitDurationMs: (parseResult.interludeDurationSec || 15) * 1000,
+        });
+      } else if (parseResult.kind === 'section') {
+        hasStructuralChanges = true;
+        if (
+          currentSec.lines.length === 0 &&
+          (!currentSec.name || currentSec.name === 'Verse 1' || currentSec.name.trim().length === 0)
+        ) {
+          currentSec.name = parseResult.sectionName || 'Section';
+          currentSec.type = parseResult.sectionType || detectSectionType(currentSec.name);
+          if (parseResult.vocalRole) {
+            currentSec.vocalRole = parseResult.vocalRole;
+          }
+        } else {
+          currentSec = {
+            id: generateLyricId('sec'),
+            name: parseResult.sectionName || 'Section',
+            type: parseResult.sectionType || detectSectionType(parseResult.sectionName || 'Section'),
+            vocalRole: parseResult.vocalRole,
+            lines: [],
+          };
+          newSections.push(currentSec);
+        }
+      } else {
+        currentSec.lines.push(line);
+      }
+    }
+
+    if (currentSec.lines.length === 0) {
+      currentSec.lines.push({ id: generateLyricId('line'), text: '' });
+    }
+  }
+
+  for (const s of newSections) {
+    if (s.lines.length === 0) {
+      s.lines.push({ id: generateLyricId('line'), text: '' });
+    }
+  }
+
+  if (!hasStructuralChanges) {
+    return doc;
+  }
+
+  return {
+    ...doc,
+    sections: newSections,
+  };
 }
 
 /**

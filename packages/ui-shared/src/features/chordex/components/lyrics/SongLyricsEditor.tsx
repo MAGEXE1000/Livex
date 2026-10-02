@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   type SongLyricsDocument,
@@ -18,6 +18,10 @@ import {
   continuousTextToLyricsDocument,
   createEmptyLyricsDocument,
   generateLyricId,
+  parseLineStructuralElement,
+  normalizeLyricsDocumentStructure,
+  parseVocalRoleFromHeader,
+  detectSectionType,
   getCombinedVocalRoles,
   saveCustomVocalRole,
   deleteCustomVocalRole,
@@ -183,7 +187,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 }) => {
   // Local document state initialized from props
   const [localDoc, setLocalDoc] = useState<SongLyricsDocument>(() => {
-    return lyrics && Array.isArray(lyrics.sections) ? lyrics : createEmptyLyricsDocument();
+    const initial = lyrics && Array.isArray(lyrics.sections) ? lyrics : createEmptyLyricsDocument();
+    return normalizeLyricsDocumentStructure(initial);
   });
   const localDocRef = useRef<SongLyricsDocument>(localDoc);
   localDocRef.current = localDoc;
@@ -191,8 +196,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // Keep localDoc in sync when external lyrics prop updates
   useEffect(() => {
     if (lyrics && Array.isArray(lyrics.sections) && lyrics !== localDocRef.current) {
-      setLocalDoc(lyrics);
-      localDocRef.current = lyrics;
+      const normalized = normalizeLyricsDocumentStructure(lyrics);
+      setLocalDoc(normalized);
+      localDocRef.current = normalized;
     }
   }, [lyrics]);
 
@@ -641,6 +647,123 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
+  const handlePromoteLineToSection = useCallback(
+    (
+      sectionId: string,
+      lineIdx: number,
+      parsed: {
+        sectionName?: string;
+        sectionType?: StandardLyricSectionType;
+        vocalRole?: VocalRoleAnnotation;
+      }
+    ) => {
+      let targetFocusLineId = '';
+
+      updateDoc((doc) => {
+        const secIdx = doc.sections.findIndex((s) => s.id === sectionId);
+        if (secIdx === -1) return doc;
+        const currentSec = doc.sections[secIdx];
+        const newSecName = parsed.sectionName || 'Section';
+        const newSecType = parsed.sectionType || detectSectionType(newSecName);
+
+        // Case 1: If current section has <= 1 line and was unnamed or default "Verse 1":
+        // Rename the section and reset the line to an empty line ready for lyrics
+        const isCurrentSecEmptyOrSingle =
+          (!currentSec.name || currentSec.name.trim().length === 0 || currentSec.name === 'Verse 1') &&
+          currentSec.lines.length <= 1;
+
+        if (isCurrentSecEmptyOrSingle) {
+          const freshLineId = generateLyricId('line');
+          targetFocusLineId = freshLineId;
+          const updatedSec: SongLyricSection = {
+            ...currentSec,
+            name: newSecName,
+            type: newSecType,
+            vocalRole: parsed.vocalRole || currentSec.vocalRole,
+            lines: [{ id: freshLineId, text: '' }],
+          };
+          const nextSections = [...doc.sections];
+          nextSections[secIdx] = updatedSec;
+          return { ...doc, sections: nextSections };
+        }
+
+        // Case 2: User is inside an existing section.
+        // We split the current section at lineIdx:
+        // - currentSec keeps lines before lineIdx
+        // - new section gets fresh empty line, plus any lines after lineIdx
+        const linesBefore = currentSec.lines.slice(0, lineIdx);
+        const linesAfter = currentSec.lines.slice(lineIdx + 1);
+        const freshLine: SongLyricLine = { id: generateLyricId('line'), text: '' };
+        targetFocusLineId = freshLine.id;
+
+        const updatedCurrentSec: SongLyricSection = {
+          ...currentSec,
+          lines: linesBefore.length > 0 ? linesBefore : [{ id: generateLyricId('line'), text: '' }],
+        };
+
+        const newSec: SongLyricSection = {
+          id: generateLyricId('sec'),
+          name: newSecName,
+          type: newSecType,
+          vocalRole: parsed.vocalRole,
+          lines: [freshLine, ...linesAfter],
+        };
+
+        const nextSections = [...doc.sections];
+        nextSections.splice(secIdx, 1, updatedCurrentSec, newSec);
+        return { ...doc, sections: nextSections };
+      }, true);
+
+      if (targetFocusLineId) {
+        pendingFocusLineIdRef.current = targetFocusLineId;
+        targetCursorOffsetRef.current = 0;
+      }
+    },
+    [updateDoc]
+  );
+
+  const handlePromoteLineToInterlude = useCallback(
+    (
+      sectionId: string,
+      lineIdx: number,
+      parsed: { interludeLabel?: string; interludeDurationSec?: number }
+    ) => {
+      let targetFocusLineId = '';
+      updateDoc((doc) => {
+        const nextSections = doc.sections.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          const currentLine = sec.lines[lineIdx];
+          if (!currentLine) return sec;
+
+          const interludeLine: SongLyricLine = {
+            id: currentLine.id,
+            type: 'interlude',
+            text: parsed.interludeLabel || 'Solo',
+            explicitDurationMs: (parsed.interludeDurationSec || 15) * 1000,
+          };
+
+          const nextEmptyLine: SongLyricLine = {
+            id: generateLyricId('line'),
+            text: '',
+          };
+          targetFocusLineId = nextEmptyLine.id;
+
+          const lines = [...sec.lines];
+          lines.splice(lineIdx, 1, interludeLine, nextEmptyLine);
+          return { ...sec, lines };
+        });
+
+        return { ...doc, sections: nextSections };
+      }, true);
+
+      if (targetFocusLineId) {
+        pendingFocusLineIdRef.current = targetFocusLineId;
+        targetCursorOffsetRef.current = 0;
+      }
+    },
+    [updateDoc]
+  );
+
   const handleDeleteLine = useCallback(
     (sectionId: string, lineId: string, prevLineIdToFocus?: string) => {
       updateDoc((doc) => ({
@@ -815,73 +938,31 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       lineId: string
     ) => {
       const pastedText = e.clipboardData.getData('text');
-      if (!pastedText || (!pastedText.includes('\n') && !pastedText.includes('\r'))) {
+      if (!pastedText) return;
+
+      const singleParse = parseLineStructuralElement(pastedText.trim());
+      if (singleParse.kind === 'section') {
+        e.preventDefault();
+        handlePromoteLineToSection(sectionId, lineIdx, singleParse);
+        return;
+      }
+      if (singleParse.kind === 'interlude') {
+        e.preventDefault();
+        handlePromoteLineToInterlude(sectionId, lineIdx, singleParse);
+        return;
+      }
+
+      if (!pastedText.includes('\n') && !pastedText.includes('\r')) {
         return;
       }
 
       e.preventDefault();
 
-      if (pastedText.includes('[') && pastedText.includes(']')) {
-        const parsedDoc = continuousTextToLyricsDocument(pastedText, localDocRef.current);
-        updateDoc(() => parsedDoc, true);
-        return;
-      }
-
-      const rawLines = pastedText.split(/\r?\n/).map((l) => l.trimEnd());
-      if (rawLines.length === 0) return;
-
-      const input = e.currentTarget;
-      const start = input.selectionStart ?? input.value.length;
-      const end = input.selectionEnd ?? input.value.length;
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-
-      let lastLineId = '';
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) => {
-          if (sec.id !== sectionId) return sec;
-          const currentLine = sec.lines[lineIdx];
-          if (!currentLine || currentLine.id !== lineId) return sec;
-
-          const newLines: SongLyricLine[] = [];
-
-          const firstLine: SongLyricLine = {
-            ...currentLine,
-            text: before + rawLines[0],
-          };
-          newLines.push(firstLine);
-
-          for (let i = 1; i < rawLines.length - 1; i++) {
-            newLines.push({
-              id: generateLyricId('line'),
-              text: rawLines[i],
-            });
-          }
-
-          if (rawLines.length > 1) {
-            const lastLine: SongLyricLine = {
-              id: generateLyricId('line'),
-              text: rawLines[rawLines.length - 1] + after,
-            };
-            lastLineId = lastLine.id;
-            newLines.push(lastLine);
-          } else {
-            lastLineId = firstLine.id;
-          }
-
-          const lines = [...sec.lines];
-          lines.splice(lineIdx, 1, ...newLines);
-          return { ...sec, lines };
-        }),
-      }), true);
-
-      if (lastLineId) {
-        pendingFocusLineIdRef.current = lastLineId;
-        targetCursorOffsetRef.current = rawLines[rawLines.length - 1]?.length ?? 0;
-      }
+      const parsedDoc = continuousTextToLyricsDocument(pastedText, localDocRef.current);
+      const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
+      updateDoc(() => normalizedDoc, true);
     },
-    [updateDoc]
+    [localDocRef, updateDoc, handlePromoteLineToSection, handlePromoteLineToInterlude]
   );
 
   const handleLineKeyDown = useCallback(
@@ -894,6 +975,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         const target = e.currentTarget;
+        const lineText = target.value;
+        const parseResult = parseLineStructuralElement(lineText);
+
+        if (parseResult.kind === 'section') {
+          handlePromoteLineToSection(sectionId, lineIdx, parseResult);
+          return;
+        }
+
+        if (parseResult.kind === 'interlude') {
+          handlePromoteLineToInterlude(sectionId, lineIdx, parseResult);
+          return;
+        }
+
         const splitPos = target.selectionStart ?? target.value.length;
         handleSplitLine(sectionId, lineIdx, lineId, splitPos);
       } else if (e.key === 'Backspace') {
@@ -942,7 +1036,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         }
       }
     },
-    [currentDoc.sections, handleSplitLine, handleDeleteLine, handleMergeWithPrevious]
+    [currentDoc.sections, handlePromoteLineToSection, handlePromoteLineToInterlude, handleSplitLine, handleDeleteLine, handleMergeWithPrevious]
   );
 
   const handleMoveLine = useCallback(
@@ -1118,7 +1212,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const handleFormatBold = useCallback(() => {
     const sel = activeSelectionRef.current;
     if (!sel) {
-      toast.info('Click or select text in a line first');
+      toast.info('Click or select text first');
       return;
     }
 
@@ -1202,14 +1296,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           sectionId: firstSec.id,
           lineId: firstLine.id,
           offset: 0,
-          wordText: firstLine.text.split(' ')[0] || 'line start',
+          wordText: firstLine.text.split(' ')[0] || 'start',
         });
         setChordSearchQuery('');
         setChordRootFilter('All');
         setChordTypeFilter('all');
         setShowChordPicker(true);
       } else {
-        toast.info('Type a lyric line first to attach chords');
+        toast.info('Type lyrics first to attach chords');
       }
       return;
     }
@@ -1766,44 +1860,61 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               data-testid={`lyric-section-${secIdx}`}
               className="flex flex-col gap-2 relative group/sec"
             >
-              {/* Optional Section Header Strip (Only if section has a name) */}
+              {/* Canonical Section Header Strip */}
               {hasSectionHeader && (
                 <div className="flex items-center justify-between gap-2 pt-3 pb-1">
                   <div className="flex items-center gap-2">
                     <span
-                      className="w-1.5 h-3.5 rounded-full flex-shrink-0"
+                      className="w-1.5 h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: sectionColor }}
                     />
                     <button
                       type="button"
+                      data-testid={`section-rename-btn-${secIdx}`}
                       onClick={() => setRenameSectionTarget({ id: section.id, name: section.name })}
                       className="text-xs font-black uppercase tracking-wider hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1.5"
                       style={{ color: sectionColor }}
                       title="Click to rename section"
                     >
                       <span>{section.name}</span>
-                      <span className="material-symbols-rounded text-xs opacity-40">edit</span>
+                      <Pencil
+                        className="w-3.5 h-3.5 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
+                        strokeWidth={2.2}
+                      />
                     </button>
 
                     {/* Vocal Role Badge */}
-                    <button
-                      type="button"
-                      onClick={() => setRolePickerTarget({ sectionId: section.id })}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95"
-                      style={{
-                        backgroundColor: section.vocalRole
-                          ? `${section.vocalRole.color || '#3b82f6'}22`
-                          : 'rgba(255,255,255,0.04)',
-                        borderColor: section.vocalRole
-                          ? `${section.vocalRole.color || '#3b82f6'}44`
-                          : 'rgba(255,255,255,0.08)',
-                        color: section.vocalRole?.color || 'var(--c-text-muted, #94a3b8)',
-                      }}
-                      title="Assign Vocal Performer Role to Section"
-                    >
-                      <span className="material-symbols-rounded text-[11px]">mic</span>
-                      <span>{section.vocalRole?.label || '+ Role'}</span>
-                    </button>
+                    {section.vocalRole ? (
+                      <button
+                        type="button"
+                        onClick={() => setRolePickerTarget({ sectionId: section.id })}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95"
+                        style={{
+                          backgroundColor: `${section.vocalRole.color || '#3b82f6'}22`,
+                          borderColor: `${section.vocalRole.color || '#3b82f6'}44`,
+                          color: section.vocalRole.color || 'var(--c-text-muted, #94a3b8)',
+                        }}
+                        title="Change Vocal Performer Role"
+                      >
+                        <span className="material-symbols-rounded text-[11px]">mic</span>
+                        <span>{section.vocalRole.label}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setRolePickerTarget({ sectionId: section.id })}
+                        className="opacity-0 group-hover/sec:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.04)',
+                          borderColor: 'rgba(255,255,255,0.08)',
+                          color: 'var(--c-text-muted, #94a3b8)',
+                        }}
+                        title="Assign Vocal Performer Role to Section"
+                      >
+                        <span className="material-symbols-rounded text-[10px]">mic</span>
+                        <span>+ Role</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Section Delete button */}
@@ -2160,13 +2271,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             setLastActivePosition(section.id, lineIdx, line.id);
                             setActiveSelection({ sectionId: section.id, lineId: line.id, start: 0, end: line.text.length, text: line.text });
                           }}
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val.length > 0) {
+                              const parseResult = parseLineStructuralElement(val);
+                              if (parseResult.kind === 'section') {
+                                handlePromoteLineToSection(section.id, lineIdx, parseResult);
+                              } else if (parseResult.kind === 'interlude') {
+                                handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
+                              }
+                            }
+                          }}
                           onChange={(e) => {
                             setLastActivePosition(section.id, lineIdx, line.id);
                             handleUpdateLineText(section.id, line.id, e.target.value);
                           }}
                           onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
                           onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
-                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here... (Enter for new lines)' : ''}
+                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
                           data-testid={`lyric-line-input-${lineIdx}`}
                           className="w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors"
                           style={{
@@ -3039,7 +3161,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 <span className="text-gray-300 truncate">
                   Target:{' '}
                   <strong className="text-blue-400 font-mono">
-                    {chordPickerTarget.wordText ? chordPickerTarget.wordText : 'Line Start'}
+                    {chordPickerTarget.wordText ? chordPickerTarget.wordText : 'Start'}
                   </strong>{' '}
                   <span className="text-gray-500">(offset {chordPickerTarget.offset})</span>
                 </span>
