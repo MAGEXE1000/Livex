@@ -253,7 +253,7 @@ jobs:
           }
 
       - name: Upload Firebase Hosting Metadata Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firebase-public-metadata
           path: firebase-public/
@@ -274,7 +274,7 @@ jobs:
           echo "✓ Signing Verification Stage Passed: Status is VERIFIED_PRODUCTION"
 
       - name: Upload Release Verification Report Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-verification-report
           path: |
@@ -283,7 +283,7 @@ jobs:
           retention-days: 1
 
       - name: Upload Release APK Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk
           path: apps/studio-android/android/app/build/outputs/apk/release/app-release.apk
