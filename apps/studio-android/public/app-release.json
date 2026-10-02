@@ -1,27 +1,26 @@
 {
   "platform": "android",
-  "version": "4.6.75",
-  "versionName": "4.6.75",
-  "versionCode": 40675,
-  "version_code": 40675,
-  "commit": "a8f1f672",
-  "releasedAt": "10/1/2026, 8:59:35 PM CST",
-  "buildTimestamp": "10/1/2026, 8:59:35 PM CST",
+  "version": "4.6.76",
+  "versionName": "4.6.76",
+  "versionCode": 40676,
+  "version_code": 40676,
+  "commit": "d25ce859",
+  "releasedAt": "10/2/2026, 12:09:43 AM CST",
+  "buildTimestamp": "10/2/2026, 12:09:43 AM CST",
   "updateMode": "refresh",
-  "changelog": "• Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.\n• Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.\n• Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.\n• Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.\n• Intrusive Section Header Buttons: Removed cluttered inline \"+ Add Songs\" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.\n• FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.",
-  "whatsNew": "• Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.\n• Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.\n• Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.\n• Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.\n• Intrusive Section Header Buttons: Removed cluttered inline \"+ Add Songs\" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.\n• FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.",
+  "changelog": "• Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.\n• Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.\n• Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.\n• Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.\n• Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.",
+  "whatsNew": "• Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.\n• Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.\n• Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.\n• Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.\n• Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.",
   "releaseNotes": {
     "added": [
-      "Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.",
-      "Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB."
+      "Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.",
+      "Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging."
     ],
     "improved": [
-      "Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.",
-      "Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster."
+      "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
+      "Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface."
     ],
     "fixed": [
-      "Intrusive Section Header Buttons: Removed cluttered inline \"+ Add Songs\" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.",
-      "FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes."
+      "Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data."
     ]
   },
   "mandatory": false

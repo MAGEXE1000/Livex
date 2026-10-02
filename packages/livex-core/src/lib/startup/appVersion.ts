@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.75';
-export const NATIVE_VERSION_CODE = 40675;
-export const WEB_VERSION = '4.6.75';
+export const NATIVE_VERSION = '4.6.76';
+export const NATIVE_VERSION_CODE = 40676;
+export const WEB_VERSION = '4.6.76';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/1/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'a8f1f672';
+export const APP_COMMIT_SHA = 'd25ce859';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/1/2026, 8:59:35 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 12:09:43 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,22 +101,21 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.',
-      'Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.',
+      'Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.',
+      'Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.',
-      'Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.',
+      "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
+      'Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Intrusive Section Header Buttons: Removed cluttered inline "+ Add Songs" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.',
-      'FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.',
+      'Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.',
     ],
   },
 ];
@@ -128,6 +127,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.76',
+    date: '2026-10-01',
+    highlights: [
+      'Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.',
+      'Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.',
+      "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
+      'Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.',
+      'Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.',
+    ],
+  },
   {
     version: '4.6.75',
     date: '2026-10-01',
@@ -232,15 +242,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.',
       'Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.',
       'Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.',
-    ],
-  },
-  {
-    version: '4.6.66',
-    date: '2026-09-30',
-    highlights: [
-      'Butter-Smooth Sliding Letter Lyric Highlight: Implemented GPU compositor text-clip gradient wipe (`@keyframes lyric-word-wipe`) that fluidly glides across letters in lockstep with the precision timeline clock with 0 lag and 120fps hardware acceleration.',
-      'Luminous Accent Bloom on Sung Words: Enhanced active lyrics in both Teleprompter and Both (Hybrid) modes with glowing leading edges and subtle drop-shadow depth.',
-      'Super-Optimized Live Mode Performance: Streamlined chord and lyric state synchronization in LiveModeUI, eliminating redundant recalculations and layout shifts during auto-play and manual word seek.',
     ],
   },
 ];
