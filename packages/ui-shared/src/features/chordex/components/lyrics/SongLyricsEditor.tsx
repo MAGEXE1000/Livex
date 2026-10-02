@@ -27,11 +27,18 @@ import {
   deleteCustomVocalRole,
   applyFormatToSpans,
   toggleBoldOnSelection,
+  toggleItalicOnSelection,
+  toggleUnderlineOnSelection,
+  isSelectionBold,
+  isSelectionItalic,
+  isSelectionUnderline,
   setColorOnSelection,
   setRoleOnSelection,
   clearFormattingOnSelection,
   getCharacterColor,
   getCharacterBold,
+  getCharacterItalic,
+  getCharacterUnderline,
   getCharacterBackgroundColor,
   getCharacterVocalRole,
   getLineSpans,
@@ -534,7 +541,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showChordPalette, setShowChordPalette] = useState(false);
   const [showSectionMorph, setShowSectionMorph] = useState(false);
-  const [showTextMorph, setShowTextMorph] = useState(false);
+  const [showToolbarColorPicker, setShowToolbarColorPicker] = useState(false);
+  const [showToolbarRolePicker, setShowToolbarRolePicker] = useState(false);
   const [renameSectionTarget, setRenameSectionTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Chord Library Modal & Target
@@ -634,6 +642,57 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         )
     );
   }, [currentDoc]);
+
+  const isSelectionCurrentlyBold = useMemo(() => {
+    if (!hasCapturedSelection || !capturedSelectionRef.current) return false;
+    const sel = capturedSelectionRef.current;
+    if (sel.lines.length === 0) return false;
+    for (const l of sel.lines) {
+      const sec = currentDoc.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.bold && !currentDoc.formatting?.bold) return false;
+      } else {
+        if (!getCharacterBold(line.spans, l.start) && !line.format?.bold && !currentDoc.formatting?.bold) return false;
+      }
+    }
+    return true;
+  }, [hasCapturedSelection, currentDoc]);
+
+  const isSelectionCurrentlyItalic = useMemo(() => {
+    if (!hasCapturedSelection || !capturedSelectionRef.current) return false;
+    const sel = capturedSelectionRef.current;
+    if (sel.lines.length === 0) return false;
+    for (const l of sel.lines) {
+      const sec = currentDoc.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.italic) return false;
+      } else {
+        if (!getCharacterItalic(line.spans, l.start) && !line.format?.italic) return false;
+      }
+    }
+    return true;
+  }, [hasCapturedSelection, currentDoc]);
+
+  const isSelectionCurrentlyUnderline = useMemo(() => {
+    if (!hasCapturedSelection || !capturedSelectionRef.current) return false;
+    const sel = capturedSelectionRef.current;
+    if (sel.lines.length === 0) return false;
+    for (const l of sel.lines) {
+      const sec = currentDoc.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.underline) return false;
+      } else {
+        if (!getCharacterUnderline(line.spans, l.start) && !line.format?.underline) return false;
+      }
+    }
+    return true;
+  }, [hasCapturedSelection, currentDoc]);
 
   // Document-wide colors & formatting
   const documentColor = currentDoc.formatting?.defaultColor;
@@ -1540,6 +1599,174 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     toast.success(`Bold ${nextBold ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
   }, [updateDoc]);
 
+  const handleFormatItalic = useCallback(() => {
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) {
+      if (lastActivePositionRef.current) {
+        const pos = lastActivePositionRef.current;
+        updateDoc((doc) => ({
+          ...doc,
+          sections: doc.sections.map((sec) => {
+            if (sec.id !== pos.sectionId) return sec;
+            return {
+              ...sec,
+              lines: sec.lines.map((l) => {
+                if (l.id !== pos.lineId) return l;
+                const currentItalic = Boolean(l.format?.italic);
+                return {
+                  ...l,
+                  format: { ...l.format, italic: !currentItalic },
+                };
+              }),
+            };
+          }),
+        }));
+        toast.success('Line italic toggled');
+        return;
+      }
+      return;
+    }
+
+    const targetLineMap = new Map<string, CapturedSelectionLine>();
+    for (const l of sel.lines) {
+      targetLineMap.set(l.lineId, l);
+    }
+
+    let allItalic = true;
+    for (const l of sel.lines) {
+      const sec = localDocRef.current.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.italic) {
+          allItalic = false;
+          break;
+        }
+      } else {
+        const isPartItalic = getCharacterItalic(line.spans, l.start);
+        if (!isPartItalic && !line.format?.italic) {
+          allItalic = false;
+          break;
+        }
+      }
+    }
+
+    const nextItalic = !allItalic;
+
+    updateDoc((doc) => ({
+      ...doc,
+      sections: doc.sections.map((sec) => {
+        const hasLine = sec.lines.some((l) => targetLineMap.has(l.id));
+        if (!hasLine) return sec;
+
+        return {
+          ...sec,
+          lines: sec.lines.map((l) => {
+            const lineSel = targetLineMap.get(l.id);
+            if (!lineSel) return l;
+
+            if (lineSel.isFullLine || lineSel.start === lineSel.end) {
+              return {
+                ...l,
+                format: { ...l.format, italic: nextItalic },
+              };
+            }
+
+            const nextSpans = toggleItalicOnSelection(l.spans, l.text, lineSel.start, lineSel.end);
+            return { ...l, spans: nextSpans };
+          }),
+        };
+      }),
+    }));
+
+    const count = sel.lines.length;
+    toast.success(`Italic ${nextItalic ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
+  }, [updateDoc]);
+
+  const handleFormatUnderline = useCallback(() => {
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) {
+      if (lastActivePositionRef.current) {
+        const pos = lastActivePositionRef.current;
+        updateDoc((doc) => ({
+          ...doc,
+          sections: doc.sections.map((sec) => {
+            if (sec.id !== pos.sectionId) return sec;
+            return {
+              ...sec,
+              lines: sec.lines.map((l) => {
+                if (l.id !== pos.lineId) return l;
+                const currentUnderline = Boolean(l.format?.underline);
+                return {
+                  ...l,
+                  format: { ...l.format, underline: !currentUnderline },
+                };
+              }),
+            };
+          }),
+        }));
+        toast.success('Line underline toggled');
+        return;
+      }
+      return;
+    }
+
+    const targetLineMap = new Map<string, CapturedSelectionLine>();
+    for (const l of sel.lines) {
+      targetLineMap.set(l.lineId, l);
+    }
+
+    let allUnderline = true;
+    for (const l of sel.lines) {
+      const sec = localDocRef.current.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.underline) {
+          allUnderline = false;
+          break;
+        }
+      } else {
+        const isPartUnderline = getCharacterUnderline(line.spans, l.start);
+        if (!isPartUnderline && !line.format?.underline) {
+          allUnderline = false;
+          break;
+        }
+      }
+    }
+
+    const nextUnderline = !allUnderline;
+
+    updateDoc((doc) => ({
+      ...doc,
+      sections: doc.sections.map((sec) => {
+        const hasLine = sec.lines.some((l) => targetLineMap.has(l.id));
+        if (!hasLine) return sec;
+
+        return {
+          ...sec,
+          lines: sec.lines.map((l) => {
+            const lineSel = targetLineMap.get(l.id);
+            if (!lineSel) return l;
+
+            if (lineSel.isFullLine || lineSel.start === lineSel.end) {
+              return {
+                ...l,
+                format: { ...l.format, underline: nextUnderline },
+              };
+            }
+
+            const nextSpans = toggleUnderlineOnSelection(l.spans, l.text, lineSel.start, lineSel.end);
+            return { ...l, spans: nextSpans };
+          }),
+        };
+      }),
+    }));
+
+    const count = sel.lines.length;
+    toast.success(`Underline ${nextUnderline ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
+  }, [updateDoc]);
+
   const handleFormatColor = useCallback(
     (color: string) => {
       const sel = capturedSelectionRef.current;
@@ -2197,7 +2424,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     }));
     setRolePickerTarget(null);
     setShowFormattingModal(false);
-    setShowTextMorph(false);
     toast.success('All vocal roles cleared');
   }, [updateDoc]);
 
@@ -3201,6 +3427,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             const wordBgColor = getCharacterBackgroundColor(line.spans, w.start);
                             const wordRole = getCharacterVocalRole(line.spans, w.start);
                             const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
+                            const isWordItalic = getCharacterItalic(line.spans, w.start) || Boolean(line.format?.italic);
+                            const isWordUnderline = getCharacterUnderline(line.spans, w.start) || Boolean(line.format?.underline);
                             const isHighlighted = Boolean(wordBgColor || wordRole);
                             const effectiveWordColor = wordRole?.color || wordColor;
 
@@ -3212,6 +3440,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 style={{
                                   color: effectiveWordColor,
                                   fontWeight: isWordBold || isHighlighted ? 700 : 500,
+                                  fontStyle: isWordItalic ? 'italic' : undefined,
+                                  textDecoration: isWordUnderline ? 'underline' : undefined,
                                   fontFamily: 'inherit',
                                   backgroundColor: wordRole?.color ? `${wordRole.color}28` : (wordBgColor || undefined),
                                   borderRadius: isHighlighted ? '4px' : undefined,
@@ -3358,6 +3588,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         const wordBgColor = getCharacterBackgroundColor(line.spans, w.start);
                         const wordRole = getCharacterVocalRole(line.spans, w.start);
                         const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
+                        const isWordItalic = getCharacterItalic(line.spans, w.start) || Boolean(line.format?.italic);
+                        const isWordUnderline = getCharacterUnderline(line.spans, w.start) || Boolean(line.format?.underline);
                         const isHighlighted = Boolean(wordBgColor || wordRole);
                         const effectiveWordColor = wordRole?.color || wordColor;
 
@@ -3426,6 +3658,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               style={{
                                 color: effectiveWordColor,
                                 fontWeight: isWordBold || isHighlighted ? 800 : 500,
+                                fontStyle: isWordItalic ? 'italic' : undefined,
+                                textDecoration: isWordUnderline ? 'underline' : undefined,
                                 fontFamily: 'inherit',
                                 backgroundColor: wordRole?.color ? `${wordRole.color}28` : (wordBgColor || undefined),
                                 borderRadius: isHighlighted ? '4px' : undefined,
@@ -3562,16 +3796,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     sublabel: 'Timed silence / solo (e.g. 15s)',
                     onPress: () => {
                       handleAddInterludeLine(lastActivePositionRef.current?.sectionId, lastActivePositionRef.current?.lineIndex);
-                    },
-                  },
-                  {
-                    id: 'action-styling',
-                    label: 'Text Presentation',
-                    icon: 'palette',
-                    sublabel: 'Colors, bold, vocal roles',
-                    onPress: () => {
-                      captureSelection();
-                      setShowTextMorph(true);
                     },
                   },
                 ]}
@@ -3728,171 +3952,322 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           ]}
         />
 
-        {/* ── Morphing Text Formatting & Color Surface ── */}
-        <MorphingActionSurface
-          isOpen={showTextMorph}
-          onOpenChange={setShowTextMorph}
-          placement="center"
-          maxWidth={310}
-          title="Text & Colors"
-          accentColor={accent.from}
-        >
-          {({ close }) => {
-            const sel = capturedSelectionRef.current;
-            const lineCount = sel?.lines.length || 0;
-            return (
-              <div className="flex flex-col gap-3 py-1 text-xs">
-                {/* Selection status indicator */}
-                {lineCount > 0 ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-medium text-[11px]">
-                    <span className="material-symbols-rounded text-sm">check_circle</span>
-                    <span>{lineCount === 1 ? '1 line selected' : `${lineCount} lines selected`}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-400 font-medium text-[11px]">
-                    <span className="material-symbols-rounded text-sm">info</span>
-                    <span>No text selected (actions will apply to current line)</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                  <span className="font-bold text-gray-300">Text Formatting</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleFormatBold();
-                      }}
-                      className="px-2.5 py-1 rounded-lg border font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
-                      style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                        borderColor: 'rgba(255, 255, 255, 0.15)',
-                        color: 'var(--c-text-primary, #ffffff)',
-                      }}
-                    >
-                      <span className="font-black">B</span>
-                      <span>Toggle Bold</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleResetFormatting();
-                        close();
-                      }}
-                      className="px-2 py-1 rounded-lg border font-medium flex items-center gap-1 transition active:scale-95 text-gray-300 hover:text-white cursor-pointer"
-                      style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                      }}
-                      title="Reset bold and color formatting"
-                    >
-                      <span className="material-symbols-rounded text-sm">format_clear</span>
-                      <span>Reset</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <span className="font-semibold text-gray-400">Color Palette</span>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {COLOR_PALETTE.map((c) => (
-                      <button
-                        key={c.label}
-                        type="button"
-                        onClick={() => {
-                          const newColor = c.value || '';
-                          handleFormatColor(newColor);
-                          close();
-                        }}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-90 cursor-pointer hover:scale-105"
-                        style={{
-                          backgroundColor: c.value || 'transparent',
-                          borderColor: isEffectiveLight
-                            ? 'rgba(0,0,0,0.15)'
-                            : 'rgba(255,255,255,0.2)',
-                        }}
-                        title={c.label}
-                      >
-                        {!c.value && (
-                          <span className="material-symbols-rounded text-xs text-gray-400">format_color_reset</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-white/10 flex flex-col gap-1.5">
+        {/* ── CANVA-STYLE HORIZONTAL CONTEXTUAL FORMATTING TOOLBAR ── */}
+        {typeof document !== 'undefined' &&
+          createPortal(
+            <AnimatePresence>
+              {hasCapturedSelection && (
+                <motion.div
+                  key="canva-formatting-toolbar"
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 16, scale: 0.95 }}
+                  transition={{ type: 'spring', damping: 28, stiffness: 420 }}
+                  data-testid="canva-formatting-toolbar"
+                  className="fixed z-50 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1.5 rounded-full border shadow-2xl select-none"
+                  style={{
+                    bottom:
+                      'calc(var(--bottom-nav-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
+                    backgroundColor: isEffectiveLight
+                      ? 'rgba(255, 255, 255, 0.95)'
+                      : isEffectiveAmoled
+                      ? 'rgba(10, 10, 10, 0.96)'
+                      : 'rgba(20, 24, 33, 0.95)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    borderColor: isEffectiveLight
+                      ? 'rgba(0, 0, 0, 0.12)'
+                      : 'rgba(255, 255, 255, 0.16)',
+                    boxShadow: isEffectiveLight
+                      ? '0 12px 32px -4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0,0,0,0.08)'
+                      : '0 16px 40px -6px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255,255,255,0.06)',
+                    height: '46px',
+                    maxWidth: '94vw',
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Bold Button */}
                   <button
                     type="button"
+                    data-testid="toolbar-bold-btn"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
-                      close();
-                      const currentSel = capturedSelectionRef.current;
-                      if (currentSel && currentSel.lines.length > 0) {
-                        const lineIds = currentSel.lines.map((l) => l.lineId);
-                        setRolePickerTarget({
-                          sectionId: currentSel.lines[0].sectionId,
-                          lineId: currentSel.lines[0].lineId,
-                          lineIds,
-                          sectionIds: currentSel.sectionIds,
-                        });
-                      } else if (currentDoc.sections.length > 0) {
-                        setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
-                      }
+                      handleFormatBold();
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all active:scale-90 cursor-pointer ${
+                      isSelectionCurrentlyBold
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isEffectiveLight
+                        ? 'text-slate-800 hover:bg-black/5'
+                        : 'text-slate-200 hover:bg-white/10'
+                    }`}
+                    title="Bold"
+                    aria-label="Bold"
+                  >
+                    <span>B</span>
+                  </button>
+
+                  {/* Italic Button */}
+                  <button
+                    type="button"
+                    data-testid="toolbar-italic-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      handleFormatItalic();
+                    }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-serif italic font-bold transition-all active:scale-90 cursor-pointer ${
+                      isSelectionCurrentlyItalic
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isEffectiveLight
+                        ? 'text-slate-800 hover:bg-black/5'
+                        : 'text-slate-200 hover:bg-white/10'
+                    }`}
+                    title="Italic"
+                    aria-label="Italic"
+                  >
+                    <span>I</span>
+                  </button>
+
+                  {/* Underline Button */}
+                  <button
+                    type="button"
+                    data-testid="toolbar-underline-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      handleFormatUnderline();
+                    }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm underline font-bold transition-all active:scale-90 cursor-pointer ${
+                      isSelectionCurrentlyUnderline
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isEffectiveLight
+                        ? 'text-slate-800 hover:bg-black/5'
+                        : 'text-slate-200 hover:bg-white/10'
+                    }`}
+                    title="Underline"
+                    aria-label="Underline"
+                  >
+                    <span>U</span>
+                  </button>
+
+                  {/* Subtle vertical separator */}
+                  <div
+                    className="w-px h-5 mx-0.5"
                     style={{
-                      backgroundColor: `${accent.from}15`,
-                      borderColor: `${accent.from}35`,
-                      color: accent.from,
+                      backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)',
                     }}
-                  >
-                    <span className="material-symbols-rounded text-sm">mic</span>
-                    <span>Assign Vocal Roles...</span>
-                  </button>
+                  />
 
-                  {hasAnyVocalRoles && (
+                  {/* Color Palette Picker & Compact Popover */}
+                  <div className="relative">
                     <button
                       type="button"
-                      data-testid="fab-clear-all-roles-btn"
+                      data-testid="toolbar-color-btn"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
-                        close();
-                        handleClearAllRoles();
+                        setShowToolbarColorPicker((prev) => !prev);
+                        setShowToolbarRolePicker(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-rose-400 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 transition active:scale-95 cursor-pointer"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                        showToolbarColorPicker
+                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40'
+                          : isEffectiveLight
+                          ? 'text-slate-800 hover:bg-black/5'
+                          : 'text-slate-200 hover:bg-white/10'
+                      }`}
+                      title="Color Palette"
+                      aria-label="Color Palette"
                     >
-                      <span className="material-symbols-rounded text-sm">delete_sweep</span>
-                      <span>Clear All Vocal Roles</span>
+                      <span className="material-symbols-rounded text-lg">palette</span>
                     </button>
-                  )}
 
+                    <AnimatePresence>
+                      {showToolbarColorPicker && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          data-testid="toolbar-color-popover"
+                          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 p-2 rounded-2xl border shadow-xl backdrop-blur-xl flex flex-col gap-1.5 z-50 min-w-[200px]"
+                          style={{
+                            backgroundColor: isEffectiveLight
+                              ? 'rgba(255, 255, 255, 0.96)'
+                              : isEffectiveAmoled
+                              ? 'rgba(12, 12, 12, 0.98)'
+                              : 'rgba(22, 27, 34, 0.96)',
+                            borderColor: isEffectiveLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.15)',
+                          }}
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                            Color Palette
+                          </span>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {COLOR_PALETTE.map((c) => (
+                              <button
+                                key={c.label}
+                                type="button"
+                                data-testid={`toolbar-color-swatch-${c.label.toLowerCase().replace(/\s+/g, '-')}`}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  handleFormatColor(c.value || '');
+                                  setShowToolbarColorPicker(false);
+                                }}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center border transition-all active:scale-90 cursor-pointer hover:scale-105"
+                                style={{
+                                  backgroundColor: c.value || 'transparent',
+                                  borderColor: isEffectiveLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)',
+                                }}
+                                title={c.label}
+                              >
+                                {!c.value && (
+                                  <span className="material-symbols-rounded text-xs text-slate-400">format_color_reset</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Vocal Role Picker & Compact Popover */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      data-testid="toolbar-vocal-role-btn"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setShowToolbarRolePicker((prev) => !prev);
+                        setShowToolbarColorPicker(false);
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                        showToolbarRolePicker
+                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40'
+                          : isEffectiveLight
+                          ? 'text-slate-800 hover:bg-black/5'
+                          : 'text-slate-200 hover:bg-white/10'
+                      }`}
+                      title="Assign Vocal Role"
+                      aria-label="Assign Vocal Role"
+                    >
+                      <span className="material-symbols-rounded text-lg">mic</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {showToolbarRolePicker && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          data-testid="toolbar-role-popover"
+                          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 p-2 rounded-2xl border shadow-xl backdrop-blur-xl flex flex-col gap-1 z-50 min-w-[170px]"
+                          style={{
+                            backgroundColor: isEffectiveLight
+                              ? 'rgba(255, 255, 255, 0.96)'
+                              : isEffectiveAmoled
+                              ? 'rgba(12, 12, 12, 0.98)'
+                              : 'rgba(22, 27, 34, 0.96)',
+                            borderColor: isEffectiveLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.15)',
+                          }}
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                            Vocal Roles
+                          </span>
+                          <div className="flex flex-col gap-1 max-h-48 overflow-y-auto no-scrollbar py-0.5">
+                            {defaultVocalRoles.map((role) => (
+                              <button
+                                key={role.type}
+                                type="button"
+                                data-testid={`toolbar-role-option-${role.type}`}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  handleAssignRole(role);
+                                  setShowToolbarRolePicker(false);
+                                }}
+                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
+                                style={{
+                                  backgroundColor: `${role.color || '#3b82f6'}18`,
+                                  borderColor: `${role.color || '#3b82f6'}33`,
+                                  color: role.color || '#3b82f6',
+                                }}
+                              >
+                                <span
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: role.color }}
+                                />
+                                <span>{role.label || role.type}</span>
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              data-testid="toolbar-role-clear-btn"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                handleAssignRole(undefined);
+                                setShowToolbarRolePicker(false);
+                              }}
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-semibold text-rose-400 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 cursor-pointer"
+                            >
+                              <span className="material-symbols-rounded text-sm">block</span>
+                              <span>Clear Role</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Reset Formatting Button */}
                   <button
                     type="button"
+                    data-testid="toolbar-reset-formatting-btn"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
-                      close();
-                      handlePasteLyricsFromClipboard();
+                      handleResetFormatting();
+                      setShowToolbarColorPicker(false);
+                      setShowToolbarRolePicker(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                      isEffectiveLight
+                        ? 'text-slate-600 hover:bg-black/5 hover:text-slate-900'
+                        : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                    title="Clear formatting on selection"
+                    aria-label="Clear formatting"
                   >
-                    <span className="material-symbols-rounded text-sm">content_paste</span>
-                    <span>Paste Lyrics</span>
+                    <span className="material-symbols-rounded text-lg">format_clear</span>
                   </button>
 
+                  {/* Dismiss Selection Button */}
                   <button
                     type="button"
+                    data-testid="toolbar-close-btn"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
-                      close();
-                      handleCopyLyricsToClipboard();
+                      if (typeof window !== 'undefined') {
+                        window.getSelection()?.removeAllRanges();
+                      }
+                      setHasCapturedSelection(false);
+                      capturedSelectionRef.current = null;
+                      setShowToolbarColorPicker(false);
+                      setShowToolbarRolePicker(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ml-0.5 ${
+                      isEffectiveLight
+                        ? 'text-slate-400 hover:bg-black/5 hover:text-slate-700'
+                        : 'text-slate-500 hover:bg-white/10 hover:text-slate-300'
+                    }`}
+                    title="Dismiss selection"
+                    aria-label="Close"
                   >
-                    <span className="material-symbols-rounded text-sm">content_copy</span>
-                    <span>Copy Lyrics & Chords</span>
+                    <span className="material-symbols-rounded text-base">close</span>
                   </button>
-                </div>
-              </div>
-            );
-          }}
-        </MorphingActionSurface>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            document.body
+          )}
       </main>
 
       {/* ── DIALOG: REPOSITION / REPLACE / REMOVE CHORD ── */}

@@ -850,6 +850,8 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                               boxShadow: 'none',
                               color: lineTextColor,
                               fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
+                              fontStyle: line.format?.italic ? 'italic' : undefined,
+                              textDecoration: line.format?.underline ? 'underline' : undefined,
                               fontSize: `${fontSize}px`,
                               fontFamily: 'inherit',
                             }}

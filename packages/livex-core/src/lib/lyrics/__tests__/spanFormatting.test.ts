@@ -5,9 +5,14 @@ import {
   clearFormattingOnSelection,
   getCharacterColor,
   getCharacterBold,
+  getCharacterItalic,
+  getCharacterUnderline,
   getCharacterBackgroundColor,
   getCharacterVocalRole,
   toggleBoldOnSelection,
+  toggleItalicOnSelection,
+  toggleUnderlineOnSelection,
+  setColorOnSelection,
 } from '../spanFormatting';
 import type { VocalRoleAnnotation } from '../../../types/lyrics';
 
@@ -66,6 +71,26 @@ describe('Span Formatting and Word-Level Vocal Role Highlighting', () => {
     expect(getCharacterVocalRole(spans, 11)).toEqual(harmonyRole);
   });
 
+  it('allows toggling italic and underline independently on selected characters', () => {
+    const text = 'Format styled text nicely';
+    // Make "styled" italic (indices 7 to 13)
+    let spans = toggleItalicOnSelection(undefined, text, 7, 13);
+    expect(getCharacterItalic(spans, 8)).toBe(true);
+    expect(getCharacterUnderline(spans, 8)).toBe(false);
+
+    // Make "styled text" underlined (indices 7 to 18)
+    spans = toggleUnderlineOnSelection(spans, text, 7, 18);
+    expect(getCharacterItalic(spans, 8)).toBe(true);
+    expect(getCharacterUnderline(spans, 8)).toBe(true);
+    expect(getCharacterItalic(spans, 15)).toBe(false);
+    expect(getCharacterUnderline(spans, 15)).toBe(true);
+
+    // Apply custom color to "text" (indices 14 to 18)
+    spans = setColorOnSelection(spans, text, 14, 18, '#38bdf8');
+    expect(getCharacterColor(spans, 15)).toBe('#38bdf8');
+    expect(getCharacterUnderline(spans, 15)).toBe(true);
+  });
+
   it('clears formatting only on the specified selection', () => {
     const text = 'Keep this part highlighted and clear this';
     let spans = setRoleOnSelection(undefined, text, 0, text.length, harmonyRole);
@@ -78,3 +103,4 @@ describe('Span Formatting and Word-Level Vocal Role Highlighting', () => {
     expect(getCharacterBackgroundColor(spans, 35)).toBeUndefined();
   });
 });
+

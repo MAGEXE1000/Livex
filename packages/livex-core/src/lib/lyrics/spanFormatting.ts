@@ -197,6 +197,98 @@ export function toggleBoldOnSelection(
 }
 
 /**
+ * Checks whether the entire selection [startOffset, endOffset] is currently italic.
+ */
+export function isSelectionItalic(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number
+): boolean {
+  const safeStart = Math.max(0, Math.min(startOffset, endOffset));
+  const safeEnd = Math.min(fullText.length, Math.max(startOffset, endOffset));
+
+  if (safeStart === safeEnd) return false;
+
+  const currentSpans = spans && spans.length > 0 ? spans : [{ text: fullText }];
+  let currentOffset = 0;
+  let hasAnySelected = false;
+
+  for (const span of currentSpans) {
+    const spanEnd = currentOffset + span.text.length;
+
+    if (spanEnd > safeStart && currentOffset < safeEnd) {
+      hasAnySelected = true;
+      if (!span.format?.italic) {
+        return false;
+      }
+    }
+    currentOffset = spanEnd;
+  }
+
+  return hasAnySelected;
+}
+
+/**
+ * Toggles italic formatting on the selected range.
+ */
+export function toggleItalicOnSelection(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number
+): LyricTextSpan[] {
+  const currentlyItalic = isSelectionItalic(spans, fullText, startOffset, endOffset);
+  return applyFormatToSpans(spans, fullText, startOffset, endOffset, { italic: !currentlyItalic });
+}
+
+/**
+ * Checks whether the entire selection [startOffset, endOffset] is currently underlined.
+ */
+export function isSelectionUnderline(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number
+): boolean {
+  const safeStart = Math.max(0, Math.min(startOffset, endOffset));
+  const safeEnd = Math.min(fullText.length, Math.max(startOffset, endOffset));
+
+  if (safeStart === safeEnd) return false;
+
+  const currentSpans = spans && spans.length > 0 ? spans : [{ text: fullText }];
+  let currentOffset = 0;
+  let hasAnySelected = false;
+
+  for (const span of currentSpans) {
+    const spanEnd = currentOffset + span.text.length;
+
+    if (spanEnd > safeStart && currentOffset < safeEnd) {
+      hasAnySelected = true;
+      if (!span.format?.underline) {
+        return false;
+      }
+    }
+    currentOffset = spanEnd;
+  }
+
+  return hasAnySelected;
+}
+
+/**
+ * Toggles underline formatting on the selected range.
+ */
+export function toggleUnderlineOnSelection(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number
+): LyricTextSpan[] {
+  const currentlyUnderline = isSelectionUnderline(spans, fullText, startOffset, endOffset);
+  return applyFormatToSpans(spans, fullText, startOffset, endOffset, { underline: !currentlyUnderline });
+}
+
+/**
  * Sets color formatting on the selected range.
  */
 export function setColorOnSelection(
@@ -206,7 +298,7 @@ export function setColorOnSelection(
   endOffset: number,
   color: string
 ): LyricTextSpan[] {
-  return applyFormatToSpans(spans, fullText, startOffset, endOffset, { color });
+  return applyFormatToSpans(spans, fullText, startOffset, endOffset, { color: color || undefined });
 }
 
 /**
@@ -241,6 +333,44 @@ export function getCharacterBold(
     const end = offset + s.text.length;
     if (charOffset >= offset && charOffset < end) {
       return Boolean(s.format?.bold);
+    }
+    offset = end;
+  }
+  return false;
+}
+
+/**
+ * Checks if the character at the specified character offset is italic.
+ */
+export function getCharacterItalic(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): boolean {
+  if (!spans || spans.length === 0) return false;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return Boolean(s.format?.italic);
+    }
+    offset = end;
+  }
+  return false;
+}
+
+/**
+ * Checks if the character at the specified character offset is underlined.
+ */
+export function getCharacterUnderline(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): boolean {
+  if (!spans || spans.length === 0) return false;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return Boolean(s.format?.underline);
     }
     offset = end;
   }
