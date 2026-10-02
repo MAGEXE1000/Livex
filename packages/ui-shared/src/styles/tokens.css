@@ -1098,19 +1098,30 @@ html[data-perf-mode='on'] *::after {
   }
 
   /* ===== Keyboard Accessible Focus-Visible Indicator ===== */
-  :focus-visible {
+  :focus-visible:not(.no-focus-ring):not([data-no-focus-ring]) {
     outline: 2px solid var(--c-accent-from, #2563eb);
     outline-offset: 2px;
   }
 
-  button:focus-visible,
-  [role="button"]:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
+  button:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
+  [role="button"]:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
+  a:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
+  input:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
+  select:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
+  textarea:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]) {
     outline: 2px solid var(--c-accent-from, #2563eb);
     outline-offset: 2px;
+  }
+
+  .no-focus-ring,
+  .no-focus-ring:focus,
+  .no-focus-ring:focus-visible,
+  [data-no-focus-ring],
+  [data-no-focus-ring]:focus,
+  [data-no-focus-ring]:focus-visible {
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
   }
 
   /* ===== Card hover ===== */

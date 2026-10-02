@@ -2012,6 +2012,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             <input
                               type="text"
                               value={line.text}
+                              data-no-focus-ring="true"
                               onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
                               onChange={(e) => {
                                 setLastActivePosition(section.id, lineIdx, line.id);
@@ -2020,10 +2021,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               placeholder="Label (e.g. Solo)"
                               aria-label="Interlude event label"
                               data-testid={`interlude-label-input-${lineIdx}`}
-                              className="bg-transparent border-0 border-b outline-none text-xs sm:text-sm font-bold pb-0.5 min-w-[50px] max-w-[110px] sm:max-w-[180px] transition-colors truncate"
+                              className="no-focus-ring bg-transparent border-0 border-b outline-none text-xs sm:text-sm font-bold pb-0.5 min-w-[50px] max-w-[110px] sm:max-w-[180px] transition-colors truncate focus:outline-none focus:ring-0 focus-visible:outline-none"
                               style={{
                                 color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
                                 borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
+                                outline: 'none',
+                                outlineOffset: 0,
+                                boxShadow: 'none',
                               }}
                             />
                           </div>
@@ -2162,6 +2166,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               min={1}
                               max={600}
                               value={durSec}
+                              data-no-focus-ring="true"
                               aria-label="Interlude duration in seconds"
                               data-testid={`interlude-dur-input-${lineIdx}`}
                               onFocus={() => setLastActivePosition(section.id, lineIdx, line.id)}
@@ -2172,11 +2177,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   handleUpdateInterludeDuration(section.id, line.id, sec);
                                 }
                               }}
-                              className="rounded-md px-1.5 py-0.5 text-xs font-mono font-bold w-11 outline-none text-center shadow-xs transition-colors"
+                              className="no-focus-ring rounded-md px-1.5 py-0.5 text-xs font-mono font-bold w-11 outline-none text-center shadow-xs transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none"
                               style={{
                                 backgroundColor: isEffectiveLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
                                 border: isEffectiveLight ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid rgba(255, 255, 255, 0.16)',
                                 color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                                outline: 'none',
+                                outlineOffset: 0,
+                                boxShadow: 'none',
                               }}
                             />
 
@@ -2290,12 +2298,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
                           placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
                           data-testid={`lyric-line-input-${lineIdx}`}
-                          className="w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors"
+                          data-no-focus-ring="true"
+                          className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
                           style={{
                             color: resolvedColor,
                             fontWeight: isLineBold ? 700 : 500,
                             fontFamily: 'inherit',
                             caretColor: accent.from || '#2563EB',
+                            outline: 'none',
+                            outlineOffset: 0,
+                            border: 'none',
+                            boxShadow: 'none',
+                            WebkitTapHighlightColor: 'transparent',
                           }}
                           autoCapitalize="sentences"
                           autoCorrect="on"
