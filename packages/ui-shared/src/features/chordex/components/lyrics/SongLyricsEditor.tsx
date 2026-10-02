@@ -2247,8 +2247,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <div
               className="fixed z-50 pointer-events-auto"
               style={{
-                bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-                right: '20px',
+                bottom:
+                  'calc(var(--bottom-nav-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+                right: '16px',
               }}
               data-purpose={mode === 'lyrics' ? 'lyrics-action-menu' : 'both-action-menu'}
             >
@@ -2266,12 +2267,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     data-action="add-actions"
                     className="rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-all select-none"
                     style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      background: '#0a0a0c',
-                      border: '1px solid rgba(255, 255, 255, 0.20)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.55)',
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '9999px',
+                      background: 'rgba(18, 18, 18, 0.85)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
                       color: '#ffffff',
                     }}
                     type="button"

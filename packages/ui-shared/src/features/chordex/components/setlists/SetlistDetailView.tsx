@@ -329,36 +329,15 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
         onBack={onBack}
         backBtnTestId="setlist-detail-back-btn"
         toolbarActions={
-          stats.totalSongs > 0 ? (
+          <div className="flex items-center gap-1">
             <motion.button
               whileTap={{ scale: 0.92 }}
               type="button"
-              data-testid="setlist-start-live-btn"
-              onClick={() => onPlayLiveSetlist(setlist, 0)}
-              title="Start live setlist rehearsal"
-              aria-label="Start live rehearsal"
-              className="w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md shrink-0 active:scale-95"
-              style={{
-                backgroundColor: 'var(--c-accent-from, #2563EB)',
-                color: '#FFFFFF',
-                boxShadow: '0 3px 12px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
-              }}
-            >
-              <span
-                className="material-symbols-rounded text-[22px]"
-                style={{ fontVariationSettings: "'FILL' 1", marginLeft: '2px' }}
-              >
-                play_arrow
-              </span>
-            </motion.button>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              type="button"
+              data-testid="setlist-edit-info-btn"
               onClick={() => setShowEditInfoModal(true)}
               title="Edit setlist info"
               aria-label="Edit setlist info"
-              className="w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0"
+              className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -367,9 +346,33 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
             >
               <span className="material-symbols-rounded text-[20px]">edit</span>
             </motion.button>
-          )
+
+            {stats.totalSongs > 0 && (
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                type="button"
+                data-testid="setlist-start-live-btn"
+                onClick={() => onPlayLiveSetlist(setlist, 0)}
+                title="Start live setlist rehearsal"
+                aria-label="Start live rehearsal"
+                className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: isLight ? '#000000' : '#FFFFFF',
+                }}
+              >
+                <span
+                  className="material-symbols-rounded text-[22px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  play_arrow
+                </span>
+              </motion.button>
+            )}
+          </div>
         }
-        sideClearance={52}
+        sideClearance={stats.totalSongs > 0 ? 80 : 52}
       />
 
       {/* Main Content Area */}
@@ -507,21 +510,6 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
 
                     {/* Section Controls */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSongPicker(section.id)}
-                        data-testid={`add-songs-sec-${section.id}`}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${accentColor} 15%, transparent)`,
-                          color: accentColor,
-                          border: `1px solid color-mix(in srgb, ${accentColor} 30%, transparent)`,
-                        }}
-                      >
-                        <span className="material-symbols-rounded text-sm">add</span>
-                        <span>Add Songs</span>
-                      </button>
-
                       <button
                         type="button"
                         onClick={() => {
@@ -759,6 +747,55 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
           </div>
         </Dialog>
       )}
+
+      {/* Floating Action Button (Universal Black FAB) */}
+      <aside
+        className="fixed pointer-events-auto select-none"
+        style={{
+          bottom:
+            'calc(var(--bottom-nav-height, 64px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+          right: '16px',
+          zIndex: 60,
+        }}
+        data-purpose="setlist-action-button"
+      >
+        <motion.button
+          whileTap={{ scale: 0.90 }}
+          type="button"
+          data-testid="setlist-fab-add-songs"
+          aria-label="Add Songs to Setlist"
+          title="Add Songs to Setlist"
+          onClick={() => {
+            if (!setlist.sections || setlist.sections.length === 0) {
+              addSectionToSetlist(setlist.id, 'Set 1');
+              setTimeout(() => {
+                const currentStore = useChordStore.getState();
+                const currentSetlist = (currentStore.setlists || []).find((st) => st.id === setlist.id);
+                const firstSecId = currentSetlist?.sections?.[0]?.id || 'sec-1';
+                setPickerSectionId(firstSecId);
+                setShowPickerModal(true);
+              }, 50);
+            } else {
+              setPickerSectionId(setlist.sections[0].id);
+              setShowPickerModal(true);
+            }
+          }}
+          className="rounded-full flex items-center justify-center cursor-pointer active:scale-95 transition-all select-none"
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '9999px',
+            background: 'rgba(18, 18, 18, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+            color: '#ffffff',
+          }}
+        >
+          <span className="material-symbols-rounded text-2xl font-bold">add</span>
+        </motion.button>
+      </aside>
     </div>
   );
 };

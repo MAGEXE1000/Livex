@@ -6057,8 +6057,9 @@ export default function SongsPanel() {
           <div
             className="fixed z-50 pointer-events-auto"
             style={{
-              bottom: 'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 20px)',
-              right: '20px',
+              bottom:
+                'calc(var(--bottom-nav-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+              right: '16px',
             }}
             data-purpose="song-creation-action-menu"
           >
@@ -6075,15 +6076,15 @@ export default function SongsPanel() {
                   data-testid="song-add-actions-btn"
                   className="rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-all select-none"
                   style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    background: 'var(--surface-topbar-bg, rgba(20, 20, 24, 0.9))',
-                    border: 'var(--surface-topbar-border, 1px solid rgba(255, 255, 255, 0.15))',
-                    backdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                    WebkitBackdropFilter: 'var(--surface-topbar-backdrop, blur(20px))',
-                    boxShadow: 'var(--surface-topbar-shadow, 0 8px 32px rgba(0, 0, 0, 0.45))',
-                    color: 'var(--c-text-primary, #ffffff)',
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '9999px',
+                    background: 'rgba(18, 18, 18, 0.85)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+                    color: '#ffffff',
                   }}
                   type="button"
                 >
@@ -6650,10 +6651,11 @@ export default function SongsPanel() {
 
                 {/* Floating Action Buttons (FAB Stack) */}
                 <aside
-                  className="fixed right-5 flex flex-col items-end gap-3 pointer-events-auto"
+                  className="fixed flex flex-col items-end gap-3 pointer-events-auto"
                   style={{
                     bottom:
-                      'calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 86px)',
+                      'calc(var(--bottom-nav-height, 64px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
+                    right: '16px',
                     zIndex: 40,
                   }}
                   data-purpose="action-buttons"
@@ -6704,13 +6706,17 @@ export default function SongsPanel() {
                           data-testid="new-preset-btn"
                           aria-label="Create new progression"
                           title="Create new progression"
-                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all select-none"
                           style={{
-                            width: '52px',
-                            height: '52px',
-                            backgroundColor: 'var(--c-accent-from, #2563EB)',
-                            boxShadow:
-                              '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '9999px',
+                            background: 'rgba(18, 18, 18, 0.85)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+                            color: '#ffffff',
                           }}
                         >
                           <span className="material-symbols-rounded text-2xl font-bold">add</span>
@@ -6734,13 +6740,17 @@ export default function SongsPanel() {
                           data-testid="btn-create-setlist"
                           aria-label="Create new setlist"
                           title="Create new setlist"
-                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                          className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all select-none"
                           style={{
-                            width: '52px',
-                            height: '52px',
-                            backgroundColor: 'var(--c-accent-from, #2563EB)',
-                            boxShadow:
-                              '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '9999px',
+                            background: 'rgba(18, 18, 18, 0.85)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+                            color: '#ffffff',
                           }}
                         >
                           <span className="material-symbols-rounded text-2xl font-bold">add</span>
