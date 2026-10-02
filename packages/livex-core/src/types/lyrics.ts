@@ -31,7 +31,7 @@ export interface LyricChordPlacement {
 /**
  * Standard vocal performer roles
  */
-export type StandardVocalRole = 'lead' | 'solo' | 'backing' | 'all' | 'choir' | 'custom';
+export type StandardVocalRole = 'lead' | 'solo' | 'backing' | 'harmony' | 'all' | 'choir' | 'guest' | 'custom';
 
 export interface VocalRoleAnnotation {
   type: StandardVocalRole;
@@ -40,11 +40,12 @@ export interface VocalRoleAnnotation {
 }
 
 export const VOCAL_ROLE_PRESETS: { type: StandardVocalRole; label: string; color: string }[] = [
-  { type: 'lead', label: 'Lead', color: '#3b82f6' },
-  { type: 'solo', label: 'Solo', color: '#8b5cf6' },
-  { type: 'backing', label: 'Backing', color: '#06b6d4' },
-  { type: 'all', label: 'All', color: '#10b981' },
-  { type: 'choir', label: 'Choir', color: '#f59e0b' },
+  { type: 'lead', label: 'Lead', color: '#06b6d4' },
+  { type: 'harmony', label: 'Harmony', color: '#f59e0b' },
+  { type: 'choir', label: 'Choir', color: '#a855f7' },
+  { type: 'solo', label: 'Solo', color: '#ec4899' },
+  { type: 'backing', label: 'Backing', color: '#3b82f6' },
+  { type: 'guest', label: 'Guest', color: '#10b981' },
 ];
 
 export type SongLyricLineType = 'lyric' | 'interlude';

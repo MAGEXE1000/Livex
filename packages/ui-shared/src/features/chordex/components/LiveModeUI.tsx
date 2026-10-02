@@ -1204,18 +1204,27 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           const isActive = idx === currentLineIdx;
           const isPast = idx < currentLineIdx;
 
+          const role = item.line.vocalRole || item.sectionVocalRole;
+          const roleColor = role?.color;
           const isTextColorWhite =
             !item.color ||
             item.color.toLowerCase() === '#ffffff' ||
             item.color.toLowerCase() === '#fff' ||
             item.color.toLowerCase().startsWith('rgb(255');
-          const highlightBorderColor = isTextColorWhite ? accent.from : item.color;
-          const highlightBg = isTextColorWhite
-            ? 'rgba(255, 255, 255, 0.08)'
-            : 'rgba(255, 255, 255, 0.05)';
+          const highlightBorderColor = roleColor || (isTextColorWhite ? accent.from : item.color);
+          const highlightBg = roleColor
+            ? `color-mix(in srgb, ${roleColor} 14%, rgba(255, 255, 255, 0.08))`
+            : isTextColorWhite
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(255, 255, 255, 0.05)';
+          const nonActiveBg = roleColor
+            ? `color-mix(in srgb, ${roleColor} 8%, transparent)`
+            : 'transparent';
           const highlightBorder = isActive
             ? `1px solid ${isTextColorWhite ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.1)'}`
-            : '1px solid transparent';
+            : roleColor
+              ? `1px solid color-mix(in srgb, ${roleColor} 25%, transparent)`
+              : '1px solid transparent';
           const highlightShadow = isActive
             ? '0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
             : 'none';
@@ -1234,9 +1243,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 position: 'relative',
                 borderRadius: '16px',
                 padding: '12px 16px',
-                background: isActive ? highlightBg : 'transparent',
+                background: isActive ? highlightBg : nonActiveBg,
                 border: highlightBorder,
-                borderLeft: isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent',
+                borderLeft: roleColor
+                  ? `4px solid ${roleColor}`
+                  : (isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent'),
                 boxShadow: highlightShadow,
                 opacity: isActive ? 1 : isPast ? 0.45 : 0.72,
                 transition:
@@ -1302,6 +1313,47 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                       {item.sectionVocalRole.label || item.sectionVocalRole.type}
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* Line-level vocal role badge if line has an explicit role */}
+              {item.line.vocalRole && (!item.isFirstLineOfSection || !item.sectionVocalRole) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCentered ? 'center' : 'flex-start',
+                    gap: '6px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 800,
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      backgroundColor: `${item.line.vocalRole.color || accent.from}24`,
+                      border: `1px solid ${item.line.vocalRole.color || accent.from}55`,
+                      color: item.line.vocalRole.color || accent.from,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '5px',
+                        height: '5px',
+                        borderRadius: '50%',
+                        backgroundColor: item.line.vocalRole.color || accent.from,
+                      }}
+                    />
+                    {item.line.vocalRole.label || item.line.vocalRole.type}
+                  </span>
                 </div>
               )}
 
@@ -1803,6 +1855,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
   } = state;
 
   const currentLine = teleprompterLines[currentLineIdx];
+  const currentLineRole = currentLine?.line.vocalRole || currentLine?.sectionVocalRole;
 
   React.useEffect(() => {
     const el = state.teleprompterContainerRef.current;
@@ -1991,20 +2044,53 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
               </div>
             </div>
           ) : (
-            <div
-              style={{
-                fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-                fontSize: 'clamp(26px, 6vw, 40px)',
-                fontWeight: 800,
-                color: currentLine?.color || 'var(--c-text-primary, #ffffff)',
-                letterSpacing: '-0.02em',
-                textAlign: 'center',
-                lineHeight: 1.3,
-                padding: '0 12px',
-                transition: 'color 0.2s ease',
-              }}
-            >
-              {currentLine?.line.text || '...'}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {currentLineRole && (
+                <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 800,
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      padding: '3px 12px',
+                      borderRadius: '9999px',
+                      backgroundColor: `${currentLineRole.color || accent.from}24`,
+                      border: `1px solid ${currentLineRole.color || accent.from}55`,
+                      color: currentLineRole.color || accent.from,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: currentLineRole.color || accent.from,
+                      }}
+                    />
+                    {currentLineRole.label || currentLineRole.type}
+                  </span>
+                </div>
+              )}
+              <div
+                style={{
+                  fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
+                  fontSize: 'clamp(26px, 6vw, 40px)',
+                  fontWeight: 800,
+                  color: currentLine?.color || 'var(--c-text-primary, #ffffff)',
+                  letterSpacing: '-0.02em',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                  padding: '0 12px',
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                {currentLine?.line.text || '...'}
+              </div>
             </div>
           )}
         </div>

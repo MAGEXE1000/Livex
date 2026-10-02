@@ -168,12 +168,19 @@ const CUSTOM_ROLE_COLORS = [
 const INTERLUDE_PRESET_DURATIONS = [5, 10, 15, 20, 30, 45, 60];
 const INTERLUDE_PRESET_LABELS = ['Solo', 'Guitar Solo', 'Interlude', 'Intro', 'Outro', 'Bridge'];
 
-interface ActiveSelection {
+export interface CapturedSelectionLine {
   sectionId: string;
   lineId: string;
+  lineIndex: number;
   start: number;
   end: number;
-  text: string;
+  isFullLine: boolean;
+}
+
+export interface CapturedSelectionData {
+  lines: CapturedSelectionLine[];
+  sectionIds: string[];
+  fullText: string;
 }
 
 function areLyricsEqual(a: SongLyricsDocument | undefined, b: SongLyricsDocument | undefined): boolean {
@@ -332,17 +339,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   useEffect(() => {
     if (pendingFocusLineIdRef.current) {
       const lineId = pendingFocusLineIdRef.current;
+      setEditingLineId(lineId);
       pendingFocusLineIdRef.current = null;
-      const el = inputRefs.current[lineId];
-      if (el) {
-        el.focus();
-        const offset = targetCursorOffsetRef.current ?? el.value.length;
-        targetCursorOffsetRef.current = null;
-        try {
-          const clamped = Math.min(el.value.length, Math.max(0, offset));
-          el.setSelectionRange(clamped, clamped);
-        } catch (_) {}
-      }
+      setTimeout(() => {
+        const el = inputRefs.current[lineId];
+        if (el) {
+          el.focus();
+          const offset = targetCursorOffsetRef.current ?? el.value.length;
+          targetCursorOffsetRef.current = null;
+          try {
+            const clamped = Math.min(el.value.length, Math.max(0, offset));
+            el.setSelectionRange(clamped, clamped);
+          } catch (_) {}
+        }
+      }, 10);
     }
   }, [currentDoc]);
 
@@ -352,10 +362,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const dragOverTargetRef = useRef<{ sectionId: string; lineIdx: number } | null>(null);
   dragOverTargetRef.current = dragOverTarget;
 
-  // Active line selection state for toolbar operations
-  const [activeSelection, setActiveSelection] = useState<ActiveSelection | null>(null);
-  const activeSelectionRef = useRef<ActiveSelection | null>(null);
-  activeSelectionRef.current = activeSelection;
+  // Captured selection reference for selection-first formatting operations
+  const capturedSelectionRef = useRef<CapturedSelectionData | null>(null);
+  const [hasCapturedSelection, setHasCapturedSelection] = useState(false);
+
+  // Active single-line editing state in lyrics mode
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
+
+  // Workspace container ref for DOM selection measurements
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
 
   // Active cursor/line position tracking for arbitrary element insertion
   const lastActivePositionRef = useRef<{
@@ -371,10 +386,155 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     []
   );
 
-  // Active text color paint tool (null = inactive, string = hex or '' for clear)
-  const [activeColorTool, setActiveColorTool] = useState<string | null>(null);
-  const activeColorToolRef = useRef<string | null>(null);
-  activeColorToolRef.current = activeColorTool;
+  // Robust Selection Detection & Preservation
+  const captureSelection = useCallback((): CapturedSelectionData | null => {
+    if (typeof window === 'undefined') return null;
+
+    // 1. Check if an active input inside the editor has text selected
+    const activeEl = document.activeElement;
+    if (
+      activeEl instanceof HTMLInputElement &&
+      activeEl.selectionStart !== null &&
+      activeEl.selectionEnd !== null &&
+      activeEl.selectionStart !== activeEl.selectionEnd
+    ) {
+      const lineEl = activeEl.closest('[data-line-id]') as HTMLElement | null;
+      if (lineEl) {
+        const sectionId = lineEl.dataset.sectionId || '';
+        const lineId = lineEl.dataset.lineId || '';
+        const lineIndex = parseInt(lineEl.dataset.lineIndex || '0', 10);
+        const start = Math.min(activeEl.selectionStart, activeEl.selectionEnd);
+        const end = Math.max(activeEl.selectionStart, activeEl.selectionEnd);
+        const isFullLine = start === 0 && end >= activeEl.value.length;
+        return {
+          lines: [
+            {
+              sectionId,
+              lineId,
+              lineIndex,
+              start,
+              end,
+              isFullLine,
+            },
+          ],
+          sectionIds: sectionId ? [sectionId] : [],
+          fullText: activeEl.value.slice(start, end),
+        };
+      }
+    }
+
+    // 2. Check window.getSelection() across DOM text nodes
+    const winSel = window.getSelection();
+    if (!winSel || winSel.isCollapsed || winSel.rangeCount === 0) {
+      return null;
+    }
+
+    const range = winSel.getRangeAt(0);
+    const container = workspaceRef.current;
+    if (!container) return null;
+
+    if (!container.contains(range.commonAncestorContainer) && !range.intersectsNode(container)) {
+      return null;
+    }
+
+    const lineEls = Array.from(container.querySelectorAll<HTMLElement>('[data-line-id]'));
+    const capturedLines: CapturedSelectionLine[] = [];
+    const sectionIdsSet = new Set<string>();
+
+    for (const lineEl of lineEls) {
+      let intersects = false;
+      try {
+        intersects = range.intersectsNode(lineEl);
+      } catch {
+        intersects = winSel.containsNode(lineEl, true);
+      }
+
+      if (!intersects) continue;
+
+      const sectionId = lineEl.dataset.sectionId || '';
+      const lineId = lineEl.dataset.lineId || '';
+      const lineIndex = parseInt(lineEl.dataset.lineIndex || '0', 10);
+
+      const sec = localDocRef.current.sections.find((s) => s.id === sectionId);
+      const line = sec?.lines.find((l) => l.id === lineId);
+      const textLen = line?.text ? line.text.length : 0;
+
+      let start = 0;
+      let end = textLen;
+
+      if (lineEl.contains(range.startContainer)) {
+        try {
+          const startRange = document.createRange();
+          startRange.setStart(lineEl, 0);
+          startRange.setEnd(range.startContainer, range.startOffset);
+          start = Math.max(0, Math.min(textLen, startRange.toString().length));
+        } catch {
+          start = 0;
+        }
+      }
+
+      if (lineEl.contains(range.endContainer)) {
+        try {
+          const endRange = document.createRange();
+          endRange.setStart(lineEl, 0);
+          endRange.setEnd(range.endContainer, range.endOffset);
+          end = Math.max(0, Math.min(textLen, endRange.toString().length));
+        } catch {
+          end = textLen;
+        }
+      }
+
+      if (start > end) {
+        const tmp = start;
+        start = end;
+        end = tmp;
+      }
+
+      const isFullLine = start === 0 && end >= textLen;
+      capturedLines.push({
+        sectionId,
+        lineId,
+        lineIndex,
+        start,
+        end,
+        isFullLine,
+      });
+      if (sectionId) sectionIdsSet.add(sectionId);
+    }
+
+    if (capturedLines.length === 0) return null;
+
+    return {
+      lines: capturedLines,
+      sectionIds: Array.from(sectionIdsSet),
+      fullText: winSel.toString(),
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const captured = captureSelection();
+      if (captured && captured.lines.length > 0) {
+        capturedSelectionRef.current = captured;
+        setHasCapturedSelection(true);
+      } else {
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const isInteractingWithControls =
+          active && (active.closest('[data-morphing-surface]') || active.closest('[data-action="add-actions"]'));
+        if (!isInteractingWithControls) {
+          const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
+          if (!winSel || winSel.isCollapsed) {
+            setHasCapturedSelection(false);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [captureSelection]);
 
   // Dialog & popover states
   const [showPasteModal, setShowPasteModal] = useState(false);
@@ -456,8 +616,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Role Picker
   const [rolePickerTarget, setRolePickerTarget] = useState<{
-    sectionId: string;
+    sectionId?: string;
     lineId?: string;
+    lineIds?: string[];
+    sectionIds?: string[];
   } | null>(null);
 
   // Custom roles management state
@@ -639,14 +801,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               }
             }
           }
-          // 2. Try active selection
-          if (!targetSecId && activeSelectionRef.current) {
-            const secExists = sections.some((s) => s.id === activeSelectionRef.current!.sectionId);
+          // 2. Try captured selection
+          const capturedFirstLine = capturedSelectionRef.current?.lines[0];
+          if (!targetSecId && capturedFirstLine) {
+            const secExists = sections.some((s) => s.id === capturedFirstLine.sectionId);
             if (secExists) {
-              targetSecId = activeSelectionRef.current.sectionId;
+              targetSecId = capturedFirstLine.sectionId;
               if (resolvedLineIdx === undefined) {
                 const targetSec = sections.find((s) => s.id === targetSecId);
-                const lIdx = targetSec?.lines.findIndex((l) => l.id === activeSelectionRef.current!.lineId);
+                const lIdx = targetSec?.lines.findIndex((l) => l.id === capturedFirstLine.lineId);
                 if (lIdx !== undefined && lIdx >= 0) {
                   resolvedLineIdx = lIdx;
                 }
@@ -1283,104 +1446,235 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // ── INLINE FORMATTING (BOLD & COLOR) ────────────────────────────────
 
   const handleFormatBold = useCallback(() => {
-    const sel = activeSelectionRef.current;
-    if (!sel) {
-      toast.info('Click or select text first');
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) {
+      if (lastActivePositionRef.current) {
+        const pos = lastActivePositionRef.current;
+        updateDoc((doc) => ({
+          ...doc,
+          sections: doc.sections.map((sec) => {
+            if (sec.id !== pos.sectionId) return sec;
+            return {
+              ...sec,
+              lines: sec.lines.map((l) => {
+                if (l.id !== pos.lineId) return l;
+                const currentBold = Boolean(l.format?.bold);
+                return {
+                  ...l,
+                  format: { ...l.format, bold: !currentBold },
+                };
+              }),
+            };
+          }),
+        }));
+        toast.success('Line bold toggled');
+        return;
+      }
+
+      // Otherwise toggle doc bold
+      updateDoc((doc) => ({
+        ...doc,
+        formatting: { ...doc.formatting, bold: !doc.formatting?.bold },
+      }));
+      toast.success('Song bold toggled');
       return;
     }
+
+    const targetLineMap = new Map<string, CapturedSelectionLine>();
+    for (const l of sel.lines) {
+      targetLineMap.set(l.lineId, l);
+    }
+
+    // Determine if all targets are currently bold to toggle
+    let allBold = true;
+    for (const l of sel.lines) {
+      const sec = localDocRef.current.sections.find((s) => s.id === l.sectionId);
+      const line = sec?.lines.find((lineItem) => lineItem.id === l.lineId);
+      if (!line) continue;
+      if (l.isFullLine) {
+        if (!line.format?.bold && !localDocRef.current.formatting?.bold) {
+          allBold = false;
+          break;
+        }
+      } else {
+        const isPartBold = getCharacterBold(line.spans, l.start);
+        if (!isPartBold && !line.format?.bold && !localDocRef.current.formatting?.bold) {
+          allBold = false;
+          break;
+        }
+      }
+    }
+
+    const nextBold = !allBold;
 
     updateDoc((doc) => ({
       ...doc,
       sections: doc.sections.map((sec) => {
-        if (sec.id !== sel.sectionId) return sec;
+        const hasLine = sec.lines.some((l) => targetLineMap.has(l.id));
+        if (!hasLine) return sec;
+
         return {
           ...sec,
           lines: sec.lines.map((l) => {
-            if (l.id !== sel.lineId) return l;
+            const lineSel = targetLineMap.get(l.id);
+            if (!lineSel) return l;
 
-            // If a specific range is selected, format only that range
-            if (sel.start !== sel.end) {
-              const nextSpans = toggleBoldOnSelection(l.spans, l.text, sel.start, sel.end);
-              return { ...l, spans: nextSpans };
+            if (lineSel.isFullLine || lineSel.start === lineSel.end) {
+              return {
+                ...l,
+                format: { ...l.format, bold: nextBold },
+              };
             }
 
-            // Otherwise toggle line-level bold
-            const currentBold = Boolean(l.format?.bold);
-            return {
-              ...l,
-              format: { ...l.format, bold: !currentBold },
-            };
+            const nextSpans = toggleBoldOnSelection(l.spans, l.text, lineSel.start, lineSel.end);
+            return { ...l, spans: nextSpans };
           }),
         };
       }),
     }));
+
+    const count = sel.lines.length;
+    toast.success(`Bold ${nextBold ? 'applied to' : 'removed from'} ${count} ${count === 1 ? 'line' : 'lines'}`);
   }, [updateDoc]);
 
   const handleFormatColor = useCallback(
     (color: string) => {
-      const sel = activeSelectionRef.current;
-      if (!sel) {
+      const sel = capturedSelectionRef.current;
+      if (!sel || sel.lines.length === 0) {
+        if (lastActivePositionRef.current) {
+          const pos = lastActivePositionRef.current;
+          updateDoc((doc) => ({
+            ...doc,
+            sections: doc.sections.map((sec) => {
+              if (sec.id !== pos.sectionId) return sec;
+              return {
+                ...sec,
+                lines: sec.lines.map((l) => {
+                  if (l.id !== pos.lineId) return l;
+                  return {
+                    ...l,
+                    format: { ...l.format, color: color || undefined },
+                  };
+                }),
+              };
+            }),
+          }));
+          toast.success(color ? 'Line color updated' : 'Line color reset');
+          return;
+        }
+
         // Document-wide color change
         updateDoc((doc) => ({
           ...doc,
           formatting: { ...doc.formatting, defaultColor: color || undefined },
         }));
+        toast.success(color ? 'Song color updated' : 'Song color reset');
         return;
+      }
+
+      const targetLineMap = new Map<string, CapturedSelectionLine>();
+      for (const l of sel.lines) {
+        targetLineMap.set(l.lineId, l);
       }
 
       updateDoc((doc) => ({
         ...doc,
         sections: doc.sections.map((sec) => {
-          if (sec.id !== sel.sectionId) return sec;
+          const hasLine = sec.lines.some((l) => targetLineMap.has(l.id));
+          if (!hasLine) return sec;
+
           return {
             ...sec,
             lines: sec.lines.map((l) => {
-              if (l.id !== sel.lineId) return l;
+              const lineSel = targetLineMap.get(l.id);
+              if (!lineSel) return l;
 
-              // If a specific range is selected, format only that range
-              if (sel.start !== sel.end) {
-                const nextSpans = setColorOnSelection(l.spans, l.text, sel.start, sel.end, color);
-                return { ...l, spans: nextSpans };
+              if (lineSel.isFullLine || lineSel.start === lineSel.end) {
+                const nextSpans = !color && l.spans ? l.spans.map(s => ({ ...s, format: { ...s.format, color: undefined } })) : l.spans;
+                return {
+                  ...l,
+                  format: { ...l.format, color: color || undefined },
+                  spans: nextSpans,
+                };
               }
 
-              // Otherwise set line-level color
-              return {
-                ...l,
-                format: { ...l.format, color: color || undefined },
-              };
-            }),
-          };
-        }),
-      }));
-    },
-    [updateDoc]
-  );
-
-  const handleApplyColorToWord = useCallback(
-    (sectionId: string, lineId: string, start: number, end: number, color: string) => {
-      updateDoc((doc) => ({
-        ...doc,
-        sections: doc.sections.map((sec) => {
-          if (sec.id !== sectionId) return sec;
-          return {
-            ...sec,
-            lines: sec.lines.map((l) => {
-              if (l.id !== lineId) return l;
-              const nextSpans = setColorOnSelection(l.spans, l.text, start, end, color);
+              const nextSpans = setColorOnSelection(l.spans, l.text, lineSel.start, lineSel.end, color);
               return { ...l, spans: nextSpans };
             }),
           };
         }),
       }));
+
+      const count = sel.lines.length;
+      if (color) {
+        toast.success(`Color applied to ${count} ${count === 1 ? 'line' : 'lines'}`);
+      } else {
+        toast.info(`Color reset on ${count} ${count === 1 ? 'line' : 'lines'}`);
+      }
     },
     [updateDoc]
   );
 
+  const handleResetFormatting = useCallback(() => {
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) {
+      updateDoc((doc) => ({
+        ...doc,
+        formatting: undefined,
+        sections: doc.sections.map((sec) => ({
+          ...sec,
+          lines: sec.lines.map((l) => ({
+            ...l,
+            format: undefined,
+            spans: undefined,
+          })),
+        })),
+      }));
+      toast.success('Formatting reset to default');
+      return;
+    }
+
+    const targetLineMap = new Map<string, CapturedSelectionLine>();
+    for (const l of sel.lines) {
+      targetLineMap.set(l.lineId, l);
+    }
+
+    updateDoc((doc) => ({
+      ...doc,
+      sections: doc.sections.map((sec) => {
+        const hasLine = sec.lines.some((l) => targetLineMap.has(l.id));
+        if (!hasLine) return sec;
+
+        return {
+          ...sec,
+          lines: sec.lines.map((l) => {
+            const lineSel = targetLineMap.get(l.id);
+            if (!lineSel) return l;
+
+            if (lineSel.isFullLine) {
+              return {
+                ...l,
+                format: undefined,
+                spans: undefined,
+              };
+            }
+
+            const nextSpans = setColorOnSelection(l.spans, l.text, lineSel.start, lineSel.end, '');
+            return { ...l, spans: nextSpans };
+          }),
+        };
+      }),
+    }));
+
+    const count = sel.lines.length;
+    toast.success(`Formatting reset for ${count} ${count === 1 ? 'line' : 'lines'}`);
+  }, [updateDoc]);
+
   // ── CHORD PLACEMENT HELPERS ──────────────────────────────────────────
 
   const handleOpenChordPicker = useCallback(() => {
-    const sel = activeSelectionRef.current;
-    if (!sel) {
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) {
       // If there are lines, pick the first line at start
       const firstSec = currentDoc.sections[0];
       const firstLine = firstSec?.lines[0];
@@ -1401,11 +1695,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       return;
     }
 
+    const firstLine = sel.lines[0];
     setChordPickerTarget({
-      sectionId: sel.sectionId,
-      lineId: sel.lineId,
-      offset: sel.start,
-      wordText: sel.text,
+      sectionId: firstLine.sectionId,
+      lineId: firstLine.lineId,
+      offset: firstLine.start,
+      wordText: sel.fullText.split(' ')[0] || 'start',
     });
     setChordSearchQuery('');
     setChordRootFilter('All');
@@ -1586,6 +1881,28 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       updateDoc((doc) => ({
         ...doc,
         sections: doc.sections.map((sec) => {
+          // If specific lineIds were targeted across a multi-line selection
+          if (rolePickerTarget.lineIds && rolePickerTarget.lineIds.length > 0) {
+            const lineIdSet = new Set(rolePickerTarget.lineIds);
+            const hasAnyLine = sec.lines.some((l) => lineIdSet.has(l.id));
+            if (!hasAnyLine) return sec;
+
+            const updatedLines = sec.lines.map((l) =>
+              lineIdSet.has(l.id) ? { ...l, vocalRole: role } : l
+            );
+
+            // If all lines in this section now share this role, set section role as well
+            const allLinesHaveRole = updatedLines.every(
+              (l) => l.vocalRole?.type === role?.type && l.vocalRole?.label === role?.label
+            );
+
+            return {
+              ...sec,
+              vocalRole: allLinesHaveRole ? role : sec.vocalRole,
+              lines: updatedLines,
+            };
+          }
+
           if (sec.id !== rolePickerTarget.sectionId) return sec;
 
           if (rolePickerTarget.lineId) {
@@ -1600,6 +1917,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           return { ...sec, vocalRole: role };
         }),
       }));
+
+      if (role) {
+        toast.success(`Role "${role.label || role.type}" assigned`);
+      } else {
+        toast.info('Vocal role cleared');
+      }
       setRolePickerTarget(null);
     },
     [rolePickerTarget, updateDoc]
@@ -1758,6 +2081,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   return (
     <div
+      ref={workspaceRef}
       data-testid="song-lyrics-editor-workspace"
       className="flex flex-col w-full relative select-text"
       style={{
@@ -2354,12 +2678,103 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     );
                   }
 
+                  const activeRole = line.vocalRole || section.vocalRole;
                   const resolvedColor =
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
                   const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
 
-                  // In LYRICS mode: render editable input line
+                  // In LYRICS mode: render editable input when focused, or formatted spans with multi-line selection
                   if (mode === 'lyrics') {
+                    const isEditing = editingLineId === line.id;
+                    if (isEditing) {
+                      return (
+                        <div
+                          key={line.id || lineIdx}
+                          data-testid={`lyric-line-${section.id}-${lineIdx}`}
+                          data-line-id={line.id}
+                          data-section-id={section.id}
+                          data-line-index={lineIdx}
+                          onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
+                          onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
+                          className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text"
+                          style={{
+                            transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
+                            transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                            backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
+                            borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
+                            WebkitUserSelect: 'text',
+                            userSelect: 'text',
+                          }}
+                        >
+                          <input
+                            ref={(el) => { inputRefs.current[line.id] = el; }}
+                            type="text"
+                            autoFocus
+                            value={line.text}
+                            onFocus={() => {
+                              setLastActivePosition(section.id, lineIdx, line.id);
+                            }}
+                            onBlur={(e) => {
+                              setEditingLineId(null);
+                              const val = e.target.value.trim();
+                              if (val.length > 0) {
+                                const parseResult = parseLineStructuralElement(val);
+                                if (parseResult.kind === 'section') {
+                                  handlePromoteLineToSection(section.id, lineIdx, parseResult);
+                                } else if (parseResult.kind === 'interlude') {
+                                  handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
+                                }
+                              }
+                            }}
+                            onChange={(e) => {
+                              setLastActivePosition(section.id, lineIdx, line.id);
+                              handleUpdateLineText(section.id, line.id, e.target.value);
+                            }}
+                            onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
+                            onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
+                            placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
+                            data-testid={`lyric-line-input-${lineIdx}`}
+                            data-no-focus-ring="true"
+                            className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
+                            style={{
+                              color: resolvedColor,
+                              fontWeight: isLineBold ? 700 : 500,
+                              fontFamily: 'inherit',
+                              caretColor: accent.from || '#2563EB',
+                              outline: 'none',
+                              outlineOffset: 0,
+                              border: 'none',
+                              boxShadow: 'none',
+                              WebkitTapHighlightColor: 'transparent',
+                              WebkitUserSelect: 'text',
+                              userSelect: 'text',
+                            }}
+                            autoCapitalize="sentences"
+                            autoCorrect="on"
+                            spellCheck="false"
+                          />
+                          {activeRole && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none"
+                              style={{
+                                backgroundColor: `${activeRole.color || '#3b82f6'}26`,
+                                borderColor: `${activeRole.color || '#3b82f6'}66`,
+                                color: activeRole.color || '#3b82f6',
+                              }}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: activeRole.color || '#3b82f6' }}
+                              />
+                              {activeRole.label || activeRole.type}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Not currently editing this line: render rich formatted spans allowing native multi-line text selection
+                    const words = findWordBoundaries(line.text);
                     return (
                       <div
                         key={line.id || lineIdx}
@@ -2371,73 +2786,66 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                           if (sel && sel.toString().length > 0) return;
                           setLastActivePosition(section.id, lineIdx, line.id);
+                          setEditingLineId(line.id);
                         }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex items-center py-1 px-1 transition-all rounded-lg select-text"
+                        className="group/line relative flex flex-wrap items-center gap-x-1.5 py-1 px-2 transition-all rounded-lg select-text cursor-text"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                          backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
+                          borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
                           WebkitUserSelect: 'text',
                           userSelect: 'text',
                         }}
                       >
-                        <input
-                          ref={(el) => { inputRefs.current[line.id] = el; }}
-                          type="text"
-                          value={line.text}
-                          onFocus={() => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                            setActiveSelection({ sectionId: section.id, lineId: line.id, start: 0, end: line.text.length, text: line.text });
-                          }}
-                          onBlur={(e) => {
-                            const val = e.target.value.trim();
-                            if (val.length > 0) {
-                              const parseResult = parseLineStructuralElement(val);
-                              if (parseResult.kind === 'section') {
-                                handlePromoteLineToSection(section.id, lineIdx, parseResult);
-                              } else if (parseResult.kind === 'interlude') {
-                                handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
-                              }
-                            }
-                          }}
-                          onChange={(e) => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                            handleUpdateLineText(section.id, line.id, e.target.value);
-                          }}
-                          onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
-                          onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
-                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
-                          data-testid={`lyric-line-input-${lineIdx}`}
-                          data-no-focus-ring="true"
-                          className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
-                          style={{
-                            color: resolvedColor,
-                            fontWeight: isLineBold ? 700 : 500,
-                            fontFamily: 'inherit',
-                            caretColor: accent.from || '#2563EB',
-                            outline: 'none',
-                            outlineOffset: 0,
-                            border: 'none',
-                            boxShadow: 'none',
-                            WebkitTapHighlightColor: 'transparent',
-                            WebkitUserSelect: 'text',
-                            userSelect: 'text',
-                          }}
-                          autoCapitalize="sentences"
-                          autoCorrect="on"
-                          spellCheck="false"
-                        />
-                        {line.vocalRole && (
+                        {line.text.trim().length === 0 ? (
                           <span
-                            className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2"
+                            title="Tap to edit line"
+                            className="text-base leading-relaxed tracking-wide text-gray-500/40 italic select-none py-0.5 cursor-pointer"
+                          >
+                            {secIdx === 0 && lineIdx === 0 && section.lines.length === 1
+                              ? 'Write or paste lyrics here...'
+                              : 'Empty line (tap to write)'}
+                          </span>
+                        ) : (
+                          words.map((w, wIdx) => {
+                            const wordColor = getCharacterColor(line.spans, w.start) || resolvedColor;
+                            const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
+
+                            return (
+                              <span
+                                key={`${w.start}-${w.end}-${wIdx}`}
+                                title="Tap to edit line"
+                                className="text-base leading-relaxed tracking-wide transition-all select-text cursor-pointer"
+                                style={{
+                                  color: wordColor,
+                                  fontWeight: isWordBold ? 700 : 500,
+                                  fontFamily: 'inherit',
+                                  WebkitUserSelect: 'text',
+                                  userSelect: 'text',
+                                }}
+                              >
+                                {w.word}
+                              </span>
+                            );
+                          })
+                        )}
+                        {activeRole && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none"
                             style={{
-                              backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
-                              borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
-                              color: line.vocalRole.color || '#3b82f6',
+                              backgroundColor: `${activeRole.color || '#3b82f6'}26`,
+                              borderColor: `${activeRole.color || '#3b82f6'}66`,
+                              color: activeRole.color || '#3b82f6',
                             }}
                           >
-                            {line.vocalRole.label || line.vocalRole.type}
+                            <span
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: activeRole.color || '#3b82f6' }}
+                            />
+                            {activeRole.label || activeRole.type}
                           </span>
                         )}
                       </div>
@@ -2527,10 +2935,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       }}
                       onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                       onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-1 transition-all rounded-lg select-text"
+                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-2 transition-all rounded-lg select-text"
                       style={{
                         transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                         transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                        backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
+                        borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
                         WebkitUserSelect: 'text',
                         userSelect: 'text',
                       }}
@@ -2592,23 +3002,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               )}
                             </div>
 
-                            {/* Word Text (Tap in placement mode anchors the chord, or paints in color tool mode!) */}
+                            {/* Word Text (Tap in placement mode anchors the chord) */}
                             <span
                               onClick={() => {
                                 const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                                 if (sel && sel.toString().length > 0) return;
-                                if (activeColorTool !== null) {
-                                  handleApplyColorToWord(section.id, line.id, w.start, w.end, activeColorTool);
-                                  return;
-                                }
                                 if (activePlacementChord) {
                                   handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
                                 }
                               }}
                               className={`text-base tracking-wide transition-all select-text ${
-                                activeColorTool !== null
-                                  ? 'cursor-pointer hover:opacity-80 active:scale-95'
-                                  : activePlacementChord
+                                activePlacementChord
                                   ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted'
                                   : ''
                               }`}
@@ -2627,16 +3031,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       })}
 
                       {/* Vocal Role badge if present on line */}
-                      {line.vocalRole && (
+                      {activeRole && (
                         <span
-                          className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center mb-1"
+                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none"
                           style={{
-                            backgroundColor: `${line.vocalRole.color || '#3b82f6'}22`,
-                            borderColor: `${line.vocalRole.color || '#3b82f6'}44`,
-                            color: line.vocalRole.color || '#3b82f6',
+                            backgroundColor: `${activeRole.color || '#3b82f6'}26`,
+                            borderColor: `${activeRole.color || '#3b82f6'}66`,
+                            color: activeRole.color || '#3b82f6',
                           }}
                         >
-                          {line.vocalRole.label || line.vocalRole.type}
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: activeRole.color || '#3b82f6' }}
+                          />
+                          {activeRole.label || activeRole.type}
                         </span>
                       )}
                     </div>
@@ -2646,34 +3054,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             </section>
           );
         })}
-
-        {/* ── ACTIVE COLOR TOOL BANNER (BRUSH MODE) ── */}
-        {activeColorTool !== null && (
-          <div
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold backdrop-blur-md self-center my-2 shadow-sm pointer-events-auto"
-            style={{
-              backgroundColor: isEffectiveAmoled ? 'rgba(12,12,14,0.94)' : 'rgba(22,22,26,0.94)',
-              borderColor: activeColorTool || '#3b82f6',
-              color: '#ffffff',
-            }}
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: activeColorTool || '#94a3b8' }}
-            />
-            <span>Color tool active — tap words to paint</span>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveColorTool(null);
-                toast.info('Color tool exited');
-              }}
-              className="ml-1 text-[11px] text-gray-400 hover:text-white px-2 py-0.5 rounded bg-white/10 cursor-pointer"
-            >
-              ✕ Exit
-            </button>
-          </div>
-        )}
 
         {/* ── UNIFIED BLACK FLOATING ADD (+) BUTTON (MATCHING CHORDS & LYRICS) ── */}
         {typeof document !== 'undefined' &&
@@ -2768,6 +3148,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     icon: 'palette',
                     sublabel: 'Colors, bold, vocal roles',
                     onPress: () => {
+                      captureSelection();
                       setShowTextMorph(true);
                     },
                   },
@@ -2930,130 +3311,150 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           isOpen={showTextMorph}
           onOpenChange={setShowTextMorph}
           placement="center"
-          maxWidth={300}
+          maxWidth={310}
           title="Text & Colors"
           accentColor={accent.from}
         >
-          {({ close }) => (
-            <div className="flex flex-col gap-3 py-1 text-xs">
-              <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
-                <span className="font-bold text-gray-300">Text Formatting</span>
-                <button
-                  type="button"
-                  onClick={handleFormatBold}
-                  className="px-2.5 py-1 rounded-lg border font-bold flex items-center gap-1.5 transition active:scale-95"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    borderColor: 'rgba(255, 255, 255, 0.15)',
-                    color: 'var(--c-text-primary, #ffffff)',
-                  }}
-                >
-                  <span className="font-black">B</span>
-                  <span>Toggle Bold</span>
-                </button>
-              </div>
+          {({ close }) => {
+            const sel = capturedSelectionRef.current;
+            const lineCount = sel?.lines.length || 0;
+            return (
+              <div className="flex flex-col gap-3 py-1 text-xs">
+                {/* Selection status indicator */}
+                {lineCount > 0 ? (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-medium text-[11px]">
+                    <span className="material-symbols-rounded text-sm">check_circle</span>
+                    <span>{lineCount === 1 ? '1 line selected' : `${lineCount} lines selected`}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-400 font-medium text-[11px]">
+                    <span className="material-symbols-rounded text-sm">info</span>
+                    <span>No text selected (actions will apply to current line)</span>
+                  </div>
+                )}
 
-              <div className="flex flex-col gap-1.5">
-                <span className="font-semibold text-gray-400">Color Palette</span>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {COLOR_PALETTE.map((c) => {
-                    const isSelected = activeColorTool === (c.value || '');
-                    return (
+                <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+                  <span className="font-bold text-gray-300">Text Formatting</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleFormatBold();
+                      }}
+                      className="px-2.5 py-1 rounded-lg border font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        borderColor: 'rgba(255, 255, 255, 0.15)',
+                        color: 'var(--c-text-primary, #ffffff)',
+                      }}
+                    >
+                      <span className="font-black">B</span>
+                      <span>Toggle Bold</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleResetFormatting();
+                        close();
+                      }}
+                      className="px-2 py-1 rounded-lg border font-medium flex items-center gap-1 transition active:scale-95 text-gray-300 hover:text-white cursor-pointer"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                      }}
+                      title="Reset bold and color formatting"
+                    >
+                      <span className="material-symbols-rounded text-sm">format_clear</span>
+                      <span>Reset</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="font-semibold text-gray-400">Color Palette</span>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {COLOR_PALETTE.map((c) => (
                       <button
                         key={c.label}
                         type="button"
                         onClick={() => {
                           const newColor = c.value || '';
-                          setActiveColorTool(newColor);
+                          handleFormatColor(newColor);
                           close();
-                          if (activeSelection && activeSelection.start !== activeSelection.end) {
-                            handleFormatColor(newColor);
-                          }
-                          if (newColor) {
-                            toast.success(`Color tool active: tap words to apply ${c.label}`);
-                          } else {
-                            toast.info('Color reset tool active: tap words to reset color');
-                          }
                         }}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-90 cursor-pointer ${
-                          isSelected ? 'ring-2 ring-blue-500 scale-105' : ''
-                        }`}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-90 cursor-pointer hover:scale-105"
                         style={{
                           backgroundColor: c.value || 'transparent',
-                          borderColor: isSelected
-                            ? '#3b82f6'
-                            : isEffectiveLight
-                              ? 'rgba(0,0,0,0.15)'
-                              : 'rgba(255,255,255,0.2)',
+                          borderColor: isEffectiveLight
+                            ? 'rgba(0,0,0,0.15)'
+                            : 'rgba(255,255,255,0.2)',
                         }}
                         title={c.label}
                       >
                         {!c.value && (
                           <span className="material-symbols-rounded text-xs text-gray-400">format_color_reset</span>
                         )}
-                        {isSelected && c.value && (
-                          <span
-                            className="material-symbols-rounded text-xs"
-                            style={{ color: c.value === '#ffffff' ? '#000000' : '#ffffff' }}
-                          >
-                            check
-                          </span>
-                        )}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10 flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      const currentSel = capturedSelectionRef.current;
+                      if (currentSel && currentSel.lines.length > 0) {
+                        const lineIds = currentSel.lines.map((l) => l.lineId);
+                        setRolePickerTarget({
+                          sectionId: currentSel.lines[0].sectionId,
+                          lineId: currentSel.lines[0].lineId,
+                          lineIds,
+                          sectionIds: currentSel.sectionIds,
+                        });
+                      } else if (currentDoc.sections.length > 0) {
+                        setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer"
+                    style={{
+                      backgroundColor: `${accent.from}15`,
+                      borderColor: `${accent.from}35`,
+                      color: accent.from,
+                    }}
+                  >
+                    <span className="material-symbols-rounded text-sm">mic</span>
+                    <span>Assign Vocal Roles...</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      handlePasteLyricsFromClipboard();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-rounded text-sm">content_paste</span>
+                    <span>Paste Lyrics</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      handleCopyLyricsToClipboard();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-rounded text-sm">content_copy</span>
+                    <span>Copy Lyrics & Chords</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="pt-2 border-t border-white/10 flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    const sel = activeSelectionRef.current;
-                    if (sel) {
-                      setRolePickerTarget({ sectionId: sel.sectionId, lineId: sel.lineId });
-                    } else if (currentDoc.sections.length > 0) {
-                      setRolePickerTarget({ sectionId: currentDoc.sections[0].id });
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer"
-                  style={{
-                    backgroundColor: `${accent.from}15`,
-                    borderColor: `${accent.from}35`,
-                    color: accent.from,
-                  }}
-                >
-                  <span className="material-symbols-rounded text-sm">mic</span>
-                  <span>Assign Vocal Roles...</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    handlePasteLyricsFromClipboard();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
-                >
-                  <span className="material-symbols-rounded text-sm">content_paste</span>
-                  <span>Paste Lyrics</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    handleCopyLyricsToClipboard();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-gray-300 hover:text-white bg-white/5 border-white/10 transition active:scale-95 cursor-pointer"
-                >
-                  <span className="material-symbols-rounded text-sm">content_copy</span>
-                  <span>Copy Lyrics & Chords</span>
-                </button>
-              </div>
-            </div>
-          )}
+            );
+          }}
         </MorphingActionSurface>
       </main>
 

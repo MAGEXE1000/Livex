@@ -101,7 +101,7 @@ describe('Vocal Roles Management', () => {
     };
 
     const combined = getCombinedVocalRoles(doc);
-    expect(combined.defaults).toHaveLength(5);
+    expect(combined.defaults).toHaveLength(6);
     // Custom roles should have Guest Star (from storage) and Congregation (from doc)
     const customLabels = combined.customs.map((c) => c.label);
     expect(customLabels).toContain('Guest Star');
