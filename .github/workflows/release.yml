@@ -315,7 +315,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download Firebase Hosting Metadata Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: firebase-public-metadata
           path: firebase-public-metadata-temp
@@ -326,7 +326,7 @@ jobs:
           mv firebase-public-metadata-temp firebase-public
 
       - name: Download Release APK Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-apk
           path: release-apk-temp
