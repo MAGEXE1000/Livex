@@ -1,19 +1,15 @@
-# Version 4.6.74
+# Version 4.6.75
 
 Release Date: 2026-10-01
 
 ### Added
-- Docked Floating Toast Manager: Unified notification system anchored directly above the bottom navbar with frosted-glass styling, spring animations, and multi-theme support (Light, Dark, AMOLED).
-- Synchronized Rehearsal Lobby: Multi-device synchronized waiting lobby mode triggered via "Call Band" header action with automatic spectator lock and synchronized start.
-- Drag-and-Drop Song Reordering: Smooth reordering for song setlists and song repertoire with direct drag-and-drop handles.
-- Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.
+- Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.
+- Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.
 
 ### Improved
-- Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.
-- Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.
-- Repertoire & Editor Canvas: Borderless chord editor canvas with unified floating action button and letter-anchored chord placement.
+- Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.
+- Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.
 
 ### Fixed
-- Leader Self-Toast Echo: Enforced unconditional filter preventing band session leaders from receiving self-invitation toasts during band calls.
-- Solo Lobby Card Suppression: Eliminated persistent solo lobby bar popups during paused playback in solo live sessions.
-- Song Deletion & Preset Sync: Repaired active preset reset on song deletion and prevented stale references in setlist sections.
+- Intrusive Section Header Buttons: Removed cluttered inline "+ Add Songs" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.
+- FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.

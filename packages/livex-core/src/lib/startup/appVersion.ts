@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.74';
-export const NATIVE_VERSION_CODE = 40674;
-export const WEB_VERSION = '4.6.74';
+export const NATIVE_VERSION = '4.6.75';
+export const NATIVE_VERSION_CODE = 40675;
+export const WEB_VERSION = '4.6.75';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/1/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '10fc935e';
+export const APP_COMMIT_SHA = 'a8f1f672';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/1/2026, 6:02:47 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/1/2026, 8:59:35 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,26 +101,22 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Docked Floating Toast Manager: Unified notification system anchored directly above the bottom navbar with frosted-glass styling, spring animations, and multi-theme support (Light, Dark, AMOLED).',
-      'Synchronized Rehearsal Lobby: Multi-device synchronized waiting lobby mode triggered via "Call Band" header action with automatic spectator lock and synchronized start.',
-      'Drag-and-Drop Song Reordering: Smooth reordering for song setlists and song repertoire with direct drag-and-drop handles.',
-      'Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.',
+      'Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.',
+      'Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.',
-      'Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.',
-      'Repertoire & Editor Canvas: Borderless chord editor canvas with unified floating action button and letter-anchored chord placement.',
+      'Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.',
+      'Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Leader Self-Toast Echo: Enforced unconditional filter preventing band session leaders from receiving self-invitation toasts during band calls.',
-      'Solo Lobby Card Suppression: Eliminated persistent solo lobby bar popups during paused playback in solo live sessions.',
-      'Song Deletion & Preset Sync: Repaired active preset reset on song deletion and prevented stale references in setlist sections.',
+      'Intrusive Section Header Buttons: Removed cluttered inline "+ Add Songs" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.',
+      'FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.',
     ],
   },
 ];
@@ -132,6 +128,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.75',
+    date: '2026-10-01',
+    highlights: [
+      'Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.',
+      'Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.',
+      'Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.',
+      'Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.',
+      'Intrusive Section Header Buttons: Removed cluttered inline "+ Add Songs" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.',
+      'FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.',
+    ],
+  },
   {
     version: '4.6.74',
     date: '2026-10-01',
@@ -233,16 +241,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Butter-Smooth Sliding Letter Lyric Highlight: Implemented GPU compositor text-clip gradient wipe (`@keyframes lyric-word-wipe`) that fluidly glides across letters in lockstep with the precision timeline clock with 0 lag and 120fps hardware acceleration.',
       'Luminous Accent Bloom on Sung Words: Enhanced active lyrics in both Teleprompter and Both (Hybrid) modes with glowing leading edges and subtle drop-shadow depth.',
       'Super-Optimized Live Mode Performance: Streamlined chord and lyric state synchronization in LiveModeUI, eliminating redundant recalculations and layout shifts during auto-play and manual word seek.',
-    ],
-  },
-  {
-    version: '4.6.65',
-    date: '2026-09-29',
-    highlights: [
-      'Next Chord Modern Diagram in Live Mode: Displayed the canonical DetailFretboardDiagram for the upcoming chord in Chords Live mode (ChordsLiveView) with high-fidelity fretboard markers and interactive advance tap target.',
-      'Teleprompter Speed & Precise Duration Controls: Added real-time Speed slider (0.5x–2.0x) and MM:SS duration modal with automatic pacing computation and countdown timers.',
-      'First-Class Timed Silence & Interlude Events: Added support for dedicated interlude lines (e.g. solos or spoken segments) with independent explicit duration in seconds, unaffected by song BPM.',
-      'Floating Viewport Bottom Toolbar in Both Mode: Portaled the Both-mode editing toolbar to document.body, floating persistently at the viewport bottom as a mobile navbar with safe-area insets while reserving full scroll padding for the final lyric lines.',
     ],
   },
 ];
