@@ -4,6 +4,7 @@ import { type Setlist, type SongPreset, useChordStore } from '@workspace/livex-c
 import { SetlistCard } from './SetlistCard';
 import { SetlistCreateModal } from './SetlistCreateModal';
 import { SetlistShareModal } from './SetlistShareModal';
+import { ImportSetlistModal } from './ImportSetlistModal';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/StudioDesignSystem';
 
@@ -24,6 +25,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingSetlist, setEditingSetlist] = useState<Setlist | null>(null);
   const [sharingSetlist, setSharingSetlist] = useState<Setlist | null>(null);
   const [deletingSetlistId, setDeletingSetlistId] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
             >
               Organize 100+ songs into custom sections (e.g. Set 1, Acoustic Break, Encore) for sequential live rehearsal & gig playback.
             </p>
-            <div className="flex items-center gap-2.5 mt-6">
+            <div className="flex items-center gap-2.5 mt-6 flex-wrap justify-center">
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 type="button"
@@ -156,6 +158,24 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
               >
                 <span className="material-symbols-rounded text-base">add</span>
                 <span>Create First Setlist</span>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                type="button"
+                data-testid="empty-import-setlist-btn"
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-2.5 rounded-full text-xs font-bold border shadow-soft-card cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+                style={{
+                  backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                  borderColor: 'var(--c-border, #E3E6EB)',
+                  color: 'var(--c-text-primary, #111827)',
+                }}
+              >
+                <span className="material-symbols-rounded text-base text-[var(--c-text-secondary)]">
+                  cloud_download
+                </span>
+                <span>Import .livex Bundle</span>
               </motion.button>
             </div>
           </section>
@@ -243,6 +263,14 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
         onSave={handleSaveModal}
         initialSetlist={editingSetlist}
         accentColor={accentColor}
+      />
+
+      {/* Import Setlist Modal */}
+      <ImportSetlistModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        accentColor={accentColor}
+        onImportSuccess={(newId) => onOpenSetlist(newId)}
       />
 
       {/* Delete confirmation dialog */}

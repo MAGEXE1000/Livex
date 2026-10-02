@@ -47,6 +47,8 @@ import {
   SetlistLibraryView,
   SetlistDetailView,
   SetlistFormContent,
+  ImportSetlistContent,
+  ImportSetlistModal,
 } from '../components/setlists';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -4599,6 +4601,22 @@ export default function SongsPanel() {
     [accent.from, createSetlist, setActiveSetlistId]
   );
 
+  const renderImportSetlistForm = useCallback(
+    ({ close }: { close?: () => void } = {}) => (
+      <div style={{ padding: '8px 14px 14px 14px' }}>
+        <ImportSetlistContent
+          accentColor={accent.from}
+          onImportSuccess={(newSetlistId) => {
+            setActiveSetlistId(newSetlistId);
+            close?.();
+          }}
+          onClose={() => close?.()}
+        />
+      </div>
+    ),
+    [accent.from, setActiveSetlistId]
+  );
+
   // Sync localSections from store when not dragging
   useEffect(() => {
     if (secDragIdx === null) {
@@ -6649,8 +6667,8 @@ export default function SongsPanel() {
                   }}
                   data-purpose="action-buttons"
                 >
-                  {/* Secondary FAB: Import (All Songs only) */}
-                  {songsSubTab === 'all' && (
+                  {/* Secondary FAB: Import (All Songs = Import Song, Setlists = Import Setlist) */}
+                  {songsSubTab === 'all' ? (
                     <MorphingActionSurface
                       placement="center"
                       maxWidth={420}
@@ -6676,6 +6694,33 @@ export default function SongsPanel() {
                       )}
                     >
                       {renderImportSongForm}
+                    </MorphingActionSurface>
+                  ) : (
+                    <MorphingActionSurface
+                      placement="center"
+                      maxWidth={420}
+                      title="Import Setlist"
+                      subtitle="Import a .livex setlist package with songs"
+                      accentColor={accent.from}
+                      customTrigger={({ triggerProps }) => (
+                        <motion.button
+                          {...triggerProps}
+                          type="button"
+                          data-testid="import-setlist-fab-btn"
+                          aria-label="Import Setlist Package"
+                          title="Import Setlist Package"
+                          className="w-11 h-11 rounded-full border shadow-soft-card flex items-center justify-center cursor-pointer"
+                          style={{
+                            backgroundColor: 'var(--surface-card-bg, #ffffff)',
+                            borderColor: 'var(--c-border, #E3E6EB)',
+                            color: 'var(--c-text-secondary, #6B7280)',
+                          }}
+                        >
+                          <span className="material-symbols-rounded text-xl">cloud_download</span>
+                        </motion.button>
+                      )}
+                    >
+                      {renderImportSetlistForm}
                     </MorphingActionSurface>
                   )}
 

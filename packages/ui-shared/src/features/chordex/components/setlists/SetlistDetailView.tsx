@@ -79,17 +79,19 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
       id={songId}
       dragListener={false}
       dragControls={dragControls}
-      className="flex items-center justify-between gap-2 p-2.5 rounded-2xl border transition-all hover:border-white/20 select-none group"
+      dragElastic={0.05}
+      className="flex items-center justify-between gap-2 p-2.5 rounded-2xl border transition-all select-none group"
       style={{
-        backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
-        borderColor: 'var(--c-border, rgba(255, 255, 255, 0.06))',
+        backgroundColor: 'var(--c-surface-mid, var(--surface-card-bg, rgba(255, 255, 255, 0.04)))',
+        borderColor: 'var(--c-border, rgba(255, 255, 255, 0.08))',
         position: 'relative',
       }}
       whileDrag={{
-        scale: 1.025,
-        boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
-        backgroundColor: 'var(--surface-container-high, rgba(30, 35, 45, 0.98))',
-        borderColor: 'var(--c-accent-from, rgba(59, 130, 246, 0.6))',
+        scale: 1.02,
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+        borderColor: 'var(--c-accent-from, #2563EB)',
+        opacity: 0.92,
         zIndex: 50,
       }}
       transition={{ type: 'spring', stiffness: 500, damping: 32 }}
@@ -100,7 +102,7 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
         {/* Drag Grip Handle */}
         <div
           onPointerDown={(e) => dragControls.start(e)}
-          className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-slate-400 hover:text-white transition-colors shrink-0 flex items-center justify-center rounded-lg hover:bg-white/5"
+          className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-slate-400 hover:text-[var(--c-text-primary)] transition-colors shrink-0 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
           style={{ touchAction: 'none' }}
           title="Drag to reorder"
           data-testid={`drag-handle-${song.id}`}
@@ -117,8 +119,8 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden relative"
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-            borderColor: 'rgba(255, 255, 255, 0.12)',
+            backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
+            borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
           }}
         >
           {song.coverImage ? (
@@ -144,21 +146,45 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
           onClick={() => onOpenSongInEditor?.(song.id)}
           title="Open in song editor"
         >
-          <h4 className="text-xs font-bold truncate leading-tight group-hover:text-blue-400 transition-colors">
+          <h4
+            className="text-xs font-bold truncate leading-tight transition-colors"
+            style={{ color: 'var(--c-text-primary)' }}
+          >
             {song.name}
           </h4>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 flex-wrap">
+          <div
+            className="flex items-center gap-2 mt-0.5 text-[10px] flex-wrap"
+            style={{ color: 'var(--c-text-secondary)' }}
+          >
             {song.artist && <span className="truncate max-w-[100px]">{song.artist}</span>}
             {song.key && (
-              <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+              <span
+                className="px-1 py-0.5 rounded font-bold"
+                style={{
+                  backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
+                  color: 'var(--c-text-primary)',
+                }}
+              >
                 #{song.key}
               </span>
             )}
-            <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-slate-200">
+            <span
+              className="px-1 py-0.5 rounded font-bold"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
+                color: 'var(--c-text-primary)',
+              }}
+            >
               {song.bpm || song.speed || 120} BPM
             </span>
             {durStr && (
-              <span className="px-1 py-0.5 rounded font-bold bg-white/10 text-blue-400">
+              <span
+                className="px-1 py-0.5 rounded font-bold"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 15%, transparent)',
+                  color: 'var(--c-accent-from, #2563EB)',
+                }}
+              >
                 {durStr}
               </span>
             )}
@@ -173,7 +199,8 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
           type="button"
           onClick={onPlayLiveFromHere}
           title={`Play live starting from "${song.name}"`}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/10 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+          style={{ color: 'var(--c-accent-from, #2563EB)' }}
         >
           <span className="material-symbols-rounded text-base">play_arrow</span>
         </button>
@@ -184,7 +211,8 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
             type="button"
             onClick={onMoveToSection}
             title="Move to another section"
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
+            style={{ color: 'var(--c-text-secondary)' }}
           >
             <span className="material-symbols-rounded text-sm">drive_file_move</span>
           </button>
@@ -195,7 +223,8 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
           type="button"
           onClick={onRemove}
           title="Remove song from setlist (keeps song in library)"
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:bg-red-500/10"
+          style={{ color: 'var(--c-text-muted)' }}
         >
           <span className="material-symbols-rounded text-sm">close</span>
         </button>
@@ -668,11 +697,10 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
           }
         >
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-slate-300 m-0">
+            <p className="text-xs text-[var(--c-text-secondary)] m-0">
               Enter a custom section name (e.g. &quot;Set 2&quot;, &quot;Acoustic Break&quot;, &quot;Encore&quot;):
             </p>
             <input
-              autoFocus
               type="text"
               data-testid="new-section-name-input"
               placeholder="e.g. Bloque 2, Encore, Medley..."
@@ -681,8 +709,12 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleCreateNewSection();
               }}
-              className="w-full h-10 px-3 rounded-xl border text-xs font-bold outline-none bg-black/40 text-white mt-1"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}
+              className="w-full h-10 px-3 rounded-xl border text-xs font-bold outline-none mt-1 transition-all"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.15))',
+                color: 'var(--c-text-primary)',
+              }}
             />
           </div>
         </Dialog>

@@ -92,7 +92,6 @@ export function SetlistFormContent({
         placeholder="e.g. Festival Set 2026..."
         data-testid="setlist-title-input"
         required
-        autoFocus
       />
 
       <Input
