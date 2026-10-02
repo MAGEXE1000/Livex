@@ -165,6 +165,10 @@
     </script>
     <meta charset="UTF-8" />
     <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' capacitor: ionic: http://localhost:*; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: https: blob: capacitor:; media-src 'self' blob: data: capacitor:; connect-src 'self' capacitor: ionic: https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com https://*.web.app https://api.github.com https://github.com https://*.githubusercontent.com https://app.tolgee.io https://*.supabase.co http://localhost:* ws://localhost:*; worker-src 'self' blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; object-src 'none';"
+    />
+    <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover, interactive-widget=overlays-content"
     />
