@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.78';
-export const NATIVE_VERSION_CODE = 40678;
-export const WEB_VERSION = '4.6.78';
+export const NATIVE_VERSION = '4.6.79';
+export const NATIVE_VERSION_CODE = 40679;
+export const WEB_VERSION = '4.6.79';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'a4a1e4d9';
+export const APP_COMMIT_SHA = '51f74191';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 3:20:40 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 4:01:31 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,23 +101,20 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Canva-Style Floating Formatting Toolbar: Introduced a viewport-docked horizontal frosted glass toolbar appearing instantly upon text selection with inline Bold (B), Italic (I), Underline (U), active formatting pill badges, and quick clear formatting.',
-      'Compact Color Palette Popover: Integrated a 9-color high-contrast spectrum swatch grid into the selection dock for instant character-level color styling.',
-      'Vocal Role Quick Tagging: Added popover selection to assign Lead Vocal, Harmony, and Choir/Backing roles to selected character ranges with highlighted backgrounds.',
-      'Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.',
+      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
+      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      "Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.",
-      'Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.',
+      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Live Teleprompter Multi-Line Formatting Parity: Updated teleprompter and preparation view rendering to display character-level italic and underline formatting without layout shift.',
+      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
     ],
   },
 ];
@@ -129,6 +126,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.79',
+    date: '2026-10-02',
+    highlights: [
+      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
+      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
+      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
+      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
+    ],
+  },
   {
     version: '4.6.78',
     date: '2026-10-02',
@@ -232,18 +239,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Independent Stage Display Synchronization: Ensured follower teleprompters preserve independent visual layouts (Lyrics only, Chords only, Both) while locking musical timing to the leader.',
     ],
   },
-  {
-    version: '4.6.69',
-    date: '2026-09-30',
-    highlights: [
-      'Always-Editable Lyrics and Both Workspaces: Enabled immediate, direct text editing and deletion across Lyrics and Both workspaces upon tap without requiring prior unlock actions.',
-      'Dynamic Chord Offset Shifting Engine: Implemented `shiftChordOffsets` to cleanly and automatically preserve above-word anchored chords when writing, backspacing, or inserting words in Both mode.',
-      'Configurable Bars-per-Line Pacing Controls: Added fine-grained measures-per-line pacing settings (1–4 bars / 4–16 beats) in Song Live Settings for metronomic teleprompter alignment.',
-      'Seamless Scroll-Aware Live Topbar: Auto-hides top navigation during active teleprompter playback and downward scrolling, restoring instantly on pause or upward scroll.',
-      'Enhanced Active Lyric Highlight Contrast: Optimized high-contrast white lyric highlighting and border accents across Dark and AMOLED themes.',
-      'Clean Live Lyrics Floating Toolbar: Streamlined secondary capsule toolbar and eliminated redundant view mode settings.',
-    ],
-  },
 ];
 
 /** Native English version of the current changelog for Android. */
@@ -251,17 +246,15 @@ export const APP_CHANGELOG_SECTIONS_NATIVE: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
-      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
+      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
+      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
-      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
-      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
-      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
+      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
+      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
     ],
   },
 ];
@@ -272,17 +265,15 @@ export const APP_CHANGELOG_SECTIONS_ES: ChangelogSection[] = [
   {
     heading: 'Novedades',
     items: [
-      'Integración de Llamar Banda en Cabecera: Botón de ensayo "Llamar Banda" integrado directamente en la cabecera superior de Modo En Vivo para líderes de banda con diseño de cristal.',
-      'Interfaz de Repertorios Pulida: Vista de repertorio optimizada con controles de 34px, holgura de cabecera dinámica (140px) que previene colisiones de texto, insignias uniformes (#Tonalidad, BPM, Duración) y estados vacíos intuitivos.',
+      'Formato de Selección Silencioso por Carácter: Política estricta de cero alertas toast para acciones de formato contextual (Negrita, Cursiva, Subrayado, Paleta de Color, Limpiar Formato) con respuesta visual instantánea en el texto.',
+      'Estabilidad Táctil y de Selección: Prevensión onPointerDown en los 10 botones de la barra de formato para evitar pérdida de foco o colapso de la selección nativa en Android WebView.',
     ],
   },
   {
     heading: 'Correcciones',
     items: [
-      'Bloqueo de Progresión del Teleprónter: Referencias de sincronización estabilizadas, eliminando reinicios prematuros del temporizador para garantizar el avance continuo y automático de letras.',
-      'Canal de Eliminación de Canciones e Integridad Relacional: Reparada acción de confirmación de eliminación con restablecimiento de canción activa, limpieza en repertorios y notificaciones toast.',
-      'Ciclo de Vida de Sala de Espera Aislado: Sala de espera restringida estrictamente a sesiones de llamada multidispositivo activas, eliminando ventanas emergentes en modo individual o pausas.',
-      'Hub de Banda Simplificado: Eliminada gestión redundante de repertorios en el modal para enfocarse exclusivamente en Miembros (con Código de Unión) y Calendario de Gigs.',
+      'Motor de Toast Exclusivo para Acciones Macro: Notificaciones toast reservadas exclusivamente para acciones estructurales del sistema.',
+      'Integridad de Pegado Multilínea: Normalización CRLF (\\r\\n / \\r -> \\n) e inserción multilínea fluida en la posición del cursor sin alterar estructuras de secciones.',
     ],
   },
 ];
@@ -292,17 +283,15 @@ export const APP_CHANGELOG_SECTIONS_DE: ChangelogSection[] = [
   {
     heading: 'Neu',
     items: [
-      'Live-Header-Band-Aufruf: "Band anrufen"-Button direkt in den oberen Live-Modus-Header für Bandleiter integriert.',
-      'Optimierte Setlist-Oberfläche: Optimierte Setlist-Detailansicht mit 34-px-Bedienelementen, dynamischem Header-Abstand (140 px) zur Vermeidung von Titelkollisionen und einheitlichen Song-Badges.',
+      'Lautlose zeichengenaue Textformatierung: Strenge Zero-Toast-Richtlinie für alle Formatierungsaktionen (Fett, Kursiv, Unterstrichen, Farbpalette, Formatierung löschen) mit sofortigem visuellem Feedback.',
+      'Touch- & Auswahl-Stabilität: onPointerDown-Prävention auf allen 10 Symbolleisten-Schaltflächen zur Verhinderung des Auswahlverlusts in Android WebView.',
     ],
   },
   {
     heading: 'Fehlerbehebungen',
     items: [
-      'Teleprompter-Fortschritts-Fix: Stabilisierte Synchronisations-Refs für kontinuierliches automatisches Weiterschalten der Songtexte.',
-      'Song-Löschungs-Pipeline: Zuverlässiges Löschen mit Bereinigung in Setlists und Toast-Benachrichtigung.',
-      'Isolierte Proberaum-Lobby: Keine störenden Solo-Lobby-Popups mehr bei Pausen.',
-      'Optimierter Band-Hub: Fokussierung auf Mitglieder und Gigs/Kalender.',
+      'Toast-Benachrichtigungen nur für Systemaktionen: Toast-Engine ausschließlich für Makro-Systemaktionen reserviert.',
+      'Mehrzeilige Zwischenablage-Korrektur: CRLF-Normalisierung (\\r\\n / \\r -> \\n) und nahtloses Einfügen an der Cursorposition.',
     ],
   },
 ];
