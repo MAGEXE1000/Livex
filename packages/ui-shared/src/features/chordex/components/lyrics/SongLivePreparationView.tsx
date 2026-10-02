@@ -164,6 +164,36 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     [lyricsDoc, sections, onUpdateLyrics]
   );
 
+  const handleClearAllRoles = useCallback(() => {
+    if (!lyricsDoc) return;
+    const nextSections = sections.map((sec) => ({
+      ...sec,
+      vocalRole: undefined,
+      lines: sec.lines.map((l) => ({
+        ...l,
+        vocalRole: undefined,
+        spans: l.spans
+          ? l.spans.map((s) => ({
+              ...s,
+              format: {
+                ...s.format,
+                vocalRole: undefined,
+                backgroundColor: undefined,
+                color: undefined,
+              },
+            }))
+          : undefined,
+      })),
+    }));
+    onUpdateLyrics({
+      ...lyricsDoc,
+      defaultVocalRole: undefined,
+      sections: nextSections,
+    });
+    setSelectedSectionForRole(null);
+    toast.success('All vocal roles cleared');
+  }, [lyricsDoc, sections, onUpdateLyrics]);
+
   // Append a new empty section with a specified type/name
   const handleAddSection = useCallback(
     (name: string, type: any = 'verse') => {
@@ -1156,11 +1186,22 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
 
                 <button
                   type="button"
+                  data-testid="live-prep-remove-role-btn"
                   onClick={() => handleSetSectionVocalRole(selectedSectionForRole, undefined)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-50 active:scale-95 transition-colors cursor-pointer mt-1"
                 >
-                  <span className="material-symbols-rounded text-base">clear</span>
-                  <span>Remove Role</span>
+                  <span className="material-symbols-rounded text-base">block</span>
+                  <span>Remove Role on Section</span>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="live-prep-clear-all-roles-btn"
+                  onClick={handleClearAllRoles}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 active:scale-95 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-rounded text-base">delete_sweep</span>
+                  <span>Clear All Assigned Roles</span>
                 </button>
               </div>
             </motion.div>

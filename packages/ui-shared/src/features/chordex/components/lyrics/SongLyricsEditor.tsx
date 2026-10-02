@@ -612,6 +612,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     return getCombinedVocalRoles(currentDoc);
   }, [currentDoc, customRolesVersion]);
 
+  const hasAnyVocalRoles = useMemo(() => {
+    if (currentDoc.defaultVocalRole) return true;
+    return currentDoc.sections.some(
+      (s) =>
+        Boolean(s.vocalRole) ||
+        s.lines.some(
+          (l) =>
+            Boolean(l.vocalRole) ||
+            (l.spans && l.spans.some((sp) => Boolean(sp.format?.vocalRole)))
+        )
+    );
+  }, [currentDoc]);
+
   // Document-wide colors & formatting
   const documentColor = currentDoc.formatting?.defaultColor;
 
@@ -1981,6 +1994,36 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     },
     [rolePickerTarget, updateDoc]
   );
+
+  const handleClearAllRoles = useCallback(() => {
+    updateDoc((doc) => ({
+      ...doc,
+      defaultVocalRole: undefined,
+      sections: doc.sections.map((sec) => ({
+        ...sec,
+        vocalRole: undefined,
+        lines: sec.lines.map((l) => ({
+          ...l,
+          vocalRole: undefined,
+          spans: l.spans
+            ? l.spans.map((s) => ({
+                ...s,
+                format: {
+                  ...s.format,
+                  vocalRole: undefined,
+                  backgroundColor: undefined,
+                  color: undefined,
+                },
+              }))
+            : undefined,
+        })),
+      })),
+    }));
+    setRolePickerTarget(null);
+    setShowFormattingModal(false);
+    setShowTextMorph(false);
+    toast.success('All vocal roles cleared');
+  }, [updateDoc]);
 
   const handleCreateCustomRole = useCallback(() => {
     if (!newRoleName.trim()) return;
@@ -3525,6 +3568,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     <span>Assign Vocal Roles...</span>
                   </button>
 
+                  {hasAnyVocalRoles && (
+                    <button
+                      type="button"
+                      data-testid="fab-clear-all-roles-btn"
+                      onClick={() => {
+                        close();
+                        handleClearAllRoles();
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-semibold text-rose-400 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 transition active:scale-95 cursor-pointer"
+                    >
+                      <span className="material-symbols-rounded text-sm">delete_sweep</span>
+                      <span>Clear All Vocal Roles</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => {
@@ -4069,24 +4127,44 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         <div className="flex flex-col gap-3 py-1">
           <p className="text-xs text-gray-400">Select which performer should sing this part:</p>
 
-          {/* Remove / Clear Role option at top */}
-          <button
-            type="button"
-            data-testid="remove-vocal-role-btn"
-            onClick={() => handleAssignRole(undefined)}
-            className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-rose-500/40"
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              borderColor: 'rgba(239, 68, 68, 0.25)',
-              color: '#ef4444',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-rounded text-base">block</span>
-              <span>Remove Role / Clear</span>
-            </div>
-            <span className="text-[10px] uppercase font-mono opacity-80">Clear</span>
-          </button>
+          {/* Action strip: Remove Role on Selection & Clear All Assigned Roles */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              data-testid="remove-vocal-role-btn"
+              onClick={() => handleAssignRole(undefined)}
+              className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-rose-500/40"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                borderColor: 'rgba(239, 68, 68, 0.25)',
+                color: '#ef4444',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-rounded text-base">block</span>
+                <span>Remove Role on Selection / Line</span>
+              </div>
+              <span className="text-[10px] uppercase font-mono opacity-80">Clear</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="clear-all-vocal-roles-btn"
+              onClick={handleClearAllRoles}
+              className="flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-rose-500/40"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                color: '#ef4444',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-rounded text-base">delete_sweep</span>
+                <span>Clear All Assigned Roles</span>
+              </div>
+              <span className="text-[10px] uppercase font-mono opacity-80">Reset All</span>
+            </button>
+          </div>
 
           {/* Canonical 5 default roles */}
           <div className="flex flex-col gap-1.5">
