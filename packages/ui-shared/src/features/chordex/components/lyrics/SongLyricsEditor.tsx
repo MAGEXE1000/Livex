@@ -321,8 +321,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const historyRef = useRef<SongLyricsDocument[]>([]);
   const futureRef = useRef<SongLyricsDocument[]>([]);
 
-  // Input refs and cursor focus management
-  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // Input/textarea refs and cursor focus management
+  const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const pendingFocusLineIdRef = useRef<string | null>(null);
   const targetCursorOffsetRef = useRef<number | null>(null);
 
@@ -387,10 +387,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const captureSelection = useCallback((): CapturedSelectionData | null => {
     if (typeof window === 'undefined') return null;
 
-    // 1. Check if an active input inside the editor has text selected
+    // 1. Check if an active input/textarea inside the editor has text selected
     const activeEl = document.activeElement;
     if (
-      activeEl instanceof HTMLInputElement &&
+      (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) &&
       activeEl.selectionStart !== null &&
       activeEl.selectionEnd !== null &&
       activeEl.selectionStart !== activeEl.selectionEnd
@@ -1218,7 +1218,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const handlePasteIntoLine = useCallback(
     (
-      e: React.ClipboardEvent<HTMLInputElement>,
+      e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
       sectionId: string,
       lineIdx: number,
       lineId: string
@@ -1373,7 +1373,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const handleLineKeyDown = useCallback(
     (
-      e: React.KeyboardEvent<HTMLInputElement>,
+      e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
       sectionId: string,
       lineIdx: number,
       lineId: string
@@ -1413,31 +1413,43 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }
         }
       } else if (e.key === 'ArrowUp') {
-        const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
-        if (lineIdx > 0 && currentSec) {
-          const prevLine = currentSec.lines[lineIdx - 1];
-          if (prevLine && inputRefs.current[prevLine.id]) {
-            e.preventDefault();
-            const target = e.currentTarget;
-            const pos = target.selectionStart ?? 0;
-            inputRefs.current[prevLine.id]?.focus();
-            try {
-              inputRefs.current[prevLine.id]?.setSelectionRange(pos, pos);
-            } catch (_) {}
+        // Textarea handles intra-line vertical navigation natively.
+        // Only intercept when cursor is already at position 0 (top of this textarea)
+        // to jump to the previous line's textarea.
+        const target = e.currentTarget;
+        const selStart = target.selectionStart ?? 0;
+        if (selStart === 0) {
+          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+          if (lineIdx > 0 && currentSec) {
+            const prevLine = currentSec.lines[lineIdx - 1];
+            if (prevLine && inputRefs.current[prevLine.id]) {
+              e.preventDefault();
+              const el = inputRefs.current[prevLine.id];
+              el?.focus();
+              try {
+                const len = el?.value.length ?? 0;
+                el?.setSelectionRange(len, len);
+              } catch (_) {}
+            }
           }
         }
       } else if (e.key === 'ArrowDown') {
-        const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
-        if (currentSec && lineIdx < currentSec.lines.length - 1) {
-          const nextLine = currentSec.lines[lineIdx + 1];
-          if (nextLine && inputRefs.current[nextLine.id]) {
-            e.preventDefault();
-            const target = e.currentTarget;
-            const pos = target.selectionStart ?? 0;
-            inputRefs.current[nextLine.id]?.focus();
-            try {
-              inputRefs.current[nextLine.id]?.setSelectionRange(pos, pos);
-            } catch (_) {}
+        // Only intercept when cursor is at end of this textarea to jump to next line's textarea.
+        const target = e.currentTarget;
+        const selStart = target.selectionStart ?? 0;
+        const valLen = target.value.length;
+        if (selStart >= valLen) {
+          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+          if (currentSec && lineIdx < currentSec.lines.length - 1) {
+            const nextLine = currentSec.lines[lineIdx + 1];
+            if (nextLine && inputRefs.current[nextLine.id]) {
+              e.preventDefault();
+              const el = inputRefs.current[nextLine.id];
+              el?.focus();
+              try {
+                el?.setSelectionRange(0, 0);
+              } catch (_) {}
+            }
           }
         }
       }
@@ -3401,106 +3413,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     line.format?.color || documentColor || 'var(--c-text-primary, #ffffff)';
                   const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
 
-                  // In LYRICS mode: render editable input when focused, or formatted spans with multi-line selection
+                  // In LYRICS mode: single always-visible auto-growing textarea per line.
+                  // Using <textarea> instead of <input type="text"> is the root-cause fix:
+                  // the HTML spec strips embedded \n from single-line inputs, which flattened
+                  // entire songs into one wall of text. A textarea preserves every newline natively.
                   if (mode === 'lyrics') {
-                    const isEditing = editingLineId === line.id;
-                    if (isEditing) {
-                      return (
-                        <div
-                          key={line.id || lineIdx}
-                          data-testid={`lyric-line-${section.id}-${lineIdx}`}
-                          data-line-id={line.id}
-                          data-section-id={section.id}
-                          data-line-index={lineIdx}
-                          onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
-                          onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                          className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text"
-                          style={{
-                            transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
-                            transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                            WebkitUserSelect: 'text',
-                            userSelect: 'text',
-                          }}
-                        >
-                          <input
-                            ref={(el) => { inputRefs.current[line.id] = el; }}
-                            type="text"
-                            autoFocus
-                            value={line.text}
-                            onFocus={() => {
-                              setLastActivePosition(section.id, lineIdx, line.id);
-                            }}
-                            onBlur={(e) => {
-                              setEditingLineId(null);
-                              const val = e.target.value.trim();
-                              if (val.length > 0) {
-                                const parseResult = parseLineStructuralElement(val);
-                                if (parseResult.kind === 'section') {
-                                  handlePromoteLineToSection(section.id, lineIdx, parseResult);
-                                } else if (parseResult.kind === 'interlude') {
-                                  handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
-                                }
-                              }
-                            }}
-                            onChange={(e) => {
-                              setLastActivePosition(section.id, lineIdx, line.id);
-                              handleUpdateLineText(section.id, line.id, e.target.value);
-                            }}
-                            onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
-                            onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
-                            placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
-                            data-testid={`lyric-line-input-${lineIdx}`}
-                            data-no-focus-ring="true"
-                            className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
-                            style={{
-                              color: resolvedColor,
-                              fontWeight: isLineBold ? 700 : 500,
-                              fontFamily: 'inherit',
-                              caretColor: accent.from || '#2563EB',
-                              outline: 'none',
-                              outlineOffset: 0,
-                              border: 'none',
-                              boxShadow: 'none',
-                              WebkitTapHighlightColor: 'transparent',
-                              WebkitUserSelect: 'text',
-                              userSelect: 'text',
-                            }}
-                            autoCapitalize="sentences"
-                            autoCorrect="on"
-                            spellCheck="false"
-                          />
-                          {activeRole && (
-                            <button
-                              type="button"
-                              data-testid={`vocal-role-chip-${line.id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRolePickerTarget({
-                                  sectionId: section.id,
-                                  lineId: line.id,
-                                });
-                              }}
-                              className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                              style={{
-                                backgroundColor: `${activeRole.color || '#3b82f6'}26`,
-                                borderColor: `${activeRole.color || '#3b82f6'}66`,
-                                color: activeRole.color || '#3b82f6',
-                              }}
-                              title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
-                            >
-                              <span
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: activeRole.color || '#3b82f6' }}
-                              />
-                              <span>{activeRole.label || activeRole.type}</span>
-                            </button>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Not currently editing this line: render rich formatted spans allowing native multi-line text selection
-                    const words = findWordBoundaries(line.text);
                     return (
                       <div
                         key={line.id || lineIdx}
@@ -3508,15 +3425,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
-                        onClick={() => {
-                          const sel = typeof window !== 'undefined' ? window.getSelection() : null;
-                          if (sel && sel.toString().length > 0) return;
-                          setLastActivePosition(section.id, lineIdx, line.id);
-                          setEditingLineId(line.id);
-                        }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex flex-wrap items-center gap-x-1.5 py-1 px-2 transition-all rounded-lg select-text cursor-text"
+                        className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
@@ -3524,51 +3435,64 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           userSelect: 'text',
                         }}
                       >
-                        {line.text.trim().length === 0 ? (
-                          <span
-                            title="Tap to edit line"
-                            className="text-base leading-relaxed tracking-wide text-gray-500/40 italic select-none py-0.5 cursor-pointer"
-                          >
-                            {secIdx === 0 && lineIdx === 0 && section.lines.length === 1
-                              ? 'Write or paste lyrics here...'
-                              : 'Empty line (tap to write)'}
-                          </span>
-                        ) : (
-                          words.map((w, wIdx) => {
-                            const wordColor = getCharacterColor(line.spans, w.start) || resolvedColor;
-                            const wordBgColor = getCharacterBackgroundColor(line.spans, w.start);
-                            const wordRole = getCharacterVocalRole(line.spans, w.start);
-                            const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
-                            const isWordItalic = getCharacterItalic(line.spans, w.start) || Boolean(line.format?.italic);
-                            const isWordUnderline = getCharacterUnderline(line.spans, w.start) || Boolean(line.format?.underline);
-                            const isHighlighted = Boolean(wordBgColor || wordRole);
-                            const effectiveWordColor = wordRole?.color || wordColor;
-
-                            return (
-                              <span
-                                key={`${w.start}-${w.end}-${wIdx}`}
-                                title={wordRole ? `Vocal role: ${wordRole.label || wordRole.type}` : 'Tap to edit line'}
-                                className="text-base leading-relaxed tracking-wide transition-all select-text cursor-pointer"
-                                style={{
-                                  color: effectiveWordColor,
-                                  fontWeight: isWordBold || isHighlighted ? 700 : 500,
-                                  fontStyle: isWordItalic ? 'italic' : undefined,
-                                  textDecoration: isWordUnderline ? 'underline' : undefined,
-                                  fontFamily: 'inherit',
-                                  backgroundColor: wordRole?.color ? `${wordRole.color}28` : (wordBgColor || undefined),
-                                  borderRadius: isHighlighted ? '4px' : undefined,
-                                  padding: isHighlighted ? '1px 5px' : undefined,
-                                  margin: isHighlighted ? '0 1px' : undefined,
-                                  border: wordRole ? `1px solid ${wordRole.color}44` : (wordBgColor ? `1px solid ${wordBgColor}44` : undefined),
-                                  WebkitUserSelect: 'text',
-                                  userSelect: 'text',
-                                }}
-                              >
-                                {w.word}
-                              </span>
-                            );
-                          })
-                        )}
+                        <textarea
+                          ref={(el) => { inputRefs.current[line.id] = el; }}
+                          rows={1}
+                          value={line.text}
+                          onFocus={() => {
+                            setLastActivePosition(section.id, lineIdx, line.id);
+                            setEditingLineId(line.id);
+                          }}
+                          onBlur={(e) => {
+                            setEditingLineId(null);
+                            const val = e.target.value.trim();
+                            if (val.length > 0) {
+                              const parseResult = parseLineStructuralElement(val);
+                              if (parseResult.kind === 'section') {
+                                handlePromoteLineToSection(section.id, lineIdx, parseResult);
+                              } else if (parseResult.kind === 'interlude') {
+                                handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
+                              }
+                            }
+                          }}
+                          onChange={(e) => {
+                            setLastActivePosition(section.id, lineIdx, line.id);
+                            handleUpdateLineText(section.id, line.id, e.target.value);
+                            // Auto-resize: collapse then grow to content height
+                            const el = e.target;
+                            el.style.height = 'auto';
+                            el.style.height = `${el.scrollHeight}px`;
+                          }}
+                          onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
+                          onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
+                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
+                          data-testid={`lyric-line-input-${lineIdx}`}
+                          data-no-focus-ring="true"
+                          className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
+                          style={{
+                            color: resolvedColor,
+                            fontWeight: isLineBold ? 700 : 500,
+                            fontFamily: 'inherit',
+                            caretColor: accent.from || '#2563EB',
+                            outline: 'none',
+                            outlineOffset: 0,
+                            border: 'none',
+                            boxShadow: 'none',
+                            resize: 'none',
+                            overflow: 'hidden',
+                            padding: 0,
+                            margin: 0,
+                            height: 'auto',
+                            minHeight: '1.75rem',
+                            display: 'block',
+                            WebkitTapHighlightColor: 'transparent',
+                            WebkitUserSelect: 'text',
+                            userSelect: 'text',
+                          } as React.CSSProperties}
+                          autoCapitalize="sentences"
+                          autoCorrect="on"
+                          spellCheck={false}
+                        />
                         {activeRole && (
                           <button
                             type="button"
@@ -3580,7 +3504,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 lineId: line.id,
                               });
                             }}
-                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                             style={{
                               backgroundColor: `${activeRole.color || '#3b82f6'}26`,
                               borderColor: `${activeRole.color || '#3b82f6'}66`,

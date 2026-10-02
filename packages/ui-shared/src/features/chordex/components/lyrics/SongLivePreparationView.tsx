@@ -89,7 +89,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
     lineId?: string;
   } | null>(null);
 
-  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const pendingFocusLineIdRef = useRef<string | null>(null);
 
   // Drag and drop state for interludes
@@ -815,7 +815,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                         )}
 
                         <div className="flex items-center gap-2 w-full">
-                          <input
+                          <textarea
                             ref={(el) => {
                               inputRefs.current[line.id] = el;
                               if (el && pendingFocusLineIdRef.current === line.id) {
@@ -825,13 +825,17 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 el.setSelectionRange(len, len);
                               }
                             }}
-                            type="text"
+                            rows={1}
                             data-testid={`lyrics-line-input-${lIdx}`}
                             value={line.text}
                             onFocus={() => setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id })}
                             onChange={(e) => {
                               setActivePosition({ sectionId: section.id, lineIndex: lIdx, lineId: line.id });
                               handleUpdateLineText(section.id, line.id, e.target.value);
+                              // Auto-resize: collapse then grow to content height
+                              const el = e.target;
+                              el.style.height = 'auto';
+                              el.style.height = `${el.scrollHeight}px`;
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
@@ -843,18 +847,23 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 handleDeleteLine(section.id, line.id, prevLine?.id);
                               }
                             }}
-                            className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors"
+                            className="flex-1 bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide pb-1 transition-colors focus:outline-none focus:ring-0 focus:border-0"
                             style={{
                               border: 'none',
                               outline: 'none',
                               boxShadow: 'none',
+                              resize: 'none',
+                              overflow: 'hidden',
+                              padding: 0,
+                              height: 'auto',
+                              minHeight: '1.5rem',
                               color: lineTextColor,
                               fontWeight: (line.format?.bold ?? isBold) ? 700 : 400,
                               fontStyle: line.format?.italic ? 'italic' : undefined,
                               textDecoration: line.format?.underline ? 'underline' : undefined,
                               fontSize: `${fontSize}px`,
                               fontFamily: 'inherit',
-                            }}
+                            } as React.CSSProperties}
                           />
                         </div>
                       </div>
