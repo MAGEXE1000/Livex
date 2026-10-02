@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.76';
-export const NATIVE_VERSION_CODE = 40676;
-export const WEB_VERSION = '4.6.76';
+export const NATIVE_VERSION = '4.6.77';
+export const NATIVE_VERSION_CODE = 40677;
+export const WEB_VERSION = '4.6.77';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -70,19 +70,19 @@ export const APP_VERSION_LABEL = APP_VERSION;
  * Local date this build was stamped (e.g. "July 24, 2026").
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_VERSION_DATE = '10/1/2026';
+export const APP_VERSION_DATE = '10/2/2026';
 
 /**
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'd25ce859';
+export const APP_COMMIT_SHA = '2a9076b2';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 12:09:43 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 2:15:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,21 +101,20 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.',
-      'Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.',
+      'Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.',
+      'Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
-      'Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.',
+      'Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.',
+      'Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.',
     ],
   },
 ];
@@ -127,6 +126,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.77',
+    date: '2026-10-02',
+    highlights: [
+      'Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.',
+      'Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.',
+      'Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.',
+      'Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.',
+    ],
+  },
   {
     version: '4.6.76',
     date: '2026-10-01',
@@ -230,18 +239,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Reorganized Both-Mode Edit Toolbar: Placed Undo and Redo on the left, a neutral standard Chord tool in the center, Text Styling/Color tool and clean More menu on the right-center, and anchored the primary Done action all the way to the far right.',
       'Cleaned More Action Menu: Removed redundant "Enter edit mode" and "Add lyric line" items, retaining "+ Add Section" (with layers icon), "+ Add Timed Interlude", and essential song actions.',
       'Unobscured Viewport Docking: Removed intrusive mode toggle toasts and anchored the bottom dock persistently as a mobile floating navbar.',
-    ],
-  },
-  {
-    version: '4.6.67',
-    date: '2026-09-30',
-    highlights: [
-      'Modern PDF Export Screen: Streamlined PDF export interface with instant header action, unobscured bottom drawer with paper format (A4, Letter), orientation (Portrait, Landscape), and theme toggles.',
-      'Enhanced Song Library Experience: Modernized song cards with single-line metadata badges, custom song cover picker and local persistence, and clean full song export.',
-      'First-Class Timed Interludes in Song Editor: Added support for inserting timed interlude/solo segments anywhere in song lyrics with custom explicit duration and live teleprompter countdown.',
-      'Global Floating Navbar Suppression during PDF Export: Completely suppressed application bottom navigation bar during PDF preview, restoring smoothly upon closing.',
-      'Clean PDF Document Template: Removed lyrics and vocal roles section from the chord chart PDF export layout, providing centered, well-proportioned diagrams.',
-      'Restored Canonical BPM Engine: Reinstated metronomic BPM progression capped at 400 BPM while completely decoupling BPM adjustments from song duration mutations.',
     ],
   },
 ];
