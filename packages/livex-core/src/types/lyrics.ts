@@ -6,11 +6,24 @@
  * vocal roles, and line-level styling without storing opaque HTML.
  */
 
+/**
+ * Standard vocal performer roles
+ */
+export type StandardVocalRole = 'lead' | 'solo' | 'backing' | 'harmony' | 'all' | 'choir' | 'guest' | 'custom';
+
+export interface VocalRoleAnnotation {
+  type: StandardVocalRole;
+  label?: string; // Display label (e.g. "Lead", "All", "Lead + Group", "John & Paul")
+  color?: string; // Badge accent color (e.g. "#3b82f6", "#10b981", "#f59e0b")
+}
+
 export interface LyricSpanFormat {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
   color?: string; // Hex color code or CSS color string
+  backgroundColor?: string; // Hex background highlight color or tint
+  vocalRole?: VocalRoleAnnotation; // Vocal role assigned specifically to this span/word
 }
 
 export interface LyricTextSpan {
@@ -26,17 +39,6 @@ export interface LyricChordPlacement {
   id: string; // Unique marker ID
   chord: string; // Canonical chord ID or symbol (e.g. 'C', 'G/B', 'Am7')
   offset: number; // Character index in the line text (0-based)
-}
-
-/**
- * Standard vocal performer roles
- */
-export type StandardVocalRole = 'lead' | 'solo' | 'backing' | 'harmony' | 'all' | 'choir' | 'guest' | 'custom';
-
-export interface VocalRoleAnnotation {
-  type: StandardVocalRole;
-  label?: string; // Display label (e.g. "Lead", "All", "Lead + Group", "John & Paul")
-  color?: string; // Badge accent color (e.g. "#3b82f6", "#10b981", "#f59e0b")
 }
 
 export const VOCAL_ROLE_PRESETS: { type: StandardVocalRole; label: string; color: string }[] = [

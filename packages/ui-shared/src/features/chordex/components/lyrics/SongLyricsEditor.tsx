@@ -28,6 +28,12 @@ import {
   applyFormatToSpans,
   toggleBoldOnSelection,
   setColorOnSelection,
+  setRoleOnSelection,
+  clearFormattingOnSelection,
+  getCharacterColor,
+  getCharacterBold,
+  getCharacterBackgroundColor,
+  getCharacterVocalRole,
   getLineSpans,
   splitLineIntoSegments,
   findWordBoundaries,
@@ -112,32 +118,6 @@ function getCharOffsetFromClickX(text: string, clickX: number, inputEl?: HTMLInp
     }
   }
   return bestOffset;
-}
-
-function getCharacterColor(spans: LyricTextSpan[] | undefined, charOffset: number): string | undefined {
-  if (!spans || spans.length === 0) return undefined;
-  let offset = 0;
-  for (const s of spans) {
-    const end = offset + s.text.length;
-    if (charOffset >= offset && charOffset < end) {
-      return s.format?.color;
-    }
-    offset = end;
-  }
-  return undefined;
-}
-
-function getCharacterBold(spans: LyricTextSpan[] | undefined, charOffset: number): boolean {
-  if (!spans || spans.length === 0) return false;
-  let offset = 0;
-  for (const s of spans) {
-    const end = offset + s.text.length;
-    if (charOffset >= offset && charOffset < end) {
-      return Boolean(s.format?.bold);
-    }
-    offset = end;
-  }
-  return false;
 }
 
 const COLOR_PALETTE = [
@@ -1655,11 +1635,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               return {
                 ...l,
                 format: undefined,
+                vocalRole: undefined,
                 spans: undefined,
               };
             }
 
-            const nextSpans = setColorOnSelection(l.spans, l.text, lineSel.start, lineSel.end, '');
+            const nextSpans = clearFormattingOnSelection(l.spans, l.text, lineSel.start, lineSel.end);
             return { ...l, spans: nextSpans };
           }),
         };
@@ -1876,29 +1857,63 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const handleAssignRole = useCallback(
     (role: VocalRoleAnnotation | undefined) => {
-      if (!rolePickerTarget) return;
+      const capturedSel = capturedSelectionRef.current;
+      const targetLineMap = new Map<string, CapturedSelectionLine>();
+      if (capturedSel && capturedSel.lines.length > 0) {
+        for (const l of capturedSel.lines) {
+          targetLineMap.set(l.lineId, l);
+        }
+      }
 
       updateDoc((doc) => ({
         ...doc,
         sections: doc.sections.map((sec) => {
-          // If specific lineIds were targeted across a multi-line selection
+          // If active selection with character ranges exists
+          if (targetLineMap.size > 0) {
+            const hasAnyLine = sec.lines.some((l) => targetLineMap.has(l.id));
+            if (!hasAnyLine) return sec;
+
+            const updatedLines = sec.lines.map((l) => {
+              const lineSel = targetLineMap.get(l.id);
+              if (!lineSel) return l;
+
+              if (lineSel.isFullLine || lineSel.start === lineSel.end) {
+                const nextSpans = setRoleOnSelection(l.spans, l.text, 0, l.text.length, role);
+                return {
+                  ...l,
+                  vocalRole: role,
+                  spans: nextSpans,
+                };
+              }
+
+              const nextSpans = setRoleOnSelection(l.spans, l.text, lineSel.start, lineSel.end, role);
+              return {
+                ...l,
+                spans: nextSpans,
+              };
+            });
+
+            return {
+              ...sec,
+              lines: updatedLines,
+            };
+          }
+
+          if (!rolePickerTarget) return sec;
+
           if (rolePickerTarget.lineIds && rolePickerTarget.lineIds.length > 0) {
             const lineIdSet = new Set(rolePickerTarget.lineIds);
             const hasAnyLine = sec.lines.some((l) => lineIdSet.has(l.id));
             if (!hasAnyLine) return sec;
 
-            const updatedLines = sec.lines.map((l) =>
-              lineIdSet.has(l.id) ? { ...l, vocalRole: role } : l
-            );
-
-            // If all lines in this section now share this role, set section role as well
-            const allLinesHaveRole = updatedLines.every(
-              (l) => l.vocalRole?.type === role?.type && l.vocalRole?.label === role?.label
-            );
+            const updatedLines = sec.lines.map((l) => {
+              if (!lineIdSet.has(l.id)) return l;
+              const nextSpans = setRoleOnSelection(l.spans, l.text, 0, l.text.length, role);
+              return { ...l, vocalRole: role, spans: nextSpans };
+            });
 
             return {
               ...sec,
-              vocalRole: allLinesHaveRole ? role : sec.vocalRole,
               lines: updatedLines,
             };
           }
@@ -1908,9 +1923,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           if (rolePickerTarget.lineId) {
             return {
               ...sec,
-              lines: sec.lines.map((l) =>
-                l.id === rolePickerTarget.lineId ? { ...l, vocalRole: role } : l
-              ),
+              lines: sec.lines.map((l) => {
+                if (l.id !== rolePickerTarget.lineId) return l;
+                const nextSpans = setRoleOnSelection(l.spans, l.text, 0, l.text.length, role);
+                return { ...l, vocalRole: role, spans: nextSpans };
+              }),
             };
           }
 
@@ -1921,7 +1938,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       if (role) {
         toast.success(`Role "${role.label || role.type}" assigned`);
       } else {
-        toast.info('Vocal role cleared');
+        toast.info('Role highlight cleared');
       }
       setRolePickerTarget(null);
     },
@@ -2700,8 +2717,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           style={{
                             transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                             transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                            backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
-                            borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
                             WebkitUserSelect: 'text',
                             userSelect: 'text',
                           }}
@@ -2794,8 +2809,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                          backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
-                          borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
                           WebkitUserSelect: 'text',
                           userSelect: 'text',
                         }}
@@ -2812,17 +2825,26 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         ) : (
                           words.map((w, wIdx) => {
                             const wordColor = getCharacterColor(line.spans, w.start) || resolvedColor;
+                            const wordBgColor = getCharacterBackgroundColor(line.spans, w.start);
+                            const wordRole = getCharacterVocalRole(line.spans, w.start);
                             const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
+                            const isHighlighted = Boolean(wordBgColor || wordRole);
+                            const effectiveWordColor = wordRole?.color || wordColor;
 
                             return (
                               <span
                                 key={`${w.start}-${w.end}-${wIdx}`}
-                                title="Tap to edit line"
+                                title={wordRole ? `Vocal role: ${wordRole.label || wordRole.type}` : 'Tap to edit line'}
                                 className="text-base leading-relaxed tracking-wide transition-all select-text cursor-pointer"
                                 style={{
-                                  color: wordColor,
-                                  fontWeight: isWordBold ? 700 : 500,
+                                  color: effectiveWordColor,
+                                  fontWeight: isWordBold || isHighlighted ? 700 : 500,
                                   fontFamily: 'inherit',
+                                  backgroundColor: wordRole?.color ? `${wordRole.color}28` : (wordBgColor || undefined),
+                                  borderRadius: isHighlighted ? '4px' : undefined,
+                                  padding: isHighlighted ? '1px 5px' : undefined,
+                                  margin: isHighlighted ? '0 1px' : undefined,
+                                  border: wordRole ? `1px solid ${wordRole.color}44` : (wordBgColor ? `1px solid ${wordBgColor}44` : undefined),
                                   WebkitUserSelect: 'text',
                                   userSelect: 'text',
                                 }}
@@ -2939,8 +2961,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       style={{
                         transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                         transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                        backgroundColor: activeRole?.color ? `${activeRole.color}1e` : undefined,
-                        borderLeft: activeRole?.color ? `3px solid ${activeRole.color}` : '3px solid transparent',
                         WebkitUserSelect: 'text',
                         userSelect: 'text',
                       }}
@@ -2952,7 +2972,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             (wIdx === 0 && c.offset < w.start)
                         );
                         const wordColor = getCharacterColor(line.spans, w.start) || resolvedColor;
+                        const wordBgColor = getCharacterBackgroundColor(line.spans, w.start);
+                        const wordRole = getCharacterVocalRole(line.spans, w.start);
                         const isWordBold = getCharacterBold(line.spans, w.start) || isLineBold;
+                        const isHighlighted = Boolean(wordBgColor || wordRole);
+                        const effectiveWordColor = wordRole?.color || wordColor;
 
                         return (
                           <div
@@ -3017,9 +3041,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   : ''
                               }`}
                               style={{
-                                color: wordColor,
-                                fontWeight: isWordBold ? 800 : 500,
+                                color: effectiveWordColor,
+                                fontWeight: isWordBold || isHighlighted ? 800 : 500,
                                 fontFamily: 'inherit',
+                                backgroundColor: wordRole?.color ? `${wordRole.color}28` : (wordBgColor || undefined),
+                                borderRadius: isHighlighted ? '4px' : undefined,
+                                padding: isHighlighted ? '1px 5px' : undefined,
+                                margin: isHighlighted ? '0 1px' : undefined,
+                                border: wordRole ? `1px solid ${wordRole.color}44` : (wordBgColor ? `1px solid ${wordBgColor}44` : undefined),
                                 WebkitUserSelect: 'text',
                                 userSelect: 'text',
                               }}

@@ -1,4 +1,4 @@
-import type { LyricTextSpan, LyricSpanFormat, SongLyricLine } from '../../types/lyrics';
+import type { LyricTextSpan, LyricSpanFormat, SongLyricLine, VocalRoleAnnotation } from '../../types/lyrics';
 
 /**
  * Ensures a line has a valid spans array.
@@ -17,11 +17,20 @@ export function getLineSpans(line: SongLyricLine): LyricTextSpan[] {
 export function areFormatsEqual(a?: LyricSpanFormat, b?: LyricSpanFormat): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
+  const roleEqual =
+    (!a.vocalRole && !b.vocalRole) ||
+    (Boolean(a.vocalRole && b.vocalRole) &&
+      a.vocalRole!.type === b.vocalRole!.type &&
+      (a.vocalRole!.label || '') === (b.vocalRole!.label || '') &&
+      (a.vocalRole!.color || '') === (b.vocalRole!.color || ''));
+
   return (
     Boolean(a.bold) === Boolean(b.bold) &&
     Boolean(a.italic) === Boolean(b.italic) &&
     Boolean(a.underline) === Boolean(b.underline) &&
-    (a.color || '') === (b.color || '')
+    (a.color || '') === (b.color || '') &&
+    (a.backgroundColor || '') === (b.backgroundColor || '') &&
+    roleEqual
   );
 }
 
@@ -117,6 +126,8 @@ export function applyFormatToSpans(
         if (!mergedFormat.italic) delete mergedFormat.italic;
         if (!mergedFormat.underline) delete mergedFormat.underline;
         if (!mergedFormat.color) delete mergedFormat.color;
+        if (!mergedFormat.backgroundColor) delete mergedFormat.backgroundColor;
+        if (!mergedFormat.vocalRole) delete mergedFormat.vocalRole;
 
         nextSpans.push({
           text: span.text.slice(beforeLength, beforeLength + insideLength),
@@ -235,3 +246,119 @@ export function getCharacterBold(
   }
   return false;
 }
+
+/**
+ * Returns the background highlight color of the character at the specified character offset.
+ */
+export function getCharacterBackgroundColor(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): string | undefined {
+  if (!spans || spans.length === 0) return undefined;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return s.format?.backgroundColor;
+    }
+    offset = end;
+  }
+  return undefined;
+}
+
+/**
+ * Returns the vocal role assigned to the character at the specified character offset.
+ */
+export function getCharacterVocalRole(
+  spans: LyricTextSpan[] | undefined,
+  charOffset: number
+): VocalRoleAnnotation | undefined {
+  if (!spans || spans.length === 0) return undefined;
+  let offset = 0;
+  for (const s of spans) {
+    const end = offset + s.text.length;
+    if (charOffset >= offset && charOffset < end) {
+      return s.format?.vocalRole;
+    }
+    offset = end;
+  }
+  return undefined;
+}
+
+/**
+ * Assigns or removes a vocal role and associated highlight background on the selected range.
+ */
+export function setRoleOnSelection(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number,
+  role?: VocalRoleAnnotation
+): LyricTextSpan[] {
+  return applyFormatToSpans(spans, fullText, startOffset, endOffset, {
+    vocalRole: role,
+    backgroundColor: role?.color ? `${role.color}28` : undefined,
+    color: role?.color,
+  });
+}
+
+/**
+ * Strips formatting from the selected character range [startOffset, endOffset].
+ */
+export function clearFormattingOnSelection(
+  spans: LyricTextSpan[] | undefined,
+  fullText: string,
+  startOffset: number,
+  endOffset: number
+): LyricTextSpan[] {
+  const safeStart = Math.max(0, Math.min(startOffset, endOffset));
+  const safeEnd = Math.min(fullText.length, Math.max(startOffset, endOffset));
+  if (safeStart === safeEnd) {
+    return spans && spans.length > 0 ? spans : [{ text: fullText }];
+  }
+
+  const initialSpans: LyricTextSpan[] =
+    spans && spans.length > 0 ? spans : [{ text: fullText }];
+
+  const nextSpans: LyricTextSpan[] = [];
+  let currentOffset = 0;
+
+  for (const span of initialSpans) {
+    const spanLength = span.text.length;
+    const spanEnd = currentOffset + spanLength;
+
+    if (spanEnd <= safeStart || currentOffset >= safeEnd) {
+      nextSpans.push(span);
+    } else {
+      const overlapStart = Math.max(currentOffset, safeStart);
+      const overlapEnd = Math.min(spanEnd, safeEnd);
+
+      const beforeLength = overlapStart - currentOffset;
+      const insideLength = overlapEnd - overlapStart;
+      const afterLength = spanEnd - overlapEnd;
+
+      if (beforeLength > 0) {
+        nextSpans.push({
+          text: span.text.slice(0, beforeLength),
+          format: span.format ? { ...span.format } : undefined,
+        });
+      }
+      if (insideLength > 0) {
+        nextSpans.push({
+          text: span.text.slice(beforeLength, beforeLength + insideLength),
+          format: undefined,
+        });
+      }
+      if (afterLength > 0) {
+        nextSpans.push({
+          text: span.text.slice(beforeLength + insideLength),
+          format: span.format ? { ...span.format } : undefined,
+        });
+      }
+    }
+    currentOffset = spanEnd;
+  }
+
+  return compactSpans(nextSpans);
+}
+

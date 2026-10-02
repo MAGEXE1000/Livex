@@ -1,97 +1,80 @@
 import { describe, it, expect } from 'vitest';
 import {
   applyFormatToSpans,
-  compactSpans,
-  isSelectionBold,
-  toggleBoldOnSelection,
-  setColorOnSelection,
+  setRoleOnSelection,
+  clearFormattingOnSelection,
   getCharacterColor,
   getCharacterBold,
+  getCharacterBackgroundColor,
+  getCharacterVocalRole,
+  toggleBoldOnSelection,
 } from '../spanFormatting';
-import type { LyricTextSpan } from '../../../types/lyrics';
+import type { VocalRoleAnnotation } from '../../../types/lyrics';
 
-describe('Lyrics Span Formatting Utilities', () => {
-  it('correctly resolves character color and bold across formatted spans', () => {
-    const spans: LyricTextSpan[] = [
-      { text: 'Lead: ', format: { bold: true, color: '#3b82f6' } },
-      { text: 'I see a silhouette' },
-      { text: ' of a man', format: { color: '#ec4899' } },
-    ];
+describe('Span Formatting and Word-Level Vocal Role Highlighting', () => {
+  const harmonyRole: VocalRoleAnnotation = {
+    type: 'harmony',
+    label: 'Harmony',
+    color: '#f59e0b',
+  };
 
-    // Character 0 ('L') is inside the first span
-    expect(getCharacterColor(spans, 0)).toBe('#3b82f6');
-    expect(getCharacterBold(spans, 0)).toBe(true);
+  it('assigns role and highlight only to the targeted word/character range', () => {
+    const text = 'On a dark desert highway';
+    // Select "dark desert" (indices 5 to 16)
+    const spans = setRoleOnSelection(undefined, text, 5, 16, harmonyRole);
 
-    // Character 8 ('s' in silhouette) is inside the unformatted second span
-    expect(getCharacterColor(spans, 8)).toBeUndefined();
-    expect(getCharacterBold(spans, 8)).toBe(false);
+    expect(spans).toHaveLength(3);
+    expect(spans[0].text).toBe('On a ');
+    expect(spans[0].format).toBeUndefined();
 
-    // Character 26 ('f' in of a man) is inside the third span
-    expect(getCharacterColor(spans, 26)).toBe('#ec4899');
-    expect(getCharacterBold(spans, 26)).toBe(false);
+    expect(spans[1].text).toBe('dark desert');
+    expect(spans[1].format?.vocalRole).toEqual(harmonyRole);
+    expect(spans[1].format?.backgroundColor).toBe('#f59e0b28');
+    expect(spans[1].format?.color).toBe('#f59e0b');
 
-    // Negative or beyond bounds returns undefined / false
-    expect(getCharacterColor(spans, 999)).toBeUndefined();
-    expect(getCharacterBold(spans, 999)).toBe(false);
+    expect(spans[2].text).toBe(' highway');
+    expect(spans[2].format).toBeUndefined();
   });
 
-  it('applies bold to a single word in a line', () => {
-    const text = 'This is important text';
-    const start = text.indexOf('important');
-    const end = start + 'important'.length;
+  it('retrieves character-level role and background color correctly', () => {
+    const text = 'Lead line (backing vocals)';
+    const backingRole: VocalRoleAnnotation = {
+      type: 'backing',
+      label: 'Backing',
+      color: '#3b82f6',
+    };
 
-    const result = applyFormatToSpans(undefined, text, start, end, { bold: true });
-    expect(result).toHaveLength(3);
-    expect(result[0]).toEqual({ text: 'This is ' });
-    expect(result[1]).toEqual({ text: 'important', format: { bold: true } });
-    expect(result[2]).toEqual({ text: ' text' });
+    // Apply backing role only to "(backing vocals)" (indices 10 to 26)
+    const spans = setRoleOnSelection(undefined, text, 10, 26, backingRole);
+
+    expect(getCharacterVocalRole(spans, 2)).toBeUndefined();
+    expect(getCharacterBackgroundColor(spans, 2)).toBeUndefined();
+
+    expect(getCharacterVocalRole(spans, 12)).toEqual(backingRole);
+    expect(getCharacterBackgroundColor(spans, 12)).toBe('#3b82f628');
+    expect(getCharacterColor(spans, 12)).toBe('#3b82f6');
   });
 
-  it('applies color to a sub-word character range', () => {
-    const text = 'Highlighting words';
-    // Select "light" inside "Highlighting"
-    const start = 4;
-    const end = 9;
+  it('allows toggling bold on a specific word without affecting role highlights', () => {
+    const text = 'Sing this word loud';
+    // Highlight "word" with harmony role (indices 10 to 14)
+    let spans = setRoleOnSelection(undefined, text, 10, 14, harmonyRole);
+    // Make "word" bold
+    spans = toggleBoldOnSelection(spans, text, 10, 14);
 
-    const result = setColorOnSelection(undefined, text, start, end, '#3b82f6');
-    expect(result).toHaveLength(3);
-    expect(result[0]).toEqual({ text: 'High' });
-    expect(result[1]).toEqual({ text: 'light', format: { color: '#3b82f6' } });
-    expect(result[2]).toEqual({ text: 'ing words' });
+    expect(getCharacterBold(spans, 11)).toBe(true);
+    expect(getCharacterVocalRole(spans, 11)).toEqual(harmonyRole);
   });
 
-  it('toggles bold off when an already bold range is selected', () => {
-    const initialSpans: LyricTextSpan[] = [
-      { text: 'Hello ' },
-      { text: 'World', format: { bold: true } },
-    ];
-    const fullText = 'Hello World';
-    const start = 6;
-    const end = 11;
+  it('clears formatting only on the specified selection', () => {
+    const text = 'Keep this part highlighted and clear this';
+    let spans = setRoleOnSelection(undefined, text, 0, text.length, harmonyRole);
 
-    expect(isSelectionBold(initialSpans, fullText, start, end)).toBe(true);
+    // Clear only "clear this" (indices 31 to 41)
+    spans = clearFormattingOnSelection(spans, text, 31, 41);
 
-    const toggled = toggleBoldOnSelection(initialSpans, fullText, start, end);
-    expect(toggled).toHaveLength(1);
-    expect(toggled[0]).toEqual({ text: 'Hello World' }); // Compacted together!
-  });
-
-  it('preserves surrounding formatting and merges adjacent identical spans', () => {
-    const initialSpans: LyricTextSpan[] = [
-      { text: 'Start ', format: { bold: true } },
-      { text: 'Middle' },
-      { text: ' End', format: { color: '#10b981' } },
-    ];
-    const fullText = 'Start Middle End';
-
-    // Apply color to Middle
-    const start = 6;
-    const end = 12;
-    const result = setColorOnSelection(initialSpans, fullText, start, end, '#10b981');
-
-    // Middle and End now both have color: #10b981, so they should compact together!
-    expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ text: 'Start ', format: { bold: true } });
-    expect(result[1]).toEqual({ text: 'Middle End', format: { color: '#10b981' } });
+    expect(getCharacterVocalRole(spans, 5)).toEqual(harmonyRole);
+    expect(getCharacterVocalRole(spans, 35)).toBeUndefined();
+    expect(getCharacterBackgroundColor(spans, 35)).toBeUndefined();
   });
 });

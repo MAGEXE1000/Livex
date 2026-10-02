@@ -1204,27 +1204,19 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           const isActive = idx === currentLineIdx;
           const isPast = idx < currentLineIdx;
 
-          const role = item.line.vocalRole || item.sectionVocalRole;
-          const roleColor = role?.color;
           const isTextColorWhite =
             !item.color ||
             item.color.toLowerCase() === '#ffffff' ||
             item.color.toLowerCase() === '#fff' ||
             item.color.toLowerCase().startsWith('rgb(255');
-          const highlightBorderColor = roleColor || (isTextColorWhite ? accent.from : item.color);
-          const highlightBg = roleColor
-            ? `color-mix(in srgb, ${roleColor} 14%, rgba(255, 255, 255, 0.08))`
-            : isTextColorWhite
-              ? 'rgba(255, 255, 255, 0.08)'
-              : 'rgba(255, 255, 255, 0.05)';
-          const nonActiveBg = roleColor
-            ? `color-mix(in srgb, ${roleColor} 8%, transparent)`
-            : 'transparent';
+          const highlightBorderColor = isTextColorWhite ? accent.from : item.color;
+          const highlightBg = isTextColorWhite
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(255, 255, 255, 0.05)';
+          const nonActiveBg = 'transparent';
           const highlightBorder = isActive
             ? `1px solid ${isTextColorWhite ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.1)'}`
-            : roleColor
-              ? `1px solid color-mix(in srgb, ${roleColor} 25%, transparent)`
-              : '1px solid transparent';
+            : '1px solid transparent';
           const highlightShadow = isActive
             ? '0 6px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
             : 'none';
@@ -1245,9 +1237,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 padding: '12px 16px',
                 background: isActive ? highlightBg : nonActiveBg,
                 border: highlightBorder,
-                borderLeft: roleColor
-                  ? `4px solid ${roleColor}`
-                  : (isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent'),
+                borderLeft: isActive ? `4px solid ${highlightBorderColor}` : '4px solid transparent',
                 boxShadow: highlightShadow,
                 opacity: isActive ? 1 : isPast ? 0.45 : 0.72,
                 transition:
@@ -1444,16 +1434,49 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                             fontFamily: resolvedFontFamily,
                             fontSize: fontSizes.text,
                             cursor: 'pointer',
-                            color: isActive
+                            color: w.color || (isActive
                               ? (item.color || 'var(--c-text-primary, #ffffff)')
-                              : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))',
-                            fontWeight: isActive ? 700 : 500,
-                            transition: 'color 0.2s ease',
+                              : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))'),
+                            fontWeight: isActive || Boolean(w.backgroundColor || w.vocalRole) ? 700 : 500,
+                            backgroundColor: w.backgroundColor || undefined,
+                            borderRadius: (w.backgroundColor || w.vocalRole) ? '4px' : undefined,
+                            padding: (w.backgroundColor || w.vocalRole) ? '1px 5px' : undefined,
+                            border: w.vocalRole?.color ? `1px solid ${w.vocalRole.color}44` : undefined,
+                            transition: 'color 0.2s ease, background-color 0.2s ease',
                           }}
                         >
                           {w.text}&nbsp;
                         </span>
                       </div>
+                    );
+                  })
+                ) : item.words && item.words.length > 0 ? (
+                  item.words.map((w) => {
+                    const isWordHighlighted = Boolean(w.backgroundColor || w.vocalRole);
+                    const wordColor = w.vocalRole?.color || w.color || (isActive
+                      ? (item.color || 'var(--c-text-primary, #ffffff)')
+                      : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))');
+                    return (
+                      <span
+                        key={w.id}
+                        style={{
+                          fontFamily: resolvedFontFamily,
+                          fontSize: fontSizes.text,
+                          cursor: 'pointer',
+                          color: wordColor,
+                          fontWeight: isActive || isWordHighlighted ? 700 : 500,
+                          letterSpacing: '-0.01em',
+                          backgroundColor: w.backgroundColor || undefined,
+                          borderRadius: isWordHighlighted ? '4px' : undefined,
+                          padding: isWordHighlighted ? '1px 5px' : undefined,
+                          margin: isWordHighlighted ? '0 1px' : undefined,
+                          border: w.vocalRole?.color ? `1px solid ${w.vocalRole.color}44` : undefined,
+                          display: 'inline-block',
+                          transition: 'color 0.2s ease, background-color 0.2s ease',
+                        }}
+                      >
+                        {w.text}&nbsp;
+                      </span>
                     );
                   })
                 ) : (
@@ -2086,10 +2109,35 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
                   textAlign: 'center',
                   lineHeight: 1.3,
                   padding: '0 12px',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '4px',
                   transition: 'color 0.2s ease',
                 }}
               >
-                {currentLine?.line.text || '...'}
+                {currentLine?.words && currentLine.words.length > 0
+                  ? currentLine.words.map((w) => {
+                      const isWordHighlighted = Boolean(w.backgroundColor || w.vocalRole);
+                      const wColor = w.vocalRole?.color || w.color || currentLine?.color || 'var(--c-text-primary, #ffffff)';
+                      return (
+                        <span
+                          key={w.id}
+                          style={{
+                            color: wColor,
+                            backgroundColor: w.backgroundColor || undefined,
+                            borderRadius: isWordHighlighted ? '6px' : undefined,
+                            padding: isWordHighlighted ? '2px 8px' : undefined,
+                            border: w.vocalRole?.color ? `1px solid ${w.vocalRole.color}44` : undefined,
+                            display: 'inline-block',
+                          }}
+                        >
+                          {w.text}
+                        </span>
+                      );
+                    })
+                  : (currentLine?.line.text || '...')}
               </div>
             </div>
           )}

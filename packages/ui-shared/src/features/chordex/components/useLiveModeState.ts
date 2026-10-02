@@ -22,6 +22,8 @@ import {
   parseDurationMmSs,
   type SongTimingSchedule,
   getCharacterColor,
+  getCharacterBackgroundColor,
+  getCharacterVocalRole,
   useBandStore,
   broadcastBandLivePacket,
   subscribeToBandLiveSession,
@@ -76,6 +78,8 @@ export interface TeleprompterWord {
   endOffset: number;
   durationMs: number;
   color?: string;
+  backgroundColor?: string;
+  vocalRole?: VocalRoleAnnotation;
 }
 
 export interface TeleprompterLineItem {
@@ -350,7 +354,10 @@ export function splitLineIntoWords(
       (wIdx === 0 ? chords?.find((c) => c.offset < rw.start) : undefined);
 
     const spanColor = getCharacterColor(line?.spans, rw.start);
-    const resolvedWordColor = spanColor || defaultLineColor;
+    const spanBgColor = getCharacterBackgroundColor(line?.spans, rw.start);
+    const spanRole = getCharacterVocalRole(line?.spans, rw.start);
+    const resolvedWordColor = spanRole?.color || spanColor || defaultLineColor;
+    const resolvedWordBg = spanRole?.color ? `${spanRole.color}28` : spanBgColor;
 
     words.push({
       id: `word-${lineIdx}-${wIdx}`,
@@ -363,6 +370,8 @@ export function splitLineIntoWords(
       endOffset: rw.end,
       durationMs: wordDuration,
       color: resolvedWordColor,
+      backgroundColor: resolvedWordBg,
+      vocalRole: spanRole,
     });
   }
 
