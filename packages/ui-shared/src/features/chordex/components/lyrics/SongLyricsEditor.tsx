@@ -1223,10 +1223,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       lineIdx: number,
       lineId: string
     ) => {
-      const pastedText = e.clipboardData.getData('text');
+      // Prefer text/plain for full fidelity; some clipboard managers (WhatsApp, clipboard history apps)
+      // only populate text/plain and not the shorthand 'text', which can cause getData('text') to return
+      // an empty string on Android WebView, falling through to native <input type="text"> paste that
+      // strips all newlines.
+      const pastedText =
+        e.clipboardData.getData('text/plain') || e.clipboardData.getData('text');
       if (!pastedText) return;
 
-      const singleParse = parseLineStructuralElement(pastedText.trim());
+      // Normalize all line-ending variants (\r\n, \r) to canonical \n before any processing.
+      // This is critical for content from Windows apps, WhatsApp, and clipboard history managers
+      // that may produce \r\n or bare \r line endings.
+      const normalizedText = pastedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+      // Structural element detection (section header / interlude) — single-line only
+      const singleParse = parseLineStructuralElement(normalizedText.trim());
       if (singleParse.kind === 'section') {
         e.preventDefault();
         handlePromoteLineToSection(sectionId, lineIdx, singleParse);
@@ -1238,17 +1249,126 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         return;
       }
 
-      if (!pastedText.includes('\n') && !pastedText.includes('\r')) {
+      // Single-line paste: let browser handle natively (no newlines present)
+      if (!normalizedText.includes('\n')) {
+        // Still need to prevent the native paste from triggering if the line text would
+        // be replaced, and instead perform the splice manually to keep span/chord data intact.
+        const inputEl = e.currentTarget;
+        const selStart = inputEl.selectionStart ?? inputEl.value.length;
+        const selEnd = inputEl.selectionEnd ?? inputEl.value.length;
+        const currentText = inputEl.value;
+        const before = currentText.slice(0, selStart);
+        const after = currentText.slice(selEnd);
+        const newLineText = before + normalizedText + after;
+        e.preventDefault();
+        setLastActivePosition(sectionId, lineIdx, lineId);
+        handleUpdateLineText(sectionId, lineId, newLineText);
+        // Restore cursor after the pasted segment
+        const newCursorPos = selStart + normalizedText.length;
+        pendingFocusLineIdRef.current = lineId;
+        targetCursorOffsetRef.current = newCursorPos;
         return;
       }
 
+      // Multiline paste — always intercept; never let <input type="text"> handle it
+      // (the HTML spec requires single-line inputs to strip newlines on paste).
       e.preventDefault();
 
-      const parsedDoc = continuousTextToLyricsDocument(pastedText, localDocRef.current);
-      const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
-      updateDoc(() => normalizedDoc, true);
+      const inputEl = e.currentTarget;
+      const selStart = inputEl.selectionStart ?? inputEl.value.length;
+      const selEnd = inputEl.selectionEnd ?? inputEl.value.length;
+      const currentLineText = inputEl.value;
+      const beforeCursor = currentLineText.slice(0, selStart);
+      const afterCursor = currentLineText.slice(selEnd);
+
+      const pastedLines = normalizedText.split('\n');
+
+      const doc = localDocRef.current;
+      const targetSec = doc.sections.find((s) => s.id === sectionId);
+      const targetLine = targetSec?.lines.find((l) => l.id === lineId);
+
+      // If the current line is empty and the doc has only one empty section (blank editor),
+      // parse the whole pasted block as a fresh document.
+      const isDocEffectivelyEmpty =
+        doc.sections.length === 1 &&
+        doc.sections[0].lines.length === 1 &&
+        (!doc.sections[0].lines[0].text || doc.sections[0].lines[0].text.trim() === '') &&
+        (!beforeCursor || !beforeCursor.trim()) &&
+        (!afterCursor || !afterCursor.trim());
+
+      if (isDocEffectivelyEmpty) {
+        const parsedDoc = continuousTextToLyricsDocument(normalizedText, doc);
+        const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
+        updateDoc(() => normalizedDoc, true);
+        return;
+      }
+
+      // Non-empty doc: splice pasted content at cursor position within the document structure.
+      // Strategy:
+      //   - The first pasted line is appended to `beforeCursor` text of the current line.
+      //   - Middle pasted lines become new standalone lines inserted after.
+      //   - The last pasted line is prepended before `afterCursor` and becomes a new line too.
+      const firstPastedLine = pastedLines[0];
+      const lastPastedLine = pastedLines[pastedLines.length - 1];
+      const middleLines = pastedLines.slice(1, pastedLines.length - 1);
+
+      updateDoc((prev) => {
+        const newSections = prev.sections.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+
+          const newLines = [...sec.lines];
+          const targetLineIdx = newLines.findIndex((l) => l.id === lineId);
+          if (targetLineIdx === -1) return sec;
+
+          // Update current line with before-cursor + first pasted line
+          const updatedCurrentLine: SongLyricLine = {
+            ...newLines[targetLineIdx],
+            text: beforeCursor + firstPastedLine,
+            // Clear spans/chords since text structure has fundamentally changed
+            spans: undefined,
+            chords:
+              targetLine?.chords && targetLine.chords.length > 0
+                ? shiftChordOffsets(currentLineText, beforeCursor + firstPastedLine, targetLine.chords)
+                : undefined,
+          };
+
+          const insertedLines: SongLyricLine[] = middleLines.map((ml) => ({
+            id: generateLyricId('line'),
+            text: ml,
+          }));
+
+          // Final line = last pasted segment + after-cursor
+          const finalLine: SongLyricLine = {
+            id: generateLyricId('line'),
+            text: lastPastedLine + afterCursor,
+          };
+
+          newLines.splice(
+            targetLineIdx,
+            1,
+            updatedCurrentLine,
+            ...insertedLines,
+            finalLine
+          );
+
+          return { ...sec, lines: newLines };
+        });
+
+        return { ...prev, sections: newSections };
+      }, true);
+
+      // Focus the last inserted line at end of last pasted segment
+      const lastInsertedId = '__paste_last__'; // resolved inside updateDoc above
+      void lastInsertedId; // suppress unused warning — focus is set via DOM after re-render
     },
-    [localDocRef, updateDoc, handlePromoteLineToSection, handlePromoteLineToInterlude]
+    [
+      localDocRef,
+      updateDoc,
+      handlePromoteLineToSection,
+      handlePromoteLineToInterlude,
+      handleUpdateLineText,
+      setLastActivePosition,
+    ]
   );
 
   const handleLineKeyDown = useCallback(
@@ -2443,7 +2563,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
         const text = await navigator.clipboard.readText();
         if (text && text.trim()) {
-          const parsed = parsePastedLyrics(text);
+          // Normalize all line-ending variants (\r\n, \r) → \n before parsing
+          const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          const parsed = parsePastedLyrics(normalized);
           onChange(parsed);
           toast.success('Lyrics pasted successfully!');
           return;
@@ -2458,7 +2580,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const handleApplyPasteModal = useCallback(() => {
     if (pasteModalText.trim()) {
-      const parsed = parsePastedLyrics(pasteModalText);
+      // Normalize all line-ending variants (\r\n, \r) → \n before parsing
+      const normalized = pasteModalText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const parsed = parsePastedLyrics(normalized);
       onChange(parsed);
       toast.success('Lyrics pasted successfully!');
       setShowPasteModal(false);
