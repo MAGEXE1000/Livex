@@ -20,6 +20,7 @@
 import type { SongPreset, SongSection } from '../store/slices/songSlice';
 import type { SongLyricsDocument, SongLyricSection, SongLyricLine, LyricChordPlacement } from '../types/lyrics';
 import { getBeatsPerMeasure, type MetronomeTimeSignature } from './audio/metronomeAudio';
+import { resolveLineBars } from './metronome/pacing';
 
 export interface PerformanceTimingItem {
   id: string;
@@ -160,7 +161,12 @@ export function calculateSongTimingSchedule(
           lineNominalMs = Math.max(0, line.explicitDurationMs || 0);
           totalFixedDurationMs += lineNominalMs;
         } else {
-          lineNominalMs = Math.round(beatsPerLine * beatDurationMs);
+          const effectiveGlobalBars = options?.beatsPerLine !== undefined
+            ? options.beatsPerLine / beatsPerMeasure
+            : barsPerLine;
+          const lineBars = resolveLineBars(line, sec, effectiveGlobalBars);
+          const lineBeats = lineBars * beatsPerMeasure;
+          lineNominalMs = Math.round(lineBeats * beatDurationMs);
         }
 
         secNominalDuration += lineNominalMs;

@@ -1097,7 +1097,9 @@ export function useLiveModeState(
     // Starting playback from paused state
     const effectiveBpm = speed || bpmOverride || 120;
 
+    const engine = liveMetronomeRef.current;
     if (countdownMode === 'off') {
+      if (engine) engine.setCountIn(false);
       setAutoPlay(true);
       return;
     }
@@ -1132,10 +1134,15 @@ export function useLiveModeState(
     setCountdownCurrentBar(1);
     setCountdownTotalBars(totalBars);
 
-    const engine = liveMetronomeRef.current;
     if (!engine) {
       setAutoPlay(true);
       return;
+    }
+
+    if (countdownAudioMode === 'silent') {
+      engine.setMuted(true);
+    } else {
+      engine.setMuted(!metronomeEnabledRef.current);
     }
 
     engine.setCountIn(true, totalBars, countdownAudioMode === 'voice');
@@ -1842,39 +1849,19 @@ export function useLiveModeState(
         const beatDurMs = (60000 / (speedRef.current || 120)) / (playbackSpeedRef.current || 1);
 
         let totalLineBeats: number;
-        let lineBarsValue = barsPerLineRef.current;
         if (isInterlude) {
           const interludeMs = Math.max(1000, activeLine?.line?.explicitDurationMs || 15000);
           totalLineBeats = Math.max(1, Math.round(interludeMs / beatDurMs));
         } else if (scheduledLine && scheduledLine.durationMs > 0) {
           totalLineBeats = Math.max(1, Math.round(scheduledLine.durationMs / beatDurMs));
         } else {
-          // Use variable bars per line logic
-          let secBars: number | undefined;
-          let lineBarsOverride: number | undefined;
-          if (activeLine && activeLine.line) {
-             lineBarsOverride = activeLine.line.bars;
-             // We can find section in preset if we assume we have preset.
-             // But preset is from closure, so we can access it directly if we include it in deps or let it be stale (it's fine).
-             // Actually, `activeLine.sectionId` is known.
-             // But wait, the pure helper is better if we just import it, but we don't have preset in deps.
-             // Let's just use the activeLine data directly since we don't have preset in deps.
-             // Oh, activeLine DOESN'T have section bars, so we have to look up preset.
-          }
-          // The prompt says use pure helper, but since we are modifying useLiveModeState, we can just look it up.
-          // Wait, I will just do it inline here to avoid complex imports.
-          
-          const sec = preset.lyrics?.sections?.find(s => s.id === activeLine?.sectionId);
-          secBars = sec?.barsPerLine;
-          
-          lineBarsValue = lineBarsOverride ?? secBars ?? barsPerLineRef.current;
-          totalLineBeats = lineBarsValue * beatsPerMeasure;
+          totalLineBeats = barsPerLineRef.current * beatsPerMeasure;
         }
 
         lineBeatsElapsedRef.current++;
 
         const currentBarNum = Math.min(
-          barsPerLineRef.current,
+          Math.ceil(totalLineBeats / beatsPerMeasure),
           Math.floor((lineBeatsElapsedRef.current - 1) / beatsPerMeasure) + 1
         );
         setCurrentBar(currentBarNum);
@@ -1963,6 +1950,10 @@ export function useLiveModeState(
     } else {
       engine.stop();
       setActiveMetronomeBeat(-1);
+      if (isCountingDownRef.current) {
+        isCountingDownRef.current = false;
+        setIsCountingDown(false);
+      }
     }
   }, [
     autoPlay,

@@ -295,6 +295,8 @@ export function splitLineByNewlines(line: SongLyricLine): SongLyricLine[] {
       spans: segmentSpans,
       format: line.format ? { ...line.format } : undefined,
       vocalRole: line.vocalRole ? { ...line.vocalRole } : undefined,
+      bars: sIdx === 0 ? line.bars : undefined,
+      explicitDurationMs: sIdx === 0 ? line.explicitDurationMs : undefined,
     });
 
     currentStartOffset = segmentEndOffset + 1; // +1 for the '\n'
