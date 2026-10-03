@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.93';
-export const NATIVE_VERSION_CODE = 40693;
-export const WEB_VERSION = '4.6.93';
+export const NATIVE_VERSION = '4.6.94';
+export const NATIVE_VERSION_CODE = 40694;
+export const WEB_VERSION = '4.6.94';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '94bc7e63';
+export const APP_COMMIT_SHA = '1087c9a5';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 2:20:07 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 2:52:46 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,15 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Batch Bars-per-Line Assignment Dock: Integrated a dedicated "Set Bars per Line" action in the editor Floating Action Button (+) menu with multi-line tap and drag selection, enabling instant bulk bar allocation via `[1 Bar]`, `[2 Bars]`, `[4 Bars]`, and `[Custom…]` preset chips.',
-      'Multi-Line Range Selection Engine: Implemented `useLineRangeSelection` with drag-to-select support, requestAnimationFrame frame coalescing, and non-blocking canvas interactions.',
-      'Bulk Timing Pacing Allocator: Added `applyBarsToLines` immutable helper to assign measures to multiple lines in a single atomic undoable document change, skipping timed interludes and cleaning redundant section overrides.',
+      'Right-Aligned Bar Badges: Rendered unified, persistent timing indicators on every lyric line across all editor views (`1 bar` default, `2 bars`, `4 bars`, `8 bars` high-contrast accent badge), providing instant visual clarity of measure pacing. Outside batch mode, tapping any badge cycles line timing (`auto → 1 → 2 → 4 → 8 → auto`).',
+      'Synchronous Batch Timing & Visual Pulse: Upgraded the bottom dock timing preset chips (`[1 Bar]`, `[2 Bars]`, `[4 Bars]`, `[Custom…]`) with immediate synchronous state dispatch, instant mobile haptic feedback (`navigator.vibrate(20)`), and an animated primary accent flash on all updated lines.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Automated Navigation Test Debounce Stabilization: Resolved a 280ms back-dispatcher debounce collision in `run-navigation-core-tests.mjs`, ensuring repeatable clean passes across automated test and CI suites.',
+      'Touch Drag Line Selection & Android Context Menu Isolation: Completely eliminated WebView text selection callouts, copy/paste context bubbles, and pan gesture locks during multi-line timing assignment by enforcing `user-select: none`, `-webkit-touch-callout: none`, and dynamically disabling canvas `contentEditable` while in batch assignment mode.',
+      'Non-Colliding Gesture vs Tap Engine: Enhanced `useLineRangeSelection` with a 6px movement threshold and RAF-throttled continuous line range expansion, resolving synthetic click collisions and ensuring butter-smooth touch interaction on mobile devices.',
+      'Live Settings Modal Clean-Up: Streamlined the modal header to "Live Settings" and completely purged the obsolete global "BARS PER LINE" card, ensuring playback progression derives authoritatively from song lyric line timing.',
     ],
   },
 ];
@@ -124,6 +125,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.94',
+    date: '2026-10-03',
+    highlights: [
+      'Right-Aligned Bar Badges: Rendered unified, persistent timing indicators on every lyric line across all editor views (`1 bar` default, `2 bars`, `4 bars`, `8 bars` high-contrast accent badge), providing instant visual clarity of measure pacing. Outside batch mode, tapping any badge cycles line timing (`auto → 1 → 2 → 4 → 8 → auto`).',
+      'Synchronous Batch Timing & Visual Pulse: Upgraded the bottom dock timing preset chips (`[1 Bar]`, `[2 Bars]`, `[4 Bars]`, `[Custom…]`) with immediate synchronous state dispatch, instant mobile haptic feedback (`navigator.vibrate(20)`), and an animated primary accent flash on all updated lines.',
+      'Touch Drag Line Selection & Android Context Menu Isolation: Completely eliminated WebView text selection callouts, copy/paste context bubbles, and pan gesture locks during multi-line timing assignment by enforcing `user-select: none`, `-webkit-touch-callout: none`, and dynamically disabling canvas `contentEditable` while in batch assignment mode.',
+      'Non-Colliding Gesture vs Tap Engine: Enhanced `useLineRangeSelection` with a 6px movement threshold and RAF-throttled continuous line range expansion, resolving synthetic click collisions and ensuring butter-smooth touch interaction on mobile devices.',
+      'Live Settings Modal Clean-Up: Streamlined the modal header to "Live Settings" and completely purged the obsolete global "BARS PER LINE" card, ensuring playback progression derives authoritatively from song lyric line timing.',
+    ],
+  },
   {
     version: '4.6.93',
     date: '2026-10-03',
@@ -215,16 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Plain-Text Clipboard Sanitization: Stripped tabs, non-breaking spaces, and synthetic multi-space padding on copy and paste events to ensure pasted verses always render clean, left-aligned, and line-by-line.',
       'Live Header Object Serialization: Resolved JSX element string coercion that previously caused setlist subtitles to display as [object Object].',
       'Dead Code and Bundle Bloat: Safely pruned unreferenced legacy components and orphaned input handlers, reducing bundle size.',
-    ],
-  },
-  {
-    version: '4.6.83',
-    date: '2026-10-02',
-    highlights: [
-      "Permanent Canvas Focus Ring Immunity: Removed tabIndex={0} and enforced outline: none, border: none, ring-0, and no-focus-ring across the teleprompter writing canvas and global CSS to eliminate the browser engine's blue bounding rectangle during edit focus.",
-      'Unconstrained Dual-Direction Multi-Line Text Selection: Enabled seamless multi-line selection handle dragging downwards and upwards across verses with soft keyboard open.',
-      'Immediate Batch Deletion: Instant removal of highlighted multi-line character ranges via Backspace key without leaving ghost lines or UI stutter.',
-      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, topbar pills, and navigation tabs while keeping editable lyric content selectable.',
     ],
   },
 ];
