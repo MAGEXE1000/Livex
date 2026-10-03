@@ -11,6 +11,7 @@ import {
   type MetronomeSubdivision,
   type MetronomeSoundId,
   type MetronomePreset,
+  type MetronomeAccentType,
   useIsWebDesktop,
 } from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
@@ -32,7 +33,7 @@ interface MetronomePanelProps {
 interface BeatCellsProps {
   beatsCount: number;
   beatGridColsClass: string;
-  accentPattern: Record<number, 'normal' | 'accent' | 'strong'> | undefined;
+  accentPattern: MetronomeAccentType[] | Record<number, MetronomeAccentType> | undefined;
   isAmoled: boolean;
   cycleBeatAccent: (index: number) => void;
 }
@@ -51,9 +52,10 @@ const BeatCells = React.memo(function BeatCells({
     <div className={`grid gap-2 py-1 ${beatGridColsClass}`}>
       {Array.from({ length: beatsCount }).map((_, idx) => {
         const isCurrent = isPlaying && activeBeat === idx;
-        const accentType = (accentPattern && accentPattern[idx]) || 'normal';
+        const accentType = (accentPattern && (accentPattern as any)[idx]) || 'normal';
         const isStrong = accentType === 'strong';
         const isAccent = accentType === 'accent';
+        const isMuted = accentType === 'muted';
         const isCompact = beatsCount > 6;
 
         if (isCurrent) {
@@ -67,14 +69,16 @@ const BeatCells = React.memo(function BeatCells({
                   ? 'bg-[#007aff] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)]'
                   : isAccent
                     ? 'bg-sky-500 text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]'
-                    : 'bg-blue-600 text-white shadow-[0_4px_14px_rgba(0,122,255,0.2)]'
+                    : isMuted
+                      ? 'bg-zinc-700/80 text-zinc-400 border border-dashed border-zinc-500 shadow-[0_4px_14px_rgba(0,0,0,0.3)]'
+                      : 'bg-blue-600 text-white shadow-[0_4px_14px_rgba(0,122,255,0.2)]'
               }`}
             >
               <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
                 {idx + 1}
               </span>
               <span className="text-[8px] font-bold tracking-widest uppercase opacity-90">
-                {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
+                {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : isMuted ? 'MUTE' : 'NORMAL'}
               </span>
               {(isStrong || isAccent) && (
                 <span
@@ -101,9 +105,13 @@ const BeatCells = React.memo(function BeatCells({
                   ? isAmoled
                     ? 'bg-sky-500/20 text-sky-400 border-sky-500/70 hover:bg-sky-500/30'
                     : 'bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 border-sky-400/60 dark:border-sky-600/60 hover:bg-sky-100 dark:hover:bg-sky-900/40'
-                  : isAmoled
-                    ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
-                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                  : isMuted
+                    ? isAmoled
+                      ? 'bg-transparent text-zinc-500 border-dashed border-zinc-700/60 hover:bg-zinc-900/40 opacity-60'
+                      : 'bg-zinc-100/50 dark:bg-zinc-900/30 text-zinc-400 dark:text-zinc-500 border-dashed border-zinc-300 dark:border-zinc-700/60 hover:bg-zinc-200/50 opacity-60'
+                    : isAmoled
+                      ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
             }`}
           >
             <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
@@ -115,10 +123,12 @@ const BeatCells = React.memo(function BeatCells({
                   ? 'font-extrabold text-[#007aff]'
                   : isAccent
                     ? 'font-bold text-sky-500 dark:text-sky-400'
-                    : 'font-medium text-slate-400 dark:text-zinc-500'
+                    : isMuted
+                      ? 'font-medium text-zinc-500'
+                      : 'font-medium text-slate-400 dark:text-zinc-500'
               }`}
             >
-              {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
+              {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : isMuted ? 'MUTE' : 'NORMAL'}
             </span>
             {isStrong && (
               <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-[#007aff]" />
@@ -1204,10 +1214,9 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             </div>
             <MorphMenu
               floating
-              anchor="top-left"
+              anchor="bottom-left"
               closedWidth={130}
               closedHeight={36}
-              closedRadius={10}
               openWidth={180}
               openHeight={240}
               openRadius={16}

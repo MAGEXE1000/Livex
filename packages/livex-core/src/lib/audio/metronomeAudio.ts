@@ -35,7 +35,7 @@ export interface MetronomeTempoRampConfig {
   holdFinalBpm?: boolean; // Whether target BPM persists after ramp completion (default true)
 }
 
-export type MetronomeAccentType = 'normal' | 'accent' | 'strong';
+export type MetronomeAccentType = 'normal' | 'accent' | 'strong' | 'muted';
 
 export interface MetronomeBeatEvent {
   beatIndex: number;
@@ -770,6 +770,7 @@ export class MetronomeAudioEngine {
     countInHigh: boolean
   ) {
     if (!this._ctx || !this._masterGain) return;
+    if (accentType === 'muted' && !isCountIn && !isSub) return;
 
     let bufferKey: string;
     if (isCountIn) {
@@ -907,14 +908,14 @@ export class MetronomeAudioEngine {
     const newPattern: MetronomeAccentType[] = [];
     for (let i = 0; i < beatsPerMeasure; i++) {
       const val = pattern[i];
-      if (val === 'strong' || val === 'accent' || val === 'normal') {
+      if (val === 'strong' || val === 'accent' || val === 'normal' || val === 'muted') {
         newPattern.push(val);
       } else {
         newPattern.push(i === 0 ? 'strong' : 'normal');
       }
     }
     this._accentPattern = newPattern;
-    this._accentBeat = this._accentPattern.findIndex((t) => t !== 'normal');
+    this._accentBeat = this._accentPattern.findIndex((t) => t === 'strong' || t === 'accent');
   }
 
   public setBeatAccent(beatIndex: number, type: MetronomeAccentType) {
@@ -981,6 +982,10 @@ export class MetronomeAudioEngine {
     if (this._countInVoiceEnabled) {
       this.preloadVoiceBuffers();
     }
+  }
+
+  public setCountInVoice(enabled: boolean) {
+    this.setVoiceCountIn(enabled);
   }
 
   public setTempoRamp(config: MetronomeTempoRampConfig | null) {

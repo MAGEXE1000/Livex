@@ -140,8 +140,13 @@ export default function LiveMode({
                 state.setSpeed(newBpm);
               }}
               accent={state.accent}
-              countdownMode={state.countdownMode}
-              onCountdownModeChange={state.setCountdownMode}
+              timeSignature={state.metronomeTimeSignature}
+              onTimeSignatureChange={state.setMetronomeTimeSignature}
+              subdivision={state.metronomeSubdivision}
+              onSubdivisionChange={state.setMetronomeSubdivision}
+              accentPattern={state.metronomeAccentPattern}
+              onCycleBeatAccent={state.cycleMetronomeBeatAccent}
+              activeBeat={state.activeMetronomeBeat}
               metronomeEnabled={state.metronomeEnabled}
               onMetronomeToggle={state.setMetronomeEnabled}
               metronomeVolume={state.metronomeVolume}

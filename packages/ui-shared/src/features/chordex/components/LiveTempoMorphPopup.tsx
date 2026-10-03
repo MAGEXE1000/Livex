@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import type { MetronomeSoundId } from '@workspace/livex-core';
+import {
+  type MetronomeSoundId,
+  type MetronomeTimeSignature,
+  type MetronomeSubdivision,
+  type MetronomeAccentType,
+  getBeatsPerMeasure,
+  SOUND_LABELS,
+} from '@workspace/livex-core';
 
 export type LiveCountdownMode = 'off' | '1bar' | '2bars' | '3s' | '5s';
 
@@ -7,8 +14,13 @@ export interface LiveTempoMorphPopupProps {
   bpm: number;
   onBpmChange: (newBpm: number) => void;
   accent: { from: string; to: string; mid?: string };
-  countdownMode: LiveCountdownMode;
-  onCountdownModeChange: (mode: LiveCountdownMode) => void;
+  timeSignature?: MetronomeTimeSignature;
+  onTimeSignatureChange?: (sig: MetronomeTimeSignature) => void;
+  subdivision?: MetronomeSubdivision;
+  onSubdivisionChange?: (sub: MetronomeSubdivision) => void;
+  accentPattern?: MetronomeAccentType[];
+  onCycleBeatAccent?: (beatIndex: number) => void;
+  activeBeat?: number;
   metronomeEnabled: boolean;
   onMetronomeToggle: (enabled: boolean) => void;
   metronomeVolume: number;
@@ -16,6 +28,8 @@ export interface LiveTempoMorphPopupProps {
   metronomeSound: MetronomeSoundId;
   onMetronomeSoundChange: (sound: MetronomeSoundId) => void;
   onClose: () => void;
+  countdownMode?: LiveCountdownMode;
+  onCountdownModeChange?: (mode: LiveCountdownMode) => void;
 }
 
 function getTempoName(bpm: number): string {
@@ -29,12 +43,27 @@ function getTempoName(bpm: number): string {
   return 'Prestissimo';
 }
 
+const SOUND_OPTIONS: { id: MetronomeSoundId; label: string }[] = [
+  { id: 'woodblock', label: 'Woodblock' },
+  { id: 'click', label: 'Stick Click' },
+  { id: 'studioclick', label: 'Studio Click' },
+  { id: 'digital', label: 'Digital Click' },
+  { id: 'sidestick', label: 'Side Stick' },
+  { id: 'drystick', label: 'Dry Stick' },
+  { id: 'rimclick', label: 'Rim Click' },
+];
+
 export function LiveTempoMorphPopup({
   bpm,
   onBpmChange,
   accent,
-  countdownMode,
-  onCountdownModeChange,
+  timeSignature = '4/4',
+  onTimeSignatureChange,
+  subdivision = '1/4',
+  onSubdivisionChange,
+  accentPattern,
+  onCycleBeatAccent,
+  activeBeat = -1,
   metronomeEnabled,
   onMetronomeToggle,
   metronomeVolume,
@@ -44,6 +73,9 @@ export function LiveTempoMorphPopup({
   onClose,
 }: LiveTempoMorphPopupProps) {
   const [bpmInputVal, setBpmInputVal] = useState(() => String(bpm));
+  const [isSoundPickerOpen, setIsSoundPickerOpen] = useState(false);
+  const soundPickerRef = useRef<HTMLDivElement | null>(null);
+
   const tapTimesRef = useRef<number[]>([]);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isTapActive, setIsTapActive] = useState(false);
@@ -51,6 +83,22 @@ export function LiveTempoMorphPopup({
   useEffect(() => {
     setBpmInputVal(String(bpm));
   }, [bpm]);
+
+  // Click outside sound picker to close
+  useEffect(() => {
+    if (!isSoundPickerOpen) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      if (soundPickerRef.current && !soundPickerRef.current.contains(e.target as Node)) {
+        setIsSoundPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside, true);
+    document.addEventListener('touchstart', handleOutside, true);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside, true);
+      document.removeEventListener('touchstart', handleOutside, true);
+    };
+  }, [isSoundPickerOpen]);
 
   const handleStep = (delta: number) => {
     const next = Math.max(40, Math.min(280, bpm + delta));
@@ -93,20 +141,13 @@ export function LiveTempoMorphPopup({
     }
   }, [onBpmChange]);
 
-  const COUNTDOWN_OPTIONS: { id: LiveCountdownMode; label: string }[] = [
-    { id: 'off', label: 'Off' },
-    { id: '1bar', label: '1 Bar' },
-    { id: '2bars', label: '2 Bars' },
-    { id: '3s', label: '3s' },
-    { id: '5s', label: '5s' },
-  ];
-
-  const SOUND_OPTIONS: { id: MetronomeSoundId; label: string }[] = [
-    { id: 'woodblock', label: 'Woodblock' },
-    { id: 'click', label: 'Stick Click' },
-    { id: 'studioclick', label: 'Studio Click' },
-    { id: 'digital', label: 'Digital' },
-  ];
+  const beatsCount = getBeatsPerMeasure(timeSignature);
+  const resolvedAccentPattern: MetronomeAccentType[] =
+    accentPattern && accentPattern.length === beatsCount
+      ? accentPattern
+      : Array(beatsCount)
+          .fill('normal')
+          .map((_, i) => (i === 0 ? 'strong' : 'normal'));
 
   return (
     <div
@@ -119,9 +160,9 @@ export function LiveTempoMorphPopup({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.55)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        background: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         padding: '16px',
         animation: 'popup-backdrop-fade 0.2s ease-out',
       }}
@@ -133,13 +174,18 @@ export function LiveTempoMorphPopup({
         }
         @keyframes popup-morph-in {
           0% {
-            transform: scale(0.88) translateY(-10px);
+            transform: scale(0.9) translateY(12px);
             opacity: 0;
           }
           100% {
             transform: scale(1) translateY(0);
             opacity: 1;
           }
+        }
+        @keyframes beat-pulse-glow {
+          0% { transform: scale(0.96); box-shadow: 0 0 0 0 ${accent.from}66; }
+          50% { transform: scale(1.04); box-shadow: 0 0 12px 2px ${accent.from}; }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 ${accent.from}00; }
         }
       `}</style>
 
@@ -148,17 +194,19 @@ export function LiveTempoMorphPopup({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: '380px',
-          borderRadius: '28px',
-          background: 'var(--surface-dialog-bg, rgba(22, 22, 28, 0.94))',
-          border: '1px solid var(--c-border, rgba(255, 255, 255, 0.14))',
-          boxShadow: 'var(--shadow-elevation-high, 0 20px 60px rgba(0,0,0,0.65))',
-          padding: '20px 20px 22px',
+          maxWidth: '400px',
+          maxHeight: '90vh',
+          borderRadius: '26px',
+          background: 'var(--surface-dialog-bg, rgba(18, 18, 24, 0.96))',
+          border: '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+          boxShadow: 'var(--shadow-elevation-high, 0 24px 64px rgba(0,0,0,0.7))',
+          padding: '16px 16px 18px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
+          gap: '12px',
           boxSizing: 'border-box',
-          animation: 'popup-morph-in 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          animation: 'popup-morph-in 0.24s cubic-bezier(0.16, 1, 0.3, 1)',
+          overflowY: 'auto',
         }}
       >
         {/* Header */}
@@ -168,7 +216,7 @@ export function LiveTempoMorphPopup({
               className="material-symbols-outlined"
               style={{ fontSize: '20px', color: accent.from }}
             >
-              speed
+              metronome
             </span>
             <span
               style={{
@@ -189,8 +237,8 @@ export function LiveTempoMorphPopup({
             data-testid="live-tempo-popup-close-btn"
             onClick={onClose}
             style={{
-              width: '30px',
-              height: '30px',
+              width: '28px',
+              height: '28px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -201,21 +249,21 @@ export function LiveTempoMorphPopup({
               cursor: 'pointer',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>close</span>
           </button>
         </div>
 
-        {/* Digital BPM Readout & Steppers */}
+        {/* 1. Digital BPM Readout & Fine Steppers */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '12px 14px',
-            borderRadius: '20px',
+            padding: '10px 12px',
+            borderRadius: '18px',
             background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
             border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
-            gap: '10px',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
@@ -231,14 +279,14 @@ export function LiveTempoMorphPopup({
                 }
               }}
               style={{
-                fontSize: '44px',
+                fontSize: '42px',
                 fontWeight: 900,
                 fontFamily: 'var(--studio-font-display, "Inter Tight", monospace)',
                 color: 'var(--c-text-primary, #ffffff)',
                 background: 'transparent',
                 border: 'none',
                 textAlign: 'center',
-                width: '105px',
+                width: '100px',
                 outline: 'none',
                 padding: 0,
                 lineHeight: 1,
@@ -246,7 +294,7 @@ export function LiveTempoMorphPopup({
             />
             <span
               style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 800,
                 color: accent.from,
                 letterSpacing: '0.04em',
@@ -258,7 +306,7 @@ export function LiveTempoMorphPopup({
 
           <span
             style={{
-              fontSize: '11px',
+              fontSize: '10.5px',
               fontWeight: 600,
               color: 'var(--c-text-secondary, #94a3b8)',
               marginTop: '-4px',
@@ -268,150 +316,314 @@ export function LiveTempoMorphPopup({
           </span>
 
           {/* Steppers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', width: '100%' }}>
             {[-5, -1, 1, 5].map((delta) => (
               <button
                 key={delta}
                 type="button"
                 onClick={() => handleStep(delta)}
                 style={{
-                  height: '34px',
-                  borderRadius: '10px',
+                  height: '30px',
+                  borderRadius: '9px',
                   border: '1px solid rgba(255,255,255,0.08)',
                   background: 'rgba(255,255,255,0.06)',
                   color: 'var(--c-text-primary, #ffffff)',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'background 0.12s, transform 0.1s',
                 }}
-                onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.94)')}
-                onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
               >
                 {delta > 0 ? `+${delta}` : delta}
               </button>
             ))}
           </div>
 
-          {/* Range Slider */}
-          <input
-            type="range"
-            min={40}
-            max={280}
-            step={1}
-            value={bpm}
-            onChange={(e) => onBpmChange(Number(e.target.value))}
-            style={{
-              width: '100%',
-              accentColor: accent.from,
-              height: '20px',
-              cursor: 'pointer',
-              marginTop: '4px',
-            }}
-          />
+          {/* Range Slider & Tap Tempo in row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', marginTop: '2px' }}>
+            <input
+              type="range"
+              min={40}
+              max={280}
+              step={1}
+              value={bpm}
+              onChange={(e) => onBpmChange(Number(e.target.value))}
+              style={{
+                flex: 1,
+                accentColor: accent.from,
+                height: '16px',
+                cursor: 'pointer',
+              }}
+            />
 
-          {/* Tap Tempo Button */}
-          <button
-            type="button"
-            data-testid="live-tap-tempo-btn"
-            onClick={handleTapTempo}
-            style={{
-              width: '100%',
-              height: '38px',
-              borderRadius: '12px',
-              border: `1.5px solid ${isTapActive ? accent.from : 'rgba(255,255,255,0.12)'}`,
-              background: isTapActive
-                ? `${accent.from}33`
-                : 'rgba(255,255,255,0.05)',
-              color: isTapActive ? '#ffffff' : 'var(--c-text-primary, #ffffff)',
-              fontSize: '12px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.1s ease',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '17px', color: accent.from }}>
-              touch_app
-            </span>
-            <span>Tap Tempo</span>
-          </button>
+            <button
+              type="button"
+              data-testid="live-tap-tempo-btn"
+              onClick={handleTapTempo}
+              style={{
+                height: '32px',
+                padding: '0 12px',
+                borderRadius: '10px',
+                border: `1.5px solid ${isTapActive ? accent.from : 'rgba(255,255,255,0.14)'}`,
+                background: isTapActive ? `${accent.from}44` : 'rgba(255,255,255,0.06)',
+                color: isTapActive ? '#ffffff' : 'var(--c-text-primary, #ffffff)',
+                fontSize: '11px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.1s ease',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>
+                touch_app
+              </span>
+              <span>Tap</span>
+            </button>
+          </div>
         </div>
 
-        {/* Pre-Roll Countdown Mode */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span
-            style={{
-              fontSize: '10.5px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: 'var(--c-text-secondary, #94a3b8)',
-            }}
-          >
-            Pre-Roll Countdown
-          </span>
+        {/* 2. Interactive Beat Tracker */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--c-text-secondary, #94a3b8)',
+              }}
+            >
+              Beat Tracker
+            </span>
+            <span style={{ fontSize: '9px', color: 'var(--c-text-tertiary, #64748b)' }}>
+              Tap pill to cycle accent
+            </span>
+          </div>
+
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
+              gridTemplateColumns: `repeat(${beatsCount}, 1fr)`,
               gap: '4px',
-              padding: '3px',
-              background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
-              borderRadius: '14px',
-              border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
+              width: '100%',
             }}
           >
-            {COUNTDOWN_OPTIONS.map((opt) => {
-              const isSel = countdownMode === opt.id;
+            {Array.from({ length: beatsCount }).map((_, idx) => {
+              const accentType = resolvedAccentPattern[idx] || 'normal';
+              const isStrong = accentType === 'strong';
+              const isNormal = accentType === 'normal';
+              const isMuted = accentType === 'muted';
+              const isCurrent = activeBeat === idx;
+
+              let bg = 'rgba(255,255,255,0.06)';
+              let borderColor = 'rgba(255,255,255,0.08)';
+              let textColor = 'var(--c-text-secondary, #94a3b8)';
+              let label = 'NORMAL';
+
+              if (isStrong) {
+                bg = isCurrent ? accent.from : `${accent.from}22`;
+                borderColor = accent.from;
+                textColor = isCurrent ? '#ffffff' : accent.from;
+                label = 'STRONG';
+              } else if (isNormal) {
+                bg = isCurrent ? `${accent.from}88` : 'rgba(255,255,255,0.06)';
+                borderColor = isCurrent ? accent.from : 'rgba(255,255,255,0.1)';
+                textColor = isCurrent ? '#ffffff' : 'var(--c-text-primary, #ffffff)';
+                label = 'NORMAL';
+              } else if (isMuted) {
+                bg = isCurrent ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255,255,255,0.02)';
+                borderColor = isCurrent ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255,255,255,0.04)';
+                textColor = 'rgba(255,255,255,0.25)';
+                label = 'MUTE';
+              }
+
               return (
                 <button
-                  key={opt.id}
+                  key={idx}
                   type="button"
-                  onClick={() => onCountdownModeChange(opt.id)}
+                  data-testid={`live-beat-pill-${idx}`}
+                  onClick={() => onCycleBeatAccent?.(idx)}
                   style={{
-                    padding: '8px 2px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: isSel ? accent.from : 'transparent',
-                    color: isSel ? '#ffffff' : 'var(--c-text-secondary, #94a3b8)',
-                    fontWeight: isSel ? 800 : 600,
-                    fontSize: '11px',
+                    height: '42px',
+                    borderRadius: '11px',
+                    background: bg,
+                    border: `1.5px solid ${borderColor}`,
+                    color: textColor,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    position: 'relative',
+                    transition: 'all 0.12s ease',
+                    boxShadow: isCurrent ? `0 0 10px ${accent.from}66` : 'none',
                   }}
                 >
-                  {opt.label}
+                  <span style={{ fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>
+                    {idx + 1}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '7.5px',
+                      fontWeight: 800,
+                      letterSpacing: '0.04em',
+                      marginTop: '2px',
+                      opacity: isMuted ? 0.6 : 0.9,
+                    }}
+                  >
+                    {label}
+                  </span>
+                  {isStrong && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '3px',
+                        right: '4px',
+                        width: '4px',
+                        height: '4px',
+                        borderRadius: '50%',
+                        background: accent.from,
+                      }}
+                    />
+                  )}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Metronome Settings Row */}
+        {/* 3. Time Signature & Subdivision (Side by side) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {/* Time Signature */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              padding: '8px 10px',
+              borderRadius: '14px',
+              background: 'var(--surface-container-low, rgba(255,255,255,0.03))',
+              border: '1px solid var(--c-border, rgba(255,255,255,0.06))',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: 'var(--c-text-secondary, #94a3b8)',
+              }}
+            >
+              Meter
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
+              {(['4/4', '3/4', '6/8', '2/4'] as MetronomeTimeSignature[]).map((sig) => {
+                const isSel = timeSignature === sig;
+                return (
+                  <button
+                    key={sig}
+                    type="button"
+                    data-testid={`time-sig-btn-${sig.replace('/', '-')}`}
+                    onClick={() => onTimeSignatureChange?.(sig)}
+                    style={{
+                      padding: '5px 0',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isSel ? accent.from : 'rgba(255,255,255,0.05)',
+                      color: isSel ? '#ffffff' : 'var(--c-text-secondary, #94a3b8)',
+                      fontSize: '10px',
+                      fontWeight: isSel ? 800 : 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {sig}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Subdivision */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              padding: '8px 10px',
+              borderRadius: '14px',
+              background: 'var(--surface-container-low, rgba(255,255,255,0.03))',
+              border: '1px solid var(--c-border, rgba(255,255,255,0.06))',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: 'var(--c-text-secondary, #94a3b8)',
+              }}
+            >
+              Subdivision
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
+              {(['1/4', '1/8', '1/16', '3let'] as MetronomeSubdivision[]).map((sub) => {
+                const isSel = subdivision === sub;
+                return (
+                  <button
+                    key={sub}
+                    type="button"
+                    data-testid={`subdivision-btn-${sub.replace('/', '-')}`}
+                    onClick={() => onSubdivisionChange?.(sub)}
+                    style={{
+                      padding: '5px 0',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isSel ? accent.from : 'rgba(255,255,255,0.05)',
+                      color: isSel ? '#ffffff' : 'var(--c-text-secondary, #94a3b8)',
+                      fontSize: '10px',
+                      fontWeight: isSel ? 800 : 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {sub}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Audible Metronome Row & Upward Drop-Up Click Sound Selector */}
         <div
+          ref={soundPickerRef}
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
-            padding: '12px 14px',
+            gap: '8px',
+            padding: '10px 12px',
             borderRadius: '16px',
             background: 'var(--surface-container-low, rgba(255,255,255,0.03))',
             border: '1px solid var(--c-border, rgba(255,255,255,0.06))',
+            position: 'relative',
           }}
         >
+          {/* Top Switch Row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: accent.from }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '17px', color: accent.from }}>
                 metronome
               </span>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text-primary, #ffffff)' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--c-text-primary, #ffffff)' }}>
                 Audible Metronome
               </span>
             </div>
@@ -421,9 +633,9 @@ export function LiveTempoMorphPopup({
               data-testid="live-metronome-toggle-btn"
               onClick={() => onMetronomeToggle(!metronomeEnabled)}
               style={{
-                width: '42px',
-                height: '24px',
-                borderRadius: '12px',
+                width: '38px',
+                height: '22px',
+                borderRadius: '11px',
                 background: metronomeEnabled ? accent.from : 'rgba(255,255,255,0.15)',
                 border: 'none',
                 position: 'relative',
@@ -435,12 +647,12 @@ export function LiveTempoMorphPopup({
               <span
                 style={{
                   display: 'block',
-                  width: '20px',
-                  height: '20px',
+                  width: '18px',
+                  height: '18px',
                   borderRadius: '50%',
                   background: '#ffffff',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                  transform: metronomeEnabled ? 'translateX(18px)' : 'translateX(0)',
+                  transform: metronomeEnabled ? 'translateX(16px)' : 'translateX(0)',
                   transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               />
@@ -448,8 +660,8 @@ export function LiveTempoMorphPopup({
           </div>
 
           {metronomeEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-              {/* Volume */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '2px' }}>
+              {/* Volume Slider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--c-text-secondary)' }}>
                   volume_up
@@ -464,43 +676,134 @@ export function LiveTempoMorphPopup({
                   style={{
                     flex: 1,
                     accentColor: accent.from,
-                    height: '16px',
+                    height: '14px',
                     cursor: 'pointer',
                   }}
                 />
-                <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)', width: '32px', textAlign: 'right' }}>
+                <span style={{ fontSize: '10.5px', color: 'var(--c-text-secondary)', width: '30px', textAlign: 'right' }}>
                   {Math.round(metronomeVolume * 100)}%
                 </span>
               </div>
 
-              {/* Sound Select */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-                {SOUND_OPTIONS.map((s) => {
-                  const isSoundSel = metronomeSound === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => onMetronomeSoundChange(s.id)}
+              {/* Click Sound Selector with Upward Drop-Up */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  data-testid="live-click-sound-selector-btn"
+                  onClick={() => setIsSoundPickerOpen((prev) => !prev)}
+                  style={{
+                    width: '100%',
+                    height: '32px',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.05)',
+                    padding: '0 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    color: 'var(--c-text-primary, #ffffff)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>
+                      graphic_eq
+                    </span>
+                    <span style={{ color: 'var(--c-text-secondary)', fontSize: '10px', fontWeight: 600 }}>SOUND:</span>
+                    <span>{SOUND_LABELS[metronomeSound] || metronomeSound}</span>
+                  </div>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: '16px',
+                      color: 'var(--c-text-secondary)',
+                      transform: isSoundPickerOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  >
+                    expand_less
+                  </span>
+                </button>
+
+                {/* UPWARD Drop-Up Menu */}
+                {isSoundPickerOpen && (
+                  <div
+                    data-testid="live-click-sound-dropup"
+                    style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 6px)',
+                      left: 0,
+                      right: 0,
+                      background: 'var(--surface-dialog-bg, #16161f)',
+                      border: '1px solid var(--c-border, rgba(255,255,255,0.16))',
+                      borderRadius: '14px',
+                      boxShadow: '0 -12px 36px rgba(0,0,0,0.6)',
+                      padding: '4px',
+                      zIndex: 120,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      transformOrigin: 'bottom center',
+                      animation: 'popup-morph-in 0.18s ease-out',
+                    }}
+                  >
+                    <div
                       style={{
-                        padding: '6px 2px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: isSoundSel ? `${accent.from}33` : 'rgba(255,255,255,0.05)',
-                        borderBottom: isSoundSel ? `2px solid ${accent.from}` : 'none',
-                        color: isSoundSel ? '#ffffff' : 'var(--c-text-secondary)',
-                        fontSize: '10px',
-                        fontWeight: isSoundSel ? 800 : 600,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        padding: '4px 8px 2px',
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: 'var(--c-text-secondary, #94a3b8)',
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        marginBottom: '2px',
                       }}
                     >
-                      {s.label}
-                    </button>
-                  );
-                })}
+                      Select Click Sound
+                    </div>
+                    {SOUND_OPTIONS.map((s) => {
+                      const isSel = metronomeSound === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            onMetronomeSoundChange(s.id);
+                            setIsSoundPickerOpen(false);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px 8px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: isSel ? `${accent.from}33` : 'transparent',
+                            color: isSel ? '#ffffff' : 'var(--c-text-secondary, #cbd5e1)',
+                            fontSize: '11px',
+                            fontWeight: isSel ? 800 : 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'background 0.1s ease',
+                          }}
+                        >
+                          <span>{s.label}</span>
+                          {isSel && (
+                            <span
+                              className="material-symbols-outlined"
+                              style={{ fontSize: '15px', color: accent.from }}
+                            >
+                              check
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

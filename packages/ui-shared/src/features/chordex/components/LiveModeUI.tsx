@@ -3662,6 +3662,74 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 );
               })}
             </div>
+
+            {/* Count-In Audio Mode (Voice vs Click vs Silent) */}
+            {state.countdownMode !== 'off' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  Count-In Audio Mode
+                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '5px',
+                    padding: '3px',
+                    background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                    borderRadius: '14px',
+                    border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
+                  }}
+                >
+                  {[
+                    { id: 'click' as const, label: 'Click Sound', icon: 'timer' },
+                    { id: 'voice' as const, label: 'Voice ("1, 2, 3, 4")', icon: 'record_voice_over' },
+                    { id: 'silent' as const, label: 'Silent Visual', icon: 'volume_off' },
+                  ].map((opt) => {
+                    const isSelected = (state.countdownAudioMode || 'click') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        data-testid={`countdown-audio-opt-${opt.id}`}
+                        onClick={() => state.setCountdownAudioMode(opt.id)}
+                        className="btn-smooth"
+                        style={{
+                          padding: '8px 4px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: isSelected ? accent.from : 'transparent',
+                          color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                          fontWeight: isSelected ? 800 : 600,
+                          fontSize: '10.5px',
+                          fontFamily: 'var(--studio-font-body)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                          {opt.icon}
+                        </span>
+                        <span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── 6. AUDIBLE METRONOME & CLICK TRACK ─────────────────── */}

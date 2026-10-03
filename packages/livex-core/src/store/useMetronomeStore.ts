@@ -714,7 +714,11 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       const current = currentPattern[beatIndex] || 'normal';
       // Cycle: normal -> accent -> strong -> normal
       const nextType: MetronomeAccentType =
-        current === 'normal' ? 'accent' : current === 'accent' ? 'strong' : 'normal';
+        current === 'normal'
+          ? 'accent'
+          : current === 'accent'
+            ? 'strong'
+            : 'normal';
       get().setBeatAccent(beatIndex, nextType);
     },
 
