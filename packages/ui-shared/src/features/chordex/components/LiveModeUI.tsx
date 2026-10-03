@@ -356,11 +356,11 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
             marginRight: '2px',
           }}
         >
-          {state.isBandLeader && !state.isLockedToLeader && (
+          {state.isBandLeader && (
             <button
               type="button"
-              data-testid="live-call-band-btn"
-              onClick={state.callBandSession}
+              data-testid="live-session-leader-btn"
+              onClick={state.isBroadcasting ? state.endLiveSession : () => state.startLiveSession(state.preset)}
               style={{
                 height: '30px',
                 padding: '0 10px',
@@ -368,9 +368,11 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
-                border: `1px solid ${accent.from}66`,
-                color: 'var(--c-text-primary, #ffffff)',
+                background: state.isBroadcasting
+                  ? 'rgba(16, 185, 129, 0.15)'
+                  : `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+                border: `1px solid ${state.isBroadcasting ? 'rgba(16, 185, 129, 0.4)' : `${accent.from}66`}`,
+                color: state.isBroadcasting ? '#34d399' : 'var(--c-text-primary, #ffffff)',
                 cursor: 'pointer',
                 fontSize: '11px',
                 fontWeight: 700,
@@ -378,39 +380,50 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
                 boxShadow: `0 2px 8px ${accent.from}22`,
                 transition: 'all 0.15s ease',
               }}
-              title="Call Band for Live Rehearsal"
-              aria-label="Call Band for Live Rehearsal"
+              title={state.isBroadcasting ? 'Session Active (Tap to End)' : 'Start Play Together Session'}
+              aria-label={state.isBroadcasting ? 'Session Active' : 'Start Play Together Session'}
             >
-              <span className="material-symbols-rounded" style={{ fontSize: '15px', color: accent.from }}>
-                cell_tower
+              <span className="material-symbols-rounded" style={{ fontSize: '15px', color: state.isBroadcasting ? '#34d399' : accent.from }}>
+                {state.isBroadcasting ? 'sensors' : 'cell_tower'}
               </span>
-              <span className="hidden sm:inline">Call Band</span>
+              <span className="hidden sm:inline">
+                {state.isBroadcasting
+                  ? (state.isSpanish ? `En Vivo (${state.connectedMembersCount || 1})` : `Live (${state.connectedMembersCount || 1})`)
+                  : (state.isSpanish ? 'Tocar Juntos' : 'Play Together')}
+              </span>
             </button>
           )}
 
-          {state.hasActiveBand && state.isLockedToLeader && (
+          {!state.isBandLeader && state.hasActiveBand && state.isLockedToLeader && (
             <button
               type="button"
               data-testid="live-follow-toggle"
-              onClick={() => state.setIsLockedToLeader(false)}
+              onClick={state.leaveSession}
               style={{
-                width: '32px',
-                height: '32px',
-                display: 'flex',
+                height: '30px',
+                padding: '0 10px',
+                borderRadius: '9999px',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: '#FFFFFF',
+                gap: '5px',
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.4)',
+                color: '#60a5fa',
                 cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 700,
                 transition: 'all 0.15s ease',
-                padding: 0,
               }}
-              title="Synced with Band Leader (Tap to unlock)"
-              aria-label="Synced with Band Leader (Tap to unlock)"
+              title="Following Band Leader (Tap to Leave)"
+              aria-label="Following Band Leader (Tap to Leave)"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
                 link
+              </span>
+              <span className="hidden sm:inline">
+                {state.isSpanish
+                  ? `Siguiendo a ${state.activeLiveSession?.leaderName || 'Líder'}`
+                  : `Following ${state.activeLiveSession?.leaderName || 'Leader'}`}
               </span>
             </button>
           )}
@@ -3873,7 +3886,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '17px', color: accent.from }}>
-                      groups
+                      sensors
                     </span>
                     <p
                       style={{
@@ -3885,7 +3898,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         letterSpacing: '0.12em',
                       }}
                     >
-                      Stage Band Live Sync
+                      {state.isBandLeader
+                        ? (state.isSpanish ? 'Tocar Juntos (Líder)' : 'Play Together (Leader)')
+                        : (state.isSpanish ? 'Tocar Juntos (Músico)' : 'Play Together (Member)')}
                     </p>
                   </div>
                   <p
@@ -3896,10 +3911,13 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       marginTop: '2px',
                     }}
                   >
-                    Synchronize teleprompters & cues in real time
+                    {state.isSpanish
+                      ? 'Sincroniza teleprompter y notas en tiempo real'
+                      : 'Synchronize teleprompters & cues in real time'}
                   </p>
                 </div>
                 <span
+                  data-testid="band-connected-count-badge"
                   style={{
                     padding: '2px 8px',
                     borderRadius: '10px',
@@ -3911,50 +3929,198 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     fontWeight: 700,
                   }}
                 >
-                  {state.bandName}
+                  {state.connectedMembersCount || 1}{' '}
+                  {state.connectedMembersCount === 1
+                    ? (state.isSpanish ? 'conectado' : 'connected')
+                    : (state.isSpanish ? 'conectados' : 'connected')}
                 </span>
               </div>
 
-              {/* Follower Sync Status / Toggle */}
-              <div>
-                <button
-                  type="button"
-                  data-testid="band-sync-follow-btn"
-                  onClick={() => {
-                    const next = !state.isLockedToLeader;
-                    state.setIsLockedToLeader(next);
-                    if (next) state.setIsBroadcasting(false);
-                  }}
-                  className="btn-smooth"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    background: state.isLockedToLeader
-                      ? 'rgba(59, 130, 246, 0.16)'
-                      : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
-                    border: `1px solid ${state.isLockedToLeader ? 'rgba(59, 130, 246, 0.4)' : 'var(--c-border, transparent)'}`,
-                    color: state.isLockedToLeader ? '#60a5fa' : 'var(--c-text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                      link
-                    </span>
-                    <span style={{ fontSize: '11px', fontWeight: 700 }}>
-                      {state.isLockedToLeader ? 'Locked to Leader' : 'Follow Leader'}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '10px', opacity: 0.7 }}>
-                    {state.isLockedToLeader ? 'ACTIVE' : 'OFF'}
-                  </span>
-                </button>
-              </div>
+              {/* Role-Aware "Play Together" Controls */}
+              {state.isBandLeader ? (
+                /* Leader Controls */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {state.isBroadcasting && state.activeLiveSession?.status === 'active' ? (
+                    <div
+                      style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#10b981',
+                            boxShadow: '0 0 8px #10b981',
+                          }}
+                        />
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#34d399' }}>
+                          {state.isSpanish ? 'Sesión en Vivo Activa' : 'Live Session Active'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="play-together-end-btn"
+                        onClick={state.endLiveSession}
+                        className="btn-smooth"
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          background: 'rgba(239, 68, 68, 0.2)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#f87171',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {state.isSpanish ? 'Finalizar Sesión' : 'End Session'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      data-testid="play-together-start-btn"
+                      onClick={() => state.startLiveSession(state.preset)}
+                      className="btn-smooth"
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}22)`,
+                        border: `1px solid ${accent.from}66`,
+                        color: 'var(--c-text-primary, #ffffff)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        boxShadow: `0 2px 10px ${accent.from}22`,
+                      }}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '18px', color: accent.from }}>
+                        sensors
+                      </span>
+                      <span>
+                        {state.isSpanish
+                          ? 'Iniciar Sesión "Tocar Juntos"'
+                          : 'Start "Play Together" Session'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Member Controls */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {state.isLockedToLeader ? (
+                    <div
+                      style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: 'rgba(59, 130, 246, 0.12)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#60a5fa' }}>
+                          link
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>
+                          {state.isSpanish
+                            ? `Siguiendo a ${state.activeLiveSession?.leaderName || 'Líder'}`
+                            : `Following ${state.activeLiveSession?.leaderName || 'Leader'}`}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="play-together-leave-btn"
+                        onClick={state.leaveSession}
+                        className="btn-smooth"
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: 'var(--c-text-primary, #ffffff)',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {state.isSpanish ? 'Salir de Sesión' : 'Leave Session'}
+                      </button>
+                    </div>
+                  ) : state.activeLiveSession && state.activeLiveSession.status === 'active' ? (
+                    <div
+                      style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, textTransform: 'uppercase' }}>
+                          {state.isSpanish ? 'Sesión Activa' : 'Session Active'}
+                        </span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--c-text-primary)' }}>
+                          {state.activeLiveSession.songTitle || 'Live Rehearsal'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="play-together-join-btn"
+                        onClick={() => state.joinSession(state.activeLiveSession!)}
+                        className="btn-smooth"
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '8px',
+                          background: accent.from,
+                          border: 'none',
+                          color: '#ffffff',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {state.isSpanish ? 'Unirse' : 'Join'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        background: 'var(--surface-container-low, rgba(255, 255, 255, 0.04))',
+                        border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+                        color: 'var(--c-text-secondary)',
+                        fontSize: '11px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {state.isSpanish
+                        ? 'Esperando a que el líder inicie una sesión...'
+                        : 'Waiting for leader to start a session...'}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

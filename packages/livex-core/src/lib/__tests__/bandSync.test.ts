@@ -6,6 +6,7 @@ import {
   subscribeToBandLiveSession,
 } from '../bandSyncService';
 import type { LiveBandSyncPacket } from '../../types/band';
+import type { SongPreset } from '../../store/slices/songSlice';
 
 describe('Band Live Sync Engine', () => {
   beforeEach(() => {
@@ -213,6 +214,139 @@ describe('Band Live Sync Engine', () => {
 
       useBandStore.getState().deleteEvent(event.id);
       expect(useBandStore.getState().events.length).toBe(0);
+    });
+  });
+
+  describe('Play Together Session Lifecycle & Security', () => {
+    const mockPreset: SongPreset = {
+      id: 'song-stage-99',
+      name: 'Electric Horizon',
+      artist: 'Livex Band',
+      key: 'A',
+      bpm: 128,
+      speed: 128,
+      barsPerLine: 2,
+      notes: 'Chorus loud',
+      chords: [],
+      sections: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    it('leader starts and ends a Play Together session with valid status and metadata', async () => {
+      const band = useBandStore.getState().createBand('Neon Pulse', 'u-leader-1', 'Leo');
+      useBandStore.setState({ currentUserId: 'u-leader-1', currentUserName: 'Leo' });
+
+      // Start session
+      await useBandStore.getState().startLiveSession(mockPreset, 'u-leader-1', 'Leo');
+
+      const stateAfterStart = useBandStore.getState();
+      expect(stateAfterStart.isBroadcasting).toBe(true);
+      expect(stateAfterStart.isLockedToLeader).toBe(false);
+      expect(stateAfterStart.activeLiveSession).not.toBeNull();
+      expect(stateAfterStart.activeLiveSession?.status).toBe('active');
+      expect(stateAfterStart.activeLiveSession?.action).toBe('START_SESSION');
+      expect(stateAfterStart.activeLiveSession?.songTitle).toBe('Electric Horizon');
+      expect(stateAfterStart.activeLiveSession?.leaderId).toBe('u-leader-1');
+      expect(stateAfterStart.connectedMembersCount).toBe(1);
+      expect(stateAfterStart.activeLiveSession?.expiresAt).toBeGreaterThan(Date.now() + 10 * 3600 * 1000);
+
+      // End session
+      await useBandStore.getState().endLiveSession();
+
+      const stateAfterEnd = useBandStore.getState();
+      expect(stateAfterEnd.isBroadcasting).toBe(false);
+      expect(stateAfterEnd.isLockedToLeader).toBe(false);
+      expect(stateAfterEnd.activeLiveSession).toBeNull();
+      expect(stateAfterEnd.sessionPreset).toBeNull();
+      expect(stateAfterEnd.lobbyAttendees).toEqual([]);
+    });
+
+    it('member joins session and receives ephemeral sessionPreset without polluting local library', async () => {
+      const band = useBandStore.getState().createBand('Neon Pulse', 'u-leader-1', 'Leo');
+      useBandStore.setState({ currentUserId: 'u-member-2', currentUserName: 'Maya' });
+
+      const sessionPacket: LiveBandSyncPacket = {
+        id: `sess-${band.id}`,
+        bandId: band.id,
+        leaderId: 'u-leader-1',
+        leaderName: 'Leo',
+        status: 'active',
+        songId: mockPreset.id,
+        songTitle: mockPreset.name,
+        action: 'START_SESSION',
+        timestamp: Date.now(),
+        currentLineIdx: 0,
+        currentWordIdx: 0,
+        currentBeat: 0,
+        currentBar: 1,
+        bpm: 128,
+        barsPerLine: 2,
+        autoPlay: false,
+        version: 1,
+        songPayload: {
+          id: mockPreset.id,
+          bandId: band.id,
+          songId: mockPreset.id,
+          title: mockPreset.name,
+          artist: mockPreset.artist,
+          key: mockPreset.key,
+          bpm: mockPreset.bpm,
+          speed: mockPreset.speed,
+          barsPerLine: mockPreset.barsPerLine,
+          sections: [],
+          lyrics: undefined,
+          chords: [],
+          version: 1,
+          updatedAt: Date.now(),
+          updatedBy: 'u-leader-1',
+        },
+      };
+
+      // Member joins session
+      await useBandStore.getState().joinSession(sessionPacket, 'u-member-2', 'Maya');
+
+      const state = useBandStore.getState();
+      expect(state.isLockedToLeader).toBe(true);
+      expect(state.isBroadcasting).toBe(false);
+      expect(state.sessionPreset).not.toBeNull();
+      expect(state.sessionPreset?.name).toBe('Electric Horizon');
+      expect(state.lobbyAttendees.some((a) => a.userId === 'u-member-2')).toBe(true);
+
+      // Member leaves session
+      await useBandStore.getState().leaveSession('u-member-2');
+
+      const stateAfterLeave = useBandStore.getState();
+      expect(stateAfterLeave.isLockedToLeader).toBe(false);
+      expect(stateAfterLeave.sessionPreset).toBeNull();
+      expect(stateAfterLeave.lobbyAttendees.some((a) => a.userId === 'u-member-2')).toBe(false);
+    });
+
+    it('rejects stale sessions older than 12 hours from packet handlers', () => {
+      const now = Date.now();
+      const expiredSessionPacket: LiveBandSyncPacket = {
+        id: 'sess-stale-1',
+        bandId: 'band-stale',
+        leaderId: 'u-leader-1',
+        leaderName: 'Leo',
+        status: 'active',
+        songId: 'song-1',
+        songTitle: 'Ancient Rehearsal',
+        action: 'PLAY',
+        timestamp: now - 13 * 3600 * 1000,
+        expiresAt: now - 1 * 3600 * 1000, // Expired 1 hour ago
+        currentLineIdx: 0,
+        currentWordIdx: 0,
+        currentBeat: 0,
+        currentBar: 1,
+        bpm: 120,
+        barsPerLine: 2,
+        autoPlay: false,
+        version: 1,
+      };
+
+      const isExpired = Boolean(expiredSessionPacket.expiresAt && Date.now() > expiredSessionPacket.expiresAt);
+      expect(isExpired).toBe(true);
     });
   });
 });

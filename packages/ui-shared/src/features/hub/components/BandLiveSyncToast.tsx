@@ -52,7 +52,7 @@ export const BandLiveSyncToast: React.FC = () => {
 
   const handleJoin = useCallback(
     (packet: LiveBandSyncPacket) => {
-      // 1. Resolve song in local library or import from sharedSongs/songPayload
+      // 1. Resolve song in local library if user already owns it
       let targetId = packet.songId;
       const presets = useChordStore.getState().presets;
       const existing = presets.find(
@@ -61,63 +61,16 @@ export const BandLiveSyncToast: React.FC = () => {
 
       if (existing) {
         targetId = existing.id;
-      } else {
-        const sharedSongs = useBandStore.getState().sharedSongs;
-        const shared = sharedSongs.find(
-          (s) => s.songId === packet.songId || s.title.toLowerCase() === packet.songTitle.toLowerCase()
-        );
-        if (shared) {
-          targetId = createPreset({
-            name: shared.title,
-            artist: shared.artist || '',
-            key: shared.key || 'C',
-            bpm: shared.bpm || 120,
-            speed: shared.speed || shared.bpm || 120,
-            barsPerLine: shared.barsPerLine || 2,
-            notes: shared.notes || '',
-            chords: shared.chords || [],
-            sections: shared.sections || [],
-            lyrics: shared.lyrics,
-            coverImage: shared.coverImage,
-          });
-        } else if (packet.songPayload) {
-          const payload = packet.songPayload;
-          targetId = createPreset({
-            name: payload.title || packet.songTitle,
-            artist: payload.artist || '',
-            key: payload.key || 'C',
-            bpm: payload.bpm || packet.bpm || 120,
-            speed: payload.speed || payload.bpm || 120,
-            barsPerLine: payload.barsPerLine || packet.barsPerLine || 2,
-            notes: payload.notes || '',
-            chords: payload.chords || [],
-            sections: payload.sections || [],
-            lyrics: payload.lyrics,
-            coverImage: payload.coverImage,
-          });
-        }
+        setActivePreset(targetId);
       }
 
-      // 2. Lock to leader and set spectator session state
-      const currentUserId = useBandStore.getState().currentUserId || 'local-user';
-      const currentUserName = useBandStore.getState().currentUserName || 'Musician';
-
-      if (currentBand?.id) {
-        useBandStore.getState().joinLobby(currentBand.id, {
-          userId: currentUserId,
-          displayName: currentUserName,
-          role: 'member',
-          joinedAt: Date.now(),
-        });
-      }
-
-      setIsLockedToLeader(true);
-      setActiveLiveSession(packet);
-      setActivePreset(targetId);
+      // 2. Join session via canonical joinSession:
+      // Mounts ephemeral in-memory sessionPreset snapshot without saving to follower's library
+      useBandStore.getState().joinSession(packet);
 
       // 3. Dispatch navigation into Chordex Songs with auto-open Live mode flag
       try {
-        sessionStorage.setItem('livex_auto_open_live', targetId);
+        sessionStorage.setItem('livex_auto_open_live', targetId || 'session');
       } catch (_) {}
 
       window.dispatchEvent(
@@ -125,7 +78,7 @@ export const BandLiveSyncToast: React.FC = () => {
       );
       NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
     },
-    [currentBand?.id, createPreset, setActivePreset, setIsLockedToLeader, setActiveLiveSession]
+    [setActivePreset]
   );
 
   // 2. Subscribe to live session broadcasts and member join events
@@ -169,7 +122,7 @@ export const BandLiveSyncToast: React.FC = () => {
       const isBroadcaster = Boolean(isBroadcasting || useBandStore.getState().isBroadcasting);
 
       // Strict Leader Filtering: The device initiating or leading the session must NEVER display an invitation toast to itself
-      if (packet.action === 'CALL_BAND' && (isLeaderOfBand || isPacketLeader || isBroadcaster)) {
+      if ((packet.action === 'CALL_BAND' || packet.action === 'START_SESSION') && (isLeaderOfBand || isPacketLeader || isBroadcaster)) {
         return;
       }
       if (isLeaderOfBand || isPacketLeader || isBroadcaster || isLockedToLeader) {
@@ -177,6 +130,7 @@ export const BandLiveSyncToast: React.FC = () => {
       }
 
       if (
+        packet.action !== 'START_SESSION' &&
         packet.action !== 'PLAY' &&
         packet.action !== 'SONG_SELECT' &&
         packet.action !== 'CALL_BAND' &&
@@ -185,18 +139,23 @@ export const BandLiveSyncToast: React.FC = () => {
         return;
       }
 
-      // Check if this is the same song notification within 10 seconds (unless it's an explicit CALL_BAND)
-      if (packet.action !== 'CALL_BAND' && lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
+      // Check if this is the same song notification within 10 seconds (unless it's an explicit CALL_BAND or START_SESSION)
+      if (packet.action !== 'CALL_BAND' && packet.action !== 'START_SESSION' && lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
         return;
       }
 
       lastToastSongIdRef.current = `${packet.songId}_${packet.songTitle}`;
+      const isSessionStart = packet.action === 'START_SESSION';
       const isCallBand = packet.action === 'CALL_BAND';
       const songTitle = packet.songTitle || (isSpanish ? 'Ensayo en Vivo' : 'Live Rehearsal');
       const leaderName = packet.leaderName || (isSpanish ? 'Líder' : 'Band Leader');
 
       showLiveToast(
-        isCallBand
+        isSessionStart
+          ? isSpanish
+            ? `${leaderName} inició "Tocar Juntos": ${songTitle}`
+            : `${leaderName} started "Play Together": ${songTitle}`
+          : isCallBand
           ? isSpanish
             ? `${leaderName} llamó para ${songTitle}`
             : `${leaderName} called for ${songTitle}`
@@ -204,11 +163,11 @@ export const BandLiveSyncToast: React.FC = () => {
           ? `Tocando: ${songTitle}`
           : `Playing: ${songTitle}`,
         {
-          duration: isCallBand ? 8000 : 5000,
+          duration: isSessionStart || isCallBand ? 10000 : 5000,
           songTitle,
           songId: packet.songId,
           leaderName,
-          isCallBand,
+          isCallBand: isCallBand || isSessionStart,
           onJoin: () => handleJoin(packet),
         }
       );

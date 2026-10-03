@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   useBandStore,
+  NavigationDispatcher,
   type Band,
   type BandMember,
 } from '@workspace/livex-core';
@@ -42,6 +43,11 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     isLoading,
     error,
     setError,
+    activeLiveSession,
+    isLockedToLeader,
+    joinSession,
+    leaveSession,
+    connectedMembersCount,
   } = useBandStore();
 
   const [noBandTab, setNoBandTab] = useState<'create' | 'join'>('create');
@@ -103,6 +109,26 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     } catch (_) {}
   };
 
+  const isLeader = Boolean(currentBand && (currentBand.leaderId === currentUserId || !currentBand.leaderId));
+  const isSessionActive = Boolean(
+    activeLiveSession &&
+    activeLiveSession.status === 'active' &&
+    (!activeLiveSession.expiresAt || Date.now() < activeLiveSession.expiresAt)
+  );
+
+  const handleJoinLive = async () => {
+    if (!activeLiveSession) return;
+    await joinSession(activeLiveSession, currentUserId, currentUserName);
+    onClose();
+    try {
+      sessionStorage.setItem('livex_auto_open_live', activeLiveSession.songId || 'session');
+    } catch (_) {}
+    window.dispatchEvent(
+      new CustomEvent('livex:open-live-spectator', { detail: { songId: activeLiveSession.songId } })
+    );
+    NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
+  };
+
   const handleSaveEvent = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!currentBand || !eventTitle.trim()) return;
@@ -125,8 +151,6 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
     setShowAddEvent(false);
     showToast(isSpanish ? '¡Evento agregado al calendario!' : 'Event added to calendar!');
   };
-
-  const isLeader = currentBand?.leaderId === currentUserId;
 
   return (
     <Dialog
@@ -231,6 +255,70 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
                 <span>{copiedCode ? (isSpanish ? 'Copiado' : 'Copied') : (isSpanish ? 'Copiar' : 'Copy')}</span>
               </button>
             </div>
+
+            {/* Active Live Session / Play Together Card */}
+            {isSessionActive && (
+              <div
+                data-testid="band-hub-active-session-card"
+                className="flex items-center justify-between p-3.5 rounded-2xl border"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  borderColor: 'rgba(16, 185, 129, 0.25)',
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400">
+                    <StudioIcon name="sensors" size={17} />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                      {isSpanish ? 'Sesión en Vivo Activa' : 'Live Session Active'} • {connectedMembersCount || 1} {connectedMembersCount === 1 ? (isSpanish ? 'conectado' : 'connected') : (isSpanish ? 'conectados' : 'connected')}
+                    </span>
+                    <span className="text-xs font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
+                      {activeLiveSession?.songTitle || (isSpanish ? 'Ensayo en Vivo' : 'Live Rehearsal')}
+                    </span>
+                  </div>
+                </div>
+
+                {isLeader ? (
+                  <button
+                    type="button"
+                    data-testid="band-hub-go-session-btn"
+                    onClick={() => {
+                      onClose();
+                      NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition active:scale-95 cursor-pointer shrink-0"
+                  >
+                    {isSpanish ? 'Ir a Sesión' : 'Go to Session'}
+                  </button>
+                ) : isLockedToLeader ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] font-bold text-emerald-400">
+                      {isSpanish ? 'Conectado' : 'Connected'}
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="band-hub-leave-session-btn"
+                      onClick={() => leaveSession(currentUserId)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/10 hover:bg-white/15 text-zinc-300 transition active:scale-95 cursor-pointer"
+                    >
+                      {isSpanish ? 'Salir' : 'Leave'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="band-hub-join-session-btn"
+                    onClick={handleJoinLive}
+                    className="px-4 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95 cursor-pointer shrink-0 shadow-sm"
+                    style={{ background: accent.from }}
+                  >
+                    {isSpanish ? 'Unirse' : 'Join'}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Segmented Sub-Navigation (Repertoire / Calendar / Members) */}
             <div

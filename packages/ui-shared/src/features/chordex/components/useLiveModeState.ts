@@ -264,6 +264,13 @@ export interface LiveModeState {
   isInLobby: boolean;
   setIsInLobby: (v: boolean) => void;
   lobbyAttendees: LobbyAttendee[];
+  connectedMembersCount: number;
+  startLiveSession: (preset: SongPreset) => Promise<void>;
+  endLiveSession: () => Promise<void>;
+  joinSession: (packet: LiveBandSyncPacket) => Promise<void>;
+  leaveSession: () => Promise<void>;
+  isLeaderDisconnected: boolean;
+  isSpanish: boolean;
   startSongFromLobby: () => void;
   callBandSession: () => void;
 
@@ -475,9 +482,11 @@ export function useLiveModeState(
     useShallow((s) => ({
       accentColor: s.settings.accentColor,
       liveModeAnimations: s.settings.liveModeAnimations,
+      language: s.settings.language,
     }))
   );
   const accent = resolveAccent(settings.accentColor);
+  const isSpanish = settings.language === 'es';
 
   // Band Stage Collaboration Store
   const currentBand = useBandStore((s) => s.currentBand);
@@ -491,6 +500,14 @@ export function useLiveModeState(
   const setIsLockedToLeader = useBandStore((s) => s.setIsLockedToLeader);
   const activeLiveSession = useBandStore((s) => s.activeLiveSession);
   const setActiveLiveSession = useBandStore((s) => s.setActiveLiveSession);
+  const connectedMembersCount = useBandStore((s) => s.connectedMembersCount);
+  const startLiveSessionStore = useBandStore((s) => s.startLiveSession);
+  const endLiveSessionStore = useBandStore((s) => s.endLiveSession);
+  const joinSessionStore = useBandStore((s) => s.joinSession);
+  const leaveSessionStore = useBandStore((s) => s.leaveSession);
+
+  const [isLeaderDisconnected, setIsLeaderDisconnected] = useState(false);
+  const lastPacketReceivedAtRef = useRef<number>(Date.now());
 
   const packetVersionRef = useRef(1);
   const currentLineIdxRef = useRef(0);
@@ -756,9 +773,13 @@ export function useLiveModeState(
       if (!currentBand) return;
       const nextVersion = packetVersionRef.current++;
       const packet: LiveBandSyncPacket = {
+        id: activeLiveSession?.id || `sess_${currentBand.id}_${Date.now()}`,
+        status: action === 'END_SESSION' ? 'ended' : 'active',
         bandId: currentBand.id,
-        leaderId: currentBand.leaderId || 'local-leader',
-        leaderName: 'Leader',
+        leaderId: currentBand.leaderId || currentUserId || 'local-leader',
+        leaderName: isBandLeader
+          ? (useBandStore.getState().currentUserName || 'Leader')
+          : 'Leader',
         songId: preset.id,
         songTitle: preset.name || 'Untitled Song',
         action,
@@ -772,7 +793,11 @@ export function useLiveModeState(
         elapsedMs: overrides?.elapsedMs ?? elapsedMsRef.current,
         autoPlay: overrides?.autoPlay ?? autoPlayRef.current,
         version: nextVersion,
+        connectedMembersCount,
         songPayload: {
+          id: preset.id,
+          bandId: currentBand.id,
+          songId: preset.id,
           title: preset.name,
           artist: preset.artist,
           key: preset.key,
@@ -783,11 +808,14 @@ export function useLiveModeState(
           sections: preset.sections,
           lyrics: preset.lyrics,
           chords: preset.chords,
+          version: 1,
+          updatedAt: Date.now(),
+          updatedBy: currentUserId,
         },
       };
       broadcastBandLivePacket(packet);
     },
-    [currentBand, preset]
+    [currentBand, preset, activeLiveSession?.id, currentUserId, isBandLeader, connectedMembersCount]
   );
 
   const setAutoPlay = useCallback(
@@ -850,6 +878,52 @@ export function useLiveModeState(
       lobbyAttendees: [initialAttendee],
     });
   }, [currentBand, currentUserId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
+
+  const startLiveSession = useCallback(
+    async (song: SongPreset) => {
+      const leaderName = currentBand
+        ? useBandStore.getState().members.find((m) => m.userId === currentUserId)?.displayName || 'Leader'
+        : 'Leader';
+      await startLiveSessionStore(song, currentUserId, leaderName);
+    },
+    [startLiveSessionStore, currentUserId, currentBand]
+  );
+
+  const endLiveSession = useCallback(async () => {
+    emitLiveSync('END_SESSION', { autoPlay: false });
+    await endLiveSessionStore();
+  }, [emitLiveSync, endLiveSessionStore]);
+
+  const joinSession = useCallback(
+    async (targetPacket: LiveBandSyncPacket) => {
+      const userName = useBandStore.getState().currentUserName || 'Musician';
+      await joinSessionStore(targetPacket, currentUserId, userName);
+    },
+    [joinSessionStore, currentUserId]
+  );
+
+  const leaveSession = useCallback(async () => {
+    await leaveSessionStore(currentUserId);
+  }, [leaveSessionStore, currentUserId]);
+
+  // 8-second watchdog for Leader disconnect:
+  // If locked to leader and no packet/heartbeat received for >8000ms, pause and warn
+  useEffect(() => {
+    if (!isLockedToLeader) {
+      setIsLeaderDisconnected(false);
+      return undefined;
+    }
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastPacketReceivedAtRef.current;
+      if (elapsed > 8000) {
+        setIsLeaderDisconnected(true);
+        if (autoPlay) {
+          setAutoPlayState(false);
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLockedToLeader, autoPlay]);
 
   useEffect(() => {
     if (preset.barsPerLine) {
@@ -2045,7 +2119,23 @@ export function useLiveModeState(
       // Leader broadcasts playback controls; follower applies incoming controls
       if (isBroadcasting || !isLockedToLeader) return;
 
+      lastPacketReceivedAtRef.current = Date.now();
+      setIsLeaderDisconnected(false);
+
+      if (packet.action === 'END_SESSION' || packet.status === 'ended') {
+        setIsInLobby(false);
+        setAutoPlayState(false);
+        setIsLockedToLeader(false);
+        setActiveLiveSession(null);
+        useBandStore.getState().leaveSession(currentUserId);
+        return;
+      }
+
       setActiveLiveSession(packet);
+
+      if (packet.songPayload) {
+        useBandStore.getState().setSessionPreset(packet.songPayload as unknown as SongPreset);
+      }
 
       const { isStale } = calculateTransitDrift(packet);
       if (isStale && packet.action !== 'PLAY' && packet.action !== 'PAUSE') return;
@@ -2063,6 +2153,14 @@ export function useLiveModeState(
       }
 
       switch (packet.action) {
+        case 'START_SESSION':
+          setIsInLobby(false);
+          setAutoPlayState(false);
+          if (packet.songPayload) {
+            useBandStore.getState().setSessionPreset(packet.songPayload as unknown as SongPreset);
+          }
+          break;
+
         case 'CALL_BAND':
           setIsInLobby(true);
           setAutoPlayState(false);
@@ -2387,6 +2485,13 @@ export function useLiveModeState(
     isInLobby,
     setIsInLobby,
     lobbyAttendees,
+    connectedMembersCount,
+    startLiveSession,
+    endLiveSession,
+    joinSession,
+    leaveSession,
+    isLeaderDisconnected,
+    isSpanish,
     startSongFromLobby,
     callBandSession,
     setlistContext,

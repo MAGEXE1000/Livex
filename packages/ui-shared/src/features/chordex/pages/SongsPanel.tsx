@@ -4765,7 +4765,7 @@ export default function SongsPanel() {
       <div className="flex flex-col h-full overflow-hidden app-bg" style={{ position: 'relative' }}>
         {showLive && (
           <LiveMode
-            preset={activePreset}
+            preset={activePreset || useBandStore.getState().sessionPreset}
             initialMode={editorViewMode}
             onClose={() => {
               setShowLive(false);

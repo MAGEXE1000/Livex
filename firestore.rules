@@ -29,6 +29,19 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/roomCodes/$(get(/databases/$(database)/documents/rooms/$(roomId)).data.shortCode));
     }
 
+    function isBandLeader(bandId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/bands/$(bandId)) &&
+        get(/databases/$(database)/documents/bands/$(bandId)).data.leaderId == request.auth.uid;
+    }
+
+    function isBandMember(bandId) {
+      return isAuthenticated() && (
+        isBandLeader(bandId) ||
+        exists(/databases/$(database)/documents/bands/$(bandId)/members/$(request.auth.uid))
+      );
+    }
+
     // User data isolation: strict per-user sandbox
     match /users/{userId} {
       allow read, write: if isOwner(userId);
@@ -151,5 +164,85 @@ service cloud.firestore {
         allow delete: if isAuthenticated() && isRoomHost(roomId);
       }
     }
+
+    // Band join codes: used for code -> bandId resolution
+    match /bandCodes/{code} {
+      allow list: if false;
+      allow get: if isAuthenticated() && code.size() == 6;
+      allow create, update: if isAuthenticated()
+        && code.size() == 6
+        && request.resource.data.bandId is string
+        && request.resource.data.bandId.size() > 0;
+      allow delete: if isAuthenticated() && (
+        !exists(/databases/$(database)/documents/bands/$(resource.data.bandId)) ||
+        get(/databases/$(database)/documents/bands/$(resource.data.bandId)).data.leaderId == request.auth.uid
+      );
+    }
+
+    // Band workspaces and repertoires
+    match /bands/{bandId} {
+      allow list: if false;
+      allow get: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.leaderId == request.auth.uid
+        && request.resource.data.id == bandId;
+      allow update: if isBandLeader(bandId);
+      allow delete: if isBandLeader(bandId);
+
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && (
+          request.auth.uid == request.resource.data.userId ||
+          isBandLeader(bandId)
+        );
+        allow update: if isBandLeader(bandId) || request.auth.uid == resource.data.userId;
+        allow delete: if isBandLeader(bandId) || request.auth.uid == resource.data.userId;
+      }
+
+      match /songs/{songId} {
+        allow read: if isBandMember(bandId);
+        allow write: if isBandMember(bandId);
+      }
+
+      match /events/{eventId} {
+        allow read: if isBandMember(bandId);
+        allow write: if isBandMember(bandId);
+      }
+    }
+
+    // Live Band Sessions / Play Together: Authoritative Realtime Synchronization
+    match /liveBandSessions/{bandId} {
+      // Band members can read the live session state
+      allow read: if isBandMember(bandId);
+
+      // Only the band Leader can create or update session transport state
+      allow create: if isBandLeader(bandId)
+        && request.resource.data.bandId == bandId
+        && request.resource.data.leaderId == request.auth.uid;
+
+      allow update: if isBandLeader(bandId)
+        && request.resource.data.bandId == bandId
+        && request.resource.data.leaderId == request.auth.uid;
+
+      allow delete: if isBandLeader(bandId);
+
+      // Realtime member presence subcollection
+      match /lobby/{userId} {
+        // Any band member can read the connected presence roster
+        allow read: if isBandMember(bandId);
+
+        // Members can only write and update their own presence
+        allow create, update: if isBandMember(bandId)
+          && request.auth.uid == userId
+          && request.resource.data.userId == userId;
+
+        // Members can remove themselves, or the leader can prune attendees
+        allow delete: if isAuthenticated() && (
+          request.auth.uid == userId ||
+          isBandLeader(bandId)
+        );
+      }
+    }
   }
 }
+

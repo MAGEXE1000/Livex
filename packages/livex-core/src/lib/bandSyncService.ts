@@ -67,11 +67,21 @@ export function calculateTransitDrift(
 export async function broadcastBandLivePacket(packet: LiveBandSyncPacket): Promise<void> {
   if (!packet || !packet.bandId) return;
 
+  const now = Date.now();
+  const enrichedPacket: LiveBandSyncPacket = {
+    ...packet,
+    id: packet.id || `sess-${packet.bandId}`,
+    status: packet.status || (packet.action === 'END_SESSION' ? 'ended' : 'active'),
+    createdAt: packet.createdAt || now,
+    updatedAt: now,
+    expiresAt: packet.expiresAt || now + 12 * 3600 * 1000, // 12-hour expiry threshold for stale sessions
+  };
+
   // 1. Instant local broadcast (sub-millisecond latency for same-device/multi-tab/preview)
   try {
     const ch = getOrCreateChannel(_liveSyncChannels, `livex_band_live_sync_${packet.bandId}`);
     if (ch) {
-      ch.postMessage({ type: 'LIVEX_BAND_STAGE_SYNC', packet });
+      ch.postMessage({ type: 'LIVEX_BAND_STAGE_SYNC', packet: enrichedPacket });
     }
   } catch (err) {
     console.warn('[BandSyncService] BroadcastChannel postMessage error:', err);
@@ -82,14 +92,44 @@ export async function broadcastBandLivePacket(packet: LiveBandSyncPacket): Promi
     const db = getFirebaseDb();
     if (db) {
       const sessionRef = doc(db, 'liveBandSessions', packet.bandId);
-      const clean = cleanPayload(packet);
+      const clean = cleanPayload(enrichedPacket);
       setDoc(sessionRef, clean, { merge: true }).catch((err) => {
         console.debug('[BandSyncService] Firestore sync non-fatal write error:', err?.message || err);
       });
     }
-  } catch (err) {
-    console.debug('[BandSyncService] Firestore session update skipped:', err);
+  } catch (err: any) {
+    console.debug('[BandSyncService] Firestore session update skipped:', err?.message || err);
   }
+}
+
+/**
+ * End an active live band session in Firestore and local broadcast
+ */
+export async function endBandLiveSessionRemote(bandId: string, leaderId: string): Promise<void> {
+  if (!bandId) return;
+
+  const packet: LiveBandSyncPacket = {
+    id: `sess-${bandId}`,
+    bandId,
+    leaderId,
+    leaderName: '',
+    status: 'ended',
+    songId: '',
+    songTitle: '',
+    action: 'END_SESSION',
+    timestamp: Date.now(),
+    currentLineIdx: 0,
+    currentWordIdx: 0,
+    currentBeat: 0,
+    currentBar: 0,
+    bpm: 120,
+    barsPerLine: 2,
+    autoPlay: false,
+    version: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  await broadcastBandLivePacket(packet);
 }
 
 /**
@@ -241,8 +281,32 @@ export function subscribeToBandLiveSession(
           if (snapshot.exists()) {
             const data = snapshot.data() as LiveBandSyncPacket;
             if (data && data.bandId === bandId) {
+              // Ignore stale / expired sessions (> 12 hours)
+              if (data.expiresAt && Date.now() > data.expiresAt) {
+                return;
+              }
               handleIncomingPacket(data);
             }
+          } else {
+            // Document deleted -> session ended
+            handleIncomingPacket({
+              bandId,
+              leaderId: '',
+              leaderName: '',
+              songId: '',
+              songTitle: '',
+              action: 'END_SESSION',
+              status: 'ended',
+              timestamp: Date.now(),
+              currentLineIdx: 0,
+              currentWordIdx: 0,
+              currentBeat: 0,
+              currentBar: 0,
+              bpm: 120,
+              barsPerLine: 2,
+              autoPlay: false,
+              version: Date.now(),
+            });
           }
         },
         (error) => {
@@ -263,6 +327,68 @@ export function subscribeToBandLiveSession(
     }
   };
 }
+
+/**
+ * Subscribe to realtime lobby presence for a given band
+ */
+export function subscribeToLobbyPresence(
+  bandId: string,
+  onAttendees: (attendees: LobbyAttendee[]) => void
+): () => void {
+  if (!bandId) return () => {};
+
+  let unsubFirestore: (() => void) | null = null;
+  try {
+    const db = getFirebaseDb();
+    if (db) {
+      const lobbyCol = collection(db, 'liveBandSessions', bandId, 'lobby');
+      unsubFirestore = onSnapshot(
+        lobbyCol,
+        (snapshot) => {
+          const attendees: LobbyAttendee[] = [];
+          snapshot.forEach((docSnap) => {
+            if (docSnap.exists()) {
+              attendees.push(docSnap.data() as LobbyAttendee);
+            }
+          });
+          onAttendees(attendees);
+        },
+        (err) => {
+          console.debug('[BandSyncService] onSnapshot lobby presence notice:', err?.message || err);
+        }
+      );
+    }
+  } catch (err) {
+    console.debug('[BandSyncService] Could not establish lobby presence listener:', err);
+  }
+
+  return () => {
+    if (unsubFirestore) {
+      unsubFirestore();
+    }
+  };
+}
+
+/**
+ * Canonical Live Session Transport abstraction
+ */
+export interface LiveSessionTransport {
+  publishSession(packet: LiveBandSyncPacket): Promise<void>;
+  endSession(bandId: string, leaderId: string): Promise<void>;
+  subscribeSession(bandId: string, onPacket: (packet: LiveBandSyncPacket) => void): () => void;
+  updatePresence(bandId: string, attendee: LobbyAttendee): Promise<void>;
+  removePresence(bandId: string, userId: string): Promise<void>;
+  subscribePresence(bandId: string, onAttendees: (attendees: LobbyAttendee[]) => void): () => void;
+}
+
+export const firestoreSessionTransport: LiveSessionTransport = {
+  publishSession: broadcastBandLivePacket,
+  endSession: endBandLiveSessionRemote,
+  subscribeSession: subscribeToBandLiveSession,
+  updatePresence: joinLobbyRemote,
+  removePresence: leaveLobbyRemote,
+  subscribePresence: subscribeToLobbyPresence,
+};
 
 /* ── CLOUD FIRESTORE BAND PERSISTENCE & REALTIME DATA LAYER ── */
 

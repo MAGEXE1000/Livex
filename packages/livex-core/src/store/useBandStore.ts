@@ -21,6 +21,9 @@ import {
   deleteEventRemote,
   subscribeToBandRealtimeData,
   broadcastBandLivePacket,
+  endBandLiveSessionRemote,
+  subscribeToBandLiveSession,
+  subscribeToLobbyPresence,
   joinLobbyRemote,
   leaveLobbyRemote,
 } from '../lib/bandSyncService';
@@ -42,6 +45,8 @@ export function generateBandCode(): string {
 }
 
 let _currentBandUnsub: (() => void) | null = null;
+let _currentSessionUnsub: (() => void) | null = null;
+let _currentLobbyUnsub: (() => void) | null = null;
 
 const DEFAULT_BAND_STATE: BandState = {
   currentBand: null,
@@ -58,6 +63,8 @@ const DEFAULT_BAND_STATE: BandState = {
   activeLiveSession: null,
   lastSyncTimestamp: null,
   lobbyAttendees: [],
+  connectedMembersCount: 1,
+  sessionPreset: null,
 };
 
 export const useBandStore = create<BandStore>()(
@@ -69,9 +76,19 @@ export const useBandStore = create<BandStore>()(
         set({ currentBand: band });
         if (band?.id) {
           get().attachRealtimeSync();
-        } else if (_currentBandUnsub) {
-          _currentBandUnsub();
-          _currentBandUnsub = null;
+        } else {
+          if (_currentBandUnsub) {
+            _currentBandUnsub();
+            _currentBandUnsub = null;
+          }
+          if (_currentSessionUnsub) {
+            _currentSessionUnsub();
+            _currentSessionUnsub = null;
+          }
+          if (_currentLobbyUnsub) {
+            _currentLobbyUnsub();
+            _currentLobbyUnsub = null;
+          }
         }
       },
 
@@ -108,8 +125,16 @@ export const useBandStore = create<BandStore>()(
           _currentBandUnsub();
           _currentBandUnsub = null;
         }
+        if (_currentSessionUnsub) {
+          _currentSessionUnsub();
+          _currentSessionUnsub = null;
+        }
+        if (_currentLobbyUnsub) {
+          _currentLobbyUnsub();
+          _currentLobbyUnsub = null;
+        }
 
-        const unsub = subscribeToBandRealtimeData(
+        const unsubData = subscribeToBandRealtimeData(
           bandId,
           {
             onBandUpdate: (band) => {
@@ -130,9 +155,39 @@ export const useBandStore = create<BandStore>()(
           },
           currentUserId
         );
+        _currentBandUnsub = unsubData;
 
-        _currentBandUnsub = unsub;
-        return unsub;
+        // Reactive Session Sync
+        const unsubSession = subscribeToBandLiveSession(bandId, (packet) => {
+          if (!packet || packet.action === 'END_SESSION' || packet.status === 'ended') {
+            set({
+              activeLiveSession: null,
+              sessionPreset: null,
+              isLockedToLeader: false,
+            });
+            return;
+          }
+          set({
+            activeLiveSession: packet,
+            lastSyncTimestamp: Date.now(),
+          });
+        });
+        _currentSessionUnsub = unsubSession;
+
+        // Reactive Lobby / Presence Sync
+        const unsubLobby = subscribeToLobbyPresence(bandId, (attendees) => {
+          set({
+            lobbyAttendees: attendees,
+            connectedMembersCount: Math.max(1, attendees.length),
+          });
+        });
+        _currentLobbyUnsub = unsubLobby;
+
+        return () => {
+          unsubData();
+          unsubSession();
+          unsubLobby();
+        };
       },
 
       createBand: (name, leaderId, leaderName, description) => {
@@ -265,9 +320,18 @@ export const useBandStore = create<BandStore>()(
       },
 
       leaveBand: () => {
+        get().leaveSession().catch(() => {});
         if (_currentBandUnsub) {
           _currentBandUnsub();
           _currentBandUnsub = null;
+        }
+        if (_currentSessionUnsub) {
+          _currentSessionUnsub();
+          _currentSessionUnsub = null;
+        }
+        if (_currentLobbyUnsub) {
+          _currentLobbyUnsub();
+          _currentLobbyUnsub = null;
         }
 
         set({
@@ -276,6 +340,12 @@ export const useBandStore = create<BandStore>()(
           sharedSongs: [],
           events: [],
           error: null,
+          isBroadcasting: false,
+          isLockedToLeader: false,
+          activeLiveSession: null,
+          sessionPreset: null,
+          lobbyAttendees: [],
+          connectedMembersCount: 1,
         });
       },
 
@@ -450,7 +520,11 @@ export const useBandStore = create<BandStore>()(
         });
       },
 
-      callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => {
+      setSessionPreset: (preset) => {
+        set({ sessionPreset: preset });
+      },
+
+      startLiveSession: async (preset: SongPreset, leaderId?: string, leaderName?: string) => {
         const state = get();
         const band = state.currentBand;
         if (!band) return;
@@ -465,14 +539,20 @@ export const useBandStore = create<BandStore>()(
           joinedAt: Date.now(),
         };
 
+        const now = Date.now();
         const packet: LiveBandSyncPacket = {
+          id: `sess-${band.id}`,
           bandId: band.id,
           leaderId: effectiveLeaderId,
           leaderName: effectiveLeaderName,
+          status: 'active',
+          createdAt: now,
+          updatedAt: now,
+          expiresAt: now + 12 * 3600 * 1000,
           songId: preset.id,
           songTitle: preset.name || 'Untitled Song',
-          action: 'CALL_BAND',
-          timestamp: Date.now(),
+          action: 'START_SESSION',
+          timestamp: now,
           currentLineIdx: 0,
           currentWordIdx: 0,
           currentBeat: 0,
@@ -480,7 +560,8 @@ export const useBandStore = create<BandStore>()(
           bpm: preset.speed || preset.bpm || 120,
           barsPerLine: preset.barsPerLine || 2,
           autoPlay: false,
-          version: Date.now(),
+          version: now,
+          connectedMembersCount: 1,
           songPayload: {
             id: preset.id,
             bandId: band.id,
@@ -496,7 +577,7 @@ export const useBandStore = create<BandStore>()(
             lyrics: preset.lyrics,
             chords: preset.chords,
             version: 1,
-            updatedAt: Date.now(),
+            updatedAt: now,
             updatedBy: effectiveLeaderId,
           },
           lobbyAttendees: [initialAttendee],
@@ -507,9 +588,101 @@ export const useBandStore = create<BandStore>()(
           isLockedToLeader: false,
           activeLiveSession: packet,
           lobbyAttendees: [initialAttendee],
+          connectedMembersCount: 1,
         });
 
-        broadcastBandLivePacket(packet).catch(() => {});
+        joinLobbyRemote(band.id, initialAttendee).catch(() => {});
+        await broadcastBandLivePacket(packet);
+      },
+
+      endLiveSession: async () => {
+        const state = get();
+        const band = state.currentBand;
+        if (!band) return;
+
+        const leaderId = state.currentUserId || band.leaderId || 'local-leader';
+        await endBandLiveSessionRemote(band.id, leaderId);
+
+        set({
+          isBroadcasting: false,
+          isLockedToLeader: false,
+          activeLiveSession: null,
+          sessionPreset: null,
+          lobbyAttendees: [],
+          connectedMembersCount: 1,
+        });
+      },
+
+      joinSession: async (packet: LiveBandSyncPacket, userId?: string, userName?: string) => {
+        const state = get();
+        const band = state.currentBand;
+        if (!band) return;
+
+        const effectiveUserId = userId || state.currentUserId || 'local-user';
+        const effectiveUserName = userName || state.currentUserName || 'Musician';
+
+        const attendee: LobbyAttendee = {
+          userId: effectiveUserId,
+          displayName: effectiveUserName,
+          role: 'member',
+          joinedAt: Date.now(),
+        };
+
+        const existingAttendees = state.lobbyAttendees.filter((a) => a.userId !== effectiveUserId);
+        const updatedAttendees = [...existingAttendees, attendee];
+
+        let sessionSong: SongPreset | null = null;
+        if (packet.songPayload) {
+          const payload = packet.songPayload as any;
+          sessionSong = {
+            id: payload.id || payload.songId || packet.songId || 'ephemeral-session-song',
+            name: payload.name || payload.title || packet.songTitle || 'Live Rehearsal',
+            artist: payload.artist || '',
+            key: payload.key || 'C',
+            bpm: payload.bpm || packet.bpm || 120,
+            speed: payload.speed || payload.bpm || packet.bpm || 120,
+            barsPerLine: payload.barsPerLine || packet.barsPerLine || 2,
+            targetDurationSeconds: payload.targetDurationSeconds,
+            notes: payload.notes || '',
+            chords: payload.chords || [],
+            sections: payload.sections || [],
+            lyrics: payload.lyrics,
+            coverImage: payload.coverImage,
+            createdAt: payload.createdAt || Date.now(),
+            updatedAt: payload.updatedAt || Date.now(),
+          };
+        }
+
+        set({
+          isLockedToLeader: true,
+          isBroadcasting: false,
+          activeLiveSession: packet,
+          sessionPreset: sessionSong,
+          lobbyAttendees: updatedAttendees,
+          connectedMembersCount: Math.max(1, updatedAttendees.length),
+        });
+
+        await joinLobbyRemote(band.id, attendee);
+      },
+
+      leaveSession: async (userId?: string) => {
+        const state = get();
+        const band = state.currentBand;
+        const effectiveUserId = userId || state.currentUserId || 'local-user';
+
+        if (band?.id) {
+          await leaveLobbyRemote(band.id, effectiveUserId);
+        }
+
+        set((s) => ({
+          isLockedToLeader: false,
+          sessionPreset: null,
+          lobbyAttendees: s.lobbyAttendees.filter((a) => a.userId !== effectiveUserId),
+        }));
+      },
+
+      callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => {
+        get().startLiveSession(preset, leaderId, leaderName).catch(() => {});
       },
 
       joinLobby: (bandId: string, attendee: LobbyAttendee) => {
@@ -522,6 +695,7 @@ export const useBandStore = create<BandStore>()(
             isLockedToLeader: true,
             isBroadcasting: false,
             lobbyAttendees: updated,
+            connectedMembersCount: Math.max(1, updated.length),
           };
         });
 
@@ -529,9 +703,13 @@ export const useBandStore = create<BandStore>()(
       },
 
       leaveLobby: (bandId: string, userId: string) => {
-        set((state) => ({
-          lobbyAttendees: state.lobbyAttendees.filter((a) => a.userId !== userId),
-        }));
+        set((state) => {
+          const updated = state.lobbyAttendees.filter((a) => a.userId !== userId);
+          return {
+            lobbyAttendees: updated,
+            connectedMembersCount: Math.max(1, updated.length),
+          };
+        });
 
         leaveLobbyRemote(bandId, userId).catch(() => {});
       },

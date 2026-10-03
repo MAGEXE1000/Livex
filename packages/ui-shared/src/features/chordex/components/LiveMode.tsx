@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { calculateSongTimingSchedule, type SongPreset } from '@workspace/livex-core';
+import { calculateSongTimingSchedule, useBandStore, type SongPreset } from '@workspace/livex-core';
 
 if (typeof window !== 'undefined') {
   (window as any).calculateSongTimingSchedule = calculateSongTimingSchedule;
@@ -19,7 +19,7 @@ import { LiveCountdownOverlay } from './LiveCountdownOverlay';
 import { LiveTempoMorphPopup } from './LiveTempoMorphPopup';
 
 interface LiveModeProps {
-  preset: SongPreset;
+  preset?: SongPreset | null;
   initialMode?: 'chords' | 'lyrics' | 'both';
   onClose: () => void;
   transposeOffset?: number;
@@ -27,13 +27,32 @@ interface LiveModeProps {
 }
 
 export default function LiveMode({
-  preset,
+  preset: propPreset,
   initialMode,
   onClose,
   transposeOffset = 0,
   setlistContext,
 }: LiveModeProps) {
-  const state = useLiveModeState(preset, onClose, transposeOffset, initialMode, setlistContext);
+  const sessionPreset = useBandStore((s) => s.sessionPreset);
+  const isLockedToLeader = useBandStore((s) => s.isLockedToLeader);
+  const effectivePreset = (isLockedToLeader && sessionPreset) ? sessionPreset : (propPreset || sessionPreset);
+
+  const fallbackPreset: SongPreset = effectivePreset || {
+    id: 'ephemeral-session-song',
+    name: 'Play Together Session',
+    artist: '',
+    key: 'C',
+    bpm: 120,
+    speed: 120,
+    barsPerLine: 2,
+    notes: '',
+    chords: [],
+    sections: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  const state = useLiveModeState(fallbackPreset, onClose, transposeOffset, initialMode, setlistContext);
 
   if (!state.hasLiveContent) {
     const emptyNode = (
@@ -108,6 +127,40 @@ export default function LiveMode({
       ) : (
         <>
           <LiveModeHeader state={state} />
+
+          {state.isLeaderDisconnected && (
+            <div
+              data-testid="leader-disconnect-banner"
+              style={{
+                position: 'fixed',
+                top: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 54px)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1002,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                background: 'rgba(239, 68, 68, 0.92)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+                color: '#ffffff',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                cloud_off
+              </span>
+              <span>
+                {state.isSpanish
+                  ? 'Líder desconectado • Pausando teleprompter...'
+                  : 'Leader disconnected • Pausing teleprompter...'}
+              </span>
+            </div>
+          )}
 
           {isChordsOnly ? (
             <ChordsLiveView state={state} />

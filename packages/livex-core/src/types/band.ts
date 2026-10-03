@@ -52,7 +52,11 @@ export interface SharedSong {
   uploaderName?: string;
 }
 
+export type LiveSessionStatus = 'idle' | 'active' | 'ended';
+
 export type LiveSyncAction =
+  | 'START_SESSION'
+  | 'END_SESSION'
   | 'PLAY'
   | 'PAUSE'
   | 'SEEK'
@@ -73,12 +77,18 @@ export interface LobbyAttendee {
   displayName: string;
   role?: BandRole;
   joinedAt: number;
+  lastSeenAt?: number;
 }
 
 export interface LiveBandSyncPacket {
+  id?: string;
   bandId: string;
   leaderId: string;
   leaderName: string;
+  status?: LiveSessionStatus;
+  createdAt?: number;
+  updatedAt?: number;
+  expiresAt?: number;
   songId: string;
   songTitle: string;
   action: LiveSyncAction;
@@ -93,9 +103,11 @@ export interface LiveBandSyncPacket {
   elapsedMs?: number;
   autoPlay: boolean;
   version: number;
+  scheduledStartTimestamp?: number;
   songPayload?: Partial<SharedSong>;
   memberPayload?: Partial<BandMember>;
   lobbyAttendees?: LobbyAttendee[];
+  connectedMembersCount?: number;
   sessionId?: string;
 }
 
@@ -141,6 +153,8 @@ export interface BandState {
   activeLiveSession: LiveBandSyncPacket | null;
   lastSyncTimestamp: number | null;
   lobbyAttendees: LobbyAttendee[];
+  connectedMembersCount: number;
+  sessionPreset: SongPreset | null;
 }
 
 export interface BandActions {
@@ -166,9 +180,15 @@ export interface BandActions {
   setIsBroadcasting: (broadcasting: boolean) => void;
   setIsLockedToLeader: (locked: boolean) => void;
   setActiveLiveSession: (packet: LiveBandSyncPacket | null) => void;
+  setSessionPreset: (preset: SongPreset | null) => void;
   callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => void;
+  startLiveSession: (preset: SongPreset, leaderId?: string, leaderName?: string) => Promise<void>;
+  endLiveSession: () => Promise<void>;
+  joinSession: (packet: LiveBandSyncPacket, userId?: string, userName?: string) => Promise<void>;
+  leaveSession: (userId?: string) => Promise<void>;
   joinLobby: (bandId: string, attendee: LobbyAttendee) => void;
   leaveLobby: (bandId: string, userId: string) => void;
   startPlaybackFromLobby: (preset: SongPreset) => void;
 }
+
 
