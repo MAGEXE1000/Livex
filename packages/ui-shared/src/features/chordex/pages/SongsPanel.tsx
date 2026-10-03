@@ -88,6 +88,7 @@ import {
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { MorphMenu, PlusMenu } from '../../../shared/design-system';
+import { TextInputDialog } from '../../../shared/design-system/TextInputDialog';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -3821,6 +3822,7 @@ const PresetCard = React.memo(
 
 export default function SongsPanel() {
   const t = useT();
+  const [customSectionState, setCustomSectionState] = useState({ open: false, initialName: '' });
   const isWebDesktop = useIsWebDesktop();
   const presets = useChordStore(useShallow((s) => s.presets));
   const activePresetId = useChordStore(useShallow((s) => s.activePresetId));
@@ -6135,16 +6137,29 @@ export default function SongsPanel() {
               icon: 'edit',
               onPress: () => {
                 if (!activePreset) return;
-                const name = window.prompt(t.songs.sectionNamePlaceholder || 'Section name:');
-                if (name && name.trim()) {
-                  const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
-                  if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
-                  else addSection(activePreset.id, name.trim());
-                }
+                setCustomSectionState({ open: true, initialName: '' });
                 setShowSectionPicker(false);
               },
             },
           ]}
+        />
+
+        <TextInputDialog
+          open={customSectionState.open}
+          onClose={() => setCustomSectionState({ open: false, initialName: '' })}
+          onConfirm={(name) => {
+            if (activePreset && name && name.trim()) {
+              const hasSecs = !!(activePreset.sections && activePreset.sections.length > 0);
+              if (!hasSecs && localChords.length > 0) convertToSections(activePreset.id);
+              else addSection(activePreset.id, name.trim());
+            }
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
+          }}
+          title={t.songs.addSection || 'Add Section'}
+          initialValue={customSectionState.initialName}
+          placeholder={t.songs.sectionNamePlaceholder || 'Section name:'}
         />
 
         {showForm && (

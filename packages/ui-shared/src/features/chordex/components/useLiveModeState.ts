@@ -711,7 +711,7 @@ export function useLiveModeState(
     const engine = new MetronomeAudioEngine();
     liveMetronomeRef.current = engine;
     return () => {
-      engine.stop();
+      engine.dispose();
       liveMetronomeRef.current = null;
     };
   }, []);

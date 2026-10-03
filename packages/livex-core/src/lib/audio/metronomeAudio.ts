@@ -154,12 +154,25 @@ export class MetronomeAudioEngine {
 
   private _activeSources: Set<AudioBufferSourceNode> = new Set();
 
+  public static _instances: MetronomeAudioEngine[] = [];
+
   // Callbacks
   public onBeat?: (event: MetronomeBeatEvent) => void;
   public onPlayStateChange?: (isPlaying: boolean) => void;
 
   constructor() {
+    MetronomeAudioEngine._instances.push(this);
     // Lazy audio context init on user gesture
+  }
+
+  public static hasInstance(engine: MetronomeAudioEngine) {
+    return MetronomeAudioEngine._instances.includes(engine);
+  }
+
+  public static stopAll() {
+    for (const engine of MetronomeAudioEngine._instances) {
+      engine.stop();
+    }
   }
 
   private initAudio() {
@@ -557,6 +570,14 @@ export class MetronomeAudioEngine {
   public start() {
     this.initAudio();
     if (!this._ctx) return;
+    
+    // Stop every OTHER playing engine before starting this one
+    for (const engine of (this.constructor as typeof MetronomeAudioEngine)._instances) {
+      if (engine !== this && engine._isPlaying) {
+        engine.stop();
+      }
+    }
+    
     if (this._voiceGain) {
       this._voiceGain.gain.setValueAtTime(
         this._countInVoiceEnabled ? 1.0 : 0.0,
@@ -1084,6 +1105,11 @@ export class MetronomeAudioEngine {
   // ── Cleanup & Teardown ───────────────────────────────────────────────────
 
   public dispose() {
+    const idx = MetronomeAudioEngine._instances.indexOf(this);
+    if (idx !== -1) {
+      MetronomeAudioEngine._instances.splice(idx, 1);
+    }
+    
     this.stop();
     if (this._voiceGain) {
       try {
@@ -1106,6 +1132,8 @@ export class MetronomeAudioEngine {
     this._soundBuffers.clear();
     this._voiceBuffers.clear();
     this._scheduledEvents = [];
+    this.onBeat = undefined;
+    this.onPlayStateChange = undefined;
   }
 
   // Getters
