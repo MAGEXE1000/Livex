@@ -7,6 +7,7 @@ import {
   NavigationDispatcher,
   type LiveBandSyncPacket,
   type BandMember,
+  type SongPreset,
 } from '@workspace/livex-core';
 import { showLiveToast, showMemberJoinedToast } from '../../../components/ui/sonner';
 
@@ -128,7 +129,29 @@ export const BandLiveSyncToast: React.FC = () => {
       ) {
         return;
       }
-      if (isLeaderOfBand || isPacketLeader || isBroadcaster || isLockedToLeader) {
+      if (isLeaderOfBand || isPacketLeader || isBroadcaster) {
+        return;
+      }
+
+      // If follower is already locked to the leader, ensure Live spectator view tracks incoming song changes
+      if (isLockedToLeader) {
+        if (packet.songPayload) {
+          useBandStore.getState().setSessionPreset(packet.songPayload as unknown as SongPreset);
+        }
+        if (
+          packet.action === 'START_SESSION' ||
+          packet.action === 'SONG_SELECT' ||
+          packet.action === 'PLAY' ||
+          packet.action === 'START_PLAYBACK'
+        ) {
+          try {
+            sessionStorage.setItem('livex_auto_open_live', packet.songId || 'session');
+          } catch (_) {}
+          window.dispatchEvent(
+            new CustomEvent('livex:open-live-spectator', { detail: { songId: packet.songId } })
+          );
+          NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
+        }
         return;
       }
 

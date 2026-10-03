@@ -155,3 +155,6 @@ export * from './lib/metronome/pacing';
 export * from './lib/qr/qrGenerator';
 export * from './lib/qr/sessionToken';
 
+// Play Together Session Synchronization & Clock Offset
+export * from './lib/clock/clockSync';
+export * from './lib/band/sessionAnchor';

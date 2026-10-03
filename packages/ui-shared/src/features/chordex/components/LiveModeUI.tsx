@@ -1025,7 +1025,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
             boxShadow: 'var(--surface-topbar-shadow)',
           }}
         >
-          {state.prevSetlistSong && (
+          {!state.isLockedToLeader && state.prevSetlistSong && (
             <button
               type="button"
               data-testid="chords-prev-setlist-btn"
@@ -1057,7 +1057,7 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
             {state.currentSetlistIndex + 1} / {state.totalSetlistSongs}
           </span>
 
-          {state.nextSetlistSong && (
+          {!state.isLockedToLeader && state.nextSetlistSong && (
             <button
               type="button"
               data-testid="chords-next-setlist-btn"
@@ -1774,7 +1774,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           </span>
         </button>
 
-        {state.isInSetlist && state.prevSetlistSong && (
+        {state.isInSetlist && !state.isLockedToLeader && state.prevSetlistSong && (
           <button
             type="button"
             data-testid="lyrics-prev-setlist-btn"
@@ -1805,7 +1805,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         <button
           type="button"
           data-testid="lyrics-play-pause-btn"
-          onClick={state.togglePlayWithCountdown}
+          onClick={state.isLockedToLeader ? undefined : state.togglePlayWithCountdown}
           style={{
             width: '46px',
             height: '46px',
@@ -1813,17 +1813,44 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: state.isCountingDown
+            background: state.isLockedToLeader
+              ? autoPlay
+                ? '#10b981'
+                : 'rgba(255, 255, 255, 0.15)'
+              : state.isCountingDown
               ? 'linear-gradient(135deg, #f59e0b, #d97706)'
               : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
             color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
+            border: state.isLockedToLeader ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+            cursor: state.isLockedToLeader ? 'not-allowed' : 'pointer',
+            opacity: state.isLockedToLeader && !autoPlay ? 0.7 : 1,
+            boxShadow: state.isLockedToLeader
+              ? autoPlay
+                ? '0 0 16px rgba(16, 185, 129, 0.4)'
+                : 'none'
+              : `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
           }}
-          title={state.isCountingDown ? 'Cancel Countdown' : autoPlay ? 'Pause' : 'Play (with Countdown)'}
+          title={
+            state.isLockedToLeader
+              ? autoPlay
+                ? state.isSpanish
+                  ? 'Reproduciendo (Controlado por el líder)'
+                  : 'Playing (Controlled by leader)'
+                : state.isSpanish
+                ? 'Pausado por el líder'
+                : 'Paused by leader'
+              : state.isCountingDown
+              ? 'Cancel Countdown'
+              : autoPlay
+              ? 'Pause'
+              : 'Play (with Countdown)'
+          }
         >
-          {state.isCountingDown ? (
+          {state.isLockedToLeader ? (
+            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+              {autoPlay ? 'lock_open' : 'lock'}
+            </span>
+          ) : state.isCountingDown ? (
             <span style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace' }}>
               {state.countdownBeat}
             </span>
@@ -1834,7 +1861,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
           )}
         </button>
 
-        {state.isInSetlist && state.nextSetlistSong && (
+        {state.isInSetlist && !state.isLockedToLeader && state.nextSetlistSong && (
           <button
             type="button"
             data-testid="lyrics-next-setlist-btn"
@@ -2429,7 +2456,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           </span>
         </button>
 
-        {state.isInSetlist && state.prevSetlistSong && (
+        {state.isInSetlist && !state.isLockedToLeader && state.prevSetlistSong && (
           <button
             type="button"
             data-testid="hybrid-prev-setlist-btn"
@@ -2460,7 +2487,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         <button
           type="button"
           data-testid="hybrid-play-pause-btn"
-          onClick={state.togglePlayWithCountdown}
+          onClick={state.isLockedToLeader ? undefined : state.togglePlayWithCountdown}
           style={{
             width: '46px',
             height: '46px',
@@ -2468,17 +2495,44 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: state.isCountingDown
+            background: state.isLockedToLeader
+              ? autoPlay
+                ? '#10b981'
+                : 'rgba(255, 255, 255, 0.15)'
+              : state.isCountingDown
               ? 'linear-gradient(135deg, #f59e0b, #d97706)'
               : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
             color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
+            border: state.isLockedToLeader ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+            cursor: state.isLockedToLeader ? 'not-allowed' : 'pointer',
+            opacity: state.isLockedToLeader && !autoPlay ? 0.7 : 1,
+            boxShadow: state.isLockedToLeader
+              ? autoPlay
+                ? '0 0 16px rgba(16, 185, 129, 0.4)'
+                : 'none'
+              : `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
           }}
-          title={state.isCountingDown ? 'Cancel Countdown' : autoPlay ? 'Pause' : 'Play (with Countdown)'}
+          title={
+            state.isLockedToLeader
+              ? autoPlay
+                ? state.isSpanish
+                  ? 'Reproduciendo (Controlado por el líder)'
+                  : 'Playing (Controlled by leader)'
+                : state.isSpanish
+                ? 'Pausado por el líder'
+                : 'Paused by leader'
+              : state.isCountingDown
+              ? 'Cancel Countdown'
+              : autoPlay
+              ? 'Pause'
+              : 'Play (with Countdown)'
+          }
         >
-          {state.isCountingDown ? (
+          {state.isLockedToLeader ? (
+            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+              {autoPlay ? 'lock_open' : 'lock'}
+            </span>
+          ) : state.isCountingDown ? (
             <span style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace' }}>
               {state.countdownBeat}
             </span>
@@ -2489,7 +2543,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
           )}
         </button>
 
-        {state.isInSetlist && state.nextSetlistSong && (
+        {state.isInSetlist && !state.isLockedToLeader && state.nextSetlistSong && (
           <button
             type="button"
             data-testid="hybrid-next-setlist-btn"

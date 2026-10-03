@@ -71,7 +71,14 @@ export type LiveSyncAction =
   | 'BARS_CHANGE'
   | 'HEARTBEAT'
   | 'MEMBER_JOINED'
-  | 'SONG_SHARED';
+  | 'SONG_SHARED'
+  | 'CLOCK_PING'
+  | 'CLOCK_PONG';
+
+export interface PlaybackPositionAnchor {
+  positionMs: number;
+  serverTimeMs: number;
+}
 
 export interface SessionJoinToken {
   type: 'livex_session_join';
@@ -102,6 +109,31 @@ export interface LiveBandSyncPacket {
   leaderId: string;
   leaderName: string;
   status?: LiveSessionStatus;
+  playbackStatus?: 'playing' | 'paused' | 'stopped';
+  positionAnchor?: PlaybackPositionAnchor;
+  countIn?: {
+    active: boolean;
+    leadInBars: number;
+    targetStartServerTimeMs?: number;
+  };
+  sectionCue?: {
+    sectionIndex: number;
+    sectionName: string;
+  };
+  setlistContext?: {
+    setlistId?: string;
+    setlistTitle?: string;
+    songIndex?: number;
+    totalSongs?: number;
+  };
+  clockPingPayload?: {
+    pingId: string;
+    senderId: string;
+    targetId?: string;
+    t0: number;
+    t1?: number;
+    t2?: number;
+  };
   createdAt?: number;
   updatedAt?: number;
   expiresAt?: number;

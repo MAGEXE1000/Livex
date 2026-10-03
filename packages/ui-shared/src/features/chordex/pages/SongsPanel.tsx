@@ -3981,6 +3981,8 @@ export default function SongsPanel() {
   const callBand = useBandStore((s) => s.callBand);
   const currentUserId = useBandStore((s) => s.currentUserId);
   const currentUserName = useBandStore((s) => s.currentUserName);
+  const sessionPreset = useBandStore((s) => s.sessionPreset);
+  const isLockedToLeader = useBandStore((s) => s.isLockedToLeader);
 
   useEffect(() => {
     const handleOpenSpectator = () => {
@@ -4765,7 +4767,16 @@ export default function SongsPanel() {
       <div className="flex flex-col h-full overflow-hidden app-bg" style={{ position: 'relative' }}>
         {showLive && (
           <LiveMode
-            preset={activePreset || useBandStore.getState().sessionPreset}
+            key={
+              (isLockedToLeader && sessionPreset)
+                ? sessionPreset.id
+                : (activePreset?.id || sessionPreset?.id || 'live-mode')
+            }
+            preset={
+              (isLockedToLeader && sessionPreset)
+                ? sessionPreset
+                : (activePreset || sessionPreset)
+            }
             initialMode={editorViewMode}
             onClose={() => {
               setShowLive(false);

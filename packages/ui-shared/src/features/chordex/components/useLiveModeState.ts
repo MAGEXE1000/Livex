@@ -43,6 +43,11 @@ import {
   getBeatsPerMeasure,
   resolveLineBars,
   advanceLineClock,
+  globalClockSync,
+  computeCurrentPlaybackPositionMs,
+  resolveSchedulePosition,
+  createScheduledPlayAnchor,
+  type PlaybackPositionAnchor,
 } from '@workspace/livex-core';
 import { animateScrollTop } from '../../../lib/animatedScroll';
 
@@ -468,12 +473,14 @@ export function useLiveModeState(
       : undefined;
 
   const goToPrevSetlistSong = useCallback(() => {
+    if (useBandStore.getState().isLockedToLeader) return;
     if (setlistContext && currentSetlistIndex > 0) {
       setlistContext.onSelectIndex(currentSetlistIndex - 1);
     }
   }, [setlistContext, currentSetlistIndex]);
 
   const goToNextSetlistSong = useCallback(() => {
+    if (useBandStore.getState().isLockedToLeader) return;
     if (setlistContext && currentSetlistIndex < totalSetlistSongs - 1) {
       setlistContext.onSelectIndex(currentSetlistIndex + 1);
     }
@@ -540,6 +547,16 @@ export function useLiveModeState(
   const [showSettings, setShowSettings] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduledPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scheduledPlayTimerRef.current) {
+        clearTimeout(scheduledPlayTimerRef.current);
+        scheduledPlayTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // ── Countdown & Metronome Engine State ──────────────────────────
   const [countdownMode, setCountdownModeState] = useState<LiveCountdownMode>(() => {
@@ -774,9 +791,63 @@ export function useLiveModeState(
     (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
       if (!currentBand) return;
       const nextVersion = packetVersionRef.current++;
+      const now = Date.now();
+      const lineIdx = overrides?.currentLineIdx ?? currentLineIdxRef.current;
+      const currentLineStartMs = timingScheduleRef.current?.lines?.[lineIdx]?.startTimeMs ?? 0;
+      const currentPositionMs = currentLineStartMs;
+
+      let scheduledStartTimestamp: number | undefined = overrides?.scheduledStartTimestamp;
+      let anchor: PlaybackPositionAnchor | undefined = overrides?.positionAnchor;
+      let playbackStatus: 'playing' | 'paused' | 'stopped' =
+        overrides?.playbackStatus || (autoPlayRef.current ? 'playing' : 'paused');
+
+      if (action === 'PLAY' || action === 'START_PLAYBACK') {
+        playbackStatus = 'playing';
+        if (!anchor) {
+          const scheduled = createScheduledPlayAnchor(currentPositionMs, now, 1200);
+          anchor = scheduled.anchor;
+          scheduledStartTimestamp = scheduled.scheduledStartServerTimeMs;
+        }
+      } else if (action === 'PAUSE' || action === 'END_SESSION') {
+        playbackStatus = action === 'END_SESSION' ? 'stopped' : 'paused';
+        if (!anchor) {
+          anchor = {
+            positionMs: currentPositionMs,
+            serverTimeMs: now,
+          };
+        }
+      } else if (action === 'SEEK' || action === 'CUE') {
+        if (!anchor) {
+          anchor = {
+            positionMs: currentPositionMs,
+            serverTimeMs: now,
+          };
+        }
+      } else if (action === 'START_SESSION' || action === 'SONG_SELECT') {
+        playbackStatus = 'stopped';
+        if (!anchor) {
+          anchor = {
+            positionMs: 0,
+            serverTimeMs: now,
+          };
+        }
+      }
+
+      const activeSection = timingScheduleRef.current?.lines?.[lineIdx]?.sectionName;
+      const sectionCue = activeSection
+        ? {
+            sectionIndex: lineIdx,
+            sectionName: activeSection,
+          }
+        : undefined;
+
       const packet: LiveBandSyncPacket = {
-        id: activeLiveSession?.id || `sess_${currentBand.id}_${Date.now()}`,
+        id: activeLiveSession?.id || `sess_${currentBand.id}_${now}`,
         status: action === 'END_SESSION' ? 'ended' : 'active',
+        playbackStatus,
+        positionAnchor: anchor,
+        scheduledStartTimestamp,
+        sectionCue,
         bandId: currentBand.id,
         leaderId: currentBand.leaderId || currentUserId || 'local-leader',
         leaderName: isBandLeader
@@ -785,17 +856,25 @@ export function useLiveModeState(
         songId: preset.id,
         songTitle: preset.name || 'Untitled Song',
         action,
-        timestamp: Date.now(),
-        currentLineIdx: overrides?.currentLineIdx ?? currentLineIdxRef.current,
+        timestamp: now,
+        currentLineIdx: lineIdx,
         currentWordIdx: overrides?.currentWordIdx ?? currentWordIdxRef.current,
         currentBeat: overrides?.currentBeat ?? currentBeatRef.current,
         currentBar: overrides?.currentBar ?? currentBarRef.current,
         bpm: overrides?.bpm ?? speedRef.current,
         barsPerLine: overrides?.barsPerLine ?? barsPerLineRef.current,
-        elapsedMs: overrides?.elapsedMs ?? elapsedMsRef.current,
-        autoPlay: overrides?.autoPlay ?? autoPlayRef.current,
+        elapsedMs: overrides?.elapsedMs ?? currentPositionMs,
+        autoPlay: playbackStatus === 'playing',
         version: nextVersion,
         connectedMembersCount,
+        setlistContext: setlistContext
+          ? {
+              setlistId: setlistContext.setlistId,
+              setlistTitle: setlistContext.setlistTitle,
+              songIndex: setlistContext.currentIndex,
+              totalSongs: setlistContext.queue?.length,
+            }
+          : undefined,
         songPayload: {
           id: preset.id,
           bandId: currentBand.id,
@@ -811,13 +890,14 @@ export function useLiveModeState(
           lyrics: preset.lyrics,
           chords: preset.chords,
           version: 1,
-          updatedAt: Date.now(),
+          updatedAt: now,
           updatedBy: currentUserId,
         },
+        ...overrides,
       };
       broadcastBandLivePacket(packet);
     },
-    [currentBand, preset, activeLiveSession?.id, currentUserId, isBandLeader, connectedMembersCount]
+    [currentBand, preset, activeLiveSession?.id, currentUserId, isBandLeader, connectedMembersCount, setlistContext]
   );
 
   const setAutoPlay = useCallback(
@@ -1589,17 +1669,19 @@ export function useLiveModeState(
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   const cyclePlaybackSpeed = useCallback(() => {
+    if (isLockedToLeader) return;
     const speeds = [0.8, 1.0, 1.25, 1.5];
     setPlaybackSpeedState((prev) => {
       const curIdx = speeds.indexOf(prev);
       const nextIdx = curIdx === -1 ? 1 : (curIdx + 1) % speeds.length;
       return speeds[nextIdx];
     });
-  }, []);
+  }, [isLockedToLeader]);
 
   const setPlaybackSpeed = useCallback((speed: number) => {
+    if (isLockedToLeader) return;
     setPlaybackSpeedState(speed);
-  }, []);
+  }, [isLockedToLeader]);
 
   const playChordSound = useCallback(
     (guitarData?: GuitarChordData | null) => {
@@ -1716,6 +1798,7 @@ export function useLiveModeState(
   );
 
   const nextPhrase = useCallback(() => {
+    if (isLockedToLeader) return;
     if (currentLineIdx + 1 < totalLines) {
       goToLine(currentLineIdx + 1);
       const nextFirstWord = allWords.find((w) => w.lineIdx === currentLineIdx + 1);
@@ -1724,9 +1807,10 @@ export function useLiveModeState(
         emitLiveSync('CUE', { currentLineIdx: currentLineIdx + 1, currentBeat: 0, currentBar: 1 });
       }
     }
-  }, [currentLineIdx, totalLines, goToLine, allWords, isBroadcasting, emitLiveSync]);
+  }, [currentLineIdx, totalLines, goToLine, allWords, isBroadcasting, emitLiveSync, isLockedToLeader]);
 
   const prevPhrase = useCallback(() => {
+    if (isLockedToLeader) return;
     if (currentLineIdx > 0) {
       goToLine(currentLineIdx - 1);
       const prevFirstWord = allWords.find((w) => w.lineIdx === currentLineIdx - 1);
@@ -1735,9 +1819,10 @@ export function useLiveModeState(
         emitLiveSync('CUE', { currentLineIdx: currentLineIdx - 1, currentBeat: 0, currentBar: 1 });
       }
     }
-  }, [currentLineIdx, goToLine, allWords, isBroadcasting, emitLiveSync]);
+  }, [currentLineIdx, goToLine, allWords, isBroadcasting, emitLiveSync, isLockedToLeader]);
 
   const goToNextSection = useCallback(() => {
+    if (isLockedToLeader) return;
     const nextSecLine = teleprompterLines.find(
       (tl) => tl.isFirstLineOfSection && tl.globalIndex > currentLineIdx
     );
@@ -1746,9 +1831,10 @@ export function useLiveModeState(
       const firstWord = allWords.find((w) => w.lineIdx === nextSecLine.globalIndex);
       if (firstWord) setCurrentWordIdxState(firstWord.globalWordIdx);
     }
-  }, [teleprompterLines, currentLineIdx, goToLine, allWords]);
+  }, [teleprompterLines, currentLineIdx, goToLine, allWords, isLockedToLeader]);
 
   const goToPrevSection = useCallback(() => {
+    if (isLockedToLeader) return;
     const prevSecLines = teleprompterLines.filter(
       (tl) => tl.isFirstLineOfSection && tl.globalIndex < currentLineIdx
     );
@@ -1761,10 +1847,11 @@ export function useLiveModeState(
       goToLine(0);
       setCurrentWordIdxState(0);
     }
-  }, [teleprompterLines, currentLineIdx, goToLine, allWords]);
+  }, [teleprompterLines, currentLineIdx, goToLine, allWords, isLockedToLeader]);
 
   // ── Step Navigation ─────────────────────────────────────────────
   const goNext = useCallback(() => {
+    if (isLockedToLeader) return;
     setDirection('forward');
     if (isTeleprompterMode) {
       if (totalLines > 0) {
@@ -1775,9 +1862,10 @@ export function useLiveModeState(
         setCurrentIdx((i) => (i + 1) % total);
       }
     }
-  }, [isTeleprompterMode, totalLines, total, nextPhrase]);
+  }, [isTeleprompterMode, totalLines, total, nextPhrase, isLockedToLeader]);
 
   const goPrev = useCallback(() => {
+    if (isLockedToLeader) return;
     setDirection('backward');
     if (isTeleprompterMode) {
       prevPhrase();
@@ -1786,13 +1874,14 @@ export function useLiveModeState(
         setCurrentIdx((i) => i - 1);
       }
     }
-  }, [isTeleprompterMode, currentIdx, prevPhrase]);
+  }, [isTeleprompterMode, currentIdx, prevPhrase, isLockedToLeader]);
 
   const handleLineClick = useCallback(
     (globalIndex: number) => {
+      if (isLockedToLeader) return;
       goToLine(globalIndex);
     },
-    [goToLine]
+    [goToLine, isLockedToLeader]
   );
 
   // ── Smooth Teleprompter Auto-Scroll ──────────────────────────────
@@ -2089,6 +2178,20 @@ export function useLiveModeState(
     return () => clearInterval(interval);
   }, [isBroadcasting, autoPlay, currentBand?.id, emitLiveSync]);
 
+  // ── Periodic NTP ping-pong clock calibration from follower to leader ─
+  useEffect(() => {
+    if (!isLockedToLeader || isBroadcasting || !currentBand?.id) return;
+    // Initial calibration ping
+    const ping = globalClockSync.createPing(currentUserId);
+    emitLiveSync('CLOCK_PING', { clockPingPayload: ping });
+
+    const interval = setInterval(() => {
+      const p = globalClockSync.createPing(currentUserId);
+      emitLiveSync('CLOCK_PING', { clockPingPayload: p });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isLockedToLeader, isBroadcasting, currentBand?.id, currentUserId, emitLiveSync]);
+
   // ── Follower & Leader Live Session Synchronization ─────────
   useEffect(() => {
     if (!currentBand?.id) return;
@@ -2096,6 +2199,30 @@ export function useLiveModeState(
 
     const unsub = subscribeToBandLiveSession(currentBand.id, (packet) => {
       if (!packet || packet.bandId !== currentBand.id) return;
+
+      // Handle NTP clock synchronization ping-pong
+      if (packet.action === 'CLOCK_PING') {
+        if (isBroadcasting && packet.clockPingPayload) {
+          emitLiveSync('CLOCK_PONG', {
+            clockPingPayload: {
+              pingId: packet.clockPingPayload.pingId,
+              senderId: currentUserId,
+              targetId: packet.clockPingPayload.senderId,
+              t0: packet.clockPingPayload.t0,
+              t1: Date.now(),
+              t2: Date.now(),
+            },
+          });
+        }
+        return;
+      }
+
+      if (packet.action === 'CLOCK_PONG') {
+        if (isLockedToLeader && packet.clockPingPayload?.targetId === currentUserId) {
+          globalClockSync.processPong(packet.clockPingPayload as any, Date.now());
+        }
+        return;
+      }
 
       // Handle Lobby presence for both Leader and Followers
       if (packet.action === 'LOBBY_JOIN') {
@@ -2132,8 +2259,13 @@ export function useLiveModeState(
       setIsLeaderDisconnected(false);
 
       if (packet.action === 'END_SESSION' || packet.status === 'ended') {
+        if (scheduledPlayTimerRef.current) {
+          clearTimeout(scheduledPlayTimerRef.current);
+          scheduledPlayTimerRef.current = null;
+        }
         setIsInLobby(false);
         setAutoPlayState(false);
+        liveMetronomeRef.current?.stop();
         setIsLockedToLeader(false);
         setActiveLiveSession(null);
         useBandStore.getState().leaveSession(currentUserId);
@@ -2151,6 +2283,7 @@ export function useLiveModeState(
 
       if (packet.bpm && packet.bpm >= 40 && packet.bpm <= 400 && packet.bpm !== speed) {
         setSpeedState(packet.bpm);
+        liveMetronomeRef.current?.setBpm(packet.bpm);
       }
       if (
         packet.barsPerLine &&
@@ -2163,78 +2296,145 @@ export function useLiveModeState(
 
       switch (packet.action) {
         case 'START_SESSION':
+        case 'SONG_SELECT': {
           setIsInLobby(false);
+          if (scheduledPlayTimerRef.current) {
+            clearTimeout(scheduledPlayTimerRef.current);
+            scheduledPlayTimerRef.current = null;
+          }
           setAutoPlayState(false);
+          liveMetronomeRef.current?.stop();
           if (packet.songPayload) {
             useBandStore.getState().setSessionPreset(packet.songPayload as unknown as SongPreset);
           }
+          goToLine(0);
           break;
+        }
 
         case 'CALL_BAND':
           setIsInLobby(true);
           setAutoPlayState(false);
+          liveMetronomeRef.current?.stop();
           if (packet.lobbyAttendees) {
             useBandStore.getState().setLobbyAttendees(packet.lobbyAttendees);
           }
           break;
 
         case 'START_PLAYBACK':
+        case 'PLAY': {
           setIsInLobby(false);
-          goToLine(packet.currentLineIdx || 0);
-          setCurrentBeat(packet.currentBeat || 0);
-          setCurrentBar(packet.currentBar || 1);
-          setAutoPlayState(true);
-          wordRemainingMsRef.current = 0;
-          wordStartTimestampRef.current = performance.now();
-          break;
-
-        case 'PLAY':
-          setIsInLobby(false);
-          if (packet.currentLineIdx !== currentLineIdxRef.current) {
-            goToLine(packet.currentLineIdx);
+          if (scheduledPlayTimerRef.current) {
+            clearTimeout(scheduledPlayTimerRef.current);
+            scheduledPlayTimerRef.current = null;
           }
-          setAutoPlayState(true);
-          setCurrentBeat(packet.currentBeat || 0);
-          setCurrentBar(packet.currentBar || 1);
-          break;
 
-        case 'PAUSE':
+          const estimatedLeaderNow = globalClockSync.getEstimatedServerTime(Date.now());
+          const targetTime = packet.scheduledStartTimestamp || packet.timestamp;
+          const delayMs = targetTime - estimatedLeaderNow;
+
+          if (delayMs > 20) {
+            scheduledPlayTimerRef.current = setTimeout(() => {
+              goToLine(packet.currentLineIdx || 0);
+              setCurrentBeat(packet.currentBeat || 0);
+              setCurrentBar(packet.currentBar || 1);
+              setAutoPlayState(true);
+              liveMetronomeRef.current?.start();
+              scheduledPlayTimerRef.current = null;
+            }, delayMs);
+          } else {
+            // Late join or delay elapsed: converge from position anchor
+            const currentPosMs = computeCurrentPlaybackPositionMs(
+              packet.positionAnchor || { positionMs: 0, serverTimeMs: packet.timestamp },
+              'playing',
+              estimatedLeaderNow
+            );
+            const resolved = resolveSchedulePosition(timingScheduleRef.current, currentPosMs);
+            goToLine(resolved.lineIndex);
+            setCurrentBeat(packet.currentBeat || 0);
+            setCurrentBar(packet.currentBar || 1);
+            setAutoPlayState(true);
+            liveMetronomeRef.current?.start();
+          }
+          break;
+        }
+
+        case 'PAUSE': {
+          if (scheduledPlayTimerRef.current) {
+            clearTimeout(scheduledPlayTimerRef.current);
+            scheduledPlayTimerRef.current = null;
+          }
           setAutoPlayState(false);
-          if (packet.currentLineIdx !== currentLineIdxRef.current) {
+          liveMetronomeRef.current?.stop();
+          if (packet.positionAnchor) {
+            const resolved = resolveSchedulePosition(
+              timingScheduleRef.current,
+              packet.positionAnchor.positionMs
+            );
+            goToLine(resolved.lineIndex);
+          } else if (packet.currentLineIdx !== currentLineIdxRef.current) {
             goToLine(packet.currentLineIdx);
           }
           setCurrentBeat(packet.currentBeat || 0);
           setCurrentBar(packet.currentBar || 1);
           break;
+        }
 
         case 'SEEK':
-        case 'CUE':
+        case 'CUE': {
           setIsInLobby(false);
+          if (scheduledPlayTimerRef.current) {
+            clearTimeout(scheduledPlayTimerRef.current);
+            scheduledPlayTimerRef.current = null;
+          }
           goToLine(packet.currentLineIdx);
           setCurrentBeat(packet.currentBeat || 0);
           setCurrentBar(packet.currentBar || 1);
           if (typeof packet.autoPlay === 'boolean') {
             setAutoPlayState(packet.autoPlay);
+            if (packet.autoPlay) {
+              liveMetronomeRef.current?.start();
+            } else {
+              liveMetronomeRef.current?.stop();
+            }
           }
           break;
+        }
 
         case 'TEMPO_CHANGE':
-          if (packet.bpm) setSpeedState(packet.bpm);
+          if (packet.bpm) {
+            setSpeedState(packet.bpm);
+            liveMetronomeRef.current?.setBpm(packet.bpm);
+          }
           break;
 
         case 'BARS_CHANGE':
           if (packet.barsPerLine) setBarsPerLineState(packet.barsPerLine);
           break;
 
-        case 'HEARTBEAT':
-          if (packet.autoPlay) {
+        case 'HEARTBEAT': {
+          if (packet.autoPlay || packet.playbackStatus === 'playing') {
             setIsInLobby(false);
-            setAutoPlayState(true);
-            if (Math.abs(packet.currentLineIdx - currentLineIdxRef.current) >= 1) {
+            if (!autoPlayRef.current) {
+              setAutoPlayState(true);
+              liveMetronomeRef.current?.start();
+            }
+            if (packet.positionAnchor) {
+              const estimatedLeaderNow = globalClockSync.getEstimatedServerTime(Date.now());
+              const currentPosMs = computeCurrentPlaybackPositionMs(
+                packet.positionAnchor,
+                'playing',
+                estimatedLeaderNow
+              );
+              const resolved = resolveSchedulePosition(timingScheduleRef.current, currentPosMs);
+              if (Math.abs(resolved.lineIndex - currentLineIdxRef.current) >= 1) {
+                goToLine(resolved.lineIndex);
+              }
+            } else if (Math.abs(packet.currentLineIdx - currentLineIdxRef.current) >= 1) {
               goToLine(packet.currentLineIdx);
             }
           }
           break;
+        }
       }
     });
 
@@ -2243,10 +2443,12 @@ export function useLiveModeState(
     isLockedToLeader,
     isBroadcasting,
     currentBand?.id,
+    currentUserId,
     speed,
     barsPerLine,
     goToLine,
     setActiveLiveSession,
+    emitLiveSync,
   ]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────
