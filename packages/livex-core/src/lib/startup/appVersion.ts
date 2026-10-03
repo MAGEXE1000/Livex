@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.94';
-export const NATIVE_VERSION_CODE = 40694;
-export const WEB_VERSION = '4.6.94';
+export const NATIVE_VERSION = '4.6.95';
+export const NATIVE_VERSION_CODE = 40695;
+export const WEB_VERSION = '4.6.95';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '1087c9a5';
+export const APP_COMMIT_SHA = '3883ceb0';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 2:52:46 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 3:28:48 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Right-Aligned Bar Badges: Rendered unified, persistent timing indicators on every lyric line across all editor views (`1 bar` default, `2 bars`, `4 bars`, `8 bars` high-contrast accent badge), providing instant visual clarity of measure pacing. Outside batch mode, tapping any badge cycles line timing (`auto → 1 → 2 → 4 → 8 → auto`).',
-      'Synchronous Batch Timing & Visual Pulse: Upgraded the bottom dock timing preset chips (`[1 Bar]`, `[2 Bars]`, `[4 Bars]`, `[Custom…]`) with immediate synchronous state dispatch, instant mobile haptic feedback (`navigator.vibrate(20)`), and an animated primary accent flash on all updated lines.',
+      'Sample-Accurate Web Audio Visual Synchronization: Synchronized teleprompter visual beat pulses directly with Web Audio hardware DAC buffer output timing via `startVisualSyncLoop` lookahead clock alignment, eliminating the ~200ms perceptual lag between acoustic clicks and on-screen indicator illumination.',
+      'Repositioned Active Line Beat Indicator: Shifted teleprompter beat dots (`• • • •`) and bar progress counter (`bar X/Y`) into a dedicated in-flow sub-container directly beneath the lyric baseline with clean vertical breathing room (`marginTop: 8px`), eliminating overlap collisions with text, chords, and vocal badges.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Touch Drag Line Selection & Android Context Menu Isolation: Completely eliminated WebView text selection callouts, copy/paste context bubbles, and pan gesture locks during multi-line timing assignment by enforcing `user-select: none`, `-webkit-touch-callout: none`, and dynamically disabling canvas `contentEditable` while in batch assignment mode.',
-      'Non-Colliding Gesture vs Tap Engine: Enhanced `useLineRangeSelection` with a 6px movement threshold and RAF-throttled continuous line range expansion, resolving synthetic click collisions and ensuring butter-smooth touch interaction on mobile devices.',
-      'Live Settings Modal Clean-Up: Streamlined the modal header to "Live Settings" and completely purged the obsolete global "BARS PER LINE" card, ensuring playback progression derives authoritatively from song lyric line timing.',
+      '"MNOME" Brand & Ligature Artifact Eradication: Purged unmapped Material Symbols icon glyphs across Live Topbar tempo pills, Tempo & Metronome Morph modal headers, and Audible Metronome toggle switches, removing fallback text string corruptions.',
+      'Topbar Chrome Sanitization: Removed the pulsing circular indicator dot beside the song title in Live Mode, presenting a clean, focused header layout.',
+      'Instantaneous Beat Dot Lighting: Set immediate CSS activation transitions (`transition: none !important`) on active beat dots to guarantee zero animation delay when downbeats strike.',
     ],
   },
 ];
@@ -125,6 +125,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.95',
+    date: '2026-10-03',
+    highlights: [
+      'Sample-Accurate Web Audio Visual Synchronization: Synchronized teleprompter visual beat pulses directly with Web Audio hardware DAC buffer output timing via `startVisualSyncLoop` lookahead clock alignment, eliminating the ~200ms perceptual lag between acoustic clicks and on-screen indicator illumination.',
+      'Repositioned Active Line Beat Indicator: Shifted teleprompter beat dots (`• • • •`) and bar progress counter (`bar X/Y`) into a dedicated in-flow sub-container directly beneath the lyric baseline with clean vertical breathing room (`marginTop: 8px`), eliminating overlap collisions with text, chords, and vocal badges.',
+      '"MNOME" Brand & Ligature Artifact Eradication: Purged unmapped Material Symbols icon glyphs across Live Topbar tempo pills, Tempo & Metronome Morph modal headers, and Audible Metronome toggle switches, removing fallback text string corruptions.',
+      'Topbar Chrome Sanitization: Removed the pulsing circular indicator dot beside the song title in Live Mode, presenting a clean, focused header layout.',
+      'Instantaneous Beat Dot Lighting: Set immediate CSS activation transitions (`transition: none !important`) on active beat dots to guarantee zero animation delay when downbeats strike.',
+    ],
+  },
   {
     version: '4.6.94',
     date: '2026-10-03',
@@ -215,18 +226,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Plain-Text Paste Stream Parsing: Enforced continuous single-line rendering in lyrics mode, permanently eliminating erratic multi-column verse splits and horizontal whitespace gaps.',
       'Word Stuttering & Concatenation Elimination: Hardened input event synchronization and selection capture to sanitize DOM text extraction, ignoring chord buttons, badges, and unmanaged elements to prevent duplicate word tokens (e.g. "Estoy Estoy").',
       'Editor Lifecycle Safety: Bound unique song keys to the lyrics canvas to guarantee pristine DOM state transitions when changing active songs in Chordex.',
-    ],
-  },
-  {
-    version: '4.6.84',
-    date: '2026-10-02',
-    highlights: [
-      'Deterministic Setlist Live Back-Navigation: Enforced stateful setlist origin tracking ensuring the top-left back button and hardware back gestures return directly to the parent Setlist view rather than redirecting into the single-song chord/lyrics editor.',
-      'Canva Toolbar Copy Integration: Added a dedicated Copy button to the floating Canva formatting toolbar allowing one-tap copying of highlighted lyrics directly to the system clipboard.',
-      'Transport Control Deduplication: Streamlined Live mode transport bars by eliminating redundant skip controls from auxiliary floating quick action toolbars and displaying next/prev song buttons strictly in the primary bottom dock when actively playing inside a Setlist.',
-      'Plain-Text Clipboard Sanitization: Stripped tabs, non-breaking spaces, and synthetic multi-space padding on copy and paste events to ensure pasted verses always render clean, left-aligned, and line-by-line.',
-      'Live Header Object Serialization: Resolved JSX element string coercion that previously caused setlist subtitles to display as [object Object].',
-      'Dead Code and Bundle Bloat: Safely pruned unreferenced legacy components and orphaned input handlers, reducing bundle size.',
     ],
   },
 ];

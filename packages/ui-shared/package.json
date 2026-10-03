@@ -1,6 +1,6 @@
 {
   "name": "@workspace/ui-shared",
-  "version": "4.6.94",
+  "version": "4.6.95",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
