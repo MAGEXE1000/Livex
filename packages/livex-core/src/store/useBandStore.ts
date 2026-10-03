@@ -613,9 +613,64 @@ export const useBandStore = create<BandStore>()(
         });
       },
 
-      joinSession: async (packet: LiveBandSyncPacket, userId?: string, userName?: string) => {
+      inviteBandToSession: async (preset?: SongPreset) => {
         const state = get();
         const band = state.currentBand;
+        if (!band) return;
+
+        const effectiveLeaderId = state.currentUserId || band.leaderId || 'local-leader';
+        const effectiveLeaderName = state.currentUserName || 'Band Leader';
+        const currentSession = state.activeLiveSession;
+
+        const targetSongId = preset?.id || currentSession?.songId || 'session-song';
+        const targetSongTitle = preset?.name || currentSession?.songTitle || 'Live Rehearsal';
+        const bpm = preset?.bpm || preset?.speed || currentSession?.bpm || 120;
+        const barsPerLine = preset?.barsPerLine || currentSession?.barsPerLine || 2;
+
+        const packet: LiveBandSyncPacket = {
+          id: currentSession?.id || `sess-${band.id}`,
+          bandId: band.id,
+          leaderId: effectiveLeaderId,
+          leaderName: effectiveLeaderName,
+          status: 'active',
+          action: 'INVITE_BAND',
+          songId: targetSongId,
+          songTitle: targetSongTitle,
+          bpm,
+          barsPerLine,
+          timestamp: Date.now(),
+          currentLineIdx: currentSession?.currentLineIdx || 0,
+          currentWordIdx: currentSession?.currentWordIdx || 0,
+          currentBeat: currentSession?.currentBeat || 0,
+          currentBar: currentSession?.currentBar || 1,
+          autoPlay: false,
+          version: Date.now(),
+          songPayload: preset
+            ? {
+                id: preset.id,
+                title: preset.name,
+                bpm: preset.bpm || preset.speed || 120,
+                barsPerLine: preset.barsPerLine || 2,
+                lyrics: preset.lyrics,
+                chords: preset.chords,
+                sections: preset.sections,
+              }
+            : currentSession?.songPayload,
+        };
+
+        await broadcastBandLivePacket(packet);
+      },
+
+      joinSession: async (packet: LiveBandSyncPacket, userId?: string, userName?: string) => {
+        const state = get();
+        let band = state.currentBand;
+        if (!band && packet.bandId) {
+          const matched = state.userBands.find((b) => b.id === packet.bandId);
+          if (matched) {
+            band = matched;
+            set({ currentBand: matched });
+          }
+        }
         if (!band) return;
 
         const effectiveUserId = userId || state.currentUserId || 'local-user';

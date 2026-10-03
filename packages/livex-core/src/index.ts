@@ -150,3 +150,8 @@ export * from './lib/lyrics/lyricSegments';
 // Setlists & Repertoire Subsystem
 export * from './types/setlist';
 export * from './lib/metronome/pacing';
+
+// QR Code & Play Together Session Tokens
+export * from './lib/qr/qrGenerator';
+export * from './lib/qr/sessionToken';
+

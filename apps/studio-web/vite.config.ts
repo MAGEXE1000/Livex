@@ -164,7 +164,7 @@ export default defineConfig(async ({ command, mode }) => {
         'X-Frame-Options': 'SAMEORIGIN',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy':
-          'camera=(), geolocation=(), payment=(), usb=(), microphone=(self), midi=(self), autoplay=(self)',
+          'camera=(self), geolocation=(), payment=(), usb=(), microphone=(self), midi=(self), autoplay=(self)',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
         'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
         'Content-Security-Policy':

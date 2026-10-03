@@ -57,6 +57,7 @@ export type LiveSessionStatus = 'idle' | 'active' | 'ended';
 export type LiveSyncAction =
   | 'START_SESSION'
   | 'END_SESSION'
+  | 'INVITE_BAND'
   | 'PLAY'
   | 'PAUSE'
   | 'SEEK'
@@ -71,6 +72,21 @@ export type LiveSyncAction =
   | 'HEARTBEAT'
   | 'MEMBER_JOINED'
   | 'SONG_SHARED';
+
+export interface SessionJoinToken {
+  type: 'livex_session_join';
+  version: 1;
+  bandId: string;
+  sessionId: string;
+  leaderId: string;
+  leaderName: string;
+  songId: string;
+  songTitle: string;
+  bpm: number;
+  barsPerLine: number;
+  createdAt: number;
+  expiresAt: number;
+}
 
 export interface LobbyAttendee {
   userId: string;
@@ -184,6 +200,7 @@ export interface BandActions {
   callBand: (preset: SongPreset, leaderId?: string, leaderName?: string) => void;
   startLiveSession: (preset: SongPreset, leaderId?: string, leaderName?: string) => Promise<void>;
   endLiveSession: () => Promise<void>;
+  inviteBandToSession: (preset?: SongPreset) => Promise<void>;
   joinSession: (packet: LiveBandSyncPacket, userId?: string, userName?: string) => Promise<void>;
   leaveSession: (userId?: string) => Promise<void>;
   joinLobby: (bandId: string, attendee: LobbyAttendee) => void;

@@ -8,6 +8,7 @@ import {
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { toast } from '../../../components/ui/sonner';
+import { PlayTogetherScannerModal } from '../../chordex/components/PlayTogetherScannerModal';
 
 export interface BandHubModalProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
   const [copiedCode, setCopiedCode] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
 
   // New Event Form State
   const [eventTitle, setEventTitle] = useState('');
@@ -307,15 +309,26 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    data-testid="band-hub-join-session-btn"
-                    onClick={handleJoinLive}
-                    className="px-4 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95 cursor-pointer shrink-0 shadow-sm"
-                    style={{ background: accent.from }}
-                  >
-                    {isSpanish ? 'Unirse' : 'Join'}
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      data-testid="band-hub-scan-qr-btn"
+                      onClick={() => setShowScannerModal(true)}
+                      className="p-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-zinc-300 transition active:scale-95 cursor-pointer flex items-center justify-center"
+                      title={isSpanish ? 'Escanear QR' : 'Scan QR'}
+                    >
+                      <StudioIcon name="qr_code_scanner" size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="band-hub-join-session-btn"
+                      onClick={handleJoinLive}
+                      className="px-4 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95 cursor-pointer shrink-0 shadow-sm"
+                      style={{ background: accent.from }}
+                    >
+                      {isSpanish ? 'Unirse' : 'Join'}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -857,6 +870,10 @@ export const BandHubModal: React.FC<BandHubModalProps> = ({
           </div>
         )}
       </div>
+      <PlayTogetherScannerModal
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+      />
     </Dialog>
   );
 };

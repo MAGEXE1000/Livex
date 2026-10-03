@@ -26,6 +26,8 @@ import {
   parseDurationMmSs,
   getBeatsPerMeasure,
 } from '@workspace/livex-core';
+import { PlayTogetherQrModal } from './PlayTogetherQrModal';
+import { PlayTogetherScannerModal } from './PlayTogetherScannerModal';
 
 /* ── STYLES & KEYFRAMES INJECTION ────────────────────────────── */
 const liveModeStyles = `
@@ -2609,6 +2611,10 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
   const [durationInputVal, setDurationInputVal] = useState('');
   const durationInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
+
   const startDurationEdit = () => {
     const currentSec =
       state.targetDurationSeconds ||
@@ -4018,6 +4024,89 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       </span>
                     </button>
                   )}
+
+                  {/* Leader Invitation & QR Code Options */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '2px' }}>
+                    <button
+                      type="button"
+                      data-testid="play-together-invite-btn"
+                      onClick={async () => {
+                        if (!state.isBroadcasting) {
+                          await state.startLiveSession(state.preset);
+                        }
+                        await state.inviteBandToSession(state.preset);
+                        setInviteSent(true);
+                        setTimeout(() => setInviteSent(false), 2500);
+                      }}
+                      className="btn-smooth"
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        background: inviteSent ? '#10b981' : `${accent.from}22`,
+                        border: `1px solid ${inviteSent ? '#10b981' : `${accent.from}55`}`,
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        {inviteSent ? 'check_circle' : 'notifications_active'}
+                      </span>
+                      <span>
+                        {inviteSent
+                          ? state.isSpanish
+                            ? '¡Enviada!'
+                            : 'Sent!'
+                          : state.isSpanish
+                          ? 'Invitar banda'
+                          : 'Invite band'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="play-together-show-qr-btn"
+                      onClick={async () => {
+                        if (!state.isBroadcasting) {
+                          await state.startLiveSession(state.preset);
+                        }
+                        setIsQrModalOpen(true);
+                      }}
+                      className="btn-smooth"
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.16)',
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        qr_code
+                      </span>
+                      <span>{state.isSpanish ? 'Mostrar QR' : 'Show QR'}</span>
+                    </button>
+                  </div>
+
+                  <span style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.42)', lineHeight: 1.35, textAlign: 'center' }}>
+                    {state.isSpanish
+                      ? 'Las invitaciones llegan a los miembros con la app abierta.'
+                      : 'Invitations reach members who have the app open.'}
+                  </span>
                 </div>
               ) : (
                 /* Member Controls */
@@ -4118,6 +4207,37 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         ? 'Esperando a que el líder inicie una sesión...'
                         : 'Waiting for leader to start a session...'}
                     </div>
+                  )}
+
+                  {/* Member Scan QR Option */}
+                  {!state.isLockedToLeader && (
+                    <button
+                      type="button"
+                      data-testid="play-together-scan-qr-btn"
+                      onClick={() => setIsScannerModalOpen(true)}
+                      className="btn-smooth"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: 'var(--c-text-primary, #ffffff)',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        marginTop: '2px',
+                      }}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        qr_code_scanner
+                      </span>
+                      <span>{state.isSpanish ? 'Escanear QR para Unirse' : 'Scan QR to Join'}</span>
+                    </button>
                   )}
                 </div>
               )}
@@ -4431,6 +4551,15 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
         </div>
       </div>
     </div>
+    <PlayTogetherQrModal
+      isOpen={isQrModalOpen}
+      onClose={() => setIsQrModalOpen(false)}
+      preset={state.preset}
+    />
+    <PlayTogetherScannerModal
+      isOpen={isScannerModalOpen}
+      onClose={() => setIsScannerModalOpen(false)}
+    />
   </>
 );
 }

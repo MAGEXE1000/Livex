@@ -267,6 +267,7 @@ export interface LiveModeState {
   connectedMembersCount: number;
   startLiveSession: (preset: SongPreset) => Promise<void>;
   endLiveSession: () => Promise<void>;
+  inviteBandToSession: (preset?: SongPreset) => Promise<void>;
   joinSession: (packet: LiveBandSyncPacket) => Promise<void>;
   leaveSession: () => Promise<void>;
   isLeaderDisconnected: boolean;
@@ -503,6 +504,7 @@ export function useLiveModeState(
   const connectedMembersCount = useBandStore((s) => s.connectedMembersCount);
   const startLiveSessionStore = useBandStore((s) => s.startLiveSession);
   const endLiveSessionStore = useBandStore((s) => s.endLiveSession);
+  const inviteBandToSessionStore = useBandStore((s) => s.inviteBandToSession);
   const joinSessionStore = useBandStore((s) => s.joinSession);
   const leaveSessionStore = useBandStore((s) => s.leaveSession);
 
@@ -893,6 +895,13 @@ export function useLiveModeState(
     emitLiveSync('END_SESSION', { autoPlay: false });
     await endLiveSessionStore();
   }, [emitLiveSync, endLiveSessionStore]);
+
+  const inviteBandToSession = useCallback(
+    async (song?: SongPreset) => {
+      await inviteBandToSessionStore(song || preset);
+    },
+    [inviteBandToSessionStore, preset]
+  );
 
   const joinSession = useCallback(
     async (targetPacket: LiveBandSyncPacket) => {
@@ -2488,6 +2497,7 @@ export function useLiveModeState(
     connectedMembersCount,
     startLiveSession,
     endLiveSession,
+    inviteBandToSession,
     joinSession,
     leaveSession,
     isLeaderDisconnected,

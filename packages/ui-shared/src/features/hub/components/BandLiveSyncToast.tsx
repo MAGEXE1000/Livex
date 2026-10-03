@@ -122,7 +122,10 @@ export const BandLiveSyncToast: React.FC = () => {
       const isBroadcaster = Boolean(isBroadcasting || useBandStore.getState().isBroadcasting);
 
       // Strict Leader Filtering: The device initiating or leading the session must NEVER display an invitation toast to itself
-      if ((packet.action === 'CALL_BAND' || packet.action === 'START_SESSION') && (isLeaderOfBand || isPacketLeader || isBroadcaster)) {
+      if (
+        (packet.action === 'CALL_BAND' || packet.action === 'START_SESSION' || packet.action === 'INVITE_BAND') &&
+        (isLeaderOfBand || isPacketLeader || isBroadcaster)
+      ) {
         return;
       }
       if (isLeaderOfBand || isPacketLeader || isBroadcaster || isLockedToLeader) {
@@ -130,6 +133,7 @@ export const BandLiveSyncToast: React.FC = () => {
       }
 
       if (
+        packet.action !== 'INVITE_BAND' &&
         packet.action !== 'START_SESSION' &&
         packet.action !== 'PLAY' &&
         packet.action !== 'SONG_SELECT' &&
@@ -139,19 +143,25 @@ export const BandLiveSyncToast: React.FC = () => {
         return;
       }
 
-      // Check if this is the same song notification within 10 seconds (unless it's an explicit CALL_BAND or START_SESSION)
-      if (packet.action !== 'CALL_BAND' && packet.action !== 'START_SESSION' && lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
+      // Check if this is the same song notification within 10 seconds (unless it's an explicit invite or session start)
+      const isUrgentAction = packet.action === 'INVITE_BAND' || packet.action === 'CALL_BAND' || packet.action === 'START_SESSION';
+      if (!isUrgentAction && lastToastSongIdRef.current === `${packet.songId}_${packet.songTitle}`) {
         return;
       }
 
       lastToastSongIdRef.current = `${packet.songId}_${packet.songTitle}`;
+      const isInvite = packet.action === 'INVITE_BAND';
       const isSessionStart = packet.action === 'START_SESSION';
       const isCallBand = packet.action === 'CALL_BAND';
       const songTitle = packet.songTitle || (isSpanish ? 'Ensayo en Vivo' : 'Live Rehearsal');
       const leaderName = packet.leaderName || (isSpanish ? 'Líder' : 'Band Leader');
 
       showLiveToast(
-        isSessionStart
+        isInvite
+          ? isSpanish
+            ? `${leaderName} te invitó a "Tocar Juntos": ${songTitle}`
+            : `${leaderName} invited you to "Play Together": ${songTitle}`
+          : isSessionStart
           ? isSpanish
             ? `${leaderName} inició "Tocar Juntos": ${songTitle}`
             : `${leaderName} started "Play Together": ${songTitle}`
@@ -163,11 +173,11 @@ export const BandLiveSyncToast: React.FC = () => {
           ? `Tocando: ${songTitle}`
           : `Playing: ${songTitle}`,
         {
-          duration: isSessionStart || isCallBand ? 10000 : 5000,
+          duration: isInvite || isSessionStart || isCallBand ? 10000 : 5000,
           songTitle,
           songId: packet.songId,
           leaderName,
-          isCallBand: isCallBand || isSessionStart,
+          isCallBand: isInvite || isSessionStart || isCallBand,
           onJoin: () => handleJoin(packet),
         }
       );
