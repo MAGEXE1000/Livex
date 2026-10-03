@@ -105,9 +105,9 @@ async function runNavigationCoreTests() {
   const transitionUrl = `file://${transitionPath.replace(/\\/g, '/')}`;
   const { TransitionCoordinator } = await import(transitionUrl);
 
-  // Helper to reset store state before each test
   const resetStore = () => {
     useNavigationStore.getState().resetStore();
+    BackDispatcher.resetDebounce();
   };
 
   // Test 1: Initial Navigation State
