@@ -297,9 +297,15 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
               marginTop: '1px',
             }}
           >
-            {state.isInSetlist && state.currentSetlistSectionName
-              ? `${state.currentSetlistSectionName} • ${subtitle}`
-              : subtitle}
+            {state.isInSetlist && state.currentSetlistSectionName ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10.5px' }}>
+                <span style={{ fontWeight: 700, color: 'var(--c-text-primary)' }}>{state.currentSetlistSectionName}</span>
+                <span style={{ opacity: 0.35 }}>•</span>
+                {subtitle}
+              </span>
+            ) : (
+              subtitle
+            )}
           </div>
         </div>
 
@@ -1091,15 +1097,11 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
     showQuickActions,
     playbackSpeed,
     cyclePlaybackSpeed,
-    goToPrevSection,
-    goToNextSection,
     setTeleprompterFontSize,
     setDisplayMode,
     compatibleModes,
     autoPlay,
     setAutoPlay,
-    nextPhrase,
-    prevPhrase,
     setShowSettings,
     setShowQuickActions,
   } = state;
@@ -1563,44 +1565,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
             <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
 
-            <button
-              type="button"
-              onClick={goToPrevSection}
-              style={{
-                padding: '4px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-              }}
-              title="Previous Section"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                fast_rewind
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={goToNextSection}
-              style={{
-                padding: '4px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-              }}
-              title="Next Section"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                fast_forward
-              </span>
-            </button>
-
-            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 type="button"
@@ -1728,28 +1692,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
-          onClick={prevPhrase}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Rewind Phrase"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-            fast_rewind
-          </span>
-        </button>
-
-        <button
-          type="button"
           data-testid="lyrics-play-pause-btn"
           onClick={() => setAutoPlay((a) => !a)}
           style={{
@@ -1769,28 +1711,6 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         >
           <span className="material-symbols-outlined" style={{ fontSize: '24px', fontWeight: 'bold' }}>
             {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={nextPhrase}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Forward Phrase"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-            fast_forward
           </span>
         </button>
 
@@ -1865,7 +1785,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
     autoPlay,
     setAutoPlay,
     nextPhrase,
-    prevPhrase,
     stepWordForward,
     stepWordBackward,
     playChordSound,
@@ -1874,8 +1793,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
     setShowQuickActions,
     cyclePlaybackSpeed,
     playbackSpeed,
-    goToPrevSection,
-    goToNextSection,
     teleprompterFontSize,
     setTeleprompterFontSize,
     displayMode,
@@ -2264,44 +2181,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
 
             <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
 
-            <button
-              type="button"
-              onClick={goToPrevSection}
-              style={{
-                padding: '4px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-              }}
-              title="Previous Section"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                fast_rewind
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={goToNextSection}
-              style={{
-                padding: '4px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-              }}
-              title="Next Section"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                fast_forward
-              </span>
-            </button>
-
-            <div style={{ width: '1px', height: '16px', background: 'var(--surface-topbar-border)' }} />
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <button
                 type="button"
@@ -2460,28 +2339,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
-          onClick={prevPhrase}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Previous Phrase"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
-            skip_previous
-          </span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => setAutoPlay((a) => !a)}
           style={{
             width: '46px',
@@ -2500,28 +2357,6 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
         >
           <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>
             {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={nextPhrase}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-primary)',
-            cursor: 'pointer',
-          }}
-          title="Next Phrase"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
-            skip_next
           </span>
         </button>
 

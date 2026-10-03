@@ -1303,246 +1303,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     [updateDoc]
   );
 
-  const handlePasteIntoLine = useCallback(
-    (
-      e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-      sectionId: string,
-      lineIdx: number,
-      lineId: string
-    ) => {
-      // Prefer text/plain for full fidelity; some clipboard managers (WhatsApp, clipboard history apps)
-      // only populate text/plain and not the shorthand 'text', which can cause getData('text') to return
-      // an empty string on Android WebView, falling through to native <input type="text"> paste that
-      // strips all newlines.
-      const pastedText =
-        e.clipboardData.getData('text/plain') || e.clipboardData.getData('text');
-      if (!pastedText) return;
 
-      // Normalize all line-ending variants (\r\n, \r) to canonical \n before any processing.
-      // This is critical for content from Windows apps, WhatsApp, and clipboard history managers
-      // that may produce \r\n or bare \r line endings.
-      const normalizedText = pastedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-      // Structural element detection (section header / interlude) — single-line only
-      const singleParse = parseLineStructuralElement(normalizedText.trim());
-      if (singleParse.kind === 'section') {
-        e.preventDefault();
-        handlePromoteLineToSection(sectionId, lineIdx, singleParse);
-        return;
-      }
-      if (singleParse.kind === 'interlude') {
-        e.preventDefault();
-        handlePromoteLineToInterlude(sectionId, lineIdx, singleParse);
-        return;
-      }
-
-      // Single-line paste: let browser handle natively (no newlines present)
-      if (!normalizedText.includes('\n')) {
-        // Still need to prevent the native paste from triggering if the line text would
-        // be replaced, and instead perform the splice manually to keep span/chord data intact.
-        const inputEl = e.currentTarget;
-        const selStart = inputEl.selectionStart ?? inputEl.value.length;
-        const selEnd = inputEl.selectionEnd ?? inputEl.value.length;
-        const currentText = inputEl.value;
-        const before = currentText.slice(0, selStart);
-        const after = currentText.slice(selEnd);
-        const newLineText = before + normalizedText + after;
-        e.preventDefault();
-        setLastActivePosition(sectionId, lineIdx, lineId);
-        handleUpdateLineText(sectionId, lineId, newLineText);
-        // Restore cursor after the pasted segment
-        const newCursorPos = selStart + normalizedText.length;
-        pendingFocusLineIdRef.current = lineId;
-        targetCursorOffsetRef.current = newCursorPos;
-        return;
-      }
-
-      // Multiline paste — always intercept; never let <input type="text"> handle it
-      // (the HTML spec requires single-line inputs to strip newlines on paste).
-      e.preventDefault();
-
-      const inputEl = e.currentTarget;
-      const selStart = inputEl.selectionStart ?? inputEl.value.length;
-      const selEnd = inputEl.selectionEnd ?? inputEl.value.length;
-      const currentLineText = inputEl.value;
-      const beforeCursor = currentLineText.slice(0, selStart);
-      const afterCursor = currentLineText.slice(selEnd);
-
-      const pastedLines = normalizedText.split('\n');
-
-      const doc = localDocRef.current;
-      const targetSec = doc.sections.find((s) => s.id === sectionId);
-      const targetLine = targetSec?.lines.find((l) => l.id === lineId);
-
-      // If the current line is empty and the doc has only one empty section (blank editor),
-      // parse the whole pasted block as a fresh document.
-      const isDocEffectivelyEmpty =
-        doc.sections.length === 1 &&
-        doc.sections[0].lines.length === 1 &&
-        (!doc.sections[0].lines[0].text || doc.sections[0].lines[0].text.trim() === '') &&
-        (!beforeCursor || !beforeCursor.trim()) &&
-        (!afterCursor || !afterCursor.trim());
-
-      if (isDocEffectivelyEmpty) {
-        const parsedDoc = continuousTextToLyricsDocument(normalizedText, doc);
-        const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
-        updateDoc(() => normalizedDoc, true);
-        return;
-      }
-
-      // Non-empty doc: splice pasted content at cursor position within the document structure.
-      // Strategy:
-      //   - The first pasted line is appended to `beforeCursor` text of the current line.
-      //   - Middle pasted lines become new standalone lines inserted after.
-      //   - The last pasted line is prepended before `afterCursor` and becomes a new line too.
-      const firstPastedLine = pastedLines[0];
-      const lastPastedLine = pastedLines[pastedLines.length - 1];
-      const middleLines = pastedLines.slice(1, pastedLines.length - 1);
-
-      updateDoc((prev) => {
-        const newSections = prev.sections.map((sec) => {
-          if (sec.id !== sectionId) return sec;
-
-          const newLines = [...sec.lines];
-          const targetLineIdx = newLines.findIndex((l) => l.id === lineId);
-          if (targetLineIdx === -1) return sec;
-
-          // Update current line with before-cursor + first pasted line
-          const updatedCurrentLine: SongLyricLine = {
-            ...newLines[targetLineIdx],
-            text: beforeCursor + firstPastedLine,
-            // Clear spans/chords since text structure has fundamentally changed
-            spans: undefined,
-            chords:
-              targetLine?.chords && targetLine.chords.length > 0
-                ? shiftChordOffsets(currentLineText, beforeCursor + firstPastedLine, targetLine.chords)
-                : undefined,
-          };
-
-          const insertedLines: SongLyricLine[] = middleLines.map((ml) => ({
-            id: generateLyricId('line'),
-            text: ml,
-          }));
-
-          // Final line = last pasted segment + after-cursor
-          const finalLine: SongLyricLine = {
-            id: generateLyricId('line'),
-            text: lastPastedLine + afterCursor,
-          };
-
-          newLines.splice(
-            targetLineIdx,
-            1,
-            updatedCurrentLine,
-            ...insertedLines,
-            finalLine
-          );
-
-          return { ...sec, lines: newLines };
-        });
-
-        return { ...prev, sections: newSections };
-      }, true);
-
-      // Focus the last inserted line at end of last pasted segment
-      const lastInsertedId = '__paste_last__'; // resolved inside updateDoc above
-      void lastInsertedId; // suppress unused warning — focus is set via DOM after re-render
-    },
-    [
-      localDocRef,
-      updateDoc,
-      handlePromoteLineToSection,
-      handlePromoteLineToInterlude,
-      handleUpdateLineText,
-      setLastActivePosition,
-    ]
-  );
-
-  const handleLineKeyDown = useCallback(
-    (
-      e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-      sectionId: string,
-      lineIdx: number,
-      lineId: string
-    ) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const target = e.currentTarget;
-        const lineText = target.value;
-        const parseResult = parseLineStructuralElement(lineText);
-
-        if (parseResult.kind === 'section') {
-          handlePromoteLineToSection(sectionId, lineIdx, parseResult);
-          return;
-        }
-
-        if (parseResult.kind === 'interlude') {
-          handlePromoteLineToInterlude(sectionId, lineIdx, parseResult);
-          return;
-        }
-
-        const splitPos = target.selectionStart ?? target.value.length;
-        handleSplitLine(sectionId, lineIdx, lineId, splitPos);
-      } else if (e.key === 'Backspace') {
-        const target = e.currentTarget;
-        const selStart = target.selectionStart ?? 0;
-        const selEnd = target.selectionEnd ?? 0;
-        if (selStart === 0 && selEnd === 0) {
-          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
-          const currentLine = currentSec?.lines[lineIdx];
-          if (currentLine && currentLine.text.length === 0) {
-            e.preventDefault();
-            const prevLine = lineIdx > 0 ? currentSec?.lines[lineIdx - 1] : undefined;
-            handleDeleteLine(sectionId, lineId, prevLine?.id);
-          } else if (lineIdx > 0 || (currentDoc.sections.length > 1 && currentDoc.sections[0].id !== sectionId)) {
-            e.preventDefault();
-            handleMergeWithPrevious(sectionId, lineIdx, lineId);
-          }
-        }
-      } else if (e.key === 'ArrowUp') {
-        // Textarea handles intra-line vertical navigation natively.
-        // Only intercept when cursor is already at position 0 (top of this textarea)
-        // to jump to the previous line's textarea.
-        const target = e.currentTarget;
-        const selStart = target.selectionStart ?? 0;
-        if (selStart === 0) {
-          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
-          if (lineIdx > 0 && currentSec) {
-            const prevLine = currentSec.lines[lineIdx - 1];
-            if (prevLine && inputRefs.current[prevLine.id]) {
-              e.preventDefault();
-              const el = inputRefs.current[prevLine.id];
-              el?.focus();
-              try {
-                const len = el?.value.length ?? 0;
-                el?.setSelectionRange(len, len);
-              } catch (_) {}
-            }
-          }
-        }
-      } else if (e.key === 'ArrowDown') {
-        // Only intercept when cursor is at end of this textarea to jump to next line's textarea.
-        const target = e.currentTarget;
-        const selStart = target.selectionStart ?? 0;
-        const valLen = target.value.length;
-        if (selStart >= valLen) {
-          const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
-          if (currentSec && lineIdx < currentSec.lines.length - 1) {
-            const nextLine = currentSec.lines[lineIdx + 1];
-            if (nextLine && inputRefs.current[nextLine.id]) {
-              e.preventDefault();
-              const el = inputRefs.current[nextLine.id];
-              el?.focus();
-              try {
-                el?.setSelectionRange(0, 0);
-              } catch (_) {}
-            }
-          }
-        }
-      }
-    },
-    [currentDoc.sections, handlePromoteLineToSection, handlePromoteLineToInterlude, handleSplitLine, handleDeleteLine, handleMergeWithPrevious]
-  );
 
   const handleMoveLine = useCallback(
     (fromSectionId: string, fromLineId: string, toSectionId: string, toLineIdx: number) => {
@@ -2166,6 +1927,290 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       window.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
     };
   }, [captureSelection, handleBatchDeleteSelection]);
+
+  // ── CLIPBOARD NORMALIZATION & SANITIZATION ────────────────────────────
+
+  const handleCanvasCopy = useCallback(
+    (e: React.ClipboardEvent<HTMLElement>) => {
+      const curSel = capturedSelectionRef.current || captureSelection();
+      let textToCopy = '';
+
+      if (curSel && curSel.lines.length > 0) {
+        const extractedLines: string[] = [];
+        for (const item of curSel.lines) {
+          const sec = localDocRef.current.sections.find((s) => s.id === item.sectionId);
+          const line = sec?.lines.find((l) => l.id === item.lineId);
+          if (line) {
+            const slice = line.text.slice(item.start, item.end);
+            extractedLines.push(slice);
+          }
+        }
+        if (extractedLines.length > 0) {
+          textToCopy = extractedLines.join('\n');
+        }
+      }
+
+      if (!textToCopy) {
+        const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+        if (sel && !sel.isCollapsed) {
+          textToCopy = sel.toString();
+        }
+      }
+
+      if (!textToCopy) return;
+
+      e.preventDefault();
+
+      // Normalize: strip non-breaking spaces (\u00A0), tabs (\t), and multiple consecutive spacer characters
+      const cleanText = textToCopy
+        .replace(/\u00A0/g, ' ')
+        .replace(/\t/g, ' ')
+        .replace(/[^\S\r\n]{2,}/g, ' ')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .join('\n');
+
+      e.clipboardData.setData('text/plain', cleanText);
+    },
+    [captureSelection]
+  );
+
+  const handleCanvasCut = useCallback(
+    (e: React.ClipboardEvent<HTMLElement>) => {
+      handleCanvasCopy(e);
+      handleBatchDeleteSelection();
+    },
+    [handleCanvasCopy, handleBatchDeleteSelection]
+  );
+
+  const handleCopySelectionToClipboard = useCallback(async () => {
+    const curSel = capturedSelectionRef.current || captureSelection();
+    let textToCopy = '';
+
+    if (curSel && curSel.lines.length > 0) {
+      const extractedLines: string[] = [];
+      for (const item of curSel.lines) {
+        const sec = localDocRef.current.sections.find((s) => s.id === item.sectionId);
+        const line = sec?.lines.find((l) => l.id === item.lineId);
+        if (line) {
+          const slice = line.text.slice(item.start, item.end);
+          extractedLines.push(slice);
+        }
+      }
+      if (extractedLines.length > 0) {
+        textToCopy = extractedLines.join('\n');
+      }
+    }
+
+    if (!textToCopy) {
+      const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+      if (sel && !sel.isCollapsed) {
+        textToCopy = sel.toString();
+      }
+    }
+
+    if (!textToCopy) return;
+
+    const cleanText = textToCopy
+      .replace(/\u00A0/g, ' ')
+      .replace(/\t/g, ' ')
+      .replace(/[^\S\r\n]{2,}/g, ' ')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .join('\n');
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(cleanText);
+        toast.success('Copied to clipboard');
+      }
+    } catch (err) {
+      console.warn('Clipboard writeText failed:', err);
+    }
+  }, [captureSelection]);
+
+  const handleCanvasPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLElement>) => {
+      const rawText = e.clipboardData.getData('text/plain') || e.clipboardData.getData('text');
+      if (!rawText) return;
+
+      e.preventDefault();
+
+      // Normalize line breaks to \n
+      // Strip tabs (\t), non-breaking spaces (\u00A0), and multiple consecutive spacer characters
+      const normalizedText = rawText
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\t/g, ' ')
+        .replace(/[^\S\n]{2,}/g, ' ');
+
+      // Split on standard line breaks and trim line-level whitespace so every verse is left-aligned
+      const rawPastedLines = normalizedText
+        .split('\n')
+        .map((line) => line.trim());
+
+      const pastedLines = rawPastedLines.length > 0 ? rawPastedLines : [''];
+
+      const doc = localDocRef.current;
+
+      // Blank editor: parse as whole document
+      const isDocEffectivelyEmpty =
+        doc.sections.length <= 1 &&
+        (doc.sections.length === 0 ||
+          (doc.sections[0].lines.length <= 1 &&
+            (!doc.sections[0].lines[0] || !doc.sections[0].lines[0].text || doc.sections[0].lines[0].text.trim() === '')));
+
+      if (isDocEffectivelyEmpty) {
+        const parsedDoc = continuousTextToLyricsDocument(pastedLines.join('\n'), doc);
+        const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
+        updateDoc(() => normalizedDoc, true);
+        return;
+      }
+
+      // If text selection is active, delete it first
+      let workingDoc = doc;
+      const curSel = capturedSelectionRef.current || captureSelection();
+      let targetSectionId = '';
+      let targetLineId = '';
+      let targetLineIdx = -1;
+      let insertOffset = 0;
+
+      if (curSel && curSel.lines.length > 0) {
+        const firstLine = curSel.lines[0];
+        targetSectionId = firstLine.sectionId;
+        targetLineId = firstLine.lineId;
+        targetLineIdx = firstLine.lineIndex;
+        insertOffset = firstLine.start;
+        workingDoc = batchDeleteLyricsSelection(doc, curSel);
+        capturedSelectionRef.current = null;
+        setHasCapturedSelection(false);
+      } else {
+        const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+        if (sel && sel.anchorNode) {
+          const anchorNode = sel.anchorNode;
+          const anchorEl = anchorNode instanceof HTMLElement ? anchorNode : anchorNode.parentElement;
+          const lineEl = anchorEl?.closest('[data-line-id]') as HTMLElement | null;
+          if (lineEl) {
+            targetSectionId = lineEl.dataset.sectionId || '';
+            targetLineId = lineEl.dataset.lineId || '';
+            targetLineIdx = parseInt(lineEl.dataset.lineIndex || '-1', 10);
+            insertOffset = sel.rangeCount > 0 ? sel.getRangeAt(0).startOffset : 0;
+          }
+        }
+      }
+
+      if (!targetSectionId || targetLineIdx === -1) {
+        if (lastActivePositionRef.current) {
+          targetSectionId = lastActivePositionRef.current.sectionId;
+          targetLineIdx = lastActivePositionRef.current.lineIndex;
+          targetLineId = lastActivePositionRef.current.lineId || '';
+        } else {
+          const lastSec = workingDoc.sections[workingDoc.sections.length - 1];
+          if (lastSec) {
+            targetSectionId = lastSec.id;
+            targetLineIdx = Math.max(0, lastSec.lines.length - 1);
+            targetLineId = lastSec.lines[targetLineIdx]?.id || '';
+            insertOffset = lastSec.lines[targetLineIdx]?.text?.length || 0;
+          }
+        }
+      }
+
+      if (pastedLines.length === 1) {
+        const singleText = pastedLines[0];
+        updateDoc((prev) => {
+          const base = workingDoc !== doc ? workingDoc : prev;
+          return {
+            ...base,
+            sections: base.sections.map((sec) => {
+              if (sec.id !== targetSectionId) return sec;
+              return {
+                ...sec,
+                lines: sec.lines.map((line, idx) => {
+                  if (idx !== targetLineIdx && line.id !== targetLineId) return line;
+                  const curText = line.text;
+                  const safeOffset = Math.min(curText.length, Math.max(0, insertOffset));
+                  const before = curText.slice(0, safeOffset);
+                  const after = curText.slice(safeOffset);
+                  const nextText = before + singleText + after;
+                  return {
+                    ...line,
+                    text: nextText,
+                    spans: undefined,
+                    chords: line.chords ? shiftChordOffsets(curText, nextText, line.chords) : undefined,
+                  };
+                }),
+              };
+            }),
+          };
+        }, true);
+        return;
+      }
+
+      // Multiline paste
+      const firstPastedLine = pastedLines[0];
+      const lastPastedLine = pastedLines[pastedLines.length - 1];
+      const middleLines = pastedLines.slice(1, pastedLines.length - 1);
+
+      let newFocusLineId = '';
+      updateDoc((prev) => {
+        const base = workingDoc !== doc ? workingDoc : prev;
+        return {
+          ...base,
+          sections: base.sections.map((sec) => {
+            if (sec.id !== targetSectionId) return sec;
+            const newLines = [...sec.lines];
+            const resolvedTargetIdx =
+              targetLineIdx >= 0 && targetLineIdx < newLines.length
+                ? targetLineIdx
+                : newLines.findIndex((l) => l.id === targetLineId);
+
+            if (resolvedTargetIdx === -1) {
+              const createdLines: SongLyricLine[] = pastedLines.map((pl) => ({
+                id: generateLyricId('line'),
+                text: pl,
+              }));
+              if (createdLines.length > 0) newFocusLineId = createdLines[createdLines.length - 1].id;
+              return { ...sec, lines: [...newLines, ...createdLines] };
+            }
+
+            const targetLine = newLines[resolvedTargetIdx];
+            const curText = targetLine.text;
+            const safeOffset = Math.min(curText.length, Math.max(0, insertOffset));
+            const beforeCursor = curText.slice(0, safeOffset);
+            const afterCursor = curText.slice(safeOffset);
+
+            const updatedCurrentLine: SongLyricLine = {
+              ...targetLine,
+              text: beforeCursor + firstPastedLine,
+              spans: undefined,
+              chords: targetLine.chords ? shiftChordOffsets(curText, beforeCursor + firstPastedLine, targetLine.chords) : undefined,
+            };
+
+            const insertedMiddleLines: SongLyricLine[] = middleLines.map((ml) => ({
+              id: generateLyricId('line'),
+              text: ml,
+            }));
+
+            const finalLine: SongLyricLine = {
+              id: generateLyricId('line'),
+              text: lastPastedLine + afterCursor,
+            };
+            newFocusLineId = finalLine.id;
+
+            newLines.splice(resolvedTargetIdx, 1, updatedCurrentLine, ...insertedMiddleLines, finalLine);
+            return { ...sec, lines: newLines };
+          }),
+        };
+      }, true);
+
+      if (newFocusLineId) {
+        pendingFocusLineIdRef.current = newFocusLineId;
+        targetCursorOffsetRef.current = lastPastedLine.length;
+      }
+    },
+    [captureSelection, updateDoc]
+  );
 
   // Canvas keydown event handler: intercepts Enter, Backspace (batch deletion or merge), and Arrow navigation
   const handleCanvasKeyDown = useCallback(
@@ -2850,7 +2895,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         const text = await navigator.clipboard.readText();
         if (text && text.trim()) {
           // Normalize all line-ending variants (\r\n, \r) → \n before parsing
-          const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          const normalized = text
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\t/g, ' ')
+            .replace(/[^\S\n]{2,}/g, ' ');
           const parsed = parsePastedLyrics(normalized);
           onChange(parsed);
           toast.success('Lyrics pasted successfully!');
@@ -2867,7 +2917,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const handleApplyPasteModal = useCallback(() => {
     if (pasteModalText.trim()) {
       // Normalize all line-ending variants (\r\n, \r) → \n before parsing
-      const normalized = pasteModalText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const normalized = pasteModalText
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\t/g, ' ')
+        .replace(/[^\S\n]{2,}/g, ' ');
       const parsed = parsePastedLyrics(normalized);
       onChange(parsed);
       toast.success('Lyrics pasted successfully!');
@@ -2883,12 +2938,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         toast.info('No lyrics to copy');
         return;
       }
+      const cleanText = plainText
+        .replace(/\u00A0/g, ' ')
+        .replace(/\t/g, ' ')
+        .replace(/[^\S\r\n]{2,}/g, ' ')
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .join('\n');
       if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(plainText);
+        await navigator.clipboard.writeText(cleanText);
         toast.success('Lyrics copied to clipboard!');
       } else {
         const el = document.createElement('textarea');
-        el.value = plainText;
+        el.value = cleanText;
         document.body.appendChild(el);
         el.select();
         document.execCommand('copy');
@@ -3023,6 +3085,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         onKeyDown={handleCanvasKeyDown}
         onBeforeInput={handleCanvasBeforeInput}
         onInput={handleCanvasInput}
+        onCopy={handleCanvasCopy}
+        onCut={handleCanvasCut}
+        onPaste={handleCanvasPaste}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             const lastSec = currentDoc.sections[currentDoc.sections.length - 1];
@@ -4573,6 +4638,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     aria-label="Clear formatting"
                   >
                     <span className="material-symbols-rounded text-lg">format_clear</span>
+                  </button>
+
+                  {/* Copy Selection Button */}
+                  <button
+                    type="button"
+                    data-testid="toolbar-copy-selection-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={handleCopySelectionToClipboard}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                      isEffectiveLight
+                        ? 'text-slate-600 hover:bg-black/5 hover:text-slate-900'
+                        : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                    title="Copy highlighted text"
+                    aria-label="Copy selection"
+                  >
+                    <span className="material-symbols-rounded text-lg">content_copy</span>
                   </button>
 
                   {/* Batch Delete Selection Button */}

@@ -4227,7 +4227,13 @@ export default function SongsPanel() {
       }
       if (showLive) {
         setShowLive(false);
+        const setlistToRestore = liveSetlistId;
         setLiveSetlistQueue(null);
+        setLiveSetlistId(null);
+        if (setlistToRestore) {
+          setActivePreset(null);
+          setActiveSetlistId(setlistToRestore);
+        }
         return true;
       }
       if (showForm) {
@@ -4275,6 +4281,7 @@ export default function SongsPanel() {
       showDeleteId,
       activePresetId,
       activeSetlistId,
+      liveSetlistId,
       setActiveSetlistId,
       editorViewMode,
       setActivePreset,
@@ -4778,12 +4785,12 @@ export default function SongsPanel() {
             initialMode={editorViewMode}
             onClose={() => {
               setShowLive(false);
-              if (liveSetlistQueue) {
-                setLiveSetlistQueue(null);
-                if (liveSetlistId) {
-                  setActivePreset(null);
-                  setActiveSetlistId(liveSetlistId);
-                }
+              const setlistToRestore = liveSetlistId;
+              setLiveSetlistQueue(null);
+              setLiveSetlistId(null);
+              if (setlistToRestore) {
+                setActivePreset(null);
+                setActiveSetlistId(setlistToRestore);
               }
             }}
             transposeOffset={transposeOffset}

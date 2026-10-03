@@ -1146,9 +1146,10 @@ export function useLiveModeState(
         setShowSettings(false);
         return true;
       }
-      return false;
+      handleClose();
+      return true;
     },
-    [showSettings]
+    [showSettings, handleClose]
   );
 
   // ── Chord Resolution ─────────────────────────────────────────────
