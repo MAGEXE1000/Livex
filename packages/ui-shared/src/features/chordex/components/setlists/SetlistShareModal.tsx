@@ -94,7 +94,7 @@ export async function exportSetlistToLivex(
           recursive: true,
         });
         await Share.share({
-          title: setlist.title,
+          title: fileName,
           url: cacheResult.uri,
           dialogTitle: `Share Setlist: ${setlist.title}`,
         });

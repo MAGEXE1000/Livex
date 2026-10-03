@@ -62,6 +62,7 @@ export * from './lib/songTimingEngine';
 export * from './data/authorizedChords';
 export * from './lib/chordService';
 export * from './lib/chord/chordResolution';
+export * from './lib/bundle/livexBundleService';
 export * from './lib/updater/diagnostics';
 export { deleteLocalApk } from './lib/updater/cacheManager';
 export * from './lib/updater/versionLogger';

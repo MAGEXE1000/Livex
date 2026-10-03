@@ -1,14 +1,17 @@
 import type { StateCreator } from 'zustand';
-import type { Setlist, SetlistSection } from '../../types/setlist';
+import type { Setlist, SetlistSection, SetlistLivexBundle } from '../../types/setlist';
 
 export interface SetlistSliceState {
   setlists: Setlist[];
   activeSetlistId: string | null;
   songsSubTab: 'all' | 'setlists';
+  pendingSetlistImport: SetlistLivexBundle | null;
 }
 
 export interface SetlistSliceActions {
   setSongsSubTab: (tab: 'all' | 'setlists') => void;
+  setPendingSetlistImport: (bundle: SetlistLivexBundle | null) => void;
+  clearPendingSetlistImport: () => void;
   createSetlist: (data: {
     title: string;
     description?: string;
@@ -53,8 +56,11 @@ export const createSetlistSlice: StateCreator<any, [], [], SetlistSlice> = (set,
   setlists: [],
   activeSetlistId: null,
   songsSubTab: 'all',
+  pendingSetlistImport: null,
 
   setSongsSubTab: (tab) => set({ songsSubTab: tab }),
+  setPendingSetlistImport: (bundle) => set({ pendingSetlistImport: bundle }),
+  clearPendingSetlistImport: () => set({ pendingSetlistImport: null }),
 
   createSetlist: (data) => {
     const id = `setlist-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

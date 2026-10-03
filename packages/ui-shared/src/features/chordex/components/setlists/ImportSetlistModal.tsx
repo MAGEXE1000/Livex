@@ -1,15 +1,16 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import {
   type Setlist,
   type SongPreset,
+  type SetlistLivexBundle,
+  parseLivexBundle,
   useChordStore,
   useIsWebDesktop,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/StudioDesignSystem';
-import type { SetlistLivexBundle } from './SetlistShareModal';
 
 type ImportStage = 'idle' | 'preview' | 'success' | 'error';
 
@@ -24,16 +25,33 @@ export interface ImportSetlistContentProps {
   accentColor?: string;
   onImportSuccess?: (setlistId: string) => void;
   onClose?: () => void;
+  initialBundle?: SetlistLivexBundle | null;
 }
 
 export function ImportSetlistContent({
   accentColor = '#2563EB',
   onImportSuccess,
   onClose,
+  initialBundle,
 }: ImportSetlistContentProps) {
   const isWebDesktop = useIsWebDesktop();
-  const [stage, setStage] = useState<ImportStage>('idle');
-  const [parsed, setParsed] = useState<ParsedSetlistImport | null>(null);
+  const pendingSetlistImport = useChordStore((s) => s.pendingSetlistImport);
+  const clearPendingSetlistImport = useChordStore((s) => s.clearPendingSetlistImport);
+
+  const activeBundle = initialBundle || pendingSetlistImport;
+
+  const [stage, setStage] = useState<ImportStage>(activeBundle ? 'preview' : 'idle');
+  const [parsed, setParsed] = useState<ParsedSetlistImport | null>(() => {
+    if (activeBundle) {
+      return {
+        setlist: activeBundle.setlist,
+        songs: activeBundle.songs || [],
+        fileName: `${activeBundle.setlist.title || 'setlist'}.livex`,
+        fileSizeBytes: 0,
+      };
+    }
+    return null;
+  });
   const [errorMsg, setErrorMsg] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,63 +61,72 @@ export function ImportSetlistContent({
   const createSetlist = useChordStore((s) => s.createSetlist);
   const setActivePreset = useChordStore((s) => s.setActivePreset);
 
-  const parseFile = useCallback((file: File) => {
-    const isSupported =
-      file.name.toLowerCase().endsWith('.livex') ||
-      file.name.toLowerCase().endsWith('.json') ||
-      file.type === 'application/json';
-
-    if (!isSupported) {
-      setErrorMsg('Please select a .livex or .json setlist package file.');
-      setStage('error');
-      return;
+  // Sync if pendingSetlistImport updates
+  useEffect(() => {
+    if (activeBundle) {
+      setParsed({
+        setlist: activeBundle.setlist,
+        songs: activeBundle.songs || [],
+        fileName: `${activeBundle.setlist.title || 'setlist'}.livex`,
+        fileSizeBytes: 0,
+      });
+      setStage('preview');
     }
+  }, [activeBundle]);
 
+  const parseFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const raw = JSON.parse(ev.target?.result as string);
-        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-          throw new Error('Not a valid JSON object.');
+        const rawContent = ev.target?.result as string;
+        const result = parseLivexBundle(rawContent);
+
+        if (result.type === 'invalid') {
+          throw new Error(result.error);
         }
 
-        let setlistObj: Setlist | null = null;
-        let songsArr: SongPreset[] = [];
-
-        if (raw._type === 'setlist' && raw.setlist) {
-          setlistObj = raw.setlist;
-          songsArr = Array.isArray(raw.songs) ? raw.songs : [];
-        } else if (raw.sections && (raw.title || raw.name)) {
-          setlistObj = {
-            id: raw.id || `setlist-${Date.now()}`,
-            title: raw.title || raw.name || 'Imported Setlist',
-            description: raw.description,
-            date: raw.date,
-            sections: raw.sections,
-            createdAt: raw.createdAt || Date.now(),
-            updatedAt: raw.updatedAt || Date.now(),
+        if (result.type === 'setlist') {
+          setParsed({
+            setlist: result.bundle.setlist,
+            songs: result.bundle.songs,
+            fileName: file.name,
+            fileSizeBytes: file.size,
+          });
+          setStage('preview');
+        } else if (result.type === 'song') {
+          // Wrapped single song into a 1-song setlist for unified bundle import
+          const syntheticSetlist: Setlist = {
+            id: `setlist-${Date.now()}`,
+            title: `${result.preset.name} Set`,
+            sections: [
+              {
+                id: `sec-${Date.now()}`,
+                name: 'Main',
+                songIds: [`song-import-${Date.now()}`],
+              },
+            ],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
           };
-          songsArr = Array.isArray(raw.songs) ? raw.songs : [];
-        } else if (raw.setlist && raw.setlist.title) {
-          setlistObj = raw.setlist;
-          songsArr = Array.isArray(raw.songs) ? raw.songs : [];
-        }
+          const syntheticSong: SongPreset = {
+            ...result.preset,
+            id: syntheticSetlist.sections[0].songIds[0],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
 
-        if (!setlistObj || !setlistObj.title) {
-          throw new Error(
-            'Unrecognized format. File must contain a valid Setlist with title and sections.'
-          );
+          setParsed({
+            setlist: syntheticSetlist,
+            songs: [syntheticSong],
+            fileName: file.name,
+            fileSizeBytes: file.size,
+          });
+          setStage('preview');
         }
-
-        setParsed({
-          setlist: setlistObj,
-          songs: songsArr,
-          fileName: file.name,
-          fileSizeBytes: file.size,
-        });
-        setStage('preview');
       } catch (err: any) {
-        setErrorMsg(err?.message || 'Failed to parse file. Ensure it is a valid .livex or .json setlist file.');
+        setErrorMsg(
+          err?.message || 'Failed to parse file. Ensure it is a valid .livex or .json setlist bundle.'
+        );
         setStage('error');
       }
     };
@@ -185,6 +212,7 @@ export function ImportSetlistContent({
 
       // Clear active preset so that activeSetlistId takes priority in mobile view
       setActivePreset(null);
+      clearPendingSetlistImport();
 
       toast.success(
         `Imported setlist "${setlist.title}" with ${songs.length} songs (${newlyRegisteredCount} added to library)!`
@@ -232,7 +260,7 @@ export function ImportSetlistContent({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".livex,.json,application/json"
+                accept=".livex,.json,.bin,application/json,application/octet-stream,text/plain,*/*"
                 onChange={handleFileChange}
                 style={{ display: 'none' }}
                 data-testid="setlist-file-input"
@@ -358,6 +386,7 @@ export function ImportSetlistContent({
             <div className="flex gap-2 w-full mt-1">
               <Button
                 onClick={() => {
+                  clearPendingSetlistImport();
                   setParsed(null);
                   setStage('idle');
                 }}
@@ -440,14 +469,21 @@ export const ImportSetlistModal: React.FC<ImportSetlistModalProps> = ({
   accentColor = '#2563EB',
   onImportSuccess,
 }) => {
+  const clearPendingSetlistImport = useChordStore((s) => s.clearPendingSetlistImport);
+
+  const handleClose = () => {
+    clearPendingSetlistImport();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onClose={onClose} title="Import Setlist (.livex)">
+    <Dialog open={isOpen} onClose={handleClose} title="Import Setlist (.livex)">
       <ImportSetlistContent
         accentColor={accentColor}
         onImportSuccess={onImportSuccess}
-        onClose={onClose}
+        onClose={handleClose}
       />
     </Dialog>
   );

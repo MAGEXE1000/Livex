@@ -34,6 +34,8 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
   const updateSetlist = useChordStore((s) => s.updateSetlist);
   const deleteSetlist = useChordStore((s) => s.deleteSetlist);
   const duplicateSetlist = useChordStore((s) => s.duplicateSetlist);
+  const pendingSetlistImport = useChordStore((s) => s.pendingSetlistImport);
+  const clearPendingSetlistImport = useChordStore((s) => s.clearPendingSetlistImport);
 
   const filteredSetlists = useMemo(() => {
     if (!searchQuery.trim()) return setlists;
@@ -267,8 +269,11 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
 
       {/* Import Setlist Modal */}
       <ImportSetlistModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        isOpen={showImportModal || Boolean(pendingSetlistImport)}
+        onClose={() => {
+          setShowImportModal(false);
+          clearPendingSetlistImport();
+        }}
         accentColor={accentColor}
         onImportSuccess={(newId) => onOpenSetlist(newId)}
       />

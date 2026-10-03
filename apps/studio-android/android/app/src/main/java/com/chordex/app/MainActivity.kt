@@ -554,11 +554,36 @@ class MainActivity : BridgeActivity() {
             val fileObj = JSObject()
             fileObj.put("fileName", fileName)
 
-            if (fileName.endsWith(".json", ignoreCase = true) || mimeType.contains("json", ignoreCase = true)) {
-                val jsonContent = SafeContentResolver.readSafeTextContent(this, uri) ?: return
+            val isTextCandidate = fileName.endsWith(".livex", ignoreCase = true) ||
+                    fileName.endsWith(".json", ignoreCase = true) ||
+                    fileName.endsWith(".bin", ignoreCase = true) ||
+                    fileName.endsWith(".txt", ignoreCase = true) ||
+                    mimeType.contains("json", ignoreCase = true) ||
+                    mimeType.contains("livex", ignoreCase = true) ||
+                    mimeType.contains("text", ignoreCase = true) ||
+                    mimeType.contains("octet-stream", ignoreCase = true)
 
+            var isJson = false
+            var textContent: String? = null
+
+            if (isTextCandidate) {
+                try {
+                    val rawText = SafeContentResolver.readSafeTextContent(this, uri)
+                    if (rawText != null) {
+                        val trimmed = rawText.trim()
+                        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                            textContent = rawText
+                            isJson = true
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.d("MainActivity", "Not valid JSON text content: ${e.message}")
+                }
+            }
+
+            if (isJson && textContent != null) {
                 fileObj.put("type", "json")
-                fileObj.put("data", jsonContent)
+                fileObj.put("data", textContent)
             } else {
                 val tempFile = SafeContentResolver.copySafeStreamToCache(this, uri, fileName)
                 val filePath = tempFile.absolutePath

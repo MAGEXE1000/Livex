@@ -41,6 +41,7 @@ import {
   type SetlistSection,
   type SetlistQueueItem,
   flattenSetlistToQueue,
+  parseLivexBundle,
 } from '@workspace/livex-core';
 import {
   SetlistNavSwitcher,
@@ -2439,9 +2440,9 @@ async function exportPresetToJSON(
           recursive: true,
         });
         await Share.share({
-          title: preset.name,
+          title: fileName,
           url: cacheResult.uri,
-          dialogTitle: `Share ${preset.name}`,
+          dialogTitle: `Share Song: ${preset.name}`,
         });
       } catch {
         /* User cancelled or share unavailable */
@@ -2579,80 +2580,61 @@ export function ImportSongContent({
 
   const parseFile = useCallback(
     (file: File) => {
-      const isSupported =
-        file.name.toLowerCase().endsWith('.json') ||
-        file.name.toLowerCase().endsWith('.livex') ||
-        file.type === 'application/json';
-      if (!isSupported) {
-        setErrorMsg('Please select a .livex or .json song file.');
-        setStage('error');
-        return;
-      }
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const raw = JSON.parse(ev.target?.result as string);
-          if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
-            throw new Error('Not a valid JSON object.');
+          const rawContent = ev.target?.result as string;
+          const bundleResult = parseLivexBundle(rawContent);
 
-          const songName = (raw.songName ?? raw.name ?? raw.title ?? '').trim();
-          if (!songName) throw new Error('Missing required field: songName');
-
-          let unresolvedCount = 0;
-          const resolvedIds: string[] = [];
-
-          if (Array.isArray(raw.chordIds) && raw.chordIds.length > 0) {
-            for (const id of raw.chordIds) {
-              if (typeof id === 'string' && id.trim()) {
-                resolvedIds.push(id.trim());
-              }
-            }
-          } else if (Array.isArray(raw.chords)) {
-            for (const c of raw.chords) {
-              if (typeof c === 'string') {
-                const id = resolveChordId(c) || c;
-                resolvedIds.push(id);
-              } else if (typeof c === 'object' && c !== null) {
-                if (c.id && typeof c.id === 'string') {
-                  resolvedIds.push(c.id);
-                } else if (typeof c.name === 'string') {
-                  const id = resolveChordId(c.name);
-                  if (id) resolvedIds.push(id);
-                  else unresolvedCount++;
-                }
-              }
-            }
+          if (bundleResult.type === 'invalid') {
+            throw new Error(bundleResult.error);
           }
 
-          const result: ParsedImport = {
-            name: songName,
-            artist: (raw.artist ?? '').trim(),
-            bpm: Math.max(40, Math.min(400, parseInt(raw.bpm || raw.speed) || 120)),
-            barsPerLine: typeof raw.barsPerLine === 'number' ? raw.barsPerLine : undefined,
-            key: (raw.key ?? '').trim() || 'C',
-            notes: (raw.notes ?? '').trim(),
-            chords: resolvedIds,
-            rawCount: resolvedIds.length + unresolvedCount,
-            unresolvedCount,
-            sections: Array.isArray(raw.sections) ? raw.sections : undefined,
-            lyrics: raw.lyrics && typeof raw.lyrics === 'object' ? raw.lyrics : undefined,
-            targetDurationSeconds:
-              typeof raw.targetDurationSeconds === 'number' && raw.targetDurationSeconds > 0
-                ? raw.targetDurationSeconds
-                : undefined,
-            coverImage: typeof raw.coverImage === 'string' ? raw.coverImage : undefined,
-          };
+          if (bundleResult.type === 'setlist') {
+            useChordStore.getState().setPendingSetlistImport(bundleResult.bundle);
+            useChordStore.getState().setSongsSubTab('setlists');
+            toast.success(`Loaded setlist bundle: "${bundleResult.bundle.setlist.title}"`);
+            return;
+          }
 
-          setParsed(result);
-          const conflict = existingPresets.find(
-            (p) => p.name.trim().toLowerCase() === result.name.toLowerCase()
-          );
-          if (conflict) {
-            setConflictId(conflict.id);
-            setRenameVal(`${result.name} ${t.songs.importSuffix}`);
-            setStage('conflict');
-          } else {
-            setStage('preview');
+          if (bundleResult.type === 'song') {
+            const song = bundleResult.preset;
+            let unresolvedCount = 0;
+            const resolvedIds: string[] = [];
+
+            for (const c of song.chords) {
+              const id = resolveChordId(c) || c;
+              if (id) resolvedIds.push(id);
+              else unresolvedCount++;
+            }
+
+            const result: ParsedImport = {
+              name: song.name,
+              artist: song.artist,
+              bpm: song.bpm,
+              barsPerLine: song.barsPerLine,
+              key: song.key,
+              notes: song.notes,
+              chords: resolvedIds,
+              rawCount: resolvedIds.length + unresolvedCount,
+              unresolvedCount,
+              sections: song.sections,
+              lyrics: song.lyrics,
+              targetDurationSeconds: song.targetDurationSeconds,
+              coverImage: song.coverImage,
+            };
+
+            setParsed(result);
+            const conflict = existingPresets.find(
+              (p) => p.name.trim().toLowerCase() === result.name.toLowerCase()
+            );
+            if (conflict) {
+              setConflictId(conflict.id);
+              setRenameVal(`${result.name} ${t.songs.importSuffix}`);
+              setStage('conflict');
+            } else {
+              setStage('preview');
+            }
           }
         } catch (err) {
           setErrorMsg(err instanceof Error ? err.message : t.songs.couldNotParse);
@@ -2798,7 +2780,7 @@ export function ImportSongContent({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json,.livex,application/json"
+            accept=".livex,.json,.bin,application/json,application/octet-stream,text/plain,*/*"
             onChange={handleFileInput}
             style={{ display: 'none' }}
           />

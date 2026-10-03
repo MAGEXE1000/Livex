@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, memo } from '
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
+import { toast } from 'sonner';
 import {
   useChordStore,
   useIsWebDesktop,
@@ -327,6 +328,96 @@ export function SharedAppShell({
 
     return () => {
       StartupCoordinator.cancel('app_unmounted');
+    };
+  }, []);
+
+  // Listen for native .livex bundle intents, shared files, and appUrlOpen events
+  useEffect(() => {
+    let unmounted = false;
+    let removeSharedFileListener: (() => void) | null = null;
+    let removeUrlOpenListener: (() => void) | null = null;
+
+    const setupFileListeners = async () => {
+      const { Capacitor } = await import('@capacitor/core');
+      if (!Capacitor.isNativePlatform()) return;
+
+      const { AppInstaller, dispatchIncomingLivexBundle } = await import('@workspace/livex-core');
+
+      // 1. Check for shared file passed on cold start
+      try {
+        const shared = await AppInstaller.getSharedFile();
+        if (!unmounted && shared && !shared.none && shared.type === 'json' && shared.data) {
+          const res = dispatchIncomingLivexBundle(shared.data, shared.fileName);
+          if (res.handled) {
+            toast.success(
+              res.type === 'setlist'
+                ? `Opened setlist bundle: "${res.title}"`
+                : `Opened song package: "${res.title}"`
+            );
+          }
+        }
+      } catch (_) {}
+
+      // 2. Listen for runtime file share events from MainActivity
+      try {
+        const handle = await (AppInstaller as any).addListener(
+          'onSharedFileReceived',
+          (fileObj: any) => {
+            if (!unmounted && fileObj && fileObj.type === 'json' && fileObj.data) {
+              const res = dispatchIncomingLivexBundle(fileObj.data, fileObj.fileName);
+              if (res.handled) {
+                toast.success(
+                  res.type === 'setlist'
+                    ? `Opened setlist bundle: "${res.title}"`
+                    : `Opened song package: "${res.title}"`
+                );
+              }
+            }
+          }
+        );
+        removeSharedFileListener = () => handle?.remove?.();
+      } catch (_) {}
+
+      // 3. Listen for @capacitor/app appUrlOpen (intent deep links & file openings)
+      try {
+        const { App } = await import('@capacitor/app');
+        const urlHandle = await App.addListener('appUrlOpen', async (data) => {
+          if (unmounted || !data?.url) return;
+          try {
+            const url = data.url;
+            if (url.startsWith('file:') || url.startsWith('content:')) {
+              const { Filesystem } = await import('@capacitor/filesystem');
+              const fileData = await Filesystem.readFile({ path: url });
+              const content = typeof fileData.data === 'string' ? fileData.data : '';
+              if (content) {
+                let text = content;
+                try {
+                  text = atob(content);
+                } catch {
+                  text = content;
+                }
+                const res = dispatchIncomingLivexBundle(text);
+                if (res.handled) {
+                  toast.success(
+                    res.type === 'setlist'
+                      ? `Opened setlist bundle: "${res.title}"`
+                      : `Opened song package: "${res.title}"`
+                  );
+                }
+              }
+            }
+          } catch (_) {}
+        });
+        removeUrlOpenListener = () => urlHandle?.remove?.();
+      } catch (_) {}
+    };
+
+    void setupFileListeners();
+
+    return () => {
+      unmounted = true;
+      if (removeSharedFileListener) removeSharedFileListener();
+      if (removeUrlOpenListener) removeUrlOpenListener();
     };
   }, []);
 

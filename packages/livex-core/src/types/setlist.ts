@@ -18,6 +18,15 @@ export interface Setlist {
   color?: string;
 }
 
+export interface SetlistLivexBundle {
+  _app: 'Livex';
+  _type: 'setlist';
+  _version: number;
+  setlist: Setlist;
+  songs: SongPreset[];
+  exportedAt: number;
+}
+
 export interface SetlistQueueItem {
   song: SongPreset;
   sectionId: string;
