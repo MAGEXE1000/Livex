@@ -1,6 +1,6 @@
 {
   "name": "workspace",
-  "version": "4.6.91",
+  "version": "4.6.92",
   "license": "MIT",
   "packageManager": "pnpm@11.24.0",
   "scripts": {
