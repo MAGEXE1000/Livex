@@ -294,6 +294,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // ── BATCH BARS-PER-LINE ASSIGNMENT ──
   const [batchBarsActive, setBatchBarsActive] = useState(false);
   const lineSelection = useLineRangeSelection(currentDoc.sections);
+  const [flashLineIds, setFlashLineIds] = useState<Set<string>>(new Set());
 
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
@@ -3336,25 +3337,27 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       ref={workspaceRef}
       data-testid="song-lyrics-editor-workspace"
       data-empty-lyrics={mode === 'lyrics' && isDocumentCompletelyEmpty ? 'true' : undefined}
-      className="flex flex-col w-full relative select-text"
+      className={`flex flex-col w-full relative ${batchBarsActive ? 'select-none' : 'select-text'}`}
       style={{
         color: 'var(--c-text-primary, #ffffff)',
         fontFamily: 'var(--studio-font-body, var(--font-body))',
-        WebkitUserSelect: 'text',
-        userSelect: 'text',
+        WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+        userSelect: batchBarsActive ? 'none' : 'text',
+        WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
       }}
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
         key={`lyrics-canvas-${canvasResetKey}`}
         ref={canvasRef}
-        contentEditable={true}
+        contentEditable={!batchBarsActive}
         suppressContentEditableWarning={true}
-        className="flex flex-col gap-4 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0 border-0 ring-0 w-full select-text min-h-[300px] cursor-text lyrics-canvas-document no-focus-ring"
+        className={`flex flex-col gap-4 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0 border-0 ring-0 w-full min-h-[300px] lyrics-canvas-document no-focus-ring ${batchBarsActive ? 'select-none' : 'select-text cursor-text'}`}
         style={{
           paddingBottom: '24px',
-          WebkitUserSelect: 'text',
-          userSelect: 'text',
+          WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+          userSelect: batchBarsActive ? 'none' : 'text',
+          WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
           touchAction: 'pan-y',
           willChange: 'transform',
           outline: 'none',
@@ -4106,6 +4109,104 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   const isEditing = editingLineId === line.id;
                   void isEditing; // Preserved for backwards compatibility
 
+                  const isExplicitLineOverride = line.bars !== undefined;
+                  const resolvedLineBars = line.bars ?? section.barsPerLine ?? 1;
+                  const isLineFlashed = flashLineIds.has(line.id);
+
+                  const renderTrailingLineMeta = () => (
+                    <div
+                      contentEditable={false}
+                      className="ml-auto flex items-center gap-1.5 flex-shrink-0 self-center select-none"
+                      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                    >
+                      {activeRole && (
+                        <button
+                          type="button"
+                          contentEditable={false}
+                          data-testid={`vocal-role-chip-${line.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRolePickerTarget({
+                              sectionId: section.id,
+                              lineId: line.id,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                          style={{
+                            backgroundColor: `${activeRole.color || '#3b82f6'}26`,
+                            borderColor: `${activeRole.color || '#3b82f6'}66`,
+                            color: activeRole.color || '#3b82f6',
+                          }}
+                          title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: activeRole.color || '#3b82f6' }}
+                          />
+                          <span>{activeRole.label || activeRole.type}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        contentEditable={false}
+                        data-testid={`line-bars-badge-${line.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (batchBarsActive) return;
+                          const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
+                          const sec = nextDoc.sections.find((s) => s.id === section.id);
+                          const l = sec?.lines.find((x) => x.id === line.id);
+                          if (l) {
+                            const current = l.bars;
+                            const next =
+                              current === undefined
+                                ? 1
+                                : current === 1
+                                  ? 2
+                                  : current === 2
+                                    ? 4
+                                    : current === 4
+                                      ? 8
+                                      : undefined;
+                            l.bars = next;
+                            triggerChange(nextDoc, true);
+                          }
+                        }}
+                        className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[11px] font-semibold font-mono select-none transition-all duration-300 cursor-pointer active:scale-95"
+                        style={{
+                          backgroundColor: isLineFlashed
+                            ? 'var(--color-primary, #14b8a6)'
+                            : isExplicitLineOverride
+                              ? 'var(--c-accent-translucent, rgba(236, 72, 153, 0.15))'
+                              : 'transparent',
+                          border: isLineFlashed
+                            ? '1px solid var(--color-primary, #14b8a6)'
+                            : isExplicitLineOverride
+                              ? '1px solid var(--c-accent-border, rgba(236, 72, 153, 0.35))'
+                              : '1px solid transparent',
+                          color: isLineFlashed
+                            ? '#ffffff'
+                            : isExplicitLineOverride
+                              ? 'var(--c-accent, #f472b6)'
+                              : 'var(--c-text-muted, #94a3b8)',
+                          opacity: isLineFlashed
+                            ? 1
+                            : isExplicitLineOverride
+                              ? 0.95
+                              : batchBarsActive
+                                ? 0.75
+                                : 0.45,
+                          boxShadow: isLineFlashed ? '0 0 12px rgba(20, 184, 166, 0.5)' : undefined,
+                        }}
+                        title={`Line Timing: ${resolvedLineBars} ${resolvedLineBars === 1 ? 'bar' : 'bars'}${isExplicitLineOverride ? ' (custom override)' : ' (section default)'}`}
+                      >
+                        <span>
+                          {resolvedLineBars} {resolvedLineBars === 1 ? 'bar' : 'bars'}
+                        </span>
+                      </button>
+                    </div>
+                  );
+
                   // ── CONTINUOUS LYRICS RENDERING (LYRICS MODE) ──
                   if (mode === 'lyrics' && line.text && line.text.trim().length > 0) {
                     const hasMultipleSpans = line.spans && line.spans.length > 1;
@@ -4117,21 +4218,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-section-id={section.id}
                         data-line-index={lineIdx}
                         onClick={() => {
-                          if (batchBarsActive) {
-                            lineSelection.toggle(line.id);
-                            return;
-                          }
+                          if (batchBarsActive) return;
                           setLastActivePosition(section.id, lineIdx, line.id);
                         }}
                         onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
+                        onTouchStart={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text min-h-[1.75rem]"
+                        className={`group/line relative flex items-center py-1 px-2 transition-all rounded-lg min-h-[1.75rem] ${batchBarsActive ? 'select-none' : 'select-text'}`}
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
                           WebkitUserSelect: batchBarsActive ? 'none' : 'text',
                           userSelect: batchBarsActive ? 'none' : 'text',
+                          WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                           ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
                             borderLeft: '3px solid var(--color-primary, #14b8a6)',
                             background: 'rgba(20,184,166,0.12)',
@@ -4144,7 +4244,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             React to removeChild a text node the browser/IME may already have replaced. */}
                         <span
                           key={`content-${line.id}-${hasMultipleSpans ? `rich-${line.spans!.length}` : 'plain'}`}
-                          className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
+                          className={`lyric-line-content outline-none text-base leading-relaxed tracking-wide w-full ${batchBarsActive ? 'select-none' : 'select-text'}`}
                           data-line-text="true"
                           style={{
                             color: resolvedColor,
@@ -4152,8 +4252,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             fontStyle: line.format?.italic ? 'italic' : undefined,
                             textDecoration: line.format?.underline ? 'underline' : undefined,
                             fontFamily: 'inherit',
-                            WebkitUserSelect: 'text',
-                            userSelect: 'text',
+                            WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                            userSelect: batchBarsActive ? 'none' : 'text',
+                            WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                           }}
                         >
                           {hasMultipleSpans
@@ -4187,33 +4288,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               })
                             : line.text}
                         </span>
-                        {activeRole && (
-                          <button
-                            type="button"
-                            contentEditable={false}
-                            data-testid={`vocal-role-chip-${line.id}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRolePickerTarget({
-                                sectionId: section.id,
-                                lineId: line.id,
-                              });
-                            }}
-                            className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-2 shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                            style={{
-                              backgroundColor: `${activeRole.color || '#3b82f6'}26`,
-                              borderColor: `${activeRole.color || '#3b82f6'}66`,
-                              color: activeRole.color || '#3b82f6',
-                            }}
-                            title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
-                          >
-                            <span
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{ backgroundColor: activeRole.color || '#3b82f6' }}
-                            />
-                            <span>{activeRole.label || activeRole.type}</span>
-                          </button>
-                        )}
+                        {renderTrailingLineMeta()}
                       </div>
                     );
                   }
@@ -4230,21 +4305,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           data-section-id={section.id}
                           data-line-index={lineIdx}
                           onClick={() => {
-                            if (batchBarsActive) {
-                              lineSelection.toggle(line.id);
-                              return;
-                            }
+                            if (batchBarsActive) return;
                             setLastActivePosition(section.id, lineIdx, line.id);
                           }}
                           onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
+                          onTouchStart={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                           onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                           onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                          className="group/line relative flex items-center py-1 px-2 select-text min-h-[1.75rem] rounded-lg hover:bg-white/5 transition-colors"
+                          className={`group/line relative flex items-center py-1 px-2 min-h-[1.75rem] rounded-lg hover:bg-white/5 transition-colors ${batchBarsActive ? 'select-none' : 'select-text'}`}
                           style={{
                             transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                             transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
                             WebkitUserSelect: batchBarsActive ? 'none' : 'text',
                             userSelect: batchBarsActive ? 'none' : 'text',
+                            WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                             ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
                               borderLeft: '3px solid var(--color-primary, #14b8a6)',
                               background: 'rgba(20,184,166,0.12)',
@@ -4257,11 +4331,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               rather than reconcile the stale <br> child against the real DOM. */}
                           <span
                             key="empty-line-content"
-                            className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
+                            className={`lyric-line-content outline-none text-base leading-relaxed tracking-wide w-full ${batchBarsActive ? 'select-none' : 'select-text'}`}
                             data-line-text="true"
+                            style={{
+                              WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                              userSelect: batchBarsActive ? 'none' : 'text',
+                              WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
+                            }}
                           >
                             <br />
                           </span>
+                          {renderTrailingLineMeta()}
                         </div>
                       );
                     }
@@ -4272,14 +4352,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
-                        onClick={batchBarsActive ? () => lineSelection.toggle(line.id) : undefined}
+                        onClick={() => {
+                          if (batchBarsActive) return;
+                        }}
                         onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
+                        onTouchStart={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="relative flex items-center gap-2 py-1 px-1 rounded-lg"
+                        className={`relative flex items-center gap-2 py-1 px-1 rounded-lg ${batchBarsActive ? 'select-none' : ''}`}
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                          WebkitUserSelect: batchBarsActive ? 'none' : undefined,
+                          userSelect: batchBarsActive ? 'none' : undefined,
+                          WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                           ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
                             borderLeft: '3px solid var(--color-primary, #14b8a6)',
                             background: 'rgba(20,184,166,0.12)',
@@ -4316,6 +4402,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             </button>
                           ))}
                         </div>
+                        {renderTrailingLineMeta()}
                       </div>
                     );
                   }
@@ -4333,10 +4420,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       data-section-id={section.id}
                       data-line-index={lineIdx}
                       onClick={() => {
-                        if (batchBarsActive) {
-                          lineSelection.toggle(line.id);
-                          return;
-                        }
+                        if (batchBarsActive) return;
                         const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                         if (sel && sel.toString().length > 0) return;
                         setLastActivePosition(section.id, lineIdx, line.id);
@@ -4345,18 +4429,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         }
                       }}
                       onDoubleClick={() => {
+                        if (batchBarsActive) return;
                         setLastActivePosition(section.id, lineIdx, line.id);
                         setEditingLineId(line.id);
                       }}
                       onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
+                      onTouchStart={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                       onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                       onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                      className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-2 transition-all rounded-lg select-text"
+                      className={`group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-2 transition-all rounded-lg ${batchBarsActive ? 'select-none' : 'select-text'}`}
                       style={{
                         transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                         transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
                         WebkitUserSelect: batchBarsActive ? 'none' : 'text',
                         userSelect: batchBarsActive ? 'none' : 'text',
+                        WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                         ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
                           borderLeft: '3px solid var(--color-primary, #14b8a6)',
                           background: 'rgba(20,184,166,0.12)',
@@ -4382,10 +4469,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         return (
                           <div
                             key={`${w.start}-${w.end}-${wIdx}`}
-                            className="inline-flex flex-col items-start relative group/word select-text"
+                            className={`inline-flex flex-col items-start relative group/word ${batchBarsActive ? 'select-none' : 'select-text'}`}
                             style={{
-                              WebkitUserSelect: 'text',
-                              userSelect: 'text',
+                              WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                              userSelect: batchBarsActive ? 'none' : 'text',
+                              WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                             }}
                           >
                             {/* Chord Lane (only in BOTH mode) */}
@@ -4434,6 +4522,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             <span
                               data-word-text="true"
                               onClick={(e) => {
+                                if (batchBarsActive) return;
                                 const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                                 if (sel && sel.toString().length > 0) return;
                                 if (mode === 'both' && activePlacementChord) {
@@ -4441,10 +4530,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   handleAnchorChord(section.id, line.id, activePlacementChord, w.start);
                                 }
                               }}
-                              className={`text-base tracking-wide transition-all select-text ${
-                                mode === 'both' && activePlacementChord
-                                  ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted'
-                                  : 'cursor-text'
+                              className={`text-base tracking-wide transition-all ${
+                                batchBarsActive
+                                  ? 'select-none'
+                                  : mode === 'both' && activePlacementChord
+                                    ? 'cursor-pointer hover:text-sky-400 active:scale-95 underline decoration-sky-400/40 decoration-dotted select-text'
+                                    : 'cursor-text select-text'
                               }`}
                               style={{
                                 color: effectiveWordColor,
@@ -4457,8 +4548,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 padding: isHighlighted ? '1px 5px' : undefined,
                                 margin: isHighlighted ? '0 1px' : undefined,
                                 border: wordRole ? `1px solid ${wordRole.color}44` : (wordBgColor ? `1px solid ${wordBgColor}44` : undefined),
-                                WebkitUserSelect: 'text',
-                                userSelect: 'text',
+                                WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                                userSelect: batchBarsActive ? 'none' : 'text',
+                                WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                               }}
                             >
                               {w.word}
@@ -4466,63 +4558,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           </div>
                         );
                       })}
-
-                      {/* Line Bars Override */}
-                      <button
-                        type="button"
-                        contentEditable={false}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
-                          const sec = nextDoc.sections.find(s => s.id === section.id);
-                          const l = sec?.lines.find(x => x.id === line.id);
-                          if (l) {
-                            const current = l.bars;
-                            const next = current === undefined ? 1 : current === 1 ? 2 : current === 2 ? 4 : current === 4 ? 8 : undefined;
-                            l.bars = next;
-                            triggerChange(nextDoc);
-                          }
-                        }}
-                        className="opacity-0 group-hover/line:opacity-100 inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] text-[9px] font-extrabold uppercase px-2 rounded border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                        style={{
-                          backgroundColor: line.bars ? 'var(--c-accent-translucent, rgba(236, 72, 153, 0.1))' : 'var(--c-surface-hover, rgba(255,255,255,0.05))',
-                          borderColor: line.bars ? 'var(--c-accent-border, rgba(236, 72, 153, 0.3))' : 'var(--c-border, rgba(255,255,255,0.1))',
-                          color: line.bars ? 'var(--c-accent, #f472b6)' : 'var(--c-text-muted, #94a3b8)',
-                          opacity: line.bars ? 1 : undefined,
-                        }}
-                        title="Set Line Bars"
-                      >
-                        <span>{line.bars ? `${line.bars}b` : 'AUTO'}</span>
-                      </button>
-
-                      {/* Vocal Role badge if present on line */}
-                      {activeRole && (
-                        <button
-                          type="button"
-                          contentEditable={false}
-                          data-testid={`vocal-role-chip-${line.id}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRolePickerTarget({
-                              sectionId: section.id,
-                              lineId: line.id,
-                            });
-                          }}
-                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-                          style={{
-                            backgroundColor: `${activeRole.color || '#3b82f6'}26`,
-                            borderColor: `${activeRole.color || '#3b82f6'}66`,
-                            color: activeRole.color || '#3b82f6',
-                          }}
-                          title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
-                        >
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: activeRole.color || '#3b82f6' }}
-                          />
-                          <span>{activeRole.label || activeRole.type}</span>
-                        </button>
-                      )}
+                      {renderTrailingLineMeta()}
                     </div>
                   );
                 })}
@@ -4624,6 +4660,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     icon: 'timer',
                     sublabel: 'Assign bars to multiple lines',
                     onPress: () => {
+                      if (document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                      }
+                      window.getSelection()?.removeAllRanges();
                       setBatchBarsActive(true);
                       lineSelection.enter(new Set());
                     },
@@ -5957,8 +5997,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             1,
           );
           if (newSections !== currentDoc.sections) {
-            triggerChange({ ...currentDoc, sections: newSections });
+            triggerChange({ ...currentDoc, sections: newSections }, true);
           }
+          const flashed = new Set(lineSelection.selectedLineIds);
+          setFlashLineIds(flashed);
+          setTimeout(() => setFlashLineIds(new Set()), 500);
         }}
         onClose={() => {
           setBatchBarsActive(false);

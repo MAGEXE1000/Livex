@@ -28,7 +28,12 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
     if (!active) return;
     const handleTapOutside = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('#bars-assignment-dock') || target.closest('.bars-custom-sheet') || target.closest('[data-line-id]')) {
+      if (
+        target.closest('#bars-assignment-dock') ||
+        target.closest('.bars-custom-sheet') ||
+        target.closest('[data-line-id]') ||
+        target.closest('[role="dialog"]')
+      ) {
         return;
       }
       onClose();
@@ -40,6 +45,15 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
   if (!active && !showCustom) return null;
 
   const noAnim = preferences.reduceMotion;
+
+  const handleApply = (bars: number | null) => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate(20);
+      } catch (_) {}
+    }
+    onApply(bars);
+  };
 
   const content = (
     <>
@@ -59,40 +73,49 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 'var(--space-2)'
+          gap: 'var(--space-2)',
         }}
       >
-        <div style={{
-          background: 'var(--surface-float-bg, rgba(20, 20, 20, 0.85))',
-          backdropFilter: noAnim ? 'none' : 'blur(16px)',
-          WebkitBackdropFilter: noAnim ? 'none' : 'blur(16px)',
-          padding: 'var(--space-2) var(--space-4)',
-          borderRadius: '999px',
-          border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
-          color: 'var(--text-secondary, #a1a1a1)',
-          fontSize: 'var(--font-ui-sm, 13px)',
-          fontWeight: 500,
-          userSelect: 'none'
-        }}>
+        <div
+          style={{
+            background: 'var(--surface-float-bg, rgba(20, 20, 20, 0.85))',
+            backdropFilter: noAnim ? 'none' : 'blur(16px)',
+            WebkitBackdropFilter: noAnim ? 'none' : 'blur(16px)',
+            padding: 'var(--space-2) var(--space-4)',
+            borderRadius: '999px',
+            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+            color: 'var(--text-secondary, #a1a1a1)',
+            fontSize: 'var(--font-ui-sm, 13px)',
+            fontWeight: 500,
+            userSelect: 'none',
+          }}
+        >
           {selectedCount} line{selectedCount !== 1 ? 's' : ''} selected &bull; Tap or drag to select
         </div>
 
-        <div style={{
-          display: 'flex',
-          background: 'var(--surface-float-bg, rgba(20, 20, 20, 0.85))',
-          backdropFilter: noAnim ? 'none' : 'blur(16px)',
-          WebkitBackdropFilter: noAnim ? 'none' : 'blur(16px)',
-          borderRadius: 'var(--radius-3, 12px)',
-          border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
-          padding: 'var(--space-1)',
-          gap: 'var(--space-1)'
-        }}>
-          {[1, 2, 4].map(bars => (
+        <div
+          style={{
+            display: 'flex',
+            background: 'var(--surface-float-bg, rgba(20, 20, 20, 0.85))',
+            backdropFilter: noAnim ? 'none' : 'blur(16px)',
+            WebkitBackdropFilter: noAnim ? 'none' : 'blur(16px)',
+            borderRadius: 'var(--radius-3, 12px)',
+            border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))',
+            padding: 'var(--space-1)',
+            gap: 'var(--space-1)',
+          }}
+        >
+          {[1, 2, 4].map((bars) => (
             <button
               key={bars}
+              type="button"
               disabled={selectedCount === 0}
-              onClick={() => onApply(bars)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleApply(bars);
+              }}
               aria-label={`Set to ${bars} bar${bars > 1 ? 's' : ''}`}
+              className="active:scale-95 transition-transform"
               style={{
                 height: '44px',
                 minWidth: '44px',
@@ -104,16 +127,21 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
                 fontSize: 'var(--font-ui-md, 15px)',
                 fontWeight: 600,
                 cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
-                touchAction: 'manipulation'
+                touchAction: 'manipulation',
               }}
             >
               {bars} Bar{bars > 1 ? 's' : ''}
             </button>
           ))}
           <button
+            type="button"
             disabled={selectedCount === 0}
-            onClick={() => setShowCustom(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCustom(true);
+            }}
             aria-label="Set custom bars"
+            className="active:scale-95 transition-transform"
             style={{
               height: '44px',
               minWidth: '44px',
@@ -125,17 +153,28 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
               fontSize: 'var(--font-ui-md, 15px)',
               fontWeight: 600,
               cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
-              touchAction: 'manipulation'
+              touchAction: 'manipulation',
             }}
           >
             Custom&hellip;
           </button>
-          
-          <div style={{ width: '1px', background: 'var(--border-subtle, rgba(255,255,255,0.1))', margin: 'var(--space-1) var(--space-1)' }} />
-          
+
+          <div
+            style={{
+              width: '1px',
+              background: 'var(--border-subtle, rgba(255,255,255,0.1))',
+              margin: 'var(--space-1) var(--space-1)',
+            }}
+          />
+
           <button
-            onClick={onClose}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             aria-label="Done"
+            className="active:scale-95 transition-transform"
             style={{
               height: '44px',
               width: '44px',
@@ -147,21 +186,21 @@ export function BarsAssignmentDock({ active, selectedCount, onApply, onClose }: 
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              touchAction: 'manipulation'
+              touchAction: 'manipulation',
             }}
           >
             <Check size={20} />
           </button>
         </div>
       </div>
-      
+
       {showCustom && (
         <div className="bars-custom-sheet">
           <CustomBarsSheet
             open={showCustom}
             onClose={() => setShowCustom(false)}
             onConfirm={(bars) => {
-              onApply(bars);
+              handleApply(bars);
               setShowCustom(false);
             }}
             initialBars={4}

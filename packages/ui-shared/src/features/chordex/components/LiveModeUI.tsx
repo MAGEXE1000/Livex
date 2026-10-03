@@ -1113,8 +1113,8 @@ export function ChordsLiveView({ state }: { state: LiveModeState }) {
         onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
         onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         onPointerCancel={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-        title="Song Live Settings"
-        aria-label="Song Live Settings"
+        title="Live Settings"
+        aria-label="Live Settings"
       >
         <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
           settings
@@ -2737,7 +2737,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 fontSize: '18px',
               }}
             >
-              Song Live Settings
+              Live Settings
             </p>
             <p
               style={{
@@ -3263,122 +3263,6 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
           </div>
 
-          {/* ── BARS PER LINE ─────────────── */}
-          <div
-            data-testid="live-settings-bars-per-line-card"
-            style={{
-              padding: '14px',
-              borderRadius: '16px',
-              background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
-              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-body)',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.12em',
-                  }}
-                >
-                  Bars per Line
-                </p>
-                <p
-                  style={{
-                    color: 'var(--c-text-secondary)',
-                    fontSize: '11px',
-                    fontFamily: 'Inter',
-                    marginTop: '2px',
-                  }}
-                >
-                  Measures per lyric line
-                </p>
-              </div>
-              <div
-                data-testid="bars-per-line-badge"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '4px 10px',
-                  borderRadius: '100px',
-                  background: `${accent.from}15`,
-                  border: `1px solid ${accent.from}30`,
-                  color: accent.from,
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {(state.barsPerLine || 2) === 1 ? '1 Bar (4 beats)' : `${state.barsPerLine || 2} Bars (${(state.barsPerLine || 2) * 4} beats)`}
-              </div>
-            </div>
-
-            <div
-              role="radiogroup"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '8px',
-                width: '100%',
-              }}
-            >
-              {[1, 2, 3, 4].map((bars) => {
-                const isActive = (state.barsPerLine || 2) === bars;
-                return (
-                  <button
-                    key={bars}
-                    data-testid={`bars-per-line-option-${bars}`}
-                    onClick={() => state.setBarsPerLine(bars)}
-                    className="btn-smooth"
-                    style={{
-                      position: 'relative',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '10px 4px',
-                      borderRadius: '12px',
-                      background: isActive
-                        ? accent.from
-                        : 'var(--surface-container-low, rgba(255, 255, 255, 0.05))',
-                      border: `1px solid ${
-                        isActive ? accent.from : 'var(--c-border, rgba(255, 255, 255, 0.08))'
-                      }`,
-                      color: isActive ? '#ffffff' : 'var(--c-text-primary)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: isActive ? 800 : 600,
-                        letterSpacing: '-0.02em',
-                        marginBottom: '2px',
-                      }}
-                    >
-                      {bars} Bar{bars > 1 ? 's' : ''}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* ── 4. SONG DURATION (MINUTES : SECONDS) ─────────────── */}
           <div
