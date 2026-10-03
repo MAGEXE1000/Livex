@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { GripVertical, Pencil } from 'lucide-react';
@@ -327,6 +327,29 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const pendingFocusLineIdRef = useRef<string | null>(null);
   const targetCursorOffsetRef = useRef<number | null>(null);
+  const caretPosRef = useRef<{ lineId: string; offset: number } | null>(null);
+
+  // Restore caret position seamlessly across React renders in contenteditable
+  useLayoutEffect(() => {
+    if (caretPosRef.current && workspaceRef.current) {
+      const { lineId, offset } = caretPosRef.current;
+      caretPosRef.current = null;
+      const lineSpan = workspaceRef.current.querySelector<HTMLElement>(`[data-line-id="${lineId}"] .lyric-line-content`);
+      if (lineSpan) {
+        const textNode = lineSpan.firstChild || lineSpan;
+        const textLen = textNode.nodeType === Node.TEXT_NODE ? (textNode as Text).length : lineSpan.textContent?.length || 0;
+        const clamped = Math.min(textLen, Math.max(0, offset));
+        const range = document.createRange();
+        try {
+          range.setStart(textNode, clamped);
+          range.collapse(true);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        } catch (_) {}
+      }
+    }
+  });
 
   // Focus management effect for newly created or targeted lines
   useEffect(() => {
@@ -335,6 +358,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       setEditingLineId(lineId);
       pendingFocusLineIdRef.current = null;
       setTimeout(() => {
+        // 1. Try textarea/input ref first if present
         const el = inputRefs.current[lineId];
         if (el) {
           el.focus();
@@ -343,6 +367,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           try {
             const clamped = Math.min(el.value.length, Math.max(0, offset));
             el.setSelectionRange(clamped, clamped);
+          } catch (_) {}
+          return;
+        }
+
+        // 2. Try contenteditable DOM span element
+        const lineSpan = workspaceRef.current?.querySelector<HTMLElement>(`[data-line-id="${lineId}"] .lyric-line-content`);
+        if (lineSpan) {
+          const textNode = lineSpan.firstChild || lineSpan;
+          const textLen = textNode.nodeType === Node.TEXT_NODE ? (textNode as Text).length : lineSpan.textContent?.length || 0;
+          const offset = targetCursorOffsetRef.current !== null ? Math.min(textLen, Math.max(0, targetCursorOffsetRef.current)) : textLen;
+          targetCursorOffsetRef.current = null;
+          try {
+            const range = document.createRange();
+            range.setStart(textNode, offset);
+            range.collapse(true);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
           } catch (_) {}
         }
       }, 10);
@@ -2069,8 +2111,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   // ── BATCH SELECTION DELETION ──────────────────────────────────────────
 
   const handleBatchDeleteSelection = useCallback(() => {
-    const sel = capturedSelectionRef.current;
+    const sel = capturedSelectionRef.current || captureSelection();
     if (!sel || sel.lines.length === 0) return;
+
+    const firstLine = sel.lines[0];
+    if (firstLine) {
+      pendingFocusLineIdRef.current = firstLine.lineId;
+      targetCursorOffsetRef.current = firstLine.start;
+    }
 
     updateDoc((doc) => batchDeleteLyricsSelection(doc, sel), true);
 
@@ -2081,13 +2129,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     setHasCapturedSelection(false);
     setShowToolbarColorPicker(false);
     setShowToolbarRolePicker(false);
-  }, [updateDoc]);
+  }, [updateDoc, captureSelection]);
 
   // Intercept Backspace and Delete keys (both hardware and virtual IME) when multi-line selection is active
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Backspace' || e.key === 'Delete') && hasCapturedSelection) {
-        if (capturedSelectionRef.current && capturedSelectionRef.current.lines.length > 0) {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        const curSel = capturedSelectionRef.current || captureSelection();
+        if (curSel && curSel.lines.length > 0) {
           e.preventDefault();
           e.stopPropagation();
           handleBatchDeleteSelection();
@@ -2097,12 +2146,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
     const handleBeforeInput = (e: InputEvent) => {
       if (
-        (e.inputType === 'deleteContentBackward' ||
-          e.inputType === 'deleteContentForward' ||
-          e.inputType === 'deleteByCut') &&
-        hasCapturedSelection
+        e.inputType === 'deleteContentBackward' ||
+        e.inputType === 'deleteContentForward' ||
+        e.inputType === 'deleteByCut'
       ) {
-        if (capturedSelectionRef.current && capturedSelectionRef.current.lines.length > 0) {
+        const curSel = capturedSelectionRef.current || captureSelection();
+        if (curSel && curSel.lines.length > 0) {
           e.preventDefault();
           e.stopPropagation();
           handleBatchDeleteSelection();
@@ -2116,7 +2165,147 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
     };
-  }, [hasCapturedSelection, handleBatchDeleteSelection]);
+  }, [captureSelection, handleBatchDeleteSelection]);
+
+  // Canvas keydown event handler: intercepts Enter, Backspace (batch deletion or merge), and Arrow navigation
+  const handleCanvasKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>) => {
+      // 1. Backspace / Delete: batch delete if selection exists
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
+        const curSel = capturedSelectionRef.current || captureSelection();
+        const hasSelection = (winSel && !winSel.isCollapsed && winSel.toString().length > 0) || (curSel && curSel.lines.length > 0);
+        if (hasSelection) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleBatchDeleteSelection();
+          return;
+        }
+
+        // Backspace with collapsed cursor at start of line: merge or delete empty line
+        if (e.key === 'Backspace' && winSel && winSel.isCollapsed && winSel.rangeCount > 0) {
+          const range = winSel.getRangeAt(0);
+          const node = range.startContainer;
+          const el = node instanceof HTMLElement ? node : node.parentElement;
+          const lineEl = el?.closest('[data-line-id]') as HTMLElement | null;
+          if (lineEl && range.startOffset === 0) {
+            const sectionId = lineEl.dataset.sectionId || '';
+            const lineId = lineEl.dataset.lineId || '';
+            const lineIdx = parseInt(lineEl.dataset.lineIndex || '0', 10);
+            const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+            const currentLine = currentSec?.lines[lineIdx];
+
+            if (currentLine && currentLine.text.length === 0) {
+              e.preventDefault();
+              e.stopPropagation();
+              const prevLine = lineIdx > 0 ? currentSec?.lines[lineIdx - 1] : undefined;
+              handleDeleteLine(sectionId, lineId, prevLine?.id);
+              return;
+            } else if (lineIdx > 0 || (currentDoc.sections.length > 1 && currentDoc.sections[0].id !== sectionId)) {
+              e.preventDefault();
+              e.stopPropagation();
+              handleMergeWithPrevious(sectionId, lineIdx, lineId);
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Enter: split line or promote structural element
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
+        if (!winSel || !winSel.anchorNode) return;
+        const node = winSel.anchorNode;
+        const el = node instanceof HTMLElement ? node : node.parentElement;
+        const lineEl = el?.closest('[data-line-id]') as HTMLElement | null;
+        if (!lineEl) return;
+
+        const sectionId = lineEl.dataset.sectionId || '';
+        const lineId = lineEl.dataset.lineId || '';
+        const lineIdx = parseInt(lineEl.dataset.lineIndex || '0', 10);
+
+        const currentSec = currentDoc.sections.find((s) => s.id === sectionId);
+        const currentLine = currentSec?.lines[lineIdx];
+        const lineText = currentLine?.text || lineEl.querySelector('.lyric-line-content')?.textContent || '';
+
+        const parseResult = parseLineStructuralElement(lineText);
+        if (parseResult.kind === 'section') {
+          handlePromoteLineToSection(sectionId, lineIdx, parseResult);
+          return;
+        }
+        if (parseResult.kind === 'interlude') {
+          handlePromoteLineToInterlude(sectionId, lineIdx, parseResult);
+          return;
+        }
+
+        const splitPos = winSel.rangeCount > 0 ? winSel.getRangeAt(0).startOffset : lineText.length;
+        handleSplitLine(sectionId, lineIdx, lineId, splitPos);
+      }
+    },
+    [
+      captureSelection,
+      handleBatchDeleteSelection,
+      currentDoc.sections,
+      handleDeleteLine,
+      handleMergeWithPrevious,
+      handlePromoteLineToSection,
+      handlePromoteLineToInterlude,
+      handleSplitLine,
+    ]
+  );
+
+  // Canvas beforeinput event handler: intercepts Android Gboard delete events during multi-line selection
+  const handleCanvasBeforeInput = useCallback(
+    (e: React.FormEvent<HTMLElement>) => {
+      const nativeEvent = e.nativeEvent as InputEvent;
+      if (
+        nativeEvent.inputType === 'deleteContentBackward' ||
+        nativeEvent.inputType === 'deleteContentForward' ||
+        nativeEvent.inputType === 'deleteByCut'
+      ) {
+        const curSel = capturedSelectionRef.current || captureSelection();
+        if (curSel && curSel.lines.length > 0) {
+          e.preventDefault();
+          handleBatchDeleteSelection();
+        }
+      }
+    },
+    [captureSelection, handleBatchDeleteSelection]
+  );
+
+  // Canvas input event handler: synchronizes line text to document model and preserves caret
+  const handleCanvasInput = useCallback(
+    (e: React.FormEvent<HTMLElement>) => {
+      const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+      if (!sel || !sel.anchorNode) return;
+      const anchorNode = sel.anchorNode;
+      const anchorEl = anchorNode instanceof HTMLElement ? anchorNode : anchorNode.parentElement;
+      const lineEl = anchorEl?.closest('[data-line-id]') as HTMLElement | null;
+      if (!lineEl) return;
+
+      const sectionId = lineEl.dataset.sectionId || '';
+      const lineId = lineEl.dataset.lineId || '';
+      const lineIdx = parseInt(lineEl.dataset.lineIndex || '0', 10);
+      if (!sectionId || !lineId) return;
+
+      setLastActivePosition(sectionId, lineIdx, lineId);
+
+      const contentEl = lineEl.querySelector<HTMLElement>('.lyric-line-content') || lineEl;
+      const rawText = contentEl.textContent || '';
+
+      const currentOffset = sel.rangeCount > 0 ? sel.getRangeAt(0).startOffset : rawText.length;
+      caretPosRef.current = { lineId, offset: currentOffset };
+
+      const currentSec = localDocRef.current.sections.find((s) => s.id === sectionId);
+      const currentLine = currentSec?.lines.find((l) => l.id === lineId);
+      if (currentLine && currentLine.text !== rawText) {
+        handleUpdateLineText(sectionId, lineId, rawText);
+      }
+    },
+    [handleUpdateLineText, setLastActivePosition]
+  );
 
   // ── CHORD PLACEMENT HELPERS ──────────────────────────────────────────
 
@@ -2814,6 +3003,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
         tabIndex={0}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
         className="flex flex-col gap-4 outline-none w-full select-text min-h-[300px] cursor-text lyrics-canvas-document"
         style={{
           paddingBottom: '24px',
@@ -2823,6 +3014,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           willChange: 'transform',
         }}
         data-purpose="teleprompter-writing-canvas"
+        onKeyDown={handleCanvasKeyDown}
+        onBeforeInput={handleCanvasBeforeInput}
+        onInput={handleCanvasInput}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             const lastSec = currentDoc.sections[currentDoc.sections.length - 1];
@@ -3075,7 +3269,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             >
               {/* Canonical Section Header Strip */}
               {hasSectionHeader && (
-                <div className="flex items-center justify-between gap-2 pb-2 mb-1 border-b border-white/5 select-none">
+                <div contentEditable={false} className="flex items-center justify-between gap-2 pb-2 mb-1 border-b border-white/5 select-none">
                   {/* Left Cluster: Drag Handle, Name & Vocal Role */}
                   <div className="flex items-center gap-1.5 min-w-0">
                     {/* Section Drag Handle */}
@@ -3211,6 +3405,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     return (
                       <div
                         key={line.id || lineIdx}
+                        contentEditable={false}
                         data-testid={`lyric-line-interlude-${section.id}-${lineIdx}`}
                         data-line-id={line.id}
                         data-section-id={section.id}
@@ -3222,7 +3417,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex flex-col gap-2 p-2.5 sm:p-3 rounded-2xl transition-all border my-2 shadow-xs"
+                        className="group/line relative flex flex-col gap-2 p-2.5 sm:p-3 rounded-2xl transition-all border my-2 shadow-xs select-none"
                         style={{
                           transform: isDragged
                             ? 'scale(1.02)'
@@ -3514,9 +3709,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   const isLineBold = Boolean(line.format?.bold || currentDoc.formatting?.bold);
 
                   const isEditing = editingLineId === line.id;
+                  void isEditing; // Preserved for backwards compatibility
 
-                  // ── INLINE EDITING STATE (when tapped/focused) ──
-                  if (isEditing) {
+                  // ── CONTINUOUS LYRICS RENDERING (UNCONSTRAINED SELECTION) ──
+                  if (mode === 'lyrics' && (!line.spans || line.spans.length <= 1) && (!line.chords || line.chords.length === 0) && line.text && line.text.trim().length > 0) {
                     return (
                       <div
                         key={line.id || lineIdx}
@@ -3524,9 +3720,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
+                        onClick={() => {
+                          setLastActivePosition(section.id, lineIdx, line.id);
+                        }}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                        className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text"
+                        className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text min-h-[1.75rem]"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
@@ -3534,77 +3733,25 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           userSelect: 'text',
                         }}
                       >
-                        <textarea
-                          ref={(el) => {
-                            inputRefs.current[line.id] = el;
-                            if (el) {
-                              el.style.height = 'auto';
-                              el.style.height = `${el.scrollHeight}px`;
-                            }
-                          }}
-                          rows={1}
-                          autoFocus
-                          value={line.text}
-                          onFocus={() => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                          }}
-                          onBlur={(e) => {
-                            setEditingLineId(null);
-                            const val = e.target.value.trim();
-                            if (val.length > 0) {
-                              const parseResult = parseLineStructuralElement(val);
-                              if (parseResult.kind === 'section') {
-                                handlePromoteLineToSection(section.id, lineIdx, parseResult);
-                              } else if (parseResult.kind === 'interlude') {
-                                handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
-                              }
-                            }
-                            const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
-                            if (winSel && !winSel.isCollapsed && winSel.toString().length > 0) {
-                              const mainEl = workspaceRef.current?.querySelector<HTMLElement>('[data-purpose="teleprompter-writing-canvas"]');
-                              mainEl?.focus({ preventScroll: true });
-                            }
-                          }}
-                          onChange={(e) => {
-                            setLastActivePosition(section.id, lineIdx, line.id);
-                            handleUpdateLineText(section.id, line.id, e.target.value);
-                            const el = e.target;
-                            el.style.height = 'auto';
-                            el.style.height = `${el.scrollHeight}px`;
-                          }}
-                          onKeyDown={(e) => handleLineKeyDown(e, section.id, lineIdx, line.id)}
-                          onPaste={(e) => handlePasteIntoLine(e, section.id, lineIdx, line.id)}
-                          placeholder={secIdx === 0 && lineIdx === 0 && section.lines.length === 1 ? 'Write or paste lyrics here...' : ''}
-                          data-testid={`lyric-line-input-${lineIdx}`}
-                          data-no-focus-ring="true"
-                          className="no-focus-ring w-full bg-transparent border-0 outline-none text-base leading-relaxed tracking-wide transition-colors focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
+                        <span
+                          className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
+                          data-line-text="true"
                           style={{
                             color: resolvedColor,
                             fontWeight: isLineBold ? 700 : 500,
+                            fontStyle: line.format?.italic ? 'italic' : undefined,
+                            textDecoration: line.format?.underline ? 'underline' : undefined,
                             fontFamily: 'inherit',
-                            caretColor: accent.from || '#2563EB',
-                            outline: 'none',
-                            outlineOffset: 0,
-                            border: 'none',
-                            boxShadow: 'none',
-                            resize: 'none',
-                            overflow: 'hidden',
-                            padding: 0,
-                            margin: 0,
-                            height: 'auto',
-                            minHeight: '1.75rem',
-                            display: 'block',
-                            WebkitTapHighlightColor: 'transparent',
                             WebkitUserSelect: 'text',
                             userSelect: 'text',
-                          } as React.CSSProperties}
-                          autoCapitalize="sentences"
-                          autoCorrect="on"
-                          spellCheck={false}
-                        />
+                          }}
+                        >
+                          {line.text}
+                        </span>
                         {activeRole && (
                           <button
                             type="button"
+                            contentEditable={false}
                             data-testid={`vocal-role-chip-${line.id}`}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3640,20 +3787,28 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       return (
                         <div
                           key={line.id || lineIdx}
+                          data-testid={`lyric-line-${section.id}-${lineIdx}`}
                           data-line-id={line.id}
                           data-section-id={section.id}
                           data-line-index={lineIdx}
                           onClick={() => {
                             setLastActivePosition(section.id, lineIdx, line.id);
-                            setEditingLineId(line.id);
                           }}
                           onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                           onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
-                          className="h-7 w-full flex items-center px-2 py-0.5 select-none cursor-text rounded-lg hover:bg-white/5 transition-colors"
+                          className="group/line relative flex items-center py-1 px-2 select-text min-h-[1.75rem] rounded-lg hover:bg-white/5 transition-colors"
+                          style={{
+                            transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
+                            transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                            WebkitUserSelect: 'text',
+                            userSelect: 'text',
+                          }}
                         >
-                          <span className="text-base text-gray-500/40 italic select-none">
-                            {isInitialEmpty ? 'Write or paste lyrics here...' : 'Empty line (tap to write)'}
-                          </span>
+                          <span
+                            className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
+                            data-line-text="true"
+                            data-placeholder={isInitialEmpty ? 'Write or paste lyrics here...' : 'Empty line (tap to write)'}
+                          />
                         </div>
                       );
                     }
@@ -3765,9 +3920,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           >
                             {/* Chord Lane (only in BOTH mode) */}
                             {mode === 'both' && (
-                              <div className="h-6 flex items-center gap-1 select-none">
+                              <div contentEditable={false} className="h-6 flex items-center gap-1 select-none">
                                 {wordChords.map((c) => (
                                   <button
+                                    contentEditable={false}
                                     key={c.id}
                                     type="button"
                                     data-testid={`placed-chord-${c.chord}`}
@@ -3844,6 +4000,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       {activeRole && (
                         <button
                           type="button"
+                          contentEditable={false}
                           data-testid={`vocal-role-chip-${line.id}`}
                           onClick={(e) => {
                             e.stopPropagation();

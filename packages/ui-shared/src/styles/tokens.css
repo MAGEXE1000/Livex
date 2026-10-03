@@ -4186,10 +4186,12 @@ html.light .button--secondary {
 
 /* ── Global Selection Lockdown (Strict App-wide Immunity) ── */
 :root,
-body {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+html,
+body,
+#root {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
 }
 
 /* Whitelist editable content only */
@@ -4198,20 +4200,39 @@ textarea,
 [contenteditable="true"],
 .selectable-text,
 .lyrics-canvas-document,
-.lyrics-canvas-document * {
+.lyric-line-content,
+.lyric-word-span {
   -webkit-user-select: text !important;
   user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
+.lyric-line-content:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(156, 163, 175, 0.4);
+  font-style: italic;
+  pointer-events: none;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 /* Explicitly lock all interactive chrome, buttons, headers, icons, and navigation */
 button,
+button *,
 a,
 nav,
+nav *,
 header,
+header *,
 [role="button"],
 [role="tab"],
 .no-select,
-.select-none {
+.select-none,
+[data-purpose="section-drag-handle"],
+[data-testid*="chord"],
+[data-testid*="vocal-role"],
+[data-testid="canva-formatting-toolbar"],
+[data-testid="canva-formatting-toolbar"] * {
   -webkit-user-select: none !important;
   user-select: none !important;
   -webkit-touch-callout: none !important;
