@@ -149,4 +149,4 @@ export * from './lib/lyrics/lyricSegments';
 
 // Setlists & Repertoire Subsystem
 export * from './types/setlist';
-
+export * from './lib/metronome/pacing';

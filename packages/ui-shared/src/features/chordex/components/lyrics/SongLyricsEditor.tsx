@@ -3682,22 +3682,34 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   <div className="flex items-center ml-2">
                     <button
                       type="button"
+                      contentEditable={false}
                       onClick={(e) => {
                         e.stopPropagation();
                         const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
                         const sec = nextDoc.sections.find(s => s.id === section.id);
                         if (sec) {
                           const current = sec.barsPerLine;
-                          const next = current === undefined ? 1 : current === 1 ? 2 : current === 2 ? 4 : current === 4 ? 8 : undefined;
+                          let next: number | undefined;
+                          if (current === undefined) next = 1;
+                          else if (current === 1) next = 2;
+                          else if (current === 2) next = 4;
+                          else {
+                            const val = window.prompt('Enter custom bars per line (1-32), or leave blank for default:', current.toString());
+                            if (!val) next = undefined;
+                            else {
+                              const parsed = parseInt(val, 10);
+                              next = (!isNaN(parsed) && parsed >= 1 && parsed <= 32) ? parsed : undefined;
+                            }
+                          }
                           sec.barsPerLine = next;
                           triggerChange(nextDoc);
                         }
                       }}
-                      className="opacity-70 group-hover/sec:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10"
+                      className="opacity-70 group-hover/sec:opacity-100 inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10 select-none"
                       style={{
-                        backgroundColor: section.barsPerLine ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
-                        borderColor: section.barsPerLine ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255,255,255,0.08)',
-                        color: section.barsPerLine ? '#60a5fa' : 'var(--c-text-muted, #94a3b8)',
+                        backgroundColor: section.barsPerLine ? 'var(--c-accent-translucent, rgba(59, 130, 246, 0.1))' : 'var(--c-surface-hover, rgba(255,255,255,0.04))',
+                        borderColor: section.barsPerLine ? 'var(--c-accent-border, rgba(59, 130, 246, 0.3))' : 'var(--c-border, rgba(255,255,255,0.08))',
+                        color: section.barsPerLine ? 'var(--c-accent, #60a5fa)' : 'var(--c-text-muted, #94a3b8)',
                       }}
                       title="Set Section Bars Per Line"
                     >
@@ -4422,16 +4434,16 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             triggerChange(nextDoc);
                           }
                         }}
-                        className="opacity-0 group-hover/line:opacity-100 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                        className="opacity-0 group-hover/line:opacity-100 inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] text-[9px] font-extrabold uppercase px-2 rounded border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                         style={{
-                          backgroundColor: line.bars ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255,255,255,0.05)',
-                          borderColor: line.bars ? 'rgba(236, 72, 153, 0.3)' : 'rgba(255,255,255,0.1)',
-                          color: line.bars ? '#f472b6' : 'var(--c-text-muted, #94a3b8)',
+                          backgroundColor: line.bars ? 'var(--c-accent-translucent, rgba(236, 72, 153, 0.1))' : 'var(--c-surface-hover, rgba(255,255,255,0.05))',
+                          borderColor: line.bars ? 'var(--c-accent-border, rgba(236, 72, 153, 0.3))' : 'var(--c-border, rgba(255,255,255,0.1))',
+                          color: line.bars ? 'var(--c-accent, #f472b6)' : 'var(--c-text-muted, #94a3b8)',
                           opacity: line.bars ? 1 : undefined,
                         }}
                         title="Set Line Bars"
                       >
-                        <span>{line.bars ? `${line.bars} BARS` : 'DEF BARS'}</span>
+                        <span>{line.bars ? `${line.bars}b` : 'AUTO'}</span>
                       </button>
 
                       {/* Vocal Role badge if present on line */}

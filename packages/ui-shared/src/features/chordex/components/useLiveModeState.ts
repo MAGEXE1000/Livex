@@ -218,6 +218,8 @@ export interface LiveModeState {
   currentBar: number;
   msPerChord: number;
   msPerLine: number;
+  totalLineBeats: number;
+  lineBeatsElapsed: number;
 
   // Duration & Timing Engine
   targetDurationSeconds?: number;
@@ -742,6 +744,9 @@ export function useLiveModeState(
 
   const autoPlayRef = useRef(autoPlay);
   autoPlayRef.current = autoPlay;
+
+  const presetRef = useRef(preset);
+  presetRef.current = preset;
 
   const emitLiveSync = useCallback(
     (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
@@ -1866,8 +1871,8 @@ export function useLiveModeState(
           const interludeMs = Math.max(1000, activeLine?.line?.explicitDurationMs || 15000);
           totalLineBeats = Math.max(1, Math.round(interludeMs / beatDurMs));
         } else {
-          const sec = timingScheduleRef.current?.document?.sections?.find(s => s.id === activeLine?.sectionId);
-          totalLineBeats = resolveLineBars(activeLine?.line, sec, barsPerLineRef.current || 1) * beatsPerMeasure;
+          const sec = presetRef.current?.lyrics?.sections?.find(s => s.id === activeLine?.sectionId);
+          totalLineBeats = resolveLineBars(activeLine?.line, sec as any, barsPerLineRef.current || 1) * beatsPerMeasure;
         }
         
         setTotalLineBeats(totalLineBeats);
