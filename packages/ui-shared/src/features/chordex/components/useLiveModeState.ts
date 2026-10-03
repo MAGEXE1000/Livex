@@ -33,6 +33,8 @@ import {
   type LiveSyncAction,
   type LobbyAttendee,
   type SetlistQueueItem,
+  MetronomeAudioEngine,
+  type MetronomeSoundId,
 } from '@workspace/livex-core';
 import { animateScrollTop } from '../../../lib/animatedScroll';
 
@@ -44,6 +46,7 @@ export interface LiveSetlistContext {
   onSelectIndex: (index: number) => void;
 }
 
+export type LiveCountdownMode = 'off' | '1bar' | '2bars' | '3s' | '5s';
 
 export type VisualStyle = 'both' | 'diagram' | 'name';
 
@@ -156,6 +159,23 @@ export interface LiveModeState {
   // Playback & Timing
   autoPlay: boolean;
   setAutoPlay: (v: boolean | ((prev: boolean) => boolean)) => void;
+  countdownMode: LiveCountdownMode;
+  setCountdownMode: (mode: LiveCountdownMode) => void;
+  isCountingDown: boolean;
+  countdownBeat: number;
+  countdownTotalBeats: number;
+  countdownCurrentBar: number;
+  countdownTotalBars: number;
+  cancelCountdown: () => void;
+  togglePlayWithCountdown: () => void;
+  metronomeEnabled: boolean;
+  setMetronomeEnabled: (enabled: boolean) => void;
+  metronomeVolume: number;
+  setMetronomeVolume: (vol: number) => void;
+  metronomeSound: MetronomeSoundId;
+  setMetronomeSound: (sound: MetronomeSoundId) => void;
+  showTempoModal: boolean;
+  setShowTempoModal: (show: boolean | ((prev: boolean) => boolean)) => void;
   showSettings: boolean;
   setShowSettings: (v: boolean | ((prev: boolean) => boolean)) => void;
   showQuickActions: boolean;
@@ -836,6 +856,218 @@ export function useLiveModeState(
     [preset?.id]
   );
 
+  // ── Countdown & Metronome Engine State ──────────────────────────
+  const [countdownMode, setCountdownModeState] = useState<LiveCountdownMode>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_live_countdown_mode') as LiveCountdownMode;
+      if (saved === 'off' || saved === '1bar' || saved === '2bars' || saved === '3s' || saved === '5s') {
+        return saved;
+      }
+    } catch (_) {}
+    return '1bar';
+  });
+
+  const setCountdownMode = useCallback((mode: LiveCountdownMode) => {
+    setCountdownModeState(mode);
+    try {
+      localStorage.setItem('chordex_live_countdown_mode', mode);
+    } catch (_) {}
+  }, []);
+
+  const [metronomeEnabled, setMetronomeEnabledState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chordex_live_metronome_enabled') === 'true';
+    } catch (_) {}
+    return false;
+  });
+
+  const setMetronomeEnabled = useCallback((enabled: boolean) => {
+    setMetronomeEnabledState(enabled);
+    try {
+      localStorage.setItem('chordex_live_metronome_enabled', String(enabled));
+    } catch (_) {}
+  }, []);
+
+  const [metronomeVolume, setMetronomeVolumeState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_live_metronome_volume');
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) return parsed;
+      }
+    } catch (_) {}
+    return 0.85;
+  });
+
+  const setMetronomeVolume = useCallback((vol: number) => {
+    const clamped = Math.max(0, Math.min(1, vol));
+    setMetronomeVolumeState(clamped);
+    try {
+      localStorage.setItem('chordex_live_metronome_volume', String(clamped));
+    } catch (_) {}
+  }, []);
+
+  const [metronomeSound, setMetronomeSoundState] = useState<MetronomeSoundId>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_live_metronome_sound') as MetronomeSoundId;
+      if (saved) return saved;
+    } catch (_) {}
+    return 'woodblock';
+  });
+
+  const setMetronomeSound = useCallback((sound: MetronomeSoundId) => {
+    setMetronomeSoundState(sound);
+    try {
+      localStorage.setItem('chordex_live_metronome_sound', sound);
+    } catch (_) {}
+  }, []);
+
+  const [showTempoModal, setShowTempoModal] = useState<boolean>(false);
+  const [isCountingDown, setIsCountingDown] = useState<boolean>(false);
+  const [countdownBeat, setCountdownBeat] = useState<number>(4);
+  const [countdownTotalBeats, setCountdownTotalBeats] = useState<number>(4);
+  const [countdownCurrentBar, setCountdownCurrentBar] = useState<number>(1);
+  const [countdownTotalBars, setCountdownTotalBars] = useState<number>(1);
+
+  const isCountingDownRef = useRef<boolean>(false);
+  const countdownBeatRef = useRef<number>(4);
+  const countdownTotalBeatsRef = useRef<number>(4);
+  const metronomeEnabledRef = useRef<boolean>(metronomeEnabled);
+  metronomeEnabledRef.current = metronomeEnabled;
+
+  const liveMetronomeRef = useRef<MetronomeAudioEngine | null>(null);
+
+  // Initialize Metronome Audio Engine
+  useEffect(() => {
+    const engine = new MetronomeAudioEngine();
+    liveMetronomeRef.current = engine;
+    return () => {
+      engine.stop();
+      liveMetronomeRef.current = null;
+    };
+  }, []);
+
+  // Update metronome properties on change
+  useEffect(() => {
+    const engine = liveMetronomeRef.current;
+    if (!engine) return;
+    const effectiveBpm = speed || bpmOverride || 120;
+    engine.setBpm(effectiveBpm);
+    engine.setVolume(metronomeVolume);
+    engine.setSound(metronomeSound);
+  }, [speed, bpmOverride, metronomeVolume, metronomeSound]);
+
+  // Manage metronome playback sync when autoPlay changes
+  useEffect(() => {
+    const engine = liveMetronomeRef.current;
+    if (!engine) return;
+
+    if (autoPlay && metronomeEnabled && !isCountingDownRef.current) {
+      const effectiveBpm = speed || bpmOverride || 120;
+      engine.setBpm(effectiveBpm);
+      engine.setVolume(metronomeVolume);
+      engine.setSound(metronomeSound);
+      engine.setMuted(false);
+      engine.start();
+    } else if (!autoPlay && !isCountingDownRef.current) {
+      engine.stop();
+    }
+  }, [autoPlay, metronomeEnabled, speed, bpmOverride, metronomeVolume, metronomeSound]);
+
+  const cancelCountdown = useCallback(() => {
+    isCountingDownRef.current = false;
+    setIsCountingDown(false);
+    liveMetronomeRef.current?.stop();
+  }, []);
+
+  const togglePlayWithCountdown = useCallback(() => {
+    if (isLockedToLeader) return;
+
+    // If currently counting down, cancel immediately
+    if (isCountingDownRef.current) {
+      cancelCountdown();
+      return;
+    }
+
+    // If currently playing, pause
+    if (autoPlay) {
+      setAutoPlay(false);
+      liveMetronomeRef.current?.stop();
+      return;
+    }
+
+    // Starting playback from paused state
+    const effectiveBpm = speed || bpmOverride || 120;
+
+    if (countdownMode === 'off') {
+      setAutoPlay(true);
+      return;
+    }
+
+    // Calculate countdown parameters
+    let totalBeats = 4;
+    let totalBars = 1;
+    if (countdownMode === '1bar') {
+      totalBeats = 4;
+      totalBars = 1;
+    } else if (countdownMode === '2bars') {
+      totalBeats = 8;
+      totalBars = 2;
+    } else if (countdownMode === '3s') {
+      const beatDurSec = 60 / effectiveBpm;
+      totalBeats = Math.max(1, Math.round(3 / beatDurSec));
+      totalBars = 1;
+    } else if (countdownMode === '5s') {
+      const beatDurSec = 60 / effectiveBpm;
+      totalBeats = Math.max(1, Math.round(5 / beatDurSec));
+      totalBars = 1;
+    }
+
+    isCountingDownRef.current = true;
+    countdownBeatRef.current = totalBeats;
+    countdownTotalBeatsRef.current = totalBeats;
+    setIsCountingDown(true);
+    setCountdownBeat(totalBeats);
+    setCountdownTotalBeats(totalBeats);
+    setCountdownCurrentBar(1);
+    setCountdownTotalBars(totalBars);
+
+    const engine = liveMetronomeRef.current;
+    if (!engine) {
+      setAutoPlay(true);
+      return;
+    }
+
+    engine.stop();
+    engine.setBpm(effectiveBpm);
+    engine.setVolume(metronomeVolume > 0 ? metronomeVolume : 0.85);
+    engine.setSound(metronomeSound);
+    engine.setMuted(false);
+
+    let beatsRemaining = totalBeats;
+
+    engine.onBeat = () => {
+      if (!isCountingDownRef.current) return;
+      beatsRemaining -= 1;
+      if (beatsRemaining > 0) {
+        countdownBeatRef.current = beatsRemaining;
+        setCountdownBeat(beatsRemaining);
+        const currentBarNum = Math.ceil((totalBeats - beatsRemaining + 1) / 4);
+        setCountdownCurrentBar(currentBarNum);
+      } else {
+        // Countdown completed!
+        isCountingDownRef.current = false;
+        setIsCountingDown(false);
+        setAutoPlay(true);
+        if (!metronomeEnabledRef.current) {
+          engine.stop();
+        }
+      }
+    };
+
+    engine.start();
+  }, [isLockedToLeader, autoPlay, speed, bpmOverride, countdownMode, metronomeVolume, metronomeSound, setAutoPlay, cancelCountdown]);
+
   const teleprompterContainerRef = useRef<HTMLDivElement | null>(null);
 
   // ── Chord Progression Data ──────────────────────────────────────
@@ -1113,6 +1345,9 @@ export function useLiveModeState(
   const handleClose = useCallback(() => {
     if (isExiting) return;
     setIsExiting(true);
+    setIsCountingDown(false);
+    isCountingDownRef.current = false;
+    liveMetronomeRef.current?.stop();
     setNavLocked(false);
     setNavHidden(false);
     setIsBroadcasting(false);
@@ -1976,6 +2211,23 @@ export function useLiveModeState(
     transposeOffset,
     autoPlay,
     setAutoPlay,
+    countdownMode,
+    setCountdownMode,
+    isCountingDown,
+    countdownBeat,
+    countdownTotalBeats,
+    countdownCurrentBar,
+    countdownTotalBars,
+    cancelCountdown,
+    togglePlayWithCountdown,
+    metronomeEnabled,
+    setMetronomeEnabled,
+    metronomeVolume,
+    setMetronomeVolume,
+    metronomeSound,
+    setMetronomeSound,
+    showTempoModal,
+    setShowTempoModal,
     showSettings,
     setShowSettings,
     showQuickActions,

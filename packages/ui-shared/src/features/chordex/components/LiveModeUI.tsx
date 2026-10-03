@@ -122,7 +122,36 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         </>
       )}
       <span style={{ opacity: 0.35 }}>•</span>
-      <span style={{ fontWeight: 700 }}>SPEED {currentSpeed}</span>
+      <button
+        type="button"
+        data-testid="live-header-tempo-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          state.setShowTempoModal(true);
+        }}
+        style={{
+          pointerEvents: 'auto',
+          background: state.metronomeEnabled ? `${accent.from}28` : 'rgba(255,255,255,0.08)',
+          border: `1px solid ${state.metronomeEnabled ? accent.from + '55' : 'rgba(255,255,255,0.14)'}`,
+          borderRadius: '9999px',
+          padding: '1px 7px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px',
+          color: state.metronomeEnabled ? accent.from : 'var(--c-text-primary, #ffffff)',
+          fontSize: '10px',
+          fontWeight: 800,
+          cursor: 'pointer',
+          outline: 'none',
+          transition: 'all 0.15s ease',
+        }}
+        title="Adjust Tempo & Metronome"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '11px', color: state.metronomeEnabled ? accent.from : 'var(--c-text-secondary)' }}>
+          {state.metronomeEnabled ? 'metronome' : 'speed'}
+        </span>
+        <span>{currentSpeed} BPM</span>
+      </button>
       <span style={{ opacity: 0.35 }}>•</span>
       <span>{durationText}</span>
     </span>
@@ -1693,7 +1722,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
         <button
           type="button"
           data-testid="lyrics-play-pause-btn"
-          onClick={() => setAutoPlay((a) => !a)}
+          onClick={state.togglePlayWithCountdown}
           style={{
             width: '46px',
             height: '46px',
@@ -1701,17 +1730,25 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            background: state.isCountingDown
+              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
             color: '#fff',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: `0 4px 16px ${accent.from}66`,
+            boxShadow: `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
           }}
-          title="Toggle Auto-Scroll"
+          title={state.isCountingDown ? 'Cancel Countdown' : autoPlay ? 'Pause' : 'Play (with Countdown)'}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', fontWeight: 'bold' }}>
-            {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
+          {state.isCountingDown ? (
+            <span style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace' }}>
+              {state.countdownBeat}
+            </span>
+          ) : (
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', fontWeight: 'bold' }}>
+              {autoPlay ? 'pause' : 'play_arrow'}
+            </span>
+          )}
         </button>
 
         {state.isInSetlist && state.nextSetlistSong && (
@@ -2339,7 +2376,8 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
 
         <button
           type="button"
-          onClick={() => setAutoPlay((a) => !a)}
+          data-testid="hybrid-play-pause-btn"
+          onClick={state.togglePlayWithCountdown}
           style={{
             width: '46px',
             height: '46px',
@@ -2347,17 +2385,25 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            background: state.isCountingDown
+              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
             color: '#fff',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: `0 4px 16px ${accent.from}66`,
+            boxShadow: `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
           }}
-          title="Toggle Playback"
+          title={state.isCountingDown ? 'Cancel Countdown' : autoPlay ? 'Pause' : 'Play (with Countdown)'}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>
-            {autoPlay ? 'pause' : 'play_arrow'}
-          </span>
+          {state.isCountingDown ? (
+            <span style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace' }}>
+              {state.countdownBeat}
+            </span>
+          ) : (
+            <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>
+              {autoPlay ? 'pause' : 'play_arrow'}
+            </span>
+          )}
         </button>
 
         {state.isInSetlist && state.nextSetlistSong && (
@@ -3530,6 +3576,257 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 );
               })}
             </div>
+          </div>
+
+          {/* ── 5. PRE-ROLL COUNTDOWN ─────────────────────────────── */}
+          <div
+            data-testid="live-settings-countdown-card"
+            style={{
+              padding: '14px',
+              borderRadius: '16px',
+              background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-primary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  Pre-Roll Countdown
+                </p>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'Inter',
+                    marginTop: '2px',
+                  }}
+                >
+                  Lead-in beats before auto-scrolling starts
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '5px',
+                padding: '3px',
+                background: 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                borderRadius: '14px',
+                border: '1px solid var(--c-border, rgba(255,255,255,0.08))',
+              }}
+            >
+              {[
+                { id: 'off' as const, label: 'Off' },
+                { id: '1bar' as const, label: '1 Bar' },
+                { id: '2bars' as const, label: '2 Bars' },
+                { id: '3s' as const, label: '3s' },
+                { id: '5s' as const, label: '5s' },
+              ].map((opt) => {
+                const isSelected = state.countdownMode === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    data-testid={`countdown-opt-${opt.id}`}
+                    onClick={() => state.setCountdownMode(opt.id)}
+                    className="btn-smooth"
+                    style={{
+                      padding: '8px 2px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: isSelected ? accent.from : 'transparent',
+                      color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                      fontWeight: isSelected ? 800 : 600,
+                      fontSize: '11px',
+                      fontFamily: 'var(--studio-font-body)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── 6. AUDIBLE METRONOME & CLICK TRACK ─────────────────── */}
+          <div
+            data-testid="live-settings-metronome-card"
+            style={{
+              padding: '14px',
+              borderRadius: '16px',
+              background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p
+                  style={{
+                    color: 'var(--c-text-primary)',
+                    fontFamily: 'var(--studio-font-body)',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  Audible Metronome
+                </p>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'Inter',
+                    marginTop: '2px',
+                  }}
+                >
+                  Synchronous Web Audio click during live performance
+                </p>
+              </div>
+
+              <button
+                type="button"
+                data-testid="live-settings-metronome-toggle"
+                onClick={() => state.setMetronomeEnabled(!state.metronomeEnabled)}
+                style={{
+                  width: '42px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  background: state.metronomeEnabled ? accent.from : 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease',
+                  padding: '2px',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'block',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    transform: state.metronomeEnabled ? 'translateX(18px)' : 'translateX(0)',
+                    transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                />
+              </button>
+            </div>
+
+            {state.metronomeEnabled && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Volume slider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--c-text-secondary)' }}>
+                    volume_up
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={state.metronomeVolume}
+                    onChange={(e) => state.setMetronomeVolume(Number(e.target.value))}
+                    style={{
+                      flex: 1,
+                      accentColor: accent.from,
+                      height: '16px',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--c-text-secondary)', width: '32px', textAlign: 'right' }}>
+                    {Math.round(state.metronomeVolume * 100)}%
+                  </span>
+                </div>
+
+                {/* Sound selector */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                  {[
+                    { id: 'woodblock' as const, label: 'Woodblock' },
+                    { id: 'click' as const, label: 'Stick' },
+                    { id: 'studioclick' as const, label: 'Studio' },
+                    { id: 'digital' as const, label: 'Digital' },
+                  ].map((s) => {
+                    const isSoundSel = state.metronomeSound === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => state.setMetronomeSound(s.id)}
+                        style={{
+                          padding: '7px 2px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: isSoundSel ? `${accent.from}33` : 'rgba(255,255,255,0.05)',
+                          borderBottom: isSoundSel ? `2px solid ${accent.from}` : 'none',
+                          color: isSoundSel ? '#ffffff' : 'var(--c-text-secondary)',
+                          fontSize: '10.5px',
+                          fontWeight: isSoundSel ? 800 : 600,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Open Tempo Morph Controller Button */}
+            <button
+              type="button"
+              data-testid="live-settings-open-tempo-btn"
+              onClick={() => {
+                setShowSettings(false);
+                state.setShowTempoModal(true);
+              }}
+              style={{
+                width: '100%',
+                height: '36px',
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'var(--c-text-primary, #ffffff)',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                marginTop: '2px',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: accent.from }}>
+                speed
+              </span>
+              Open Tempo & Tap Tempo Controller
+            </button>
           </div>
 
           {/* ── STAGE BAND LIVE SYNC CARD ────────────────────────── */}

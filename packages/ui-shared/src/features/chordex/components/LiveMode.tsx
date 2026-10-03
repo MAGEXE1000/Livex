@@ -15,6 +15,8 @@ import {
   RehearsalWaitingLobby,
   LeaderLobbyPresenceBar,
 } from './LiveModeUI';
+import { LiveCountdownOverlay } from './LiveCountdownOverlay';
+import { LiveTempoMorphPopup } from './LiveTempoMorphPopup';
 
 interface LiveModeProps {
   preset: SongPreset;
@@ -118,6 +120,37 @@ export default function LiveMode({
           {showLeaderPresenceBar && <LeaderLobbyPresenceBar state={state} />}
 
           {state.showSettings && <LiveModeSettings state={state} />}
+
+          {state.isCountingDown && (
+            <LiveCountdownOverlay
+              currentBeat={state.countdownBeat}
+              totalBeats={state.countdownTotalBeats}
+              currentBar={state.countdownCurrentBar}
+              totalBars={state.countdownTotalBars}
+              bpm={state.speed || state.bpmOverride}
+              accent={state.accent}
+              onCancel={state.cancelCountdown}
+            />
+          )}
+
+          {state.showTempoModal && (
+            <LiveTempoMorphPopup
+              bpm={state.speed || state.bpmOverride}
+              onBpmChange={(newBpm) => {
+                state.setSpeed(newBpm);
+              }}
+              accent={state.accent}
+              countdownMode={state.countdownMode}
+              onCountdownModeChange={state.setCountdownMode}
+              metronomeEnabled={state.metronomeEnabled}
+              onMetronomeToggle={state.setMetronomeEnabled}
+              metronomeVolume={state.metronomeVolume}
+              onMetronomeVolumeChange={state.setMetronomeVolume}
+              metronomeSound={state.metronomeSound}
+              onMetronomeSoundChange={state.setMetronomeSound}
+              onClose={() => state.setShowTempoModal(false)}
+            />
+          )}
         </>
       )}
     </div>
