@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.86';
-export const NATIVE_VERSION_CODE = 40686;
-export const WEB_VERSION = '4.6.86';
+export const NATIVE_VERSION = '4.6.87';
+export const NATIVE_VERSION_CODE = 40687;
+export const WEB_VERSION = '4.6.87';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e324c321';
+export const APP_COMMIT_SHA = '375734d3';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 11:30:00 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 12:01:54 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,9 +101,9 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Fixed',
     items: [
-      'Decouple Canvas Placeholder & Enforce Clean Buffer Initialization: Replaced pseudo-element data-placeholder and lyric-line-content:empty::before mechanism with a decoupled, non-interactive sibling overlay rendered strictly when the document is empty.',
-      'Clean Document State & Selection Capture: The editable DOM containers never hold synthetic placeholder strings or attributes, preventing selection captures, input desynchronization, and clipboard concatenation errors.',
-      'Pseudo-Element Pruning: Cleaned out obsolete lyric-line-content:empty::before CSS rules across shared tokens, Android, and Web styles to prevent browser caret misalignments and unexpected DOM injections.',
+      'Canvas Touch Focus & Soft Keyboard Activation: Resolved empty canvas collapse on Android WebView by inserting a `<br />` inside the empty `.lyric-line-content` span, establishing a valid DOM caret anchor so tapping empty lyric space immediately focuses and opens the Android virtual keyboard.',
+      "Empty-State Banner Touch Isolation: Isolated the `[NO LYRICS]` banner inside `<main contentEditable>` in Both mode with `contentEditable={false}`, `userSelect: 'none'`, and `select-none` to permanently prevent WebView from targeting banner text nodes or intercepting cursor placement.",
+      'Lyrics & Both Mode Parity: Ensured seamless touch-to-type capability across both Lyrics and Both workspaces with clean caret positioning and zero placeholder interference.',
     ],
   },
 ];
@@ -118,6 +118,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.87',
+    date: '2026-10-02',
+    highlights: [
+      'Canvas Touch Focus & Soft Keyboard Activation: Resolved empty canvas collapse on Android WebView by inserting a `<br />` inside the empty `.lyric-line-content` span, establishing a valid DOM caret anchor so tapping empty lyric space immediately focuses and opens the Android virtual keyboard.',
+      "Empty-State Banner Touch Isolation: Isolated the `[NO LYRICS]` banner inside `<main contentEditable>` in Both mode with `contentEditable={false}`, `userSelect: 'none'`, and `select-none` to permanently prevent WebView from targeting banner text nodes or intercepting cursor placement.",
+      'Lyrics & Both Mode Parity: Ensured seamless touch-to-type capability across both Lyrics and Both workspaces with clean caret positioning and zero placeholder interference.',
+    ],
+  },
   {
     version: '4.6.86',
     date: '2026-10-02',
@@ -211,16 +220,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Continuous Multi-Line Selection Document Model: Unified lyrics engine to support uninterrupted cross-line text selection handles across sections and verses.',
       "Clean Floating Action Button Menu: Purged redundant 'Text Presentation' / 'Text & Colors' modal from the FAB (+) menu, keeping only structural additive actions.",
       'Natural Lyrics Canvas Top Alignment: Ensured unified top alignment and empty blank canvas typing failsafes across Chords, Lyrics, and Both modes.',
-    ],
-  },
-  {
-    version: '4.6.77',
-    date: '2026-10-02',
-    highlights: [
-      'Clear All Assigned Roles Modal Action: Added an instant reset button inside the Vocal Roles modal with destructive confirmation styling to strip all assigned vocal roles across all lines in a song at once with real-time UI synchronization.',
-      'Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.',
-      'Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.',
-      'Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.',
     ],
   },
 ];
