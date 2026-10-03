@@ -1,7 +1,8 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphMenu } from '../../../shared/design-system/MorphMenu';
 import AppSpinner from '../../../shared/loading/AppSpinner';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import { animateScrollTop } from '../../../lib/animatedScroll';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   useChordStore,
@@ -723,10 +724,10 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
       return;
     }
 
-    startTimeRef.current = Date.now() - elapsedTimeRef.current;
+    startTimeRef.current = performance.now() - elapsedTimeRef.current;
 
     const tick = () => {
-      const delta = Date.now() - startTimeRef.current;
+      const delta = performance.now() - startTimeRef.current;
       const nextTime = Math.min(totalDuration, delta);
       elapsedTimeRef.current = nextTime;
 
@@ -821,12 +822,17 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
       const containerHeight = container.clientHeight;
       const activeHeight = activeEl.clientHeight;
       const activeTop = activeEl.offsetTop;
-      container.scrollTo({
-        top: activeTop - containerHeight / 2 + activeHeight / 2,
-        behavior: 'smooth',
-      });
+      animateScrollTop(container, activeTop - containerHeight / 2 + activeHeight / 2);
     }
   }, [activeLine, activeSections.length]);
+
+  // Time label has no React-managed children (see JSX), so imperative writes in the rAF loop are safe.
+  // This layout effect covers initial mount, seek, and end-of-playback positions.
+  useLayoutEffect(() => {
+    if (timeLabelRef.current) {
+      timeLabelRef.current.textContent = `${Math.floor(elapsedTime / 1000)}s`;
+    }
+  }, [elapsedTime]);
 
   const handlePlayToggle = () => {
     if (elapsedTimeRef.current >= totalDuration) {
@@ -865,7 +871,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
       timeLabelRef.current.textContent = `${Math.floor(nextTime / 1000)}s`;
     }
     if (isPlaying) {
-      startTimeRef.current = Date.now() - nextTime;
+      startTimeRef.current = performance.now() - nextTime;
     }
   };
 
@@ -1951,9 +1957,7 @@ export function SongPracticeView({ song, onClose }: SongPracticeViewProps) {
             <span
               ref={timeLabelRef}
               style={{ fontSize: '9px', color: 'var(--c-text-muted)', fontFamily: 'monospace' }}
-            >
-              {Math.floor(elapsedTime / 1000)}s
-            </span>
+            />
             <input
               ref={sliderRef}
               type="range"

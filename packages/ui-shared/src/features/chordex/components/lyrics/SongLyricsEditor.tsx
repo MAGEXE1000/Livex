@@ -57,6 +57,7 @@ import {
   type Chord,
   shiftChordOffsets,
   batchDeleteLyricsSelection,
+  reconcileSpansOnTextEdit,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/buttons';
@@ -172,59 +173,30 @@ export interface CapturedSelectionData {
   fullText: string;
 }
 
+/**
+ * Structural deep equality (undefined-valued keys ignored). Used instead of a hand-picked field
+ * list so newly added formatting fields (italic, underline, highlight, span roles, ...) can never
+ * be silently excluded from the external-sync comparison.
+ */
+function deepEqualIgnoringUndefined(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ra = a as Record<string, unknown>;
+  const rb = b as Record<string, unknown>;
+  const ka = Object.keys(ra).filter((k) => ra[k] !== undefined);
+  const kb = Object.keys(rb).filter((k) => rb[k] !== undefined);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    if (!deepEqualIgnoringUndefined(ra[k], rb[k])) return false;
+  }
+  return true;
+}
+
 function areLyricsEqual(a: SongLyricsDocument | undefined, b: SongLyricsDocument | undefined): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
-  if (a.sections.length !== b.sections.length) return false;
-  if (a.formatting?.bold !== b.formatting?.bold || a.formatting?.defaultColor !== b.formatting?.defaultColor) return false;
-
-  for (let i = 0; i < a.sections.length; i++) {
-    const sa = a.sections[i];
-    const sb = b.sections[i];
-    if (sa.id !== sb.id || sa.name !== sb.name || sa.type !== sb.type) return false;
-    if (
-      sa.vocalRole?.type !== sb.vocalRole?.type ||
-      sa.vocalRole?.label !== sb.vocalRole?.label ||
-      sa.vocalRole?.color !== sb.vocalRole?.color
-    ) {
-      return false;
-    }
-    if (sa.lines.length !== sb.lines.length) return false;
-
-    for (let j = 0; j < sa.lines.length; j++) {
-      const la = sa.lines[j];
-      const lb = sb.lines[j];
-      if (la.id !== lb.id || la.text !== lb.text || la.type !== lb.type) return false;
-      if (la.format?.bold !== lb.format?.bold || la.format?.color !== lb.format?.color) return false;
-      if (la.explicitDurationMs !== lb.explicitDurationMs) return false;
-      if (
-        la.vocalRole?.type !== lb.vocalRole?.type ||
-        la.vocalRole?.label !== lb.vocalRole?.label ||
-        la.vocalRole?.color !== lb.vocalRole?.color
-      ) {
-        return false;
-      }
-
-      const chordsA = la.chords ?? [];
-      const chordsB = lb.chords ?? [];
-      if (chordsA.length !== chordsB.length) return false;
-      for (let k = 0; k < chordsA.length; k++) {
-        if (chordsA[k].id !== chordsB[k].id || chordsA[k].chord !== chordsB[k].chord || chordsA[k].offset !== chordsB[k].offset) {
-          return false;
-        }
-      }
-
-      const spansA = la.spans ?? [];
-      const spansB = lb.spans ?? [];
-      if (spansA.length !== spansB.length) return false;
-      for (let k = 0; k < spansA.length; k++) {
-        if (spansA[k].text !== spansB[k].text || spansA[k].format?.bold !== spansB[k].format?.bold || spansA[k].format?.color !== spansB[k].format?.color) {
-          return false;
-        }
-      }
-    }
-  }
-  return true;
+  return deepEqualIgnoringUndefined(a, b);
 }
 
 export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
@@ -248,17 +220,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const localDocRef = useRef<SongLyricsDocument>(localDoc);
   localDocRef.current = localDoc;
 
-  // Keep localDoc in sync when external lyrics prop updates (bailing out when identical to eliminate loops)
-  useEffect(() => {
-    if (lyrics && Array.isArray(lyrics.sections)) {
-      if (lyrics === localDocRef.current) return;
-      if (areLyricsEqual(lyrics, localDocRef.current)) return;
-      const normalized = normalizeLyricsDocumentStructure(lyrics);
-      setLocalDoc(normalized);
-      localDocRef.current = normalized;
-    }
-  }, [lyrics]);
-
   const currentDoc = localDoc;
 
   // Memoized empty document check for clean placeholder overlay rendering
@@ -280,6 +241,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Debounced store mutation ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Last document we pushed to the store; its echo coming back via props must never overwrite newer local edits
+  const lastEmittedRef = useRef<SongLyricsDocument | null>(null);
 
   const triggerChange = useCallback(
     (nextDoc: SongLyricsDocument, immediate = false) => {
@@ -292,9 +255,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       }
 
       if (immediate) {
+        lastEmittedRef.current = nextDoc;
         onChangeRef.current(nextDoc);
       } else {
         debounceTimerRef.current = setTimeout(() => {
+          lastEmittedRef.current = nextDoc;
           onChangeRef.current(nextDoc);
           debounceTimerRef.current = null;
         }, 400);
@@ -302,6 +267,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     },
     []
   );
+
+  // Keep localDoc in sync when the external lyrics prop genuinely changes (remote sync, undo elsewhere).
+  // Guards: our own echo is ignored, and pending local edits always win (they flush to the store shortly).
+  useEffect(() => {
+    if (!lyrics || !Array.isArray(lyrics.sections)) return;
+    if (lyrics === localDocRef.current || lyrics === lastEmittedRef.current) return;
+    if (debounceTimerRef.current) return;
+    if (areLyricsEqual(lyrics, localDocRef.current)) return;
+    const normalized = normalizeLyricsDocumentStructure(lyrics);
+    setLocalDoc(normalized);
+    localDocRef.current = normalized;
+  }, [lyrics]);
 
   // Canvas reset key for failsafe DOM reconciliation
   const [canvasResetKey, setCanvasResetKey] = useState(0);
@@ -450,6 +427,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Workspace container ref for DOM selection measurements
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  // contentEditable host: delete interception is scoped to events originating inside it
+  const canvasRef = useRef<HTMLElement | null>(null);
 
   // Active cursor/line position tracking for arbitrary element insertion
   const lastActivePositionRef = useRef<{
@@ -880,19 +859,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 lines: sec.lines.map((l) => {
                   if (l.id !== lineId) return l;
                   const shiftedChords = shiftChordOffsets(l.text, newText, l.chords);
-                  let nextSpans = l.spans;
-                  if (l.spans && l.spans.length > 0) {
-                    if (newText === l.text) {
-                      nextSpans = l.spans;
-                    } else if (l.spans.length === 1) {
-                      nextSpans = [{ text: newText, format: l.spans[0].format }];
-                    } else {
-                      // Multi-span line: update leading span text length or preserve spans
-                      nextSpans = l.spans.map((s, idx) =>
-                        idx === 0 ? { ...s, text: newText.slice(0, Math.max(1, s.text.length)) } : s
-                      );
-                    }
-                  }
+                  const nextSpans = reconcileSpansOnTextEdit(l.spans, l.text, newText);
                   return {
                     ...l,
                     text: newText,
@@ -1938,39 +1905,51 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     setShowToolbarRolePicker(false);
   }, [updateDoc, captureSelection]);
 
-  // Intercept Backspace and Delete keys (both hardware and virtual IME) when multi-line selection is active
+  // Intercept Backspace/Delete (hardware + virtual IME) ONLY when the event originates inside the
+  // lyrics canvas AND a live, non-collapsed selection exists. A stale captured selection must never
+  // hijack Backspace in unrelated inputs (chord search, role name, modals, title fields).
   useEffect(() => {
+    const isInCanvas = (t: EventTarget | null): boolean =>
+      t instanceof Node && canvasRef.current !== null && canvasRef.current.contains(t);
+
+    const hasLiveSelection = (): boolean => {
+      const ws = typeof window !== 'undefined' ? window.getSelection() : null;
+      return Boolean(ws && ws.rangeCount > 0 && !ws.isCollapsed);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Backspace' || e.key === 'Delete') {
-        const curSel = capturedSelectionRef.current || captureSelection();
-        if (curSel && curSel.lines.length > 0) {
-          e.preventDefault();
-          e.stopPropagation();
-          handleBatchDeleteSelection();
-        }
+      if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+      if (!isInCanvas(e.target) || !hasLiveSelection()) return;
+      const curSel = capturedSelectionRef.current || captureSelection();
+      if (curSel && curSel.lines.length > 0) {
+        e.preventDefault();
+        e.stopPropagation(); // in-canvas only: stops the React onKeyDown path from deleting twice
+        handleBatchDeleteSelection();
       }
     };
 
     const handleBeforeInput = (e: InputEvent) => {
       if (
-        e.inputType === 'deleteContentBackward' ||
-        e.inputType === 'deleteContentForward' ||
-        e.inputType === 'deleteByCut'
+        e.inputType !== 'deleteContentBackward' &&
+        e.inputType !== 'deleteContentForward' &&
+        e.inputType !== 'deleteByCut'
       ) {
-        const curSel = capturedSelectionRef.current || captureSelection();
-        if (curSel && curSel.lines.length > 0) {
-          e.preventDefault();
-          e.stopPropagation();
-          handleBatchDeleteSelection();
-        }
+        return;
+      }
+      if (!isInCanvas(e.target) || !hasLiveSelection()) return;
+      const curSel = capturedSelectionRef.current || captureSelection();
+      if (curSel && curSel.lines.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleBatchDeleteSelection();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('beforeinput', handleBeforeInput as EventListener, true);
+    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('beforeinput', handleBeforeInput as EventListener, true);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
     };
   }, [captureSelection, handleBatchDeleteSelection]);
 
@@ -2345,25 +2324,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       handlePromoteLineToInterlude,
       handleSplitLine,
     ]
-  );
-
-  // Canvas beforeinput event handler: intercepts Android Gboard delete events during multi-line selection
-  const handleCanvasBeforeInput = useCallback(
-    (e: React.FormEvent<HTMLElement>) => {
-      const nativeEvent = e.nativeEvent as InputEvent;
-      if (
-        nativeEvent.inputType === 'deleteContentBackward' ||
-        nativeEvent.inputType === 'deleteContentForward' ||
-        nativeEvent.inputType === 'deleteByCut'
-      ) {
-        const curSel = capturedSelectionRef.current || captureSelection();
-        if (curSel && curSel.lines.length > 0) {
-          e.preventDefault();
-          handleBatchDeleteSelection();
-        }
-      }
-    },
-    [captureSelection, handleBatchDeleteSelection]
   );
 
   // Canvas input event handler: synchronizes line text to document model and preserves caret
@@ -2892,11 +2852,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         }),
       }));
 
-      if (role) {
-        toast.success(`Role "${role.label || role.type}" assigned`);
-      } else {
-        toast.info('Role highlight cleared');
-      }
+      // No toast — role highlight is inline formatting (zero-toast policy)
       setRolePickerTarget(null);
     },
     [rolePickerTarget, updateDoc]
@@ -2928,7 +2884,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     }));
     setRolePickerTarget(null);
     setShowFormattingModal(false);
-    toast.success('All vocal roles cleared');
+    // No toast — role/format changes are visual-only (zero-toast policy)
   }, [updateDoc]);
 
   const handleCreateCustomRole = useCallback(() => {
@@ -3121,6 +3077,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
         key={`lyrics-canvas-${canvasResetKey}`}
+        ref={canvasRef}
         contentEditable={true}
         suppressContentEditableWarning={true}
         className="flex flex-col gap-4 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0 border-0 ring-0 w-full select-text min-h-[300px] cursor-text lyrics-canvas-document no-focus-ring"
@@ -3140,7 +3097,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         }}
         data-purpose="teleprompter-writing-canvas"
         onKeyDown={handleCanvasKeyDown}
-        onBeforeInput={handleCanvasBeforeInput}
         onInput={handleCanvasInput}
         onCopy={handleCanvasCopy}
         onCut={handleCanvasCut}
@@ -3864,7 +3820,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           userSelect: 'text',
                         }}
                       >
+                        {/* Structural key: switching between a plain text child and rich span children
+                            replaces this element (removed via the app-owned line div) instead of asking
+                            React to removeChild a text node the browser/IME may already have replaced. */}
                         <span
+                          key={`content-${line.id}-${hasMultipleSpans ? `rich-${line.spans!.length}` : 'plain'}`}
                           className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
                           data-line-text="true"
                           style={{

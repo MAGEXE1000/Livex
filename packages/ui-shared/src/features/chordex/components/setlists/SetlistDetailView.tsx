@@ -88,8 +88,7 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
       }}
       whileDrag={{
         scale: 1.02,
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-        backgroundColor: 'var(--surface-card-bg, #ffffff)',
+        boxShadow: '0 14px 32px rgba(0, 0, 0, 0.35)',
         borderColor: 'var(--c-accent-from, #2563EB)',
         opacity: 0.92,
         zIndex: 50,

@@ -122,7 +122,7 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         </>
       )}
       <span style={{ opacity: 0.35 }}>•</span>
-      <span style={{ fontWeight: 700 }}>BPM {currentSpeed}</span>
+      <span style={{ fontWeight: 700 }}>SPEED {currentSpeed}</span>
       <span style={{ opacity: 0.35 }}>•</span>
       <span>{durationText}</span>
     </span>
@@ -1924,7 +1924,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
               color: 'var(--c-text-secondary)',
             }}
           >
-            BAR {currentBar} OF {state.barsPerLine || 2} • BEAT {currentBeat + 1}
+            LINE {Math.min(currentLineIdx + 1, teleprompterLines.length)} OF {teleprompterLines.length}
           </span>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             {[0, 1, 2, 3].map((b) => (
@@ -3076,7 +3076,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   letterSpacing: '0.15em',
                 }}
               >
-                BPM
+                SPEED
               </p>
               <p
                 style={{
@@ -3092,7 +3092,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 type="button"
-                aria-label="Decrease BPM"
+                aria-label="Decrease speed"
                 onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.max(40, b - 1))}
                 className="btn-smooth"
                 style={{
@@ -3124,7 +3124,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               />
               <button
                 type="button"
-                aria-label="Increase BPM"
+                aria-label="Increase speed"
                 onClick={() => (state.setSpeed || state.setBpmOverride)((b: number) => Math.min(400, b + 1))}
                 className="btn-smooth"
                 style={{
@@ -4159,7 +4159,7 @@ export function RehearsalWaitingLobby({ state }: { state: LiveModeState }) {
               color: 'var(--c-text-primary, #ffffff)',
             }}
           >
-            BPM {currentBpm}
+            SPEED {currentBpm}
           </span>
           <span
             style={{

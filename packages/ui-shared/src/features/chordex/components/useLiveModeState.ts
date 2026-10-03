@@ -34,6 +34,7 @@ import {
   type LobbyAttendee,
   type SetlistQueueItem,
 } from '@workspace/livex-core';
+import { animateScrollTop } from '../../../lib/animatedScroll';
 
 export interface LiveSetlistContext {
   setlistId: string;
@@ -760,6 +761,8 @@ export function useLiveModeState(
 
   const wordRemainingMsRef = useRef<number>(0);
   const wordStartTimestampRef = useRef<number>(0);
+  // Absolute performance.now() boundary at which the current line's period began (drift anchor)
+  const lineDueAtRef = useRef<number>(0);
   const beatRemainingMsRef = useRef<number>(0);
   const beatStartTimestampRef = useRef<number>(0);
 
@@ -1386,10 +1389,7 @@ export function useLiveModeState(
         const lineHeight = lineEl.clientHeight;
         // Position active line at ~35% from top so upcoming lyrics have ample viewport space
         const targetScroll = Math.max(0, lineTop - containerHeight * 0.35 + lineHeight / 2);
-        container.scrollTo({
-          top: targetScroll,
-          behavior: 'smooth',
-        });
+        animateScrollTop(container, targetScroll);
         if (autoPlay && targetScroll > 20) {
           setIsHeaderHidden(true);
         }
@@ -1428,7 +1428,7 @@ export function useLiveModeState(
       setElapsedMs((prev) => {
         const next = prev + 1000 * (playbackSpeed || 1);
         const total = timingSchedule.effectiveDurationMs;
-        return next > total ? 0 : next;
+        return total > 0 ? Math.min(next, total) : next;
       });
     }, 1000);
     return () => clearInterval(interval);
@@ -1536,12 +1536,14 @@ export function useLiveModeState(
   useEffect(() => {
     wordRemainingMsRef.current = 0;
     wordStartTimestampRef.current = 0;
+    lineDueAtRef.current = 0;
   }, [seekToken]);
 
   useEffect(() => {
     if (!isTeleprompterMode || totalLines === 0) return;
 
     if (!autoPlay || bpmOverride <= 0) {
+      lineDueAtRef.current = 0;
       if (wordStartTimestampRef.current > 0) {
         const passed = performance.now() - wordStartTimestampRef.current;
         wordRemainingMsRef.current = Math.max(0, (wordRemainingMsRef.current || 0) - passed);
@@ -1556,9 +1558,15 @@ export function useLiveModeState(
       activeLine?.line?.type === 'interlude' ||
       activeLine?.line?.explicitDurationMs !== undefined;
 
+    // The timing schedule (derived from the song's target duration + Speed) is the single authority.
+    // msPerLine is only the fallback when the schedule has no entry for this line.
+    const scheduledLine = timingSchedule.lines[currentLineIdx];
+    const scheduledLineMs =
+      scheduledLine && scheduledLine.durationMs > 0 ? scheduledLine.durationMs : msPerLine;
+
     const actualLineMs = (isInterlude
       ? Math.max(1000, activeLine?.line?.explicitDurationMs || 15000)
-      : msPerLine) / (playbackSpeed || 1);
+      : scheduledLineMs) / (playbackSpeed || 1);
 
     // Sync active chord for this line if present
     const lineWords = activeLine?.words || [];
@@ -1573,6 +1581,15 @@ export function useLiveModeState(
       currentWaitMs = wordRemainingMsRef.current;
     } else {
       wordRemainingMsRef.current = actualLineMs;
+      // Fresh line: end at (previous scheduled boundary + this line's duration) so render latency and
+      // timer jitter never accumulate across the song. Ignore implausible anchors (> 500ms off).
+      if (lineDueAtRef.current > 0) {
+        const anchored = lineDueAtRef.current + actualLineMs - performance.now();
+        if (Math.abs(anchored - actualLineMs) <= 500) {
+          currentWaitMs = Math.max(50, anchored);
+        }
+        lineDueAtRef.current = 0;
+      }
     }
 
     wordStartTimestampRef.current = performance.now();
@@ -1592,13 +1609,30 @@ export function useLiveModeState(
       setInterludeRemainingSec(null);
     }
 
+    // Absolute instant at which this line is due to end (render latency between a tick and the
+    // next effect run must not accumulate across lines).
+    const scheduledEndAt = performance.now() + currentWaitMs;
+
     const tickLine = () => {
       setIsHeaderHidden(true);
       wordRemainingMsRef.current = 0;
       wordStartTimestampRef.current = performance.now();
 
+      // End of song: stop on the final line. Never silently wrap to line 0 mid-performance.
+      if (currentLineIdx + 1 >= totalLines) {
+        lineDueAtRef.current = 0;
+        if (isBroadcasting) {
+          emitLiveSync('PAUSE', { autoPlay: false });
+        }
+        setAutoPlayState(false);
+        return;
+      }
+
+      // The next line's period begins at the scheduled boundary, not at "now".
+      lineDueAtRef.current = scheduledEndAt;
+
       // Line completed its allotted musical duration! Advance directly to next line
-      const nextLineIdx = (currentLineIdx + 1) % totalLines;
+      const nextLineIdx = currentLineIdx + 1;
       setDirection('forward');
       setCurrentLineIdx(nextLineIdx);
       setCurrentBeat(0);
