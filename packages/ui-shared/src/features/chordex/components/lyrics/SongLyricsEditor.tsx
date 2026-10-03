@@ -3298,10 +3298,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
         {isLyricsEmpty && mode === 'both' && (
           <div
-            className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all text-center my-4 group"
+            contentEditable={false}
+            className="flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed transition-all text-center my-4 group select-none"
             style={{
               backgroundColor: isLight ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)',
               borderColor: 'var(--c-border, rgba(255,255,255,0.08))',
+              userSelect: 'none',
             }}
           >
             <span
@@ -3963,7 +3965,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           <span
                             className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
                             data-line-text="true"
-                          />
+                          >
+                            <br />
+                          </span>
                           {isFirstDocLine && isDocumentCompletelyEmpty && (
                             <span
                               contentEditable={false}
