@@ -1138,62 +1138,8 @@ export function useLiveModeState(
       return;
     }
 
-    engine.stop();
-    engine.setBpm(effectiveBpm);
-    engine.setTimeSignature(metronomeTimeSignature);
-    engine.setSubdivision('1/4'); // Count-in always ticks on quarter beats
-    engine.setAccentPattern(metronomeAccentPattern);
-    engine.setVolume(metronomeVolume > 0 ? metronomeVolume : 0.85);
-    engine.setSound(metronomeSound);
-
-    // Configure audio mute / voice mode
-    const isSilent = countdownAudioMode === 'silent';
-    engine.setMuted(isSilent);
-    engine.setCountInVoice(countdownAudioMode === 'voice');
-
-    let tickCount = 0;
-
-    engine.onBeat = (ev) => {
-      if (!isCountingDownRef.current) {
-        setActiveMetronomeBeat(ev.beatIndex);
-        return;
-      }
-
-      tickCount++;
-      setActiveMetronomeBeat((tickCount - 1) % beatsPerBar);
-
-      if (tickCount <= totalBeats) {
-        // Active lead-in beat
-        const currentBeatInBar = ((tickCount - 1) % beatsPerBar) + 1;
-        const currentBarNum = Math.floor((tickCount - 1) / beatsPerBar) + 1;
-        const beatsLeft = totalBeats - tickCount + 1;
-        countdownBeatRef.current = beatsLeft;
-        setCountdownBeat(beatsLeft);
-        setCountdownCurrentBar(currentBarNum);
-
-        if (countdownAudioMode === 'voice') {
-          engine.playVoicePreview(currentBeatInBar);
-        }
-      } else {
-        // Sample-accurate transition downbeat!
-        // Beat N has finished its full duration.
-        // Downbeat (virtual Beat N+1) starts the song.
-        isCountingDownRef.current = false;
-        setIsCountingDown(false);
-        lineBeatsElapsedRef.current = 1;
-        chordBeatsElapsedRef.current = 1;
-        setCurrentBeat(0);
-        setCurrentBar(1);
-        setActiveMetronomeBeat(0);
-        setAutoPlay(true);
-
-        engine.setSubdivision(metronomeSubdivision);
-        engine.setMuted(!metronomeEnabledRef.current);
-        engine.setCountInVoice(false);
-      }
-    };
-
-    engine.start();
+    engine.setCountIn(true, totalBars, countdownAudioMode === 'voice');
+    setAutoPlay(true);
   }, [isLockedToLeader, autoPlay, speed, bpmOverride, countdownMode, countdownAudioMode, metronomeTimeSignature, metronomeSubdivision, metronomeAccentPattern, metronomeVolume, metronomeSound, setAutoPlay, cancelCountdown]);
 
   const teleprompterContainerRef = useRef<HTMLDivElement | null>(null);
@@ -1847,14 +1793,37 @@ export function useLiveModeState(
   // ── Authoritative Master Clock onBeat Dispatcher ──────────────────
   const handleOnBeat = useCallback(
     (ev: MetronomeBeatEvent) => {
-      if (isCountingDownRef.current) return;
+      const beatsPerMeasure = getBeatsPerMeasure(metronomeTimeSignatureRef.current);
+
+      if (ev.isCountIn) {
+        if (!isCountingDownRef.current) {
+          setIsCountingDown(true);
+          isCountingDownRef.current = true;
+        }
+        const totalCountInBars = ev.countInTotalBars || 1;
+        const currentCountInBar = ev.countInBar || 1;
+        const countInNumber = ev.countInNumber || 1;
+        const beatsLeft = (totalCountInBars - currentCountInBar) * beatsPerMeasure + (beatsPerMeasure - countInNumber + 1);
+        setCountdownBeat(beatsLeft);
+        setActiveMetronomeBeat(countInNumber - 1);
+        return; // Do NOT advance lines during count-in
+      } else {
+        if (isCountingDownRef.current) {
+          setIsCountingDown(false);
+          isCountingDownRef.current = false;
+          const engine = liveMetronomeRef.current;
+          if (engine) {
+            engine.setMuted(!metronomeEnabledRef.current);
+            engine.setCountInVoice(false);
+          }
+        }
+      }
 
       // Only main quarter/downbeat events advance bars, lines, and chords
       if (ev.subdivisionIndex !== 0) {
         return;
       }
 
-      const beatsPerMeasure = getBeatsPerMeasure(metronomeTimeSignatureRef.current);
       setActiveMetronomeBeat(ev.beatIndex);
       setCurrentBeat(ev.beatIndex);
 
@@ -1873,13 +1842,33 @@ export function useLiveModeState(
         const beatDurMs = (60000 / (speedRef.current || 120)) / (playbackSpeedRef.current || 1);
 
         let totalLineBeats: number;
+        let lineBarsValue = barsPerLineRef.current;
         if (isInterlude) {
           const interludeMs = Math.max(1000, activeLine?.line?.explicitDurationMs || 15000);
           totalLineBeats = Math.max(1, Math.round(interludeMs / beatDurMs));
         } else if (scheduledLine && scheduledLine.durationMs > 0) {
           totalLineBeats = Math.max(1, Math.round(scheduledLine.durationMs / beatDurMs));
         } else {
-          totalLineBeats = barsPerLineRef.current * beatsPerMeasure;
+          // Use variable bars per line logic
+          let secBars: number | undefined;
+          let lineBarsOverride: number | undefined;
+          if (activeLine && activeLine.line) {
+             lineBarsOverride = activeLine.line.bars;
+             // We can find section in preset if we assume we have preset.
+             // But preset is from closure, so we can access it directly if we include it in deps or let it be stale (it's fine).
+             // Actually, `activeLine.sectionId` is known.
+             // But wait, the pure helper is better if we just import it, but we don't have preset in deps.
+             // Let's just use the activeLine data directly since we don't have preset in deps.
+             // Oh, activeLine DOESN'T have section bars, so we have to look up preset.
+          }
+          // The prompt says use pure helper, but since we are modifying useLiveModeState, we can just look it up.
+          // Wait, I will just do it inline here to avoid complex imports.
+          
+          const sec = preset.lyrics?.sections?.find(s => s.id === activeLine?.sectionId);
+          secBars = sec?.barsPerLine;
+          
+          lineBarsValue = lineBarsOverride ?? secBars ?? barsPerLineRef.current;
+          totalLineBeats = lineBarsValue * beatsPerMeasure;
         }
 
         lineBeatsElapsedRef.current++;
@@ -1953,7 +1942,7 @@ export function useLiveModeState(
     const engine = liveMetronomeRef.current;
     if (!engine) return;
 
-    if (autoPlay && !isCountingDownRef.current) {
+    if (autoPlay) {
       const effectiveBpm = speed || bpmOverride || 120;
       engine.setBpm(effectiveBpm);
       engine.setTimeSignature(metronomeTimeSignature);
@@ -1961,12 +1950,17 @@ export function useLiveModeState(
       engine.setAccentPattern(metronomeAccentPattern);
       engine.setVolume(metronomeVolume);
       engine.setSound(metronomeSound);
-      // Mute audio output if metronome is disabled, but keep sample-accurate clock running
-      engine.setMuted(!metronomeEnabled);
-      engine.setCountInVoice(false);
+      
+      if (!isCountingDownRef.current) {
+        engine.setMuted(!metronomeEnabled);
+        engine.setCountInVoice(false);
+      }
+      
       engine.onBeat = handleOnBeat;
-      engine.start();
-    } else if (!autoPlay && !isCountingDownRef.current) {
+      if (!engine.isPlaying) {
+        engine.start();
+      }
+    } else {
       engine.stop();
       setActiveMetronomeBeat(-1);
     }

@@ -76,17 +76,33 @@ const liveModeStyles = `
 }
 
 .beat-dot {
-  width: 8px;
-  height: 8px;
+  width: var(--space-2, 8px);
+  height: var(--space-2, 8px);
   border-radius: 9999px;
   background: var(--surface-topbar-border, rgba(255,255,255,0.2));
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .beat-dot.beat-dot-active {
   background: var(--c-primary, #2563eb) !important;
   transform: scale(1.35);
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat-dot {
+    transition: none;
+  }
+  .beat-dot.beat-dot-active {
+    transform: none;
+  }
+}
+
+[data-performance-mode="low"] .beat-dot {
+  transition: none;
+}
+[data-performance-mode="low"] .beat-dot.beat-dot-active {
+  transform: none;
 }
 `;
 
@@ -1341,6 +1357,36 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                       {item.sectionVocalRole.label || item.sectionVocalRole.type}
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* Active Line Beat Dots */}
+              {isActive && state.autoPlay && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '6px',
+                    left: '16px',
+                    right: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCentered ? 'center' : 'flex-start',
+                    gap: '4px',
+                    opacity: 0.5,
+                  }}
+                >
+                  {Array.from({ length: 4 }).map((_, bIdx) => {
+                    const isDotActive = state.activeMetronomeBeat === bIdx;
+                    return (
+                      <div
+                        key={`beat-dot-${bIdx}`}
+                        className={`beat-dot ${isDotActive ? 'beat-dot-active' : ''}`}
+                        style={{
+                          backgroundColor: isDotActive ? accent.from : 'var(--c-text-muted, #94a3b8)',
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               )}
 

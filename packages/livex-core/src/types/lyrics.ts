@@ -64,6 +64,7 @@ export interface SongLyricLine {
   spans?: LyricTextSpan[]; // Optional rich formatted text spans
   format?: LyricSpanFormat; // Line-level formatting (e.g. color override, bold)
   vocalRole?: VocalRoleAnnotation; // Optional line-level vocal role override
+  bars?: number; // Variable bars-per-line pacing override for this specific line
 }
 
 /**
@@ -97,6 +98,7 @@ export interface SongLyricSection {
   type: StandardLyricSectionType;
   name: string; // Display name: "Verse 1", "Chorus", etc.
   vocalRole?: VocalRoleAnnotation; // Section-level vocal role
+  barsPerLine?: number; // Variable bars-per-line pacing override for this section
   lines: SongLyricLine[];
 }
 

@@ -3679,6 +3679,33 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     )}
                   </div>
 
+                  <div className="flex items-center ml-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
+                        const sec = nextDoc.sections.find(s => s.id === section.id);
+                        if (sec) {
+                          const current = sec.barsPerLine;
+                          const next = current === undefined ? 1 : current === 1 ? 2 : current === 2 ? 4 : current === 4 ? 8 : undefined;
+                          sec.barsPerLine = next;
+                          triggerChange(nextDoc);
+                        }
+                      }}
+                      className="opacity-70 group-hover/sec:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10"
+                      style={{
+                        backgroundColor: section.barsPerLine ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
+                        borderColor: section.barsPerLine ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255,255,255,0.08)',
+                        color: section.barsPerLine ? '#60a5fa' : 'var(--c-text-muted, #94a3b8)',
+                      }}
+                      title="Set Section Bars Per Line"
+                    >
+                      <span className="material-symbols-rounded text-[10px]">straighten</span>
+                      <span>{section.barsPerLine ? `${section.barsPerLine} BARS` : 'DEF BARS'}</span>
+                    </button>
+                  </div>
+
                   {/* Right Cluster: Up/Down Shift Arrows & Manage Menu */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
@@ -4378,6 +4405,34 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           </div>
                         );
                       })}
+
+                      {/* Line Bars Override */}
+                      <button
+                        type="button"
+                        contentEditable={false}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
+                          const sec = nextDoc.sections.find(s => s.id === section.id);
+                          const l = sec?.lines.find(x => x.id === line.id);
+                          if (l) {
+                            const current = l.bars;
+                            const next = current === undefined ? 1 : current === 1 ? 2 : current === 2 ? 4 : current === 4 ? 8 : undefined;
+                            l.bars = next;
+                            triggerChange(nextDoc);
+                          }
+                        }}
+                        className="opacity-0 group-hover/line:opacity-100 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border flex-shrink-0 self-center ml-auto shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                        style={{
+                          backgroundColor: line.bars ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255,255,255,0.05)',
+                          borderColor: line.bars ? 'rgba(236, 72, 153, 0.3)' : 'rgba(255,255,255,0.1)',
+                          color: line.bars ? '#f472b6' : 'var(--c-text-muted, #94a3b8)',
+                          opacity: line.bars ? 1 : undefined,
+                        }}
+                        title="Set Line Bars"
+                      >
+                        <span>{line.bars ? `${line.bars} BARS` : 'DEF BARS'}</span>
+                      </button>
 
                       {/* Vocal Role badge if present on line */}
                       {activeRole && (
