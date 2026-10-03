@@ -213,12 +213,6 @@ export function LiveTempoMorphPopup({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
-              className="material-symbols-outlined"
-              style={{ fontSize: '20px', color: accent.from }}
-            >
-              metronome
-            </span>
-            <span
               style={{
                 fontSize: '13px',
                 fontWeight: 800,
@@ -228,7 +222,7 @@ export function LiveTempoMorphPopup({
                 fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
               }}
             >
-              Tempo & Metronome
+              TEMPO & METRONOME
             </span>
           </div>
 
@@ -620,9 +614,6 @@ export function LiveTempoMorphPopup({
           {/* Top Switch Row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '17px', color: accent.from }}>
-                metronome
-              </span>
               <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--c-text-primary, #ffffff)' }}>
                 Audible Metronome
               </span>

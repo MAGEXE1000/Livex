@@ -80,13 +80,14 @@ const liveModeStyles = `
   height: var(--space-2, 8px);
   border-radius: 9999px;
   background: var(--surface-topbar-border, rgba(255,255,255,0.2));
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.12s ease-out, opacity 0.12s ease-out;
 }
 
 .beat-dot.beat-dot-active {
   background: var(--c-primary, #2563eb) !important;
   transform: scale(1.35);
   opacity: 1;
+  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -164,9 +165,6 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
         }}
         title="Adjust Tempo & Metronome"
       >
-        <span className="material-symbols-outlined" style={{ fontSize: '11px', color: state.metronomeEnabled ? accent.from : 'var(--c-text-secondary)' }}>
-          {state.metronomeEnabled ? 'metronome' : 'speed'}
-        </span>
         <span>{currentSpeed} BPM</span>
       </button>
       <span style={{ opacity: 0.35 }}>•</span>
@@ -279,17 +277,6 @@ export function LiveModeHeader({ state }: { state: LiveModeState }) {
               maxWidth: '100%',
             }}
           >
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: autoPlay ? '#22c55e' : accent.from,
-                boxShadow: autoPlay ? '0 0 6px #22c55e' : `0 0 6px ${accent.from}`,
-                animation: autoPlay ? 'live-dot-pulse 1.5s infinite' : 'none',
-                flexShrink: 0,
-              }}
-            />
             {state.isInSetlist && (
               <span
                 data-testid="live-setlist-badge"
@@ -1360,57 +1347,7 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                 </div>
               )}
 
-              {/* Active Line Beat Dots */}
-              {isActive && state.autoPlay && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '6px',
-                    left: '16px',
-                    right: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: isCentered ? 'center' : 'flex-start',
-                    gap: '4px',
-                    opacity: 0.5,
-                  }}
-                >
-                  {(() => {
-                    const beatsPerBar = 4; // Assuming 4/4 if not available directly here
-                    const totalBars = Math.ceil((state.totalLineBeats || 4) / beatsPerBar);
-                    const currentBar = Math.min(totalBars, Math.floor((state.lineBeatsElapsed || 0) / beatsPerBar) + 1);
-                    const beatWithinBar = (state.lineBeatsElapsed || 0) % beatsPerBar;
-                    
-                    return (
-                      <>
-                        {Array.from({ length: beatsPerBar }).map((_, bIdx) => {
-                          const isDotActive = bIdx <= beatWithinBar;
-                          return (
-                            <div
-                              key={`beat-dot-${bIdx}`}
-                              className="beat-dot"
-                              style={{
-                                width: '6px',
-                                height: '6px',
-                                borderRadius: '50%',
-                                transition: 'opacity 150ms ease, transform 150ms ease',
-                                opacity: isDotActive ? 1 : 0.3,
-                                transform: isDotActive ? 'scale(1.2)' : 'scale(1)',
-                                backgroundColor: isDotActive ? accent.from : 'var(--c-text-muted, #94a3b8)',
-                              }}
-                            />
-                          );
-                        })}
-                        {totalBars > 1 && (
-                          <span style={{ fontSize: '10px', marginLeft: '8px', color: 'var(--c-text-muted)' }}>
-                            bar {currentBar}/{totalBars}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+
 
               {/* Line-level vocal role badge if line has an explicit role */}
               {item.line.vocalRole && (!item.isFirstLineOfSection || !item.sectionVocalRole) && (
@@ -1603,6 +1540,68 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                   </span>
                 )}
               </div>
+              )}
+
+              {/* Active Line Beat Indicator (Repositioned below lyric text) */}
+              {isActive && state.autoPlay && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCentered ? 'center' : 'flex-start',
+                    gap: '6px',
+                    marginTop: '8px',
+                    paddingBottom: '2px',
+                  }}
+                >
+                  {(() => {
+                    const beatsPerBar = getBeatsPerMeasure(state.metronomeTimeSignature || '4/4');
+                    const totalBars = Math.ceil((state.totalLineBeats || beatsPerBar) / beatsPerBar);
+                    const currentBar = Math.min(totalBars, Math.floor((state.lineBeatsElapsed || 0) / beatsPerBar) + 1);
+                    const beatWithinBar = (state.lineBeatsElapsed || 0) % beatsPerBar;
+                    
+                    return (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          {Array.from({ length: beatsPerBar }).map((_, bIdx) => {
+                            const isDotActive = bIdx <= beatWithinBar;
+                            const isCurrentBeat = bIdx === beatWithinBar;
+                            return (
+                              <div
+                                key={`beat-dot-${bIdx}`}
+                                className="beat-dot"
+                                style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  transition: isCurrentBeat ? 'none' : 'opacity 120ms ease-out, transform 120ms ease-out',
+                                  opacity: isDotActive ? 1 : 0.25,
+                                  transform: isCurrentBeat ? 'scale(1.25)' : isDotActive ? 'scale(1.05)' : 'scale(1)',
+                                  backgroundColor: isDotActive ? accent.from : 'var(--c-text-muted, #94a3b8)',
+                                  boxShadow: isCurrentBeat ? `0 0 6px ${accent.from}88` : 'none',
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                        {totalBars > 1 && (
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              letterSpacing: '0.04em',
+                              textTransform: 'uppercase',
+                              color: 'var(--c-text-muted, #94a3b8)',
+                              opacity: 0.8,
+                            }}
+                          >
+                            bar {currentBar}/{totalBars}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           </React.Fragment>

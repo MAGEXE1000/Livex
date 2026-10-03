@@ -643,6 +643,7 @@ export class MetronomeAudioEngine {
     this._activeSources.clear();
 
     this._scheduledEvents = [];
+    this._lastDispatchedEventTime = -1;
     this.onPlayStateChange?.(false);
   }
 
@@ -853,20 +854,22 @@ export class MetronomeAudioEngine {
 
       if (this._ctx) {
         const now = this._ctx.currentTime;
-        // Find the latest scheduled event that has started playing
-        let latestEvent: MetronomeBeatEvent | null = null;
+        // Compensate for display refresh interval + hardware audio base latency so the visual
+        // frame commits and renders to the screen on the exact vsync matching the audio buffer output
+        const displayLeadTime = Math.max(0.016, this._ctx.baseLatency || 0.012);
+        const displayTime = now + displayLeadTime;
+
+        // Process all events ready for this display frame in chronological order
         for (let i = 0; i < this._scheduledEvents.length; i++) {
           const ev = this._scheduledEvents[i];
-          if (ev.time <= now) {
-            latestEvent = ev;
+          if (ev.time <= displayTime) {
+            if (ev.time > this._lastDispatchedEventTime) {
+              this._lastDispatchedEventTime = ev.time;
+              this.onBeat?.(ev);
+            }
           } else {
             break;
           }
-        }
-
-        if (latestEvent && latestEvent.time > this._lastDispatchedEventTime) {
-          this._lastDispatchedEventTime = latestEvent.time;
-          this.onBeat?.(latestEvent);
         }
       }
 
