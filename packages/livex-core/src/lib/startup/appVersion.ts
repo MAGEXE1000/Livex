@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.88';
-export const NATIVE_VERSION_CODE = 40688;
-export const WEB_VERSION = '4.6.88';
+export const NATIVE_VERSION = '4.6.89';
+export const NATIVE_VERSION_CODE = 40689;
+export const WEB_VERSION = '4.6.89';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'f216650a';
+export const APP_COMMIT_SHA = '87b79f65';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 1:21:22 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 2:29:16 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,13 +101,8 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Fixed',
     items: [
-      "DOM Placeholder Crash Eradication: Completely eliminated React-managed placeholder elements in `SongLyricsEditor` in favor of CSS-only `:empty` pseudo-elements on the canvas container, resolving `NotFoundError: Failed to execute 'removeChild' on 'Node'` crashes when typing initial characters on new or blank songs.",
-      'Lyric Formatting Span Reconciliation: Implemented `reconcileSpansOnTextEdit` engine to accurately preserve, shift, and adjust formatting spans (bold, italic, underline, vocal colors) across character insertions, deletions, and replacements.',
-      'Scoped Canvas Deletion Interception: Scoped Backspace and `beforeinput` selection event handlers strictly to the active lyric canvas DOM element, preventing accidental deletion interception in the chord picker, modal inputs, and search fields.',
-      'State Synchronization & Echo Guard: Hardened lyrics state synchronization with structural deep equality checks and an echo guard (`lastEmittedRef`) to prevent in-flight typing from being overwritten by pending debounced store updates.',
-      'Schedule-Authoritative Live Timing: Updated Live mode teleprompter timing to synchronize against per-line schedule durations (`timingSchedule.lines`) with drift compensation, and gracefully halting playback on the final line without wrapping.',
-      'Interruptible Smooth Scrolling: Introduced touch- and wheel-interruptible smooth scrolling (`animateScrollTop`) for teleprompter and practice views.',
-      'AMOLED Visual Polish & Formatting Silence: Removed opaque background snap during setlist song drag reordering under AMOLED themes, and eliminated unnecessary toasts during vocal role assignments.',
+      'Samsung IME Multi-Line Insert Interception: Added native DOM beforeinput interception in SongLyricsEditor for multi-line text streams, seamlessly normalizing and splicing Samsung Keyboard clipboard pastes into song lyrics and ensuring song content registers immediately for playback.',
+      'Synchronous Focus Restoration on Line Deletion: Relocated caret restoration to synchronous useLayoutEffect during line deletion and merge operations, preventing Android WebView focus loss and keeping the virtual keyboard open during rapid Backspace or word deletion.',
     ],
   },
 ];
@@ -122,6 +117,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.89',
+    date: '2026-10-03',
+    highlights: [
+      'Samsung IME Multi-Line Insert Interception: Added native DOM beforeinput interception in SongLyricsEditor for multi-line text streams, seamlessly normalizing and splicing Samsung Keyboard clipboard pastes into song lyrics and ensuring song content registers immediately for playback.',
+      'Synchronous Focus Restoration on Line Deletion: Relocated caret restoration to synchronous useLayoutEffect during line deletion and merge operations, preventing Android WebView focus loss and keeping the virtual keyboard open during rapid Backspace or word deletion.',
+    ],
+  },
   {
     version: '4.6.88',
     date: '2026-10-03',
@@ -214,16 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'True Line-by-Line Teleprompter Highlights: Enabled isolated individual-line card highlighting and progression during live playback, preventing monolithic paragraph block highlighting.',
       'Native Multiline Cursor Navigation: Restored native cross-line ArrowUp and ArrowDown cursor traversal, start-of-line backspacing to join lines, and Enter splitting.',
       'Catastrophic Paragraph Flattening: Eliminated HTML spec newline stripping from single-line inputs that previously merged songs into a single continuous block of text upon edit and paste.',
-    ],
-  },
-  {
-    version: '4.6.79',
-    date: '2026-10-02',
-    highlights: [
-      'Silent Character-Level Selection Formatting: Enforced strict zero-toast policy for all contextual formatting actions (Bold, Italic, Underline, Color Palette swatches, Clear Formatting) with instantaneous visual feedback directly on the highlighted character range.',
-      'Touch & Selection Stability: Attached onPointerDown prevention across all 10 contextual formatting toolbar buttons and swatches to prevent Android WebView from blurring focus or collapsing native selection handles during tap interactions.',
-      'Clean Macro-Only Toast Engine: Reserved bottom toast notification system strictly for macro document and system actions (saving presets, deleting songs, band call invitations).',
-      'Multiline Clipboard Paste Integrity: Overhauled clipboard paste handling with CRLF normalization (\\r\\n / \\r -> \\n) and seamless multiline text insertion at cursor without corrupting underlying section structures.',
     ],
   },
 ];
