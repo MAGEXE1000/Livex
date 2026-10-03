@@ -29,7 +29,7 @@
     "@tolgee/react": "^7.1.1",
     "@workspace/livex-core": "workspace:*",
     "clsx": "catalog:",
-    "firebase": "^12.16.0",
+    "firebase": "^12.19.0",
     "html2canvas": "^1.4.1",
     "i18next": "^26.3.6",
     "jspdf": "^4.2.1",

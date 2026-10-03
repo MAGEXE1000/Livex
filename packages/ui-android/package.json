@@ -24,7 +24,7 @@
     "@workspace/livex-core": "workspace:*",
     "@workspace/ui-shared": "workspace:*",
     "clsx": "catalog:",
-    "firebase": "^12.16.0",
+    "firebase": "^12.19.0",
     "html2canvas": "^1.4.1",
     "i18next": "^26.3.6",
     "lottie-react": "^2.4.1",
