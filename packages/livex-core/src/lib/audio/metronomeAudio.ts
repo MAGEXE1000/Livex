@@ -152,6 +152,8 @@ export class MetronomeAudioEngine {
   // Voice sample cache (AudioBuffers for numbers 1 to 12)
   private _voiceBuffers: Map<number, AudioBuffer> = new Map();
 
+  private _activeSources: Set<AudioBufferSourceNode> = new Set();
+
   // Callbacks
   public onBeat?: (event: MetronomeBeatEvent) => void;
   public onPlayStateChange?: (isPlaying: boolean) => void;
@@ -609,6 +611,16 @@ export class MetronomeAudioEngine {
       this._rafId = null;
     }
 
+    for (const source of this._activeSources) {
+      try {
+        source.stop();
+        source.disconnect();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+    }
+    this._activeSources.clear();
+
     this._scheduledEvents = [];
     this.onPlayStateChange?.(false);
   }
@@ -748,6 +760,11 @@ export class MetronomeAudioEngine {
 
     const safeTime = Math.max(time, this._ctx.currentTime + 0.002);
     source.start(safeTime);
+    
+    source.onended = () => {
+      this._activeSources.delete(source);
+    };
+    this._activeSources.add(source);
   }
 
   public playVoicePreview(count: number = 1) {
@@ -760,6 +777,11 @@ export class MetronomeAudioEngine {
     source.buffer = buf;
     source.connect(this._masterGain || this._ctx.destination);
     source.start(this._ctx.currentTime);
+
+    source.onended = () => {
+      this._activeSources.delete(source);
+    };
+    this._activeSources.add(source);
   }
 
   private scheduleAudioPulse(
@@ -796,7 +818,10 @@ export class MetronomeAudioEngine {
     const safeTime = Math.max(time, this._ctx.currentTime + 0.002);
     source.start(safeTime);
 
-    // Auto-clean: AudioBufferSourceNode is automatically garbage collected once ended
+    source.onended = () => {
+      this._activeSources.delete(source);
+    };
+    this._activeSources.add(source);
   }
 
   // ── Visual UI Synchronization Loop (rAF) ─────────────────────────────────

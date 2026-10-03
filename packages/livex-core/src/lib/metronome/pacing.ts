@@ -37,3 +37,14 @@ export function mapSongBeatToLine(
 
   return null;
 }
+
+export function advanceLineClock(
+  currentElapsed: number,
+  totalLineBeats: number
+): { nextElapsed: number; shouldAdvanceLine: boolean } {
+  if (currentElapsed >= totalLineBeats) {
+    return { nextElapsed: 1, shouldAdvanceLine: true };
+  } else {
+    return { nextElapsed: currentElapsed + 1, shouldAdvanceLine: false };
+  }
+}

@@ -34,6 +34,7 @@ import {
   type LobbyAttendee,
   type SetlistQueueItem,
   MetronomeAudioEngine,
+  metronomeAudioEngine,
   type MetronomeBeatEvent,
   type MetronomeSoundId,
   type MetronomeTimeSignature,
@@ -41,6 +42,7 @@ import {
   type MetronomeAccentType,
   getBeatsPerMeasure,
   resolveLineBars,
+  advanceLineClock,
 } from '@workspace/livex-core';
 import { animateScrollTop } from '../../../lib/animatedScroll';
 
@@ -705,6 +707,7 @@ export function useLiveModeState(
 
   // Initialize Metronome Audio Engine
   useEffect(() => {
+    metronomeAudioEngine.stop(); // Stop global Hub metronome
     const engine = new MetronomeAudioEngine();
     liveMetronomeRef.current = engine;
     return () => {
@@ -1877,25 +1880,14 @@ export function useLiveModeState(
         
         setTotalLineBeats(totalLineBeats);
 
-        lineBeatsElapsedRef.current++;
-        setLineBeatsElapsed(lineBeatsElapsedRef.current);
-
-        const currentBarNum = Math.min(
-          Math.ceil(totalLineBeats / beatsPerMeasure),
-          Math.floor((lineBeatsElapsedRef.current - 1) / beatsPerMeasure) + 1
+        const { nextElapsed, shouldAdvanceLine } = advanceLineClock(
+          lineBeatsElapsedRef.current,
+          totalLineBeats
         );
-        setCurrentBar(currentBarNum);
 
-        if (isInterlude) {
-          const beatsRemaining = Math.max(0, totalLineBeats - lineBeatsElapsedRef.current);
-          const secRemaining = Math.ceil((beatsRemaining * beatDurMs) / 1000);
-          setInterludeRemainingSec(secRemaining);
-        } else {
-          setInterludeRemainingSec(null);
-        }
-
-        if (lineBeatsElapsedRef.current >= totalLineBeats) {
-          lineBeatsElapsedRef.current = 0;
+        if (shouldAdvanceLine) {
+          lineBeatsElapsedRef.current = nextElapsed;
+          setLineBeatsElapsed(lineBeatsElapsedRef.current);
           setIsHeaderHidden(true);
 
           if (lineIdx + 1 >= totalL) {
@@ -1927,6 +1919,23 @@ export function useLiveModeState(
 
           if (isBroadcastingRef.current) {
             emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
+          }
+        } else {
+          lineBeatsElapsedRef.current = nextElapsed;
+          setLineBeatsElapsed(lineBeatsElapsedRef.current);
+
+          const currentBarNum = Math.min(
+            Math.ceil(totalLineBeats / beatsPerMeasure),
+            Math.floor((lineBeatsElapsedRef.current - 1) / beatsPerMeasure) + 1
+          );
+          setCurrentBar(currentBarNum);
+
+          if (isInterlude) {
+            const beatsRemaining = Math.max(0, totalLineBeats - lineBeatsElapsedRef.current);
+            const secRemaining = Math.ceil((beatsRemaining * beatDurMs) / 1000);
+            setInterludeRemainingSec(secRemaining);
+          } else {
+            setInterludeRemainingSec(null);
           }
         }
       } else {

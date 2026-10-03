@@ -18,6 +18,7 @@ import {
 } from '@workspace/livex-core';
 import { toast } from 'sonner';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
+import { TextInputDialog } from '../../../../shared/design-system/TextInputDialog';
 
 export interface SongLivePreparationViewProps {
   preset: SongPreset;
@@ -69,6 +70,7 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSectionMorph, setShowSectionMorph] = useState(false);
   const [showTextMorph, setShowTextMorph] = useState(false);
+  const [renameState, setRenameState] = useState<{ open: boolean; initialName: string }>({ open: false, initialName: '' });
   const [selectedSectionForRole, setSelectedSectionForRole] = useState<string | null>(null);
 
   // Dock geometry anchor for contextual morphing popup
@@ -972,10 +974,8 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
             label: 'Custom...',
             icon: 'edit',
             onPress: () => {
-              const name = window.prompt('Section name:');
-              if (name && name.trim()) {
-                handleAddSection(name.trim(), 'custom');
-              }
+              setShowSectionMorph(false);
+              setRenameState({ open: true, initialName: '' });
             },
           },
         ]}
@@ -1219,6 +1219,19 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
           </div>
         )}
       </AnimatePresence>
+
+      <TextInputDialog
+        open={renameState.open}
+        onClose={() => setRenameState({ open: false, initialName: '' })}
+        onConfirm={(name) => {
+          if (name && name.trim()) {
+            handleAddSection(name.trim(), 'custom');
+          }
+        }}
+        title="Section Name"
+        initialValue={renameState.initialName}
+        placeholder="Enter section name"
+      />
     </div>
   );
 };

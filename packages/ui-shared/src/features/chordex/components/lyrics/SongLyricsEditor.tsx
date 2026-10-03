@@ -62,6 +62,8 @@ import {
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
+import { CustomBarsSheet } from '../../../../shared/design-system/CustomBarsSheet';
+import { TextInputDialog } from '../../../../shared/design-system/TextInputDialog';
 import ChordDiagram from '../../diagrams/ChordDiagram';
 import DetailFretboardDiagram from '../../diagrams/DetailFretboardDiagram';
 
@@ -282,6 +284,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   // Canvas reset key for failsafe DOM reconciliation
   const [canvasResetKey, setCanvasResetKey] = useState(0);
+
+  const [customBarsState, setCustomBarsState] = useState<{ open: boolean; sectionId: string; initialBars: number }>({ open: false, sectionId: '', initialBars: 4 });
+  const [renameState, setRenameState] = useState<{ open: boolean; sectionId: string; initialName: string; mode: 'create-section' | 'rename-section' }>({ open: false, sectionId: '', initialName: '', mode: 'create-section' });
 
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
@@ -3685,22 +3690,22 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       contentEditable={false}
                       onClick={(e) => {
                         e.stopPropagation();
+                        const current = section.barsPerLine;
+                        if (current === 4 || (current !== undefined && current !== 1 && current !== 2)) {
+                          if (document.activeElement instanceof HTMLElement) {
+                            document.activeElement.blur();
+                          }
+                          setCustomBarsState({ open: true, sectionId: section.id, initialBars: current || 4 });
+                          return;
+                        }
+
                         const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
                         const sec = nextDoc.sections.find(s => s.id === section.id);
                         if (sec) {
-                          const current = sec.barsPerLine;
                           let next: number | undefined;
                           if (current === undefined) next = 1;
                           else if (current === 1) next = 2;
                           else if (current === 2) next = 4;
-                          else {
-                            const val = window.prompt('Enter custom bars per line (1-32), or leave blank for default:', current.toString());
-                            if (!val) next = undefined;
-                            else {
-                              const parsed = parseInt(val, 10);
-                              next = (!isNaN(parsed) && parsed >= 1 && parsed <= 32) ? parsed : undefined;
-                            }
-                          }
                           sec.barsPerLine = next;
                           triggerChange(nextDoc);
                         }
@@ -3714,7 +3719,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       title="Set Section Bars Per Line"
                     >
                       <span className="material-symbols-rounded text-[10px]">straighten</span>
-                      <span>{section.barsPerLine ? `${section.barsPerLine} BARS` : 'DEF BARS'}</span>
+                      <span>{section.barsPerLine ? `${section.barsPerLine}b` : 'DEF BARS'}</span>
                     </button>
                   </div>
 
@@ -4713,10 +4718,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
               label: 'Custom...',
               icon: 'edit',
               onPress: () => {
-                const name = window.prompt('Section name:');
-                if (name && name.trim()) {
-                  handleCreateSection(name.trim(), 'custom');
-                }
+                setShowSectionMorph(false);
+                setRenameState({ open: true, sectionId: '', initialName: '', mode: 'create-section' });
               },
             },
           ]}
@@ -5567,10 +5570,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 type="button"
                 onClick={() => {
                   if (sec.type === 'custom') {
-                    const customName = window.prompt('Enter custom section name:');
-                    if (customName && customName.trim()) {
-                      handleCreateSection(customName.trim(), 'custom');
-                    }
+                    setShowAddSectionModal(false);
+                    setRenameState({ open: true, sectionId: '', initialName: '', mode: 'create-section' });
                   } else {
                     handleCreateSection(sec.label, sec.type);
                   }
@@ -5872,6 +5873,43 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           </div>
         </div>
       </Dialog>
+
+      <CustomBarsSheet
+        open={customBarsState.open}
+        onClose={() => {
+          setCustomBarsState((prev) => ({ ...prev, open: false }));
+          if (pendingFocusLineIdRef) pendingFocusLineIdRef.current = 'force-focus-restore';
+        }}
+        onConfirm={(bars) => {
+          const nextDoc = JSON.parse(JSON.stringify(currentDoc)) as SongLyricsDocument;
+          const sec = nextDoc.sections.find((s) => s.id === customBarsState.sectionId);
+          if (sec) {
+            sec.barsPerLine = bars;
+            triggerChange(nextDoc);
+          }
+        }}
+        initialBars={customBarsState.initialBars}
+      />
+
+      <TextInputDialog
+        open={renameState.open}
+        onClose={() => {
+          setRenameState((prev) => ({ ...prev, open: false }));
+          if (pendingFocusLineIdRef) pendingFocusLineIdRef.current = 'force-focus-restore';
+        }}
+        onConfirm={(name) => {
+          if (name && name.trim()) {
+            if (renameState.mode === 'create-section') {
+              handleCreateSection(name.trim(), 'custom');
+            } else if (renameState.mode === 'rename-section') {
+              // Not used right now but added for safety
+            }
+          }
+        }}
+        title="Section Name"
+        initialValue={renameState.initialName}
+        placeholder="Enter section name"
+      />
     </div>
   );
 };

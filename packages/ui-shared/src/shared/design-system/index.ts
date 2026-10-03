@@ -26,3 +26,5 @@ export {
   type SimpleAccordionItemProps,
 } from './Accordion';
 
+export * from './TextInputDialog';
+export * from './CustomBarsSheet';
