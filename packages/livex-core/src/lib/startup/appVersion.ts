@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.90';
-export const NATIVE_VERSION_CODE = 40690;
-export const WEB_VERSION = '4.6.90';
+export const NATIVE_VERSION = '4.6.91';
+export const NATIVE_VERSION_CODE = 40691;
+export const WEB_VERSION = '4.6.91';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'a8f88d29';
+export const APP_COMMIT_SHA = '73fae4ca';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 9:57:25 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 11:22:09 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Live Mode Pre-Roll Countdown & Precision Metronome: Introduced configurable count-in lead-in (`[Off] [1 Bar] [2 Bars] [3s] [5s]`) in Song Live Settings with animated visual pulse badge, paired with a synchronized Web Audio API lookahead clock scheduler for drift-free metronome clicks and accented downbeats.',
-      'Drumex-Style Live Tempo Morph Pop-Up: Implemented an interactive frosted-glass BPM/tempo adjustment modal in Live mode with tap-tempo interval averaging, incremental steppers, and smooth tempo slider.',
-      'Native Android Intent Filters for Direct File Ingestion: Registered `VIEW` and `SEND` intent filters in `AndroidManifest.xml` with deep-link resolution in `MainActivity.kt` and `SharedAppShell.tsx`, allowing users to open and import `.livex` files directly from WhatsApp, file managers, and cloud drives.',
+      'Compact Full-Featured Live Metronome Morph Pop-Up: Integrated complete Drumex-style native metronome capabilities into the Live mode morph pop-up, featuring an interactive Beat Tracker for setting strong/normal/muted accents per beat, quick-select Time Signature buttons (4/4, 3/4, 6/8, 2/4), Subdivisions (1/4, 1/8, 1/16, 3let), and Tap Tempo.',
+      'Upward Drop-Up Click Sound Picker: Anchored the metronome sound selection menu upwards (`bottom: calc(100% + 8px)`), completely preventing bottom viewport clipping and navigation bar overlap.',
+      'Decoupled Countdown Audio Architecture: Added independent Audio Mode configuration (`[Metronome Click Only] [Voice Count ("1, 2, 3, 4")] [Silent Visual Only]`) alongside Lead-In Length options (`[Off] [1 Bar] [2 Bars] [3s] [5s]`) in Song Live Settings.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Export MIME Type Normalization & .bin Attachment Corruption: Overhauled `.livex` bundle sharing via custom native `LivexFileProvider` mapping `.livex` directly to `application/json`, eliminating Android `application/octet-stream` fallbacks that caused WhatsApp and file managers to rename shared setlists to `DOC-xxxx.bin`.',
-      'Resilient & Tolerant Bundle Import Pipeline: Expanded file input criteria and implemented schema-tolerant parser in `livexBundleService` supporting `.livex`, `.json`, `.bin`, and legacy raw arrays with 1-tap instant validation preview and clear error reporting.',
+      'Web Audio Lookahead Master Clock Synchronization: Replaced drifting JavaScript `setTimeout` timer loops in Live mode with an authoritative Web Audio hardware lookahead clock scheduler (`MetronomeAudioEngine.onBeat`), locking teleprompter lyrics, chord progressions, visual beat pulses, and audio clicks into 100% phase-aligned synchronization with zero drift.',
+      'Silent Mode Master Clock Parity: Maintained continuous Web Audio scheduler execution even when the audible metronome is disabled, guaranteeing identical downbeat precision and smooth teleprompter line advances across all playback modes.',
+      'Sample-Accurate Countdown-to-Playback Transition: Fixed count-in transition timing so the final beat interval of the lead-in elapses completely before the teleprompter downbeat triggers, eliminating rushed first-verse entries.',
     ],
   },
 ];
@@ -125,6 +126,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.91',
+    date: '2026-10-03',
+    highlights: [
+      'Compact Full-Featured Live Metronome Morph Pop-Up: Integrated complete Drumex-style native metronome capabilities into the Live mode morph pop-up, featuring an interactive Beat Tracker for setting strong/normal/muted accents per beat, quick-select Time Signature buttons (4/4, 3/4, 6/8, 2/4), Subdivisions (1/4, 1/8, 1/16, 3let), and Tap Tempo.',
+      'Upward Drop-Up Click Sound Picker: Anchored the metronome sound selection menu upwards (`bottom: calc(100% + 8px)`), completely preventing bottom viewport clipping and navigation bar overlap.',
+      'Decoupled Countdown Audio Architecture: Added independent Audio Mode configuration (`[Metronome Click Only] [Voice Count ("1, 2, 3, 4")] [Silent Visual Only]`) alongside Lead-In Length options (`[Off] [1 Bar] [2 Bars] [3s] [5s]`) in Song Live Settings.',
+      'Web Audio Lookahead Master Clock Synchronization: Replaced drifting JavaScript `setTimeout` timer loops in Live mode with an authoritative Web Audio hardware lookahead clock scheduler (`MetronomeAudioEngine.onBeat`), locking teleprompter lyrics, chord progressions, visual beat pulses, and audio clicks into 100% phase-aligned synchronization with zero drift.',
+      'Silent Mode Master Clock Parity: Maintained continuous Web Audio scheduler execution even when the audible metronome is disabled, guaranteeing identical downbeat precision and smooth teleprompter line advances across all playback modes.',
+      'Sample-Accurate Countdown-to-Playback Transition: Fixed count-in transition timing so the final beat interval of the lead-in elapses completely before the teleprompter downbeat triggers, eliminating rushed first-verse entries.',
+    ],
+  },
   {
     version: '4.6.90',
     date: '2026-10-03',
@@ -215,17 +228,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.',
       'Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.',
       'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.',
-    ],
-  },
-  {
-    version: '4.6.81',
-    date: '2026-10-02',
-    highlights: [
-      'Unified Lyrics & Both Document State: Merged editor canvas render pipelines so character-level formatting (custom colors, bold, italic, underline) renders with 100% visual parity across both Lyrics and Both workspaces.',
-      'Discrete Line-by-Line Live Teleprompter: Parsed multi-line lyrics into distinct individual verse containers with targeted focus highlight boxes advancing line-by-line during playback, rendering stanza breaks as clean layout spacing gaps.',
-      'Tab Switch State Preservation: Stabilized workspace container mounting so switching between Chords, Lyrics, and Both modes never unmounts the active document or causes text truncation.',
-      'Tab Switch Text Truncation: Fixed document flattening and race condition where switching out of Both mode previously truncated multi-stanza lyrics to a single line.',
-      'Lyrics Rich-Text Canvas Parity: Eliminated plain HTML textarea restriction in Lyrics mode, restoring colored and styled character ranges without losing editability.',
     ],
   },
 ];

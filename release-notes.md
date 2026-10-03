@@ -1,12 +1,13 @@
-# Version 4.6.90
+# Version 4.6.91
 
 Release Date: 2026-10-03
 
 ### Added
-- Live Mode Pre-Roll Countdown & Precision Metronome: Introduced configurable count-in lead-in (`[Off] [1 Bar] [2 Bars] [3s] [5s]`) in Song Live Settings with animated visual pulse badge, paired with a synchronized Web Audio API lookahead clock scheduler for drift-free metronome clicks and accented downbeats.
-- Drumex-Style Live Tempo Morph Pop-Up: Implemented an interactive frosted-glass BPM/tempo adjustment modal in Live mode with tap-tempo interval averaging, incremental steppers, and smooth tempo slider.
-- Native Android Intent Filters for Direct File Ingestion: Registered `VIEW` and `SEND` intent filters in `AndroidManifest.xml` with deep-link resolution in `MainActivity.kt` and `SharedAppShell.tsx`, allowing users to open and import `.livex` files directly from WhatsApp, file managers, and cloud drives.
+- Compact Full-Featured Live Metronome Morph Pop-Up: Integrated complete Drumex-style native metronome capabilities into the Live mode morph pop-up, featuring an interactive Beat Tracker for setting strong/normal/muted accents per beat, quick-select Time Signature buttons (4/4, 3/4, 6/8, 2/4), Subdivisions (1/4, 1/8, 1/16, 3let), and Tap Tempo.
+- Upward Drop-Up Click Sound Picker: Anchored the metronome sound selection menu upwards (`bottom: calc(100% + 8px)`), completely preventing bottom viewport clipping and navigation bar overlap.
+- Decoupled Countdown Audio Architecture: Added independent Audio Mode configuration (`[Metronome Click Only] [Voice Count ("1, 2, 3, 4")] [Silent Visual Only]`) alongside Lead-In Length options (`[Off] [1 Bar] [2 Bars] [3s] [5s]`) in Song Live Settings.
 
 ### Fixed
-- Export MIME Type Normalization & .bin Attachment Corruption: Overhauled `.livex` bundle sharing via custom native `LivexFileProvider` mapping `.livex` directly to `application/json`, eliminating Android `application/octet-stream` fallbacks that caused WhatsApp and file managers to rename shared setlists to `DOC-xxxx.bin`.
-- Resilient & Tolerant Bundle Import Pipeline: Expanded file input criteria and implemented schema-tolerant parser in `livexBundleService` supporting `.livex`, `.json`, `.bin`, and legacy raw arrays with 1-tap instant validation preview and clear error reporting.
+- Web Audio Lookahead Master Clock Synchronization: Replaced drifting JavaScript `setTimeout` timer loops in Live mode with an authoritative Web Audio hardware lookahead clock scheduler (`MetronomeAudioEngine.onBeat`), locking teleprompter lyrics, chord progressions, visual beat pulses, and audio clicks into 100% phase-aligned synchronization with zero drift.
+- Silent Mode Master Clock Parity: Maintained continuous Web Audio scheduler execution even when the audible metronome is disabled, guaranteeing identical downbeat precision and smooth teleprompter line advances across all playback modes.
+- Sample-Accurate Countdown-to-Playback Transition: Fixed count-in transition timing so the final beat interval of the lead-in elapses completely before the teleprompter downbeat triggers, eliminating rushed first-verse entries.
