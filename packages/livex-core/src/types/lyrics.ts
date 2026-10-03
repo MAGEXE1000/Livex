@@ -120,3 +120,19 @@ export interface SongLyricsDocument {
   defaultVocalRole?: VocalRoleAnnotation;
   sections: SongLyricSection[];
 }
+
+export interface CapturedSelectionLine {
+  sectionId: string;
+  lineId: string;
+  lineIndex: number;
+  start: number;
+  end: number;
+  isFullLine: boolean;
+}
+
+export interface CapturedSelectionData {
+  lines: CapturedSelectionLine[];
+  sectionIds: string[];
+  fullText: string;
+}
+

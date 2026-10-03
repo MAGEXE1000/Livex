@@ -56,6 +56,7 @@ import {
   ROOTS,
   type Chord,
   shiftChordOffsets,
+  batchDeleteLyricsSelection,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/buttons';
@@ -510,26 +511,33 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   }, []);
 
   useEffect(() => {
+    let rafId: number | null = null;
     const handleSelectionChange = () => {
-      const captured = captureSelection();
-      if (captured && captured.lines.length > 0) {
-        capturedSelectionRef.current = captured;
-        setHasCapturedSelection(true);
-      } else {
-        const active = typeof document !== 'undefined' ? document.activeElement : null;
-        const isInteractingWithControls =
-          active && (active.closest('[data-morphing-surface]') || active.closest('[data-action="add-actions"]'));
-        if (!isInteractingWithControls) {
-          const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
-          if (!winSel || winSel.isCollapsed) {
-            setHasCapturedSelection(false);
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const captured = captureSelection();
+        if (captured && captured.lines.length > 0) {
+          capturedSelectionRef.current = captured;
+          setHasCapturedSelection(true);
+        } else {
+          const active = typeof document !== 'undefined' ? document.activeElement : null;
+          const isInteractingWithControls =
+            active && (active.closest('[data-morphing-surface]') || active.closest('[data-action="add-actions"]') || active.closest('[data-testid="canva-formatting-toolbar"]'));
+          if (!isInteractingWithControls) {
+            const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
+            if (!winSel || winSel.isCollapsed) {
+              setHasCapturedSelection(false);
+              capturedSelectionRef.current = null;
+            }
           }
         }
-      }
+      });
     };
 
     document.addEventListener('selectionchange', handleSelectionChange);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       document.removeEventListener('selectionchange', handleSelectionChange);
     };
   }, [captureSelection]);
@@ -2058,6 +2066,58 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     // No toast — formatting feedback is visual-only (zero-toast policy)
   }, [updateDoc]);
 
+  // ── BATCH SELECTION DELETION ──────────────────────────────────────────
+
+  const handleBatchDeleteSelection = useCallback(() => {
+    const sel = capturedSelectionRef.current;
+    if (!sel || sel.lines.length === 0) return;
+
+    updateDoc((doc) => batchDeleteLyricsSelection(doc, sel), true);
+
+    if (typeof window !== 'undefined') {
+      window.getSelection()?.removeAllRanges();
+    }
+    capturedSelectionRef.current = null;
+    setHasCapturedSelection(false);
+    setShowToolbarColorPicker(false);
+    setShowToolbarRolePicker(false);
+  }, [updateDoc]);
+
+  // Intercept Backspace and Delete keys (both hardware and virtual IME) when multi-line selection is active
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Backspace' || e.key === 'Delete') && hasCapturedSelection) {
+        if (capturedSelectionRef.current && capturedSelectionRef.current.lines.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleBatchDeleteSelection();
+        }
+      }
+    };
+
+    const handleBeforeInput = (e: InputEvent) => {
+      if (
+        (e.inputType === 'deleteContentBackward' ||
+          e.inputType === 'deleteContentForward' ||
+          e.inputType === 'deleteByCut') &&
+        hasCapturedSelection
+      ) {
+        if (capturedSelectionRef.current && capturedSelectionRef.current.lines.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleBatchDeleteSelection();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('beforeinput', handleBeforeInput as EventListener, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
+    };
+  }, [hasCapturedSelection, handleBatchDeleteSelection]);
+
   // ── CHORD PLACEMENT HELPERS ──────────────────────────────────────────
 
   const handleOpenChordPicker = useCallback(() => {
@@ -2753,11 +2813,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        className="flex flex-col gap-4 outline-none w-full select-text min-h-[300px] cursor-text"
+        tabIndex={0}
+        className="flex flex-col gap-4 outline-none w-full select-text min-h-[300px] cursor-text lyrics-canvas-document"
         style={{
           paddingBottom: '24px',
           WebkitUserSelect: 'text',
           userSelect: 'text',
+          touchAction: 'pan-y',
+          willChange: 'transform',
         }}
         data-purpose="teleprompter-writing-canvas"
         onClick={(e) => {
@@ -3495,6 +3558,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               } else if (parseResult.kind === 'interlude') {
                                 handlePromoteLineToInterlude(section.id, lineIdx, parseResult);
                               }
+                            }
+                            const winSel = typeof window !== 'undefined' ? window.getSelection() : null;
+                            if (winSel && !winSel.isCollapsed && winSel.toString().length > 0) {
+                              const mainEl = workspaceRef.current?.querySelector<HTMLElement>('[data-purpose="teleprompter-writing-canvas"]');
+                              mainEl?.focus({ preventScroll: true });
                             }
                           }}
                           onChange={(e) => {
@@ -4342,6 +4410,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     aria-label="Clear formatting"
                   >
                     <span className="material-symbols-rounded text-lg">format_clear</span>
+                  </button>
+
+                  {/* Batch Delete Selection Button */}
+                  <button
+                    type="button"
+                    data-testid="toolbar-delete-selection-btn"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={handleBatchDeleteSelection}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                      isEffectiveLight
+                        ? 'text-rose-600 hover:bg-rose-500/10 active:bg-rose-500/20'
+                        : 'text-rose-400 hover:bg-rose-500/20 active:bg-rose-500/30'
+                    }`}
+                    title="Delete highlighted text"
+                    aria-label="Delete selection"
+                  >
+                    <span className="material-symbols-rounded text-lg">delete</span>
                   </button>
 
                   {/* Dismiss Selection Button */}

@@ -7,6 +7,8 @@ import type {
   StandardLyricSectionType,
   VocalRoleAnnotation,
   StandardVocalRole,
+  CapturedSelectionData,
+  CapturedSelectionLine,
 } from '../../types/lyrics';
 
 /**
@@ -738,3 +740,184 @@ export function createEmptyLyricsDocument(): SongLyricsDocument {
     ],
   };
 }
+
+/**
+ * Helper to adjust/slice formatting spans when a character range [start, end) is deleted
+ */
+function sliceSpansOnDelete(
+  spans: LyricTextSpan[] | undefined,
+  start: number,
+  end: number
+): LyricTextSpan[] | undefined {
+  if (!spans || spans.length === 0) return spans;
+  let currOffset = 0;
+  const result: LyricTextSpan[] = [];
+
+  for (const span of spans) {
+    const spanStart = currOffset;
+    const spanEnd = currOffset + span.text.length;
+    currOffset = spanEnd;
+
+    // Span entirely before delete range
+    if (spanEnd <= start) {
+      result.push({ ...span });
+      continue;
+    }
+    // Span entirely after delete range
+    if (spanStart >= end) {
+      result.push({ ...span });
+      continue;
+    }
+    // Span overlaps delete range
+    const keepHead = spanStart < start ? span.text.slice(0, start - spanStart) : '';
+    const keepTail = spanEnd > end ? span.text.slice(end - spanStart) : '';
+    const remaining = keepHead + keepTail;
+    if (remaining.length > 0) {
+      result.push({
+        ...span,
+        text: remaining,
+      });
+    }
+  }
+
+  return result.length > 0 ? result : undefined;
+}
+
+/**
+ * Cleanly removes a captured multi-line selection range from a SongLyricsDocument,
+ * collapsing surrounding lines, shifting chords and formatting spans, and removing
+ * empty orphan lines/sections.
+ */
+export function batchDeleteLyricsSelection(
+  doc: SongLyricsDocument,
+  selection: CapturedSelectionData
+): SongLyricsDocument {
+  if (!selection || selection.lines.length === 0) return doc;
+
+  const selLinesMap = new Map<string, CapturedSelectionLine>();
+  for (const line of selection.lines) {
+    selLinesMap.set(line.lineId, line);
+  }
+
+  const newSections: SongLyricSection[] = [];
+
+  for (const section of doc.sections) {
+    const updatedLines: SongLyricLine[] = [];
+    const secSelLines = section.lines.filter((l) => selLinesMap.has(l.id));
+
+    if (secSelLines.length === 0) {
+      // No lines in this section were selected
+      newSections.push({
+        ...section,
+        lines: section.lines.map((l) => ({ ...l })),
+      });
+      continue;
+    }
+
+    const firstSelLine = secSelLines[0];
+    const lastSelLine = secSelLines[secSelLines.length - 1];
+    const isMultiLineInSec = secSelLines.length > 1;
+
+    for (let i = 0; i < section.lines.length; i++) {
+      const line = section.lines[i];
+      const sel = selLinesMap.get(line.id);
+
+      if (!sel) {
+        // Line was not selected at all
+        updatedLines.push({ ...line });
+        continue;
+      }
+
+      // Check if full line is selected
+      const isEntireLine = sel.isFullLine || (sel.start === 0 && sel.end >= line.text.length);
+
+      if (isEntireLine) {
+        // Completely removed
+        continue;
+      }
+
+      // Partial line selection
+      if (!isMultiLineInSec) {
+        // Single partial line selected: slice out [start, end)
+        const newText = line.text.slice(0, sel.start) + line.text.slice(sel.end);
+        const deleteLen = sel.end - sel.start;
+
+        // Shift chords: remove if within [start, end), shift backward if >= end
+        const newChords = (line.chords || [])
+          .filter((c) => c.offset < sel.start || c.offset >= sel.end)
+          .map((c) => (c.offset >= sel.end ? { ...c, offset: Math.max(0, c.offset - deleteLen) } : { ...c }));
+
+        // Adjust spans
+        const newSpans = sliceSpansOnDelete(line.spans, sel.start, sel.end);
+
+        updatedLines.push({
+          ...line,
+          text: newText,
+          chords: newChords.length > 0 ? newChords : undefined,
+          spans: newSpans && newSpans.length > 0 ? newSpans : undefined,
+        });
+      } else {
+        // Multi-line selection spanning this line
+        if (line.id === firstSelLine.id) {
+          // First line: keep text before start
+          const headText = line.text.slice(0, sel.start);
+          const firstSpans = sliceSpansOnDelete(line.spans, sel.start, line.text.length);
+          const firstChords = (line.chords || []).filter((c) => c.offset < sel.start);
+
+          // If last line is also in this section and partially deleted at end, merge tail of last line
+          const lastSel = selLinesMap.get(lastSelLine.id);
+          let tailText = '';
+          let tailChords: LyricChordPlacement[] = [];
+          let tailSpans: LyricTextSpan[] = [];
+
+          if (lastSel && !lastSel.isFullLine && lastSel.end < lastSelLine.text.length) {
+            tailText = lastSelLine.text.slice(lastSel.end);
+            const tailDeleteLen = lastSel.end;
+            tailChords = (lastSelLine.chords || [])
+              .filter((c) => c.offset >= lastSel.end)
+              .map((c) => ({
+                ...c,
+                offset: headText.length + Math.max(0, c.offset - tailDeleteLen),
+              }));
+            tailSpans = sliceSpansOnDelete(lastSelLine.spans, 0, lastSel.end) || [];
+          }
+
+          const mergedText = headText + tailText;
+          const mergedChords = [...firstChords, ...tailChords];
+          const mergedSpans = [...(firstSpans || []), ...tailSpans];
+
+          updatedLines.push({
+            ...line,
+            text: mergedText,
+            chords: mergedChords.length > 0 ? mergedChords : undefined,
+            spans: mergedSpans.length > 0 ? mergedSpans : undefined,
+          });
+        } else if (line.id === lastSelLine.id) {
+          // Handled by merge into firstSelLine above
+          continue;
+        } else {
+          // Middle line completely consumed
+          continue;
+        }
+      }
+    }
+
+    if (updatedLines.length > 0) {
+      newSections.push({
+        ...section,
+        lines: updatedLines,
+      });
+    }
+  }
+
+  // Failsafe: if all sections/lines were wiped out, return single empty line
+  if (newSections.length === 0 || newSections.every((s) => s.lines.length === 0)) {
+    return createEmptyLyricsDocument();
+  }
+
+  return {
+    ...doc,
+    sections: newSections,
+  };
+}
+

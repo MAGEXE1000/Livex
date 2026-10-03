@@ -9,6 +9,7 @@ import {
   lyricsDocumentToContinuousText,
   splitLineByNewlines,
   normalizeLyricsDocumentStructure,
+  batchDeleteLyricsSelection,
 } from '../lyricsParser';
 import type { SongLyricsDocument } from '../../../types/lyrics';
 
@@ -295,5 +296,103 @@ Chorus without header line 2`;
       expect(normalized.sections[0].lines[2].text).toBe('Third line');
     });
   });
+
+  describe('batchDeleteLyricsSelection', () => {
+    it('cleanly removes multiple full lines from a section', () => {
+      const doc: SongLyricsDocument = {
+        version: 1,
+        sections: [
+          {
+            id: 'sec-1',
+            type: 'verse',
+            name: 'Verse 1',
+            lines: [
+              { id: 'l1', text: 'Line 1 to keep' },
+              { id: 'l2', text: 'Line 2 to delete' },
+              { id: 'l3', text: 'Line 3 to delete' },
+              { id: 'l4', text: 'Line 4 to keep' },
+            ],
+          },
+        ],
+      };
+
+      const selection = {
+        lines: [
+          { sectionId: 'sec-1', lineId: 'l2', lineIndex: 1, start: 0, end: 17, isFullLine: true },
+          { sectionId: 'sec-1', lineId: 'l3', lineIndex: 2, start: 0, end: 17, isFullLine: true },
+        ],
+        sectionIds: ['sec-1'],
+        fullText: 'Line 2 to delete\nLine 3 to delete',
+      };
+
+      const result = batchDeleteLyricsSelection(doc, selection);
+      expect(result.sections[0].lines).toHaveLength(2);
+      expect(result.sections[0].lines[0].id).toBe('l1');
+      expect(result.sections[0].lines[0].text).toBe('Line 1 to keep');
+      expect(result.sections[0].lines[1].id).toBe('l4');
+      expect(result.sections[0].lines[1].text).toBe('Line 4 to keep');
+    });
+
+    it('merges head of first line and tail of last line for partial multi-line deletion', () => {
+      const doc: SongLyricsDocument = {
+        version: 1,
+        sections: [
+          {
+            id: 'sec-1',
+            type: 'verse',
+            name: 'Verse 1',
+            lines: [
+              { id: 'l1', text: 'Hello wonderful world' },
+              { id: 'l2', text: 'Intermediate verse that disappears' },
+              { id: 'l3', text: 'Goodbye lovely day' },
+            ],
+          },
+        ],
+      };
+
+      // Select from 'wonderful' in l1 to 'lovely' in l3
+      const selection = {
+        lines: [
+          { sectionId: 'sec-1', lineId: 'l1', lineIndex: 0, start: 6, end: 21, isFullLine: false },
+          { sectionId: 'sec-1', lineId: 'l2', lineIndex: 1, start: 0, end: 35, isFullLine: true },
+          { sectionId: 'sec-1', lineId: 'l3', lineIndex: 2, start: 0, end: 15, isFullLine: false },
+        ],
+        sectionIds: ['sec-1'],
+        fullText: 'wonderful world\nIntermediate verse that disappears\nGoodbye lovely ',
+      };
+
+      const result = batchDeleteLyricsSelection(doc, selection);
+      expect(result.sections[0].lines).toHaveLength(1);
+      expect(result.sections[0].lines[0].text).toBe('Hello day');
+    });
+
+    it('returns a clean empty document placeholder when entire song is deleted', () => {
+      const doc: SongLyricsDocument = {
+        version: 1,
+        sections: [
+          {
+            id: 'sec-1',
+            type: 'verse',
+            name: 'Verse 1',
+            lines: [{ id: 'l1', text: 'Only line in song' }],
+          },
+        ],
+      };
+
+      const selection = {
+        lines: [
+          { sectionId: 'sec-1', lineId: 'l1', lineIndex: 0, start: 0, end: 17, isFullLine: true },
+        ],
+        sectionIds: ['sec-1'],
+        fullText: 'Only line in song',
+      };
+
+      const result = batchDeleteLyricsSelection(doc, selection);
+      expect(result.sections).toHaveLength(1);
+      expect(result.sections[0].lines).toHaveLength(1);
+      expect(result.sections[0].lines[0].text).toBe('');
+    });
+  });
 });
+
 
