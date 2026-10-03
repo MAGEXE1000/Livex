@@ -1,14 +1,13 @@
-# Version 4.6.82
+# Version 4.6.83
 
 Release Date: 2026-10-02
 
 ### Added
-- Unconstrained Multi-Line Selection: Allowed touch selection handles to freely drag across any number of lines both downwards and upwards with the soft keyboard open or closed.
-- Canva Floating Toolbar Batch Deletion: Added dedicated Delete button to the floating formatting toolbar and unified Backspace key handling to batch delete highlighted text.
+- Permanent Canvas Focus Ring Immunity: Removed tabIndex={0} and enforced outline: none, border: none, ring-0, and no-focus-ring across the teleprompter writing canvas and global CSS to eliminate the browser engine's blue bounding rectangle during edit focus.
+- Unconstrained Dual-Direction Multi-Line Text Selection: Enabled seamless multi-line selection handle dragging downwards and upwards across verses with soft keyboard open.
 
 ### Improved
-- Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.
+- Immediate Batch Deletion: Instant removal of highlighted multi-line character ranges via Backspace key without leaving ghost lines or UI stutter.
 
 ### Fixed
-- Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.
-- Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.
+- Global Selection Lockdown: Enforced strict user-select none across all UI chrome, topbar pills, and navigation tabs while keeping editable lyric content selectable.

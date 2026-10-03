@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.82';
-export const NATIVE_VERSION_CODE = 40682;
-export const WEB_VERSION = '4.6.82';
+export const NATIVE_VERSION = '4.6.83';
+export const NATIVE_VERSION_CODE = 40683;
+export const WEB_VERSION = '4.6.83';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'fa3e9518';
+export const APP_COMMIT_SHA = 'b1c2ebb7';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 6:46:52 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 8:00:39 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,21 +101,20 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Unconstrained Multi-Line Selection: Allowed touch selection handles to freely drag across any number of lines both downwards and upwards with the soft keyboard open or closed.',
-      'Canva Floating Toolbar Batch Deletion: Added dedicated Delete button to the floating formatting toolbar and unified Backspace key handling to batch delete highlighted text.',
+      "Permanent Canvas Focus Ring Immunity: Removed tabIndex={0} and enforced outline: none, border: none, ring-0, and no-focus-ring across the teleprompter writing canvas and global CSS to eliminate the browser engine's blue bounding rectangle during edit focus.",
+      'Unconstrained Dual-Direction Multi-Line Text Selection: Enabled seamless multi-line selection handle dragging downwards and upwards across verses with soft keyboard open.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.',
+      'Immediate Batch Deletion: Instant removal of highlighted multi-line character ranges via Backspace key without leaving ghost lines or UI stutter.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.',
-      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.',
+      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, topbar pills, and navigation tabs while keeping editable lyric content selectable.',
     ],
   },
 ];
@@ -127,6 +126,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.83',
+    date: '2026-10-02',
+    highlights: [
+      "Permanent Canvas Focus Ring Immunity: Removed tabIndex={0} and enforced outline: none, border: none, ring-0, and no-focus-ring across the teleprompter writing canvas and global CSS to eliminate the browser engine's blue bounding rectangle during edit focus.",
+      'Unconstrained Dual-Direction Multi-Line Text Selection: Enabled seamless multi-line selection handle dragging downwards and upwards across verses with soft keyboard open.',
+      'Immediate Batch Deletion: Instant removal of highlighted multi-line character ranges via Backspace key without leaving ghost lines or UI stutter.',
+      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, topbar pills, and navigation tabs while keeping editable lyric content selectable.',
+    ],
+  },
   {
     version: '4.6.82',
     date: '2026-10-02',
@@ -224,18 +233,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Icon-Only Live Action: Streamlined Live Mode floating transport with minimalist icon-only play button and centralized action layout.',
       'Streamlined Band Hub: Focused Band Hub modal retaining exclusively Members (with quick-copy Join Code) and Calendar/Gigs schedule.',
       'Setlist & Song Modals: Standardized monochrome action icons, centered library headers, and consolidated minimalist song cards with sticky mode switcher.',
-    ],
-  },
-  {
-    version: '4.6.73',
-    date: '2026-10-01',
-    highlights: [
-      'Live Header Call Band Integration: Integrated the "Call Band" rehearsal button directly into the Live mode top header for band leaders with clean glass pill styling.',
-      'Polished Setlists Interface: Streamlined Setlist detail view with 34px action controls, dynamic header clearance (140px) preventing title collision, uniform song row badges (#Key, BPM, Duration), and intuitive empty states.',
-      'Live Teleprompter Progression Freeze: Stabilized synchronization state refs, eliminating premature line timer teardowns on musical beat ticks to ensure continuous, automatic lyric advancement during playback.',
-      'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
-      'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
-      'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
     ],
   },
 ];
