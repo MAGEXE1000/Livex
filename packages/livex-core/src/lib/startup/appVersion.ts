@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.95';
-export const NATIVE_VERSION_CODE = 40695;
-export const WEB_VERSION = '4.6.95';
+export const NATIVE_VERSION = '4.6.96';
+export const NATIVE_VERSION_CODE = 40696;
+export const WEB_VERSION = '4.6.96';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '3883ceb0';
+export const APP_COMMIT_SHA = '7f3cb3fd';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 3:28:48 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/3/2026, 5:43:05 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Sample-Accurate Web Audio Visual Synchronization: Synchronized teleprompter visual beat pulses directly with Web Audio hardware DAC buffer output timing via `startVisualSyncLoop` lookahead clock alignment, eliminating the ~200ms perceptual lag between acoustic clicks and on-screen indicator illumination.',
-      'Repositioned Active Line Beat Indicator: Shifted teleprompter beat dots (`• • • •`) and bar progress counter (`bar X/Y`) into a dedicated in-flow sub-container directly beneath the lyric baseline with clean vertical breathing room (`marginTop: 8px`), eliminating overlap collisions with text, chords, and vocal badges.',
+      'EasyUI iOS-Style Search Bar Modernization: Integrated the unified AMOLED `IosSearchBar` component across all workspaces, modules, panels, and modals (`SongsPanel`, `SetlistsPanel`, `DrumBeatsPanel`, `DrumPatternsPanel`, `MetronomePanel`, `DrumEditor`, `GroovexLibrary`, `StageLibraryPanel`, `StagexRightSidebar`, `StageGearView`, and diagnostics consoles), featuring spring-animated Cancel dismissal, minimum 44x44px touch targets, and pure black frosted glass styling.',
+      'Interactive Header Title View Switcher: Made the top header title in SongsPanel interactively toggle between Songs and Setlists with an integrated chevron indicator (`ChevronsUpDown`), eliminating redundant tab switchers and maximizing vertical viewport real estate.',
     ],
   },
   {
-    heading: 'Fixed',
+    heading: 'Improved',
     items: [
-      '"MNOME" Brand & Ligature Artifact Eradication: Purged unmapped Material Symbols icon glyphs across Live Topbar tempo pills, Tempo & Metronome Morph modal headers, and Audible Metronome toggle switches, removing fallback text string corruptions.',
-      'Topbar Chrome Sanitization: Removed the pulsing circular indicator dot beside the song title in Live Mode, presenting a clean, focused header layout.',
-      'Instantaneous Beat Dot Lighting: Set immediate CSS activation transitions (`transition: none !important`) on active beat dots to guarantee zero animation delay when downbeats strike.',
+      'Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.',
+      'Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.',
+      'Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.',
     ],
   },
 ];
@@ -125,6 +125,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.96',
+    date: '2026-10-03',
+    highlights: [
+      'EasyUI iOS-Style Search Bar Modernization: Integrated the unified AMOLED `IosSearchBar` component across all workspaces, modules, panels, and modals (`SongsPanel`, `SetlistsPanel`, `DrumBeatsPanel`, `DrumPatternsPanel`, `MetronomePanel`, `DrumEditor`, `GroovexLibrary`, `StageLibraryPanel`, `StagexRightSidebar`, `StageGearView`, and diagnostics consoles), featuring spring-animated Cancel dismissal, minimum 44x44px touch targets, and pure black frosted glass styling.',
+      'Interactive Header Title View Switcher: Made the top header title in SongsPanel interactively toggle between Songs and Setlists with an integrated chevron indicator (`ChevronsUpDown`), eliminating redundant tab switchers and maximizing vertical viewport real estate.',
+      'Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.',
+      'Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.',
+      'Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.',
+    ],
+  },
   {
     version: '4.6.95',
     date: '2026-10-03',
@@ -216,16 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Decouple Canvas Placeholder & Enforce Clean Buffer Initialization: Replaced pseudo-element data-placeholder and lyric-line-content:empty::before mechanism with a decoupled, non-interactive sibling overlay rendered strictly when the document is empty.',
       'Clean Document State & Selection Capture: The editable DOM containers never hold synthetic placeholder strings or attributes, preventing selection captures, input desynchronization, and clipboard concatenation errors.',
       'Pseudo-Element Pruning: Cleaned out obsolete lyric-line-content:empty::before CSS rules across shared tokens, Android, and Web styles to prevent browser caret misalignments and unexpected DOM injections.',
-    ],
-  },
-  {
-    version: '4.6.85',
-    date: '2026-10-02',
-    highlights: [
-      'DOM Reconciliation Crash Resolution: Resolved fatal NotFoundError insertBefore exception during Clear All Lyrics by isolating contentEditable lifecycle and executing clean Virtual DOM remounts via dynamic reset keys.',
-      'Plain-Text Paste Stream Parsing: Enforced continuous single-line rendering in lyrics mode, permanently eliminating erratic multi-column verse splits and horizontal whitespace gaps.',
-      'Word Stuttering & Concatenation Elimination: Hardened input event synchronization and selection capture to sanitize DOM text extraction, ignoring chord buttons, badges, and unmanaged elements to prevent duplicate word tokens (e.g. "Estoy Estoy").',
-      'Editor Lifecycle Safety: Bound unique song keys to the lyrics canvas to guarantee pristine DOM state transitions when changing active songs in Chordex.',
     ],
   },
 ];

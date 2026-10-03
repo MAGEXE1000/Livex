@@ -1,12 +1,12 @@
-# Version 4.6.95
+# Version 4.6.96
 
 Release Date: 2026-10-03
 
 ### Added
-- Sample-Accurate Web Audio Visual Synchronization: Synchronized teleprompter visual beat pulses directly with Web Audio hardware DAC buffer output timing via `startVisualSyncLoop` lookahead clock alignment, eliminating the ~200ms perceptual lag between acoustic clicks and on-screen indicator illumination.
-- Repositioned Active Line Beat Indicator: Shifted teleprompter beat dots (`• • • •`) and bar progress counter (`bar X/Y`) into a dedicated in-flow sub-container directly beneath the lyric baseline with clean vertical breathing room (`marginTop: 8px`), eliminating overlap collisions with text, chords, and vocal badges.
+- EasyUI iOS-Style Search Bar Modernization: Integrated the unified AMOLED `IosSearchBar` component across all workspaces, modules, panels, and modals (`SongsPanel`, `SetlistsPanel`, `DrumBeatsPanel`, `DrumPatternsPanel`, `MetronomePanel`, `DrumEditor`, `GroovexLibrary`, `StageLibraryPanel`, `StagexRightSidebar`, `StageGearView`, and diagnostics consoles), featuring spring-animated Cancel dismissal, minimum 44x44px touch targets, and pure black frosted glass styling.
+- Interactive Header Title View Switcher: Made the top header title in SongsPanel interactively toggle between Songs and Setlists with an integrated chevron indicator (`ChevronsUpDown`), eliminating redundant tab switchers and maximizing vertical viewport real estate.
 
-### Fixed
-- "MNOME" Brand & Ligature Artifact Eradication: Purged unmapped Material Symbols icon glyphs across Live Topbar tempo pills, Tempo & Metronome Morph modal headers, and Audible Metronome toggle switches, removing fallback text string corruptions.
-- Topbar Chrome Sanitization: Removed the pulsing circular indicator dot beside the song title in Live Mode, presenting a clean, focused header layout.
-- Instantaneous Beat Dot Lighting: Set immediate CSS activation transitions (`transition: none !important`) on active beat dots to guarantee zero animation delay when downbeats strike.
+### Improved
+- Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.
+- Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.
+- Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.
