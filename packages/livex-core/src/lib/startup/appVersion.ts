@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.85';
-export const NATIVE_VERSION_CODE = 40685;
-export const WEB_VERSION = '4.6.85';
+export const NATIVE_VERSION = '4.6.86';
+export const NATIVE_VERSION_CODE = 40686;
+export const WEB_VERSION = '4.6.86';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'b55a328c';
+export const APP_COMMIT_SHA = 'e324c321';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 10:28:00 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 11:30:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,21 +101,32 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Fixed',
     items: [
-      'DOM Reconciliation Crash Resolution: Resolved fatal NotFoundError insertBefore exception during Clear All Lyrics by isolating contentEditable lifecycle and executing clean Virtual DOM remounts via dynamic reset keys.',
-      'Plain-Text Paste Stream Parsing: Enforced continuous single-line rendering in lyrics mode, permanently eliminating erratic multi-column verse splits and horizontal whitespace gaps.',
-      'Word Stuttering & Concatenation Elimination: Hardened input event synchronization and selection capture to sanitize DOM text extraction, ignoring chord buttons, badges, and unmanaged elements to prevent duplicate word tokens (e.g. "Estoy Estoy").',
-      'Editor Lifecycle Safety: Bound unique song keys to the lyrics canvas to guarantee pristine DOM state transitions when changing active songs in Chordex.',
+      'Decouple Canvas Placeholder & Enforce Clean Buffer Initialization: Replaced pseudo-element data-placeholder and lyric-line-content:empty::before mechanism with a decoupled, non-interactive sibling overlay rendered strictly when the document is empty.',
+      'Clean Document State & Selection Capture: The editable DOM containers never hold synthetic placeholder strings or attributes, preventing selection captures, input desynchronization, and clipboard concatenation errors.',
+      'Pseudo-Element Pruning: Cleaned out obsolete lyric-line-content:empty::before CSS rules across shared tokens, Android, and Web styles to prevent browser caret misalignments and unexpected DOM injections.',
     ],
   },
 ];
 
 export interface ReleaseHistoryItem {
+  /** SemVer version string (e.g. "3.2.0"). */
   version: string;
+  /** Release date formatted as YYYY-MM-DD. */
   date: string;
+  /** High-level highlights of what shipped in this release. */
   highlights: string[];
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.86',
+    date: '2026-10-02',
+    highlights: [
+      'Decouple Canvas Placeholder & Enforce Clean Buffer Initialization: Replaced pseudo-element data-placeholder and lyric-line-content:empty::before mechanism with a decoupled, non-interactive sibling overlay rendered strictly when the document is empty.',
+      'Clean Document State & Selection Capture: The editable DOM containers never hold synthetic placeholder strings or attributes, preventing selection captures, input desynchronization, and clipboard concatenation errors.',
+      'Pseudo-Element Pruning: Cleaned out obsolete lyric-line-content:empty::before CSS rules across shared tokens, Android, and Web styles to prevent browser caret misalignments and unexpected DOM injections.',
+    ],
+  },
   {
     version: '4.6.85',
     date: '2026-10-02',
@@ -210,17 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Line-Level Role & Section Dismissal: Direct tap-to-manage dialog on inline role chips (`CHOIR`, `Lead`, etc.) and section badges (`[Verse]`, `[Chorus]`), allowing quick single-line role removal or section clearance without navigating away.',
       'Natural Document Flow Mode Switcher: Embedded the `Chords | Lyrics | Both` segmented controller as a static block within the lyrics canvas scroll container, allowing it to smoothly scroll off-screen as the reader scrolls down verses, maximizing active viewing area.',
       'Stale Live Mode Vocal Role Teleprompter Purge: Purged legacy role fallback and lingering cached role metadata (`• Lead`, `• Harmony`) from the Live mode teleprompter, guaranteeing plain, clean lyric line rendering when vocal roles are cleared or unassigned.',
-    ],
-  },
-  {
-    version: '4.6.76',
-    date: '2026-10-01',
-    highlights: [
-      'Standardized Setlist Card 3-Action Dock: Setlist collection cards now feature the canonical 3-action bottom strip (`Share`, `Edit`, `Delete`) matching Song cards 1:1 with identical dimensions, borders, and tactile spring interactions.',
-      'Dedicated Setlist Share Sheet: Added frosted-glass modal for Setlists supporting direct band repository synchronization and multi-song offline `.livex` bundle packaging.',
-      "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
-      'Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.',
-      'Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.',
     ],
   },
 ];
