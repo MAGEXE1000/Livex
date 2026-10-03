@@ -3002,16 +3002,22 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
-        tabIndex={0}
         contentEditable={true}
         suppressContentEditableWarning={true}
-        className="flex flex-col gap-4 outline-none w-full select-text min-h-[300px] cursor-text lyrics-canvas-document"
+        className="flex flex-col gap-4 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0 border-0 ring-0 w-full select-text min-h-[300px] cursor-text lyrics-canvas-document no-focus-ring"
         style={{
           paddingBottom: '24px',
           WebkitUserSelect: 'text',
           userSelect: 'text',
           touchAction: 'pan-y',
           willChange: 'transform',
+          outline: 'none',
+          outlineStyle: 'none',
+          outlineWidth: 0,
+          outlineColor: 'transparent',
+          boxShadow: 'none',
+          border: 'none',
+          WebkitTapHighlightColor: 'transparent',
         }}
         data-purpose="teleprompter-writing-canvas"
         onKeyDown={handleCanvasKeyDown}

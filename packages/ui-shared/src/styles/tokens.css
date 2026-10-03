@@ -4207,6 +4207,41 @@ textarea,
   -webkit-touch-callout: default !important;
 }
 
+/* ── Permanent Removal of Canvas / Document Focus Blue Outlines ── */
+.lyrics-canvas-document,
+.lyrics-canvas-document:focus,
+.lyrics-canvas-document:focus-visible,
+.lyrics-canvas-document:focus-within,
+.lyrics-canvas-document:active,
+[data-purpose="teleprompter-writing-canvas"],
+[data-purpose="teleprompter-writing-canvas"]:focus,
+[data-purpose="teleprompter-writing-canvas"]:focus-visible,
+[data-purpose="teleprompter-writing-canvas"]:focus-within,
+[data-purpose="teleprompter-writing-canvas"]:active,
+.no-focus-ring,
+.no-focus-ring:focus,
+.no-focus-ring:focus-visible,
+.no-focus-ring:focus-within {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-color: transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+[contenteditable="true"]:focus,
+[contenteditable="true"]:focus-visible,
+[contenteditable="true"]:focus-within {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+}
+
 .lyric-line-content:empty::before {
   content: attr(data-placeholder);
   color: rgba(156, 163, 175, 0.4);
