@@ -1,14 +1,14 @@
-# Version 4.6.81
+# Version 4.6.82
 
 Release Date: 2026-10-02
 
 ### Added
-- Unified Lyrics & Both Document State: Merged editor canvas render pipelines so character-level formatting (custom colors, bold, italic, underline) renders with 100% visual parity across both Lyrics and Both workspaces.
-- Discrete Line-by-Line Live Teleprompter: Parsed multi-line lyrics into distinct individual verse containers with targeted focus highlight boxes advancing line-by-line during playback, rendering stanza breaks as clean layout spacing gaps.
+- Unconstrained Multi-Line Selection: Allowed touch selection handles to freely drag across any number of lines both downwards and upwards with the soft keyboard open or closed.
+- Canva Floating Toolbar Batch Deletion: Added dedicated Delete button to the floating formatting toolbar and unified Backspace key handling to batch delete highlighted text.
 
 ### Improved
-- Tab Switch State Preservation: Stabilized workspace container mounting so switching between Chords, Lyrics, and Both modes never unmounts the active document or causes text truncation.
+- Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.
 
 ### Fixed
-- Tab Switch Text Truncation: Fixed document flattening and race condition where switching out of Both mode previously truncated multi-stanza lyrics to a single line.
-- Lyrics Rich-Text Canvas Parity: Eliminated plain HTML textarea restriction in Lyrics mode, restoring colored and styled character ranges without losing editability.
+- Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.
+- Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.

@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.81';
-export const NATIVE_VERSION_CODE = 40681;
-export const WEB_VERSION = '4.6.81';
+export const NATIVE_VERSION = '4.6.82';
+export const NATIVE_VERSION_CODE = 40682;
+export const WEB_VERSION = '4.6.82';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'dc99f7bb';
+export const APP_COMMIT_SHA = 'fa3e9518';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 5:36:48 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 6:46:52 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,21 +101,21 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Unified Lyrics & Both Document State: Merged editor canvas render pipelines so character-level formatting (custom colors, bold, italic, underline) renders with 100% visual parity across both Lyrics and Both workspaces.',
-      'Discrete Line-by-Line Live Teleprompter: Parsed multi-line lyrics into distinct individual verse containers with targeted focus highlight boxes advancing line-by-line during playback, rendering stanza breaks as clean layout spacing gaps.',
+      'Unconstrained Multi-Line Selection: Allowed touch selection handles to freely drag across any number of lines both downwards and upwards with the soft keyboard open or closed.',
+      'Canva Floating Toolbar Batch Deletion: Added dedicated Delete button to the floating formatting toolbar and unified Backspace key handling to batch delete highlighted text.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Tab Switch State Preservation: Stabilized workspace container mounting so switching between Chords, Lyrics, and Both modes never unmounts the active document or causes text truncation.',
+      'Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Tab Switch Text Truncation: Fixed document flattening and race condition where switching out of Both mode previously truncated multi-stanza lyrics to a single line.',
-      'Lyrics Rich-Text Canvas Parity: Eliminated plain HTML textarea restriction in Lyrics mode, restoring colored and styled character ranges without losing editability.',
+      'Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.',
+      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.',
     ],
   },
 ];
@@ -127,6 +127,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.82',
+    date: '2026-10-02',
+    highlights: [
+      'Unconstrained Multi-Line Selection: Allowed touch selection handles to freely drag across any number of lines both downwards and upwards with the soft keyboard open or closed.',
+      'Canva Floating Toolbar Batch Deletion: Added dedicated Delete button to the floating formatting toolbar and unified Backspace key handling to batch delete highlighted text.',
+      'Zero-Lag Gesture Handling: Throttled selection change listeners via requestAnimationFrame and enabled hardware acceleration to eliminate touch handle dragging latency.',
+      'Keyboard-Focus Selection Collapse: Eliminated single-line textarea encapsulation that previously locked selection handles to a single verse while typing.',
+      'Global Selection Lockdown: Enforced strict user-select none across all UI chrome, headers, and navigation tabs to prevent accidental selection highlights.',
+    ],
+  },
   {
     version: '4.6.81',
     date: '2026-10-02',
@@ -225,17 +236,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Song Deletion Pipeline & Relational Integrity: Repaired delete confirmation dialog actions with active preset reset, setlist section cleanup, and toast notifications.',
       'Isolated Rehearsal Lobby Lifecycle: Restricted the Rehearsal Lobby strictly to active multi-device call sessions, eliminating intrusive solo lobby popups during playback and pauses.',
       'Streamlined Band Hub: Removed redundant in-modal repertoire management to focus exclusively on Members (with Join Code) and Gigs/Calendar schedule.',
-    ],
-  },
-  {
-    version: '4.6.72',
-    date: '2026-10-01',
-    highlights: [
-      'Setlist & Repertoire Subsystem: Comprehensive gig repertoire management in Songs with custom sections (Bloque 1, Acoustic, Encore), batch song selector from library, and intuitive drag/reorder handles.',
-      'Sequential Live Setlist Playback: Seamless track advancement controls in Live mode teleprompter ([⏮ Prev: Title] and [Next: Title ⏭]) with live section and position context.',
-      'Cover Image Live Preview & Progress Lock: Added asynchronous JPEG downsampling and instant preview in the song editor dialog with loading spinners during optimization.',
-      'Custom Song Cover Persistence: Resolved race condition where background re-renders wiped selected covers upon save, ensuring persistent local storage across restarts and theme toggles.',
-      'Robust Thumbnail Rendering: Added image error fallbacks and graceful placeholder badges across song library cards, setlist detail rows, and setlist song pickers.',
     ],
   },
 ];
