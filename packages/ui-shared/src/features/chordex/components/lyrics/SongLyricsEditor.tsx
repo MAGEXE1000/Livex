@@ -286,9 +286,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     []
   );
 
+  // Canvas reset key for failsafe DOM reconciliation
+  const [canvasResetKey, setCanvasResetKey] = useState(0);
+
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
   const handleClearAllLyrics = useCallback(() => {
+    // 1. Clear any active DOM selection ranges to avoid detached node collisions
+    if (typeof window !== 'undefined') {
+      try {
+        window.getSelection()?.removeAllRanges();
+      } catch {
+        // Safe noop
+      }
+    }
+    caretPosRef.current = null;
+    capturedSelectionRef.current = null;
+    setHasCapturedSelection(false);
+
     const emptyDoc: SongLyricsDocument = {
       version: 1,
       sections: [
@@ -300,10 +315,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         },
       ],
     };
+
+    pendingFocusLineIdRef.current = emptyDoc.sections[0].lines[0].id;
+    targetCursorOffsetRef.current = 0;
+
     setLocalDoc(emptyDoc);
     localDocRef.current = emptyDoc;
     triggerChange(emptyDoc, true);
     setEditingLineId(null);
+    setCanvasResetKey((k) => k + 1);
     toast.success('Lyrics cleared');
   }, [triggerChange]);
 
@@ -502,13 +522,18 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
       let start = 0;
       let end = textLen;
+      const contentRoot = lineEl.querySelector('.lyric-line-content') || lineEl;
 
       if (lineEl.contains(range.startContainer)) {
         try {
           const startRange = document.createRange();
-          startRange.setStart(lineEl, 0);
+          startRange.setStart(contentRoot, 0);
           startRange.setEnd(range.startContainer, range.startOffset);
-          start = Math.max(0, Math.min(textLen, startRange.toString().length));
+          const clonedFrag = startRange.cloneContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.appendChild(clonedFrag);
+          tempDiv.querySelectorAll('button, [contenteditable="false"], [data-chord-id], [data-testid*="vocal-role"]').forEach((n) => n.remove());
+          start = Math.max(0, Math.min(textLen, tempDiv.textContent?.length || 0));
         } catch {
           start = 0;
         }
@@ -517,9 +542,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       if (lineEl.contains(range.endContainer)) {
         try {
           const endRange = document.createRange();
-          endRange.setStart(lineEl, 0);
+          endRange.setStart(contentRoot, 0);
           endRange.setEnd(range.endContainer, range.endOffset);
-          end = Math.max(0, Math.min(textLen, endRange.toString().length));
+          const clonedFrag = endRange.cloneContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.appendChild(clonedFrag);
+          tempDiv.querySelectorAll('button, [contenteditable="false"], [data-chord-id], [data-testid*="vocal-role"]').forEach((n) => n.remove());
+          end = Math.max(0, Math.min(textLen, tempDiv.textContent?.length || 0));
         } catch {
           end = textLen;
         }
@@ -589,7 +618,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   const [pasteModalText, setPasteModalText] = useState('');
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [showFormattingModal, setShowFormattingModal] = useState(false);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showChordPalette, setShowChordPalette] = useState(false);
   const [showSectionMorph, setShowSectionMorph] = useState(false);
   const [showToolbarColorPicker, setShowToolbarColorPicker] = useState(false);
@@ -2337,8 +2365,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
       setLastActivePosition(sectionId, lineIdx, lineId);
 
-      const contentEl = lineEl.querySelector<HTMLElement>('.lyric-line-content') || lineEl;
-      const rawText = contentEl.textContent || '';
+      const contentEl = lineEl.querySelector<HTMLElement>('.lyric-line-content');
+      let rawText = '';
+      if (contentEl) {
+        rawText = contentEl.textContent || '';
+      } else {
+        const clone = lineEl.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('button, [contenteditable="false"], [data-chord-id], [data-testid*="vocal-role"]').forEach((n) => n.remove());
+        rawText = clone.textContent || '';
+      }
 
       const currentOffset = sel.rangeCount > 0 ? sel.getRangeAt(0).startOffset : rawText.length;
       caretPosRef.current = { lineId, offset: currentOffset };
@@ -2902,7 +2937,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             .replace(/\t/g, ' ')
             .replace(/[^\S\n]{2,}/g, ' ');
           const parsed = parsePastedLyrics(normalized);
-          onChange(parsed);
+          const normalizedDoc = normalizeLyricsDocumentStructure(parsed);
+          updateDoc(() => normalizedDoc, true);
           toast.success('Lyrics pasted successfully!');
           return;
         }
@@ -2912,7 +2948,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     }
     setPasteModalText('');
     setShowPasteModal(true);
-  }, [onChange]);
+  }, [updateDoc]);
 
   const handleApplyPasteModal = useCallback(() => {
     if (pasteModalText.trim()) {
@@ -2924,12 +2960,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         .replace(/\t/g, ' ')
         .replace(/[^\S\n]{2,}/g, ' ');
       const parsed = parsePastedLyrics(normalized);
-      onChange(parsed);
+      const normalizedDoc = normalizeLyricsDocumentStructure(parsed);
+      updateDoc(() => normalizedDoc, true);
       toast.success('Lyrics pasted successfully!');
       setShowPasteModal(false);
       setPasteModalText('');
     }
-  }, [pasteModalText, onChange]);
+  }, [pasteModalText, updateDoc]);
 
   const handleCopyLyricsToClipboard = useCallback(async () => {
     try {
@@ -3064,6 +3101,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     >
       {/* ── 1. FREEFORM WRITING CANVAS (TELEPROMPTER SCRIPT STYLE) ───── */}
       <main
+        key={`lyrics-canvas-${canvasResetKey}`}
         contentEditable={true}
         suppressContentEditableWarning={true}
         className="flex flex-col gap-4 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0 border-0 ring-0 w-full select-text min-h-[300px] cursor-text lyrics-canvas-document no-focus-ring"
@@ -3782,8 +3820,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   const isEditing = editingLineId === line.id;
                   void isEditing; // Preserved for backwards compatibility
 
-                  // ── CONTINUOUS LYRICS RENDERING (UNCONSTRAINED SELECTION) ──
-                  if (mode === 'lyrics' && (!line.spans || line.spans.length <= 1) && (!line.chords || line.chords.length === 0) && line.text && line.text.trim().length > 0) {
+                  // ── CONTINUOUS LYRICS RENDERING (LYRICS MODE) ──
+                  if (mode === 'lyrics' && line.text && line.text.trim().length > 0) {
+                    const hasMultipleSpans = line.spans && line.spans.length > 1;
                     return (
                       <div
                         key={line.id || lineIdx}
@@ -3817,7 +3856,36 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             userSelect: 'text',
                           }}
                         >
-                          {line.text}
+                          {hasMultipleSpans
+                            ? line.spans!.map((span, sIdx) => {
+                                const isSpanBold = Boolean(span.format?.bold || isLineBold);
+                                const isSpanItalic = Boolean(span.format?.italic || line.format?.italic);
+                                const isSpanUnderline = Boolean(span.format?.underline || line.format?.underline);
+                                const spanColor = span.format?.vocalRole?.color || span.format?.color || resolvedColor;
+                                const spanBgColor = span.format?.vocalRole?.color
+                                  ? `${span.format.vocalRole.color}28`
+                                  : span.format?.backgroundColor;
+                                const isSpanHighlighted = Boolean(spanBgColor || span.format?.vocalRole);
+
+                                return (
+                                  <span
+                                    key={sIdx}
+                                    style={{
+                                      color: spanColor,
+                                      fontWeight: isSpanBold || isSpanHighlighted ? 700 : 500,
+                                      fontStyle: isSpanItalic ? 'italic' : undefined,
+                                      textDecoration: isSpanUnderline ? 'underline' : undefined,
+                                      backgroundColor: spanBgColor || undefined,
+                                      borderRadius: isSpanHighlighted ? '4px' : undefined,
+                                      padding: isSpanHighlighted ? '1px 3px' : undefined,
+                                      margin: isSpanHighlighted ? '0 1px' : undefined,
+                                    }}
+                                  >
+                                    {span.text}
+                                  </span>
+                                );
+                              })
+                            : line.text}
                         </span>
                         {activeRole && (
                           <button
@@ -4033,6 +4101,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
                             {/* Word Text */}
                             <span
+                              data-word-text="true"
                               onClick={(e) => {
                                 const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                                 if (sel && sel.toString().length > 0) return;
@@ -4216,7 +4285,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 onClick={() => {
                   handleClearAllLyrics();
                   setShowClearLyricsConfirm(false);
-                  toast.success('Lyrics cleared');
                 }}
                 style={{
                   backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -5487,39 +5555,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <button
               type="button"
               onClick={() => setShowPasteModal(false)}
-              className="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Dialog>
-
-      {/* ── DIALOG: CLEAR CONFIRM ────────────────────────────────────── */}
-      <Dialog
-        open={showClearConfirm}
-        onClose={() => setShowClearConfirm(false)}
-        title="Clear Lyrics"
-      >
-        <div className="flex flex-col gap-3 py-1">
-          <p className="text-xs text-gray-300">
-            Are you sure you want to remove all lyrics from this song?
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onChange(undefined);
-                setShowClearConfirm(false);
-                toast.success('Lyrics cleared');
-              }}
-              className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-rose-600"
-            >
-              Clear All Lyrics
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowClearConfirm(false)}
               className="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400"
             >
               Cancel

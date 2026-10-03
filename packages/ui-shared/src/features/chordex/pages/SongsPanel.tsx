@@ -5297,7 +5297,7 @@ export default function SongsPanel() {
                   </div>
                 )}
                 <SongLyricsEditor
-                  key="unified-song-lyrics-editor"
+                  key={`unified-song-lyrics-editor-${activePreset?.id || 'default'}`}
                   mode={editorViewMode}
                   lyrics={activePreset.lyrics}
                   onChange={handleLyricsChange}
