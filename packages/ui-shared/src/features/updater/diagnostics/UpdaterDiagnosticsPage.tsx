@@ -20,6 +20,7 @@ import {
   BouncyAccordion,
   type BouncyAccordionItem,
 } from '../../../components/motion/bouncy-accordion';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 // Simple reactive state hook to poll mutable arrays/objects
 function useForceUpdate() {
@@ -830,39 +831,12 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                           flexWrap: 'wrap',
                         }}
                       >
-                        <div
-                          style={{
-                            flex: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: 'var(--app-surface)',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--c-border)',
-                          }}
-                        >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: '14px', color: 'var(--c-text-secondary)' }}
-                          >
-                            search
-                          </span>
-                          <input
-                            value={logSearch}
-                            onChange={(e) => setLogSearch(e.target.value)}
-                            placeholder="Search logs..."
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              outline: 'none',
-                              color: 'var(--c-text-primary)',
-                              fontSize: '11px',
-                              width: '100%',
-                              fontFamily: 'monospace',
-                            }}
-                          />
-                        </div>
+                        <IosSearchBar
+                          value={logSearch}
+                          onChange={setLogSearch}
+                          placeholder="Search logs..."
+                          className="flex-1"
+                        />
                         <div style={{ display: 'flex', gap: '4px' }}>
                           {(['ALL', 'INFO', 'DEBUG', 'ERROR'] as const).map((lvl) => (
                             <span

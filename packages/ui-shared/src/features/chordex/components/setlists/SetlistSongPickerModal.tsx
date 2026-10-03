@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SongPreset, SetlistSection } from '@workspace/livex-core';
+import { IosSearchBar } from '../../../../components/ui/IosSearchBar';
 
 interface SetlistSongPickerModalProps {
   isOpen: boolean;
@@ -142,33 +143,14 @@ export const SetlistSongPickerModal: React.FC<SetlistSongPickerModalProps> = ({
               </div>
             )}
 
-            <div className="relative flex items-center">
-              <span className="material-symbols-rounded absolute left-3.5 text-lg text-slate-400 pointer-events-none">
-                search
-              </span>
-              <input
-                type="search"
-                autoFocus
-                placeholder="Search songs by title, artist, key..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-9 rounded-xl border text-xs font-medium outline-none transition-all"
-                style={{
-                  backgroundColor: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.05))',
-                  borderColor: 'var(--c-border, rgba(255, 255, 255, 0.12))',
-                  color: 'var(--c-text-primary, #FFFFFF)',
-                }}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 text-slate-400 hover:text-white"
-                >
-                  <span className="material-symbols-rounded text-sm">close</span>
-                </button>
-              )}
-            </div>
+            <IosSearchBar
+              autoFocus
+              placeholder="Search songs by title, artist, key..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onClear={() => setSearchQuery('')}
+              accent={{ from: accentColor, to: accentColor }}
+            />
 
             <div className="flex items-center justify-between text-xs px-1">
               <span className="text-slate-400 font-medium">

@@ -23,6 +23,7 @@ import {
 import { TuningForkIcon } from '../components/tuner';
 import { Compass } from 'lucide-react';
 import { SharedFloatingHeader, ContextualActionPill } from '../../../shared/layout/StudioLayoutSystem';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { Button, ActionButton } from '../../../shared/design-system/buttons';
 import { LiquidSwitch } from '../../../shared/design-system/LiquidSwitch';
@@ -1162,40 +1163,14 @@ export const LibraryMainView = React.memo(function LibraryMainView({ state }: { 
           }}
           data-purpose="mobile-viewport"
         >
-          {/* Search Bar (Modern 46px Capsule) */}
-          <div className="relative flex items-center" data-purpose="search-bar">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <span
-                className="material-symbols-rounded text-[20px]"
-                style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-              >
-                search
-              </span>
-            </div>
-            <input
-              className="w-full h-[46px] pl-11 pr-10 rounded-full text-sm font-medium border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              placeholder="Search chords..."
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                style={{ color: 'var(--c-text-muted, #8A92A6)' }}
-                aria-label="Clear search"
-              >
-                <span className="material-symbols-rounded text-sm">close</span>
-              </button>
-            ) : null}
-          </div>
+          {/* iOS Modernized Search Bar */}
+          <IosSearchBar
+            placeholder="Search chords..."
+            value={query}
+            onChange={setQuery}
+            onClear={() => setQuery('')}
+            data-purpose="search-bar"
+          />
 
           {/* SEARCH RESULTS VIEW */}
           {query ? (

@@ -83,6 +83,7 @@ export { default as VinylLottie } from './shared/lottie/VinylLottie';
 
 // UI
 export * from './shared/ui/encrypted-text';
+export { IosSearchBar, type IosSearchBarProps, type IosSearchBarHandle } from './components/ui/IosSearchBar';
 
 export { useGroovexStore } from './features/groovex';
 export { default as WebAppSectionDock } from './shared/layout/WebAppSectionDock';

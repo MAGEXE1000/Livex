@@ -65,6 +65,7 @@ import { Button } from '../../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
 import { CustomBarsSheet } from '../../../../shared/design-system/CustomBarsSheet';
 import { TextInputDialog } from '../../../../shared/design-system/TextInputDialog';
+import { IosSearchBar } from '../../../../components/ui/IosSearchBar';
 import { BarsAssignmentDock } from './BarsAssignmentDock';
 import { useLineRangeSelection } from './useLineRangeSelection';
 import ChordDiagram from '../../diagrams/ChordDiagram';
@@ -5448,33 +5449,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           )}
 
           {/* Search Bar */}
-          <div className="relative">
-            <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
-              search
-            </span>
-            <input
-              type="text"
-              data-testid="chord-library-search-input"
-              value={chordSearchQuery}
-              onChange={(e) => setChordSearchQuery(e.target.value)}
-              placeholder="Search chords (e.g. C, Dm7, sus4, Bbm)..."
-              className={`w-full pl-9 pr-8 py-2 text-xs rounded-xl border focus:outline-none focus:border-blue-500 transition-colors ${
-                isEffectiveLight
-                  ? 'bg-black/5 border-black/10 text-gray-900 placeholder-gray-400'
-                  : 'bg-white/5 border-white/10 text-white placeholder-gray-500'
-              }`}
-            />
-            {chordSearchQuery && (
-              <button
-                type="button"
-                data-testid="chord-library-search-clear-btn"
-                onClick={() => setChordSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                <span className="material-symbols-rounded text-base">close</span>
-              </button>
-            )}
-          </div>
+          <IosSearchBar
+            data-testid="chord-library-search-input"
+            value={chordSearchQuery}
+            onChange={setChordSearchQuery}
+            placeholder="Search chords (e.g. C, Dm7, sus4, Bbm)..."
+          />
 
           {/* Root Note Filter Pills */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">

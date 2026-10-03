@@ -1,5 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BouncyAccordion,
@@ -4193,19 +4194,11 @@ export default function DrumEditor() {
                             }`}
                           >
                             {/* Left: Search input */}
-                            <div className="flex items-center gap-2 flex-1 max-w-xs relative">
-                              <span className="material-symbols-outlined text-[14px] text-zinc-500 absolute left-2">
-                                search
-                              </span>
-                              <input
+                            <div className="flex items-center gap-2 flex-1 max-w-xs">
+                              <IosSearchBar
                                 value={songSearch}
-                                onChange={(e) => setSongSearch(e.target.value)}
+                                onChange={setSongSearch}
                                 placeholder="Search beats..."
-                                className={`w-full pl-7 pr-2.5 py-1 rounded-md border text-[10.5px] outline-none transition-all ${
-                                  isLight
-                                    ? 'bg-white border-zinc-200 text-zinc-850 focus:border-zinc-350 placeholder-zinc-400'
-                                    : 'bg-[#000000] border-zinc-850 text-white focus:border-zinc-750 placeholder-zinc-650'
-                                }`}
                               />
                             </div>
 

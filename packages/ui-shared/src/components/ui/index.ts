@@ -43,3 +43,4 @@ export * from './layout-grid';
 export * from './folder-open';
 export * from './around';
 export * from './eclipse';
+export * from './IosSearchBar';

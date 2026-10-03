@@ -9,6 +9,7 @@ import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 export interface DrumBeatsPanelProps {
   drumSongs: DrumSong[];
@@ -634,40 +635,17 @@ export function DrumBeatsPanel({
           data-purpose="mobile-viewport"
         >
 
-        {/* Capsule Search Bar */}
-        <div className="relative flex items-center flex-shrink-0" data-purpose="search-box">
-          <span
-            className="material-symbols-outlined absolute left-4 pointer-events-none text-lg select-none"
-            style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-          >
-            search
-          </span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search beats, kits, tempo..."
-            className="w-full h-[46px] pl-10 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
-            style={{
-              backgroundColor: 'var(--surface-card-bg, #ffffff)',
-              borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-text-primary, #111827)',
-            }}
-            data-testid="beat-search-input"
-          />
-          {searchQuery && (
-            <button
-              aria-label="Clear search"
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
-              style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-              data-testid="clear-search-btn"
-            >
-              <span className="material-symbols-outlined text-base">close</span>
-            </button>
-          )}
-        </div>
+        {/* iOS Modernized Search Bar */}
+        <IosSearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onClear={() => setSearchQuery('')}
+          placeholder="Search beats, kits, tempo..."
+          data-purpose="search-box"
+          data-testid="beat-search-input"
+          accent={accent}
+          className="flex-shrink-0"
+        />
 
         {/* Filter & Sort Chips (Visible when beats exist) */}
         {drumSongs.length > 0 && (

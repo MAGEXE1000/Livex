@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { getLogs, stateTimeline } from '@workspace/livex-core';
 import { Button, ButtonGroup } from '../../../shared/design-system/buttons';
 import { copyToClipboard } from './centralizedClipboard';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 interface LiveConsoleProps {
   nativeLogsList: any[];
@@ -161,26 +162,11 @@ export default function LiveConsole({
       <div className="bg-black border border-outline-variant/10 rounded-xl overflow-hidden flex flex-col h-80 shadow-inner">
         {/* Search Bar Header */}
         <div className="flex items-center gap-3 p-3 bg-black border-b border-outline-variant/5">
-          <div className="flex-1 flex items-center gap-2 bg-[var(--app-surface-low)] px-3 py-1.5 rounded-lg border border-outline-variant/10">
-            <span className="material-symbols-outlined text-sm text-on-surface-variant">
-              search
-            </span>
-            <input
-              className="bg-transparent border-none text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 w-full font-mono outline-none"
-              placeholder="Search logs..."
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-on-surface-variant hover:text-on-surface"
-              >
-                <span className="material-symbols-outlined text-xs">close</span>
-              </button>
-            )}
-          </div>
+          <IosSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search logs..."
+          />
         </div>
 
         {/* Filter Category Row */}

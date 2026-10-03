@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import { CANONICAL_SOURCES, CANONICAL_DESTINATIONS } from './StagexSpecsPicker';
 import { StageLibraryItem } from '../types';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 export type RightSidebarTab = 'elements' | 'specs';
 
@@ -88,8 +89,6 @@ export const StagexRightSidebar: React.FC<StagexRightSidebarProps> = ({
   // Elements search & category filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Specs state
   const preferences = useStagexStore((s) => s.preferences);
@@ -143,12 +142,10 @@ export const StagexRightSidebar: React.FC<StagexRightSidebarProps> = ({
   }, [searchQuery, selectedCategory, searchDictionary, customDictionary]);
 
   const handleSearchFocus = () => {
-    setIsSearchFocused(true);
     onSearchFocusChange?.(true);
   };
 
   const handleSearchBlur = () => {
-    setIsSearchFocused(false);
     onSearchFocusChange?.(false);
   };
 
@@ -447,47 +444,15 @@ export const StagexRightSidebar: React.FC<StagexRightSidebarProps> = ({
               {/* ── Content: Elements Tab ─────────────────────────────────── */}
               {activeTab === 'elements' && (
                 <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2.5">
-                  {/* Search input with clear button */}
-                  <div className="relative flex items-center w-full">
-                    <span
-                      className="material-symbols-outlined absolute left-2.5 text-[17px] pointer-events-none"
-                      style={{ color: isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }}
-                    >
-                      search
-                    </span>
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onFocus={handleSearchFocus}
-                      onBlur={handleSearchBlur}
-                      placeholder={isSpanish ? 'Buscar elementos...' : 'Search elements...'}
-                      className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border outline-none transition-all"
-                      style={{
-                        background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
-                        borderColor: isSearchFocused
-                          ? accent.from
-                          : isLight
-                            ? 'rgba(0,0,0,0.08)'
-                            : 'rgba(255,255,255,0.08)',
-                        color: isLight ? '#18181b' : '#f4f4f5',
-                      }}
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          searchInputRef.current?.focus();
-                        }}
-                        className="absolute right-2 text-xs flex items-center justify-center border-none bg-transparent cursor-pointer p-0.5"
-                        style={{ color: isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }}
-                        title="Clear search"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">close</span>
-                      </button>
-                    )}
-                  </div>
+                  {/* Search input */}
+                  <IosSearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onFocus={handleSearchFocus}
+                    onBlur={handleSearchBlur}
+                    placeholder={isSpanish ? 'Buscar elementos...' : 'Search elements...'}
+                    accent={accent}
+                  />
 
                   {/* Category Filter Chips */}
                   <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar flex-shrink-0">

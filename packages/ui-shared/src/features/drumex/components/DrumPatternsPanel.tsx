@@ -22,6 +22,7 @@ import { StaggeredReveal } from '../../../shared/animation';
 import { SharedFloatingHeader, ContextualActionPill } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { SlidersHorizontal } from 'lucide-react';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 export interface DrumPatternsPanelProps {
   onPreviewPattern: (lp: LibraryPattern) => void;
@@ -827,41 +828,19 @@ export function DrumPatternsPanel({
         {/* Filter & Search Controls */}
         <div className="pb-2 flex flex-col gap-2">
           {/* Capsule Search Bar (Modern 46px Capsule) */}
-          <div className="relative flex items-center" data-purpose="search-box">
-            <span
-              className="material-symbols-outlined absolute left-3.5 pointer-events-none text-lg select-none"
-              style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-            >
-              search
-            </span>
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setVisibleBatch(20);
-              }}
-              placeholder="Search patterns, genres, or moods..."
-              className="w-full h-[46px] pl-11 pr-10 text-sm rounded-full border shadow-soft-card outline-none transition-all font-inter"
-              style={{
-                backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                borderColor: 'var(--c-border, #E3E6EB)',
-                color: 'var(--c-text-primary, #111827)',
-              }}
-              data-testid="pattern-search-input"
-            />
-            {searchQuery && (
-              <button
-                aria-label="Clear search"
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-slate-600 active:scale-90 transition-transform cursor-pointer"
-                style={{ color: 'var(--c-text-muted, #94A3B8)' }}
-              >
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
-            )}
-          </div>
+          {/* iOS Modernized Search Bar */}
+          <IosSearchBar
+            value={searchQuery}
+            onChange={(val) => {
+              setSearchQuery(val);
+              setVisibleBatch(20);
+            }}
+            onClear={() => setSearchQuery('')}
+            placeholder="Search patterns, genres, or moods..."
+            data-purpose="search-box"
+            data-testid="pattern-search-input"
+            accent={accent}
+          />
 
           {/* Filter Row 1: Pattern Types / Categories */}
           <div

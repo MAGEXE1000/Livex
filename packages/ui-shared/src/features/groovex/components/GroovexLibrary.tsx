@@ -17,6 +17,7 @@ import { MorphingActionSurface } from '../../../shared/design-system/MorphingAct
 import { useVirtualWindow } from '../../../shared/virtualization';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 export default function GroovexLibrary() {
   const searchQuery = useGroovexStore(useShallow((s) => s.searchQuery));
@@ -216,75 +217,14 @@ export default function GroovexLibrary() {
               gap: '10px',
             }}
           >
-            {/* Search Input Container */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span
-              className="material-symbols-outlined"
-              style={{
-                position: 'absolute',
-                left: '14px',
-                fontSize: '20px',
-                color: 'var(--c-text-muted)',
-                pointerEvents: 'none',
-              }}
-            >
-              search
-            </span>
-            <input
-              type="text"
+            {/* iOS Modernized Search Bar */}
+            <IosSearchBar
               id="search-input"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
+              onClear={() => setSearchQuery('')}
               placeholder={t.groovex.searchPlaceholder || 'Search songs, artists, or genres...'}
-              style={{
-                width: '100%',
-                height: '46px',
-                background: 'var(--app-surface)',
-                color: 'var(--c-text-primary, var(--text))',
-                fontFamily: 'var(--studio-font-body)',
-                fontSize: '14px',
-                fontWeight: 500,
-                paddingLeft: '42px',
-                paddingRight: searchQuery ? '40px' : '16px',
-                paddingTop: '0',
-                paddingBottom: '0',
-                borderRadius: '9999px',
-                border: '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
-                boxShadow: isLight
-                  ? '0 2px 6px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02)'
-                  : '0 2px 6px rgba(0, 0, 0, 0.2)',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              }}
-              className="focus:ring-2 focus:ring-blue-500/20"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                id="clear-search"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--c-text-muted)',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  borderRadius: '9999px',
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                  cancel
-                </span>
-              </button>
-            )}
-          </div>
 
           {/* Compact Coherent Filter Bar */}
           <div

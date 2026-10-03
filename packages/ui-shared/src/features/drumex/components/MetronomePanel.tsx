@@ -23,6 +23,7 @@ import {
   TempoRampModal,
   CountInModal,
 } from './MetronomeModals';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 interface MetronomePanelProps {
   onBack?: () => void;
@@ -2161,22 +2162,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             <>
               {/* Search / Filter bar */}
               <div className="px-5 pt-3 pb-1">
-                <div className="relative flex items-center">
-                  <span className="material-symbols-outlined text-[18px] text-slate-400 absolute left-3 pointer-events-none">
-                    search
-                  </span>
-                  <input
-                    value={presetSearch}
-                    onChange={(e) => setPresetSearch(e.target.value)}
-                    placeholder="Search presets..."
-                    className={`w-full pl-9 pr-3 py-2 text-xs ${
-                      isAmoled
-                        ? 'bg-[#0a0a0c] focus:bg-black border-white/15 text-zinc-100'
-                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/60 focus:bg-white dark:focus:bg-zinc-900 border-slate-200/80 dark:border-zinc-700 text-slate-800 dark:text-zinc-100'
-                    } border rounded-xl placeholder:text-slate-400 transition focus:outline-none focus:border-[#007aff]`}
-                    type="text"
-                  />
-                </div>
+                <IosSearchBar
+                  value={presetSearch}
+                  onChange={setPresetSearch}
+                  placeholder="Search presets..."
+                />
               </div>
 
               {/* Presets List */}

@@ -12,6 +12,7 @@ import {
   BouncyAccordion,
   type BouncyAccordionItem,
 } from '../../../components/motion/bouncy-accordion';
+import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 
 interface StageLibraryPanelProps {
   isLight: boolean;
@@ -355,67 +356,15 @@ export const StageLibraryPanel = React.memo(
             </div>
           </div>
 
-          <div style={{ position: 'relative', width: '100%', marginBottom: '4px' }}>
-            <span
-              className="material-symbols-outlined"
-              style={{
-                position: 'absolute',
-                left: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: '16px',
-                color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.35)',
-                pointerEvents: 'none',
-              }}
-            >
-              search
-            </span>
-            <input
-              type="text"
-              placeholder={tr.stagex?.library?.searchPlaceholder || 'Search elements...'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={onSearchFocus}
-              onBlur={onSearchBlur}
-              style={{
-                width: '100%',
-                height: '34px',
-                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)',
-                border: isLight ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '8px',
-                paddingLeft: '32px',
-                paddingRight: searchQuery ? '28px' : '10px',
-                fontSize: '11px',
-                color: isLight ? '#000' : '#fff',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 150ms ease, box-shadow 150ms ease',
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                  close
-                </span>
-              </button>
-            )}
-          </div>
+          <IosSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onFocus={onSearchFocus}
+            onBlur={onSearchBlur}
+            placeholder={tr.stagex?.library?.searchPlaceholder || 'Search elements...'}
+            accent={accent}
+            className="mb-1"
+          />
         </div>
 
         {/* Elements List */}

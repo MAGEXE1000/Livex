@@ -2,6 +2,9 @@ import React, { forwardRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { SpringPresets } from '@workspace/livex-core';
 import { StudioIcon } from '../icons/StudioIcon';
+import { IosSearchBar, type IosSearchBarProps, type IosSearchBarHandle } from '../../components/ui/IosSearchBar';
+
+export { IosSearchBar, type IosSearchBarProps, type IosSearchBarHandle };
 
 // ── 6. Input ───────────────────────────────────────────────────────────────
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -107,7 +110,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     {
       onClear,
       accent,
-      value,
+      value = '',
       onChange,
       style,
       className = '',
@@ -118,107 +121,35 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     },
     ref
   ) => {
-    const [focused, setFocused] = useState(false);
-    const showClear = value && value.toString().length > 0 && onClear;
-    const activeAccent = accent?.from || 'var(--c-accent-from, #7c3aed)';
-
     return (
-      <div
-        className={`relative w-full ${className}`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          position: 'relative',
+      <IosSearchBar
+        value={typeof value === 'string' ? value : String(value ?? '')}
+        onChange={(val) => {
+          if (onChange) {
+            const syntheticEvent = {
+              target: { value: val },
+              currentTarget: { value: val },
+            } as React.ChangeEvent<HTMLInputElement>;
+            onChange(syntheticEvent);
+          }
         }}
-      >
-        {/* Top Specular Rim */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 14,
-            right: 14,
-            height: '1px',
-            background:
-              'var(--surface-glass-rim, linear-gradient(90deg, transparent, var(--c-border), transparent))',
-            pointerEvents: 'none',
-            opacity: focused ? 0.9 : 0.5,
-            zIndex: 6,
-          }}
-        />
-
-        <StudioIcon
-          name="search"
-          size={20}
-          className="absolute left-4 pointer-events-none"
-          style={{
-            color: focused ? activeAccent : 'var(--c-text-secondary)',
-            zIndex: 5,
-            transition: 'color 200ms ease',
-          }}
-        />
-        <input
-          ref={ref}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          onFocus={(e) => {
-            setFocused(true);
-            onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            onBlur?.(e);
-          }}
-          style={{
-            width: '100%',
-            height: '46px',
-            padding: '10px 44px 10px 46px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--surface-topbar-bg)',
-            border: focused ? `1px solid ${activeAccent}` : '1px solid var(--c-border)',
-            color: 'var(--c-text-primary)',
-            fontSize: '13.5px',
-            fontFamily: 'var(--type-body-font, var(--studio-font-body))',
-            outline: 'none',
-            transition: 'all 240ms cubic-bezier(0.2, 0, 0, 1)',
-            boxShadow: focused
-              ? `0 0 0 3px var(--studio-accent-soft), var(--elevation-mid)`
-              : 'var(--elevation-low)',
-            backdropFilter: 'var(--surface-topbar-blur, blur(16px))',
-            WebkitBackdropFilter: 'var(--surface-topbar-blur, blur(16px))',
-            boxSizing: 'border-box',
-            ...style,
-          }}
-          {...props}
-        />
-        {showClear && (
-          <motion.button
-            onClick={onClear}
-            type="button"
-            aria-label="Clear search"
-            whileTap={{ scale: 0.9 }}
-            transition={SpringPresets.soft}
-            className="absolute right-3.5 outline-none cursor-pointer flex items-center justify-center"
-            style={{
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--app-surface-high)',
-              border: '1px solid var(--c-border)',
-              color: 'var(--c-text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 5,
-            }}
-          >
-            <StudioIcon name="close" size={15} aria-hidden="true" />
-          </motion.button>
-        )}
-      </div>
+        onClear={onClear}
+        placeholder={placeholder}
+        accent={accent}
+        className={className}
+        style={style}
+        onFocus={onFocus ? () => onFocus({} as React.FocusEvent<HTMLInputElement>) : undefined}
+        onBlur={onBlur ? () => onBlur({} as React.FocusEvent<HTMLInputElement>) : undefined}
+        disabled={props.disabled}
+        autoFocus={props.autoFocus}
+        id={props.id}
+        name={props.name}
+        data-testid={props['data-testid']}
+        data-purpose={props['data-purpose']}
+      />
     );
   }
 );
 
 SearchBar.displayName = 'SearchBar';
+
