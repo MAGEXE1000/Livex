@@ -40,6 +40,7 @@ import {
   type MetronomeSubdivision,
   type MetronomeAccentType,
   getBeatsPerMeasure,
+  resolveLineBars,
 } from '@workspace/livex-core';
 import { animateScrollTop } from '../../../lib/animatedScroll';
 
@@ -719,6 +720,8 @@ export function useLiveModeState(
   const initialSpeed = preset.speed || preset.bpm || 120;
   const [speed, setSpeedState] = useState(initialSpeed);
   const [currentBeat, setCurrentBeat] = useState(0);
+  const [totalLineBeats, setTotalLineBeats] = useState<number>(0);
+  const [lineBeatsElapsed, setLineBeatsElapsed] = useState<number>(0);
   const [currentBar, setCurrentBar] = useState(1);
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -1098,7 +1101,8 @@ export function useLiveModeState(
     const effectiveBpm = speed || bpmOverride || 120;
 
     const engine = liveMetronomeRef.current;
-    if (countdownMode === 'off') {
+    const isMidSong = currentLineIdx > 0 || lineBeatsElapsedRef.current > 0;
+    if (countdownMode === 'off' || isMidSong) {
       if (engine) engine.setCountIn(false);
       setAutoPlay(true);
       return;
@@ -1594,6 +1598,14 @@ export function useLiveModeState(
         setCurrentLineIdx(idx);
         setCurrentBeat(0);
         setCurrentBar(1);
+        lineBeatsElapsedRef.current = 0;
+        setLineBeatsElapsed(0);
+
+        if (liveMetronomeRef.current?.isPlaying) {
+          liveMetronomeRef.current.setCountIn(false);
+          liveMetronomeRef.current.stop();
+          liveMetronomeRef.current.start();
+        }
         const firstWord = allWords.find((w) => w.lineIdx === idx);
         if (firstWord) {
           setCurrentWordIdxState(firstWord.globalWordIdx);
@@ -1793,6 +1805,7 @@ export function useLiveModeState(
 
   useEffect(() => {
     lineBeatsElapsedRef.current = 0;
+    setLineBeatsElapsed(0);
     chordBeatsElapsedRef.current = 0;
     setInterludeRemainingSec(null);
   }, [seekToken]);
@@ -1849,16 +1862,18 @@ export function useLiveModeState(
         const beatDurMs = (60000 / (speedRef.current || 120)) / (playbackSpeedRef.current || 1);
 
         let totalLineBeats: number;
-        if (isInterlude) {
+        if (isInterlude || (activeLine?.line?.explicitDurationMs !== undefined)) {
           const interludeMs = Math.max(1000, activeLine?.line?.explicitDurationMs || 15000);
           totalLineBeats = Math.max(1, Math.round(interludeMs / beatDurMs));
-        } else if (scheduledLine && scheduledLine.durationMs > 0) {
-          totalLineBeats = Math.max(1, Math.round(scheduledLine.durationMs / beatDurMs));
         } else {
-          totalLineBeats = barsPerLineRef.current * beatsPerMeasure;
+          const sec = timingScheduleRef.current?.document?.sections?.find(s => s.id === activeLine?.sectionId);
+          totalLineBeats = resolveLineBars(activeLine?.line, sec, barsPerLineRef.current || 1) * beatsPerMeasure;
         }
+        
+        setTotalLineBeats(totalLineBeats);
 
         lineBeatsElapsedRef.current++;
+        setLineBeatsElapsed(lineBeatsElapsedRef.current);
 
         const currentBarNum = Math.min(
           Math.ceil(totalLineBeats / beatsPerMeasure),
@@ -2320,6 +2335,8 @@ export function useLiveModeState(
     cyclePlaybackSpeed,
     currentBeat,
     currentBar,
+    totalLineBeats,
+    lineBeatsElapsed,
     msPerChord,
     msPerLine,
     targetDurationSeconds,

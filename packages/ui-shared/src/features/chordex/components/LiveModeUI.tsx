@@ -1375,18 +1375,40 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
                     opacity: 0.5,
                   }}
                 >
-                  {Array.from({ length: 4 }).map((_, bIdx) => {
-                    const isDotActive = state.activeMetronomeBeat === bIdx;
+                  {(() => {
+                    const beatsPerBar = 4; // Assuming 4/4 if not available directly here
+                    const totalBars = Math.ceil((state.totalLineBeats || 4) / beatsPerBar);
+                    const currentBar = Math.min(totalBars, Math.floor((state.lineBeatsElapsed || 0) / beatsPerBar) + 1);
+                    const beatWithinBar = (state.lineBeatsElapsed || 0) % beatsPerBar;
+                    
                     return (
-                      <div
-                        key={`beat-dot-${bIdx}`}
-                        className={`beat-dot ${isDotActive ? 'beat-dot-active' : ''}`}
-                        style={{
-                          backgroundColor: isDotActive ? accent.from : 'var(--c-text-muted, #94a3b8)',
-                        }}
-                      />
+                      <>
+                        {Array.from({ length: beatsPerBar }).map((_, bIdx) => {
+                          const isDotActive = bIdx <= beatWithinBar;
+                          return (
+                            <div
+                              key={`beat-dot-${bIdx}`}
+                              className="beat-dot"
+                              style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                transition: 'opacity 150ms ease, transform 150ms ease',
+                                opacity: isDotActive ? 1 : 0.3,
+                                transform: isDotActive ? 'scale(1.2)' : 'scale(1)',
+                                backgroundColor: isDotActive ? accent.from : 'var(--c-text-muted, #94a3b8)',
+                              }}
+                            />
+                          );
+                        })}
+                        {totalBars > 1 && (
+                          <span style={{ fontSize: '10px', marginLeft: '8px', color: 'var(--c-text-muted)' }}>
+                            bar {currentBar}/{totalBars}
+                          </span>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               )}
 
