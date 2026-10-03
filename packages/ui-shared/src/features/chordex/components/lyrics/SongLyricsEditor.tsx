@@ -58,12 +58,15 @@ import {
   shiftChordOffsets,
   batchDeleteLyricsSelection,
   reconcileSpansOnTextEdit,
+  applyBarsToLines,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
 import { CustomBarsSheet } from '../../../../shared/design-system/CustomBarsSheet';
 import { TextInputDialog } from '../../../../shared/design-system/TextInputDialog';
+import { BarsAssignmentDock } from './BarsAssignmentDock';
+import { useLineRangeSelection } from './useLineRangeSelection';
 import ChordDiagram from '../../diagrams/ChordDiagram';
 import DetailFretboardDiagram from '../../diagrams/DetailFretboardDiagram';
 
@@ -287,6 +290,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const [customBarsState, setCustomBarsState] = useState<{ open: boolean; sectionId: string; initialBars: number }>({ open: false, sectionId: '', initialBars: 4 });
   const [renameState, setRenameState] = useState<{ open: boolean; sectionId: string; initialName: string; mode: 'create-section' | 'rename-section' }>({ open: false, sectionId: '', initialName: '', mode: 'create-section' });
+
+  // ── BATCH BARS-PER-LINE ASSIGNMENT ──
+  const [batchBarsActive, setBatchBarsActive] = useState(false);
+  const lineSelection = useLineRangeSelection(currentDoc.sections);
 
   // Clear All Lyrics confirmation dialog state & handler
   const [showClearLyricsConfirm, setShowClearLyricsConfirm] = useState(false);
@@ -4110,16 +4117,26 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-section-id={section.id}
                         data-line-index={lineIdx}
                         onClick={() => {
+                          if (batchBarsActive) {
+                            lineSelection.toggle(line.id);
+                            return;
+                          }
                           setLastActivePosition(section.id, lineIdx, line.id);
                         }}
+                        onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="group/line relative flex items-center py-1 px-2 transition-all rounded-lg select-text min-h-[1.75rem]"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                          WebkitUserSelect: 'text',
-                          userSelect: 'text',
+                          WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                          userSelect: batchBarsActive ? 'none' : 'text',
+                          ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
+                            borderLeft: '3px solid var(--color-primary, #14b8a6)',
+                            background: 'rgba(20,184,166,0.12)',
+                            borderRadius: '0.375rem',
+                          }),
                         }}
                       >
                         {/* Structural key: switching between a plain text child and rich span children
@@ -4213,16 +4230,26 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           data-section-id={section.id}
                           data-line-index={lineIdx}
                           onClick={() => {
+                            if (batchBarsActive) {
+                              lineSelection.toggle(line.id);
+                              return;
+                            }
                             setLastActivePosition(section.id, lineIdx, line.id);
                           }}
+                          onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                           onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                           onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                           className="group/line relative flex items-center py-1 px-2 select-text min-h-[1.75rem] rounded-lg hover:bg-white/5 transition-colors"
                           style={{
                             transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                             transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                            WebkitUserSelect: 'text',
-                            userSelect: 'text',
+                            WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                            userSelect: batchBarsActive ? 'none' : 'text',
+                            ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
+                              borderLeft: '3px solid var(--color-primary, #14b8a6)',
+                              background: 'rgba(20,184,166,0.12)',
+                              borderRadius: '0.375rem',
+                            }),
                           }}
                         >
                           {/* Distinct key: when the first character is typed the browser mutates this
@@ -4245,12 +4272,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         data-line-id={line.id}
                         data-section-id={section.id}
                         data-line-index={lineIdx}
+                        onClick={batchBarsActive ? () => lineSelection.toggle(line.id) : undefined}
+                        onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                         onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                         onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                         className="relative flex items-center gap-2 py-1 px-1 rounded-lg"
                         style={{
                           transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                           transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+                          ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
+                            borderLeft: '3px solid var(--color-primary, #14b8a6)',
+                            background: 'rgba(20,184,166,0.12)',
+                            borderRadius: '0.375rem',
+                          }),
                         }}
                       >
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -4299,6 +4333,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       data-section-id={section.id}
                       data-line-index={lineIdx}
                       onClick={() => {
+                        if (batchBarsActive) {
+                          lineSelection.toggle(line.id);
+                          return;
+                        }
                         const sel = typeof window !== 'undefined' ? window.getSelection() : null;
                         if (sel && sel.toString().length > 0) return;
                         setLastActivePosition(section.id, lineIdx, line.id);
@@ -4310,14 +4348,20 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         setLastActivePosition(section.id, lineIdx, line.id);
                         setEditingLineId(line.id);
                       }}
+                      onPointerDown={batchBarsActive ? (e) => lineSelection.onPointerDownLine(line.id, e) : undefined}
                       onDragOver={(e) => handleDragOverLine(e, section.id, lineIdx)}
                       onDrop={(e) => handleDropOnLine(e, section.id, lineIdx)}
                       className="group/line relative flex flex-wrap items-end gap-x-2 gap-y-2 py-1 px-2 transition-all rounded-lg select-text"
                       style={{
                         transform: translateYOffset !== 0 ? `translateY(${translateYOffset}px)` : undefined,
                         transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
-                        WebkitUserSelect: 'text',
-                        userSelect: 'text',
+                        WebkitUserSelect: batchBarsActive ? 'none' : 'text',
+                        userSelect: batchBarsActive ? 'none' : 'text',
+                        ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
+                          borderLeft: '3px solid var(--color-primary, #14b8a6)',
+                          background: 'rgba(20,184,166,0.12)',
+                          borderRadius: '0.375rem',
+                        }),
                       }}
                     >
                       {words.map((w, wIdx) => {
@@ -4572,6 +4616,16 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     sublabel: 'Timed silence / solo (e.g. 15s)',
                     onPress: () => {
                       handleAddInterludeLine(lastActivePositionRef.current?.sectionId, lastActivePositionRef.current?.lineIndex);
+                    },
+                  },
+                  {
+                    id: 'action-batch-bars',
+                    label: 'Set Bars / Timing',
+                    icon: 'timer',
+                    sublabel: 'Assign bars to multiple lines',
+                    onPress: () => {
+                      setBatchBarsActive(true);
+                      lineSelection.enter(new Set());
                     },
                   },
                 ]}
@@ -5889,6 +5943,27 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
           }
         }}
         initialBars={customBarsState.initialBars}
+      />
+
+      <BarsAssignmentDock
+        active={batchBarsActive}
+        selectedCount={lineSelection.selectedCount}
+        onApply={(bars) => {
+          if (bars === null || lineSelection.selectedLineIds.size === 0) return;
+          const newSections = applyBarsToLines(
+            currentDoc.sections,
+            lineSelection.selectedLineIds,
+            bars,
+            1,
+          );
+          if (newSections !== currentDoc.sections) {
+            triggerChange({ ...currentDoc, sections: newSections });
+          }
+        }}
+        onClose={() => {
+          setBatchBarsActive(false);
+          lineSelection.exit();
+        }}
       />
 
       <TextInputDialog

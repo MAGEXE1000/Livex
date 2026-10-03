@@ -48,3 +48,50 @@ export function advanceLineClock(
     return { nextElapsed: currentElapsed + 1, shouldAdvanceLine: false };
   }
 }
+
+export function applyBarsToLines(
+  sections: SongLyricSection[],
+  lineIds: ReadonlySet<string> | string[],
+  bars: number | null,
+  globalBarsPerLine: number
+): SongLyricSection[] {
+  const lineIdSet = new Set(lineIds);
+  let changed = false;
+
+  const newSections = sections.map(section => {
+    let sectionChanged = false;
+    const newLines = section.lines.map(line => {
+      if (!lineIdSet.has(line.id)) return line;
+      if (line.type === 'interlude') return line;
+
+      const defaultBars = section.barsPerLine ?? globalBarsPerLine;
+      let newBarsValue = bars;
+
+      if (bars === defaultBars) {
+        newBarsValue = null;
+      } else if (bars !== null) {
+        newBarsValue = Math.max(1, Math.min(32, Math.round(bars)));
+      }
+
+      if (line.bars !== newBarsValue && !(line.bars === undefined && newBarsValue === null)) {
+        sectionChanged = true;
+        changed = true;
+        const newLine = { ...line };
+        if (newBarsValue === null) {
+          delete newLine.bars;
+        } else {
+          newLine.bars = newBarsValue;
+        }
+        return newLine;
+      }
+      return line;
+    });
+
+    if (sectionChanged) {
+      return { ...section, lines: newLines };
+    }
+    return section;
+  });
+
+  return changed ? newSections : sections;
+}
