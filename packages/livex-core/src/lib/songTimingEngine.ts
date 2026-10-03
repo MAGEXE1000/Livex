@@ -19,6 +19,7 @@
 
 import type { SongPreset, SongSection } from '../store/slices/songSlice';
 import type { SongLyricsDocument, SongLyricSection, SongLyricLine, LyricChordPlacement } from '../types/lyrics';
+import { getBeatsPerMeasure, type MetronomeTimeSignature } from './audio/metronomeAudio';
 
 export interface PerformanceTimingItem {
   id: string;
@@ -55,6 +56,7 @@ export interface TimingEngineOptions {
   bpmOverride?: number;
   beatsPerChord?: number;
   beatsPerLine?: number;
+  timeSignature?: MetronomeTimeSignature;
   targetDurationOverride?: number; // In seconds
 }
 
@@ -113,8 +115,12 @@ export function calculateSongTimingSchedule(
     Math.min(1200, options?.speedOverride || options?.bpmOverride || preset.speed || preset.bpm || 120)
   );
   const referenceBpm = referenceSpeed;
-  const beatsPerChord = options?.beatsPerChord || 4;
-  const beatsPerLine = options?.beatsPerLine || (preset.barsPerLine ? preset.barsPerLine * 4 : 8);
+  const timeSignature: MetronomeTimeSignature =
+    options?.timeSignature || (preset as any)?.timeSignature || '4/4';
+  const beatsPerMeasure = getBeatsPerMeasure(timeSignature);
+  const beatsPerChord = options?.beatsPerChord || beatsPerMeasure;
+  const barsPerLine = preset.barsPerLine || 2;
+  const beatsPerLine = options?.beatsPerLine || (barsPerLine * beatsPerMeasure);
   const beatDurationMs = 60000 / referenceSpeed;
 
   const targetSec =

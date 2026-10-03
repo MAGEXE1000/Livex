@@ -24,6 +24,7 @@ import {
   type LobbyAttendee,
   formatDurationMmSs,
   parseDurationMmSs,
+  getBeatsPerMeasure,
 } from '@workspace/livex-core';
 
 /* ── STYLES & KEYFRAMES INJECTION ────────────────────────────── */
@@ -1964,7 +1965,7 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             LINE {Math.min(currentLineIdx + 1, teleprompterLines.length)} OF {teleprompterLines.length}
           </span>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {[0, 1, 2, 3].map((b) => (
+            {Array.from({ length: getBeatsPerMeasure(state.metronomeTimeSignature || '4/4') }).map((_, b) => (
               <div
                 key={b}
                 className={`beat-dot ${b === currentBeat ? 'beat-dot-active' : ''}`}

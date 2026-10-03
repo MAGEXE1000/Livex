@@ -34,6 +34,7 @@ import {
   type LobbyAttendee,
   type SetlistQueueItem,
   MetronomeAudioEngine,
+  type MetronomeBeatEvent,
   type MetronomeSoundId,
   type MetronomeTimeSignature,
   type MetronomeSubdivision,
@@ -516,361 +517,6 @@ export function useLiveModeState(
   const [isExiting, setIsExiting] = useState(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [beatsPerChord, setBeatsPerChord] = useState<BeatsPerChord>(4);
-  const [barsPerLine, setBarsPerLineState] = useState<number>(() => {
-    const b = preset.barsPerLine;
-    return (b === 1 || b === 2 || b === 3 || b === 4) ? b : 2;
-  });
-
-  const initialSpeed = preset.speed || preset.bpm || 120;
-  const [speed, setSpeedState] = useState(initialSpeed);
-  const [currentBeat, setCurrentBeat] = useState(0);
-  const [currentBar, setCurrentBar] = useState(1);
-  const [elapsedMs, setElapsedMs] = useState(0);
-
-  const currentBeatRef = useRef(currentBeat);
-  currentBeatRef.current = currentBeat;
-
-  const currentBarRef = useRef(currentBar);
-  currentBarRef.current = currentBar;
-
-  const elapsedMsRef = useRef(elapsedMs);
-  elapsedMsRef.current = elapsedMs;
-
-  const speedRef = useRef(speed);
-  speedRef.current = speed;
-
-  const barsPerLineRef = useRef(barsPerLine);
-  barsPerLineRef.current = barsPerLine;
-
-  const autoPlayRef = useRef(autoPlay);
-  autoPlayRef.current = autoPlay;
-
-  const emitLiveSync = useCallback(
-    (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
-      if (!currentBand) return;
-      const nextVersion = packetVersionRef.current++;
-      const packet: LiveBandSyncPacket = {
-        bandId: currentBand.id,
-        leaderId: currentBand.leaderId || 'local-leader',
-        leaderName: 'Leader',
-        songId: preset.id,
-        songTitle: preset.name || 'Untitled Song',
-        action,
-        timestamp: Date.now(),
-        currentLineIdx: overrides?.currentLineIdx ?? currentLineIdxRef.current,
-        currentWordIdx: overrides?.currentWordIdx ?? currentWordIdxRef.current,
-        currentBeat: overrides?.currentBeat ?? currentBeatRef.current,
-        currentBar: overrides?.currentBar ?? currentBarRef.current,
-        bpm: overrides?.bpm ?? speedRef.current,
-        barsPerLine: overrides?.barsPerLine ?? barsPerLineRef.current,
-        elapsedMs: overrides?.elapsedMs ?? elapsedMsRef.current,
-        autoPlay: overrides?.autoPlay ?? autoPlayRef.current,
-        version: nextVersion,
-        songPayload: {
-          title: preset.name,
-          artist: preset.artist,
-          key: preset.key,
-          bpm: preset.bpm,
-          speed: preset.speed,
-          barsPerLine: preset.barsPerLine,
-          targetDurationSeconds: preset.targetDurationSeconds,
-          sections: preset.sections,
-          lyrics: preset.lyrics,
-          chords: preset.chords,
-        },
-      };
-      broadcastBandLivePacket(packet);
-    },
-    [currentBand, preset]
-  );
-
-  const setAutoPlay = useCallback(
-    (action: boolean | ((prev: boolean) => boolean)) => {
-      if (isLockedToLeader) return;
-      setAutoPlayState((prev) => {
-        const next = typeof action === 'function' ? action(prev) : action;
-        if (isBroadcasting) {
-          emitLiveSync(next ? 'PLAY' : 'PAUSE', { autoPlay: next });
-        }
-        return next;
-      });
-    },
-    [isLockedToLeader, isBroadcasting, emitLiveSync]
-  );
-
-  const lobbyAttendees = useBandStore((s) => s.lobbyAttendees);
-  const setLobbyAttendees = useBandStore((s) => s.setLobbyAttendees);
-
-  const [isInLobby, setIsInLobby] = useState<boolean>(() => {
-    return Boolean(isLockedToLeader && activeLiveSession?.action === 'CALL_BAND');
-  });
-
-  const startSongFromLobby = useCallback(() => {
-    setIsInLobby(false);
-    setCurrentLineIdx(0);
-    setCurrentBeat(0);
-    setCurrentBar(1);
-    setAutoPlayState(true);
-    wordRemainingMsRef.current = 0;
-    wordStartTimestampRef.current = performance.now();
-    if (isBroadcasting || (currentBand && !isLockedToLeader)) {
-      setIsBroadcasting(true);
-      emitLiveSync('START_PLAYBACK', {
-        currentLineIdx: 0,
-        currentBeat: 0,
-        currentBar: 1,
-        autoPlay: true,
-        timestamp: Date.now(),
-      });
-    }
-  }, [emitLiveSync, isBroadcasting, currentBand, isLockedToLeader, setIsBroadcasting]);
-
-  const callBandSession = useCallback(() => {
-    const leaderId = currentBand?.leaderId || currentUserId;
-    const leaderName = currentBand
-      ? useBandStore.getState().members.find((m) => m.userId === leaderId)?.displayName || 'Band Leader'
-      : 'Band Leader';
-    const initialAttendee: LobbyAttendee = {
-      userId: leaderId,
-      displayName: leaderName,
-      role: 'leader',
-      joinedAt: Date.now(),
-    };
-    setLobbyAttendees([initialAttendee]);
-    setIsBroadcasting(true);
-    setIsInLobby(true);
-    emitLiveSync('CALL_BAND', {
-      autoPlay: false,
-      lobbyAttendees: [initialAttendee],
-    });
-  }, [currentBand, currentUserId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
-
-  useEffect(() => {
-    if (preset.barsPerLine) {
-      setBarsPerLineState(preset.barsPerLine);
-    }
-  }, [preset.barsPerLine]);
-
-  const setBarsPerLine = useCallback(
-    (action: number | ((prev: number) => number)) => {
-      if (isLockedToLeader) return;
-      let nextBars = 2;
-      setBarsPerLineState((prev) => {
-        const raw = typeof action === 'function' ? action(prev) : action;
-        nextBars = Math.max(1, Math.min(4, Math.round(raw)));
-        return nextBars;
-      });
-
-      wordRemainingMsRef.current = 0;
-      wordStartTimestampRef.current = 0;
-
-      if (isBroadcasting) {
-        emitLiveSync('BARS_CHANGE', { barsPerLine: nextBars });
-      }
-
-      if (preset?.id) {
-        queueMicrotask(() => {
-          try {
-            useChordStore.getState().updatePreset(preset.id, {
-              barsPerLine: nextBars,
-            });
-          } catch (_) {}
-        });
-      }
-    },
-    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
-  );
-
-  const beatsPerLine = barsPerLine * 4;
-  const setBeatsPerLine = useCallback((b: number) => {
-    setBarsPerLine(Math.round(b / 4));
-  }, [setBarsPerLine]);
-
-  // Teleprompter presentation states with local storage persistence
-  const [teleprompterFontSize, setTeleprompterFontSizeState] = useState<TeleprompterFontSize>(() => {
-    try {
-      const saved = localStorage.getItem('chordex_teleprompter_font_size');
-      if (saved === 'normal' || saved === 'large' || saved === 'huge') {
-        return saved;
-      }
-    } catch (_) {}
-    return 'normal';
-  });
-
-  const setTeleprompterFontSize = useCallback((size: TeleprompterFontSize) => {
-    setTeleprompterFontSizeState(size);
-    try {
-      localStorage.setItem('chordex_teleprompter_font_size', size);
-    } catch (_) {}
-  }, []);
-
-  const [teleprompterFontFamily, setTeleprompterFontFamilyState] = useState<TeleprompterFontFamily>(() => {
-    try {
-      const saved = localStorage.getItem('chordex_teleprompter_font_family');
-      if (saved === 'studio' || saved === 'sans' || saved === 'serif' || saved === 'mono') {
-        return saved;
-      }
-    } catch (_) {}
-    return 'studio';
-  });
-
-  const setTeleprompterFontFamily = useCallback((font: TeleprompterFontFamily) => {
-    setTeleprompterFontFamilyState(font);
-    try {
-      localStorage.setItem('chordex_teleprompter_font_family', font);
-    } catch (_) {}
-  }, []);
-
-  const [teleprompterLineHeight, setTeleprompterLineHeightState] = useState<TeleprompterLineHeight>(() => {
-    try {
-      const saved = localStorage.getItem('chordex_teleprompter_line_height');
-      if (saved === 'compact' || saved === 'normal' || saved === 'relaxed') {
-        return saved;
-      }
-    } catch (_) {}
-    return 'normal';
-  });
-
-  const setTeleprompterLineHeight = useCallback((lh: TeleprompterLineHeight) => {
-    setTeleprompterLineHeightState(lh);
-    try {
-      localStorage.setItem('chordex_teleprompter_line_height', lh);
-    } catch (_) {}
-  }, []);
-
-  const [teleprompterAlignment, setTeleprompterAlignmentState] = useState<TeleprompterAlignment>(() => {
-    try {
-      const saved = localStorage.getItem('chordex_teleprompter_alignment');
-      if (saved === 'left' || saved === 'center') {
-        return saved;
-      }
-    } catch (_) {}
-    return 'left';
-  });
-
-  const setTeleprompterAlignment = useCallback((align: TeleprompterAlignment) => {
-    setTeleprompterAlignmentState(align);
-    try {
-      localStorage.setItem('chordex_teleprompter_alignment', align);
-    } catch (_) {}
-  }, []);
-
-  const [teleprompterMirror, setTeleprompterMirrorState] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('chordex_teleprompter_mirror') === 'true';
-    } catch (_) {}
-    return false;
-  });
-
-  const setTeleprompterMirror = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
-    setTeleprompterMirrorState((prev) => {
-      const next = typeof v === 'function' ? v(prev) : v;
-      try {
-        localStorage.setItem('chordex_teleprompter_mirror', String(next));
-      } catch (_) {}
-      return next;
-    });
-  }, []);
-
-  // Live Chords diagram scale with local storage persistence ('large' | 'medium' | 'small')
-  const [chordDiagramScale, setChordDiagramScaleState] = useState<ChordDiagramScale>(() => {
-    try {
-      const saved = localStorage.getItem('chordex_chord_diagram_scale');
-      if (saved === 'large' || saved === 'medium' || saved === 'small') {
-        return saved;
-      }
-    } catch (_) {}
-    return 'large';
-  });
-
-  const setChordDiagramScale = useCallback((scale: ChordDiagramScale) => {
-    setChordDiagramScaleState(scale);
-    try {
-      localStorage.setItem('chordex_chord_diagram_scale', scale);
-    } catch (_) {}
-  }, []);
-
-  const [showContext, setShowContext] = useState(true);
-  const [seekToken, setSeekToken] = useState(0);
-
-  const wordRemainingMsRef = useRef<number>(0);
-  const wordStartTimestampRef = useRef<number>(0);
-  // Absolute performance.now() boundary at which the current line's period began (drift anchor)
-  const lineDueAtRef = useRef<number>(0);
-  const beatRemainingMsRef = useRef<number>(0);
-  const beatStartTimestampRef = useRef<number>(0);
-
-  // Sync if preset.speed or preset.bpm changes externally
-  useEffect(() => {
-    const next = preset.speed || preset.bpm;
-    if (next && next > 0) {
-      setSpeedState(next);
-    }
-  }, [preset.speed, preset.bpm]);
-
-  const setSpeed = useCallback(
-    (action: number | ((prev: number) => number)) => {
-      if (isLockedToLeader) return;
-      let nextSpeed = 120;
-      setSpeedState((prev) => {
-        const raw = typeof action === 'function' ? action(prev) : action;
-        nextSpeed = Math.max(40, Math.min(400, Math.round(raw)));
-        return nextSpeed;
-      });
-      
-      wordRemainingMsRef.current = 0;
-      wordStartTimestampRef.current = 0;
-
-      if (isBroadcasting) {
-        emitLiveSync('TEMPO_CHANGE', { bpm: nextSpeed });
-      }
-
-      if (preset?.id) {
-        queueMicrotask(() => {
-          try {
-            useChordStore.getState().updatePreset(preset.id, { 
-              speed: nextSpeed, 
-              bpm: nextSpeed 
-            });
-          } catch (_) {}
-        });
-      }
-    },
-    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
-  );
-
-  const bpmOverride = speed;
-  const setBpmOverride = setSpeed;
-
-  const [targetDurationSeconds, setTargetDurationSecondsState] = useState<number | undefined>(
-    preset.targetDurationSeconds
-  );
-
-  // Sync if preset.targetDurationSeconds changes externally
-  useEffect(() => {
-    setTargetDurationSecondsState(preset.targetDurationSeconds);
-  }, [preset.targetDurationSeconds]);
-
-  const setTargetDurationSeconds = useCallback(
-    (action: number | undefined | ((prev: number | undefined) => number | undefined)) => {
-      let nextDuration: number | undefined;
-      setTargetDurationSecondsState((prev) => {
-        const raw = typeof action === 'function' ? action(prev) : action;
-        nextDuration = raw && raw > 0 ? Math.round(raw) : undefined;
-        return nextDuration;
-      });
-      if (preset?.id) {
-        queueMicrotask(() => {
-          try {
-            useChordStore.getState().updatePreset(preset.id, { targetDurationSeconds: nextDuration });
-          } catch (_) {}
-        });
-      }
-    },
-    [preset?.id]
-  );
-
   // ── Countdown & Metronome Engine State ──────────────────────────
   const [countdownMode, setCountdownModeState] = useState<LiveCountdownMode>(() => {
     try {
@@ -1064,44 +710,365 @@ export function useLiveModeState(
     };
   }, []);
 
-  // Update metronome properties on change
-  useEffect(() => {
-    const engine = liveMetronomeRef.current;
-    if (!engine) return;
-    const effectiveBpm = speed || bpmOverride || 120;
-    engine.setBpm(effectiveBpm);
-    engine.setTimeSignature(metronomeTimeSignature);
-    engine.setSubdivision(metronomeSubdivision);
-    engine.setAccentPattern(metronomeAccentPattern);
-    engine.setVolume(metronomeVolume);
-    engine.setSound(metronomeSound);
-  }, [speed, bpmOverride, metronomeTimeSignature, metronomeSubdivision, metronomeAccentPattern, metronomeVolume, metronomeSound]);
+  const [beatsPerChord, setBeatsPerChord] = useState<BeatsPerChord>(4);
+  const [barsPerLine, setBarsPerLineState] = useState<number>(() => {
+    const b = preset.barsPerLine;
+    return (b === 1 || b === 2 || b === 3 || b === 4) ? b : 2;
+  });
 
-  // Manage metronome playback sync when autoPlay changes
-  useEffect(() => {
-    const engine = liveMetronomeRef.current;
-    if (!engine) return;
+  const initialSpeed = preset.speed || preset.bpm || 120;
+  const [speed, setSpeedState] = useState(initialSpeed);
+  const [currentBeat, setCurrentBeat] = useState(0);
+  const [currentBar, setCurrentBar] = useState(1);
+  const [elapsedMs, setElapsedMs] = useState(0);
 
-    if (autoPlay && metronomeEnabled && !isCountingDownRef.current) {
-      const effectiveBpm = speed || bpmOverride || 120;
-      engine.setBpm(effectiveBpm);
-      engine.setTimeSignature(metronomeTimeSignature);
-      engine.setSubdivision(metronomeSubdivision);
-      engine.setAccentPattern(metronomeAccentPattern);
-      engine.setVolume(metronomeVolume);
-      engine.setSound(metronomeSound);
-      engine.setMuted(false);
-      engine.onBeat = (ev) => {
-        if (!isCountingDownRef.current) {
-          setActiveMetronomeBeat(ev.beatIndex);
-        }
+  const currentBeatRef = useRef(currentBeat);
+  currentBeatRef.current = currentBeat;
+
+  const currentBarRef = useRef(currentBar);
+  currentBarRef.current = currentBar;
+
+  const elapsedMsRef = useRef(elapsedMs);
+  elapsedMsRef.current = elapsedMs;
+
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
+
+  const barsPerLineRef = useRef(barsPerLine);
+  barsPerLineRef.current = barsPerLine;
+
+  const autoPlayRef = useRef(autoPlay);
+  autoPlayRef.current = autoPlay;
+
+  const emitLiveSync = useCallback(
+    (action: LiveSyncAction, overrides?: Partial<LiveBandSyncPacket>) => {
+      if (!currentBand) return;
+      const nextVersion = packetVersionRef.current++;
+      const packet: LiveBandSyncPacket = {
+        bandId: currentBand.id,
+        leaderId: currentBand.leaderId || 'local-leader',
+        leaderName: 'Leader',
+        songId: preset.id,
+        songTitle: preset.name || 'Untitled Song',
+        action,
+        timestamp: Date.now(),
+        currentLineIdx: overrides?.currentLineIdx ?? currentLineIdxRef.current,
+        currentWordIdx: overrides?.currentWordIdx ?? currentWordIdxRef.current,
+        currentBeat: overrides?.currentBeat ?? currentBeatRef.current,
+        currentBar: overrides?.currentBar ?? currentBarRef.current,
+        bpm: overrides?.bpm ?? speedRef.current,
+        barsPerLine: overrides?.barsPerLine ?? barsPerLineRef.current,
+        elapsedMs: overrides?.elapsedMs ?? elapsedMsRef.current,
+        autoPlay: overrides?.autoPlay ?? autoPlayRef.current,
+        version: nextVersion,
+        songPayload: {
+          title: preset.name,
+          artist: preset.artist,
+          key: preset.key,
+          bpm: preset.bpm,
+          speed: preset.speed,
+          barsPerLine: preset.barsPerLine,
+          targetDurationSeconds: preset.targetDurationSeconds,
+          sections: preset.sections,
+          lyrics: preset.lyrics,
+          chords: preset.chords,
+        },
       };
-      engine.start();
-    } else if (!autoPlay && !isCountingDownRef.current) {
-      engine.stop();
-      setActiveMetronomeBeat(-1);
+      broadcastBandLivePacket(packet);
+    },
+    [currentBand, preset]
+  );
+
+  const setAutoPlay = useCallback(
+    (action: boolean | ((prev: boolean) => boolean)) => {
+      if (isLockedToLeader) return;
+      setAutoPlayState((prev) => {
+        const next = typeof action === 'function' ? action(prev) : action;
+        if (isBroadcasting) {
+          emitLiveSync(next ? 'PLAY' : 'PAUSE', { autoPlay: next });
+        }
+        return next;
+      });
+    },
+    [isLockedToLeader, isBroadcasting, emitLiveSync]
+  );
+
+  const lobbyAttendees = useBandStore((s) => s.lobbyAttendees);
+  const setLobbyAttendees = useBandStore((s) => s.setLobbyAttendees);
+
+  const [isInLobby, setIsInLobby] = useState<boolean>(() => {
+    return Boolean(isLockedToLeader && activeLiveSession?.action === 'CALL_BAND');
+  });
+
+  const startSongFromLobby = useCallback(() => {
+    setIsInLobby(false);
+    setCurrentLineIdx(0);
+    setCurrentBeat(0);
+    setCurrentBar(1);
+    setAutoPlayState(true);
+    wordRemainingMsRef.current = 0;
+    wordStartTimestampRef.current = performance.now();
+    if (isBroadcasting || (currentBand && !isLockedToLeader)) {
+      setIsBroadcasting(true);
+      emitLiveSync('START_PLAYBACK', {
+        currentLineIdx: 0,
+        currentBeat: 0,
+        currentBar: 1,
+        autoPlay: true,
+        timestamp: Date.now(),
+      });
     }
-  }, [autoPlay, metronomeEnabled, speed, bpmOverride, metronomeTimeSignature, metronomeSubdivision, metronomeAccentPattern, metronomeVolume, metronomeSound]);
+  }, [emitLiveSync, isBroadcasting, currentBand, isLockedToLeader, setIsBroadcasting]);
+
+  const callBandSession = useCallback(() => {
+    const leaderId = currentBand?.leaderId || currentUserId;
+    const leaderName = currentBand
+      ? useBandStore.getState().members.find((m) => m.userId === leaderId)?.displayName || 'Band Leader'
+      : 'Band Leader';
+    const initialAttendee: LobbyAttendee = {
+      userId: leaderId,
+      displayName: leaderName,
+      role: 'leader',
+      joinedAt: Date.now(),
+    };
+    setLobbyAttendees([initialAttendee]);
+    setIsBroadcasting(true);
+    setIsInLobby(true);
+    emitLiveSync('CALL_BAND', {
+      autoPlay: false,
+      lobbyAttendees: [initialAttendee],
+    });
+  }, [currentBand, currentUserId, emitLiveSync, setIsBroadcasting, setLobbyAttendees]);
+
+  useEffect(() => {
+    if (preset.barsPerLine) {
+      setBarsPerLineState(preset.barsPerLine);
+    }
+  }, [preset.barsPerLine]);
+
+  const setBarsPerLine = useCallback(
+    (action: number | ((prev: number) => number)) => {
+      if (isLockedToLeader) return;
+      let nextBars = 2;
+      setBarsPerLineState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextBars = Math.max(1, Math.min(4, Math.round(raw)));
+        return nextBars;
+      });
+
+      wordRemainingMsRef.current = 0;
+      wordStartTimestampRef.current = 0;
+
+      if (isBroadcasting) {
+        emitLiveSync('BARS_CHANGE', { barsPerLine: nextBars });
+      }
+
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, {
+              barsPerLine: nextBars,
+            });
+          } catch (_) {}
+        });
+      }
+    },
+    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
+  );
+
+  const beatsPerLine = barsPerLine * getBeatsPerMeasure(metronomeTimeSignature);
+  const setBeatsPerLine = useCallback(
+    (b: number) => {
+      setBarsPerLine(Math.max(1, Math.round(b / getBeatsPerMeasure(metronomeTimeSignature))));
+    },
+    [setBarsPerLine, metronomeTimeSignature]
+  );
+
+  // Teleprompter presentation states with local storage persistence
+  const [teleprompterFontSize, setTeleprompterFontSizeState] = useState<TeleprompterFontSize>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_font_size');
+      if (saved === 'normal' || saved === 'large' || saved === 'huge') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'normal';
+  });
+
+  const setTeleprompterFontSize = useCallback((size: TeleprompterFontSize) => {
+    setTeleprompterFontSizeState(size);
+    try {
+      localStorage.setItem('chordex_teleprompter_font_size', size);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterFontFamily, setTeleprompterFontFamilyState] = useState<TeleprompterFontFamily>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_font_family');
+      if (saved === 'studio' || saved === 'sans' || saved === 'serif' || saved === 'mono') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'studio';
+  });
+
+  const setTeleprompterFontFamily = useCallback((font: TeleprompterFontFamily) => {
+    setTeleprompterFontFamilyState(font);
+    try {
+      localStorage.setItem('chordex_teleprompter_font_family', font);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterLineHeight, setTeleprompterLineHeightState] = useState<TeleprompterLineHeight>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_line_height');
+      if (saved === 'compact' || saved === 'normal' || saved === 'relaxed') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'normal';
+  });
+
+  const setTeleprompterLineHeight = useCallback((lh: TeleprompterLineHeight) => {
+    setTeleprompterLineHeightState(lh);
+    try {
+      localStorage.setItem('chordex_teleprompter_line_height', lh);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterAlignment, setTeleprompterAlignmentState] = useState<TeleprompterAlignment>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_teleprompter_alignment');
+      if (saved === 'left' || saved === 'center') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'left';
+  });
+
+  const setTeleprompterAlignment = useCallback((align: TeleprompterAlignment) => {
+    setTeleprompterAlignmentState(align);
+    try {
+      localStorage.setItem('chordex_teleprompter_alignment', align);
+    } catch (_) {}
+  }, []);
+
+  const [teleprompterMirror, setTeleprompterMirrorState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chordex_teleprompter_mirror') === 'true';
+    } catch (_) {}
+    return false;
+  });
+
+  const setTeleprompterMirror = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    setTeleprompterMirrorState((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      try {
+        localStorage.setItem('chordex_teleprompter_mirror', String(next));
+      } catch (_) {}
+      return next;
+    });
+  }, []);
+
+  // Live Chords diagram scale with local storage persistence ('large' | 'medium' | 'small')
+  const [chordDiagramScale, setChordDiagramScaleState] = useState<ChordDiagramScale>(() => {
+    try {
+      const saved = localStorage.getItem('chordex_chord_diagram_scale');
+      if (saved === 'large' || saved === 'medium' || saved === 'small') {
+        return saved;
+      }
+    } catch (_) {}
+    return 'large';
+  });
+
+  const setChordDiagramScale = useCallback((scale: ChordDiagramScale) => {
+    setChordDiagramScaleState(scale);
+    try {
+      localStorage.setItem('chordex_chord_diagram_scale', scale);
+    } catch (_) {}
+  }, []);
+
+  const [showContext, setShowContext] = useState(true);
+  const [seekToken, setSeekToken] = useState(0);
+
+  const wordRemainingMsRef = useRef<number>(0);
+  const wordStartTimestampRef = useRef<number>(0);
+  // Absolute performance.now() boundary at which the current line's period began (drift anchor)
+  const lineDueAtRef = useRef<number>(0);
+  const beatRemainingMsRef = useRef<number>(0);
+  const beatStartTimestampRef = useRef<number>(0);
+
+  // Sync if preset.speed or preset.bpm changes externally
+  useEffect(() => {
+    const next = preset.speed || preset.bpm;
+    if (next && next > 0) {
+      setSpeedState(next);
+    }
+  }, [preset.speed, preset.bpm]);
+
+  const setSpeed = useCallback(
+    (action: number | ((prev: number) => number)) => {
+      if (isLockedToLeader) return;
+      let nextSpeed = 120;
+      setSpeedState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextSpeed = Math.max(40, Math.min(400, Math.round(raw)));
+        return nextSpeed;
+      });
+      
+      wordRemainingMsRef.current = 0;
+      wordStartTimestampRef.current = 0;
+
+      if (isBroadcasting) {
+        emitLiveSync('TEMPO_CHANGE', { bpm: nextSpeed });
+      }
+
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, { 
+              speed: nextSpeed, 
+              bpm: nextSpeed 
+            });
+          } catch (_) {}
+        });
+      }
+    },
+    [isLockedToLeader, preset?.id, isBroadcasting, emitLiveSync]
+  );
+
+  const bpmOverride = speed;
+  const setBpmOverride = setSpeed;
+
+  const [targetDurationSeconds, setTargetDurationSecondsState] = useState<number | undefined>(
+    preset.targetDurationSeconds
+  );
+
+  // Sync if preset.targetDurationSeconds changes externally
+  useEffect(() => {
+    setTargetDurationSecondsState(preset.targetDurationSeconds);
+  }, [preset.targetDurationSeconds]);
+
+  const setTargetDurationSeconds = useCallback(
+    (action: number | undefined | ((prev: number | undefined) => number | undefined)) => {
+      let nextDuration: number | undefined;
+      setTargetDurationSecondsState((prev) => {
+        const raw = typeof action === 'function' ? action(prev) : action;
+        nextDuration = raw && raw > 0 ? Math.round(raw) : undefined;
+        return nextDuration;
+      });
+      if (preset?.id) {
+        queueMicrotask(() => {
+          try {
+            useChordStore.getState().updatePreset(preset.id, { targetDurationSeconds: nextDuration });
+          } catch (_) {}
+        });
+      }
+    },
+    [preset?.id]
+  );
+
+
 
   const cancelCountdown = useCallback(() => {
     isCountingDownRef.current = false;
@@ -1213,17 +1180,16 @@ export function useLiveModeState(
         // Downbeat (virtual Beat N+1) starts the song.
         isCountingDownRef.current = false;
         setIsCountingDown(false);
-        setAutoPlay(true);
+        lineBeatsElapsedRef.current = 1;
+        chordBeatsElapsedRef.current = 1;
+        setCurrentBeat(0);
+        setCurrentBar(1);
         setActiveMetronomeBeat(0);
+        setAutoPlay(true);
 
-        if (!metronomeEnabledRef.current) {
-          engine.stop();
-          setActiveMetronomeBeat(-1);
-        } else {
-          engine.setSubdivision(metronomeSubdivision);
-          engine.setMuted(false);
-          engine.setCountInVoice(false);
-        }
+        engine.setSubdivision(metronomeSubdivision);
+        engine.setMuted(!metronomeEnabledRef.current);
+        engine.setCountInVoice(false);
       }
     };
 
@@ -1272,9 +1238,10 @@ export function useLiveModeState(
         bpmOverride,
         beatsPerChord,
         beatsPerLine,
+        timeSignature: metronomeTimeSignature,
       }
     );
-  }, [preset, bpmOverride, beatsPerChord, barsPerLine, beatsPerLine, targetDurationSeconds]);
+  }, [preset, bpmOverride, beatsPerChord, barsPerLine, beatsPerLine, targetDurationSeconds, metronomeTimeSignature]);
 
   // ── Teleprompter Lines Data ─────────────────────────────────────
   const lineDurationMs = useMemo(() => {
@@ -1831,98 +1798,39 @@ export function useLiveModeState(
     return () => clearInterval(interval);
   }, [autoPlay, playbackSpeed, timingSchedule.effectiveDurationMs]);
 
-  // ── Precision Musical Beat Clock (Decoupled & Drift-Compensated) ──
-  useEffect(() => {
-    beatRemainingMsRef.current = 0;
-    beatStartTimestampRef.current = 0;
-  }, [seekToken, currentLineIdx]);
+  // ── Precision Master Performance Synchronization Refs ──────────
+  const isBroadcastingRef = useRef(isBroadcasting);
+  isBroadcastingRef.current = isBroadcasting;
 
-  useEffect(() => {
-    if (!autoPlay || bpmOverride <= 0) {
-      if (beatStartTimestampRef.current > 0) {
-        const passed = performance.now() - beatStartTimestampRef.current;
-        beatRemainingMsRef.current = Math.max(0, (beatRemainingMsRef.current || 0) - passed);
-        beatStartTimestampRef.current = 0;
-      }
-      return;
-    }
+  const beatsPerChordRef = useRef(beatsPerChord);
+  beatsPerChordRef.current = beatsPerChord;
 
-    let currentWaitMs = beatDurationMs;
-    if (beatRemainingMsRef.current > 0) {
-      currentWaitMs = beatRemainingMsRef.current;
-    } else {
-      beatRemainingMsRef.current = beatDurationMs;
-    }
+  const metronomeTimeSignatureRef = useRef(metronomeTimeSignature);
+  metronomeTimeSignatureRef.current = metronomeTimeSignature;
 
-    beatStartTimestampRef.current = performance.now();
-    let expectedTime = performance.now() + currentWaitMs;
-    let timerId: ReturnType<typeof setTimeout> | null = null;
+  const isTeleprompterModeRef = useRef(isTeleprompterMode);
+  isTeleprompterModeRef.current = isTeleprompterMode;
 
-    const tickBeat = () => {
-      beatRemainingMsRef.current = 0;
-      beatStartTimestampRef.current = performance.now();
+  const playbackSpeedRef = useRef(playbackSpeed);
+  playbackSpeedRef.current = playbackSpeed;
 
-      const now = performance.now();
-      const drift = now - expectedTime;
+  const totalLinesRef = useRef(totalLines);
+  totalLinesRef.current = totalLines;
 
-      setCurrentBeat((b) => {
-        const next = (b + 1) % 4;
-        if (next === 0) {
-          setCurrentBar((bar) => ((bar % barsPerLine) + 1));
-        }
-        return next;
-      });
+  const teleprompterLinesRef = useRef(teleprompterLines);
+  teleprompterLinesRef.current = teleprompterLines;
 
-      beatRemainingMsRef.current = beatDurationMs;
-      expectedTime += beatDurationMs;
-      const nextDelay = Math.max(0, beatDurationMs - drift);
-      timerId = setTimeout(tickBeat, nextDelay);
-    };
+  const timingScheduleRef = useRef(timingSchedule);
+  timingScheduleRef.current = timingSchedule;
 
-    timerId = setTimeout(tickBeat, currentWaitMs);
+  const totalChordsRef = useRef(total);
+  totalChordsRef.current = total;
 
-    return () => {
-      if (timerId) clearTimeout(timerId);
-    };
-  }, [autoPlay, bpmOverride, playbackSpeed, beatDurationMs, barsPerLine, currentLineIdx]);
+  const currentIdxRef = useRef(currentIdx);
+  currentIdxRef.current = currentIdx;
 
-  // ── Precision Chords Auto-Play Timer (Drift-Compensated) ─────────
-  useEffect(() => {
-    if (isTeleprompterMode || !autoPlay || bpmOverride <= 0 || total === 0) return;
-    const scheduledChord = timingSchedule.chords[currentIdx];
-    const actualChordMs = (scheduledChord ? scheduledChord.durationMs : msPerChord) / (playbackSpeed || 1);
-    let expectedTime = performance.now() + actualChordMs;
-    let timerId: ReturnType<typeof setTimeout> | null = null;
-
-    const tickChord = () => {
-      const now = performance.now();
-      const drift = now - expectedTime;
-
-      goNext();
-      playChordSound();
-
-      expectedTime += actualChordMs;
-      const nextDelay = Math.max(0, actualChordMs - drift);
-      timerId = setTimeout(tickChord, nextDelay);
-    };
-
-    timerId = setTimeout(tickChord, actualChordMs);
-
-    return () => {
-      if (timerId) clearTimeout(timerId);
-    };
-  }, [
-    isTeleprompterMode,
-    autoPlay,
-    bpmOverride,
-    playbackSpeed,
-    msPerChord,
-    currentIdx,
-    timingSchedule.chords,
-    total,
-    goNext,
-    playChordSound,
-  ]);
+  const lineBeatsElapsedRef = useRef<number>(0);
+  const chordBeatsElapsedRef = useRef<number>(0);
 
   const [interludeRemainingSec, setInterludeRemainingSec] = useState<number | null>(null);
 
@@ -1931,142 +1839,148 @@ export function useLiveModeState(
   }, [currentWordIdx]);
 
   useEffect(() => {
-    wordRemainingMsRef.current = 0;
-    wordStartTimestampRef.current = 0;
-    lineDueAtRef.current = 0;
+    lineBeatsElapsedRef.current = 0;
+    chordBeatsElapsedRef.current = 0;
+    setInterludeRemainingSec(null);
   }, [seekToken]);
 
-  useEffect(() => {
-    if (!isTeleprompterMode || totalLines === 0) return;
+  // ── Authoritative Master Clock onBeat Dispatcher ──────────────────
+  const handleOnBeat = useCallback(
+    (ev: MetronomeBeatEvent) => {
+      if (isCountingDownRef.current) return;
 
-    if (!autoPlay || bpmOverride <= 0) {
-      lineDueAtRef.current = 0;
-      if (wordStartTimestampRef.current > 0) {
-        const passed = performance.now() - wordStartTimestampRef.current;
-        wordRemainingMsRef.current = Math.max(0, (wordRemainingMsRef.current || 0) - passed);
-        wordStartTimestampRef.current = 0;
-      }
-      return;
-    }
-
-    const activeLine = teleprompterLines[currentLineIdx];
-    const isInterlude =
-      activeLine?.sectionType === 'interlude' ||
-      activeLine?.line?.type === 'interlude' ||
-      activeLine?.line?.explicitDurationMs !== undefined;
-
-    // The timing schedule (derived from the song's target duration + Speed) is the single authority.
-    // msPerLine is only the fallback when the schedule has no entry for this line.
-    const scheduledLine = timingSchedule.lines[currentLineIdx];
-    const scheduledLineMs =
-      scheduledLine && scheduledLine.durationMs > 0 ? scheduledLine.durationMs : msPerLine;
-
-    const actualLineMs = (isInterlude
-      ? Math.max(1000, activeLine?.line?.explicitDurationMs || 15000)
-      : scheduledLineMs) / (playbackSpeed || 1);
-
-    // Sync active chord for this line if present
-    const lineWords = activeLine?.words || [];
-    const firstWordWithChord = lineWords.find((w) => Boolean(w.chord));
-    if (firstWordWithChord?.chord) {
-      const chordIdx = findChordIdx(firstWordWithChord.chord);
-      if (chordIdx !== -1) setCurrentIdx(chordIdx);
-    }
-
-    let currentWaitMs = actualLineMs;
-    if (wordRemainingMsRef.current > 0) {
-      currentWaitMs = wordRemainingMsRef.current;
-    } else {
-      wordRemainingMsRef.current = actualLineMs;
-      // Fresh line: end at (previous scheduled boundary + this line's duration) so render latency and
-      // timer jitter never accumulate across the song. Ignore implausible anchors (> 500ms off).
-      if (lineDueAtRef.current > 0) {
-        const anchored = lineDueAtRef.current + actualLineMs - performance.now();
-        if (Math.abs(anchored - actualLineMs) <= 500) {
-          currentWaitMs = Math.max(50, anchored);
-        }
-        lineDueAtRef.current = 0;
-      }
-    }
-
-    wordStartTimestampRef.current = performance.now();
-    let timerId: ReturnType<typeof setTimeout> | null = null;
-    let interludeInterval: ReturnType<typeof setInterval> | null = null;
-
-    if (activeLine?.sectionType === 'interlude' || activeLine?.line?.type === 'interlude') {
-      const updateCountdown = () => {
-        if (!wordStartTimestampRef.current) return;
-        const passed = performance.now() - wordStartTimestampRef.current;
-        const remMs = Math.max(0, currentWaitMs - passed);
-        setInterludeRemainingSec(Math.ceil(remMs / 1000));
-      };
-      updateCountdown();
-      interludeInterval = setInterval(updateCountdown, 200);
-    } else {
-      setInterludeRemainingSec(null);
-    }
-
-    // Absolute instant at which this line is due to end (render latency between a tick and the
-    // next effect run must not accumulate across lines).
-    const scheduledEndAt = performance.now() + currentWaitMs;
-
-    const tickLine = () => {
-      setIsHeaderHidden(true);
-      wordRemainingMsRef.current = 0;
-      wordStartTimestampRef.current = performance.now();
-
-      // End of song: stop on the final line. Never silently wrap to line 0 mid-performance.
-      if (currentLineIdx + 1 >= totalLines) {
-        lineDueAtRef.current = 0;
-        if (isBroadcasting) {
-          emitLiveSync('PAUSE', { autoPlay: false });
-        }
-        setAutoPlayState(false);
+      // Only main quarter/downbeat events advance bars, lines, and chords
+      if (ev.subdivisionIndex !== 0) {
         return;
       }
 
-      // The next line's period begins at the scheduled boundary, not at "now".
-      lineDueAtRef.current = scheduledEndAt;
+      const beatsPerMeasure = getBeatsPerMeasure(metronomeTimeSignatureRef.current);
+      setActiveMetronomeBeat(ev.beatIndex);
+      setCurrentBeat(ev.beatIndex);
 
-      // Line completed its allotted musical duration! Advance directly to next line
-      const nextLineIdx = currentLineIdx + 1;
-      setDirection('forward');
-      setCurrentLineIdx(nextLineIdx);
-      setCurrentBeat(0);
-      setCurrentBar(1);
+      if (isTeleprompterModeRef.current) {
+        const lineIdx = currentLineIdxRef.current;
+        const totalL = totalLinesRef.current;
+        if (totalL === 0) return;
 
-      const nextLineWords = teleprompterLines[nextLineIdx]?.words || [];
-      const nextWordWithChord = nextLineWords.find((w) => Boolean(w.chord));
-      if (nextWordWithChord?.chord) {
-        const chordIdx = findChordIdx(nextWordWithChord.chord);
-        if (chordIdx !== -1) setCurrentIdx(chordIdx);
+        const activeLine = teleprompterLinesRef.current[lineIdx];
+        const isInterlude =
+          activeLine?.sectionType === 'interlude' ||
+          activeLine?.line?.type === 'interlude' ||
+          activeLine?.line?.explicitDurationMs !== undefined;
+
+        const scheduledLine = timingScheduleRef.current?.lines?.[lineIdx];
+        const beatDurMs = (60000 / (speedRef.current || 120)) / (playbackSpeedRef.current || 1);
+
+        let totalLineBeats: number;
+        if (isInterlude) {
+          const interludeMs = Math.max(1000, activeLine?.line?.explicitDurationMs || 15000);
+          totalLineBeats = Math.max(1, Math.round(interludeMs / beatDurMs));
+        } else if (scheduledLine && scheduledLine.durationMs > 0) {
+          totalLineBeats = Math.max(1, Math.round(scheduledLine.durationMs / beatDurMs));
+        } else {
+          totalLineBeats = barsPerLineRef.current * beatsPerMeasure;
+        }
+
+        lineBeatsElapsedRef.current++;
+
+        const currentBarNum = Math.min(
+          barsPerLineRef.current,
+          Math.floor((lineBeatsElapsedRef.current - 1) / beatsPerMeasure) + 1
+        );
+        setCurrentBar(currentBarNum);
+
+        if (isInterlude) {
+          const beatsRemaining = Math.max(0, totalLineBeats - lineBeatsElapsedRef.current);
+          const secRemaining = Math.ceil((beatsRemaining * beatDurMs) / 1000);
+          setInterludeRemainingSec(secRemaining);
+        } else {
+          setInterludeRemainingSec(null);
+        }
+
+        if (lineBeatsElapsedRef.current >= totalLineBeats) {
+          lineBeatsElapsedRef.current = 0;
+          setIsHeaderHidden(true);
+
+          if (lineIdx + 1 >= totalL) {
+            // End of song: stop playback on final line
+            if (isBroadcastingRef.current) {
+              emitLiveSync('PAUSE', { autoPlay: false });
+            }
+            setAutoPlayState(false);
+            liveMetronomeRef.current?.stop();
+            setActiveMetronomeBeat(-1);
+            return;
+          }
+
+          const nextLineIdx = lineIdx + 1;
+          setDirection('forward');
+          setCurrentLineIdx(nextLineIdx);
+          setCurrentBar(1);
+
+          const nextLineWords = teleprompterLinesRef.current[nextLineIdx]?.words || [];
+          const nextWordWithChord = nextLineWords.find((w) => Boolean(w.chord));
+          if (nextWordWithChord?.chord) {
+            const chordIdx = findChordIdx(nextWordWithChord.chord);
+            if (chordIdx !== -1) setCurrentIdx(chordIdx);
+          }
+
+          if (nextLineWords.length > 0) {
+            setCurrentWordIdxState(nextLineWords[0].globalWordIdx);
+          }
+
+          if (isBroadcastingRef.current) {
+            emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
+          }
+        }
+      } else {
+        const totalC = totalChordsRef.current;
+        if (totalC === 0) return;
+
+        chordBeatsElapsedRef.current++;
+        if (chordBeatsElapsedRef.current >= beatsPerChordRef.current) {
+          chordBeatsElapsedRef.current = 0;
+          setCurrentIdx((i) => (i + 1) % totalC);
+          playChordSound();
+        }
       }
+    },
+    [emitLiveSync, findChordIdx, playChordSound]
+  );
 
-      if (isBroadcasting) {
-        emitLiveSync('PLAY', { currentLineIdx: nextLineIdx, currentBeat: 0, currentBar: 1 });
-      }
-    };
+  // ── Master Playback Synchronizer (Web Audio Hardware Engine) ──────
+  useEffect(() => {
+    const engine = liveMetronomeRef.current;
+    if (!engine) return;
 
-    timerId = setTimeout(tickLine, currentWaitMs);
-
-    return () => {
-      if (timerId) clearTimeout(timerId);
-      if (interludeInterval) clearInterval(interludeInterval);
-    };
+    if (autoPlay && !isCountingDownRef.current) {
+      const effectiveBpm = speed || bpmOverride || 120;
+      engine.setBpm(effectiveBpm);
+      engine.setTimeSignature(metronomeTimeSignature);
+      engine.setSubdivision(metronomeSubdivision);
+      engine.setAccentPattern(metronomeAccentPattern);
+      engine.setVolume(metronomeVolume);
+      engine.setSound(metronomeSound);
+      // Mute audio output if metronome is disabled, but keep sample-accurate clock running
+      engine.setMuted(!metronomeEnabled);
+      engine.setCountInVoice(false);
+      engine.onBeat = handleOnBeat;
+      engine.start();
+    } else if (!autoPlay && !isCountingDownRef.current) {
+      engine.stop();
+      setActiveMetronomeBeat(-1);
+    }
   }, [
-    isTeleprompterMode,
     autoPlay,
+    metronomeEnabled,
+    speed,
     bpmOverride,
-    playbackSpeed,
-    msPerLine,
-    currentLineIdx,
-    timingSchedule.lines,
-    seekToken,
-    totalLines,
-    teleprompterLines,
-    findChordIdx,
-    isBroadcasting,
-    emitLiveSync,
+    metronomeTimeSignature,
+    metronomeSubdivision,
+    metronomeAccentPattern,
+    metronomeVolume,
+    metronomeSound,
+    handleOnBeat,
   ]);
 
   // ── Leader Heartbeat Broadcast ──────────────────────────────────
