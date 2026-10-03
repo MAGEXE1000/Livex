@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.84';
-export const NATIVE_VERSION_CODE = 40684;
-export const WEB_VERSION = '4.6.84';
+export const NATIVE_VERSION = '4.6.85';
+export const NATIVE_VERSION_CODE = 40685;
+export const WEB_VERSION = '4.6.85';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -82,7 +82,7 @@ export const APP_COMMIT_SHA = 'b55a328c';
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/2/2026, 9:38:53 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/2/2026, 10:28:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -99,24 +99,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Deterministic Setlist Live Back-Navigation: Enforced stateful setlist origin tracking ensuring the top-left back button and hardware back gestures return directly to the parent Setlist view rather than redirecting into the single-song chord/lyrics editor.',
-      'Canva Toolbar Copy Integration: Added a dedicated Copy button to the floating Canva formatting toolbar allowing one-tap copying of highlighted lyrics directly to the system clipboard.',
-    ],
-  },
-  {
-    heading: 'Improved',
-    items: [
-      'Transport Control Deduplication: Streamlined Live mode transport bars by eliminating redundant skip controls from auxiliary floating quick action toolbars and displaying next/prev song buttons strictly in the primary bottom dock when actively playing inside a Setlist.',
-      'Plain-Text Clipboard Sanitization: Stripped tabs, non-breaking spaces, and synthetic multi-space padding on copy and paste events to ensure pasted verses always render clean, left-aligned, and line-by-line.',
-    ],
-  },
-  {
     heading: 'Fixed',
     items: [
-      'Live Header Object Serialization: Resolved JSX element string coercion that previously caused setlist subtitles to display as [object Object].',
-      'Dead Code and Bundle Bloat: Safely pruned unreferenced legacy components and orphaned input handlers, reducing bundle size.',
+      'DOM Reconciliation Crash Resolution: Resolved fatal NotFoundError insertBefore exception during Clear All Lyrics by isolating contentEditable lifecycle and executing clean Virtual DOM remounts via dynamic reset keys.',
+      'Plain-Text Paste Stream Parsing: Enforced continuous single-line rendering in lyrics mode, permanently eliminating erratic multi-column verse splits and horizontal whitespace gaps.',
+      'Word Stuttering & Concatenation Elimination: Hardened input event synchronization and selection capture to sanitize DOM text extraction, ignoring chord buttons, badges, and unmanaged elements to prevent duplicate word tokens (e.g. "Estoy Estoy").',
+      'Editor Lifecycle Safety: Bound unique song keys to the lyrics canvas to guarantee pristine DOM state transitions when changing active songs in Chordex.',
     ],
   },
 ];
@@ -128,6 +116,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.85',
+    date: '2026-10-02',
+    highlights: [
+      'DOM Reconciliation Crash Resolution: Resolved fatal NotFoundError insertBefore exception during Clear All Lyrics by isolating contentEditable lifecycle and executing clean Virtual DOM remounts via dynamic reset keys.',
+      'Plain-Text Paste Stream Parsing: Enforced continuous single-line rendering in lyrics mode, permanently eliminating erratic multi-column verse splits and horizontal whitespace gaps.',
+      'Word Stuttering & Concatenation Elimination: Hardened input event synchronization and selection capture to sanitize DOM text extraction, ignoring chord buttons, badges, and unmanaged elements to prevent duplicate word tokens (e.g. "Estoy Estoy").',
+      'Editor Lifecycle Safety: Bound unique song keys to the lyrics canvas to guarantee pristine DOM state transitions when changing active songs in Chordex.',
+    ],
+  },
   {
     version: '4.6.84',
     date: '2026-10-02',
@@ -223,18 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       "Clean Setlist Card Surface & Metadata: Stripped cluttered external 'Play Live' button and 'Open Repertoire' links from setlist card faces. Refined metadata chips with playlist song count and calculated duration, removing redundant section count badges.",
       'Clean Lyrics Canvas Focus Experience: Removed intrusive blue focus outline rings when writing lyrics and section titles in the Chordex lyrics editor for an unobstructed, distraction-free songwriting surface.',
       'Multi-Song Setlist Export: Resolved setlist file sharing to recursively bundle full chord sheets and song definitions so recipient devices import complete sets without missing data.',
-    ],
-  },
-  {
-    version: '4.6.75',
-    date: '2026-10-01',
-    highlights: [
-      'Centered Add Songs Morph Modal: Added a centered spring-animated morph modal triggered from a dedicated bottom FAB (+) in the Setlist detail view with live search filtering, section assignment, and multi-song selection.',
-      'Universal Black Floating Action Button: Standardized all floating Add (+) action buttons across the entire app (All Songs library, Setlists collection, Setlist detail, Chords editor, Lyrics editor, Both editor) to match the canonical 56x56px circular translucent frosted black glass FAB.',
-      'Clean Monochrome Setlist Controls: Stripped all solid blue circular fills, halos, and background housings from the Setlist Play button, converting it to a theme-aware bare vector glyph with tactile spring press feedback.',
-      'Setlist Topbar Control Layout: Positioned the Edit metadata pencil icon to the immediate left of the Play action button in the right-aligned header cluster.',
-      'Intrusive Section Header Buttons: Removed cluttered inline "+ Add Songs" buttons from setlist section rows, routing all additive actions cleanly to the unified bottom FAB.',
-      'FAB Safe Area Positioning: Fixed bottom floating action button positioning to account for bottom navigation height and safe area insets across all viewport modes.',
     ],
   },
 ];

@@ -52,8 +52,9 @@ async function testProviderFallbackGraphQL() {
 async function testProviderFallbackCli() {
   console.log('\n[Test 3] Provider Priority: GitHub CLI Fallback');
   const mockFetch = async () => ({ ok: false });
-  const mockExec = (cmd) => {
-    if (cmd.includes('gh release view')) {
+  const mockExec = (cmd, args = []) => {
+    const fullCmd = [cmd, ...(Array.isArray(args) ? args : [])].join(' ');
+    if (fullCmd.includes('release view')) {
       return JSON.stringify({ tagName: 'v4.3.54', name: '4.3.54', assets: [] });
     }
     return '';
