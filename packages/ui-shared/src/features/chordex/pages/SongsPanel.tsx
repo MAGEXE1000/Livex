@@ -44,13 +44,13 @@ import {
   parseLivexBundle,
 } from '@workspace/livex-core';
 import {
-  SetlistNavSwitcher,
   SetlistLibraryView,
   SetlistDetailView,
   SetlistFormContent,
   ImportSetlistContent,
   ImportSetlistModal,
 } from '../components/setlists';
+import { ChevronsUpDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -3688,7 +3688,7 @@ const PresetCard = React.memo(
 
     return (
       <article
-        className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row"
+        className="w-full rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row mb-3 last:mb-0"
         style={{
           backgroundColor: 'var(--surface-card-bg, #ffffff)',
           borderColor: 'var(--c-border, #E3E6EB)',
@@ -6378,7 +6378,25 @@ export default function SongsPanel() {
                 }}
               >
                 <SharedFloatingHeader
-                  title={songsSubTab === 'setlists' ? 'Setlists' : 'Songs'}
+                  title={
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSongsSubTab(songsSubTab === 'setlists' ? 'all' : 'setlists')
+                      }
+                      className="cursor-pointer select-none text-xl font-bold tracking-tight flex items-center gap-1.5 pointer-events-auto bg-transparent border-none p-0 outline-none active:opacity-70 transition-opacity"
+                      style={{
+                        fontFamily:
+                          'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
+                        color: 'var(--c-text-primary)',
+                      }}
+                      data-testid="interactive-songs-header-title"
+                      aria-label={`Switch to ${songsSubTab === 'setlists' ? 'Songs' : 'Setlists'} view`}
+                    >
+                      <span>{songsSubTab === 'setlists' ? 'Setlists' : 'Songs'}</span>
+                      <ChevronsUpDown className="w-4 h-4 opacity-50" aria-hidden="true" />
+                    </button>
+                  }
                   hideBack={true}
                   scrollContainerRef={listScrollRef}
                 />
@@ -6394,19 +6412,10 @@ export default function SongsPanel() {
                     className="w-full max-w-md mx-auto pb-32 px-4 space-y-4"
                     style={{
                       paddingTop:
-                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 92px)',
+                        'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 76px)',
                     }}
                     data-purpose="mobile-viewport"
                   >
-                    {/* Top Segmented Switcher: All Songs vs Setlists */}
-                    <SetlistNavSwitcher
-                      activeTab={songsSubTab}
-                      onTabChange={setSongsSubTab}
-                      songsCount={presets.length}
-                      setlistsCount={setlists.length}
-                      accentColor={accent.from}
-                    />
-
                     {songsSubTab === 'setlists' ? (
                       <SetlistLibraryView
                         setlists={setlists}
@@ -6425,7 +6434,7 @@ export default function SongsPanel() {
                           placeholder="Search titles, keys, or tags..."
                           data-purpose="search-bar"
                           accent={accent}
-                          className="mb-1"
+                          className="mb-4"
                         />
 
                         {/* Empty states or song list */}
@@ -6575,7 +6584,7 @@ export default function SongsPanel() {
                           )
                         ) : (
                           /* Scalable Song List */
-                          <div className="space-y-2.5" data-purpose="song-list">
+                          <div className="flex flex-col gap-3" data-purpose="song-list">
                             <StaggeredReveal staggerInterval={30}>
                               {filteredPresets.map((preset) => (
                                 <PresetCard
@@ -6623,11 +6632,11 @@ export default function SongsPanel() {
 
                 {/* Floating Action Buttons (FAB Stack) */}
                 <aside
-                  className="fixed flex flex-col items-end gap-3 pointer-events-auto"
+                  className="fixed flex flex-col items-center gap-3 pointer-events-auto"
                   style={{
                     bottom:
                       'calc(var(--bottom-nav-height, 64px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px)',
-                    right: '16px',
+                    right: '20px',
                     zIndex: 40,
                   }}
                   data-purpose="action-buttons"

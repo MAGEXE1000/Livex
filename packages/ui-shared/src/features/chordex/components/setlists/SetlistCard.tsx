@@ -74,7 +74,7 @@ export const SetlistCard: React.FC<SetlistCardProps> = React.memo(
 
     return (
       <article
-        className="rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row relative"
+        className="w-full rounded-3xl border shadow-soft-card overflow-hidden transition-all group content-auto-row relative mb-3 last:mb-0"
         style={{
           backgroundColor: 'var(--surface-card-bg, #ffffff)',
           borderColor: 'var(--c-border, #E3E6EB)',

@@ -86,7 +86,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
         placeholder="Search setlists, dates, sections..."
         data-purpose="search-bar"
         accent={{ from: accentColor, to: accentColor }}
-        className="mb-1"
+        className="mb-4"
       />
 
       {/* Setlists Content or Empty States */}
@@ -207,7 +207,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
         )
       ) : (
         /* List of Setlist Cards */
-        <div className="space-y-3" data-purpose="setlist-list">
+        <div className="flex flex-col gap-3" data-purpose="setlist-list">
           {filteredSetlists.map((setlist) => (
             <SetlistCard
               key={setlist.id}
