@@ -261,6 +261,23 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
 
   const currentDoc = localDoc;
 
+  // Memoized empty document check for clean placeholder overlay rendering
+  const isDocumentCompletelyEmpty = useMemo(() => {
+    if (!currentDoc || !Array.isArray(currentDoc.sections) || currentDoc.sections.length === 0) {
+      return true;
+    }
+    return currentDoc.sections.every(
+      (sec) =>
+        (!sec.name || sec.name.trim().length === 0) &&
+        sec.lines.every(
+          (line) =>
+            (!line.text || line.text.trim().length === 0) &&
+            (!line.chords || line.chords.length === 0) &&
+            line.type !== 'interlude'
+        )
+    );
+  }, [currentDoc]);
+
   // Debounced store mutation ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -3922,7 +3939,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   if (!line.text || line.text.trim().length === 0) {
                     const hasChords = mode === 'both' && line.chords && line.chords.length > 0;
                     if (!hasChords) {
-                      const isInitialEmpty = secIdx === 0 && lineIdx === 0 && section.lines.length === 1;
+                      const isFirstDocLine = secIdx === 0 && lineIdx === 0;
                       return (
                         <div
                           key={line.id || lineIdx}
@@ -3946,8 +3963,24 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           <span
                             className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
                             data-line-text="true"
-                            data-placeholder={isInitialEmpty ? 'Write or paste lyrics here...' : 'Empty line (tap to write)'}
                           />
+                          {isFirstDocLine && isDocumentCompletelyEmpty && (
+                            <span
+                              contentEditable={false}
+                              data-testid="lyrics-canvas-empty-placeholder"
+                              aria-hidden="true"
+                              className="absolute left-2 top-1 text-base leading-relaxed tracking-wide italic pointer-events-none select-none"
+                              style={{
+                                color: 'rgba(156, 163, 175, 0.45)',
+                                WebkitUserSelect: 'none',
+                                userSelect: 'none',
+                                pointerEvents: 'none',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              Write or paste lyrics here...
+                            </span>
+                          )}
                         </div>
                       );
                     }

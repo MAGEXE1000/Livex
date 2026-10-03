@@ -4242,14 +4242,6 @@ textarea,
   box-shadow: none !important;
 }
 
-.lyric-line-content:empty::before {
-  content: attr(data-placeholder);
-  color: rgba(156, 163, 175, 0.4);
-  font-style: italic;
-  pointer-events: none;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-}
 
 /* Explicitly lock all interactive chrome, buttons, headers, icons, and navigation */
 button,
