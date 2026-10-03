@@ -4207,6 +4207,28 @@ textarea,
   -webkit-touch-callout: default !important;
 }
 
+/* ── Lyrics empty-state placeholder (CSS-only, outside React's DOM tree) ──
+   Rendered as a ::before on the NON-editable workspace wrapper, toggled via the
+   data-empty-lyrics attribute. It is never a DOM node, so typing/pasting the first
+   character cannot trigger a React removeChild reconciliation against it, it can't be
+   selected, and it can't intercept pointer events or caret placement. */
+[data-testid="song-lyrics-editor-workspace"][data-empty-lyrics="true"]::before {
+  content: "Write or paste lyrics here...";
+  position: absolute;
+  top: 0.25rem;
+  left: 0.5rem;
+  z-index: 0;
+  font-size: 1rem;
+  line-height: 1.625;
+  letter-spacing: 0.025em;
+  font-style: italic;
+  font-family: inherit;
+  color: var(--text-tertiary, rgba(156, 163, 175, 0.45));
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* ── Permanent Removal of Canvas / Document Focus Blue Outlines ── */
 .lyrics-canvas-document,
 .lyrics-canvas-document:focus,

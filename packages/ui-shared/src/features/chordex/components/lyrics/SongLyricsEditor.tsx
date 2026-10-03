@@ -373,9 +373,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       caretPosRef.current = null;
       const lineSpan = workspaceRef.current.querySelector<HTMLElement>(`[data-line-id="${lineId}"] .lyric-line-content`);
       if (lineSpan) {
-        const textNode = lineSpan.firstChild || lineSpan;
+        const textNode = lineSpan.firstChild && lineSpan.firstChild.nodeName !== 'BR' ? lineSpan.firstChild : lineSpan;
         const textLen = textNode.nodeType === Node.TEXT_NODE ? (textNode as Text).length : lineSpan.textContent?.length || 0;
-        const clamped = Math.min(textLen, Math.max(0, offset));
+        const clamped = textNode === lineSpan && lineSpan.firstChild?.nodeName === 'BR' ? 0 : Math.min(textLen, Math.max(0, offset));
         const range = document.createRange();
         try {
           range.setStart(textNode, clamped);
@@ -411,9 +411,10 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         // 2. Try contenteditable DOM span element
         const lineSpan = workspaceRef.current?.querySelector<HTMLElement>(`[data-line-id="${lineId}"] .lyric-line-content`);
         if (lineSpan) {
-          const textNode = lineSpan.firstChild || lineSpan;
+          const hasBrOnly = lineSpan.firstChild?.nodeName === 'BR';
+          const textNode = lineSpan.firstChild && !hasBrOnly ? lineSpan.firstChild : lineSpan;
           const textLen = textNode.nodeType === Node.TEXT_NODE ? (textNode as Text).length : lineSpan.textContent?.length || 0;
-          const offset = targetCursorOffsetRef.current !== null ? Math.min(textLen, Math.max(0, targetCursorOffsetRef.current)) : textLen;
+          const offset = hasBrOnly ? 0 : targetCursorOffsetRef.current !== null ? Math.min(textLen, Math.max(0, targetCursorOffsetRef.current)) : textLen;
           targetCursorOffsetRef.current = null;
           try {
             const range = document.createRange();
@@ -3108,6 +3109,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
     <div
       ref={workspaceRef}
       data-testid="song-lyrics-editor-workspace"
+      data-empty-lyrics={mode === 'lyrics' && isDocumentCompletelyEmpty ? 'true' : undefined}
       className="flex flex-col w-full relative select-text"
       style={{
         color: 'var(--c-text-primary, #ffffff)',
@@ -3941,7 +3943,6 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   if (!line.text || line.text.trim().length === 0) {
                     const hasChords = mode === 'both' && line.chords && line.chords.length > 0;
                     if (!hasChords) {
-                      const isFirstDocLine = secIdx === 0 && lineIdx === 0;
                       return (
                         <div
                           key={line.id || lineIdx}
@@ -3962,29 +3963,16 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             userSelect: 'text',
                           }}
                         >
+                          {/* Distinct key: when the first character is typed the browser mutates this
+                              span's children (drops the <br>), so React must replace the whole span
+                              rather than reconcile the stale <br> child against the real DOM. */}
                           <span
+                            key="empty-line-content"
                             className="lyric-line-content select-text outline-none text-base leading-relaxed tracking-wide w-full"
                             data-line-text="true"
                           >
                             <br />
                           </span>
-                          {isFirstDocLine && isDocumentCompletelyEmpty && (
-                            <span
-                              contentEditable={false}
-                              data-testid="lyrics-canvas-empty-placeholder"
-                              aria-hidden="true"
-                              className="absolute left-2 top-1 text-base leading-relaxed tracking-wide italic pointer-events-none select-none"
-                              style={{
-                                color: 'rgba(156, 163, 175, 0.45)',
-                                WebkitUserSelect: 'none',
-                                userSelect: 'none',
-                                pointerEvents: 'none',
-                                fontFamily: 'inherit',
-                              }}
-                            >
-                              Write or paste lyrics here...
-                            </span>
-                          )}
                         </div>
                       );
                     }
