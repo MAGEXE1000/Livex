@@ -363,9 +363,40 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
         } catch (_) {}
       }
     }
+
+    // Synchronous focus restoration for line delete/merge/split — must run before
+    // the browser paints so Android WebView doesn't see a frame without focus and
+    // dismiss the soft keyboard.
+    if (pendingFocusLineIdRef.current && workspaceRef.current) {
+      const lineId = pendingFocusLineIdRef.current;
+
+      // Try contenteditable DOM span element synchronously
+      const lineSpan = workspaceRef.current.querySelector<HTMLElement>(`[data-line-id="${lineId}"] .lyric-line-content`);
+      if (lineSpan) {
+        pendingFocusLineIdRef.current = null;
+        setEditingLineId(lineId);
+        const hasBrOnly = lineSpan.firstChild?.nodeName === 'BR';
+        const textNode = lineSpan.firstChild && !hasBrOnly ? lineSpan.firstChild : lineSpan;
+        const textLen = textNode.nodeType === Node.TEXT_NODE ? (textNode as Text).length : lineSpan.textContent?.length || 0;
+        const offset = hasBrOnly ? 0 : targetCursorOffsetRef.current !== null ? Math.min(textLen, Math.max(0, targetCursorOffsetRef.current)) : textLen;
+        targetCursorOffsetRef.current = null;
+        try {
+          const range = document.createRange();
+          range.setStart(textNode, offset);
+          range.collapse(true);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        } catch (_) {}
+      }
+      // If the element doesn't exist yet (newly created line not in DOM during layout),
+      // leave pendingFocusLineIdRef set — the useEffect fallback below will handle it.
+    }
   });
 
-  // Focus management effect for newly created or targeted lines
+  // Fallback focus management for newly created or targeted lines whose DOM elements
+  // were not yet available during the synchronous useLayoutEffect above (e.g. lines
+  // created by split or paste that React hasn't committed to the DOM yet).
   useEffect(() => {
     if (pendingFocusLineIdRef.current) {
       const lineId = pendingFocusLineIdRef.current;
@@ -1952,6 +1983,233 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
       document.removeEventListener('beforeinput', handleBeforeInput as EventListener, true);
     };
   }, [captureSelection, handleBatchDeleteSelection]);
+
+  // ── IME MULTI-LINE INSERT INTERCEPTION ─────────────────────────────────
+  // Samsung keyboard clipboard paste fires `beforeinput` with inputType "insertText"
+  // containing multi-line text (\r\n), NOT a standard `paste` event. Without interception
+  // the browser natively inserts <div>/<br> nodes into the contentEditable, desynchronizing
+  // React's virtual DOM (model sees 1 line) from the native DOM (N lines visible).
+  // This handler intercepts ALL multi-line insertions and routes them through the same
+  // normalize-and-splice logic as handleCanvasPaste, keeping model and DOM in perfect sync.
+  const handleBeforeInputInsertRef = useRef<((e: InputEvent) => void) | null>(null);
+
+  handleBeforeInputInsertRef.current = useCallback(
+    (e: InputEvent) => {
+      // Only intercept text insertions that could contain newlines
+      const interceptTypes = new Set([
+        'insertText',
+        'insertFromPaste',
+        'insertFromDrop',
+        'insertReplacementText',
+        'insertFromYank',
+      ]);
+      if (!interceptTypes.has(e.inputType)) return;
+
+      // Extract the raw text from the event
+      let rawText = e.data ?? '';
+      if (!rawText && e.dataTransfer) {
+        rawText = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text') || '';
+      }
+      if (!rawText) return;
+
+      // Only intercept if the text contains newlines (multi-line paste/insert)
+      // Single-line insertText events (normal typing) pass through to native handling
+      if (!rawText.includes('\n') && !rawText.includes('\r')) return;
+
+      // Prevent the browser from natively mutating the DOM
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // Normalize line breaks and whitespace (same logic as handleCanvasPaste)
+      const normalizedText = rawText
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\t/g, ' ')
+        .replace(/[^\S\n]{2,}/g, ' ');
+
+      const rawPastedLines = normalizedText
+        .split('\n')
+        .map((line) => line.trim());
+
+      const pastedLines = rawPastedLines.length > 0 ? rawPastedLines : [''];
+
+      const doc = localDocRef.current;
+
+      // Blank editor: parse as whole document
+      const isDocEffectivelyEmpty =
+        doc.sections.length <= 1 &&
+        (doc.sections.length === 0 ||
+          (doc.sections[0].lines.length <= 1 &&
+            (!doc.sections[0].lines[0] || !doc.sections[0].lines[0].text || doc.sections[0].lines[0].text.trim() === '')));
+
+      if (isDocEffectivelyEmpty) {
+        const parsedDoc = continuousTextToLyricsDocument(pastedLines.join('\n'), doc);
+        const normalizedDoc = normalizeLyricsDocumentStructure(parsedDoc);
+        updateDoc(() => normalizedDoc, true);
+        return;
+      }
+
+      // Locate caret position from native selection
+      const sel = typeof window !== 'undefined' ? window.getSelection() : null;
+      let targetSectionId = '';
+      let targetLineId = '';
+      let targetLineIdx = -1;
+      let insertOffset = 0;
+
+      // Check for active multi-line selection to delete first
+      const curSel = capturedSelectionRef.current || captureSelection();
+      let workingDoc = doc;
+
+      if (curSel && curSel.lines.length > 0) {
+        const firstLine = curSel.lines[0];
+        targetSectionId = firstLine.sectionId;
+        targetLineId = firstLine.lineId;
+        targetLineIdx = firstLine.lineIndex;
+        insertOffset = firstLine.start;
+        workingDoc = batchDeleteLyricsSelection(doc, curSel);
+        capturedSelectionRef.current = null;
+        setHasCapturedSelection(false);
+      } else if (sel && sel.anchorNode) {
+        const anchorNode = sel.anchorNode;
+        const anchorEl = anchorNode instanceof HTMLElement ? anchorNode : anchorNode.parentElement;
+        const lineEl = anchorEl?.closest('[data-line-id]') as HTMLElement | null;
+        if (lineEl) {
+          targetSectionId = lineEl.dataset.sectionId || '';
+          targetLineId = lineEl.dataset.lineId || '';
+          targetLineIdx = parseInt(lineEl.dataset.lineIndex || '-1', 10);
+          insertOffset = sel.rangeCount > 0 ? sel.getRangeAt(0).startOffset : 0;
+        }
+      }
+
+      if (!targetSectionId || targetLineIdx === -1) {
+        if (lastActivePositionRef.current) {
+          targetSectionId = lastActivePositionRef.current.sectionId;
+          targetLineIdx = lastActivePositionRef.current.lineIndex;
+          targetLineId = lastActivePositionRef.current.lineId || '';
+        } else {
+          const lastSec = workingDoc.sections[workingDoc.sections.length - 1];
+          if (lastSec) {
+            targetSectionId = lastSec.id;
+            targetLineIdx = Math.max(0, lastSec.lines.length - 1);
+            targetLineId = lastSec.lines[targetLineIdx]?.id || '';
+            insertOffset = lastSec.lines[targetLineIdx]?.text?.length || 0;
+          }
+        }
+      }
+
+      if (pastedLines.length === 1) {
+        const singleText = pastedLines[0];
+        updateDoc((prev) => {
+          const base = workingDoc !== doc ? workingDoc : prev;
+          return {
+            ...base,
+            sections: base.sections.map((sec) => {
+              if (sec.id !== targetSectionId) return sec;
+              return {
+                ...sec,
+                lines: sec.lines.map((line, idx) => {
+                  if (idx !== targetLineIdx && line.id !== targetLineId) return line;
+                  const curText = line.text;
+                  const safeOffset = Math.min(curText.length, Math.max(0, insertOffset));
+                  const before = curText.slice(0, safeOffset);
+                  const after = curText.slice(safeOffset);
+                  const nextText = before + singleText + after;
+                  return {
+                    ...line,
+                    text: nextText,
+                    spans: undefined,
+                    chords: line.chords ? shiftChordOffsets(curText, nextText, line.chords) : undefined,
+                  };
+                }),
+              };
+            }),
+          };
+        }, true);
+        return;
+      }
+
+      // Multiline insert
+      const firstPastedLine = pastedLines[0];
+      const lastPastedLine = pastedLines[pastedLines.length - 1];
+      const middleLines = pastedLines.slice(1, pastedLines.length - 1);
+
+      let newFocusLineId = '';
+      updateDoc((prev) => {
+        const base = workingDoc !== doc ? workingDoc : prev;
+        return {
+          ...base,
+          sections: base.sections.map((sec) => {
+            if (sec.id !== targetSectionId) return sec;
+            const newLines = [...sec.lines];
+            const resolvedTargetIdx =
+              targetLineIdx >= 0 && targetLineIdx < newLines.length
+                ? targetLineIdx
+                : newLines.findIndex((l) => l.id === targetLineId);
+
+            if (resolvedTargetIdx === -1) {
+              const createdLines: SongLyricLine[] = pastedLines.map((pl) => ({
+                id: generateLyricId('line'),
+                text: pl,
+              }));
+              if (createdLines.length > 0) newFocusLineId = createdLines[createdLines.length - 1].id;
+              return { ...sec, lines: [...newLines, ...createdLines] };
+            }
+
+            const targetLine = newLines[resolvedTargetIdx];
+            const curText = targetLine.text;
+            const safeOffset = Math.min(curText.length, Math.max(0, insertOffset));
+            const beforeCursor = curText.slice(0, safeOffset);
+            const afterCursor = curText.slice(safeOffset);
+
+            const updatedCurrentLine: SongLyricLine = {
+              ...targetLine,
+              text: beforeCursor + firstPastedLine,
+              spans: undefined,
+              chords: targetLine.chords ? shiftChordOffsets(curText, beforeCursor + firstPastedLine, targetLine.chords) : undefined,
+            };
+
+            const insertedMiddleLines: SongLyricLine[] = middleLines.map((ml) => ({
+              id: generateLyricId('line'),
+              text: ml,
+            }));
+
+            const finalLine: SongLyricLine = {
+              id: generateLyricId('line'),
+              text: lastPastedLine + afterCursor,
+            };
+            newFocusLineId = finalLine.id;
+
+            newLines.splice(resolvedTargetIdx, 1, updatedCurrentLine, ...insertedMiddleLines, finalLine);
+            return { ...sec, lines: newLines };
+          }),
+        };
+      }, true);
+
+      if (newFocusLineId) {
+        pendingFocusLineIdRef.current = newFocusLineId;
+        targetCursorOffsetRef.current = lastPastedLine.length;
+      }
+    },
+    [captureSelection, updateDoc]
+  );
+
+  // Attach the native beforeinput listener to the canvas element (capture phase)
+  // Must be a native listener (not React onBeforeInput) because React's synthetic
+  // beforeinput doesn't reliably expose inputType on all browsers/WebViews
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handler = (e: Event) => {
+      handleBeforeInputInsertRef.current?.(e as InputEvent);
+    };
+
+    canvas.addEventListener('beforeinput', handler, true);
+    return () => {
+      canvas.removeEventListener('beforeinput', handler, true);
+    };
+  }, []);
 
   // ── CLIPBOARD NORMALIZATION & SANITIZATION ────────────────────────────
 
