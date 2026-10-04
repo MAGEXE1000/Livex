@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import {
   type Setlist,
   type SongPreset,
+  sanitizeFilename,
   useBandStore,
   useSessionStore,
 } from '@workspace/livex-core';
@@ -19,7 +20,7 @@ export interface SetlistLivexBundle {
 }
 
 /**
- * Export setlist and all referenced song presets recursively into a .livex bundle.
+ * Export setlist and all referenced song presets recursively into a portable .json bundle.
  */
 export async function exportSetlistToLivex(
   setlist: Setlist,
@@ -51,8 +52,7 @@ export async function exportSetlistToLivex(
   };
 
   const content = JSON.stringify(bundle, null, 2);
-  const baseSlug = setlist.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'setlist';
-  const fileName = `${baseSlug}.livex`;
+  const fileName = `${sanitizeFilename(setlist.title, 'setlist')}.json`;
 
   if (Capacitor.isNativePlatform()) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem');
@@ -190,11 +190,11 @@ export const SetlistShareModal: React.FC<SetlistShareModalProps> = ({
     }
   };
 
-  const handleExportLivex = async () => {
+  const handleExportJson = async () => {
     onClose();
     try {
       await exportSetlistToLivex(setlist, allPresets, 'share');
-      toast.success(`Exported ${setlist.title} bundle (.livex)`);
+      toast.success(`Exported ${setlist.title} bundle (.json)`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to export setlist bundle');
     }
@@ -247,11 +247,11 @@ export const SetlistShareModal: React.FC<SetlistShareModalProps> = ({
           </span>
         </button>
 
-        {/* Option 2: Export as .livex */}
+        {/* Option 2: Export as .json */}
         <button
           type="button"
           data-testid="setlist-share-option-export"
-          onClick={handleExportLivex}
+          onClick={handleExportJson}
           className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
           style={{
             backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
@@ -269,7 +269,7 @@ export const SetlistShareModal: React.FC<SetlistShareModalProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
-              Export as .livex
+              Export as .json
             </div>
             <div className="text-xs text-[var(--c-text-secondary)] truncate">
               Complete multi-song setlist bundle ({containedSongs.length} songs)

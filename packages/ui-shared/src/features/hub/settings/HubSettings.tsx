@@ -13,6 +13,7 @@ import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { Capacitor } from '@capacitor/core';
 import { Button, StatefulButton } from '../../../shared/design-system/buttons';
 import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
+import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import { ProgressiveBlur } from '../../../shared/design-system/ProgressiveBlur';
@@ -1321,7 +1322,7 @@ export function HubSettings({
           : isAmoled
             ? '#000000'
             : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
-        borderRadius: '20px',
+        borderRadius: 'clamp(16px, 2.2vh, 22px)',
         overflow: 'hidden',
         border: isLight
           ? '1px solid rgba(0, 0, 0, 0.06)'
@@ -1330,12 +1331,62 @@ export function HubSettings({
             : '1px solid rgba(255, 255, 255, 0.08)',
         backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
         WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-        boxShadow: isLight
-          ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-          : isAmoled
-            ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
-            : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+        boxShadow: 'var(--shadow-surface-raised)',
       };
+
+  const settingCardStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    minHeight: 'clamp(54px, 8.0vh, 72px)',
+    padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
+    background: isLight
+      ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
+      : isAmoled
+        ? '#000000'
+        : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+    border: isLight
+      ? '1px solid rgba(0, 0, 0, 0.06)'
+      : isAmoled
+        ? '1px solid rgba(255, 255, 255, 0.12)'
+        : '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: 'clamp(16px, 2.2vh, 22px)',
+    cursor: 'pointer',
+    textAlign: 'left',
+    boxSizing: 'border-box',
+    outline: 'none',
+    position: 'relative',
+    justifyContent: 'space-between',
+    boxShadow: 'var(--shadow-surface-raised)',
+    overflow: 'hidden',
+    backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+    WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+  };
+
+  const settingIconContainerStyle: React.CSSProperties = {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: isLight
+      ? 'rgba(0, 0, 0, 0.04)'
+      : isAmoled
+        ? '#000000'
+        : 'rgba(255, 255, 255, 0.06)',
+    border: isLight
+      ? '1px solid rgba(0, 0, 0, 0.06)'
+      : isAmoled
+        ? '1px solid rgba(255, 255, 255, 0.12)'
+        : '1px solid rgba(255, 255, 255, 0.10)',
+    boxShadow: isLight
+      ? 'inset 0 1px 1px rgba(255, 255, 255, 0.8)'
+      : isAmoled
+        ? 'none'
+        : 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+    flexShrink: 0,
+  };
 
   const slideAnim = slideDir === 'forward' ? 'hub-slide-in' : 'hub-slide-back';
   const subStyle: React.CSSProperties = {
@@ -1405,19 +1456,28 @@ export function HubSettings({
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          padding: '16px 18px',
-          background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
-          border: '1px solid var(--c-border)',
-          borderRadius: 22,
+          minHeight: 'clamp(54px, 8.0vh, 72px)',
+          padding: 'clamp(12px, 1.8vh, 18px) clamp(14px, 3.6vw, 18px)',
+          background: isLight
+            ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
+            : isAmoled
+              ? '#000000'
+              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+          border: isLight
+            ? '1px solid rgba(0, 0, 0, 0.06)'
+            : isAmoled
+              ? '1px solid rgba(255, 255, 255, 0.12)'
+              : '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 'clamp(16px, 2.2vh, 22px)',
           cursor: 'pointer',
           outline: 'none',
           position: 'relative',
           overflow: 'hidden',
           textAlign: 'left',
           boxSizing: 'border-box',
-          backdropFilter: 'var(--surface-float-blur)',
-          WebkitBackdropFilter: 'var(--surface-float-blur)',
-          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+          backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+          WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
+          boxShadow: 'var(--shadow-surface-raised)',
         }}
       >
         {/* Top Specular Rim */}
@@ -1905,7 +1965,7 @@ export function HubSettings({
                       )}
 
                       {/* Preferences Group */}
-                      <div style={{ marginBottom: 20 }}>
+                      <div style={{ marginBottom: 'clamp(16px, 2.4vh, 22px)' }}>
                         <h3
                           style={{
                             fontSize: '9.5px',
@@ -1913,7 +1973,8 @@ export function HubSettings({
                             textTransform: 'uppercase',
                             letterSpacing: '0.14em',
                             color: 'var(--c-text-tertiary, #808080)',
-                            paddingLeft: 4,
+                            margin: 0,
+                            padding: '0 2px',
                             marginBottom: 8,
                             fontFamily: 'Inter, sans-serif',
                           }}
@@ -1922,137 +1983,94 @@ export function HubSettings({
                         </h3>
                         <div
                           style={{
-                            background: isLight
-                              ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : isAmoled
-                                ? '#000000'
-                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
-                            borderRadius: 20,
-                            padding: '4px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 2,
-                            border: isLight
-                              ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : isAmoled
-                                ? '1px solid rgba(255, 255, 255, 0.12)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            boxShadow: isLight
-                              ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : isAmoled
-                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
-                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
-                            overflow: 'hidden',
+                            gap: 'clamp(8px, 1.3vh, 13px)',
                           }}
+                          className="w-full"
                         >
-                          <motion.div
-                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
-                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
-                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
+                          <button
+                            type="button"
                             onClick={() => navigate('appearance')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 14,
-                              padding: '12px 14px',
-                              borderRadius: 16,
-                              cursor: 'pointer',
-                            }}
-                            className="hover:bg-white/5 transition-colors"
+                            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
+                            style={settingCardStyle}
                           >
                             <div
                               style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.04)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.06)',
-                                border: isLight
-                                  ? '1px solid rgba(0,0,0,0.06)'
-                                  : isAmoled
-                                    ? '1px solid rgba(255,255,255,0.12)'
-                                    : '1px solid rgba(255,255,255,0.10)',
-                                boxShadow: isLight
-                                  ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : isAmoled
-                                    ? 'none'
-                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                gap: 'clamp(12px, 3.2vw, 16px)',
+                                minWidth: 0,
                               }}
                             >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ color: 'var(--c-text-secondary)', fontSize: 18 }}
+                              <div style={settingIconContainerStyle}>
+                                <span
+                                  className="material-symbols-outlined"
+                                  style={{ color: isLight ? '#000000' : '#FFFFFF', fontSize: 20 }}
+                                >
+                                  palette
+                                </span>
+                              </div>
+                              <div
+                                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
                               >
-                                palette
-                              </span>
-                            </div>
-                            <div
-                              style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: 14.5,
-                                  fontWeight: 750,
-                                  color: 'var(--c-text-primary)',
-                                  fontFamily: 'var(--studio-font-display)',
-                                  letterSpacing: '-0.015em',
-                                }}
-                              >
-                                {lang === 'es' ? 'Apariencia' : 'Appearance'}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  color: 'var(--c-text-secondary)',
-                                  fontFamily: 'Inter, sans-serif',
-                                  opacity: 0.75,
-                                }}
-                              >
-                                {lang === 'es'
-                                  ? 'Tema, colores dinámicos, acento'
-                                  : 'Theme, dynamic colors, accent'}
-                              </span>
+                                <span
+                                  style={{
+                                    fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+                                    fontWeight: 800,
+                                    color: 'var(--c-text-primary)',
+                                    fontFamily: 'var(--studio-font-display)',
+                                    letterSpacing: '-0.02em',
+                                  }}
+                                >
+                                  {lang === 'es' ? 'Apariencia' : 'Appearance'}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 'clamp(12px, 1.45vh, 13px)',
+                                    color: 'var(--c-text-secondary)',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 500,
+                                    marginTop: '3px',
+                                    lineHeight: 1.35,
+                                    opacity: 0.85,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {lang === 'es'
+                                    ? 'Tema, colores dinámicos, acento'
+                                    : 'Theme, dynamic colors, accent'}
+                                </span>
+                              </div>
                             </div>
                             <div
                               style={{
                                 width: 24,
                                 height: 24,
-                                borderRadius: '50%',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.03)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.04)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                flexShrink: 0,
+                                marginLeft: 8,
                               }}
                             >
-                              <span
-                                className="material-symbols-outlined"
+                              <StudioIcon
+                                name="chevron_right"
+                                size={20}
                                 style={{
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.6,
-                                  fontSize: 15,
+                                  color: isLight ? '#000000' : '#FFFFFF',
+                                  opacity: 0.5,
                                 }}
-                              >
-                                chevron_right
-                              </span>
+                              />
                             </div>
-                          </motion.div>
+                          </button>
                         </div>
                       </div>
 
                       {/* Help & Support Group */}
-                      <div style={{ marginBottom: 20 }}>
+                      <div style={{ marginBottom: 'clamp(16px, 2.4vh, 22px)' }}>
                         <h3
                           style={{
                             fontSize: '9.5px',
@@ -2060,7 +2078,8 @@ export function HubSettings({
                             textTransform: 'uppercase',
                             letterSpacing: '0.14em',
                             color: 'var(--c-text-tertiary, #808080)',
-                            paddingLeft: 4,
+                            margin: 0,
+                            padding: '0 2px',
                             marginBottom: 8,
                             fontFamily: 'Inter, sans-serif',
                           }}
@@ -2069,132 +2088,88 @@ export function HubSettings({
                         </h3>
                         <div
                           style={{
-                            background: isLight
-                              ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : isAmoled
-                                ? '#000000'
-                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
-                            borderRadius: 20,
-                            padding: '4px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 2,
-                            border: isLight
-                              ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : isAmoled
-                                ? '1px solid rgba(255, 255, 255, 0.12)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            boxShadow: isLight
-                              ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : isAmoled
-                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
-                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
-                            overflow: 'hidden',
+                            gap: 'clamp(8px, 1.3vh, 13px)',
                           }}
+                          className="w-full"
                         >
-                          <motion.div
-                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
-                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
-                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
+                          <button
+                            type="button"
                             onClick={() => navigate('help-center')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 14,
-                              padding: '12px 14px',
-                              borderRadius: 16,
-                              cursor: 'pointer',
-                            }}
-                            className="hover:bg-white/5 transition-colors"
+                            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
+                            style={settingCardStyle}
                           >
                             <div
                               style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.04)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.06)',
-                                border: isLight
-                                  ? '1px solid rgba(0,0,0,0.06)'
-                                  : isAmoled
-                                    ? '1px solid rgba(255,255,255,0.12)'
-                                    : '1px solid rgba(255,255,255,0.10)',
-                                boxShadow: isLight
-                                  ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : isAmoled
-                                    ? 'none'
-                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                gap: 'clamp(12px, 3.2vw, 16px)',
+                                minWidth: 0,
                               }}
                             >
-                              <AnimatedIcon
-                                name="circle-help"
-                                size={18}
-                                color="var(--c-text-secondary)"
-                              />
-                            </div>
-                            <div
-                              style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: 14.5,
-                                  fontWeight: 750,
-                                  color: 'var(--c-text-primary)',
-                                  fontFamily: 'var(--studio-font-display)',
-                                  letterSpacing: '-0.015em',
-                                }}
+                              <div style={settingIconContainerStyle}>
+                                <AnimatedIcon
+                                  name="circle-help"
+                                  size={20}
+                                  color={isLight ? '#000000' : '#FFFFFF'}
+                                />
+                              </div>
+                              <div
+                                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
                               >
-                                {lang === 'es' ? 'Ayuda y soporte' : 'Help & Support'}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  color: 'var(--c-text-secondary)',
-                                  fontFamily: 'Inter, sans-serif',
-                                  opacity: 0.75,
-                                }}
-                              >
-                                {lang === 'es'
-                                  ? 'Documentación y preguntas frecuentes'
-                                  : 'Documentation and FAQ'}
-                              </span>
+                                <span
+                                  style={{
+                                    fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+                                    fontWeight: 800,
+                                    color: 'var(--c-text-primary)',
+                                    fontFamily: 'var(--studio-font-display)',
+                                    letterSpacing: '-0.02em',
+                                  }}
+                                >
+                                  {lang === 'es' ? 'Ayuda y soporte' : 'Help & Support'}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 'clamp(12px, 1.45vh, 13px)',
+                                    color: 'var(--c-text-secondary)',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 500,
+                                    marginTop: '3px',
+                                    lineHeight: 1.35,
+                                    opacity: 0.85,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {lang === 'es'
+                                    ? 'Documentación y preguntas frecuentes'
+                                    : 'Documentation and FAQ'}
+                                </span>
+                              </div>
                             </div>
                             <div
                               style={{
                                 width: 24,
                                 height: 24,
-                                borderRadius: '50%',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.03)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.04)',
-                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                flexShrink: 0,
+                                marginLeft: 8,
                               }}
                             >
-                              <span
-                                className="material-symbols-outlined"
+                              <StudioIcon
+                                name="chevron_right"
+                                size={20}
                                 style={{
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.6,
-                                  fontSize: 15,
+                                  color: isLight ? '#000000' : '#FFFFFF',
+                                  opacity: 0.5,
                                 }}
-                              >
-                                chevron_right
-                              </span>
+                              />
                             </div>
-                          </motion.div>
+                          </button>
                         </div>
                       </div>
 
@@ -2207,7 +2182,8 @@ export function HubSettings({
                             textTransform: 'uppercase',
                             letterSpacing: '0.14em',
                             color: 'var(--c-text-tertiary, #808080)',
-                            paddingLeft: 4,
+                            margin: 0,
+                            padding: '0 2px',
                             marginBottom: 8,
                             fontFamily: 'Inter, sans-serif',
                           }}
@@ -2216,359 +2192,267 @@ export function HubSettings({
                         </h3>
                         <div
                           style={{
-                            background: isLight
-                              ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
-                              : isAmoled
-                                ? '#000000'
-                                : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
-                            borderRadius: 20,
-                            padding: '4px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 2,
-                            border: isLight
-                              ? '1px solid rgba(0, 0, 0, 0.06)'
-                              : isAmoled
-                                ? '1px solid rgba(255, 255, 255, 0.12)'
-                                : '1px solid rgba(255, 255, 255, 0.08)',
-                            backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-                            boxShadow: isLight
-                              ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                              : isAmoled
-                                ? '0 4px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.06)'
-                                : '0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
-                            overflow: 'hidden',
+                            gap: 'clamp(8px, 1.3vh, 13px)',
                           }}
+                          className="w-full"
                         >
-                          <motion.div
-                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
-                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
-                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
+                          {/* Updater Card */}
+                          <button
+                            type="button"
                             onClick={() => navigate('updater')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 14,
-                              padding: '12px 14px',
-                              borderRadius: 16,
-                              cursor: 'pointer',
-                            }}
-                            className="hover:bg-white/5 transition-colors"
+                            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
+                            style={settingCardStyle}
                           >
                             <div
                               style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.04)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.06)',
-                                border: isLight
-                                  ? '1px solid rgba(0,0,0,0.06)'
-                                  : isAmoled
-                                    ? '1px solid rgba(255,255,255,0.12)'
-                                    : '1px solid rgba(255,255,255,0.10)',
-                                boxShadow: isLight
-                                  ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : isAmoled
-                                    ? 'none'
-                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
+                                gap: 'clamp(12px, 3.2vw, 16px)',
+                                minWidth: 0,
                               }}
                             >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ color: 'var(--c-text-secondary)', fontSize: 18 }}
-                              >
-                                system_update
-                              </span>
-                            </div>
-                            <div
-                              style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: 14.5,
-                                  fontWeight: 750,
-                                  color: 'var(--c-text-primary)',
-                                  fontFamily: 'var(--studio-font-display)',
-                                  letterSpacing: '-0.015em',
-                                }}
-                              >
-                                {lang === 'es' ? 'Actualizador' : 'Updater'}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  color: 'var(--c-text-secondary)',
-                                  fontFamily: 'Inter, sans-serif',
-                                  opacity: 0.75,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                }}
-                              >
-                                {getUpdaterStatusText(updater, lang)}
-                                {updater.updateAvailable && (
-                                  <span
-                                    style={{
-                                      width: 6,
-                                      height: 6,
-                                      borderRadius: '50%',
-                                      background: '#ef4444',
-                                      display: 'inline-block',
-                                    }}
-                                  />
-                                )}
-                              </span>
-                            </div>
-                            <div
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.03)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.04)',
-                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.6,
-                                  fontSize: 15,
-                                }}
-                              >
-                                chevron_right
-                              </span>
-                            </div>
-                          </motion.div>
-
-                          <motion.div
-                            whileTap={prefersReduced ? undefined : { scale: 0.985 }}
-                            whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
-                            transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
-                            onClick={() => navigate('about')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 14,
-                              padding: '12px 14px',
-                              borderRadius: 16,
-                              cursor: 'pointer',
-                            }}
-                            className="hover:bg-white/5 transition-colors"
-                          >
-                            <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.04)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.06)',
-                                border: isLight
-                                  ? '1px solid rgba(0,0,0,0.06)'
-                                  : isAmoled
-                                    ? '1px solid rgba(255,255,255,0.12)'
-                                    : '1px solid rgba(255,255,255,0.10)',
-                                boxShadow: isLight
-                                  ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                  : isAmoled
-                                    ? 'none'
-                                    : 'inset 0 1px 1px rgba(255,255,255,0.15)',
-                              }}
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ color: 'var(--c-text-secondary)', fontSize: 18 }}
-                              >
-                                info
-                              </span>
-                            </div>
-                            <div
-                              style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: 14.5,
-                                  fontWeight: 750,
-                                  color: 'var(--c-text-primary)',
-                                  fontFamily: 'var(--studio-font-display)',
-                                  letterSpacing: '-0.015em',
-                                }}
-                              >
-                                {lang === 'es' ? 'Acerca de' : 'About'}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  color: 'var(--c-text-secondary)',
-                                  fontFamily: 'Inter, sans-serif',
-                                  opacity: 0.75,
-                                }}
-                              >
-                                {lang === 'es'
-                                  ? `Versión ${APP_VERSION_LABEL}`
-                                  : `Version ${APP_VERSION_LABEL}`}
-                              </span>
-                            </div>
-                            <div
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                background: isLight
-                                  ? 'rgba(0,0,0,0.03)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255,255,255,0.04)',
-                                border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.6,
-                                  fontSize: 15,
-                                }}
-                              >
-                                chevron_right
-                              </span>
-                            </div>
-                          </motion.div>
-
-                          {settings.developerMode && (
-                            <motion.div
-                              whileTap={prefersReduced ? undefined : { scale: 0.985 }}
-                              whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
-                              transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
-                              onClick={() => navigate('developer')}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 14,
-                                padding: '12px 14px',
-                                borderRadius: 16,
-                                cursor: 'pointer',
-                              }}
-                              className="hover:bg-white/5 transition-colors"
-                            >
-                              <div
-                                style={{
-                                  width: 36,
-                                  height: 36,
-                                  borderRadius: 12,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: isLight
-                                    ? 'rgba(0,0,0,0.04)'
-                                    : isAmoled
-                                      ? '#000000'
-                                      : 'rgba(255,255,255,0.06)',
-                                  border: isLight
-                                    ? '1px solid rgba(0,0,0,0.06)'
-                                    : isAmoled
-                                      ? '1px solid rgba(255,255,255,0.12)'
-                                      : '1px solid rgba(255,255,255,0.10)',
-                                  boxShadow: isLight
-                                    ? 'inset 0 1px 1px rgba(255,255,255,0.8)'
-                                    : isAmoled
-                                      ? 'none'
-                                      : 'inset 0 1px 1px rgba(255,255,255,0.15)',
-                                }}
-                              >
+                              <div style={settingIconContainerStyle}>
                                 <span
                                   className="material-symbols-outlined"
-                                  style={{ color: 'var(--c-text-secondary)', fontSize: 18 }}
+                                  style={{ color: isLight ? '#000000' : '#FFFFFF', fontSize: 20 }}
                                 >
-                                  terminal
+                                  system_update
                                 </span>
                               </div>
                               <div
+                                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span
+                                    style={{
+                                      fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+                                      fontWeight: 800,
+                                      color: 'var(--c-text-primary)',
+                                      fontFamily: 'var(--studio-font-display)',
+                                      letterSpacing: '-0.02em',
+                                    }}
+                                  >
+                                    {lang === 'es' ? 'Actualizador' : 'Updater'}
+                                  </span>
+                                  {updater.updateAvailable && (
+                                    <span
+                                      style={{
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: '50%',
+                                        background: '#ef4444',
+                                        display: 'inline-block',
+                                        boxShadow: '0 0 6px #ef4444',
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 'clamp(12px, 1.45vh, 13px)',
+                                    color: 'var(--c-text-secondary)',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 500,
+                                    marginTop: '3px',
+                                    lineHeight: 1.35,
+                                    opacity: 0.85,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {getUpdaterStatusText(updater, lang)}
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                width: 24,
+                                height: 24,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                marginLeft: 8,
+                              }}
+                            >
+                              <StudioIcon
+                                name="chevron_right"
+                                size={20}
                                 style={{
-                                  flex: 1,
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 2,
+                                  color: isLight ? '#000000' : '#FFFFFF',
+                                  opacity: 0.5,
                                 }}
+                              />
+                            </div>
+                          </button>
+
+                          {/* About Card */}
+                          <button
+                            type="button"
+                            onClick={() => navigate('about')}
+                            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
+                            style={settingCardStyle}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'clamp(12px, 3.2vw, 16px)',
+                                minWidth: 0,
+                              }}
+                            >
+                              <div style={settingIconContainerStyle}>
+                                <span
+                                  className="material-symbols-outlined"
+                                  style={{ color: isLight ? '#000000' : '#FFFFFF', fontSize: 20 }}
+                                >
+                                  info
+                                </span>
+                              </div>
+                              <div
+                                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
                               >
                                 <span
                                   style={{
-                                    fontSize: 14.5,
-                                    fontWeight: 750,
+                                    fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+                                    fontWeight: 800,
                                     color: 'var(--c-text-primary)',
                                     fontFamily: 'var(--studio-font-display)',
-                                    letterSpacing: '-0.015em',
+                                    letterSpacing: '-0.02em',
                                   }}
                                 >
-                                  {lang === 'es'
-                                    ? 'Opciones de Desarrollador'
-                                    : 'Developer Options'}
+                                  {lang === 'es' ? 'Acerca de' : 'About'}
                                 </span>
                                 <span
                                   style={{
-                                    fontSize: '12px',
+                                    fontSize: 'clamp(12px, 1.45vh, 13px)',
                                     color: 'var(--c-text-secondary)',
                                     fontFamily: 'Inter, sans-serif',
-                                    opacity: 0.75,
+                                    fontWeight: 500,
+                                    marginTop: '3px',
+                                    lineHeight: 1.35,
+                                    opacity: 0.85,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
                                   }}
                                 >
                                   {lang === 'es'
-                                    ? 'Herramientas de depuración'
-                                    : 'Debug tools & metrics'}
+                                    ? `Versión ${APP_VERSION_LABEL}`
+                                    : `Version ${APP_VERSION_LABEL}`}
                                 </span>
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                width: 24,
+                                height: 24,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                marginLeft: 8,
+                              }}
+                            >
+                              <StudioIcon
+                                name="chevron_right"
+                                size={20}
+                                style={{
+                                  color: isLight ? '#000000' : '#FFFFFF',
+                                  opacity: 0.5,
+                                }}
+                              />
+                            </div>
+                          </button>
+
+                          {/* Developer Options Card */}
+                          {settings.developerMode && (
+                            <button
+                              type="button"
+                              onClick={() => navigate('developer')}
+                              className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
+                              style={settingCardStyle}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 'clamp(12px, 3.2vw, 16px)',
+                                  minWidth: 0,
+                                }}
+                              >
+                                <div style={settingIconContainerStyle}>
+                                  <span
+                                    className="material-symbols-outlined"
+                                    style={{ color: isLight ? '#000000' : '#FFFFFF', fontSize: 20 }}
+                                  >
+                                    terminal
+                                  </span>
+                                </div>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+                                      fontWeight: 800,
+                                      color: 'var(--c-text-primary)',
+                                      fontFamily: 'var(--studio-font-display)',
+                                      letterSpacing: '-0.02em',
+                                    }}
+                                  >
+                                    {lang === 'es'
+                                      ? 'Opciones de Desarrollador'
+                                      : 'Developer Options'}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: 'clamp(12px, 1.45vh, 13px)',
+                                      color: 'var(--c-text-secondary)',
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontWeight: 500,
+                                      marginTop: '3px',
+                                      lineHeight: 1.35,
+                                      opacity: 0.85,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    }}
+                                  >
+                                    {lang === 'es'
+                                      ? 'Herramientas de depuración'
+                                      : 'Debug tools & metrics'}
+                                  </span>
+                                </div>
                               </div>
                               <div
                                 style={{
                                   width: 24,
                                   height: 24,
-                                  borderRadius: '50%',
-                                  background: isLight
-                                    ? 'rgba(0,0,0,0.03)'
-                                    : isAmoled
-                                      ? '#000000'
-                                      : 'rgba(255,255,255,0.04)',
-                                  border: isAmoled ? '1px solid rgba(255,255,255,0.08)' : undefined,
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
+                                  flexShrink: 0,
+                                  marginLeft: 8,
                                 }}
                               >
-                                <span
-                                  className="material-symbols-outlined"
+                                <StudioIcon
+                                  name="chevron_right"
+                                  size={20}
                                   style={{
-                                    color: 'var(--c-text-secondary)',
-                                    opacity: 0.6,
-                                    fontSize: 15,
+                                    color: isLight ? '#000000' : '#FFFFFF',
+                                    opacity: 0.5,
                                   }}
-                                >
-                                  chevron_right
-                                </span>
+                                />
                               </div>
-                            </motion.div>
+                            </button>
                           )}
                         </div>
                       </div>

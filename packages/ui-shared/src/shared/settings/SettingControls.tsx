@@ -86,8 +86,9 @@ export function SettingRow({
       onClick={onClick}
       className={`${isStacked ? 'flex flex-col gap-2.5' : 'flex items-center justify-between gap-4'} ${isInteractive ? 'cursor-pointer sc-setting-row-interactive' : ''} ${className}`}
       style={{
-        padding: '14px 16px',
-        paddingLeft: indent ? 'calc(16px * 1.75)' : '16px',
+        minHeight: 'clamp(54px, 8.0vh, 72px)',
+        padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
+        paddingLeft: indent ? 'calc(clamp(14px, 3.6vw, 18px) * 1.75)' : 'clamp(14px, 3.6vw, 18px)',
         borderBottom: '1px solid var(--track, var(--c-border))',
         boxSizing: 'border-box',
         ...style,
@@ -96,9 +97,9 @@ export function SettingRow({
       <div className={`${isStacked ? 'w-full' : 'flex-1'} min-w-0`}>
         <p
           style={{
-            fontSize: indent ? 'var(--type-meta-size, 12px)' : 'var(--type-body-size, 14.5px)',
-            lineHeight: indent ? 'var(--type-meta-lh, 16px)' : 'var(--type-body-lh, 18px)',
-            fontWeight: indent ? 400 : 500,
+            fontSize: indent ? 'var(--type-meta-size, 12px)' : 'clamp(15px, 1.9vh, 16.5px)',
+            lineHeight: indent ? 'var(--type-meta-lh, 16px)' : 'clamp(19px, 2.3vh, 22px)',
+            fontWeight: indent ? 400 : 650,
             color: indent
               ? 'var(--c-text-secondary, var(--muted))'
               : 'var(--c-text-primary, var(--text))',
@@ -112,15 +113,15 @@ export function SettingRow({
         {desc && (
           <p
             style={{
-              fontSize: 'var(--type-meta-size, 12px)',
-              marginTop: '2px',
-              lineHeight: 'var(--type-meta-lh, 16px)',
+              fontSize: 'clamp(12px, 1.45vh, 13px)',
+              marginTop: '3px',
+              lineHeight: '1.35',
               color: 'var(--c-text-secondary, var(--muted))',
               fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
               fontWeight: 400,
               letterSpacing: 'var(--type-meta-tracking, 0.2px)',
-              opacity: indent ? 0.75 : 0.82,
-              margin: '2px 0 0',
+              opacity: indent ? 0.75 : 0.85,
+              margin: '3px 0 0',
             }}
           >
             {desc}
@@ -252,16 +253,17 @@ export function BentoSettingCard({
       whileTap={prefersReduced ? undefined : { scale: 0.98 }}
       whileHover={canHover && !prefersReduced ? { scale: 1.008 } : undefined}
       transition={prefersReduced ? { duration: 0 } : SpringPresets.soft}
-      className="outline-none"
+      className="outline-none sc-module-card group"
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        padding: '14px 16px',
+        minHeight: 'clamp(54px, 8.0vh, 72px)',
+        padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
         background: 'var(--surface-card-bg, rgba(255, 255, 255, 0.03))',
         border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
-        borderRadius: 'var(--radius-card, 16px)',
+        borderRadius: 'clamp(16px, 2.2vh, 22px)',
         cursor: 'pointer',
         textAlign: 'left',
         boxSizing: 'border-box',
@@ -296,9 +298,9 @@ export function BentoSettingCard({
       >
         <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-compact, 12px)',
+            width: 38,
+            height: 38,
+            borderRadius: 13,
             background: iconColor ? `${iconColor}22` : 'var(--c-border)',
             display: 'flex',
             alignItems: 'center',
@@ -322,13 +324,13 @@ export function BentoSettingCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4
             style={{
-              fontSize: 'var(--type-body-size, 14.5px)',
-              lineHeight: 'var(--type-body-lh, 18px)',
-              fontWeight: 600,
+              fontSize: 'clamp(15.5px, 1.95vh, 17px)',
+              lineHeight: 'clamp(19px, 2.3vh, 22px)',
+              fontWeight: 750,
               color: 'var(--c-text-primary, var(--text))',
               margin: 0,
-              letterSpacing: '-0.2px',
-              fontFamily: 'var(--type-body-font, var(--studio-font-body, "Inter", sans-serif))',
+              letterSpacing: '-0.02em',
+              fontFamily: 'var(--type-body-font, var(--studio-font-display, "Inter Tight", sans-serif))',
             }}
           >
             {title}
@@ -336,12 +338,12 @@ export function BentoSettingCard({
           {desc && (
             <p
               style={{
-                fontSize: 'var(--type-meta-size, 12px)',
+                fontSize: 'clamp(12px, 1.45vh, 13px)',
                 color: 'var(--c-text-secondary, var(--muted))',
-                margin: '2px 0 0',
-                fontWeight: 400,
+                margin: '3px 0 0',
+                fontWeight: 500,
                 fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
-                lineHeight: 'var(--type-meta-lh, 16px)',
+                lineHeight: 1.35,
                 letterSpacing: 'var(--type-meta-tracking, 0.2px)',
                 opacity: 0.85,
               }}
@@ -440,7 +442,8 @@ export function BentoSettingRow({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        padding: '14px 16px',
+        minHeight: 'clamp(54px, 8.0vh, 72px)',
+        padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
         background: 'transparent',
         border: 'none',
         borderBottom: '1px solid var(--track, var(--c-border))',
@@ -460,9 +463,9 @@ export function BentoSettingRow({
       >
         <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 'var(--radius-compact, 12px)',
+            width: 38,
+            height: 38,
+            borderRadius: 13,
             background: iconColor ? `${iconColor}22` : 'var(--c-border)',
             display: 'flex',
             alignItems: 'center',
@@ -486,9 +489,9 @@ export function BentoSettingRow({
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4
             style={{
-              fontSize: 'var(--type-body-size, 14.5px)',
-              lineHeight: 'var(--type-body-lh, 18px)',
-              fontWeight: 600,
+              fontSize: 'clamp(15px, 1.9vh, 16.5px)',
+              lineHeight: 'clamp(19px, 2.3vh, 22px)',
+              fontWeight: 650,
               color: 'var(--c-text-primary, var(--text))',
               margin: 0,
               letterSpacing: '-0.2px',
@@ -500,12 +503,12 @@ export function BentoSettingRow({
           {desc && (
             <p
               style={{
-                fontSize: 'var(--type-meta-size, 12px)',
+                fontSize: 'clamp(12px, 1.45vh, 13px)',
                 color: 'var(--c-text-secondary, var(--muted))',
-                margin: '2px 0 0',
+                margin: '3px 0 0',
                 fontWeight: 400,
                 fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
-                lineHeight: 'var(--type-meta-lh, 16px)',
+                lineHeight: 1.35,
                 letterSpacing: 'var(--type-meta-tracking, 0.2px)',
                 opacity: 0.85,
               }}
@@ -606,7 +609,7 @@ export function SettingSection({
         style={{
           border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
           backgroundColor: 'var(--surface-card-bg, rgba(255, 255, 255, 0.03))',
-          borderRadius: 'var(--radius-card, 16px)',
+          borderRadius: 'clamp(16px, 2.2vh, 22px)',
           overflow: 'hidden',
           position: 'relative',
           backdropFilter: 'var(--surface-topbar-blur, blur(20px) saturate(180%))',

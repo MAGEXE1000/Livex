@@ -24,6 +24,7 @@ import {
   useSettingsStore,
   useSessionStore,
   useMetronomeStore,
+  sanitizeFilename,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
 import { DrumTransportBar } from '../components/DrumTransportBar';
@@ -640,7 +641,7 @@ async function exportDrumSongJSON(
       measures: p.measures.map((m: DrumMeasure) => ({ id: m.id, hits: m.hits })),
     })),
   };
-  const fileName = `${song?.name ?? 'drumex'}.json`;
+  const fileName = `${sanitizeFilename(song?.name, 'drumex')}.json`;
   const jsonStr = JSON.stringify(payload, null, 2);
   const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
   if (Capacitor.isNativePlatform()) {

@@ -209,18 +209,22 @@ export function Profile(props: any) {
           padding: '0px',
         }
       : {
-          background: isAmoled
-            ? '#000000'
-            : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
-          borderRadius: 20,
+          background: isLight
+            ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
+            : isAmoled
+              ? '#000000'
+              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+          borderRadius: 'clamp(16px, 2.2vh, 22px)',
           overflow: 'hidden',
-          border: '1px solid var(--c-border)',
-          boxShadow: isAmoled
-            ? '0 4px 16px rgba(0, 0, 0, 0.8)'
-            : '0 8px 24px rgba(0, 0, 0, 0.16)',
+          border: isLight
+            ? '1px solid rgba(0, 0, 0, 0.06)'
+            : isAmoled
+              ? '1px solid rgba(255, 255, 255, 0.12)'
+              : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: 'var(--shadow-surface-raised)',
           backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
           WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
-          padding: '20px',
+          padding: 'clamp(16px, 2.2vh, 22px)',
         };
 
     const guestCardStyle: React.CSSProperties = isWebDesktop
@@ -233,15 +237,19 @@ export function Profile(props: any) {
           marginBottom: 20,
         }
       : {
-          background: isAmoled
-            ? '#000000'
-            : 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.03))',
-          borderRadius: 20,
+          background: isLight
+            ? 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.70))'
+            : isAmoled
+              ? '#000000'
+              : 'linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%)',
+          borderRadius: 'clamp(16px, 2.2vh, 22px)',
           overflow: 'hidden',
-          border: '1px solid var(--c-border)',
-          boxShadow: isAmoled
-            ? '0 4px 16px rgba(0, 0, 0, 0.8)'
-            : '0 8px 24px rgba(0, 0, 0, 0.16)',
+          border: isLight
+            ? '1px solid rgba(0, 0, 0, 0.06)'
+            : isAmoled
+              ? '1px solid rgba(255, 255, 255, 0.12)'
+              : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: 'var(--shadow-surface-raised)',
           backdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
           WebkitBackdropFilter: isAmoled ? 'none' : 'var(--surface-float-blur)',
           marginBottom: 20,

@@ -156,7 +156,7 @@ export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
                 <span className="material-symbols-rounded text-base text-[var(--c-text-secondary)]">
                   cloud_download
                 </span>
-                <span>Import .livex Bundle</span>
+                <span>Import Setlist (.json)</span>
               </motion.button>
             </div>
           </section>

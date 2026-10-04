@@ -17,6 +17,7 @@ import {
   DRUM_INSTRUMENTS,
   INSTRUMENT_COLOR,
   BackDispatcher,
+  sanitizeFilename,
 } from '@workspace/livex-core';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 import DrumPaperPreview, {
@@ -323,7 +324,7 @@ async function exportDrumSongPDF(
     if (patIdx < patterns.length - 1) curY += PAT_GAP - SYS_GAP;
   }
 
-  const fileName = `${pdfName || song?.name || 'drumex'}.pdf`;
+  const fileName = `${sanitizeFilename(pdfName || song?.name, 'drumex')}.pdf`;
   const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
   if (Capacitor.isNativePlatform()) {
     try {

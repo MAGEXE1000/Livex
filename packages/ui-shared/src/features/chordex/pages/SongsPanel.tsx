@@ -42,6 +42,7 @@ import {
   type SetlistQueueItem,
   flattenSetlistToQueue,
   parseLivexBundle,
+  sanitizeFilename,
 } from '@workspace/livex-core';
 import {
   SetlistLibraryView,
@@ -2366,18 +2367,8 @@ export interface ChordexJsonFile {
   exportedAt?: number;
 }
 
-/** Keeps the readable song title; strips only characters illegal in filenames. */
-export function sanitizeFilename(title: string): string {
-  const cleaned = (title || '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^\.+/, '')
-    .slice(0, 100)
-    .trim();
-  return cleaned || 'Song';
-}
+/** Re-exported from @workspace/livex-core */
+export { sanitizeFilename };
 
 async function exportPresetToJSON(
   preset: SongPreset,
@@ -6693,7 +6684,7 @@ export default function SongsPanel() {
                       placement="center"
                       maxWidth={420}
                       title="Import Setlist"
-                      subtitle="Import a .livex setlist package with songs"
+                      subtitle="Import a .json / .livex setlist package with songs"
                       accentColor={accent.from}
                       customTrigger={({ triggerProps }) => (
                         <motion.button
@@ -6948,7 +6939,7 @@ export default function SongsPanel() {
               </span>
             </button>
 
-            {/* 2. Export as .livex */}
+            {/* 2. Export as .json */}
             <button
               type="button"
               data-testid="share-option-export"
@@ -6979,7 +6970,7 @@ export default function SongsPanel() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
-                  Export as .livex
+                  Export as .json
                 </div>
                 <div className="text-xs text-[var(--c-text-secondary)] truncate">
                   Lossless full song package export

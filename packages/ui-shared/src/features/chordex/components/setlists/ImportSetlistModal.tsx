@@ -6,6 +6,7 @@ import {
   type SongPreset,
   type SetlistLivexBundle,
   parseLivexBundle,
+  sanitizeFilename,
   useChordStore,
   useIsWebDesktop,
 } from '@workspace/livex-core';
@@ -46,7 +47,7 @@ export function ImportSetlistContent({
       return {
         setlist: activeBundle.setlist,
         songs: activeBundle.songs || [],
-        fileName: `${activeBundle.setlist.title || 'setlist'}.livex`,
+        fileName: `${sanitizeFilename(activeBundle.setlist.title, 'setlist')}.json`,
         fileSizeBytes: 0,
       };
     }
@@ -67,7 +68,7 @@ export function ImportSetlistContent({
       setParsed({
         setlist: activeBundle.setlist,
         songs: activeBundle.songs || [],
-        fileName: `${activeBundle.setlist.title || 'setlist'}.livex`,
+        fileName: `${sanitizeFilename(activeBundle.setlist.title, 'setlist')}.json`,
         fileSizeBytes: 0,
       });
       setStage('preview');
@@ -276,7 +277,7 @@ export function ImportSetlistContent({
                 <span className="material-symbols-rounded text-2xl">cloud_download</span>
               </div>
               <p className="text-sm font-bold text-[var(--c-text-primary)]">
-                {isWebDesktop ? 'Drop a .livex setlist bundle here' : 'Select a .livex setlist bundle'}
+                {isWebDesktop ? 'Drop a .json or .livex setlist bundle here' : 'Select a .json or .livex setlist bundle'}
               </p>
               <p className="text-xs text-[var(--c-text-secondary)] mt-1 max-w-[240px]">
                 Imports full setlist structure, section order, and embeds all included song charts.
@@ -356,7 +357,7 @@ export function ImportSetlistContent({
                     color: 'var(--c-text-muted)',
                   }}
                 >
-                  .livex bundle
+                  .json / .livex bundle
                 </span>
               </div>
 
@@ -479,7 +480,7 @@ export const ImportSetlistModal: React.FC<ImportSetlistModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onClose={handleClose} title="Import Setlist (.livex)">
+    <Dialog open={isOpen} onClose={handleClose} title="Import Setlist (.json / .livex)">
       <ImportSetlistContent
         accentColor={accentColor}
         onImportSuccess={onImportSuccess}

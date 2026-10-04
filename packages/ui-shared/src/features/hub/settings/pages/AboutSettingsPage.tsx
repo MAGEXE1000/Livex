@@ -305,7 +305,8 @@ export function AboutContent(props: any) {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 width: '100%',
-                padding: '14px 16px',
+                minHeight: 'clamp(54px, 8.0vh, 72px)',
+                padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
                 borderBottom: '1px solid var(--c-border)',
                 background: 'transparent',
                 borderTop: 'none',
@@ -316,29 +317,30 @@ export function AboutContent(props: any) {
                 textAlign: 'left',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
+                    width: 38,
+                    height: 38,
+                    borderRadius: 13,
                     background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid var(--c-border)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'var(--c-text-secondary)',
+                    flexShrink: 0,
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                     {icon}
                   </span>
                 </div>
                 <span
                   style={{
                     fontFamily: 'var(--type-body-font, var(--studio-font-body))',
-                    fontWeight: 750,
-                    fontSize: 14,
+                    fontWeight: 700,
+                    fontSize: 'clamp(15px, 1.9vh, 16.5px)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -377,7 +379,8 @@ export function AboutContent(props: any) {
               justifyContent: 'space-between',
               alignItems: 'center',
               width: '100%',
-              padding: '14px 16px',
+              minHeight: 'clamp(54px, 8.0vh, 72px)',
+              padding: 'clamp(8px, 1.4vh, 14px) clamp(14px, 3.6vw, 18px)',
               background: 'transparent',
               border: 'none',
               color: 'var(--c-text-primary)',
@@ -385,29 +388,30 @@ export function AboutContent(props: any) {
               textAlign: 'left',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 13,
                   background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid var(--c-border)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--c-text-secondary)',
+                  flexShrink: 0,
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                   code
                 </span>
               </div>
               <span
                 style={{
                   fontFamily: 'var(--type-body-font, var(--studio-font-body))',
-                  fontWeight: 750,
-                  fontSize: 14,
+                  fontWeight: 700,
+                  fontSize: 'clamp(15px, 1.9vh, 16.5px)',
                   letterSpacing: '-0.01em',
                 }}
               >
