@@ -26,13 +26,14 @@ export class NavigationDispatcher {
   public static push(route: Partial<NavigationRoute>): void {
     const nextRoute = NavigationCoordinator.resolveDefaultRoute(normalizeAndValidateRoute(route));
     const store = useNavigationStore.getState();
-    const current = store.history[store.history.length - 1];
+    const baseHistory = this.flushSubAppsForHub(store.history, nextRoute);
+    const current = baseHistory[baseHistory.length - 1];
 
-    if (current && isRouteEqual(current, nextRoute)) {
+    if (current && isRouteEqual(current, nextRoute) && baseHistory === store.history) {
       return;
     }
 
-    if (detectRecursion(store.history, nextRoute)) {
+    if (detectRecursion(baseHistory, nextRoute)) {
       return;
     }
 
@@ -44,9 +45,31 @@ export class NavigationDispatcher {
     this.recordNavTiming(current, nextRoute, tType);
     this.lockTransition(tType);
 
-    const newHistory = [...store.history, nextRoute];
+    const newHistory = [...baseHistory, nextRoute];
     store.setHistory(newHistory);
     resetNav();
+  }
+
+  /**
+   * Navigation isolation: when a Hub-domain route (Settings, Updater, About, Profile...) is pushed,
+   * every sub-app route (Stagex, Chordex, ...) still on the stack is flushed. Otherwise Back from
+   * Hub pages would unwind into a sub-app the user already left. Returns the same array reference
+   * when nothing needs flushing.
+   */
+  private static flushSubAppsForHub(
+    history: NavigationHistory,
+    nextRoute: NavigationRoute
+  ): NavigationHistory {
+    if (nextRoute.app !== 'hub') return history;
+    if (this.isReturnableHubOverlay(nextRoute)) return history;
+    if (!history.some((r) => r.app !== 'hub')) return history;
+    const hubOnly = history.filter((r) => r.app === 'hub');
+    return hubOnly.length > 0 ? hubOnly : [{ app: 'hub', tab: 'home' }];
+  }
+
+  /** Profile intentionally returns to the sub-app that opened it (existing back invariant). */
+  private static isReturnableHubOverlay(route: NavigationRoute): boolean {
+    return route.app === 'hub' && (route.tab === 'profile' || route.page === 'profile');
   }
 
   /**
@@ -109,7 +132,13 @@ export class NavigationDispatcher {
     this.recordNavTiming(poppedRoute, prevRoute, tType);
     this.lockTransition(tType);
 
-    const newHistory = store.history.slice(0, -1);
+    let newHistory = store.history.slice(0, -1);
+    if (poppedRoute && poppedRoute.app === 'hub' && !this.isReturnableHubOverlay(poppedRoute)) {
+      // Never unwind from a Hub page into a sub-app (e.g. Stagex) left behind on the stack.
+      const hubOnly = newHistory.filter((r) => r.app === 'hub');
+      if (hubOnly.length === 0) return;
+      newHistory = hubOnly;
+    }
     store.setHistory(newHistory);
     resetNav();
   }

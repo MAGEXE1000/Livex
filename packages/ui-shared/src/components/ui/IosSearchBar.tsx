@@ -175,8 +175,9 @@ export const IosSearchBar = forwardRef<IosSearchBarHandle, IosSearchBarProps>(
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck="false"
+            data-no-focus-ring=""
             className={cn(
-              'w-full bg-transparent text-[16px] md:text-[14px] leading-normal outline-none focus:outline-none focus:ring-0 select-text',
+              'no-focus-ring w-full bg-transparent border-0 outline-none ring-0 shadow-none text-[16px] md:text-[14px] leading-normal focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none select-text',
               '[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none',
               '[&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden',
               'disabled:opacity-40 disabled:cursor-not-allowed'
@@ -184,6 +185,12 @@ export const IosSearchBar = forwardRef<IosSearchBarHandle, IosSearchBarProps>(
             style={{
               color: 'var(--c-text-primary, #ffffff)',
               fontFamily: 'var(--studio-font-body, system-ui, sans-serif)',
+              WebkitAppearance: 'none',
+              appearance: 'none',
+              backgroundColor: 'transparent',
+              border: 0,
+              boxShadow: 'none',
+              outline: 'none',
               ...inputStyle,
             }}
           />

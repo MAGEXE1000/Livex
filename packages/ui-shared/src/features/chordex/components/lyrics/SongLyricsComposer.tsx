@@ -187,9 +187,10 @@ export const SongLyricsComposer: React.FC<SongLyricsComposerProps> = ({
           type="button"
           onClick={handleSave}
           data-testid="composer-done-btn"
-          className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer flex-shrink-0"
+          className="px-4 py-2 rounded-full text-xs font-bold shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer flex-shrink-0"
           style={{
             background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+            color: 'var(--studio-accent-contrast, #09090b)',
             boxShadow: `0 2px 10px ${accent.to}44`,
           }}
         >

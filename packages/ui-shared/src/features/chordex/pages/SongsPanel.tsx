@@ -2366,6 +2366,19 @@ export interface ChordexJsonFile {
   exportedAt?: number;
 }
 
+/** Keeps the readable song title; strips only characters illegal in filenames. */
+export function sanitizeFilename(title: string): string {
+  const cleaned = (title || '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\.+/, '')
+    .slice(0, 100)
+    .trim();
+  return cleaned || 'Song';
+}
+
 async function exportPresetToJSON(
   preset: SongPreset,
   mode: 'save' | 'share' = 'share'
@@ -2398,8 +2411,7 @@ async function exportPresetToJSON(
     exportedAt: Date.now(),
   };
   const content = JSON.stringify(file, null, 2);
-  const baseSlug = preset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'song';
-  const fileName = `${baseSlug}.livex`;
+  const fileName = `${sanitizeFilename(preset.name)}.json`;
 
   if (Capacitor.isNativePlatform()) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem');

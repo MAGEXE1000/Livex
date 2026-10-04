@@ -480,7 +480,7 @@ export function FloatingButton({ icon, style, className = '', ...props }: Floati
         borderRadius: 'var(--radius-major, 18px)',
         background:
           'linear-gradient(135deg, var(--c-accent-from, #7c3aed), var(--c-accent-to, var(--c-accent-from, #7c3aed)))',
-        color: '#ffffff',
+        color: 'var(--studio-accent-contrast, #09090b)',
         border: '1px solid rgba(255, 255, 255, 0.25)',
         display: 'flex',
         alignItems: 'center',
@@ -823,7 +823,7 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
       if (variant === 'primary') {
         return {
           bg: 'linear-gradient(135deg, var(--c-accent-from, #7c3aed), var(--c-accent-to, var(--c-accent-from, #7c3aed)))',
-          text: 'var(--color-on-tertiary, #ffffff)',
+          text: 'var(--studio-accent-contrast, #09090b)',
           border: '1px solid var(--studio-accent-border, rgba(255, 255, 255, 0.20))',
           shadow: 'var(--studio-accent-glow)',
         };
