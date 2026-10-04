@@ -42,46 +42,29 @@ export function StartOnSelector<T extends string>({
                 ? 'w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all'
                 : 'touch-target-44'
             }
-            style={
-              isWebDesktop
-                ? {
-                    width: 36,
-                    height: 36,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 8,
-                    background: active
-                      ? 'linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to))'
-                      : 'var(--c-surface-low)',
-                    color: active ? 'var(--color-on-tertiary, #ffffff)' : 'var(--c-text-secondary)',
-                    border: active
-                      ? '1px solid var(--studio-accent-border)'
-                      : '1px solid var(--c-border)',
-                    boxShadow: active ? 'var(--studio-accent-glow)' : 'none',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    flexShrink: 0,
-                  }
-                : {
-                    width: 'var(--btn-size-md, 42px)',
-                    height: 'var(--btn-size-md, 42px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 'var(--radius-compact, 12px)',
-                    border: active
-                      ? `2px solid ${acc.from}`
-                      : '1px solid var(--track, var(--c-border))',
-                    background: active
-                      ? `linear-gradient(135deg, ${acc.from}22, ${acc.to}18)`
-                      : 'var(--app-surface-low)',
-                    color: active ? acc.from : 'var(--c-text-secondary, var(--muted))',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    flexShrink: 0,
-                  }
-            }
+            style={{
+              width: isWebDesktop ? 36 : 'var(--btn-size-md, 42px)',
+              height: isWebDesktop ? 36 : 'var(--btn-size-md, 42px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: isWebDesktop ? 8 : 'var(--radius-compact, 12px)',
+              background: active
+                ? 'var(--studio-accent-gradient, linear-gradient(135deg, var(--studio-accent-from), var(--studio-accent-to)))'
+                : 'var(--c-surface-low, rgba(128, 128, 128, 0.08))',
+              color: active
+                ? 'var(--studio-accent-contrast, #09090b)'
+                : 'var(--c-text-secondary, var(--muted))',
+              border: active
+                ? '1px solid var(--studio-accent-border, transparent)'
+                : '1px solid var(--track, var(--c-border))',
+              boxShadow: active
+                ? '0 2px 8px color-mix(in srgb, var(--studio-accent-to) 25%, transparent)'
+                : 'none',
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+              flexShrink: 0,
+            }}
           >
             <AnimatedNavigationIcon
               itemKey={value}
@@ -89,11 +72,9 @@ export function StartOnSelector<T extends string>({
               size={isWebDesktop ? 18 : 20}
               isActive={active}
               color={
-                isWebDesktop
-                  ? 'currentColor'
-                  : active
-                    ? acc.from
-                    : 'var(--c-text-secondary)'
+                active
+                  ? 'var(--studio-accent-contrast, #09090b)'
+                  : 'var(--c-text-secondary)'
               }
             />
           </button>

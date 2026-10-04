@@ -747,8 +747,8 @@ h4,
   --c-text-muted: #71717a;
   --c-text-tertiary: var(--c-text-muted);
 
-  --c-border: rgba(0, 0, 0, 0.08);
-  --c-border-dashed: 1px dashed rgba(0, 0, 0, 0.16);
+  --c-border: rgba(0, 0, 0, 0.12);
+  --c-border-dashed: 1px dashed rgba(0, 0, 0, 0.20);
   --c-surface-glass-bg: rgba(255, 255, 255, 0.65);
 
   --c-error-container: rgba(239, 68, 68, 0.05);
@@ -767,13 +767,13 @@ h4,
   --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --profile-avatar-bg: rgba(0, 0, 0, 0.06);
   --profile-avatar-color: var(--c-text-primary);
-  --profile-avatar-border: 0 0 0 1px rgba(0, 0, 0, 0.08);
-  --hub-card-bg: rgba(0, 0, 0, 0.01);
+  --profile-avatar-border: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  --hub-card-bg: rgba(0, 0, 0, 0.015);
   --hub-card-pressed-bg: rgba(0, 0, 0, 0.04);
-  --hub-card-border: rgba(0, 0, 0, 0.08);
-  --hub-card-icon-bg: rgba(0, 0, 0, 0.03);
-  --hub-card-icon-border: rgba(0, 0, 0, 0.06);
-  --control-track-bg: rgba(0, 0, 0, 0.07);
+  --hub-card-border: rgba(0, 0, 0, 0.10);
+  --hub-card-icon-bg: rgba(0, 0, 0, 0.04);
+  --hub-card-icon-border: rgba(0, 0, 0, 0.08);
+  --control-track-bg: rgba(0, 0, 0, 0.08);
 
   /* ── Canonical Soft Layered Shadow System (Light Mode) ──
      Derived from design reference: soft diffuse light highlight (-4px -4px) + gentle directional dark component (+4px +8px) */

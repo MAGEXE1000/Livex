@@ -9,6 +9,7 @@ import {
   parseSessionJoinToken,
   validateSessionJoinToken,
   NavigationDispatcher,
+  requestCameraPermission,
 } from '@workspace/livex-core';
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
 
@@ -44,11 +45,13 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
+  const manualInputRef = useRef<HTMLInputElement | null>(null);
 
   const [cameraState, setCameraState] = useState<'idle' | 'requesting' | 'active' | 'denied' | 'unsupported'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [manualCode, setManualCode] = useState<string>('');
+  const [retryTrigger, setRetryTrigger] = useState<number>(0);
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {
@@ -154,6 +157,17 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
     setErrorMessage(null);
 
     async function initCamera() {
+      if (isMounted) setCameraState('requesting');
+      setErrorMessage(null);
+
+      // 1. Check and request native camera permission on Android Capacitor
+      const hasPermission = await requestCameraPermission();
+      if (!isMounted) return;
+      if (!hasPermission) {
+        setCameraState('denied');
+        return;
+      }
+
       if (!navigator.mediaDevices?.getUserMedia) {
         if (isMounted) setCameraState('unsupported');
         return;
@@ -214,7 +228,7 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
       isMounted = false;
       stopCamera();
     };
-  }, [isOpen, stopCamera, handleSuccessfulTokenScan]);
+  }, [isOpen, stopCamera, handleSuccessfulTokenScan, retryTrigger]);
 
   if (!isOpen) return null;
 
@@ -394,13 +408,47 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
                   <StudioIcon name="no_photography" size={22} />
                 </div>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#f87171' }}>
-                  {isSpanish ? 'Permiso de Cámara Denegado' : 'Camera Permission Denied'}
+                  {isSpanish ? 'Permiso de Cámara Requerido' : 'Camera Permission Required'}
                 </span>
                 <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', lineHeight: 1.4 }}>
                   {isSpanish
-                    ? 'Permite el acceso a la cámara en los ajustes de tu navegador o sistema para escanear.'
-                    : 'Please allow camera access in your browser or device settings to scan.'}
+                    ? 'Permite el acceso a la cámara para escanear el código QR o ingresa el código manual abajo.'
+                    : 'Please allow camera access to scan the QR code or enter the code manually below.'}
                 </p>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setRetryTrigger((c) => c + 1)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '12px',
+                      background: accent.from,
+                      color: (accent as any).contrast || 'var(--studio-accent-contrast, #09090b)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isSpanish ? 'Reintentar' : 'Retry'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => manualInputRef.current?.focus()}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isSpanish ? 'Código manual' : 'Manual Code'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -422,6 +470,23 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
                 <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)' }}>
                   {isSpanish ? 'Usa la entrada de token manual abajo' : 'Use manual token input below'}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => manualInputRef.current?.focus()}
+                  style={{
+                    marginTop: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isSpanish ? 'Ingresar código manual' : 'Enter Code Manually'}
+                </button>
               </div>
             )}
           </div>
@@ -456,6 +521,7 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
           <div style={{ width: '100%', marginTop: '16px' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
+                ref={manualInputRef}
                 type="text"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value)}
@@ -481,7 +547,7 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
                   borderRadius: '12px',
                   background: accent.from,
                   border: 'none',
-                  color: '#ffffff',
+                  color: accent.contrast || 'var(--studio-accent-contrast, #09090b)',
                   fontSize: '12px',
                   fontWeight: 800,
                   cursor: !manualCode.trim() || isProcessing ? 'not-allowed' : 'pointer',

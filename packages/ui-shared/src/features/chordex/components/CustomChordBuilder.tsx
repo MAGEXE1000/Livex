@@ -1194,7 +1194,7 @@ export default function CustomChordBuilder({
                         background: active
                           ? `linear-gradient(135deg, ${resolvedAccent.from}, ${resolvedAccent.to})`
                           : 'transparent',
-                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        color: active ? ((resolvedAccent as any).contrast || 'var(--studio-accent-contrast, #09090b)') : 'var(--c-text-secondary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

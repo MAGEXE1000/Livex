@@ -149,13 +149,13 @@ export const LiquidSwitch = memo(function LiquidSwitch({
           borderRadius: trackHeight / 2,
           backgroundColor: isChecked
             ? activeColor
-            : 'var(--c-surface-high, rgba(128, 128, 128, 0.16))',
+            : 'var(--control-track-bg, rgba(128, 128, 128, 0.18))',
           border: isChecked
             ? '1px solid rgba(255, 255, 255, 0.22)'
-            : '1px solid var(--c-border, rgba(255, 255, 255, 0.12))',
+            : '1px solid var(--c-border, rgba(128, 128, 128, 0.15))',
           boxShadow: isChecked
             ? `0 2px 10px ${activeColor}40, inset 0 1px 1.5px rgba(255, 255, 255, 0.35)`
-            : 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
+            : 'inset 0 1px 2px rgba(0, 0, 0, 0.18)',
           position: 'relative',
           padding: trackPadding,
           boxSizing: 'border-box',
@@ -186,7 +186,7 @@ export const LiquidSwitch = memo(function LiquidSwitch({
               width: thumbSize * 0.85,
               height: thumbSize * 0.85,
               borderRadius: (thumbSize * 0.85) / 2,
-              backgroundColor: '#ffffff',
+              backgroundColor: isChecked ? 'var(--studio-accent-contrast, #ffffff)' : '#ffffff',
               pointerEvents: 'none',
             }}
           />
@@ -217,7 +217,11 @@ export const LiquidSwitch = memo(function LiquidSwitch({
             width: thumbSize,
             height: thumbSize,
             borderRadius: thumbSize / 2,
-            backgroundColor: '#ffffff',
+            backgroundColor: isChecked
+              ? (activeColor === '#ffffff' || activeColor === 'var(--c-accent-from, #ffffff)'
+                ? 'var(--studio-accent-contrast, #09090b)'
+                : '#ffffff')
+              : '#ffffff',
             boxShadow:
               '0 2px 5px rgba(0, 0, 0, 0.32), 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.95)',
             transformOrigin: isChecked ? 'left center' : 'right center',

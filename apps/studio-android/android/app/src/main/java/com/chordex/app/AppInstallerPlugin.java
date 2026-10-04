@@ -47,6 +47,12 @@ import android.util.Log;
             strings = {
                 Manifest.permission.RECORD_AUDIO
             }
+        ),
+        @Permission(
+            alias = "camera",
+            strings = {
+                Manifest.permission.CAMERA
+            }
         )
     }
 )

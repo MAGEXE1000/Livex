@@ -868,7 +868,7 @@ export function DrumPatternsPanel({
                     borderColor: active
                       ? 'var(--c-accent-from, #ffffff)'
                       : 'var(--c-border, #E3E6EB)',
-                    color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                    color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                     boxShadow: active
                       ? '0 2px 8px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)'
                       : 'none',
@@ -908,7 +908,7 @@ export function DrumPatternsPanel({
                       borderColor: active
                         ? 'var(--c-accent-from, #ffffff)'
                         : 'var(--c-border, #E3E6EB)',
-                      color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                      color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                     }}
                   >
                     {label}
@@ -943,7 +943,7 @@ export function DrumPatternsPanel({
                       borderColor: active
                         ? 'var(--c-accent-from, #ffffff)'
                         : 'var(--c-border, #E3E6EB)',
-                      color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                      color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                     }}
                   >
                     {label}
@@ -1256,7 +1256,7 @@ export function DrumPatternsPanel({
                         borderColor: active
                           ? 'var(--c-accent-from, #ffffff)'
                           : 'var(--c-border, #E3E6EB)',
-                        color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                        color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                       }}
                     >
                       {label}

@@ -2086,7 +2086,7 @@ function ExportModal({
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
                         background: active ? accent.from : 'transparent',
-                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        color: active ? ((accent as any).contrast || 'var(--studio-accent-contrast, #09090b)') : 'var(--c-text-secondary)',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
                         transition: 'all 160ms ease',
                       }}
@@ -2124,7 +2124,7 @@ function ExportModal({
                         fontSize: '11px',
                         letterSpacing: '0.04em',
                         background: active ? accent.from : 'transparent',
-                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        color: active ? ((accent as any).contrast || 'var(--studio-accent-contrast, #09090b)') : 'var(--c-text-secondary)',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
                         transition: 'all 160ms ease',
                       }}
@@ -2166,7 +2166,7 @@ function ExportModal({
                         fontSize: '11px',
                         letterSpacing: '0.04em',
                         background: active ? accent.from : 'transparent',
-                        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+                        color: active ? ((accent as any).contrast || 'var(--studio-accent-contrast, #09090b)') : 'var(--c-text-secondary)',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
                         transition: 'all 160ms ease',
                       }}

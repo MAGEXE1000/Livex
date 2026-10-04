@@ -17,6 +17,7 @@ import { StudioIcon } from '../../../shared/icons/StudioIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
 import { StudioPageTransition } from '../../../components/StudioPageTransition';
 import { ProgressiveBlur } from '../../../shared/design-system/ProgressiveBlur';
+import { toast } from '../../../components/ui/sonner';
 import { useHoverCapable } from '../../../lib/hooks/use-hover-capable';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 import { ActionButton } from '../../../shared/design-system/StudioDesignSystem';
@@ -645,6 +646,9 @@ export function HubSettings({
 
   const triggerDevToast = useCallback(
     (msg: string) => {
+      try {
+        toast(msg);
+      } catch (_) {}
       showDevToast?.(msg);
       if (localToastTimerRef.current) {
         clearTimeout(localToastTimerRef.current);
@@ -652,7 +656,7 @@ export function HubSettings({
       setLocalDevToast(msg);
       localToastTimerRef.current = setTimeout(() => {
         setLocalDevToast(null);
-      }, 2000);
+      }, 2500);
     },
     [showDevToast]
   );
@@ -674,19 +678,19 @@ export function HubSettings({
       aboutTapTimerRef.current = null;
     }
 
-    // Interval threshold: 1000ms idle resets counter sequence
-    if (timeDelta > 1000) {
+    // Interval threshold: 2500ms idle resets counter sequence
+    if (timeDelta > 2500) {
       aboutTapCountRef.current = 1;
     } else {
       aboutTapCountRef.current += 1;
     }
 
-    // Set expiration timer for incomplete sequences
+    // Set expiration timer for incomplete sequences (2500ms)
     aboutTapTimerRef.current = setTimeout(() => {
       aboutTapCountRef.current = 0;
-    }, 1000);
+    }, 2500);
 
-    if (aboutTapCountRef.current === 10) {
+    if (aboutTapCountRef.current >= 10) {
       aboutTapCountRef.current = 0;
       if (aboutTapTimerRef.current) {
         clearTimeout(aboutTapTimerRef.current);
@@ -701,8 +705,11 @@ export function HubSettings({
         );
       } else {
         updateSettings({ developerMode: true });
+        try {
+          localStorage.setItem('studio:developer_mode', 'true');
+        } catch (_) {}
         triggerDevToast(
-          lang === 'es' ? 'Opciones de desarrollador desbloqueadas' : 'Developer options unlocked'
+          lang === 'es' ? 'Opciones de desarrollador desbloqueadas' : 'Developer Options Unlocked'
         );
       }
     }
@@ -719,20 +726,21 @@ export function HubSettings({
       <div
         style={{
           position: 'fixed',
-          bottom: '32px',
+          bottom: 'calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+          background: isLight ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.90)',
           color: isLight ? '#fff' : '#000',
           padding: '8px 18px',
           borderRadius: '20px',
           fontSize: '12.5px',
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
           fontWeight: 600,
           zIndex: 999999,
           pointerEvents: 'none',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.20)',
+          backdropFilter: 'var(--surface-float-blur)',
+          WebkitBackdropFilter: 'var(--surface-float-blur)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.30)',
           whiteSpace: 'nowrap',
         }}
       >
@@ -1669,7 +1677,7 @@ export function HubSettings({
       isLight,
       langQuery,
       setLangQuery,
-      handleLogoTap,
+      handleLogoTap: handleAboutLogoTap,
       navigate: (tab: any, params: any) => {}, 
       cardStyle,
       goBack

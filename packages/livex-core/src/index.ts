@@ -162,3 +162,6 @@ export * from './lib/band/sessionAnchor';
 // Local Stage Room Synchronization & Offset Calibration
 export * from './lib/sync/localStageSync';
 export * from './store/useLocalStageSyncStore';
+
+// Camera & Hardware Permissions
+export * from './lib/platform/cameraPermission';

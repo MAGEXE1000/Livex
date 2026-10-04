@@ -7,6 +7,7 @@ import {
   generateQrSvg,
   type SongPreset,
   type LocalStageSyncState,
+  requestCameraPermission,
 } from '@workspace/livex-core';
 import { StageSyncOffsetCalibration } from './StageSyncOffsetCalibration';
 
@@ -75,8 +76,15 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
   // Start Camera QR Scanner
   const startCamera = useCallback(async () => {
     setCameraError(null);
+
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      setCameraError('Camera permission denied. Please allow camera access or use the 4-character join code below.');
+      return;
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera access not supported on this browser/device');
+      setCameraError('Camera access not supported on this browser/device. Please use the 4-character join code below.');
       return;
     }
 
@@ -437,8 +445,15 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
                   )}
 
                   {cameraError && (
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-                      {cameraError}
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex flex-col gap-2">
+                      <span>{cameraError}</span>
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="self-start px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold transition-colors cursor-pointer"
+                      >
+                        Retry Camera
+                      </button>
                     </div>
                   )}
 
