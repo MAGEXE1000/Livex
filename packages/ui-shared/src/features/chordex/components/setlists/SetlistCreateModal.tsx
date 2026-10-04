@@ -157,7 +157,7 @@ export const SetlistCreateModal: React.FC<SetlistCreateModalProps> = ({
   onClose,
   onSave,
   initialSetlist,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
 }) => {
   if (!isOpen) return null;
   const isEditing = Boolean(initialSetlist);

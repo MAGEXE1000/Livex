@@ -581,7 +581,7 @@ export default function TakeDetailView({
       {showHarmonizer && (
         <HarmonizerSheet
           take={take}
-          accent="var(--studio-accent, #007aff)"
+          accent="var(--studio-accent, #ffffff)"
           onClose={() => setShowHarmonizer(false)}
           onBounce={async (newTake) => {
             await onSaveBounce(newTake);
@@ -659,7 +659,7 @@ export default function TakeDetailView({
                     }}
                     style={{
                       background: 'var(--app-surface-low, rgba(255,255,255,0.08))',
-                      border: '1px solid var(--studio-accent, #007aff)',
+                      border: '1px solid var(--studio-accent, #ffffff)',
                       borderRadius: 8,
                       padding: '4px 8px',
                       color: 'var(--c-text-primary)',
@@ -714,7 +714,7 @@ export default function TakeDetailView({
                 <span
                   style={{
                     color:
-                      recordState === 'recording' ? '#ef4444' : 'var(--studio-accent, #007aff)',
+                      recordState === 'recording' ? '#ef4444' : 'var(--studio-accent, #ffffff)',
                     fontWeight: 700,
                   }}
                 >
@@ -799,7 +799,7 @@ export default function TakeDetailView({
                       borderRadius: 9999,
                       background:
                         recordState === 'recording'
-                          ? 'var(--studio-accent, #007aff)'
+                          ? 'var(--studio-accent, #ffffff)'
                           : recordState === 'countdown'
                             ? '#f59e0b'
                             : isLight
@@ -1109,7 +1109,7 @@ export default function TakeDetailView({
                     fontFamily: 'var(--studio-font-mono)',
                     fontWeight: 700,
                     fontSize: 12,
-                    color: 'var(--studio-accent, #007aff)',
+                    color: 'var(--studio-accent, #ffffff)',
                   }}
                 >
                   {settings.vocalexCountIn ?? 3}s
@@ -1147,7 +1147,7 @@ export default function TakeDetailView({
                   }}
                   style={{
                     background: 'var(--app-surface-low, rgba(255,255,255,0.08))',
-                    border: '1px solid var(--studio-accent, #007aff)',
+                    border: '1px solid var(--studio-accent, #ffffff)',
                     borderRadius: 8,
                     padding: '4px 10px',
                     color: 'var(--c-text-primary)',
@@ -1162,8 +1162,8 @@ export default function TakeDetailView({
                   type="button"
                   onClick={handleSaveTitle}
                   style={{
-                    background: 'var(--studio-accent, #007aff)',
-                    color: '#fff',
+                    background: 'var(--studio-accent, #ffffff)',
+                    color: 'var(--studio-accent-contrast, #000000)',
                     border: 'none',
                     borderRadius: 8,
                     padding: '6px 12px',
@@ -1260,7 +1260,7 @@ export default function TakeDetailView({
                 top: 0,
                 bottom: 0,
                 width: 3,
-                background: playing ? 'var(--studio-accent, #007aff)' : 'transparent',
+                background: playing ? 'var(--studio-accent, #ffffff)' : 'transparent',
                 transition: 'background 200ms ease',
               }}
             />
@@ -1272,13 +1272,13 @@ export default function TakeDetailView({
                   width: 52,
                   height: 52,
                   borderRadius: '50%',
-                  background: 'var(--studio-accent, #007aff)',
+                  background: 'var(--studio-accent, #ffffff)',
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+                  boxShadow: 'var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
                   flexShrink: 0,
                 }}
               >
@@ -1286,7 +1286,7 @@ export default function TakeDetailView({
                   className="material-symbols-outlined"
                   style={{
                     fontSize: 26,
-                    color: '#fff',
+                    color: 'var(--studio-accent-contrast, #000000)',
                     fontVariationSettings: "'FILL' 1",
                   }}
                 >
@@ -1299,7 +1299,7 @@ export default function TakeDetailView({
                     fontFamily: 'var(--studio-font-display)',
                     fontWeight: 700,
                     fontSize: 14,
-                    color: playing ? 'var(--studio-accent, #007aff)' : 'var(--c-text-secondary)',
+                    color: playing ? 'var(--studio-accent, #ffffff)' : 'var(--c-text-secondary)',
                     margin: 0,
                     transition: 'color 200ms ease',
                   }}
@@ -1332,8 +1332,8 @@ export default function TakeDetailView({
                   top: 0,
                   bottom: 0,
                   width: `${progress}%`,
-                  background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.08)',
-                  borderRight: '2px solid var(--studio-accent, #007aff)',
+                  background: 'var(--c-surface-high, rgba(255, 255, 255, 0.08))',
+                  borderRight: '2px solid var(--studio-accent, #ffffff)',
                   transition: playing ? 'none' : 'width 100ms ease',
                 }}
               />
@@ -1347,7 +1347,7 @@ export default function TakeDetailView({
                       height: `${Math.max(8, h)}%`,
                       borderRadius: 9999,
                       background: isPlayed
-                        ? 'var(--studio-accent, #007aff)'
+                        ? 'var(--studio-accent, #ffffff)'
                         : isLight
                           ? '#cbd5e1'
                           : 'rgba(255,255,255,0.2)',
@@ -1402,7 +1402,7 @@ export default function TakeDetailView({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: 'var(--studio-accent, #007aff)' }}
+                  style={{ fontSize: 18, color: 'var(--c-text-primary)' }}
                 >
                   tune
                 </span>
@@ -1427,9 +1427,9 @@ export default function TakeDetailView({
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: 9999,
-                    background: 'rgba(var(--studio-accent-rgb, 0, 122, 255), 0.12)',
-                    color: 'var(--studio-accent, #007aff)',
-                    border: '1px solid rgba(var(--studio-accent-rgb, 0, 122, 255), 0.25)',
+                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                    color: 'var(--c-text-primary)',
+                    border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.15)',
                   }}
                 >
                   {isSpanish ? `${activeEffectsCount} activos` : `${activeEffectsCount} active`}
@@ -1443,9 +1443,8 @@ export default function TakeDetailView({
               data-testid="open-effects-btn"
               onClick={() => setShowEffectsSheet(true)}
               style={{
-                background:
-                  'linear-gradient(135deg, rgba(var(--studio-accent-rgb, 0,122,255), 0.14) 0%, rgba(var(--studio-accent-rgb, 0,122,255), 0.04) 100%)',
-                border: '1px solid var(--studio-accent, #007aff)',
+                background: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--c-border, rgba(128, 128, 128, 0.14))',
                 borderRadius: 12,
                 padding: '12px 14px',
                 cursor: 'pointer',
@@ -1462,12 +1461,12 @@ export default function TakeDetailView({
                     width: 38,
                     height: 38,
                     borderRadius: 10,
-                    background: 'var(--studio-accent, #007aff)',
-                    color: '#ffffff',
+                    background: 'var(--studio-accent, #ffffff)',
+                    color: 'var(--studio-accent-contrast, #000000)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+                    boxShadow: 'var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
                     flexShrink: 0,
                   }}
                 >
@@ -1505,7 +1504,7 @@ export default function TakeDetailView({
 
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 20, color: 'var(--studio-accent, #007aff)' }}
+                style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
               >
                 chevron_right
               </span>
@@ -1586,7 +1585,7 @@ export default function TakeDetailView({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 20, color: 'var(--studio-accent, #007aff)' }}
+                style={{ fontSize: 20, color: 'var(--c-text-primary)' }}
               >
                 insights
               </span>
@@ -1736,7 +1735,7 @@ export default function TakeDetailView({
                             <path
                               d={path}
                               fill="none"
-                              stroke="var(--studio-accent, #007aff)"
+                              stroke="var(--studio-accent, #ffffff)"
                               strokeWidth="1.5"
                               vectorEffect="non-scaling-stroke"
                             />
@@ -1747,10 +1746,10 @@ export default function TakeDetailView({
                             />
                             <defs>
                               <linearGradient id="pitchGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--studio-accent, #007aff)" />
+                                <stop offset="0%" stopColor="var(--studio-accent, #ffffff)" />
                                 <stop
                                   offset="100%"
-                                  stopColor="var(--studio-accent, #007aff)"
+                                  stopColor="var(--studio-accent, #ffffff)"
                                   stopOpacity="0"
                                 />
                               </linearGradient>

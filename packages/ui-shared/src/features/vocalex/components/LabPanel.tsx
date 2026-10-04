@@ -1501,7 +1501,7 @@ function MixerView({
             flexShrink: 0,
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#679cff' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--studio-accent, #ffffff)' }}>
             {session.icon}
           </span>
         </div>
@@ -1513,7 +1513,7 @@ function MixerView({
               fontFamily: 'var(--font-body)',
               fontSize: 10,
               fontWeight: 800,
-              color: '#679cff',
+              color: 'var(--studio-accent, #ffffff)',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               margin: 0,
@@ -1543,7 +1543,7 @@ function MixerView({
                 color: 'var(--vx-text)',
                 background: 'none',
                 border: 'none',
-                borderBottom: '2px solid #679cff',
+                borderBottom: '2px solid var(--studio-accent, #ffffff)',
                 outline: 'none',
                 padding: '2px 0',
                 width: '100%',
@@ -2010,7 +2010,7 @@ function SessionCard({
           flexShrink: 0,
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#679cff' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--studio-accent, #ffffff)' }}>
           {session.icon}
         </span>
       </div>
@@ -2268,7 +2268,7 @@ export default function LabPanel() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#679cff',
+                  color: 'var(--studio-accent, #ffffff)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-headline)',
                   fontSize: 12,

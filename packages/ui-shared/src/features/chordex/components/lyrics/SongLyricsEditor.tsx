@@ -75,7 +75,7 @@ export interface SongLyricsEditorProps {
   lyrics?: SongLyricsDocument;
   onChange: (updated: SongLyricsDocument | undefined) => void;
   availableChords?: string[]; // Chords currently in the song preset
-  accent: { from: string; to: string; mid?: string };
+  accent: { from: string; to: string; mid?: string; id?: string; contrast?: string };
   isLight?: boolean;
   isAmoled?: boolean;
   mode?: 'lyrics' | 'both';
@@ -214,6 +214,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
   isAmoled = false,
   mode = 'both',
 }) => {
+  const isCustomAccent = Boolean(accent?.id && accent.id !== 'monochrome');
   // Stable onChange reference to decouple store dispatches from component effects & handlers
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -3411,13 +3412,19 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide transition-all border"
                   style={{
                     backgroundColor: unassignedChords.length > 0
-                      ? isEffectiveLight ? 'rgba(37, 99, 235, 0.10)' : 'rgba(56, 189, 248, 0.15)'
+                      ? isCustomAccent
+                        ? `${accent.from}1a`
+                        : isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'
                       : isEffectiveLight ? 'rgba(16, 185, 129, 0.10)' : 'rgba(16, 185, 129, 0.15)',
                     borderColor: unassignedChords.length > 0
-                      ? isEffectiveLight ? 'rgba(37, 99, 235, 0.30)' : 'rgba(56, 189, 248, 0.35)'
+                      ? isCustomAccent
+                        ? `${accent.from}33`
+                        : isEffectiveLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)'
                       : isEffectiveLight ? 'rgba(16, 185, 129, 0.30)' : 'rgba(16, 185, 129, 0.35)',
                     color: unassignedChords.length > 0
-                      ? isEffectiveLight ? '#1d4ed8' : '#38bdf8'
+                      ? isCustomAccent
+                        ? accent.from
+                        : isEffectiveLight ? '#0f172a' : '#ffffff'
                       : isEffectiveLight ? '#047857' : '#34d399',
                   }}
                 >
@@ -3472,15 +3479,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-black border transition-all cursor-pointer select-none active:scale-95 shadow-sm whitespace-nowrap"
                       style={{
                         backgroundColor: isSelected
-                          ? isEffectiveLight ? '#2563eb' : '#0284c7'
-                          : isEffectiveLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(56, 189, 248, 0.12)',
+                          ? (isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff'))
+                          : (isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'),
                         borderColor: isSelected
-                          ? '#ffffff'
-                          : isEffectiveLight ? 'rgba(37, 99, 235, 0.30)' : 'rgba(56, 189, 248, 0.35)',
+                          ? (isCustomAccent ? '#ffffff' : (isEffectiveLight ? '#000000' : '#ffffff'))
+                          : (isEffectiveLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)'),
                         color: isSelected
-                          ? '#ffffff'
-                          : isEffectiveLight ? '#1d4ed8' : '#38bdf8',
-                        boxShadow: isSelected ? '0 0 12px rgba(37, 99, 235, 0.5)' : undefined,
+                          ? (isCustomAccent ? '#ffffff' : (isEffectiveLight ? '#ffffff' : '#000000'))
+                          : (isEffectiveLight ? '#18181b' : '#f4f4f5'),
+                        boxShadow: isSelected ? '0 0 12px rgba(255, 255, 255, 0.2)' : undefined,
                         transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                       }}
                       title={`Tap to place [${chord}] above lyrics`}
@@ -3501,9 +3508,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 data-testid="placement-mode-banner"
                 className="mt-2.5 flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold animate-fadeIn"
                 style={{
-                  backgroundColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(56, 189, 248, 0.12)',
-                  borderColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.3)' : 'rgba(56, 189, 248, 0.35)',
-                  color: isEffectiveLight ? '#1d4ed8' : '#7dd3fc',
+                  backgroundColor: isCustomAccent
+                    ? `${accent.from}14`
+                    : isEffectiveLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                  borderColor: isCustomAccent
+                    ? `${accent.from}33`
+                    : isEffectiveLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)',
+                  color: isCustomAccent
+                    ? accent.from
+                    : isEffectiveLight ? '#0f172a' : '#ffffff',
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -3668,8 +3681,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         onClick={() => setRolePickerTarget({ sectionId: section.id })}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95"
                         style={{
-                          backgroundColor: `${section.vocalRole.color || '#3b82f6'}22`,
-                          borderColor: `${section.vocalRole.color || '#3b82f6'}44`,
+                          backgroundColor: `${section.vocalRole.color || (isCustomAccent ? accent.from : '#ffffff')}22`,
+                          borderColor: `${section.vocalRole.color || (isCustomAccent ? accent.from : '#ffffff')}44`,
                           color: section.vocalRole.color || 'var(--c-text-muted, #94a3b8)',
                         }}
                         title="Change Vocal Performer Role"
@@ -3723,9 +3736,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       }}
                       className="opacity-70 group-hover/sec:opacity-100 inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full text-[9px] font-extrabold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 hover:bg-white/10 select-none"
                       style={{
-                        backgroundColor: section.barsPerLine ? 'var(--c-accent-translucent, rgba(59, 130, 246, 0.1))' : 'var(--c-surface-hover, rgba(255,255,255,0.04))',
-                        borderColor: section.barsPerLine ? 'var(--c-accent-border, rgba(59, 130, 246, 0.3))' : 'var(--c-border, rgba(255,255,255,0.08))',
-                        color: section.barsPerLine ? 'var(--c-accent, #60a5fa)' : 'var(--c-text-muted, #94a3b8)',
+                        backgroundColor: section.barsPerLine
+                          ? isCustomAccent
+                            ? `${accent.from}22`
+                            : 'rgba(255,255,255,0.12)'
+                          : 'var(--c-surface-hover, rgba(255,255,255,0.04))',
+                        borderColor: section.barsPerLine
+                          ? isCustomAccent
+                            ? `${accent.from}55`
+                            : 'rgba(255,255,255,0.25)'
+                          : 'var(--c-border, rgba(255,255,255,0.08))',
+                        color: section.barsPerLine
+                          ? isCustomAccent
+                            ? accent.from
+                            : 'var(--c-text-primary, #ffffff)'
+                          : 'var(--c-text-muted, #94a3b8)',
                       }}
                       title="Set Section Bars Per Line"
                     >
@@ -3855,8 +3880,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             <div
                               className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                               style={{
-                                backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.22)',
-                                color: isEffectiveLight ? '#2563eb' : '#60a5fa',
+                                backgroundColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
+                                color: isEffectiveLight ? '#000000' : '#ffffff',
                               }}
                             >
                               <span className="material-symbols-rounded text-sm">hourglass_bottom</span>
@@ -3876,8 +3901,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               data-testid={`interlude-label-input-${lineIdx}`}
                               className="no-focus-ring bg-transparent border-0 border-b outline-none text-xs sm:text-sm font-bold pb-0.5 min-w-[50px] max-w-[110px] sm:max-w-[180px] transition-colors truncate focus:outline-none focus:ring-0 focus-visible:outline-none"
                               style={{
-                                color: isEffectiveLight ? '#1d4ed8' : '#93c5fd',
-                                borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.45)',
+                                color: isEffectiveLight ? '#0f172a' : '#ffffff',
+                                borderColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                                 outline: 'none',
                                 outlineOffset: 0,
                                 boxShadow: 'none',
@@ -3891,17 +3916,17 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             <div
                               className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg border shadow-2xs flex-shrink-0"
                               style={{
-                                backgroundColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.10)' : 'rgba(59, 130, 246, 0.18)',
-                                borderColor: isEffectiveLight ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.35)',
+                                backgroundColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+                                borderColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)',
                               }}
                             >
-                              <span className="material-symbols-rounded text-xs" style={{ color: isEffectiveLight ? '#2563eb' : '#60a5fa' }}>
+                              <span className="material-symbols-rounded text-xs" style={{ color: isEffectiveLight ? '#000000' : '#ffffff' }}>
                                 timer
                               </span>
                               <span
                                 data-testid={`interlude-dur-display-${lineIdx}`}
                                 className="text-[11px] font-black font-mono"
-                                style={{ color: isEffectiveLight ? '#1d4ed8' : '#93c5fd' }}
+                                style={{ color: isEffectiveLight ? '#0f172a' : '#ffffff' }}
                               >
                                 {durSec}s
                               </span>
@@ -3970,9 +3995,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 className="px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap active:scale-95"
                                 style={{
                                   backgroundColor: isSelected
-                                    ? isEffectiveLight ? '#2563eb' : '#3b82f6'
+                                    ? isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')
                                     : isEffectiveLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
-                                  color: isSelected ? '#ffffff' : isEffectiveLight ? '#334155' : '#cbd5e1',
+                                  color: isSelected
+                                    ? isCustomAccent ? '#ffffff' : (isEffectiveLight ? '#ffffff' : '#000000')
+                                    : isEffectiveLight ? '#334155' : '#cbd5e1',
                                   border: isSelected
                                     ? '1px solid transparent'
                                     : isEffectiveLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.08)',
@@ -4031,9 +4058,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 }
                               }}
                               className="no-focus-ring rounded-md px-1.5 py-0.5 text-xs font-mono font-bold w-11 outline-none text-center shadow-xs transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none"
-                              style={{
+                                style={{
                                 backgroundColor: isEffectiveLight ? '#ffffff' : 'rgba(255, 255, 255, 0.08)',
-                                border: isEffectiveLight ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid rgba(255, 255, 255, 0.16)',
+                                border: isEffectiveLight ? '1px solid rgba(0, 0, 0, 0.2)' : '1px solid rgba(255, 255, 255, 0.16)',
                                 color: isEffectiveLight ? '#0f172a' : '#ffffff',
                                 outline: 'none',
                                 outlineOffset: 0,
@@ -4084,9 +4111,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   className="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                                   style={{
                                     backgroundColor: isSelected
-                                      ? isEffectiveLight ? '#2563eb' : '#3b82f6'
+                                      ? isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')
                                       : isEffectiveLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.06)',
-                                    color: isSelected ? '#ffffff' : isEffectiveLight ? '#334155' : '#cbd5e1',
+                                    color: isSelected
+                                      ? isCustomAccent ? '#ffffff' : (isEffectiveLight ? '#ffffff' : '#000000')
+                                      : isEffectiveLight ? '#334155' : '#cbd5e1',
                                     border: isSelected
                                       ? '1px solid transparent'
                                       : isEffectiveLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.08)',
@@ -4134,15 +4163,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           }}
                           className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border flex-shrink-0 self-center shadow-2xs select-none cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                           style={{
-                            backgroundColor: `${activeRole.color || '#3b82f6'}26`,
-                            borderColor: `${activeRole.color || '#3b82f6'}66`,
-                            color: activeRole.color || '#3b82f6',
+                            backgroundColor: `${activeRole.color || (isCustomAccent ? accent.from : '#ffffff')}26`,
+                            borderColor: `${activeRole.color || (isCustomAccent ? accent.from : '#ffffff')}66`,
+                            color: activeRole.color || (isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')),
                           }}
                           title={`Vocal Role: ${activeRole.label || activeRole.type} (tap to change or remove)`}
                         >
                           <span
                             className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: activeRole.color || '#3b82f6' }}
+                            style={{ backgroundColor: activeRole.color || (isCustomAccent ? accent.from : '#ffffff') }}
                           />
                           <span>{activeRole.label || activeRole.type}</span>
                         </button>
@@ -4176,19 +4205,31 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[11px] font-semibold font-mono select-none transition-all duration-300 cursor-pointer active:scale-95"
                         style={{
                           backgroundColor: isLineFlashed
-                            ? 'var(--color-primary, #14b8a6)'
+                            ? (isEffectiveLight ? '#000000' : '#ffffff')
                             : isExplicitLineOverride
-                              ? 'var(--c-accent-translucent, rgba(236, 72, 153, 0.15))'
+                              ? isCustomAccent
+                                ? `${accent.from}26`
+                                : isEffectiveLight
+                                  ? 'rgba(0, 0, 0, 0.08)'
+                                  : 'rgba(255, 255, 255, 0.12)'
                               : 'transparent',
                           border: isLineFlashed
-                            ? '1px solid var(--color-primary, #14b8a6)'
+                            ? isEffectiveLight ? '1px solid #000000' : '1px solid #ffffff'
                             : isExplicitLineOverride
-                              ? '1px solid var(--c-accent-border, rgba(236, 72, 153, 0.35))'
+                              ? isCustomAccent
+                                ? `1px solid ${accent.from}66`
+                                : isEffectiveLight
+                                  ? '1px solid rgba(0, 0, 0, 0.15)'
+                                  : '1px solid rgba(255, 255, 255, 0.2)'
                               : '1px solid transparent',
                           color: isLineFlashed
-                            ? '#ffffff'
+                            ? isEffectiveLight ? '#ffffff' : '#000000'
                             : isExplicitLineOverride
-                              ? 'var(--c-accent, #f472b6)'
+                              ? isCustomAccent
+                                ? accent.from
+                                : isEffectiveLight
+                                  ? '#09090b'
+                                  : '#ffffff'
                               : 'var(--c-text-muted, #94a3b8)',
                           opacity: isLineFlashed
                             ? 1
@@ -4197,7 +4238,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               : batchBarsActive
                                 ? 0.75
                                 : 0.45,
-                          boxShadow: isLineFlashed ? '0 0 12px rgba(20, 184, 166, 0.5)' : undefined,
+                          boxShadow: isLineFlashed ? (isEffectiveLight ? '0 0 12px rgba(0, 0, 0, 0.3)' : '0 0 12px rgba(255, 255, 255, 0.4)') : undefined,
                         }}
                         title={`Line Timing: ${resolvedLineBars} ${resolvedLineBars === 1 ? 'bar' : 'bars'}${isExplicitLineOverride ? ' (custom override)' : ' (section default)'}`}
                       >
@@ -4234,8 +4275,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           userSelect: batchBarsActive ? 'none' : 'text',
                           WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                           ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
-                            borderLeft: '3px solid var(--color-primary, #14b8a6)',
-                            background: 'rgba(20,184,166,0.12)',
+                            borderLeft: `3px solid ${isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')}`,
+                            background: isCustomAccent ? `${accent.from}1a` : (isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'),
                             borderRadius: '0.375rem',
                           }),
                         }}
@@ -4321,8 +4362,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             userSelect: batchBarsActive ? 'none' : 'text',
                             WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                             ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
-                              borderLeft: '3px solid var(--color-primary, #14b8a6)',
-                              background: 'rgba(20,184,166,0.12)',
+                              borderLeft: `3px solid ${isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')}`,
+                              background: isCustomAccent ? `${accent.from}1a` : (isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'),
                               borderRadius: '0.375rem',
                             }),
                           }}
@@ -4368,8 +4409,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                           userSelect: batchBarsActive ? 'none' : undefined,
                           WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                           ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
-                            borderLeft: '3px solid var(--color-primary, #14b8a6)',
-                            background: 'rgba(20,184,166,0.12)',
+                            borderLeft: `3px solid ${isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')}`,
+                            background: isCustomAccent ? `${accent.from}1a` : (isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'),
                             borderRadius: '0.375rem',
                           }),
                         }}
@@ -4391,12 +4432,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
                               style={{
                                 backgroundColor: isEffectiveLight
-                                  ? 'rgba(37, 99, 235, 0.12)'
-                                  : 'rgba(56, 189, 248, 0.20)',
+                                  ? 'rgba(0, 0, 0, 0.06)'
+                                  : 'rgba(255, 255, 255, 0.12)',
                                 borderColor: isEffectiveLight
-                                  ? 'rgba(37, 99, 235, 0.40)'
-                                  : 'rgba(56, 189, 248, 0.45)',
-                                color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                  ? 'rgba(0, 0, 0, 0.15)'
+                                  : 'rgba(255, 255, 255, 0.20)',
+                                color: isEffectiveLight ? '#0f172a' : '#ffffff',
                               }}
                             >
                               <span>{c.chord}</span>
@@ -4446,8 +4487,8 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                         userSelect: batchBarsActive ? 'none' : 'text',
                         WebkitTouchCallout: batchBarsActive ? 'none' : undefined,
                         ...(batchBarsActive && lineSelection.selectedLineIds.has(line.id) && {
-                          borderLeft: '3px solid var(--color-primary, #14b8a6)',
-                          background: 'rgba(20,184,166,0.12)',
+                          borderLeft: `3px solid ${isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')}`,
+                          background: isCustomAccent ? `${accent.from}1a` : (isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'),
                           borderRadius: '0.375rem',
                         }),
                       }}
@@ -4499,12 +4540,12 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-extrabold border transition-all cursor-pointer active:scale-95 shadow-2xs hover:brightness-110 whitespace-nowrap z-10 select-none"
                                     style={{
                                       backgroundColor: isEffectiveLight
-                                        ? 'rgba(37, 99, 235, 0.12)'
-                                        : 'rgba(56, 189, 248, 0.20)',
+                                        ? 'rgba(0, 0, 0, 0.06)'
+                                        : 'rgba(255, 255, 255, 0.12)',
                                       borderColor: isEffectiveLight
-                                        ? 'rgba(37, 99, 235, 0.40)'
-                                        : 'rgba(56, 189, 248, 0.45)',
-                                      color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                                        ? 'rgba(0, 0, 0, 0.15)'
+                                        : 'rgba(255, 255, 255, 0.20)',
+                                      color: isEffectiveLight ? '#0f172a' : '#ffffff',
                                     }}
                                     title={`Chord [${c.chord}] - Tap to inspect or move`}
                                   >
@@ -4512,7 +4553,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                   </button>
                                 ))}
                                 {isPlacementActive && wordChords.length === 0 && (
-                                  <span className="text-[10px] font-mono font-bold text-sky-400/50 group-hover/word:text-sky-400 select-none">
+                                  <span className="text-[10px] font-mono font-bold text-neutral-400/50 group-hover/word:text-neutral-300 select-none">
                                     +
                                   </span>
                                 )}
@@ -4865,7 +4906,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all active:scale-90 cursor-pointer ${
                       isSelectionCurrentlyBold
-                        ? 'bg-blue-600 text-white shadow-sm'
+                        ? isEffectiveLight
+                          ? 'bg-black text-white shadow-sm'
+                          : 'bg-white text-black font-bold shadow-sm'
                         : isEffectiveLight
                         ? 'text-slate-800 hover:bg-black/5'
                         : 'text-slate-200 hover:bg-white/10'
@@ -4887,7 +4930,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-serif italic font-bold transition-all active:scale-90 cursor-pointer ${
                       isSelectionCurrentlyItalic
-                        ? 'bg-blue-600 text-white shadow-sm'
+                        ? isEffectiveLight
+                          ? 'bg-black text-white shadow-sm'
+                          : 'bg-white text-black font-bold shadow-sm'
                         : isEffectiveLight
                         ? 'text-slate-800 hover:bg-black/5'
                         : 'text-slate-200 hover:bg-white/10'
@@ -4909,7 +4954,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm underline font-bold transition-all active:scale-90 cursor-pointer ${
                       isSelectionCurrentlyUnderline
-                        ? 'bg-blue-600 text-white shadow-sm'
+                        ? isEffectiveLight
+                          ? 'bg-black text-white shadow-sm'
+                          : 'bg-white text-black font-bold shadow-sm'
                         : isEffectiveLight
                         ? 'text-slate-800 hover:bg-black/5'
                         : 'text-slate-200 hover:bg-white/10'
@@ -4941,7 +4988,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
                         showToolbarColorPicker
-                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40'
+                          ? isEffectiveLight
+                            ? 'bg-black/10 text-black border border-black/20'
+                            : 'bg-white/20 text-white border border-white/30'
                           : isEffectiveLight
                           ? 'text-slate-800 hover:bg-black/5'
                           : 'text-slate-200 hover:bg-white/10'
@@ -5016,7 +5065,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
                         showToolbarRolePicker
-                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40'
+                          ? isEffectiveLight
+                            ? 'bg-black/10 text-black border border-black/20'
+                            : 'bg-white/20 text-white border border-white/30'
                           : isEffectiveLight
                           ? 'text-slate-800 hover:bg-black/5'
                           : 'text-slate-200 hover:bg-white/10'
@@ -5062,14 +5113,14 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                                 }}
                                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer hover:border-white/20"
                                 style={{
-                                  backgroundColor: `${role.color || '#3b82f6'}18`,
-                                  borderColor: `${role.color || '#3b82f6'}33`,
-                                  color: role.color || '#3b82f6',
+                                  backgroundColor: `${role.color || (isCustomAccent ? accent.from : '#ffffff')}18`,
+                                  borderColor: `${role.color || (isCustomAccent ? accent.from : '#ffffff')}33`,
+                                  color: role.color || (isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff')),
                                 }}
                               >
                                 <span
                                   className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: role.color }}
+                                  style={{ backgroundColor: role.color || (isCustomAccent ? accent.from : '#ffffff') }}
                                 />
                                 <span>{role.label || role.type}</span>
                               </button>
@@ -5307,9 +5358,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   }}
                   className="w-full py-2 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 mt-1"
                   style={{
-                    backgroundColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.10)' : 'rgba(56, 189, 248, 0.15)',
-                    borderColor: isEffectiveLight ? 'rgba(37, 99, 235, 0.35)' : 'rgba(56, 189, 248, 0.40)',
-                    color: isEffectiveLight ? '#1d4ed8' : '#38bdf8',
+                    backgroundColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+                    borderColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.20)',
+                    color: isEffectiveLight ? '#0f172a' : '#ffffff',
                   }}
                 >
                   <span className="material-symbols-rounded text-sm">pin_drop</span>
@@ -5338,7 +5389,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       }}
                       className={`h-8 px-2 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition active:scale-95 cursor-pointer border ${
                         c === selectedChordForEdit.chord.chord
-                          ? 'border-blue-500 bg-blue-500/20 text-blue-400 font-black'
+                          ? isEffectiveLight
+                            ? 'border-black bg-black text-white font-black'
+                            : 'border-white bg-white text-black font-black'
                           : 'border-white/10 bg-white/5 hover:border-white/20 text-white'
                       }`}
                     >
@@ -5362,7 +5415,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     setSelectedChordForEdit(null);
                     setShowChordPicker(true);
                   }}
-                  className="w-full mt-1.5 py-1.5 px-2.5 rounded-xl text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/25 hover:bg-blue-500/20 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                  className="w-full mt-1.5 py-1.5 px-2.5 rounded-xl text-xs font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/15 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
                 >
                   <span className="material-symbols-rounded text-sm">library_music</span>
                   <span>Browse Full Library to Replace...</span>
@@ -5428,21 +5481,21 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             <div
               className="flex items-center justify-between px-3 py-2 rounded-xl border text-xs"
               style={{
-                backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                borderColor: 'rgba(59, 130, 246, 0.25)',
+                backgroundColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+                borderColor: isEffectiveLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)',
               }}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="material-symbols-rounded text-blue-400 text-sm flex-shrink-0">pin_drop</span>
+                <span className="material-symbols-rounded text-neutral-400 text-sm flex-shrink-0">pin_drop</span>
                 <span className="text-gray-300 truncate">
                   Target:{' '}
-                  <strong className="text-blue-400 font-mono">
+                  <strong className="text-white font-mono">
                     {chordPickerTarget.wordText ? chordPickerTarget.wordText : 'Start'}
                   </strong>{' '}
                   <span className="text-gray-500">(offset {chordPickerTarget.offset})</span>
                 </span>
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-400/90 bg-blue-500/15 px-2 py-0.5 rounded-full flex-shrink-0">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-white/90 bg-white/15 px-2 py-0.5 rounded-full flex-shrink-0">
                 Tap chord to insert
               </span>
             </div>
@@ -5471,7 +5524,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   onClick={() => setChordRootFilter(r)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex-shrink-0 transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                      ? isEffectiveLight
+                        ? 'bg-black text-white shadow-sm'
+                        : 'bg-white text-black font-bold shadow-sm'
                       : isEffectiveLight
                         ? 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/5'
                         : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
@@ -5508,7 +5563,9 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   onClick={() => setChordTypeFilter(q.id)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex-shrink-0 transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                      ? isEffectiveLight
+                        ? 'bg-black text-white shadow-sm'
+                        : 'bg-white text-black font-bold shadow-sm'
                       : isEffectiveLight
                         ? 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/5'
                         : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
@@ -5546,7 +5603,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                       toast.info(`Tap letter to place [${chord.name}]`);
                     }
                   }}
-                  className="flex items-center gap-2 p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/10 group"
+                  className="flex items-center gap-2 p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer hover:border-white/30 hover:bg-white/10 group"
                   style={{
                     backgroundColor: isEffectiveLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
                     borderColor: isEffectiveLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)',
@@ -5556,11 +5613,11 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   {chord.guitar ? (
                     <div className="w-11 h-13 flex-shrink-0 flex items-center justify-center rounded-lg bg-black/40 border border-white/5 overflow-hidden">
                       <div className="w-10 h-12 pointer-events-none scale-90">
-                        <ChordDiagram data={chord.guitar} accentFrom="#3b82f6" />
+                        <ChordDiagram data={chord.guitar} accentFrom={isEffectiveLight ? '#000000' : '#ffffff'} />
                       </div>
                     </div>
                   ) : (
-                    <div className="w-11 h-13 flex-shrink-0 flex items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono font-bold text-xs">
+                    <div className="w-11 h-13 flex-shrink-0 flex items-center justify-center rounded-lg bg-white/10 border border-white/20 text-white font-mono font-bold text-xs">
                       {chord.root}
                     </div>
                   )}
@@ -5569,13 +5626,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span
-                        className="font-mono font-extrabold text-xs transition-colors group-hover:text-blue-500"
+                        className="font-mono font-extrabold text-xs transition-colors group-hover:text-white"
                         style={{ color: isEffectiveLight ? '#0f172a' : '#ffffff' }}
                       >
                         {chord.name}
                       </span>
                       {isInSong && (
-                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-white/15 text-white border border-white/25">
                           Song
                         </span>
                       )}
@@ -5588,7 +5645,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     </div>
                   </div>
 
-                  <span className="material-symbols-rounded text-gray-500 group-hover:text-blue-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <span className="material-symbols-rounded text-gray-500 group-hover:text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     add_circle
                   </span>
                 </button>
@@ -5608,7 +5665,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     setChordRootFilter('All');
                     setChordTypeFilter('all');
                   }}
-                  className="mt-1 px-3 py-1 rounded-lg text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 cursor-pointer"
+                  className="mt-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-white/10 border border-white/20 hover:bg-white/15 cursor-pointer"
                 >
                   Reset Filters
                 </button>
@@ -5650,13 +5707,13 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                     handleCreateSection(sec.label, sec.type);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl border text-xs font-bold text-left transition-all active:scale-95 cursor-pointer flex items-center gap-2 hover:border-blue-500/50"
+                className="py-2.5 px-3 rounded-xl border text-xs font-bold text-left transition-all active:scale-95 cursor-pointer flex items-center gap-2 hover:border-white/30"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.04)',
                   borderColor: 'rgba(255,255,255,0.1)',
                 }}
               >
-                <span className="material-symbols-rounded text-sm" style={{ color: accent.from }}>
+                <span className="material-symbols-rounded text-sm" style={{ color: isCustomAccent ? accent.from : (isEffectiveLight ? '#000000' : '#ffffff') }}>
                   layers
                 </span>
                 <span>{sec.label}</span>
@@ -5809,7 +5866,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                   type="button"
                   onClick={handleCreateCustomRole}
                   disabled={!newRoleName.trim()}
-                  className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 disabled:opacity-40"
+                  className="flex-1 py-1.5 rounded-lg text-xs font-bold text-black bg-white hover:bg-neutral-200 disabled:opacity-40"
                 >
                   Save Role
                 </button>
@@ -5844,7 +5901,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 }
                 placeholder="e.g. Verse 1, Chorus, Bridge"
                 data-testid="rename-section-input"
-                className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white outline-none focus:border-blue-500"
+                className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white outline-none focus:border-white/30"
               />
             </div>
 
@@ -5855,8 +5912,15 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                 onClick={() => {
                   handleRenameSection(renameSectionTarget.id, renameSectionTarget.name);
                 }}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-white shadow-sm cursor-pointer"
-                style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
+                className="flex-1 py-2 rounded-xl text-xs font-bold shadow-sm cursor-pointer"
+                style={{
+                  background: isCustomAccent
+                    ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                    : isEffectiveLight
+                      ? '#000000'
+                      : '#ffffff',
+                  color: isCustomAccent ? '#ffffff' : isEffectiveLight ? '#ffffff' : '#000000',
+                }}
               >
                 Save Name
               </button>

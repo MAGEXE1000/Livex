@@ -225,7 +225,7 @@ export async function executeStagexAction(
       x: typeof el.x === 'number' ? Math.max(5, Math.min(95, el.x)) : 50,
       y: typeof el.y === 'number' ? Math.max(5, Math.min(95, el.y)) : 50,
       label: el.label || el.name,
-      color: el.color || '#007aff',
+      color: el.color || '#ffffff',
     }));
 
     useStagexStore.setState((s) => ({

@@ -160,7 +160,7 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
             color: 'var(--landing-text-secondary)',
           }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
           Livex Platform Suite v4.0
         </motion.div>
 

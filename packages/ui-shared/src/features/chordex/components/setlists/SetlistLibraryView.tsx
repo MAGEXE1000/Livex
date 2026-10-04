@@ -20,7 +20,7 @@ interface SetlistLibraryViewProps {
 export const SetlistLibraryView: React.FC<SetlistLibraryViewProps> = ({
   setlists,
   allPresets,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
   onOpenSetlist,
   onPlayLiveSetlist,
 }) => {

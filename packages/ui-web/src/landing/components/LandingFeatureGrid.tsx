@@ -50,7 +50,7 @@ export default function LandingFeatureGrid() {
               color: 'var(--landing-text-secondary)',
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
             Stage-Ready Architecture
           </div>
           <h2

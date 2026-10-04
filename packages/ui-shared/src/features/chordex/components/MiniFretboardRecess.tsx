@@ -12,7 +12,7 @@ const STRING_PERCENTAGES = [10, 26, 42, 58, 74, 90]; // low E to high E (strings
 
 export const HeroChordRecess = memo(function HeroChordRecess({
   chordData,
-  accentFrom = 'var(--c-accent-from, #679cff)',
+  accentFrom = 'var(--c-accent-from, #ffffff)',
   className = '',
   style,
 }: MiniFretboardRecessProps) {
@@ -269,7 +269,7 @@ export interface ChordCardMiniRecessProps {
 
 export const ChordCardMiniRecess = memo(function ChordCardMiniRecess({
   chordData,
-  accentFrom = 'var(--c-accent-from, #679cff)',
+  accentFrom = 'var(--c-accent-from, #ffffff)',
   className = '',
 }: ChordCardMiniRecessProps) {
   return (

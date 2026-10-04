@@ -963,7 +963,7 @@ const DownloadProgressIndicator = React.memo(
             style={{
               height: '100%',
               width: `${pct}%`,
-              background: `linear-gradient(90deg, ${accentFrom || '#679cff'}, ${accentTo || '#007aff'})`,
+              background: `linear-gradient(90deg, ${accentFrom || '#ffffff'}, ${accentTo || '#f4f4f5'})`,
               transition: 'width 120ms ease-out',
               borderRadius: 3,
             }}

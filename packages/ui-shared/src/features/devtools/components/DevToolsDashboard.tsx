@@ -134,7 +134,7 @@ const AccordionSection = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span
           className="material-symbols-outlined"
-          style={{ color: collapsed ? 'var(--c-text-secondary)' : '#007aff', fontSize: 20 }}
+          style={{ color: collapsed ? 'var(--c-text-secondary)' : 'var(--studio-accent, #ffffff)', fontSize: 20 }}
         >
           {icon}
         </span>
@@ -1059,7 +1059,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
       MEASURED: {
         bg: 'rgba(37, 99, 235, 0.12)',
         border: 'rgba(37, 99, 235, 0.25)',
-        color: 'var(--studio-accent-from, #2563eb)',
+        color: 'var(--studio-accent-from, #ffffff)',
       },
       CALCULATED: {
         bg: 'rgba(168, 85, 247, 0.12)',
@@ -2893,7 +2893,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   </div>
                   <span
                     style={{
-                      color: 'var(--studio-accent-from, #2563eb)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       fontWeight: 700,
                       fontSize: 10,
                       textTransform: 'uppercase',
@@ -3111,7 +3111,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   transition: 'all 0.15s ease',
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--studio-accent-from, #2563eb)' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--studio-accent-from, #ffffff)' }}>
                   ios_share
                 </span>
                 Export Snapshot
@@ -3703,7 +3703,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                           padding: '1px 6px',
                           borderRadius: '4px',
                           background: 'rgba(37, 99, 235, 0.12)',
-                          color: 'var(--studio-accent-from, #2563eb)',
+                          color: 'var(--studio-accent-from, #ffffff)',
                           fontFamily: 'monospace',
                         }}
                       >
@@ -3802,7 +3802,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     className="material-symbols-outlined"
                     style={{
                       fontSize: 18,
-                      color: 'var(--studio-accent-from, #2563eb)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       flexShrink: 0,
                     }}
                   >
@@ -3861,7 +3861,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       <div
                         key={idx}
                         style={{
-                          background: isDrop ? '#fbbf24' : 'var(--studio-accent-from, #2563eb)',
+                          background: isDrop ? '#fbbf24' : 'var(--studio-accent-from, #ffffff)',
                           height: `${barHeight}%`,
                           width: '100%',
                           borderRadius: '2px 2px 0 0',
@@ -4019,7 +4019,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     className="material-symbols-outlined"
                     style={{
                       fontSize: 18,
-                      color: 'var(--studio-accent-from, #2563eb)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       flexShrink: 0,
                     }}
                   >
@@ -4166,7 +4166,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     className="material-symbols-outlined"
                     style={{
                       fontSize: 18,
-                      color: 'var(--studio-accent-from, #2563eb)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       flexShrink: 0,
                     }}
                   >
@@ -4302,7 +4302,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     >
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
                         <span style={{ color: 'var(--c-text-secondary)' }}>{nav.fromRoute}</span>
-                        <span style={{ color: 'var(--studio-accent-from, #2563eb)', margin: '0 4px' }}>→</span>
+                        <span style={{ color: 'var(--studio-accent-from, #ffffff)', margin: '0 4px' }}>→</span>
                         <span style={{ color: 'var(--c-text-primary)', fontWeight: 700 }}>{nav.toRoute}</span>
                       </div>
                       <span style={{ fontWeight: 700, color: nav.durationMs > 100 ? '#fbbf24' : 'var(--c-text-primary)', flexShrink: 0 }}>
@@ -4344,7 +4344,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span
                     className="material-symbols-outlined"
-                    style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)', flexShrink: 0 }}
+                    style={{ fontSize: 18, color: 'var(--studio-accent-from, #ffffff)', flexShrink: 0 }}
                   >
                     account_tree
                   </span>
@@ -4477,7 +4477,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                               style={{
                                 color: isHighRerender
                                   ? '#f59e0b'
-                                  : 'var(--studio-accent-from, #2563eb)',
+                                  : 'var(--studio-accent-from, #ffffff)',
                               }}
                             >
                               {comp.renders}
@@ -4553,7 +4553,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                               style={{
                                 color: isHighRerender
                                   ? '#f59e0b'
-                                  : 'var(--studio-accent-from, #2563eb)',
+                                  : 'var(--studio-accent-from, #ffffff)',
                               }}
                             >
                               {stats.renders}
@@ -4593,7 +4593,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--studio-accent-from, #2563eb)',
+                    color: 'var(--studio-accent-from, #ffffff)',
                     fontWeight: 700,
                     cursor: 'pointer',
                     fontSize: '10.5px',
@@ -4735,7 +4735,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)' }}
+                style={{ fontSize: 18, color: 'var(--studio-accent-from, #ffffff)' }}
               >
                 android
               </span>
@@ -4889,7 +4889,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 style={{
                   fontSize: '14px',
                   fontWeight: 800,
-                  color: 'var(--studio-accent-from, #2563eb)',
+                  color: 'var(--studio-accent-from, #ffffff)',
                   fontFamily: 'monospace',
                 }}
               >
@@ -4992,7 +4992,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)' }}
+                style={{ fontSize: 18, color: 'var(--studio-accent-from, #ffffff)' }}
               >
                 display_settings
               </span>
@@ -5169,7 +5169,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)' }}
+                style={{ fontSize: 18, color: 'var(--studio-accent-from, #ffffff)' }}
               >
                 settings
               </span>
@@ -5215,7 +5215,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 style={{
                   fontSize: '14px',
                   fontWeight: 800,
-                  color: 'var(--studio-accent-from, #2563eb)',
+                  color: 'var(--studio-accent-from, #ffffff)',
                   fontFamily: 'var(--studio-font-body)',
                   textTransform: 'capitalize',
                 }}
@@ -5669,7 +5669,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     >
                       <span
                         style={{
-                          color: 'var(--studio-accent-from, #679cff)',
+                          color: 'var(--studio-accent-from, #ffffff)',
                           fontWeight: 800,
                           background: 'rgba(103,124,255,0.12)',
                           padding: '2px 6px',
@@ -5772,7 +5772,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 18, color: 'var(--studio-accent-from, #2563eb)' }}
+                style={{ fontSize: 18, color: 'var(--studio-accent-from, #ffffff)' }}
               >
                 database
               </span>
@@ -6027,7 +6027,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                         fontWeight: 700,
                         fontSize: '12px',
                         fontFamily: 'monospace',
-                        color: 'var(--studio-accent-from, #2563eb)',
+                        color: 'var(--studio-accent-from, #ffffff)',
                         wordBreak: 'break-all',
                       }}
                     >
@@ -6168,7 +6168,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                       fontSize: '15px',
                       fontWeight: 800,
                       margin: 0,
-                      color: 'var(--studio-accent-from, #2563eb)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       fontFamily: 'var(--studio-font-body)',
                     }}
                   >
@@ -6292,7 +6292,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     let color = 'var(--c-text-secondary)';
     if (type === 'running' || type === 'active' || type === 'stable') {
       bg = 'rgba(103, 156, 255, 0.1)';
-      color = 'var(--studio-accent-from, #679cff)';
+      color = 'var(--studio-accent-from, #ffffff)';
     } else if (type === 'profiling') {
       bg = 'rgba(238, 125, 119, 0.1)';
       color = '#ee7d77';
@@ -6532,7 +6532,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               style={{
                 fontSize: 14,
                 fontWeight: 800,
-                color: 'var(--studio-accent-from, #679cff)',
+                color: 'var(--studio-accent-from, #ffffff)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -6721,7 +6721,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                background: 'var(--studio-accent-from, #679cff)',
+                background: 'var(--studio-accent-from, #ffffff)',
                 display: 'inline-block',
               }}
             />
@@ -7028,7 +7028,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                     className="material-symbols-outlined"
                     style={{
                       fontSize: 32,
-                      color: 'var(--studio-accent-from, #679cff)',
+                      color: 'var(--studio-accent-from, #ffffff)',
                       fontVariationSettings: "'FILL' 0",
                     }}
                   >
@@ -7295,7 +7295,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                 padding: '8px 14px',
                 borderRadius: '12px',
                 background: toggle.active
-                  ? 'var(--studio-accent-from, #2563eb)'
+                  ? 'var(--studio-accent-from, #ffffff)'
                   : 'var(--app-surface-high, var(--app-surface))',
                 border: toggle.active ? '1px solid transparent' : '1px solid var(--c-border)',
                 color: toggle.active ? '#fff' : 'var(--c-text-secondary)',
@@ -7393,7 +7393,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                           fontWeight: 700,
                           textTransform: 'uppercase',
                           letterSpacing: '0.08em',
-                          color: 'var(--studio-accent-from, #679cff)',
+                          color: 'var(--studio-accent-from, #ffffff)',
                         }}
                       >
                         Dev Mode

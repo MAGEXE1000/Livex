@@ -262,7 +262,7 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
           </span>
           <span
             data-testid="sections-count-badge"
-            className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20"
+            className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-black dark:text-white border border-black/10 dark:border-white/20"
           >
             {isSpanish
               ? `${activeCount} de ${sectionItems.length}`
@@ -278,7 +278,7 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
             disabled={isAllActive}
             data-testid="sections-select-all-btn"
             className="hover:underline disabled:opacity-40 disabled:hover:no-underline transition-opacity cursor-pointer"
-            style={{ color: '#2563eb' }}
+            style={{ color: isLight ? '#000000' : '#ffffff' }}
           >
             {isSpanish ? 'Todas' : 'All'}
           </button>
@@ -325,14 +325,14 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
                   style={{
                     backgroundColor: isActive
                       ? isLight
-                        ? 'rgba(37, 99, 235, 0.08)'
-                        : 'rgba(37, 99, 235, 0.15)'
+                        ? 'rgba(0, 0, 0, 0.08)'
+                        : 'rgba(255, 255, 255, 0.12)'
                       : isLight
                         ? 'rgba(0, 0, 0, 0.04)'
                         : 'rgba(255, 255, 255, 0.04)',
                   }}
                 >
-                  {item.icon(isActive ? '#2563eb' : textDim)}
+                  {item.icon(isActive ? (isLight ? '#000000' : '#ffffff') : textDim)}
                 </div>
 
                 {/* Title & Subtitle */}
@@ -359,9 +359,15 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
               <div
                 className="w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition-all"
                 style={{
-                  backgroundColor: isActive ? '#2563eb' : 'transparent',
+                  backgroundColor: isActive
+                    ? isLight
+                      ? '#000000'
+                      : '#ffffff'
+                    : 'transparent',
                   border: isActive
-                    ? '1.5px solid #2563eb'
+                    ? isLight
+                      ? '1.5px solid #000000'
+                      : '1.5px solid #ffffff'
                     : isLight
                       ? '1.5px solid rgba(0, 0, 0, 0.2)'
                       : '1.5px solid rgba(255, 255, 255, 0.2)',
@@ -373,7 +379,7 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
                     height="10"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#ffffff"
+                    stroke={isLight ? '#ffffff' : '#000000'}
                     strokeWidth="3.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -402,8 +408,8 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
               style={{
                 backgroundColor: showElementNames
                   ? isLight
-                    ? 'rgba(37, 99, 235, 0.08)'
-                    : 'rgba(37, 99, 235, 0.15)'
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : 'rgba(255, 255, 255, 0.12)'
                   : isLight
                     ? 'rgba(0, 0, 0, 0.04)'
                     : 'rgba(255, 255, 255, 0.04)',
@@ -414,7 +420,7 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
                 height="14"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={showElementNames ? '#2563eb' : textDim}
+                stroke={showElementNames ? (isLight ? '#000000' : '#ffffff') : textDim}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -455,16 +461,25 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
             className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
             style={{
               backgroundColor: showElementNames
-                ? '#2563eb'
+                ? isLight
+                  ? '#000000'
+                  : '#ffffff'
                 : isLight
                   ? 'rgba(0, 0, 0, 0.18)'
                   : 'rgba(255, 255, 255, 0.2)',
             }}
           >
             <span
-              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out mt-[3px] ${
+              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full shadow-md ring-0 transition duration-200 ease-in-out mt-[3px] ${
                 showElementNames ? 'translate-x-[18px]' : 'translate-x-[3px]'
               }`}
+              style={{
+                backgroundColor: showElementNames
+                  ? isLight
+                    ? '#ffffff'
+                    : '#000000'
+                  : '#ffffff',
+              }}
             />
           </button>
         </div>

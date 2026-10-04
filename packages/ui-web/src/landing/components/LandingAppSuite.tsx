@@ -108,7 +108,7 @@ export default function LandingAppSuite() {
               color: 'var(--landing-text-secondary)',
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
             The Livex Creative Suite
           </div>
           <h2

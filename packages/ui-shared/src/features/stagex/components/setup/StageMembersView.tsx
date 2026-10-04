@@ -404,7 +404,7 @@ export const StageMembersView: React.FC<StageMembersViewProps> = ({
                           <p
                             className="text-[11px] font-medium truncate mt-0.5"
                             style={{
-                              color: isAssigned ? (isLight ? '#2563eb' : '#60a5fa') : textMuted,
+                              color: isAssigned ? (isLight ? '#000000' : '#ffffff') : textMuted,
                               fontFamily:
                                 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
                             }}

@@ -87,7 +87,7 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
             {/* Header */}
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-blue-500">
+                <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-neutral-500 dark:text-neutral-400">
                   {isSpanish ? 'Guardar en Descargas' : 'Save to Downloads'}
                 </span>
                 <h3
@@ -130,8 +130,8 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
             <div
               className="px-3.5 py-2.5 rounded-xl border flex items-center justify-between text-xs font-medium"
               style={{
-                backgroundColor: isLight ? 'rgba(37, 99, 235, 0.04)' : 'rgba(37, 99, 235, 0.08)',
-                borderColor: isLight ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.25)',
+                backgroundColor: isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
+                borderColor: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
                 color: textSecondary,
               }}
             >
@@ -141,7 +141,7 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#2563eb"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -155,7 +155,7 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
                     : 'Format: Vector PDF (A4 Print-Ready)'}
                 </span>
               </div>
-              <span className="font-mono text-[11px] font-bold text-blue-500">
+              <span className="font-mono text-[11px] font-bold text-neutral-800 dark:text-neutral-200">
                 {isSpanish
                   ? `${activeSectionsCount} de ${totalSectionsCount} Secciones`
                   : `${activeSectionsCount} of ${totalSectionsCount} Sections`}
@@ -173,7 +173,7 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
               </label>
 
               <div
-                className="flex items-center rounded-xl border overflow-hidden px-3 py-2 transition-all focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
+                className="flex items-center rounded-xl border overflow-hidden px-3 py-2 transition-all focus-within:border-black dark:focus-within:border-white focus-within:ring-1 focus-within:ring-black/20 dark:focus-within:ring-white/20"
                 style={{
                   backgroundColor: inputBg,
                   borderColor: borderCol,
@@ -236,14 +236,15 @@ export const SaveFilenameModal: React.FC<SaveFilenameModalProps> = ({
                 onClick={handleConfirm}
                 disabled={isSaving || !fileName.trim()}
                 data-testid="save-modal-confirm-btn"
-                className="px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white"
+                className="px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: '#2563eb',
+                  backgroundColor: isLight ? '#000000' : '#ffffff',
+                  color: isLight ? '#ffffff' : '#000000',
                 }}
               >
                 {isSaving ? (
                   <>
-                    <AppSpinner size={14} className="text-white" />
+                    <AppSpinner size={14} className={isLight ? 'text-white' : 'text-black'} />
                     <span>{isSpanish ? 'Guardando...' : 'Saving...'}</span>
                   </>
                 ) : (

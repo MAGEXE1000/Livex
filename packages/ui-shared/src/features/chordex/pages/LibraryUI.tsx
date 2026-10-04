@@ -61,7 +61,7 @@ export function RelatedPlayBtn({
       className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
       style={{
         background: playing
-          ? 'color-mix(in srgb, var(--c-accent-from, #679cff) 25%, transparent)'
+          ? 'color-mix(in srgb, var(--c-accent-from, #ffffff) 25%, transparent)'
           : 'var(--c-surface-high, rgba(255,255,255,0.06))',
         border: '1px solid var(--c-border)',
         cursor: 'pointer',
@@ -73,7 +73,7 @@ export function RelatedPlayBtn({
         className="material-symbols-outlined"
         style={{
           fontSize: '16px',
-          color: playing ? 'var(--c-accent-from, #679cff)' : 'var(--c-text-primary)',
+          color: playing ? 'var(--c-accent-from, #ffffff)' : 'var(--c-text-primary)',
           fontVariationSettings: "'FILL' 1",
         }}
       >
@@ -271,11 +271,12 @@ export const LibraryChordDetail = React.memo(function LibraryChordDetail({
                 onClick={handlePlayChord}
                 data-purpose="chord-playback-button"
                 aria-label={chordPlaying ? 'Stop Audio' : `Play ${chord.name} Chord`}
-                className="w-11 h-11 rounded-full text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shrink-0"
+                className="w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-md shrink-0"
                 style={{
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                  backgroundColor: 'var(--c-accent-from, #ffffff)',
+                  color: 'var(--studio-accent-contrast, #09090b)',
                   boxShadow:
-                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)',
+                    '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 40%, transparent)',
                 }}
               >
                 <span className="material-symbols-rounded text-2xl">
@@ -362,14 +363,14 @@ export const LibraryChordDetail = React.memo(function LibraryChordDetail({
                       className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all"
                       style={{
                         backgroundColor: isRoot
-                          ? 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)'
+                          ? 'color-mix(in srgb, var(--c-accent-from, #ffffff) 12%, transparent)'
                           : 'var(--c-surface-lowest, #ECEEF2)',
                         borderColor: isRoot
-                          ? 'color-mix(in srgb, var(--c-accent-from, #2563EB) 28%, transparent)'
+                          ? 'color-mix(in srgb, var(--c-accent-from, #ffffff) 28%, transparent)'
                           : 'var(--c-border, #E3E6EB)',
                         borderWidth: '1px',
                         color: isRoot
-                          ? 'var(--c-accent-from, #2563EB)'
+                          ? 'var(--c-accent-from, #ffffff)'
                           : 'var(--c-text-primary, #111827)',
                       }}
                     >
@@ -378,9 +379,9 @@ export const LibraryChordDetail = React.memo(function LibraryChordDetail({
                         className="text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase"
                         style={{
                           backgroundColor: isRoot
-                            ? 'var(--c-accent-from, #2563EB)'
+                            ? 'var(--c-accent-from, #ffffff)'
                             : 'var(--c-surface-low, #E2E4E8)',
-                          color: isRoot ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                          color: isRoot ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                         }}
                       >
                         {roleLabel}
@@ -404,7 +405,7 @@ export const LibraryChordDetail = React.memo(function LibraryChordDetail({
                 </h3>
                 <span
                   className="text-xs font-semibold"
-                  style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                  style={{ color: 'var(--c-accent-from, #ffffff)' }}
                 >
                   {relatedChords.length} Chords
                 </span>
@@ -584,7 +585,7 @@ export function ChordHeroFretboard({
         />
         {/* Finger dots */}
         {dots.map((d, i) => (
-          <circle key={`dot-${i}`} cx={d.cx} cy={d.cy} r="6" fill="var(--c-accent-from, #2563EB)" />
+          <circle key={`dot-${i}`} cx={d.cx} cy={d.cy} r="6" fill="var(--c-accent-from, #ffffff)" />
         ))}
       </svg>
     </div>
@@ -627,7 +628,7 @@ export function CategoryMiniFretboard({
         strokeWidth="1.2"
       />
       {mappedDots.map((dot, idx) => (
-        <circle key={idx} cx={dot.cx} cy={dot.cy} r="3.5" fill="var(--c-accent-from, #2563EB)" />
+        <circle key={idx} cx={dot.cx} cy={dot.cy} r="3.5" fill="var(--c-accent-from, #ffffff)" />
       ))}
     </svg>
   );
@@ -771,7 +772,7 @@ export function ChordCardMiniFretboard({
               width={width}
               height="7"
               rx="3.5"
-              fill="var(--c-accent-from, #2563EB)"
+              fill="var(--c-accent-from, #ffffff)"
               fillOpacity="0.85"
             />
           );
@@ -779,7 +780,7 @@ export function ChordCardMiniFretboard({
 
         {/* Finger Dots */}
         {dots.map((d, i) => (
-          <circle key={`dot-${i}`} cx={d.cx} cy={d.cy} r="4" fill="var(--c-accent-from, #2563EB)" />
+          <circle key={`dot-${i}`} cx={d.cx} cy={d.cy} r="4" fill="var(--c-accent-from, #ffffff)" />
         ))}
       </svg>
     </div>
@@ -861,7 +862,7 @@ export const CategoryScreenView = React.memo(function CategoryScreenView({
                 </span>
               </div>
               <input
-                className="w-full pl-11 pr-10 py-3 rounded-full text-sm font-medium border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="w-full pl-11 pr-10 py-3 rounded-full text-sm font-medium border shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-neutral-400/25"
                 style={{
                   backgroundColor: 'var(--surface-card-bg, #ffffff)',
                   borderColor: 'var(--c-border, #E3E6EB)',
@@ -906,14 +907,14 @@ export const CategoryScreenView = React.memo(function CategoryScreenView({
                   className="px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 active:scale-95 transition-all cursor-pointer"
                   style={{
                     backgroundColor: isSelected
-                      ? 'var(--c-accent-from, #2563EB)'
+                      ? 'var(--c-accent-from, #ffffff)'
                       : 'var(--surface-card-bg, #ffffff)',
-                    color: isSelected ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                    color: isSelected ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                     border: isSelected
                       ? '1px solid transparent'
                       : '1px solid var(--c-border, #E3E6EB)',
                     boxShadow: isSelected
-                      ? '0 2px 8px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)'
+                      ? '0 2px 8px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)'
                       : 'none',
                   }}
                 >
@@ -999,11 +1000,11 @@ export const CategoryScreenView = React.memo(function CategoryScreenView({
                     <span
                       className="text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-md border"
                       style={{
-                        color: 'var(--c-accent-from, #2563EB)',
+                        color: 'var(--c-accent-from, #ffffff)',
                         backgroundColor:
-                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
+                          'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, transparent)',
                         borderColor:
-                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
+                          'color-mix(in srgb, var(--c-accent-from, #ffffff) 20%, transparent)',
                       }}
                     >
                       {c.type?.toUpperCase()}
@@ -1201,9 +1202,9 @@ export const LibraryMainView = React.memo(function LibraryMainView({ state }: { 
                       className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 cursor-pointer"
                       style={{
                         backgroundColor: isSelected
-                          ? 'var(--c-accent-from, #2563EB)'
+                          ? 'var(--c-accent-from, #ffffff)'
                           : 'var(--surface-card-bg, #ffffff)',
-                        color: isSelected ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
+                        color: isSelected ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #6B7280)',
                         border: isSelected
                           ? '1px solid transparent'
                           : '1px solid var(--c-border, #E3E6EB)',
@@ -1278,11 +1279,11 @@ export const LibraryMainView = React.memo(function LibraryMainView({ state }: { 
                         <span
                           className="text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-md border"
                           style={{
-                            color: 'var(--c-accent-from, #2563EB)',
+                            color: 'var(--c-accent-from, #ffffff)',
                             backgroundColor:
-                              'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
+                              'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, transparent)',
                             borderColor:
-                              'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
+                              'color-mix(in srgb, var(--c-accent-from, #ffffff) 20%, transparent)',
                           }}
                         >
                           {c.type?.toUpperCase()}
@@ -1318,7 +1319,7 @@ export const LibraryMainView = React.memo(function LibraryMainView({ state }: { 
                         <div>
                           <span
                             className="text-[10px] font-bold uppercase tracking-wider block"
-                            style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                            style={{ color: 'var(--c-accent-from, #ffffff)' }}
                           >
                             Chord of the Day
                           </span>
@@ -1364,7 +1365,7 @@ export const LibraryMainView = React.memo(function LibraryMainView({ state }: { 
                             className="material-symbols-rounded filled text-[20px]"
                             style={{
                               color: dayChordPlaying
-                                ? 'var(--c-accent-from, #2563EB)'
+                                ? 'var(--c-accent-from, #ffffff)'
                                 : 'var(--c-text-primary)',
                             }}
                           >

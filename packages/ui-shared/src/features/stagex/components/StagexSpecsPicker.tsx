@@ -248,7 +248,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
           <div className="flex items-center gap-1.5 min-w-0">
             <span
               className="material-symbols-outlined text-[16px] flex-shrink-0"
-              style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+              style={{ color: 'var(--c-accent-mid, var(--studio-accent, #ffffff))' }}
             >
               {meta.icon}
             </span>
@@ -393,7 +393,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
                         className="text-[11.5px] font-bold truncate leading-tight"
                         style={{
                           color: isSelected
-                            ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
+                            ? 'var(--c-accent-to, var(--studio-accent, #ffffff))'
                             : isLight
                               ? '#09090b'
                               : '#ffffff',
@@ -412,7 +412,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
                         className="text-[9.5px] truncate leading-tight"
                         style={{
                           color: isSelected
-                            ? 'var(--c-accent-mid, var(--studio-accent, #007aff))'
+                            ? 'var(--c-accent-mid, var(--studio-accent, #ffffff))'
                             : isLight
                               ? '#71717a'
                               : '#a1a1aa',
@@ -435,7 +435,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
                     <span
                       data-testid="specs-option-check"
                       className="material-symbols-outlined text-[16px] font-bold"
-                      style={{ color: 'var(--c-accent-to, var(--studio-accent, #007aff))' }}
+                      style={{ color: 'var(--c-accent-to, var(--studio-accent, #ffffff))' }}
                     >
                       check
                     </span>
@@ -469,7 +469,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
               className="flex-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold outline-none"
               style={{
                 background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid var(--c-accent-to, var(--studio-accent, #007aff))',
+                border: '1px solid var(--c-accent-to, var(--studio-accent, #ffffff))',
                 color: isLight ? '#09090b' : '#ffffff',
                 height: '30px',
               }}
@@ -480,8 +480,8 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
               disabled={!customVal.trim()}
               className="h-[30px] px-2.5 rounded-xl text-[10.5px] font-bold cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
               style={{
-                background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
-                color: 'var(--studio-accent-contrast, #ffffff)',
+                background: 'var(--c-accent-to, var(--studio-accent, #ffffff))',
+                color: 'var(--studio-accent-contrast, #09090b)',
               }}
             >
               <span className="material-symbols-outlined text-[14px]">check</span>
@@ -512,7 +512,7 @@ export const StagexSpecsPicker: React.FC<StagexSpecsPickerProps> = ({
               setCustomVal(currentValue || '');
             }}
             className="w-full py-1 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
-            style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+            style={{ color: 'var(--c-accent-mid, var(--studio-accent, #ffffff))' }}
           >
             <span className="material-symbols-outlined text-[13px]">add</span>
             <span>+ {meta.customLabel}...</span>

@@ -346,7 +346,7 @@ export default function TakesPanel() {
               className="material-symbols-outlined"
               style={{
                 fontSize: 16,
-                color: 'var(--studio-accent, #007aff)',
+                color: 'var(--c-text-primary)',
               }}
             >
               mic
@@ -366,8 +366,8 @@ export default function TakesPanel() {
                 fontFamily: 'var(--studio-font-mono)',
                 fontWeight: 700,
                 fontSize: 11,
-                color: 'var(--studio-accent, #007aff)',
-                background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                color: 'var(--c-text-primary)',
+                background: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.1)',
                 padding: '2px 8px',
                 borderRadius: 9999,
               }}
@@ -382,8 +382,8 @@ export default function TakesPanel() {
             isPill={true}
             onClick={handleCreateNewProject}
             style={{
-              background: 'var(--studio-accent, #007aff)',
-              color: '#ffffff',
+              background: 'var(--studio-accent, #ffffff)',
+              color: 'var(--studio-accent-contrast, #000000)',
               borderRadius: 9999,
               padding: '8px 18px',
               fontWeight: 700,
@@ -391,7 +391,7 @@ export default function TakesPanel() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: 'var(--shadow-control-raised), 0 4px 14px rgba(0, 122, 255, 0.25)',
+              boxShadow: 'var(--shadow-control-raised), var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
               border: 'none',
               cursor: 'pointer',
               flexShrink: 0,
@@ -453,7 +453,7 @@ export default function TakesPanel() {
                     width: 5,
                     height: 36,
                     borderRadius: 9999,
-                    background: 'var(--studio-accent, #007aff)',
+                    background: 'var(--studio-accent, #ffffff)',
                     opacity: 0.7,
                   }}
                 />
@@ -462,7 +462,7 @@ export default function TakesPanel() {
                     width: 5,
                     height: 48,
                     borderRadius: 9999,
-                    background: 'var(--studio-accent, #007aff)',
+                    background: 'var(--studio-accent, #ffffff)',
                   }}
                 />
                 <div
@@ -470,7 +470,7 @@ export default function TakesPanel() {
                     width: 5,
                     height: 28,
                     borderRadius: 9999,
-                    background: 'var(--studio-accent, #007aff)',
+                    background: 'var(--studio-accent, #ffffff)',
                     opacity: 0.8,
                   }}
                 />
@@ -517,8 +517,8 @@ export default function TakesPanel() {
                 onClick={handleCreateNewProject}
                 style={{
                   marginTop: 18,
-                  background: 'var(--studio-accent, #007aff)',
-                  color: '#ffffff',
+                  background: 'var(--studio-accent, #ffffff)',
+                  color: 'var(--studio-accent-contrast, #000000)',
                   borderRadius: 9999,
                   padding: '9px 20px',
                   fontWeight: 700,
@@ -526,7 +526,7 @@ export default function TakesPanel() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  boxShadow: 'var(--shadow-control-raised), 0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+                  boxShadow: 'var(--shadow-control-raised), var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
                   border: 'none',
                   cursor: 'pointer',
                 }}
@@ -646,7 +646,7 @@ export default function TakesPanel() {
                     width: 34,
                     height: 34,
                     borderRadius: 12,
-                    background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -656,7 +656,7 @@ export default function TakesPanel() {
                 >
                   <span
                     className="material-symbols-outlined"
-                    style={{ fontSize: 19, color: 'var(--studio-accent, #007aff)' }}
+                    style={{ fontSize: 19, color: 'var(--c-text-primary)' }}
                   >
                     headphones
                   </span>
@@ -830,10 +830,10 @@ function TakeListItem({
         alignItems: 'center',
         gap: 12,
         border: `1px solid ${
-          isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-border, rgba(128,128,128,0.14))'
+          isPlaying ? 'var(--studio-accent, #ffffff)' : 'var(--c-border, rgba(128,128,128,0.14))'
         }`,
         cursor: 'pointer',
-        boxShadow: isPlaying ? '0 4px 18px rgba(0,122,255,0.22)' : 'var(--shadow-surface-soft)',
+        boxShadow: isPlaying ? 'var(--studio-accent-glow, rgba(255, 255, 255, 0.22))' : 'var(--shadow-surface-soft)',
         transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
         animation: `tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 35}ms both`,
       }}
@@ -851,8 +851,8 @@ function TakeListItem({
             width: 42,
             height: 42,
             borderRadius: 9999,
-            background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
-            color: 'var(--studio-accent, #007aff)',
+            background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+            color: 'var(--c-text-primary)',
             border: 'none',
             boxShadow: 'var(--shadow-control-raised)',
             cursor: 'pointer',
@@ -883,12 +883,12 @@ function TakeListItem({
             height: 42,
             borderRadius: 9999,
             background: isPlaying
-              ? 'var(--studio-accent, #007aff)'
-              : 'rgba(var(--studio-accent-rgb, 0,122,255), 0.10)',
-            color: isPlaying ? '#ffffff' : 'var(--studio-accent, #007aff)',
+              ? 'var(--studio-accent, #ffffff)'
+              : isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+            color: isPlaying ? 'var(--studio-accent-contrast, #000000)' : 'var(--c-text-primary)',
             border: 'none',
             boxShadow: isPlaying
-              ? '0 4px 14px rgba(0, 122, 255, 0.35)'
+              ? 'var(--studio-accent-glow, rgba(255, 255, 255, 0.35))'
               : 'var(--shadow-control-raised)',
             cursor: 'pointer',
             flexShrink: 0,
@@ -954,8 +954,8 @@ function TakeListItem({
                 fontFamily: 'var(--studio-font-mono)',
                 fontSize: 10,
                 fontWeight: 700,
-                color: 'var(--studio-accent, #007aff)',
-                background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                color: 'var(--c-text-primary)',
+                background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                 padding: '2px 8px',
                 borderRadius: 9999,
                 letterSpacing: '0.04em',
@@ -1140,7 +1140,7 @@ function MiniWaveform({ peaks, isPlaying }: { peaks: number[]; isPlaying: boolea
           style={{
             width: 2.5,
             height: `${Math.max(14, Math.min(100, h))}%`,
-            background: isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-text-secondary)',
+            background: isPlaying ? 'var(--studio-accent, #ffffff)' : 'var(--c-text-secondary)',
             borderRadius: 9999,
             transition: 'background 200ms ease, height 180ms ease',
             animation: isPlaying ? `tp-bar-pulse 800ms ease-in-out ${i * 80}ms infinite` : 'none',

@@ -23,7 +23,7 @@ interface Props {
   onBounce: (newTake: TakeRecord) => void | Promise<void>;
 }
 
-export default function HarmonizerSheet({ take, accent = '#007aff', onClose, onBounce }: Props) {
+export default function HarmonizerSheet({ take, accent = 'var(--studio-accent, #ffffff)', onClose, onBounce }: Props) {
   const t = useT();
   const state = useHarmonizerState(take, accent, onClose, onBounce);
 

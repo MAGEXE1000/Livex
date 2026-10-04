@@ -89,7 +89,7 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
       whileDrag={{
         scale: 1.02,
         boxShadow: '0 14px 32px rgba(0, 0, 0, 0.35)',
-        borderColor: 'var(--c-accent-from, #2563EB)',
+        borderColor: 'var(--c-accent-from, #ffffff)',
         opacity: 0.92,
         zIndex: 50,
       }}
@@ -180,8 +180,8 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
               <span
                 className="px-1 py-0.5 rounded font-bold"
                 style={{
-                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 15%, transparent)',
-                  color: 'var(--c-accent-from, #2563EB)',
+                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 15%, transparent)',
+                  color: 'var(--c-accent-from, #ffffff)',
                 }}
               >
                 {durStr}
@@ -199,7 +199,7 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
           onClick={onPlayLiveFromHere}
           title={`Play live starting from "${song.name}"`}
           className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-          style={{ color: 'var(--c-accent-from, #2563EB)' }}
+          style={{ color: 'var(--c-accent-from, #ffffff)' }}
         >
           <span className="material-symbols-rounded text-base">play_arrow</span>
         </button>
@@ -235,7 +235,7 @@ const SetlistSongRow: React.FC<SetlistSongRowProps> = ({
 export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   setlistId,
   allPresets,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
   onBack,
   onPlayLiveSetlist,
   onOpenSongInEditor,

@@ -806,8 +806,8 @@ export const SongLivePreparationView: React.FC<SongLivePreparationViewProps> = (
                                 key={c.id}
                                 className="font-mono text-xs font-black tracking-tight px-1.5 py-0.5 rounded"
                                 style={{
-                                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
-                                  color: 'var(--c-accent-from, #2563EB)',
+                                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 12%, transparent)',
+                                  color: 'var(--c-accent-from, #ffffff)',
                                 }}
                               >
                                 {c.chord}

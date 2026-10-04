@@ -21,7 +21,7 @@ export const SetlistCard: React.FC<SetlistCardProps> = React.memo(
   function SetlistCard({
     setlist,
     allPresets,
-    accentColor = '#2563EB',
+    accentColor = '#ffffff',
     onOpen,
     onShare,
     onEdit,
@@ -203,7 +203,7 @@ export const SetlistCard: React.FC<SetlistCardProps> = React.memo(
             className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
             style={{
               borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-accent-from, #2563EB)',
+              color: 'var(--c-accent-from, #ffffff)',
             }}
             title="Share setlist"
             aria-label={`Share ${setlist.title}`}

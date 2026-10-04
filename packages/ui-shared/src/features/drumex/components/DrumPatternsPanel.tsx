@@ -133,7 +133,7 @@ const PatternMiniTimeline = memo(function PatternMiniTimeline({
                 style={{
                   height: isHit ? 5 : 3,
                   backgroundColor: isHit
-                    ? 'var(--c-accent-from, #2563EB)'
+                    ? 'var(--c-accent-from, #ffffff)'
                     : isDownbeat
                       ? isLight
                         ? 'rgba(0,0,0,0.14)'
@@ -211,7 +211,7 @@ const PatternMiniTimeline = memo(function PatternMiniTimeline({
                 style={{
                   height: isHit ? 5 : 3,
                   backgroundColor: isHit
-                    ? 'var(--c-accent-from, #2563EB)'
+                    ? 'var(--c-accent-from, #ffffff)'
                     : isDownbeat
                       ? isLight
                         ? 'rgba(0,0,0,0.14)'
@@ -296,14 +296,14 @@ const PatternCard = memo(function PatternCard({
           className="w-8.5 h-8.5 rounded-full flex items-center justify-center shrink-0 border transition-all active:scale-90 cursor-pointer shadow-sm"
           style={{
             backgroundColor: isPlaying
-              ? 'var(--c-accent-from, #2563EB)'
+              ? 'var(--c-accent-from, #ffffff)'
               : isLight
                 ? 'rgba(0,0,0,0.04)'
                 : 'rgba(255,255,255,0.06)',
-            borderColor: isPlaying ? 'var(--c-accent-from, #2563EB)' : 'var(--c-border, #E3E6EB)',
+            borderColor: isPlaying ? 'var(--c-accent-from, #ffffff)' : 'var(--c-border, #E3E6EB)',
             color: isPlaying ? '#ffffff' : 'var(--c-text-primary, #111827)',
             boxShadow: isPlaying
-              ? '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)'
+              ? '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 40%, transparent)'
               : 'none',
           }}
         >
@@ -329,8 +329,8 @@ const PatternCard = memo(function PatternCard({
           data-testid={'use-btn-' + lp.id}
           className="py-1.5 px-3 rounded-full border border-transparent font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer shadow-sm"
           style={{
-            backgroundColor: 'var(--c-accent-from, #2563EB)',
-            color: '#ffffff',
+            backgroundColor: 'var(--c-accent-from, #ffffff)',
+            color: 'var(--studio-accent-contrast, #09090b)',
           }}
         >
           <span className="material-symbols-outlined text-base">download</span>
@@ -408,9 +408,9 @@ const MyGrooveCard = memo(function MyGrooveCard({
               <span
                 className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider"
                 style={{
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                  color: '#ffffff',
-                }}
+            backgroundColor: 'var(--c-accent-from, #ffffff)',
+            color: 'var(--studio-accent-contrast, #09090b)',
+          }}
               >
                 {groove.tag}
               </span>
@@ -440,14 +440,14 @@ const MyGrooveCard = memo(function MyGrooveCard({
             className="w-8.5 h-8.5 rounded-full flex items-center justify-center border transition-all active:scale-90 cursor-pointer shadow-sm"
             style={{
               backgroundColor: isPlaying
-                ? 'var(--c-accent-from, #2563EB)'
+                ? 'var(--c-accent-from, #ffffff)'
                 : isLight
                   ? 'rgba(0,0,0,0.04)'
                   : 'rgba(255,255,255,0.06)',
-              borderColor: isPlaying ? 'var(--c-accent-from, #2563EB)' : 'var(--c-border, #E3E6EB)',
+              borderColor: isPlaying ? 'var(--c-accent-from, #ffffff)' : 'var(--c-border, #E3E6EB)',
               color: isPlaying ? '#ffffff' : 'var(--c-text-primary, #111827)',
               boxShadow: isPlaying
-                ? '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 40%, transparent)'
+                ? '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 40%, transparent)'
                 : 'none',
             }}
           >
@@ -510,8 +510,8 @@ const MyGrooveCard = memo(function MyGrooveCard({
           data-testid={'use-groove-' + groove.id}
           className="py-1.5 px-3 rounded-full border border-transparent font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer shadow-sm"
           style={{
-            backgroundColor: 'var(--c-accent-from, #2563EB)',
-            color: '#ffffff',
+            backgroundColor: 'var(--c-accent-from, #ffffff)',
+            color: 'var(--studio-accent-contrast, #09090b)',
           }}
         >
           <span className="material-symbols-outlined text-base">download</span>
@@ -861,16 +861,16 @@ export function DrumPatternsPanel({
                   className="shrink-0 px-3.5 py-1 text-[11px] font-bold rounded-full transition-all active:scale-95 cursor-pointer border"
                   style={{
                     backgroundColor: active
-                      ? 'var(--c-accent-from, #2563EB)'
+                      ? 'var(--c-accent-from, #ffffff)'
                       : isLight
                         ? 'rgba(0,0,0,0.04)'
                         : 'rgba(255,255,255,0.06)',
                     borderColor: active
-                      ? 'var(--c-accent-from, #2563EB)'
+                      ? 'var(--c-accent-from, #ffffff)'
                       : 'var(--c-border, #E3E6EB)',
                     color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
                     boxShadow: active
-                      ? '0 2px 8px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)'
+                      ? '0 2px 8px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)'
                       : 'none',
                   }}
                 >
@@ -901,12 +901,12 @@ export function DrumPatternsPanel({
                     className="shrink-0 px-3 py-0.5 text-[11px] font-bold rounded-full transition-all active:scale-95 cursor-pointer border"
                     style={{
                       backgroundColor: active
-                        ? 'var(--c-accent-from, #2563EB)'
+                        ? 'var(--c-accent-from, #ffffff)'
                         : isLight
                           ? 'rgba(0,0,0,0.03)'
                           : 'rgba(255,255,255,0.04)',
                       borderColor: active
-                        ? 'var(--c-accent-from, #2563EB)'
+                        ? 'var(--c-accent-from, #ffffff)'
                         : 'var(--c-border, #E3E6EB)',
                       color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
                     }}
@@ -936,12 +936,12 @@ export function DrumPatternsPanel({
                     className="shrink-0 px-3 py-0.5 text-[11px] font-bold rounded-full transition-all active:scale-95 cursor-pointer border"
                     style={{
                       backgroundColor: active
-                        ? 'var(--c-accent-from, #2563EB)'
+                        ? 'var(--c-accent-from, #ffffff)'
                         : isLight
                           ? 'rgba(0,0,0,0.03)'
                           : 'rgba(255,255,255,0.04)',
                       borderColor: active
-                        ? 'var(--c-accent-from, #2563EB)'
+                        ? 'var(--c-accent-from, #ffffff)'
                         : 'var(--c-border, #E3E6EB)',
                       color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
                     }}
@@ -976,8 +976,8 @@ export function DrumPatternsPanel({
                     }}
                   >
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                      style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                      style={{ backgroundColor: 'var(--c-accent-from, #ffffff)', color: 'var(--studio-accent-contrast, #09090b)' }}
                     >
                       <span className="material-symbols-outlined text-xl">bookmark_add</span>
                     </div>
@@ -1025,8 +1025,8 @@ export function DrumPatternsPanel({
                 }}
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                  style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                  style={{ backgroundColor: 'var(--c-accent-from, #ffffff)', color: 'var(--studio-accent-contrast, #09090b)' }}
                 >
                   <span className="material-symbols-outlined text-xl">bookmark_add</span>
                 </div>
@@ -1068,10 +1068,10 @@ export function DrumPatternsPanel({
                   className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-soft-card"
                   style={{
                     backgroundColor:
-                      'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
+                      'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, transparent)',
                     borderColor:
-                      'color-mix(in srgb, var(--c-accent-from, #2563EB) 25%, transparent)',
-                    color: 'var(--c-accent-from, #2563EB)',
+                      'color-mix(in srgb, var(--c-accent-from, #ffffff) 25%, transparent)',
+                    color: 'var(--c-accent-from, #ffffff)',
                   }}
                 >
                   <span className="material-symbols-outlined text-2xl">search_off</span>
@@ -1130,9 +1130,9 @@ export function DrumPatternsPanel({
                 className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-soft-card"
                 style={{
                   backgroundColor:
-                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
-                  borderColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 25%, transparent)',
-                  color: 'var(--c-accent-from, #2563EB)',
+                    'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, transparent)',
+                  borderColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 25%, transparent)',
+                  color: 'var(--c-accent-from, #ffffff)',
                 }}
               >
                 <span className="material-symbols-outlined text-2xl">bookmark_border</span>
@@ -1188,7 +1188,7 @@ export function DrumPatternsPanel({
                 style={{
                   backgroundColor: 'var(--surface-card-bg, #ffffff)',
                   borderColor: 'var(--c-border, #E3E6EB)',
-                  color: 'var(--c-accent-from, #2563EB)',
+                  color: 'var(--c-accent-from, #ffffff)',
                 }}
               >
                 Show more ({filteredLibrary.length - visibleBatch} remaining)
@@ -1249,12 +1249,12 @@ export function DrumPatternsPanel({
                       className="px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer"
                       style={{
                         backgroundColor: active
-                          ? 'var(--c-accent-from, #2563EB)'
+                          ? 'var(--c-accent-from, #ffffff)'
                           : isLight
                             ? 'rgba(0,0,0,0.03)'
                             : 'rgba(255,255,255,0.05)',
                         borderColor: active
-                          ? 'var(--c-accent-from, #2563EB)'
+                          ? 'var(--c-accent-from, #ffffff)'
                           : 'var(--c-border, #E3E6EB)',
                         color: active ? '#ffffff' : 'var(--c-text-secondary, #6B7280)',
                       }}

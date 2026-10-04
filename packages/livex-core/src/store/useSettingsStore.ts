@@ -103,20 +103,21 @@ export interface SettingsStore {
 export { ACCENT_PRESETS, APP_IDENTITY_COLORS, resolveAccent } from '../lib/preferences/accentUtils';
 
 export const ACCENT_COLORS = {
+  monochrome: { from: '#ffffff', to: '#f4f4f5', mid: '#ffffff' },
   blue: { from: '#679cff', to: '#007aff', mid: '#4d8ef7' },
   purple: { from: '#c084fc', to: '#9333ea', mid: '#a855f7' },
   green: { from: '#34d399', to: '#059669', mid: '#10b981' },
   orange: { from: '#fb923c', to: '#ea580c', mid: '#f97316' },
   pink: { from: '#f472b6', to: '#db2777', mid: '#ec4899' },
   teal: { from: '#2dd4bf', to: '#0d9488', mid: '#14b8a6' },
-  custom: { from: '#679cff', to: '#007aff', mid: '#4d8ef7' },
+  custom: { from: '#ffffff', to: '#f4f4f5', mid: '#ffffff' },
 };
 
 // Default values to use if there is no previous state.
 const DEFAULT_SETTINGS: AppSettings = {
   instrument: 'guitar',
   theme: 'light',
-  accentColor: 'blue',
+  accentColor: 'monochrome',
   showNoteNames: true,
   showIntervals: false,
   amoledMode: false,

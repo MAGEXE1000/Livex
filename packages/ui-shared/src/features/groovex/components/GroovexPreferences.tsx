@@ -195,14 +195,14 @@ export default function GroovexPreferences() {
             height: 22px;
             width: 22px;
             border-radius: 50%;
-            background: var(--app-accent, #007aff);
-            box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35), 0 0 0 3px ${thumbRing};
+            background: var(--studio-accent, #ffffff);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), 0 0 0 3px ${thumbRing};
             margin-top: -8px;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
           }
           input[type=range].stitch-range-slider::-webkit-slider-thumb:active {
             transform: scale(1.15);
-            box-shadow: 0 3px 10px rgba(0, 122, 255, 0.45), 0 0 0 4px ${thumbRing};
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), 0 0 0 4px ${thumbRing};
           }
           input[type=range].stitch-range-slider::-webkit-slider-runnable-track {
             width: 100%;
@@ -216,8 +216,8 @@ export default function GroovexPreferences() {
             width: 22px;
             border: 3px solid ${thumbRing};
             border-radius: 50%;
-            background: var(--app-accent, #007aff);
-            box-shadow: 0 2px 6px rgba(0, 122, 255, 0.35);
+            background: var(--studio-accent, #ffffff);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
             transition: transform 0.15s ease;
           }
           input[type=range].stitch-range-slider::-moz-range-thumb:active {
@@ -258,14 +258,14 @@ export default function GroovexPreferences() {
                   width: 36,
                   height: 36,
                   borderRadius: 14,
-                  backgroundColor: isLight ? 'rgba(0, 122, 255, 0.08)' : 'rgba(0, 122, 255, 0.16)',
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                   border: `1px solid ${
-                    isLight ? 'rgba(0, 122, 255, 0.18)' : 'rgba(0, 122, 255, 0.28)'
+                    isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.14)'
                   }`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--app-accent, #007aff)',
+                  color: 'var(--c-text-primary)',
                   flexShrink: 0,
                 }}
               >
@@ -352,14 +352,14 @@ export default function GroovexPreferences() {
                   width: 36,
                   height: 36,
                   borderRadius: 14,
-                  backgroundColor: isLight ? 'rgba(0, 122, 255, 0.08)' : 'rgba(0, 122, 255, 0.16)',
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                   border: `1px solid ${
-                    isLight ? 'rgba(0, 122, 255, 0.18)' : 'rgba(0, 122, 255, 0.28)'
+                    isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.14)'
                   }`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--app-accent, #007aff)',
+                  color: 'var(--c-text-primary)',
                   flexShrink: 0,
                 }}
               >
@@ -453,14 +453,14 @@ export default function GroovexPreferences() {
                   width: 36,
                   height: 36,
                   borderRadius: 14,
-                  backgroundColor: isLight ? 'rgba(0, 122, 255, 0.08)' : 'rgba(0, 122, 255, 0.16)',
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                   border: `1px solid ${
-                    isLight ? 'rgba(0, 122, 255, 0.18)' : 'rgba(0, 122, 255, 0.28)'
+                    isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.14)'
                   }`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--app-accent, #007aff)',
+                  color: 'var(--c-text-primary)',
                   flexShrink: 0,
                 }}
               >
@@ -611,7 +611,7 @@ export default function GroovexPreferences() {
                         className="material-symbols-outlined"
                         style={{
                           fontSize: 22,
-                          color: 'var(--app-accent, #007aff)',
+                          color: 'var(--c-text-primary)',
                           flexShrink: 0,
                           fontVariationSettings: "'FILL' 1",
                         }}
@@ -732,14 +732,14 @@ export default function GroovexPreferences() {
                   width: 36,
                   height: 36,
                   borderRadius: 14,
-                  backgroundColor: isLight ? 'rgba(0, 122, 255, 0.08)' : 'rgba(0, 122, 255, 0.16)',
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
                   border: `1px solid ${
-                    isLight ? 'rgba(0, 122, 255, 0.18)' : 'rgba(0, 122, 255, 0.28)'
+                    isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.14)'
                   }`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--app-accent, #007aff)',
+                  color: 'var(--c-text-primary)',
                   flexShrink: 0,
                 }}
               >
@@ -987,7 +987,7 @@ function StitchRangeSlider({
 }) {
   const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
   const trackBg = isLight ? '#e5e7eb' : 'rgba(255, 255, 255, 0.12)';
-  const accentColor = 'var(--app-accent, #007aff)';
+  const accentColor = 'var(--studio-accent, #ffffff)';
 
   return (
     <div data-purpose={`slider-container-${id}`}>
@@ -1133,7 +1133,7 @@ function StitchToggleRow({
           borderRadius: 9999,
           border: '2px solid transparent',
           backgroundColor: value
-            ? 'var(--app-accent, #007aff)'
+            ? 'var(--studio-accent, #ffffff)'
             : isLight
               ? 'rgba(0, 0, 0, 0.12)'
               : 'rgba(255, 255, 255, 0.15)',

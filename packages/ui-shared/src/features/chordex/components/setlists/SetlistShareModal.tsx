@@ -227,7 +227,7 @@ export const SetlistShareModal: React.FC<SetlistShareModalProps> = ({
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{
               backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              color: 'var(--c-accent-from, #2563EB)',
+              color: 'var(--c-accent-from, #ffffff)',
             }}
           >
             <span className="material-symbols-rounded text-xl">groups</span>

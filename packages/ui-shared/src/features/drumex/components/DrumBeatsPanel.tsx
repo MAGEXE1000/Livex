@@ -111,7 +111,7 @@ const BeatMiniTimeline = React.memo(function BeatMiniTimeline({
                 style={{
                   height: isHit ? 5 : 3,
                   backgroundColor: isHit
-                    ? 'var(--c-accent-from, #2563EB)'
+                    ? 'var(--c-accent-from, #ffffff)'
                     : isDownbeat
                       ? isLight
                         ? 'rgba(0,0,0,0.12)'
@@ -275,12 +275,12 @@ const BeatCard = React.memo(function BeatCard({
               className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-all active:scale-90 cursor-pointer shadow-sm"
               style={{
                 backgroundColor: isPlaying
-                  ? 'var(--c-accent-from, #2563EB)'
-                  : 'color-mix(in srgb, var(--c-accent-from, #2563EB) 12%, transparent)',
+                  ? 'var(--c-accent-from, #ffffff)'
+                  : 'color-mix(in srgb, var(--c-accent-from, #ffffff) 12%, transparent)',
                 borderColor: isPlaying
-                  ? 'var(--c-accent-from, #2563EB)'
-                  : 'color-mix(in srgb, var(--c-accent-from, #2563EB) 24%, transparent)',
-                color: isPlaying ? '#ffffff' : 'var(--c-accent-from, #2563EB)',
+                  ? 'var(--c-accent-from, #ffffff)'
+                  : 'color-mix(in srgb, var(--c-accent-from, #ffffff) 24%, transparent)',
+                color: isPlaying ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-accent-from, #ffffff)',
               }}
             >
               <span className="material-symbols-outlined text-2xl select-none" aria-hidden="true">
@@ -304,7 +304,7 @@ const BeatCard = React.memo(function BeatCard({
               data-purpose="beat-title-area"
             >
               <h3
-                className="text-[16px] font-extrabold tracking-tight truncate leading-tight group-hover:text-blue-600 transition-colors"
+                className="text-[16px] font-extrabold tracking-tight truncate leading-tight group-hover:opacity-80 transition-opacity"
                 style={{
                   fontFamily: 'var(--font-headline)',
                   color: 'var(--c-text-primary, #111827)',
@@ -358,7 +358,7 @@ const BeatCard = React.memo(function BeatCard({
               color: 'var(--c-text-primary, #111827)',
             }}
           >
-            <span style={{ color: 'var(--c-accent-from, #2563EB)' }}>#</span>
+            <span style={{ color: 'var(--c-accent-from, #ffffff)' }}>#</span>
             {kitName}
           </span>
 
@@ -416,7 +416,7 @@ const BeatCard = React.memo(function BeatCard({
           className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
           style={{
             borderColor: 'var(--c-border, #E3E6EB)',
-            color: 'var(--c-accent-from, #2563EB)',
+            color: 'var(--c-accent-from, #ffffff)',
           }}
         >
           <span className="material-symbols-outlined text-base">tune</span>
@@ -672,13 +672,13 @@ export function DrumBeatsPanel({
                   style={{
                     backgroundColor:
                       sortBy === s
-                        ? 'color-mix(in srgb, var(--c-accent-from, #2563EB) 14%, var(--surface-card-bg, #ffffff))'
+                        ? 'color-mix(in srgb, var(--c-accent-from, #ffffff) 14%, var(--surface-card-bg, #ffffff))'
                         : 'var(--surface-card-bg, #ffffff)',
                     borderColor:
-                      sortBy === s ? 'var(--c-accent-from, #2563EB)' : 'var(--c-border, #E3E6EB)',
+                      sortBy === s ? 'var(--c-accent-from, #ffffff)' : 'var(--c-border, #E3E6EB)',
                     color:
                       sortBy === s
-                        ? 'var(--c-accent-from, #2563EB)'
+                        ? 'var(--c-accent-from, #ffffff)'
                         : 'var(--c-text-secondary, #6B7280)',
                   }}
                   data-testid={`sort-${s}-btn`}
@@ -714,9 +714,9 @@ export function DrumBeatsPanel({
               className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
               style={{
                 backgroundColor:
-                  'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
-                borderColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 22%, transparent)',
-                color: 'var(--c-accent-from, #2563EB)',
+                  'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, var(--surface-card-bg, #ffffff))',
+                borderColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 22%, transparent)',
+                color: 'var(--c-accent-from, #ffffff)',
               }}
             >
               <span className="material-symbols-outlined text-3xl select-none">album</span>
@@ -769,11 +769,12 @@ export function DrumBeatsPanel({
                         setActiveCreateTrigger('empty');
                         triggerProps.onClick();
                       }}
-                      className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-full text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
                       style={{
-                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                        backgroundColor: 'var(--c-accent-from, #ffffff)',
+                        color: 'var(--studio-accent-contrast, #09090b)',
                         boxShadow:
-                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)',
                       }}
                       data-purpose="empty-create-beat-btn"
                       data-testid="empty-create-beat-btn"
@@ -789,11 +790,12 @@ export function DrumBeatsPanel({
                 <button
                   type="button"
                   onClick={onCreateSong}
-                  className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-full text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                   style={{
-                    backgroundColor: 'var(--c-accent-from, #2563EB)',
+                    backgroundColor: 'var(--c-accent-from, #ffffff)',
+                    color: 'var(--studio-accent-contrast, #09090b)',
                     boxShadow:
-                      '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                      '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)',
                   }}
                   data-purpose="empty-create-beat-btn"
                   data-testid="empty-create-beat-btn"
@@ -930,8 +932,8 @@ export function DrumBeatsPanel({
               <Button
                 onClick={handleSaveRename}
                 style={{
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
-                  color: '#ffffff',
+                  backgroundColor: 'var(--c-accent-from, #ffffff)',
+                  color: 'var(--studio-accent-contrast, #09090b)',
                 }}
               >
                 Save
@@ -1098,13 +1100,14 @@ export function DrumBeatsPanel({
                       setActiveCreateTrigger('fab');
                       triggerProps.onClick();
                     }}
-                    className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                    className="rounded-full shadow-lg flex items-center justify-center cursor-pointer"
                     style={{
                       width: '52px',
                       height: '52px',
-                      backgroundColor: 'var(--c-accent-from, #2563EB)',
+                      backgroundColor: 'var(--c-accent-from, #ffffff)',
+                      color: 'var(--studio-accent-contrast, #09090b)',
                       boxShadow:
-                        '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                        '0 8px 24px color-mix(in srgb, var(--c-accent-from, #ffffff) 35%, transparent)',
                     }}
                   >
                     <span className="material-symbols-outlined text-2xl font-bold">add</span>
@@ -1121,13 +1124,14 @@ export function DrumBeatsPanel({
                 aria-label="Create New Beat"
                 title="New Beat"
                 whileTap={reducedMotion ? undefined : { scale: 0.94 }}
-                className="rounded-full text-white shadow-lg flex items-center justify-center cursor-pointer"
+                className="rounded-full shadow-lg flex items-center justify-center cursor-pointer"
                 style={{
                   width: '52px',
                   height: '52px',
-                  backgroundColor: 'var(--c-accent-from, #2563EB)',
+                  backgroundColor: 'var(--c-accent-from, #ffffff)',
+                  color: 'var(--studio-accent-contrast, #09090b)',
                   boxShadow:
-                    '0 8px 24px color-mix(in srgb, var(--c-accent-from, #2563EB) 35%, transparent)',
+                    '0 8px 24px color-mix(in srgb, var(--c-accent-from, #ffffff) 35%, transparent)',
                 }}
               >
                 <span className="material-symbols-outlined text-2xl font-bold">add</span>

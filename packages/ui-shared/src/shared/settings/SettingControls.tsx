@@ -151,8 +151,8 @@ export function SegmentedControl<T extends string | number>({
   value,
   options,
   onChange,
-  accentFrom = 'var(--studio-accent-from, #679cff)',
-  accentTo = 'var(--studio-accent-to, #007aff)',
+  accentFrom = 'var(--studio-accent-from, #ffffff)',
+  accentTo = 'var(--studio-accent-to, #f4f4f5)',
   layoutId = 'segmented-control-active',
   fullWidth = false,
   style,
@@ -191,7 +191,7 @@ export function SegmentedControl<T extends string | number>({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: active ? '#ffffff' : 'var(--c-text-secondary, #acabaa)',
+              color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary, #acabaa)',
               background: 'transparent',
               border: 'none',
               transition: 'color 200ms cubic-bezier(0.2, 0, 0, 1)',
@@ -315,7 +315,7 @@ export function BentoSettingCard({
           <StudioIcon
             name={icon}
             size={20}
-            color={iconColor || 'var(--studio-accent-from, #679cff)'}
+            color={iconColor || 'var(--studio-accent-from, var(--c-text-primary))'}
             filled
           />
         </div>
@@ -357,7 +357,7 @@ export function BentoSettingCard({
             style={{
               fontSize: 11,
               fontWeight: 600,
-              color: 'var(--studio-accent-from, #679cff)',
+              color: 'var(--studio-accent-from, var(--c-text-primary))',
               fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
               opacity: 0.85,
               textTransform: 'uppercase',
@@ -479,7 +479,7 @@ export function BentoSettingRow({
           <StudioIcon
             name={icon}
             size={20}
-            color={iconColor || 'var(--studio-accent-from, #679cff)'}
+            color={iconColor || 'var(--studio-accent-from, var(--c-text-primary))'}
             filled
           />
         </div>
@@ -521,7 +521,7 @@ export function BentoSettingRow({
             style={{
               fontSize: 11,
               fontWeight: 600,
-              color: 'var(--studio-accent-from, #679cff)',
+              color: 'var(--studio-accent-from, var(--c-text-primary))',
               fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
               opacity: 0.85,
               textTransform: 'uppercase',

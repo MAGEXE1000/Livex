@@ -20,7 +20,7 @@ export function buildDetailFretboardSvgString(
 ): string {
   const {
     dark = false,
-    accentColor = '#2563EB',
+    accentColor = '#ffffff',
     displayMode = 'notes',
     showStringNames = true,
   } = options;
@@ -202,7 +202,7 @@ export function DetailFretboardDiagram({
     }
   });
 
-  const effectiveAccent = accentColor || 'var(--c-accent-from, #2563EB)';
+  const effectiveAccent = accentColor || 'var(--c-accent-from, #ffffff)';
 
   return (
     <div

@@ -256,15 +256,15 @@ export default function GroovexLibrary() {
                   borderRadius: '9999px',
                   background:
                     sortBy === 'artist' || filterArtist
-                      ? 'var(--app-accent-light, rgba(0, 122, 255, 0.12))'
+                      ? 'color-mix(in srgb, var(--studio-accent, #ffffff) 12%, transparent)'
                       : 'var(--app-surface)',
                   border:
                     sortBy === 'artist' || filterArtist
-                      ? '1px solid var(--app-accent, #007AFF)'
+                      ? '1px solid var(--studio-accent, #ffffff)'
                       : '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
                   color:
                     sortBy === 'artist' || filterArtist
-                      ? 'var(--app-accent, #007AFF)'
+                      ? 'var(--studio-accent, #ffffff)'
                       : 'var(--c-text-primary)',
                   fontFamily: 'var(--studio-font-body)',
                   fontSize: '12px',
@@ -280,7 +280,7 @@ export default function GroovexLibrary() {
                     fontSize: '16px',
                     color:
                       sortBy === 'artist' || filterArtist
-                        ? 'var(--app-accent, #007AFF)'
+                        ? 'var(--studio-accent, #ffffff)'
                         : 'var(--c-text-muted)',
                   }}
                 >
@@ -293,7 +293,7 @@ export default function GroovexLibrary() {
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--app-accent, #007AFF)',
+                      backgroundColor: 'var(--studio-accent, #ffffff)',
                       marginLeft: '2px',
                     }}
                   />
@@ -304,7 +304,7 @@ export default function GroovexLibrary() {
               <MorphingActionSurface
                 title={t.groovex.filter || 'Filters'}
                 subtitle="Filter library by artist and genre"
-                accentColor="var(--app-accent, #007AFF)"
+                accentColor="var(--studio-accent, #ffffff)"
                 maxWidth={340}
                 customTrigger={({ triggerProps }) => (
                   <motion.button
@@ -320,15 +320,15 @@ export default function GroovexLibrary() {
                       borderRadius: '9999px',
                       background:
                         filterGenre || filterArtist
-                          ? 'var(--app-accent-light, rgba(0, 122, 255, 0.12))'
+                          ? 'color-mix(in srgb, var(--studio-accent, #ffffff) 12%, transparent)'
                           : 'var(--app-surface)',
                       border:
                         filterGenre || filterArtist
-                          ? '1px solid var(--app-accent, #007AFF)'
+                          ? '1px solid var(--studio-accent, #ffffff)'
                           : '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
                       color:
                         filterGenre || filterArtist
-                          ? 'var(--app-accent, #007AFF)'
+                          ? 'var(--studio-accent, #ffffff)'
                           : 'var(--c-text-secondary)',
                       fontFamily: 'var(--studio-font-body)',
                       fontSize: '12px',
@@ -343,7 +343,7 @@ export default function GroovexLibrary() {
                         fontSize: '16px',
                         color:
                           filterGenre || filterArtist
-                            ? 'var(--app-accent, #007AFF)'
+                            ? 'var(--studio-accent, #ffffff)'
                             : 'var(--c-text-muted)',
                       }}
                     >
@@ -356,7 +356,7 @@ export default function GroovexLibrary() {
                           width: '6px',
                           height: '6px',
                           borderRadius: '50%',
-                          backgroundColor: 'var(--app-accent, #007AFF)',
+                          backgroundColor: 'var(--studio-accent, #ffffff)',
                           marginLeft: '2px',
                         }}
                       />
@@ -489,7 +489,7 @@ export default function GroovexLibrary() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '16px',
-                color: 'var(--app-accent, #007AFF)',
+                color: 'var(--studio-accent, #ffffff)',
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '36px' }}>
@@ -664,12 +664,12 @@ function StitchSongCard({
   const spindleColor = useMemo(() => {
     const hash = song.artist.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const hues = [
-      'var(--app-accent, #007AFF)',
-      '#9333ea', // purple
-      '#dc2626', // red
-      '#d97706', // amber
-      '#059669', // emerald
-      '#2563eb', // blue
+      'var(--studio-accent, #ffffff)',
+      '#71717a',
+      '#a1a1aa',
+      '#52525b',
+      '#3f3f46',
+      '#27272a',
     ];
     return hues[hash % hues.length];
   }, [song.artist]);
@@ -784,7 +784,7 @@ function StitchSongCard({
                 justifyContent: 'center',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                 border: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.1)',
-                color: 'var(--app-accent, #007AFF)',
+                color: 'var(--studio-accent, #ffffff)',
               }}
               title="Downloaded & Cached Offline"
             >
@@ -869,8 +869,8 @@ function StitchSongCard({
                 style={{
                   padding: '2px 6px',
                   borderRadius: '9999px',
-                  backgroundColor: 'var(--app-accent-light, rgba(0, 122, 255, 0.12))',
-                  color: 'var(--app-accent, #007AFF)',
+                  backgroundColor: 'color-mix(in srgb, var(--studio-accent, #ffffff) 12%, transparent)',
+                  color: 'var(--studio-accent, #ffffff)',
                   fontSize: '10px',
                   fontWeight: 700,
                   fontFamily: 'var(--studio-font-mono)',
@@ -910,7 +910,7 @@ function StitchSongCard({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-            color: 'var(--app-accent, #007AFF)',
+            color: 'var(--studio-accent, #ffffff)',
             border: 'none',
             cursor: 'pointer',
             padding: 0,
@@ -959,9 +959,9 @@ function FilterChip({
         padding: '5px 12px',
         borderRadius: '9999px',
         backgroundColor: active
-          ? 'var(--app-accent, #007AFF)'
+          ? 'var(--studio-accent, #ffffff)'
           : 'var(--app-surface-subtle, rgba(0,0,0,0.04))',
-        color: active ? '#ffffff' : 'var(--c-text-secondary)',
+        color: active ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary)',
         border: active ? '1px solid transparent' : '1px solid var(--c-border, rgba(0,0,0,0.06))',
         boxShadow: active ? 'var(--shadow-control-raised)' : 'var(--shadow-pill)',
         cursor: 'pointer',

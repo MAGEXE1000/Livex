@@ -591,7 +591,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 selection:bg-blue-600 selection:text-white"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 selection:bg-neutral-500/30"
       style={{
         background: resolvedIsLight
           ? 'rgba(0, 0, 0, 0.35)'
@@ -1135,7 +1135,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                       className="w-full pt-1"
                     >
                       <button
-                        className={`w-full h-[52px] py-3.5 px-6 rounded-full ${cancelBtnClass} font-medium text-[15px] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+                        className={`w-full h-[52px] py-3.5 px-6 rounded-full ${cancelBtnClass} font-medium text-[15px] transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400/30`}
                         data-purpose="cancel-action-button"
                         type="button"
                         onClick={handleCancel}

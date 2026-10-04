@@ -65,7 +65,7 @@ export default function LandingDownloads({
               color: 'var(--landing-text-secondary)',
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
             Deployment & Platforms
           </div>
           <h2
@@ -117,7 +117,7 @@ export default function LandingDownloads({
                         color: 'var(--landing-text-primary)',
                       }}
                     >
-                      <Globe className="w-5 h-5 text-blue-400" />
+                      <Globe className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <h3
@@ -134,7 +134,7 @@ export default function LandingDownloads({
                       </span>
                     </div>
                   </div>
-                  <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/20">
                     Recommended
                   </span>
                 </div>

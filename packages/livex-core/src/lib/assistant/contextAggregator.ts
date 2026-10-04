@@ -74,7 +74,7 @@ export function getMusicalContextSnapshot(): MusicalContextSnapshot {
         language: userSettings.language || 'en',
         theme: userSettings.theme || 'dark',
         amoledMode: Boolean(userSettings.amoledMode),
-        accentColor: userSettings.accentColor || '#007aff',
+        accentColor: userSettings.accentColor || '#ffffff',
         instrument,
       };
       snapshot.settings = settingsSnap;

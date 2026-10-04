@@ -31,6 +31,7 @@ export interface ResolvedAccent {
 }
 
 export const ACCENT_PRESETS: AccentDefinition[] = [
+  { id: 'monochrome', label: 'Monochrome', from: '#ffffff', to: '#f4f4f5', mid: '#e4e4e7' },
   { id: 'blue', label: 'Classic Blue', from: '#679cff', to: '#007aff', mid: '#4d8ef7' },
   { id: 'purple', label: 'Violet', from: '#c084fc', to: '#9333ea', mid: '#a855f7' },
   { id: 'pink', label: 'Rose Pink', from: '#f472b6', to: '#db2777', mid: '#ec4899' },
@@ -42,7 +43,7 @@ export const ACCENT_PRESETS: AccentDefinition[] = [
   { id: 'cyan', label: 'Cyan / Sky', from: '#38bdf8', to: '#0284c7', mid: '#0ea5e9' },
 ];
 
-export const DEFAULT_ACCENT_ID = 'blue';
+export const DEFAULT_ACCENT_ID = 'monochrome';
 
 /**
  * App-specific brand identity colors (STRICTLY for Hub cards, logos, and branding).
@@ -117,79 +118,101 @@ const _accentCache = new Map<string, ResolvedAccent>();
 /**
  * Resolve any preset ID or custom hex code into complete semantic accent tokens.
  */
-export function resolveAccent(accentColor?: string): ResolvedAccent {
+export function resolveAccent(accentColor?: string, isLightMode?: boolean): ResolvedAccent {
   const input = (accentColor || DEFAULT_ACCENT_ID).trim();
-  const cached = _accentCache.get(input);
+  const isMonochrome = input.toLowerCase() === 'monochrome';
+  const cacheKey = isMonochrome ? `monochrome:${isLightMode ? 'light' : 'dark'}` : input;
+  const cached = _accentCache.get(cacheKey);
   if (cached) return cached;
 
   let result: ResolvedAccent;
 
-  // 1. Check if it's a known preset ID
-  const preset = ACCENT_PRESETS.find((p) => p.id.toLowerCase() === input.toLowerCase());
-  if (preset) {
-    const [r, g, b] = hexToRgb(preset.to);
-    const lum = calculateLuminance(r, g, b);
-    result = {
-      id: preset.id,
-      from: preset.from,
-      to: preset.to,
-      mid: preset.mid,
-      rgb: `${r}, ${g}, ${b}`,
-      contrast: lum > 0.55 ? '#09090b' : '#ffffff',
-      soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
-      subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
-      glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
-      border: `rgba(${r}, ${g}, ${b}, 0.35)`,
-      hover: lighten(preset.to, 0.15),
-      active: adjustBrightness(preset.to, 0.9),
-    };
-  } else {
-    // 2. Otherwise treat as a custom hex color
-    const baseHex = input.startsWith('#') ? input : `#${input}`;
-    if (!/^#[0-9A-Fa-f]{6}$/.test(baseHex)) {
-      // If not a valid 6-char hex, fallback to default blue
-      const defaultPreset = ACCENT_PRESETS[0];
-      const [r, g, b] = hexToRgb(defaultPreset.to);
+  // 1. Check if it's the monochrome preset
+  if (isMonochrome) {
+    if (isLightMode) {
       result = {
-        id: defaultPreset.id,
-        from: defaultPreset.from,
-        to: defaultPreset.to,
-        mid: defaultPreset.mid,
-        rgb: `${r}, ${g}, ${b}`,
+        id: 'monochrome',
+        from: '#18181b',
+        to: '#09090b',
+        mid: '#27272a',
+        rgb: '9, 9, 11',
         contrast: '#ffffff',
-        soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
-        subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
-        glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
-        border: `rgba(${r}, ${g}, ${b}, 0.35)`,
-        hover: lighten(defaultPreset.to, 0.15),
-        active: adjustBrightness(defaultPreset.to, 0.9),
+        soft: 'rgba(0, 0, 0, 0.08)',
+        subtle: 'rgba(0, 0, 0, 0.04)',
+        glow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        border: 'rgba(0, 0, 0, 0.18)',
+        hover: '#27272a',
+        active: '#000000',
       };
     } else {
-      const [r, g, b] = hexToRgb(baseHex);
-      const fromHex = lighten(baseHex, 0.28);
-      const midHex = lighten(baseHex, 0.12);
-      const lum = calculateLuminance(r, g, b);
-
       result = {
-        id: 'custom',
-        from: fromHex,
-        to: baseHex,
-        mid: midHex,
+        id: 'monochrome',
+        from: '#ffffff',
+        to: '#f4f4f5',
+        mid: '#e4e4e7',
+        rgb: '255, 255, 255',
+        contrast: '#09090b',
+        soft: 'rgba(255, 255, 255, 0.14)',
+        subtle: 'rgba(255, 255, 255, 0.07)',
+        glow: '0 4px 20px rgba(255, 255, 255, 0.2)',
+        border: 'rgba(255, 255, 255, 0.35)',
+        hover: '#ffffff',
+        active: '#e4e4e7',
+      };
+    }
+  } else {
+    // 2. Check if it's another known preset ID
+    const preset = ACCENT_PRESETS.find((p) => p.id.toLowerCase() === input.toLowerCase());
+    if (preset) {
+      const [r, g, b] = hexToRgb(preset.to);
+      const lum = calculateLuminance(r, g, b);
+      result = {
+        id: preset.id,
+        from: preset.from,
+        to: preset.to,
+        mid: preset.mid,
         rgb: `${r}, ${g}, ${b}`,
         contrast: lum > 0.55 ? '#09090b' : '#ffffff',
         soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
         subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
         glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
         border: `rgba(${r}, ${g}, ${b}, 0.35)`,
-        hover: lighten(baseHex, 0.15),
-        active: adjustBrightness(baseHex, 0.9),
+        hover: lighten(preset.to, 0.15),
+        active: adjustBrightness(preset.to, 0.9),
       };
+    } else {
+      // 3. Otherwise treat as a custom hex color
+      const baseHex = input.startsWith('#') ? input : `#${input}`;
+      if (!/^#[0-9A-Fa-f]{6}$/.test(baseHex)) {
+        // Fallback to monochrome default
+        result = resolveAccent('monochrome', isLightMode);
+      } else {
+        const [r, g, b] = hexToRgb(baseHex);
+        const fromHex = lighten(baseHex, 0.28);
+        const midHex = lighten(baseHex, 0.12);
+        const lum = calculateLuminance(r, g, b);
+
+        result = {
+          id: 'custom',
+          from: fromHex,
+          to: baseHex,
+          mid: midHex,
+          rgb: `${r}, ${g}, ${b}`,
+          contrast: lum > 0.55 ? '#09090b' : '#ffffff',
+          soft: `rgba(${r}, ${g}, ${b}, 0.14)`,
+          subtle: `rgba(${r}, ${g}, ${b}, 0.07)`,
+          glow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.28)`,
+          border: `rgba(${r}, ${g}, ${b}, 0.35)`,
+          hover: lighten(baseHex, 0.15),
+          active: adjustBrightness(baseHex, 0.9),
+        };
+      }
     }
   }
 
   if (_accentCache.size >= 256) {
     _accentCache.clear();
   }
-  _accentCache.set(input, result);
+  _accentCache.set(cacheKey, result);
   return result;
 }

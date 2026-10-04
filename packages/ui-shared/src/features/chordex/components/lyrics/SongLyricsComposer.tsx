@@ -209,7 +209,7 @@ export const SongLyricsComposer: React.FC<SongLyricsComposerProps> = ({
             outline: none !important;
             border: none !important;
             box-shadow: none !important;
-            caret-color: ${accent.from || '#2563EB'} !important;
+            caret-color: ${accent.from || '#ffffff'} !important;
             -webkit-tap-highlight-color: transparent !important;
           }
           .lyrics-composer-textarea:focus {
@@ -229,7 +229,7 @@ export const SongLyricsComposer: React.FC<SongLyricsComposerProps> = ({
             fontSize: '17px',
             lineHeight: 1.65,
             color: 'var(--c-text-primary, #ffffff)',
-            caretColor: accent.from || '#2563EB',
+            caretColor: accent.from || '#ffffff',
             outline: 'none',
             border: 'none',
             boxShadow: 'none',

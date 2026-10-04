@@ -24,7 +24,7 @@ export default function ElasticSlider({
   step = 0.01,
   value,
   onChange,
-  accentColor = 'var(--accent-from, #679cff)',
+  accentColor = 'var(--accent-from, #ffffff)',
   trackColor = 'var(--app-surface-high, rgba(128,128,128,0.22))',
   disabled = false,
   className,

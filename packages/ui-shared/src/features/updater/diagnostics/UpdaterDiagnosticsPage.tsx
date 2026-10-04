@@ -214,8 +214,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
     const combined = [
       ...jsLogs.map((l) => ({
         ...l,
-        tag: '[JS]',
-        color: '#679cff',
+        tag: '[JS]', color: 'var(--studio-accent, #ffffff)',
         level: l.message.toLowerCase().includes('error')
           ? 'ERROR'
           : l.message.toLowerCase().includes('debug')
@@ -431,7 +430,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
               style={{
                 fontSize: '18px',
                 fontWeight: 800,
-                color: 'var(--studio-accent-from, #679cff)',
+                color: 'var(--studio-accent-from, #ffffff)',
               }}
             >
               {APP_VERSION}
@@ -651,8 +650,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                             width: '38px',
                             height: '38px',
                             borderRadius: '50%',
-                            background: 'rgba(103,156,255,0.1)',
-                            color: '#679cff',
+                            background: 'color-mix(in srgb, var(--studio-accent, #ffffff) 10%, transparent)', color: 'var(--studio-accent, #ffffff)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -703,8 +701,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                             width: '38px',
                             height: '38px',
                             borderRadius: '50%',
-                            background: 'rgba(103,156,255,0.1)',
-                            color: '#679cff',
+                            background: 'color-mix(in srgb, var(--studio-accent, #ffffff) 10%, transparent)', color: 'var(--studio-accent, #ffffff)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -737,11 +734,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                       <button
                         onClick={() => applyUpdate('diagnostics_manual')}
                         style={{
-                          background: 'rgba(103, 156, 255, 0.15)',
-                          border: '1px solid rgba(103, 156, 255, 0.3)',
-                          padding: '16px',
-                          borderRadius: '12px',
-                          color: '#679cff',
+                          background: 'color-mix(in srgb, var(--studio-accent, #ffffff) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--studio-accent, #ffffff) 25%, transparent)', padding: '16px', borderRadius: '12px', color: 'var(--studio-accent, #ffffff)',
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
@@ -755,8 +748,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                             width: '38px',
                             height: '38px',
                             borderRadius: '50%',
-                            background: 'rgba(103,156,255,0.2)',
-                            color: '#679cff',
+                            background: 'color-mix(in srgb, var(--studio-accent, #ffffff) 18%, transparent)', color: 'var(--studio-accent, #ffffff)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -774,8 +766,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                             style={{
                               display: 'block',
                               fontWeight: 700,
-                              fontSize: '13px',
-                              color: '#679cff',
+                              fontSize: '13px', color: 'var(--studio-accent, #ffffff)',
                             }}
                           >
                             Apply Update
@@ -848,8 +839,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                                 padding: '4px 8px',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                background: logFilter === lvl ? '#679cff' : 'var(--app-surface)',
-                                color: logFilter === lvl ? '#ffffff' : 'var(--c-text-secondary)',
+                                background: logFilter === lvl ? 'var(--studio-accent, #ffffff)' : 'var(--app-surface)', color: logFilter === lvl ? 'var(--studio-accent-contrast, #09090b)' : 'var(--c-text-secondary)',
                                 border: logFilter === lvl ? 'none' : '1px solid var(--c-border)',
                                 transition: 'all 200ms ease',
                               }}
@@ -1202,9 +1192,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                           style={{
                             width: '32px',
                             height: '16px',
-                            background: updaterSimulation.simulateDownloadThrottling
-                              ? '#679cff'
-                              : 'var(--app-surface-low)',
+                            background: updaterSimulation.simulateDownloadThrottling ? 'var(--studio-accent, #ffffff)' : 'var(--app-surface-low)',
                             borderRadius: '9999px',
                             display: 'flex',
                             alignItems: 'center',
@@ -1414,8 +1402,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                               width: '8px',
                               height: '8px',
                               borderRadius: '50%',
-                              background: isDownloadingActive
-                                ? '#679cff'
+                              background: isDownloadingActive ? 'var(--studio-accent, #ffffff)'
                                 : isDownloadingCompleted
                                   ? '#10b981'
                                   : 'var(--c-text-secondary)',
@@ -1428,8 +1415,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                               fontSize: '13px',
                               fontWeight: 700,
                               margin: 0,
-                              color: isDownloadingActive
-                                ? '#679cff'
+                              color: isDownloadingActive ? 'var(--studio-accent, #ffffff)'
                                 : isDownloadingCompleted
                                   ? '#10b981'
                                   : 'var(--c-text-primary)',
@@ -1534,7 +1520,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                       >
                         <p
                           style={{
-                            color: 'var(--studio-accent-from, #679cff)',
+                            color: 'var(--studio-accent-from, #ffffff)',
                             margin: '0 0 8px 0',
                           }}
                         >
@@ -1559,7 +1545,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                         />
                         <p
                           style={{
-                            color: 'var(--studio-accent-from, #679cff)',
+                            color: 'var(--studio-accent-from, #ffffff)',
                             margin: '0 0 8px 0',
                           }}
                         >
@@ -1567,7 +1553,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
                         </p>
                         <p style={{ margin: '0 0 4px 0 16px' }}>
                           • current_state:{' '}
-                          <span style={{ color: 'var(--studio-accent-from, #679cff)' }}>
+                          <span style={{ color: 'var(--studio-accent-from, #ffffff)' }}>
                             {updateState}
                           </span>
                         </p>

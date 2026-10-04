@@ -20,7 +20,7 @@ export const SetlistSongPickerModal: React.FC<SetlistSongPickerModalProps> = ({
   sections,
   targetSectionId,
   onAddSongs,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
 }) => {
   const [selectedSectionId, setSelectedSectionId] = useState(targetSectionId);
   const [searchQuery, setSearchQuery] = useState('');

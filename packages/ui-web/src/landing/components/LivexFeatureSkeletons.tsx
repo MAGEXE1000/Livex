@@ -29,7 +29,7 @@ export function ChordexFeatureSkeleton() {
           >
             {tab}
             {i === 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-white animate-ping" />
             )}
           </div>
         ))}
@@ -309,7 +309,7 @@ export function DrumexFeatureSkeleton() {
             >
               {tab}
               {i === 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-white animate-ping" />
               )}
             </div>
           ))}
@@ -322,7 +322,7 @@ export function DrumexFeatureSkeleton() {
                 key={b}
                 animate={b === 1 ? { opacity: [1, 0.3, 1], scale: [1.2, 0.9, 1.2] } : { opacity: 0.4 }}
                 transition={{ duration: 0.5, repeat: Infinity, ease: 'easeInOut' }}
-                className={`w-1 h-1 rounded-full ${b === 1 ? 'bg-blue-400' : 'bg-zinc-600'}`}
+                className={`w-1 h-1 rounded-full ${b === 1 ? 'bg-white' : 'bg-zinc-600'}`}
               />
             ))}
           </div>
@@ -338,7 +338,7 @@ export function DrumexFeatureSkeleton() {
         <motion.div
           animate={{ left: ['18%', '100%'] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-0 bottom-0 w-[1.5px] bg-blue-500/60 shadow-[0_0_8px_rgba(59,130,246,0.6)] z-10 pointer-events-none"
+          className="absolute top-0 bottom-0 w-[1.5px] bg-white/60 shadow-[0_0_8px_rgba(59,130,246,0.6)] z-10 pointer-events-none"
         />
 
         {insts.map((inst, rowIdx) => (
@@ -367,7 +367,7 @@ export function DrumexFeatureSkeleton() {
                       className={`w-1.5 h-1.5 rounded-sm transition-all ${
                         active === 1
                           ? rowIdx === 2
-                            ? 'bg-blue-400 shadow-[0_0_4px_rgba(96,165,250,0.5)]'
+                            ? 'bg-white shadow-[0_0_4px_rgba(96,165,250,0.5)]'
                             : 'bg-zinc-200 shadow-[0_0_4px_rgba(255,255,255,0.4)]'
                           : isGroupQuarter
                             ? 'bg-zinc-850/60 border border-zinc-800/80'
@@ -417,7 +417,7 @@ export function VocalexFeatureSkeleton() {
             >
               {tab}
               {i === 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-white animate-ping" />
               )}
             </div>
           ))}
@@ -475,13 +475,13 @@ export function VocalexFeatureSkeleton() {
                 key={n}
                 className={`w-full flex items-center justify-between border-b ${
                   n === 'C#4'
-                    ? 'border-blue-500/30 text-blue-400 font-bold'
+                    ? 'border-white/30 text-white font-bold'
                     : 'border-zinc-900/40 text-zinc-600'
                 } pb-0.5 text-[6px] font-mono`}
               >
                 <span>{n}</span>
                 {n === 'C#4' && (
-                  <span className="text-[5.5px] bg-blue-500/20 text-blue-300 px-1 rounded uppercase">
+                  <span className="text-[5.5px] bg-white/20 text-blue-300 px-1 rounded uppercase">
                     Target
                   </span>
                 )}

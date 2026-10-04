@@ -314,7 +314,7 @@ export function SidebarMenuButton({
           className="absolute left-1 w-1 h-5 rounded-full"
           style={{
             background:
-              'linear-gradient(135deg, var(--studio-accent-from, #679cff), var(--studio-accent-to, #007aff))',
+              'linear-gradient(135deg, var(--studio-accent-from, #ffffff), var(--studio-accent-to, #f4f4f5))',
           }}
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
         />

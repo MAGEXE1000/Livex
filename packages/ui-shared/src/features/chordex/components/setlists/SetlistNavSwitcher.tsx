@@ -14,7 +14,7 @@ export const SetlistNavSwitcher: React.FC<SetlistNavSwitcherProps> = ({
   onTabChange,
   songsCount,
   setlistsCount,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
 }) => {
   return (
     <div

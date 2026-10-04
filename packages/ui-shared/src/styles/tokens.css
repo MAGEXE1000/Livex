@@ -142,7 +142,7 @@
   box-shadow: var(--shadow-surface-soft);
 }
 .shadow-fret-dot {
-  box-shadow: 0 0 10px 1px var(--studio-accent-glow, rgba(37, 99, 235, 0.45));
+  box-shadow: 0 0 10px 1px var(--studio-accent-glow, rgba(255, 255, 255, 0.45));
 }
 .fretboard-recess {
   background-color: var(--c-surface-lowest);
@@ -173,15 +173,15 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: var(--c-accent-from, #679cff);
+  background-color: var(--c-accent-from, #ffffff);
   box-shadow:
-    0 0 8px var(--c-accent-from, #679cff),
+    0 0 8px var(--c-accent-from, #ffffff),
     0 2px 4px rgba(0, 0, 0, 0.5);
   position: absolute;
   transform: translate(-50%, -50%);
 }
 :root.light .finger-dot {
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--c-accent-from, #2563eb) 40%, transparent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--c-accent-from, #09090b) 40%, transparent);
 }
 
 @font-face {
@@ -290,19 +290,25 @@
 }
 
 :root {
-  --studio-accent-from: var(--accent-from, #679cff);
-  --studio-accent-to: var(--accent-to, #007aff);
-  --studio-accent-mid: var(--accent-mid, #4d8ef7);
-  --studio-accent: var(--accent-to, #007aff);
-  --studio-accent-rgb: var(--accent-to-rgb, 0, 122, 255);
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
+
+  --studio-accent-from: var(--accent-from, #ffffff);
+  --studio-accent-to: var(--accent-to, #f4f4f5);
+  --studio-accent-mid: var(--accent-mid, #e4e4e7);
+  --studio-accent: var(--accent-to, #ffffff);
+  --studio-accent-rgb: var(--accent-to-rgb, 255, 255, 255);
+  --studio-accent-contrast: #09090b;
   --studio-accent-gradient: linear-gradient(
     135deg,
     var(--studio-accent-from),
     var(--studio-accent-to)
   );
   --studio-accent-soft: color-mix(in srgb, var(--studio-accent-to) 12%, transparent);
-  --studio-accent-glow: 0 4px 20px color-mix(in srgb, var(--studio-accent-to) 25%, transparent);
-  --studio-accent-border: color-mix(in srgb, var(--studio-accent-to) 30%, transparent);
+  --studio-accent-glow: 0 4px 20px color-mix(in srgb, var(--studio-accent-to) 20%, transparent);
+  --studio-accent-border: color-mix(in srgb, var(--studio-accent-to) 25%, transparent);
 
   /* ── Canonical Livex Accent Aliases ── */
   --livex-accent-from: var(--studio-accent-from);
@@ -315,9 +321,30 @@
   --livex-accent-glow: var(--studio-accent-glow);
   --livex-accent-border: var(--studio-accent-border);
 
-  --app-bg: var(--c-background, #141414);
-  --app-surface-lowest: var(--c-surface-lowest, #101010);
-  --app-surface-low: var(--c-surface-low, #161616);
+  --app-bg: var(--c-background, #000000);
+  --app-surface-lowest: var(--c-surface-lowest, #09090b);
+  --app-surface-low: var(--c-surface-low, #121215);
+}
+
+.dark, [data-theme="dark"], [data-theme="amoled"] {
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
+}
+
+.light, [data-theme="light"] {
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 9%;
+  --studio-accent-from: var(--accent-from, #18181b);
+  --studio-accent-to: var(--accent-to, #09090b);
+  --studio-accent-mid: var(--accent-mid, #27272a);
+  --studio-accent: var(--accent-to, #09090b);
+  --studio-accent-rgb: var(--accent-to-rgb, 9, 9, 11);
+  --studio-accent-contrast: #ffffff;
+}
   --app-surface: var(--c-surface-mid, #1e1e1e);
   --app-surface-high: var(--c-surface-high, #262626);
   --app-surface-highest: var(--c-surface-highest, #2e2e2e);
@@ -1099,7 +1126,7 @@ html[data-perf-mode='on'] *::after {
 
   /* ===== Keyboard Accessible Focus-Visible Indicator ===== */
   :focus-visible:not(.no-focus-ring):not([data-no-focus-ring]) {
-    outline: 2px solid var(--c-accent-from, #2563eb);
+    outline: 1px solid rgba(255, 255, 255, 0.25);
     outline-offset: 2px;
   }
 
@@ -1109,7 +1136,7 @@ html[data-perf-mode='on'] *::after {
   input:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
   select:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]),
   textarea:focus-visible:not(.no-focus-ring):not([data-no-focus-ring]) {
-    outline: 2px solid var(--c-accent-from, #2563eb);
+    outline: 1px solid rgba(255, 255, 255, 0.25);
     outline-offset: 2px;
   }
 
@@ -1250,7 +1277,7 @@ html[data-perf-mode='on'] *::after {
     -webkit-appearance: none;
     height: 18px;
     width: 18px;
-    background: var(--accent-from, #679cff);
+    background: var(--accent-from, #ffffff);
     border-radius: 50%;
     margin-top: -7px;
     transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1261,7 +1288,7 @@ html[data-perf-mode='on'] *::after {
   input[type='range']::-moz-range-thumb {
     height: 18px;
     width: 18px;
-    background: var(--accent-from, #679cff);
+    background: var(--accent-from, #ffffff);
     border: none;
     border-radius: 50%;
     transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2157,11 +2184,6 @@ html.light .groovex-root button[style*='rgba(255,255,255,0.08)']:hover {
   background: var(--gx-surface-high) !important;
 }
 
-html.light .groovex-root button[style*='rgba(37,99,235,0.15)'] {
-  background: rgba(37, 99, 235, 0.12) !important;
-  border-color: rgba(37, 99, 235, 0.35) !important;
-  color: #2563eb !important;
-}
 
 html.light .groovex-root div[style*='background:rgba(255,255,255,0.03)'],
 html.light .groovex-root div[style*='background: rgba(255,255,255,0.03)'] {
@@ -2415,9 +2437,9 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
   padding: 1px;
   background: conic-gradient(
     from var(--gb-angle),
-    color-mix(in srgb, var(--accent-from, #679cff) var(--gb-mix, 38%), transparent),
-    color-mix(in srgb, var(--accent-to, #679cff) var(--gb-mix, 38%), transparent),
-    color-mix(in srgb, var(--accent-from, #679cff) var(--gb-mix, 38%), transparent)
+    color-mix(in srgb, var(--accent-from, #ffffff) var(--gb-mix, 38%), transparent),
+    color-mix(in srgb, var(--accent-to, #ffffff) var(--gb-mix, 38%), transparent),
+    color-mix(in srgb, var(--accent-from, #ffffff) var(--gb-mix, 38%), transparent)
   );
   animation: gb-spin var(--gb-dur, 14s) linear infinite;
 }
@@ -2437,9 +2459,9 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
   padding: 1px;
   background: conic-gradient(
     from var(--gb-angle),
-    color-mix(in srgb, var(--accent-from, #679cff) var(--gb-mix, 45%), transparent),
-    color-mix(in srgb, var(--accent-to, #679cff) var(--gb-mix, 45%), transparent),
-    color-mix(in srgb, var(--accent-from, #679cff) var(--gb-mix, 45%), transparent)
+    color-mix(in srgb, var(--accent-from, #ffffff) var(--gb-mix, 45%), transparent),
+    color-mix(in srgb, var(--accent-to, #ffffff) var(--gb-mix, 45%), transparent),
+    color-mix(in srgb, var(--accent-from, #ffffff) var(--gb-mix, 45%), transparent)
   );
   mask:
     linear-gradient(#fff 0 0) content-box,
@@ -2751,7 +2773,7 @@ html.light .groovex-root button[style*='background: rgba(239,68,68,0.15)'] {
   bottom: 0;
   left: -30%;
   width: 30%;
-  background: var(--accent-from, var(--color-primary-container, #007aff));
+  background: var(--accent-from, var(--color-primary-container, #ffffff));
   animation: studio-accent-loader-anim 1.5s infinite ease-in-out;
 }
 
@@ -3734,15 +3756,11 @@ body.amoled .sc-morphing-trigger,
 
 /* Button Variants */
 .button--primary {
-  background: linear-gradient(
-    135deg,
-    var(--c-accent-from, #2563eb),
-    var(--c-accent-to, var(--c-accent-from, #2563eb))
-  );
-  color: #ffffff;
+  background: var(--studio-accent, #ffffff);
+  color: var(--studio-accent-contrast, #09090b);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 4px 14px var(--c-accent-from, rgba(37, 99, 235, 0.35)),
+    0 4px 14px rgba(255, 255, 255, 0.15),
     inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 

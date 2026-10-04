@@ -292,7 +292,7 @@ export const DeveloperInspectorPanel: React.FC = () => {
               borderRadius: '999px',
               border: isLiveSelecting ? 'none' : '1px solid var(--c-border)',
               background: isLiveSelecting
-                ? 'var(--studio-accent-from, #2563eb)'
+                ? 'var(--studio-accent-from, #ffffff)'
                 : 'var(--app-surface-high, var(--app-surface))',
               color: isLiveSelecting ? '#ffffff' : 'var(--c-text-primary)',
               fontSize: '11px',
@@ -551,13 +551,13 @@ export const DeveloperInspectorPanel: React.FC = () => {
                 activeTab === t.id ? 'var(--app-surface-high, var(--app-surface))' : 'transparent',
               color:
                 activeTab === t.id
-                  ? 'var(--studio-accent-from, #2563eb)'
+                  ? 'var(--studio-accent-from, #ffffff)'
                   : 'var(--c-text-secondary)',
               fontWeight: activeTab === t.id ? 800 : 600,
               fontSize: '11px',
               borderBottom:
                 activeTab === t.id
-                  ? '2px solid var(--studio-accent-from, #2563eb)'
+                  ? '2px solid var(--studio-accent-from, #ffffff)'
                   : '2px solid transparent',
               cursor: 'pointer',
               display: 'flex',
@@ -590,7 +590,7 @@ export const DeveloperInspectorPanel: React.FC = () => {
           <div
             style={{
               padding: '8px 12px',
-              background: 'var(--studio-accent-from, #2563eb)',
+              background: 'var(--studio-accent-from, #ffffff)',
               color: '#ffffff',
               borderRadius: '8px',
               marginBottom: 12,
@@ -680,7 +680,7 @@ export const DeveloperInspectorPanel: React.FC = () => {
                           : 'rgba(59, 130, 246, 0.15)',
                         color: selectedFiberInfo?.memoized
                           ? '#c084fc'
-                          : 'var(--studio-accent-from, #679cff)',
+                          : 'var(--studio-accent-from, #ffffff)',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -1234,7 +1234,7 @@ export const DeveloperInspectorPanel: React.FC = () => {
                     border: activeFilter === p.id ? 'none' : '1px solid var(--c-border)',
                     background:
                       activeFilter === p.id
-                        ? 'var(--studio-accent-from, #2563eb)'
+                        ? 'var(--studio-accent-from, #ffffff)'
                         : 'var(--app-surface-high, var(--app-surface))',
                     color: activeFilter === p.id ? '#ffffff' : 'var(--c-text-secondary)',
                     fontSize: '10px',
@@ -1343,7 +1343,7 @@ export const DeveloperInspectorPanel: React.FC = () => {
                       border: gridOverlay === item.id ? 'none' : '1px solid var(--c-border)',
                       background:
                         gridOverlay === item.id
-                          ? 'var(--studio-accent-from, #2563eb)'
+                          ? 'var(--studio-accent-from, #ffffff)'
                           : 'var(--app-surface-high, var(--app-surface))',
                       color: gridOverlay === item.id ? '#ffffff' : 'var(--c-text-secondary)',
                       fontWeight: 700,
@@ -1442,7 +1442,7 @@ const EmptyInspectorState: React.FC<{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--studio-accent-from, #2563eb)',
+            color: 'var(--studio-accent-from, #ffffff)',
           }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
@@ -1480,7 +1480,7 @@ const EmptyInspectorState: React.FC<{
             padding: '8px 16px',
             borderRadius: '8px',
             border: 'none',
-            background: 'var(--studio-accent-from, #2563eb)',
+            background: 'var(--studio-accent-from, #ffffff)',
             color: '#ffffff',
             fontSize: '11.5px',
             fontWeight: 800,
@@ -1628,7 +1628,7 @@ const TreeNodeRow: React.FC<{
               style={{
                 fontSize: '8.5px',
                 background: 'rgba(59,130,246,0.15)',
-                color: 'var(--studio-accent-from, #679cff)',
+                color: 'var(--studio-accent-from, #ffffff)',
                 padding: '1px 4px',
                 borderRadius: 3,
                 fontWeight: 700,

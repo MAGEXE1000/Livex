@@ -271,7 +271,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   return (
     <div
       data-testid="stage-export-pdf-view"
-      className="w-full h-full relative overflow-hidden flex flex-col bg-transparent selection:bg-blue-500 selection:text-white"
+      className="w-full h-full relative overflow-hidden flex flex-col bg-transparent selection:bg-black/20 selection:text-black dark:selection:bg-white/20 dark:selection:text-white"
       style={{
         backgroundColor: bgMain,
         color: textSecondary,
@@ -310,7 +310,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
               maxWidth={340}
               title={isSpanish ? 'Secciones del Documento' : 'Document Sections'}
               subtitle={isSpanish ? `${activeSectionsCount} de 7 Activas` : `${activeSectionsCount} of 7 Active`}
-              accentColor="#2563eb"
+              accentColor={isLight ? '#000000' : '#ffffff'}
               customTrigger={({ triggerProps }) => (
                 <motion.button
                   {...triggerProps}
@@ -326,14 +326,20 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: isSectionsPopoverOpen
-                      ? '#2563eb'
+                      ? isLight
+                        ? '#000000'
+                        : '#ffffff'
                       : isLight
                         ? 'rgba(0, 0, 0, 0.04)'
                         : 'rgba(255, 255, 255, 0.06)',
                     border: isLight
                       ? '1px solid rgba(0, 0, 0, 0.05)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
-                    color: isSectionsPopoverOpen ? '#ffffff' : textPrimary,
+                    color: isSectionsPopoverOpen
+                      ? isLight
+                        ? '#ffffff'
+                        : '#000000'
+                      : textPrimary,
                     cursor: 'pointer',
                     outline: 'none',
                     WebkitTapHighlightColor: 'transparent',
@@ -361,7 +367,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     <line x1="17" y1="16" x2="23" y2="16" />
                   </svg>
                   {activeSectionsCount < 7 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-black dark:bg-white text-white dark:text-black text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
                       {activeSectionsCount}
                     </span>
                   )}
@@ -397,7 +403,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                   ? `${activeSectionsCount} de 7 Activas`
                   : `${activeSectionsCount} of 7 Active`
               }
-              accentColor="#2563eb"
+              accentColor={isLight ? '#000000' : '#ffffff'}
               customTrigger={({ triggerProps }) => (
                 <motion.button
                   {...triggerProps}
@@ -418,14 +424,20 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: isExportMenuOpen
-                      ? '#2563eb'
+                      ? isLight
+                        ? '#000000'
+                        : '#ffffff'
                       : isLight
                         ? 'rgba(0, 0, 0, 0.04)'
                         : 'rgba(255, 255, 255, 0.06)',
                     border: isLight
                       ? '1px solid rgba(0, 0, 0, 0.05)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
-                    color: isExportMenuOpen ? '#ffffff' : textPrimary,
+                    color: isExportMenuOpen
+                      ? isLight
+                        ? '#ffffff'
+                        : '#000000'
+                      : textPrimary,
                     cursor: isExportBusy ? 'not-allowed' : 'pointer',
                     opacity: isExportBusy ? 0.6 : 1,
                     outline: 'none',
@@ -502,14 +514,14 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
           <section className="space-y-3 pt-2" data-purpose="production-identity">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] font-mono font-bold tracking-wider text-blue-500 uppercase">
+                <div className="text-[10px] font-mono font-bold tracking-wider text-black dark:text-white uppercase">
                   {isSpanish
                     ? 'Documento de Producción de Escenario en Vivo'
                     : 'Live Stage Production Document'}
                 </div>
                 <span
                   data-testid="production-document-id"
-                  className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/10 text-blue-500 uppercase tracking-widest"
+                  className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10 text-black dark:text-white uppercase tracking-widest"
                 >
                   {data.documentId}
                 </span>
@@ -584,7 +596,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                 backgroundColor: isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
               }}
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-500">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 text-black dark:text-white">
                 <svg
                   width="20"
                   height="20"
@@ -611,7 +623,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSectionsPopoverOpen(true)}
-                className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-all cursor-pointer"
+                className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white dark:text-black bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all cursor-pointer"
               >
                 {isSpanish ? 'Configurar Secciones' : 'Configure Sections'}
               </button>
@@ -627,7 +639,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.stagePlot} //
                     </span>
                     {isSpanish ? 'Plano de Escenario' : 'Stage Plot'}
@@ -868,9 +880,11 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                               data-testid={`preview-element-ch-${idx + 1}`}
                               className="absolute -top-1.5 -right-2 px-1 py-0.5 rounded text-[7.5px] font-mono font-extrabold leading-none select-none z-20 pointer-events-none"
                               style={{
-                                backgroundColor: '#2563eb',
-                                color: '#ffffff',
-                                border: '1px solid rgba(255, 255, 255, 0.4)',
+                                backgroundColor: isLight ? '#000000' : '#ffffff',
+                                color: isLight ? '#ffffff' : '#000000',
+                                border: isLight
+                                  ? '1px solid rgba(0, 0, 0, 0.2)'
+                                  : '1px solid rgba(255, 255, 255, 0.4)',
                                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
                                 letterSpacing: '-0.02em',
                               }}
@@ -923,7 +937,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.inputPatch} //
                     </span>
                     {isSpanish
@@ -1039,7 +1053,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.technicalRequirements} //
                     </span>
                     {isSpanish ? 'Requerimientos Técnicos' : 'Technical Requirements'}
@@ -1058,14 +1072,14 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                   className="p-3.5 rounded-lg border flex flex-col gap-1"
                   style={{
                     backgroundColor: isLight
-                      ? 'rgba(59, 130, 246, 0.03)'
-                      : 'rgba(59, 130, 246, 0.05)',
-                    borderColor: isLight ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.25)',
+                      ? 'rgba(0, 0, 0, 0.03)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                    borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)',
                     borderLeftWidth: '3px',
-                    borderLeftColor: '#3b82f6',
+                    borderLeftColor: isLight ? '#000000' : '#ffffff',
                   }}
                 >
-                  <div className="text-[9px] font-mono tracking-wider font-bold uppercase text-blue-500">
+                  <div className="text-[9px] font-mono tracking-wider font-bold uppercase text-black dark:text-white">
                     {isSpanish ? 'Protocolo FOH' : 'FOH Protocol'}
                   </div>
                   <div className="text-[12px] font-bold" style={{ color: textPrimary }}>
@@ -1125,7 +1139,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.technicalNotes} //
                     </span>
                     {isSpanish ? 'Notas de Producción y Técnicas' : 'Production & Technical Notes'}
@@ -1158,7 +1172,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.setlist} //
                     </span>
                     {isSpanish ? 'Orden de Canciones del Setlist' : 'Setlist Running Order'}
@@ -1228,7 +1242,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.gear} //
                     </span>
                     {isSpanish ? 'Equipamiento / Lista de Carga' : 'Gear / Load-In Checklist'}
@@ -1304,7 +1318,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
                     className="text-[14px] font-extrabold tracking-tight uppercase"
                     style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
                   >
-                    <span className="text-blue-500 font-mono text-[11px] mr-1.5">
+                    <span className="text-black dark:text-white font-mono text-[11px] mr-1.5">
                       {sectionNumberMap.bandCrew} //
                     </span>
                     {isSpanish ? 'Lista de Banda y Equipo' : 'Band & Crew Roster'}

@@ -78,13 +78,13 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
             style={{
-              background: 'var(--c-accent-soft, var(--studio-accent-soft, rgba(0, 122, 255, 0.14)))',
-              border: '1px solid var(--c-accent-border, var(--studio-accent-border, rgba(0, 122, 255, 0.35)))',
+              background: 'var(--c-accent-soft, var(--studio-accent-soft, rgba(255, 255, 255, 0.12)))',
+              border: '1px solid var(--c-accent-border, var(--studio-accent-border, rgba(255, 255, 255, 0.25)))',
             }}
           >
             <span
               className="material-symbols-outlined text-[16px]"
-              style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+              style={{ color: 'var(--c-accent-mid, var(--studio-accent, #ffffff))' }}
             >
               history
             </span>
@@ -212,17 +212,17 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                 data-testid={`history-item-${entry.index}`}
                 className="w-full flex items-center justify-between p-3 rounded-2xl transition-all"
                 style={{
-                  background: 'var(--c-accent-soft, var(--studio-accent-soft, rgba(0, 122, 255, 0.12)))',
-                  border: '1.5px solid var(--c-accent-to, var(--studio-accent, #007aff))',
-                  boxShadow: 'var(--c-accent-glow, var(--studio-accent-glow, 0 0 16px rgba(0, 122, 255, 0.2)))',
+                  background: 'var(--c-accent-soft, var(--studio-accent-soft, rgba(255, 255, 255, 0.12)))',
+                  border: '1.5px solid var(--c-accent-to, var(--studio-accent, #ffffff))',
+                  boxShadow: 'var(--c-accent-glow, var(--studio-accent-glow, 0 0 16px rgba(255, 255, 255, 0.2)))',
                 }}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{
-                      background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
-                      color: 'var(--studio-accent-contrast, #ffffff)',
+                      background: 'var(--c-accent-to, var(--studio-accent, #ffffff))',
+                      color: 'var(--studio-accent-contrast, #09090b)',
                     }}
                   >
                     <span className="material-symbols-outlined text-[20px]">flag</span>
@@ -232,8 +232,8 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                       <span
                         className="text-[10px] font-extrabold tracking-wider uppercase px-1.5 py-0.5 rounded"
                         style={{
-                          background: 'var(--c-accent-to, var(--studio-accent, #007aff))',
-                          color: 'var(--studio-accent-contrast, #ffffff)',
+                          background: 'var(--c-accent-to, var(--studio-accent, #ffffff))',
+                          color: 'var(--studio-accent-contrast, #09090b)',
                         }}
                       >
                         #1
@@ -241,11 +241,11 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                       <span
                         data-testid="stagex-history-now-badge"
                         className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
-                        style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+                        style={{ color: 'var(--c-accent-mid, var(--studio-accent, #ffffff))' }}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full animate-pulse"
-                          style={{ background: 'var(--c-accent-to, var(--studio-accent, #007aff))' }}
+                          style={{ background: 'var(--c-accent-to, var(--studio-accent, #ffffff))' }}
                         />
                         {isSpanish ? 'ESTADO ACTUAL' : 'CURRENT STATE'}
                       </span>
@@ -311,7 +311,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                   <span
                     className="material-symbols-outlined text-[13px] flex-shrink-0 select-none"
                     style={{
-                      color: isPast || isCurrent ? 'var(--c-accent-to, var(--studio-accent, #007aff))' : 'var(--c-text-muted)',
+                      color: isPast || isCurrent ? 'var(--c-accent-to, var(--studio-accent, #ffffff))' : 'var(--c-text-muted)',
                       opacity: isPast || isCurrent ? 0.7 : 0.3,
                     }}
                     aria-hidden="true"
@@ -329,7 +329,7 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                     width: '148px',
                     height: '76px',
                     background: isCurrent
-                      ? 'var(--c-accent-soft, var(--studio-accent-soft, rgba(0, 122, 255, 0.14)))'
+                      ? 'var(--c-accent-soft, var(--studio-accent-soft, rgba(255, 255, 255, 0.12)))'
                       : isFuture
                         ? isLight
                           ? 'rgba(0, 0, 0, 0.015)'
@@ -338,12 +338,12 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                           ? 'rgba(0, 0, 0, 0.03)'
                           : 'rgba(255, 255, 255, 0.04)',
                     border: isCurrent
-                      ? '1.5px solid var(--c-accent-to, var(--studio-accent, #007aff))'
+                      ? '1.5px solid var(--c-accent-to, var(--studio-accent, #ffffff))'
                       : isFuture
                         ? '1px dashed var(--c-border)'
                         : '1px solid var(--c-border)',
                     boxShadow: isCurrent
-                      ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 0 12px rgba(0, 122, 255, 0.25)))'
+                      ? 'var(--c-accent-glow, var(--studio-accent-glow, 0 0 12px rgba(255, 255, 255, 0.25)))'
                       : 'none',
                     opacity: isFuture ? 0.65 : 1,
                     color: 'var(--c-text-primary)',
@@ -356,10 +356,10 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                       className="text-[9px] font-extrabold tracking-wider uppercase px-1.5 py-0.2 rounded"
                       style={{
                         background: isCurrent
-                          ? 'var(--c-accent-to, var(--studio-accent, #007aff))'
+                          ? 'var(--c-accent-to, var(--studio-accent, #ffffff))'
                           : 'var(--app-surface-low)',
                         color: isCurrent
-                          ? 'var(--studio-accent-contrast, #ffffff)'
+                          ? 'var(--studio-accent-contrast, #09090b)'
                           : 'var(--c-text-secondary)',
                       }}
                     >
@@ -370,11 +370,11 @@ export const StageHistorySurface: React.FC<StageHistorySurfaceProps> = ({
                       <span
                         data-testid="stagex-history-now-badge"
                         className="text-[8.5px] font-black uppercase tracking-wider flex items-center gap-0.5"
-                        style={{ color: 'var(--c-accent-mid, var(--studio-accent, #007aff))' }}
+                        style={{ color: 'var(--c-accent-mid, var(--studio-accent, #ffffff))' }}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full animate-pulse"
-                          style={{ background: 'var(--c-accent-to, var(--studio-accent, #007aff))' }}
+                          style={{ background: 'var(--c-accent-to, var(--studio-accent, #ffffff))' }}
                         />
                         {isSpanish ? 'ACTUAL' : 'NOW'}
                       </span>

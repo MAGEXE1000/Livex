@@ -131,21 +131,20 @@ export const IosSearchBar = forwardRef<IosSearchBarHandle, IosSearchBarProps>(
           className={cn(
             'relative flex-1 flex items-center h-[44px] px-3.5 rounded-full border transition-all duration-200 backdrop-blur-md',
             isFocused
-              ? 'shadow-sm'
-              : 'hover:border-white/20'
+              ? 'border-white/25 shadow-sm'
+              : 'border-white/10 hover:border-white/20'
           )}
           style={{
             backgroundColor: 'var(--surface-container-low, rgba(255, 255, 255, 0.08))',
-            borderColor: isFocused ? activeAccent : 'var(--c-border, rgba(255, 255, 255, 0.12))',
-            boxShadow: isFocused ? `0 0 0 1px ${activeAccent}` : 'none',
+            borderColor: isFocused
+              ? (accent ? activeAccent : 'rgba(255, 255, 255, 0.25)')
+              : 'var(--c-border, rgba(255, 255, 255, 0.1))',
+            boxShadow: isFocused && accent ? `0 0 0 1px ${activeAccent}` : 'none',
           }}
         >
           {/* Magnifying Glass Icon */}
           <Search
-            className="w-4 h-4 shrink-0 transition-colors pointer-events-none mr-2.5"
-            style={{
-              color: isFocused ? activeAccent : 'var(--c-text-muted, #94a3b8)',
-            }}
+            className="w-4 h-4 shrink-0 transition-colors pointer-events-none mr-2.5 text-neutral-500"
             aria-hidden="true"
           />
 
@@ -203,11 +202,7 @@ export const IosSearchBar = forwardRef<IosSearchBarHandle, IosSearchBarProps>(
                 className="shrink-0 -mr-2 w-[44px] h-[44px] flex items-center justify-center outline-none cursor-pointer touch-manipulation focus-visible:ring-1 focus-visible:ring-white rounded-full"
               >
                 <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-                    color: 'var(--c-text-muted, #94a3b8)',
-                  }}
+                  className="w-5 h-5 rounded-full flex items-center justify-center transition-colors bg-white/10 text-neutral-500 hover:text-neutral-300"
                 >
                   <X className="w-3.5 h-3.5" aria-hidden="true" />
                 </span>
@@ -234,10 +229,11 @@ export const IosSearchBar = forwardRef<IosSearchBarHandle, IosSearchBarProps>(
                 }}
                 onClick={handleCancel}
                 aria-label={cancelText}
-                className="h-[44px] px-2 flex items-center justify-center text-sm font-medium transition-opacity active:opacity-60 cursor-pointer touch-manipulation whitespace-nowrap outline-none"
-                style={{
-                  color: activeAccent,
-                }}
+                className={cn(
+                  "h-[44px] px-2 flex items-center justify-center text-sm font-medium transition-colors active:opacity-60 cursor-pointer touch-manipulation whitespace-nowrap outline-none",
+                  accent ? "" : "text-neutral-400 hover:text-white dark:text-neutral-300"
+                )}
+                style={accent ? { color: activeAccent } : undefined}
               >
                 {cancelText}
               </button>

@@ -6,6 +6,7 @@ import {
   type MetronomeAccentType,
   getBeatsPerMeasure,
   SOUND_LABELS,
+  useSettingsStore,
 } from '@workspace/livex-core';
 
 export type LiveCountdownMode = 'off' | '1bar' | '2bars' | '3s' | '5s';
@@ -13,7 +14,7 @@ export type LiveCountdownMode = 'off' | '1bar' | '2bars' | '3s' | '5s';
 export interface LiveTempoMorphPopupProps {
   bpm: number;
   onBpmChange: (newBpm: number) => void;
-  accent: { from: string; to: string; mid?: string };
+  accent: { from: string; to: string; mid?: string; id?: string; contrast?: string };
   timeSignature?: MetronomeTimeSignature;
   onTimeSignatureChange?: (sig: MetronomeTimeSignature) => void;
   subdivision?: MetronomeSubdivision;
@@ -72,6 +73,11 @@ export function LiveTempoMorphPopup({
   onMetronomeSoundChange,
   onClose,
 }: LiveTempoMorphPopupProps) {
+  const isLightMode = useSettingsStore((s) => s.settings.theme === 'light');
+  const isCustomAccent = Boolean((accent as any)?.id && (accent as any).id !== 'monochrome');
+  const activePillBg = isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff');
+  const activePillColor = isCustomAccent ? ((accent as any)?.contrast || '#ffffff') : (isLightMode ? '#ffffff' : '#000000');
+
   const [bpmInputVal, setBpmInputVal] = useState(() => String(bpm));
   const [isSoundPickerOpen, setIsSoundPickerOpen] = useState(false);
   const soundPickerRef = useRef<HTMLDivElement | null>(null);
@@ -358,9 +364,9 @@ export function LiveTempoMorphPopup({
                 height: '32px',
                 padding: '0 12px',
                 borderRadius: '10px',
-                border: `1.5px solid ${isTapActive ? accent.from : 'rgba(255,255,255,0.14)'}`,
-                background: isTapActive ? `${accent.from}44` : 'rgba(255,255,255,0.06)',
-                color: isTapActive ? '#ffffff' : 'var(--c-text-primary, #ffffff)',
+                border: `1.5px solid ${isTapActive ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff')) : 'rgba(255,255,255,0.14)'}`,
+                background: isTapActive ? (isCustomAccent ? `${accent.from}44` : (isLightMode ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)')) : 'rgba(255,255,255,0.06)',
+                color: isTapActive ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#000000' : '#ffffff')) : 'var(--c-text-primary, #ffffff)',
                 fontSize: '11px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
@@ -373,7 +379,7 @@ export function LiveTempoMorphPopup({
                 transition: 'all 0.1s ease',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: isCustomAccent ? accent.from : 'currentColor' }}>
                 touch_app
               </span>
               <span>Tap</span>
@@ -421,14 +427,24 @@ export function LiveTempoMorphPopup({
               let label = 'NORMAL';
 
               if (isStrong) {
-                bg = isCurrent ? accent.from : `${accent.from}22`;
-                borderColor = accent.from;
-                textColor = isCurrent ? '#ffffff' : accent.from;
+                bg = isCurrent
+                  ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'))
+                  : (isCustomAccent ? `${accent.from}22` : (isLightMode ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.2)'));
+                borderColor = isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff');
+                textColor = isCurrent
+                  ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#ffffff' : '#000000'))
+                  : (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'));
                 label = 'STRONG';
               } else if (isNormal) {
-                bg = isCurrent ? `${accent.from}88` : 'rgba(255,255,255,0.06)';
-                borderColor = isCurrent ? accent.from : 'rgba(255,255,255,0.1)';
-                textColor = isCurrent ? '#ffffff' : 'var(--c-text-primary, #ffffff)';
+                bg = isCurrent
+                  ? (isCustomAccent ? `${accent.from}88` : (isLightMode ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.3)'))
+                  : 'rgba(255,255,255,0.06)';
+                borderColor = isCurrent
+                  ? (isCustomAccent ? accent.from : (isLightMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)'))
+                  : 'rgba(255,255,255,0.1)';
+                textColor = isCurrent
+                  ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#000000' : '#ffffff'))
+                  : 'var(--c-text-primary, #ffffff)';
                 label = 'NORMAL';
               } else if (isMuted) {
                 bg = isCurrent ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255,255,255,0.02)';
@@ -456,7 +472,7 @@ export function LiveTempoMorphPopup({
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'all 0.12s ease',
-                    boxShadow: isCurrent ? `0 0 10px ${accent.from}66` : 'none',
+                    boxShadow: isCurrent ? (isCustomAccent ? `0 0 10px ${accent.from}66` : (isLightMode ? '0 0 10px rgba(0,0,0,0.2)' : '0 0 10px rgba(255,255,255,0.25)')) : 'none',
                   }}
                 >
                   <span style={{ fontSize: '14px', fontWeight: 900, lineHeight: 1 }}>
@@ -482,7 +498,7 @@ export function LiveTempoMorphPopup({
                         width: '4px',
                         height: '4px',
                         borderRadius: '50%',
-                        background: accent.from,
+                        background: isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'),
                       }}
                     />
                   )}
@@ -530,8 +546,8 @@ export function LiveTempoMorphPopup({
                       padding: '5px 0',
                       borderRadius: '8px',
                       border: 'none',
-                      background: isSel ? accent.from : 'rgba(255,255,255,0.05)',
-                      color: isSel ? '#ffffff' : 'var(--c-text-secondary, #94a3b8)',
+                      background: isSel ? activePillBg : 'rgba(255,255,255,0.05)',
+                      color: isSel ? activePillColor : 'var(--c-text-secondary, #94a3b8)',
                       fontSize: '10px',
                       fontWeight: isSel ? 800 : 600,
                       cursor: 'pointer',
@@ -581,8 +597,8 @@ export function LiveTempoMorphPopup({
                       padding: '5px 0',
                       borderRadius: '8px',
                       border: 'none',
-                      background: isSel ? accent.from : 'rgba(255,255,255,0.05)',
-                      color: isSel ? '#ffffff' : 'var(--c-text-secondary, #94a3b8)',
+                      background: isSel ? activePillBg : 'rgba(255,255,255,0.05)',
+                      color: isSel ? activePillColor : 'var(--c-text-secondary, #94a3b8)',
                       fontSize: '10px',
                       fontWeight: isSel ? 800 : 600,
                       cursor: 'pointer',
@@ -627,7 +643,9 @@ export function LiveTempoMorphPopup({
                 width: '38px',
                 height: '22px',
                 borderRadius: '11px',
-                background: metronomeEnabled ? accent.from : 'rgba(255,255,255,0.15)',
+                background: metronomeEnabled
+                  ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'))
+                  : 'rgba(255,255,255,0.15)',
                 border: 'none',
                 position: 'relative',
                 cursor: 'pointer',
@@ -641,7 +659,9 @@ export function LiveTempoMorphPopup({
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
-                  background: '#ffffff',
+                  background: metronomeEnabled
+                    ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#ffffff' : '#000000'))
+                    : '#ffffff',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                   transform: metronomeEnabled ? 'translateX(16px)' : 'translateX(0)',
                   transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -666,7 +686,7 @@ export function LiveTempoMorphPopup({
                   onChange={(e) => onMetronomeVolumeChange(Number(e.target.value))}
                   style={{
                     flex: 1,
-                    accentColor: accent.from,
+                    accentColor: isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'),
                     height: '14px',
                     cursor: 'pointer',
                   }}
@@ -699,7 +719,7 @@ export function LiveTempoMorphPopup({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '15px', color: accent.from }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px', color: isCustomAccent ? accent.from : 'currentColor' }}>
                       graphic_eq
                     </span>
                     <span style={{ color: 'var(--c-text-secondary)', fontSize: '10px', fontWeight: 600 }}>SOUND:</span>
@@ -769,8 +789,8 @@ export function LiveTempoMorphPopup({
                             padding: '6px 8px',
                             borderRadius: '8px',
                             border: 'none',
-                            background: isSel ? `${accent.from}33` : 'transparent',
-                            color: isSel ? '#ffffff' : 'var(--c-text-secondary, #cbd5e1)',
+                            background: isSel ? (isCustomAccent ? `${accent.from}33` : (isLightMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)')) : 'transparent',
+                            color: isSel ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#000000' : '#ffffff')) : 'var(--c-text-secondary, #cbd5e1)',
                             fontSize: '11px',
                             fontWeight: isSel ? 800 : 500,
                             display: 'flex',
@@ -785,7 +805,7 @@ export function LiveTempoMorphPopup({
                           {isSel && (
                             <span
                               className="material-symbols-outlined"
-                              style={{ fontSize: '15px', color: accent.from }}
+                              style={{ fontSize: '15px', color: isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff') }}
                             >
                               check
                             </span>

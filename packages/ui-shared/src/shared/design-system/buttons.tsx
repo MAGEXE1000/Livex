@@ -94,8 +94,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const getColors = () => {
       if (variant === 'primary') {
         return {
-          bg: 'linear-gradient(135deg, var(--c-accent-from, #2563eb), var(--c-accent-to, var(--c-accent-from, #2563eb)))',
-          text: 'var(--color-on-tertiary, #ffffff)',
+          bg: 'linear-gradient(135deg, var(--c-accent-from, #ffffff), var(--c-accent-to, var(--c-accent-from, #ffffff)))',
+          text: 'var(--studio-accent-contrast, var(--color-on-tertiary, #09090b))',
           border: 'var(--studio-accent-border, rgba(255, 255, 255, 0.20))',
           shadow: 'var(--studio-accent-glow)',
         };
@@ -384,8 +384,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     const getStyles = () => {
       if (variant === 'primary') {
         return {
-          bg: 'linear-gradient(135deg, var(--c-accent-from, #2563eb), var(--c-accent-to, var(--c-accent-from, #2563eb)))',
-          color: 'var(--color-on-tertiary, #ffffff)',
+          bg: 'linear-gradient(135deg, var(--c-accent-from, #ffffff), var(--c-accent-to, var(--c-accent-from, #ffffff)))',
+          color: 'var(--studio-accent-contrast, var(--color-on-tertiary, #09090b))',
           border: '1px solid var(--studio-accent-border, rgba(255, 255, 255, 0.20))',
           shadow: 'var(--studio-accent-glow), inset 0 1px 1.5px rgba(255, 255, 255, 0.35)',
         };

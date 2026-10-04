@@ -211,15 +211,15 @@ export default function TakeEffectsSheet({
                   borderRadius: 9999,
                   background:
                     activeCount > 0
-                      ? 'rgba(var(--studio-accent-rgb, 0, 122, 255), 0.16)'
+                      ? 'rgba(255, 255, 255, 0.15)'
                       : 'rgba(255, 255, 255, 0.08)',
                   color:
                     activeCount > 0
-                      ? 'var(--studio-accent, #007aff)'
+                      ? 'var(--studio-accent, #ffffff)'
                       : 'var(--c-text-secondary, #94a3b8)',
                   border:
                     activeCount > 0
-                      ? '1px solid rgba(var(--studio-accent-rgb, 0, 122, 255), 0.3)'
+                      ? '1px solid rgba(255, 255, 255, 0.25)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
@@ -295,8 +295,8 @@ export default function TakeEffectsSheet({
       {/* Mini Audition Player Bar */}
       <div
         style={{
-          background: 'rgba(var(--studio-accent-rgb, 0, 122, 255), 0.08)',
-          borderBottom: '1px solid rgba(var(--studio-accent-rgb, 0, 122, 255), 0.18)',
+          background: 'var(--c-surface-low, rgba(255, 255, 255, 0.04))',
+          borderBottom: '1px solid var(--c-border, rgba(128, 128, 128, 0.14))',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -313,14 +313,14 @@ export default function TakeEffectsSheet({
               width: 38,
               height: 38,
               borderRadius: '50%',
-              background: 'var(--studio-accent, #007aff)',
+              background: 'var(--studio-accent, #ffffff)',
               border: 'none',
-              color: '#ffffff',
+              color: 'var(--studio-accent-contrast, #000000)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 2px 10px rgba(0, 122, 255, 0.35)',
+              boxShadow: 'var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
               flexShrink: 0,
             }}
           >
@@ -366,7 +366,7 @@ export default function TakeEffectsSheet({
             className="material-symbols-outlined"
             style={{
               fontSize: 16,
-              color: 'var(--studio-accent, #007aff)',
+              color: 'var(--studio-accent, #ffffff)',
               animation: isPlaying ? 'pulse 1.5s infinite' : 'none',
             }}
           >
@@ -376,7 +376,7 @@ export default function TakeEffectsSheet({
             style={{
               fontSize: 11,
               fontWeight: 600,
-              color: 'var(--studio-accent, #007aff)',
+              color: 'var(--studio-accent, #ffffff)',
             }}
           >
             DSP Active
@@ -399,9 +399,8 @@ export default function TakeEffectsSheet({
         {/* Harmonizer Dedicated Feature Card */}
         <div
           style={{
-            background:
-              'linear-gradient(135deg, rgba(var(--studio-accent-rgb, 0,122,255), 0.12) 0%, rgba(147, 51, 234, 0.12) 100%)',
-            border: '1px solid rgba(var(--studio-accent-rgb, 0,122,255), 0.28)',
+            background: 'var(--c-surface-low, rgba(255, 255, 255, 0.04))',
+            border: '1px solid var(--c-border, rgba(128, 128, 128, 0.14))',
             borderRadius: 16,
             padding: 16,
             display: 'flex',
@@ -417,13 +416,13 @@ export default function TakeEffectsSheet({
                 width: 42,
                 height: 42,
                 borderRadius: 12,
-                background: 'var(--studio-accent, #007aff)',
+                background: 'var(--studio-accent, #ffffff)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
+                color: 'var(--studio-accent-contrast, #000000)',
                 flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
+                boxShadow: 'var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
               }}
             >
               <span
@@ -464,8 +463,8 @@ export default function TakeEffectsSheet({
             onClick={onOpenHarmonizer}
             data-testid="effects-open-harmonizer-btn"
             style={{
-              background: 'var(--studio-accent, #007aff)',
-              color: '#ffffff',
+              background: 'var(--studio-accent, #ffffff)',
+              color: 'var(--studio-accent-contrast, #000000)',
               border: 'none',
               borderRadius: 10,
               padding: '8px 14px',
@@ -477,7 +476,7 @@ export default function TakeEffectsSheet({
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(0, 122, 255, 0.35)',
+              boxShadow: 'var(--studio-accent-glow, rgba(255, 255, 255, 0.25))',
             }}
           >
             <span>{isSpanish ? 'Abrir' : 'Open'}</span>
@@ -491,7 +490,7 @@ export default function TakeEffectsSheet({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 18, color: 'var(--studio-accent, #007aff)' }}
+            style={{ fontSize: 18, color: 'var(--c-text-primary)' }}
           >
             tune
           </span>
@@ -524,7 +523,7 @@ export default function TakeEffectsSheet({
                     ? 'var(--c-bg-card, #121215)'
                     : 'rgba(255, 255, 255, 0.02)',
                   border: isEnabled
-                    ? '1px solid rgba(var(--studio-accent-rgb, 0, 122, 255), 0.3)'
+                    ? '1px solid var(--c-border-active, rgba(255, 255, 255, 0.2))'
                     : '1px solid var(--c-border, rgba(255, 255, 255, 0.06))',
                   borderRadius: 14,
                   padding: 14,
@@ -550,10 +549,10 @@ export default function TakeEffectsSheet({
                         height: 36,
                         borderRadius: 10,
                         background: isEnabled
-                          ? 'rgba(var(--studio-accent-rgb, 0, 122, 255), 0.18)'
+                          ? 'rgba(255, 255, 255, 0.12)'
                           : 'rgba(255, 255, 255, 0.05)',
                         color: isEnabled
-                          ? 'var(--studio-accent, #007aff)'
+                          ? 'var(--studio-accent, #ffffff)'
                           : 'var(--c-text-secondary, #94a3b8)',
                         display: 'flex',
                         alignItems: 'center',
@@ -602,7 +601,7 @@ export default function TakeEffectsSheet({
                       height: 26,
                       borderRadius: 13,
                       background: isEnabled
-                        ? 'var(--studio-accent, #007aff)'
+                        ? 'var(--studio-accent, #ffffff)'
                         : 'rgba(255, 255, 255, 0.15)',
                       border: 'none',
                       padding: 2,
@@ -621,7 +620,9 @@ export default function TakeEffectsSheet({
                         width: 22,
                         height: 22,
                         borderRadius: '50%',
-                        background: '#ffffff',
+                        background: isEnabled
+                          ? 'var(--studio-accent-contrast, #000000)'
+                          : '#ffffff',
                         boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                       }}
                     />
@@ -687,7 +688,7 @@ export default function TakeEffectsSheet({
                                 style={{
                                   fontFamily: 'var(--studio-font-mono, monospace)',
                                   fontWeight: 700,
-                                  color: 'var(--studio-accent, #007aff)',
+                                  color: 'var(--studio-accent, #ffffff)',
                                   fontSize: 11.5,
                                 }}
                               >
@@ -710,7 +711,7 @@ export default function TakeEffectsSheet({
                               }
                               style={{
                                 width: '100%',
-                                accentColor: 'var(--studio-accent, #007aff)',
+                                accentColor: 'var(--studio-accent, #ffffff)',
                                 cursor: 'pointer',
                                 height: 5,
                                 borderRadius: 3,

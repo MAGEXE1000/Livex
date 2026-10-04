@@ -136,7 +136,7 @@ const DEFAULT_EXPORT_CONFIG: ExportConfig = {
 function buildPrintSVG(
   data: GuitarChordData,
   dark = false,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
   _scale = 1,
   _noLabel = false
 ): string {
@@ -155,7 +155,7 @@ function buildPrintFretboardSVG(
   barres: { fret: number; fromString: number; toString: number }[],
   numStrings: number,
   dark = false,
-  _accentColor = '#679cff',
+  _accentColor = '#ffffff',
   _scale = 1,
   noLabel = false
 ): string {
@@ -228,7 +228,7 @@ function buildPrintFretboardSVG(
 function buildPrintPianoSVG(
   keys: number[],
   dark = false,
-  accentColor = '#679cff',
+  accentColor = '#ffffff',
   scale = 1
 ): string {
   const W = Math.round(160 * scale),
@@ -270,7 +270,7 @@ async function exportPresetToPDF(
   cfg: ExportConfig = DEFAULT_EXPORT_CONFIG,
   transposeOffset = 0,
   storedCustomChords: CustomChord[] = [],
-  accentColor = '#679cff',
+  accentColor = '#ffffff',
   pdfName = '',
   mode: 'save' | 'share' = 'share'
 ): Promise<boolean> {
@@ -3705,9 +3705,9 @@ const PresetCard = React.memo(
           <div
             className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border overflow-hidden relative"
             style={{
-              backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, transparent)',
-              borderColor: 'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
-              color: 'var(--c-accent-from, #2563EB)',
+              backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 20%, transparent)',
+              color: 'var(--c-accent-from, #ffffff)',
             }}
           >
             {hasValidCover ? (
@@ -3767,7 +3767,7 @@ const PresetCard = React.memo(
             className="flex-1 py-2.5 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-r active:opacity-75"
             style={{
               borderColor: 'var(--c-border, #E3E6EB)',
-              color: 'var(--c-accent-from, #2563EB)',
+              color: 'var(--c-accent-from, #ffffff)',
             }}
             title="Share song"
             aria-label={`Share ${preset.name}`}
@@ -4874,7 +4874,7 @@ export default function SongsPanel() {
                       color: 'var(--c-text-primary)',
                     }}
                   >
-                    <span style={{ color: 'var(--c-accent-from, #2563EB)', marginRight: '3px' }}>BPM</span>
+                    <span style={{ color: 'var(--c-accent-from, #ffffff)', marginRight: '3px' }}>BPM</span>
                     {activePreset.speed || activePreset.bpm || 120}
                   </span>
                   {activePreset.targetDurationSeconds && activePreset.targetDurationSeconds > 0 ? (
@@ -4889,7 +4889,7 @@ export default function SongsPanel() {
                         }}
                         className="inline-flex items-center gap-1 font-bold cursor-pointer transition-transform active:scale-95"
                         style={{
-                          color: '#2563eb',
+                          color: 'var(--c-accent-from, #ffffff)',
                           background: 'none',
                           border: 'none',
                           padding: 0,
@@ -5326,7 +5326,7 @@ export default function SongsPanel() {
                       className="absolute w-28 h-28 rounded-full filter blur-xl animate-pulse"
                       style={{
                         backgroundColor:
-                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 18%, transparent)',
+                          'color-mix(in srgb, var(--c-accent-from, #ffffff) 18%, transparent)',
                       }}
                     />
                     {/* Clean glyph composition */}
@@ -5335,8 +5335,8 @@ export default function SongsPanel() {
                       style={{
                         backgroundColor: 'var(--surface-card-bg, #ffffff)',
                         borderColor:
-                          'color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
-                        color: 'var(--c-accent-from, #2563EB)',
+                          'color-mix(in srgb, var(--c-accent-from, #ffffff) 20%, transparent)',
+                        color: 'var(--c-accent-from, #ffffff)',
                       }}
                     >
                       <span className="material-symbols-rounded text-3xl">music_note</span>
@@ -5417,7 +5417,7 @@ export default function SongsPanel() {
                         setShowForm(true);
                       }}
                       className="text-xs font-semibold flex items-center gap-0.5 cursor-pointer"
-                      style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                      style={{ color: 'var(--c-accent-from, #ffffff)' }}
                     >
                       <span className="material-symbols-rounded text-xs">edit</span>
                       <span>Edit</span>
@@ -5518,7 +5518,7 @@ export default function SongsPanel() {
                               className="flex-1 rounded-lg px-2.5 py-1 text-xs font-extrabold outline-none border"
                               style={{
                                 backgroundColor: 'var(--surface-card-bg, #ffffff)',
-                                borderColor: 'var(--c-accent-from, #2563EB)',
+                                borderColor: 'var(--c-accent-from, #ffffff)',
                                 color: 'var(--c-text-primary, #111827)',
                                 fontFamily: 'var(--font-headline)',
                               }}
@@ -5527,13 +5527,13 @@ export default function SongsPanel() {
                             <div className="flex-1 flex items-center gap-2">
                               <span
                                 className="w-1 h-3.5 rounded-full"
-                                style={{ backgroundColor: 'var(--c-accent-from, #2563EB)' }}
+                                style={{ backgroundColor: 'var(--c-accent-from, #ffffff)' }}
                               />
                               <h3
                                 className="text-xs font-extrabold tracking-wider uppercase"
                                 style={{
                                   fontFamily: 'var(--font-headline)',
-                                  color: 'var(--c-accent-from, #2563EB)',
+                                  color: 'var(--c-accent-from, #ffffff)',
                                 }}
                               >
                                 {section.name}
@@ -5558,10 +5558,10 @@ export default function SongsPanel() {
                                 className="px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
                                 style={{
                                   backgroundColor:
-                                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
-                                  color: 'var(--c-accent-from, #2563EB)',
+                                    'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, var(--surface-card-bg, #ffffff))',
+                                  color: 'var(--c-accent-from, #ffffff)',
                                   border:
-                                    '1px solid color-mix(in srgb, var(--c-accent-from, #2563EB) 20%, transparent)',
+                                    '1px solid color-mix(in srgb, var(--c-accent-from, #ffffff) 20%, transparent)',
                                 }}
                                 title="Add chord to this section"
                               >
@@ -5627,7 +5627,7 @@ export default function SongsPanel() {
                           >
                             <span
                               className="material-symbols-rounded text-base mb-1"
-                              style={{ color: 'var(--c-accent-from, #2563EB)' }}
+                              style={{ color: 'var(--c-accent-from, #ffffff)' }}
                             >
                               music_note
                             </span>
@@ -6449,10 +6449,10 @@ export default function SongsPanel() {
                                 className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 border shadow-soft-card"
                                 style={{
                                   backgroundColor:
-                                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 10%, var(--surface-card-bg, #ffffff))',
+                                    'color-mix(in srgb, var(--c-accent-from, #ffffff) 10%, var(--surface-card-bg, #ffffff))',
                                   borderColor:
-                                    'color-mix(in srgb, var(--c-accent-from, #2563EB) 22%, transparent)',
-                                  color: 'var(--c-accent-from, #2563EB)',
+                                    'color-mix(in srgb, var(--c-accent-from, #ffffff) 22%, transparent)',
+                                  color: 'var(--c-accent-from, #ffffff)',
                                 }}
                               >
                                 <span className="material-symbols-rounded text-3xl">library_music</span>
@@ -6491,11 +6491,12 @@ export default function SongsPanel() {
                                       {...triggerProps}
                                       whileTap={{ scale: 0.96 }}
                                       type="button"
-                                      className="px-4 py-2 rounded-full text-xs font-bold text-white shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+                                      className="px-4 py-2 rounded-full text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
                                       style={{
-                                        backgroundColor: 'var(--c-accent-from, #2563EB)',
+                                        backgroundColor: 'var(--c-accent-from, #ffffff)',
+                                        color: 'var(--studio-accent-contrast, #09090b)',
                                         boxShadow:
-                                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #2563EB) 30%, transparent)',
+                                          '0 4px 14px color-mix(in srgb, var(--c-accent-from, #ffffff) 30%, transparent)',
                                       }}
                                       data-purpose="empty-create-song-btn"
                                     >
@@ -6872,8 +6873,8 @@ export default function SongsPanel() {
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                  color: 'var(--c-accent-from, #2563EB)',
+                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 15%, transparent)',
+                  color: 'var(--c-accent-from, #ffffff)',
                 }}
               >
                 <span className="material-symbols-rounded text-xl">groups</span>

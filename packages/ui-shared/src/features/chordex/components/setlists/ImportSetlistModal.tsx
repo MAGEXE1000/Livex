@@ -29,7 +29,7 @@ export interface ImportSetlistContentProps {
 }
 
 export function ImportSetlistContent({
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
   onImportSuccess,
   onClose,
   initialBundle,
@@ -466,7 +466,7 @@ export interface ImportSetlistModalProps {
 export const ImportSetlistModal: React.FC<ImportSetlistModalProps> = ({
   isOpen,
   onClose,
-  accentColor = '#2563EB',
+  accentColor = '#ffffff',
   onImportSuccess,
 }) => {
   const clearPendingSetlistImport = useChordStore((s) => s.clearPendingSetlistImport);

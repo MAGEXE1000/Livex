@@ -93,8 +93,8 @@ const GuitarDiagram = memo(function GuitarDiagram({
     >
       <defs>
         <linearGradient id={dotGradId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#679cff" />
-          <stop offset="100%" stopColor="#007aff" />
+          <stop offset="0%" stopColor="var(--studio-accent-from, #ffffff)" />
+          <stop offset="100%" stopColor="var(--studio-accent-to, #f4f4f5)" />
         </linearGradient>
       </defs>
 
@@ -202,7 +202,7 @@ const GuitarDiagram = memo(function GuitarDiagram({
           <g key={`dot-${stringIdx}`}>
             {!isBarre ? (
               <>
-                <circle cx={cx} cy={cy} r={dotR + 2} fill="#679cff" opacity={0.14} />
+                <circle cx={cx} cy={cy} r={dotR + 2} fill="var(--studio-accent, #ffffff)" opacity={0.14} />
                 <circle cx={cx} cy={cy} r={dotR} fill={`url(#${dotGradId})`} />
               </>
             ) : (
@@ -213,7 +213,7 @@ const GuitarDiagram = memo(function GuitarDiagram({
                 x={cx}
                 y={cy}
                 fontSize={fontSize - 2}
-                fill="#ffffff"
+                fill="var(--studio-accent-contrast, #09090b)"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontWeight="bold"

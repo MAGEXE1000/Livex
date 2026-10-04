@@ -7,6 +7,17 @@
 
 /* ── Platform-Specific Overrides (Web) ──────────────────────────────────── */
 
+/* Universal outline & tap highlight elimination */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+}
+*:focus {
+  outline: none !important;
+}
+*:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
 /* Body background & canonical typography */
 :root,
 html,

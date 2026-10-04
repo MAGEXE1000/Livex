@@ -168,10 +168,10 @@ export function applyThemeTokens(settings: any) {
   }
 
   // 2. Global Accent Color Tokens
-  const accentKey = String(settings?.accentColor ?? '');
+  const accentKey = `${String(settings?.accentColor ?? '')}|${isLightMode}`;
   if (accentKey !== _lastAccentKey) {
     _lastAccentKey = accentKey;
-    const accent = resolveAccent(settings?.accentColor);
+    const accent = resolveAccent(settings?.accentColor, isLightMode);
     root.style.setProperty('--studio-accent-from', accent.from);
     root.style.setProperty('--studio-accent-to', accent.to);
     root.style.setProperty('--studio-accent-mid', accent.mid);

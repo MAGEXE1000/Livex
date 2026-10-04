@@ -91,7 +91,7 @@ function getStemColor(name: string): string {
   for (const [key, color] of Object.entries(STEM_COLOR_MAP)) {
     if (lower.includes(key)) return color;
   }
-  return '#0066FF';
+  return '#71717a';
 }
 
 function getSectionName(pct: number): string {
@@ -1116,12 +1116,12 @@ export default function GroovexPlayer() {
           height: 17px;
           width: 17px;
           border-radius: 50%;
-          background: #0066FF;
+          background: ${isLight ? '#000000' : '#ffffff'};
           cursor: pointer;
           -webkit-appearance: none;
           margin-top: -6px;
-          box-shadow: 0 2px 6px rgba(0, 102, 255, 0.4);
-          border: 2.5px solid #FFFFFF;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          border: 2.5px solid ${isLight ? '#ffffff' : '#000000'};
           transition: transform 0.15s ease;
         }
         input[type=range].gx-range-slider::-webkit-slider-thumb:active {
@@ -1147,12 +1147,12 @@ export default function GroovexPlayer() {
           height: 18px;
           width: 18px;
           border-radius: 50%;
-          background: #0066FF;
+          background: ${isLight ? '#000000' : '#ffffff'};
           cursor: pointer;
           -webkit-appearance: none;
           margin-top: -6px;
-          box-shadow: 0 2px 5px rgba(0, 102, 255, 0.35);
-          border: 2px solid #FFFFFF;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+          border: 2px solid ${isLight ? '#ffffff' : '#000000'};
           transition: transform 0.12s ease;
         }
         input[type=range].gx-stem-slider::-webkit-slider-thumb:active {
@@ -1243,9 +1243,9 @@ export default function GroovexPlayer() {
                   fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: '0.02em',
-                  background: isLight ? '#EEF6FF' : 'rgba(37,99,235,0.15)',
-                  color: '#0066FF',
-                  border: isLight ? '1px solid #D9EBFF' : '1px solid rgba(37,99,235,0.3)',
+                  background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                  color: isLight ? '#000000' : '#ffffff',
+                  border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.15)',
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
@@ -1381,7 +1381,9 @@ export default function GroovexPlayer() {
                   width: '37%',
                   height: '37%',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #0066FF, #0052CC, #1e1b4b)',
+                  background: isLight
+                    ? 'linear-gradient(135deg, #18181b, #09090b, #000000)'
+                    : 'linear-gradient(135deg, #27272a, #18181b, #09090b)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                   border: '3px solid #0F172A',
                   display: 'flex',
@@ -1523,8 +1525,10 @@ export default function GroovexPlayer() {
                       width: 10,
                       height: 10,
                       borderRadius: '50%',
-                      background: '#0066FF',
-                      boxShadow: '0 0 6px rgba(0, 102, 255, 0.8)',
+                      background: isLight ? '#000000' : '#ffffff',
+                      boxShadow: isLight
+                        ? '0 0 6px rgba(0, 0, 0, 0.5)'
+                        : '0 0 6px rgba(255, 255, 255, 0.8)',
                     }}
                   />
                 </div>
@@ -1588,7 +1592,7 @@ export default function GroovexPlayer() {
                     strokeWidth="1.2"
                   />
                   {/* Stylus body & contact tip */}
-                  <rect x="26" y="163" width="4.5" height="7" rx="1" fill="#0066FF" />
+                  <rect x="26" y="163" width="4.5" height="7" rx="1" fill="#475569" />
                   <circle cx="28.25" cy="170" r="1.2" fill="#FFFFFF" />
                 </g>
               </svg>
@@ -1625,12 +1629,19 @@ export default function GroovexPlayer() {
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      backgroundColor: phase === 'error' ? '#ef4444' : '#0066FF',
+                      backgroundColor:
+                        phase === 'error'
+                          ? '#ef4444'
+                          : isLight
+                            ? '#000000'
+                            : '#ffffff',
                       display: 'inline-block',
                       boxShadow:
                         phase === 'error'
                           ? '0 0 8px rgba(239, 68, 68, 0.7)'
-                          : '0 0 8px rgba(0, 102, 255, 0.7)',
+                          : isLight
+                            ? '0 0 8px rgba(0, 0, 0, 0.4)'
+                            : '0 0 8px rgba(255, 255, 255, 0.7)',
                       animation:
                         phase === 'error' ? 'none' : 'gxGlowPulse 1.5s ease-in-out infinite',
                       flexShrink: 0,
@@ -1681,7 +1692,12 @@ export default function GroovexPlayer() {
                     fontFamily: 'var(--studio-font-mono, monospace)',
                     fontSize: 15,
                     fontWeight: 800,
-                    color: phase === 'error' ? '#ef4444' : '#0066FF',
+                    color:
+                      phase === 'error'
+                        ? '#ef4444'
+                        : isLight
+                          ? '#000000'
+                          : '#ffffff',
                     letterSpacing: '-0.02em',
                     flexShrink: 0,
                   }}
@@ -1692,8 +1708,20 @@ export default function GroovexPlayer() {
 
               <StudioProgressBar
                 value={overallProgress}
-                accentFrom={phase === 'error' ? '#ef4444' : '#0066FF'}
-                accentTo={phase === 'error' ? '#f87171' : '#3b82f6'}
+                accentFrom={
+                  phase === 'error'
+                    ? '#ef4444'
+                    : isLight
+                      ? '#000000'
+                      : '#ffffff'
+                }
+                accentTo={
+                  phase === 'error'
+                    ? '#f87171'
+                    : isLight
+                      ? '#27272a'
+                      : '#e4e4e7'
+                }
                 height={6}
               />
 
@@ -1762,7 +1790,7 @@ export default function GroovexPlayer() {
                       alignItems: 'center',
                       gap: 4,
                       fontWeight: 700,
-                      color: '#0066FF',
+                      color: isLight ? '#000000' : '#ffffff',
                       letterSpacing: '0.04em',
                     }}
                   >
@@ -1771,7 +1799,7 @@ export default function GroovexPlayer() {
                         width: 6,
                         height: 6,
                         borderRadius: '50%',
-                        background: '#0066FF',
+                        background: isLight ? '#000000' : '#ffffff',
                         display: 'inline-block',
                         animation: isPlaying ? 'gx-glow-pulse 1.5s ease-in-out infinite' : 'none',
                       }}
@@ -1800,7 +1828,7 @@ export default function GroovexPlayer() {
                       style={{
                         width: 2.5,
                         borderRadius: 9999,
-                        background: '#0066FF',
+                        background: isLight ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
                         height: h,
                         animationDelay: `${(i * 0.07).toFixed(2)}s`,
                         animationPlayState: isPlaying ? 'running' : 'paused',
@@ -1812,9 +1840,11 @@ export default function GroovexPlayer() {
                     style={{
                       width: 3,
                       borderRadius: 9999,
-                      background: '#0066FF',
+                      background: isLight ? '#000000' : '#ffffff',
                       height: 20,
-                      boxShadow: '0 0 4px rgba(0, 102, 255, 0.6)',
+                      boxShadow: isLight
+                        ? '0 0 4px rgba(0, 0, 0, 0.3)'
+                        : '0 0 4px rgba(255, 255, 255, 0.6)',
                     }}
                   />
 
@@ -1894,7 +1924,7 @@ export default function GroovexPlayer() {
                       textTransform: 'uppercase',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
-                      color: '#0066FF',
+                      color: isLight ? '#000000' : '#ffffff',
                     }}
                   >
                     {getSectionName(duration > 0 ? effectiveTime / duration : 0)}
@@ -1961,7 +1991,7 @@ export default function GroovexPlayer() {
                   </span>
                 </button>
 
-                {/* VIBRANT BLUE PLAY/PAUSE FAB */}
+                {/* DYNAMIC MONOCHROME PLAY/PAUSE FAB */}
                 <button
                   id="play-pause-btn"
                   onClick={handlePlay}
@@ -1972,18 +2002,20 @@ export default function GroovexPlayer() {
                     height: 64,
                     borderRadius: '50%',
                     background: anyLoaded
-                      ? '#0066FF'
+                      ? (isLight ? '#000000' : '#ffffff')
                       : isLight
                         ? 'rgba(0,0,0,0.06)'
                         : 'rgba(255,255,255,0.08)',
-                    color: '#FFFFFF',
+                    color: anyLoaded
+                      ? (isLight ? '#ffffff' : '#000000')
+                      : (isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'),
                     border: 'none',
                     cursor: anyLoaded ? 'pointer' : 'not-allowed',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     boxShadow: anyLoaded
-                      ? '0 10px 25px -4px rgba(0, 102, 255, 0.45), 0 4px 10px -2px rgba(0, 102, 255, 0.3)'
+                      ? (isLight ? '0 10px 25px -4px rgba(0, 0, 0, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.15)' : '0 10px 25px -4px rgba(255, 255, 255, 0.25), 0 4px 10px -2px rgba(255, 255, 255, 0.15)')
                       : 'none',
                     margin: '0 4px',
                     transition: 'transform 150ms ease, box-shadow 150ms ease',
@@ -2067,7 +2099,7 @@ export default function GroovexPlayer() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
                     className="material-symbols-outlined"
-                    style={{ color: '#0066FF', fontSize: 20 }}
+                    style={{ color: 'var(--c-text-primary)', fontSize: 20 }}
                   >
                     tune
                   </span>
@@ -2146,7 +2178,7 @@ export default function GroovexPlayer() {
                       fontFamily: 'var(--studio-font-mono, monospace)',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: pitchShift !== 0 ? 'var(--app-accent, #007aff)' : 'var(--c-text-primary)',
+                      color: pitchShift !== 0 ? (isLight ? '#000000' : '#ffffff') : 'var(--c-text-primary)',
                     }}
                   >
                     {pitchShift > 0 ? `+${pitchShift}` : pitchShift === 0 ? '±0' : pitchShift}
@@ -2212,7 +2244,7 @@ export default function GroovexPlayer() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span
                   className="material-symbols-outlined"
-                  style={{ color: '#0066FF', fontSize: 22 }}
+                  style={{ color: 'var(--c-text-primary)', fontSize: 22 }}
                 >
                   equalizer
                 </span>
@@ -2265,9 +2297,9 @@ export default function GroovexPlayer() {
                 <span
                   style={{
                     padding: '4px 8px',
-                    background: isLight ? '#EEF6FF' : 'rgba(37,99,235,0.15)',
-                    color: '#0066FF',
-                    border: isLight ? '1px solid #D9EBFF' : '1px solid rgba(37,99,235,0.3)',
+                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
+                    color: isLight ? '#000000' : '#ffffff',
+                    border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.15)',
                     fontSize: 10,
                     fontWeight: 700,
                     borderRadius: 8,
@@ -2509,17 +2541,21 @@ export default function GroovexPlayer() {
                         fontSize: 11,
                         fontWeight: isActive ? 700 : 600,
                         background: isActive
-                          ? '#0066FF'
+                          ? (isLight ? '#000000' : '#ffffff')
                           : isLight
                             ? '#F1F5F9'
                             : 'rgba(255,255,255,0.06)',
-                        color: isActive ? '#FFFFFF' : 'var(--c-text-primary)',
+                        color: isActive
+                          ? (isLight ? '#ffffff' : '#000000')
+                          : 'var(--c-text-primary)',
                         border: 'none',
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        boxShadow: isActive ? '0 2px 8px rgba(0, 102, 255, 0.3)' : 'none',
+                        boxShadow: isActive
+                          ? (isLight ? '0 2px 8px rgba(0, 0, 0, 0.25)' : '0 2px 8px rgba(255, 255, 255, 0.25)')
+                          : 'none',
                         transition: 'all 120ms ease',
                       }}
                       onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}

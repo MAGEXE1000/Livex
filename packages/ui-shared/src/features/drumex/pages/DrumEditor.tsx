@@ -2794,9 +2794,9 @@ export default function DrumEditor() {
                           onClick={() => setShowBpmPanel((s) => !s)}
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border transition active:scale-95 cursor-pointer flex-shrink-0"
                           style={{
-                            background: isLight ? '#eff6ff' : 'rgba(0,122,255,0.15)',
-                            color: '#007aff',
-                            borderColor: isLight ? '#dbeafe' : 'rgba(0,122,255,0.35)',
+                            background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.1)',
+                            color: isLight ? '#000000' : '#ffffff',
+                            borderColor: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.2)',
                           }}
                           title="Adjust BPM & Swing"
                         >
@@ -2808,7 +2808,7 @@ export default function DrumEditor() {
                       </div>
                       {!isLandscape && (
                         <p className="text-[9px] text-slate-400 dark:text-zinc-500 font-medium tracking-wide truncate mt-0.5 max-w-[220px]">
-                          {KIT_LABEL[kit] ?? 'Acoustic ΓÇó House Kit'} ΓÇó {pattern.subdivision}th Master
+                          {KIT_LABEL[kit] ?? 'Acoustic • House Kit'} • {pattern.subdivision}th Master
                         </p>
                       )}
                     </div>
@@ -2818,7 +2818,9 @@ export default function DrumEditor() {
                       {isLandscape && (
                         <button
                           onClick={handlePlay}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#007aff] transition active:scale-95 cursor-pointer flex-shrink-0"
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer flex-shrink-0 ${
+                            isLight ? 'bg-black text-white' : 'bg-white text-black'
+                          }`}
                           aria-label={playing ? 'Pause' : 'Play'}
                           title={playing ? 'Pause' : 'Play'}
                         >
@@ -4622,8 +4624,8 @@ export default function DrumEditor() {
                                         <div
                                           className={`h-1 w-full transition-all duration-300 mt-auto ${
                                             isLight
-                                              ? 'bg-zinc-100 group-hover:bg-blue-600'
-                                              : 'bg-zinc-950 group-hover:bg-blue-500/80'
+                                              ? 'bg-zinc-100 group-hover:bg-black'
+                                              : 'bg-zinc-950 group-hover:bg-white/80'
                                           }`}
                                         />
                                       </div>
@@ -4657,7 +4659,7 @@ export default function DrumEditor() {
                             position: 'relative',
                           }}
                         >
-                          {/* ΓöÇΓöÇ Grid Toolbar ΓöÇΓöÇ */}
+                          {/* ── Grid Toolbar ── */}
                           <section
                             className="flex items-center justify-between px-3 sm:px-4 flex-shrink-0"
                             style={{
@@ -4705,7 +4707,7 @@ export default function DrumEditor() {
                             {extraInsts.length > 0 && (
                               <button
                                 onClick={() => setShowExtraRows((v) => !v)}
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-[#007aff] hover:bg-blue-100/80 dark:hover:bg-blue-900/50 border border-blue-200/60 dark:border-blue-800/40 rounded-full text-[10px] font-semibold shadow-sm transition active:scale-95 cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-black/5 dark:bg-white/10 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/15 border border-black/10 dark:border-white/20 rounded-full text-[10px] font-semibold shadow-sm transition active:scale-95 cursor-pointer"
                                 type="button"
                               >
                                 {showExtraRows ? (
@@ -5336,7 +5338,9 @@ export default function DrumEditor() {
                                                   }
                                                   className={`w-4 h-4 rounded text-[9px] font-extrabold flex items-center justify-center cursor-pointer transition active:scale-95 ${
                                                     isSoloed
-                                                      ? 'bg-[#007aff] text-white shadow-[0_0_8px_rgba(0,122,255,0.4)]'
+                                                      ? isLight
+                                                        ? 'bg-black text-white shadow-[0_0_8px_rgba(0,0,0,0.3)]'
+                                                        : 'bg-white text-black shadow-[0_0_8px_rgba(255,255,255,0.4)]'
                                                       : isLight
                                                         ? 'bg-slate-200/70 text-slate-500 hover:bg-slate-300 hover:text-slate-800'
                                                         : 'bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
@@ -6154,10 +6158,11 @@ export default function DrumEditor() {
                               }}
                               title={playing ? 'Pause' : 'Play'}
                               aria-label={playing ? 'Pause drum pattern' : 'Play drum pattern'}
-                              className="w-11 h-11 rounded-full flex items-center justify-center text-white transition active:scale-95 focus:outline-none cursor-pointer"
+                              className="w-11 h-11 rounded-full flex items-center justify-center transition active:scale-95 focus:outline-none cursor-pointer"
                               style={{
-                                background: '#007aff',
-                                boxShadow: '0 4px 16px rgba(0,122,255,0.45)',
+                                background: isLight ? '#000000' : '#ffffff',
+                                color: isLight ? '#ffffff' : '#000000',
+                                boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 16px rgba(255,255,255,0.3)',
                               }}
                               type="button"
                             >

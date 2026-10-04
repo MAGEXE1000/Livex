@@ -86,7 +86,7 @@ const liveModeStyles = `
 }
 
 .beat-dot.beat-dot-active {
-  background: var(--c-primary, #2563eb) !important;
+  background: var(--studio-accent, #ffffff) !important;
   transform: scale(1.35);
   opacity: 1;
   transition: none !important;
@@ -1154,6 +1154,41 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
     setShowQuickActions,
   } = state;
 
+  const isLightMode = useSettingsStore((s) => s.settings.theme === 'light');
+  const accentColorSetting = useSettingsStore((s) => s.settings.accentColor);
+  const isCustomAccent = Boolean(accentColorSetting && accentColorSetting !== 'monochrome');
+  const playBtnBg = state.isLockedToLeader
+    ? autoPlay
+      ? '#10b981'
+      : 'rgba(255, 255, 255, 0.15)'
+    : state.isCountingDown
+    ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+    : isCustomAccent
+    ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+    : isLightMode
+    ? '#000000'
+    : '#ffffff';
+  const playBtnColor = state.isLockedToLeader
+    ? '#ffffff'
+    : state.isCountingDown
+    ? '#ffffff'
+    : isCustomAccent
+    ? 'var(--studio-accent-contrast, #ffffff)'
+    : isLightMode
+    ? '#ffffff'
+    : '#000000';
+  const playBtnShadow = state.isLockedToLeader
+    ? autoPlay
+      ? '0 0 16px rgba(16, 185, 129, 0.4)'
+      : 'none'
+    : state.isCountingDown
+    ? '0 4px 16px #f59e0b66'
+    : isCustomAccent
+    ? `0 4px 16px ${accent.from}66`
+    : isLightMode
+    ? '0 4px 16px rgba(0, 0, 0, 0.2)'
+    : '0 4px 16px rgba(255, 255, 255, 0.15)';
+
   const fontSizes = {
     normal: { text: '22px', chord: '13px', lineGap: '20px' },
     large: { text: '26px', chord: '15px', lineGap: '26px' },
@@ -1813,22 +1848,12 @@ export function LyricsLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: state.isLockedToLeader
-              ? autoPlay
-                ? '#10b981'
-                : 'rgba(255, 255, 255, 0.15)'
-              : state.isCountingDown
-              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-            color: '#fff',
+            background: playBtnBg,
+            color: playBtnColor,
             border: state.isLockedToLeader ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
             cursor: state.isLockedToLeader ? 'not-allowed' : 'pointer',
             opacity: state.isLockedToLeader && !autoPlay ? 0.7 : 1,
-            boxShadow: state.isLockedToLeader
-              ? autoPlay
-                ? '0 0 16px rgba(16, 185, 129, 0.4)'
-                : 'none'
-              : `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
+            boxShadow: playBtnShadow,
           }}
           title={
             state.isLockedToLeader
@@ -1947,6 +1972,41 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
     visualStyle,
     setVisualStyle,
   } = state;
+
+  const isLightMode = useSettingsStore((s) => s.settings.theme === 'light');
+  const accentColorSetting = useSettingsStore((s) => s.settings.accentColor);
+  const isCustomAccent = Boolean(accentColorSetting && accentColorSetting !== 'monochrome');
+  const playBtnBg = state.isLockedToLeader
+    ? autoPlay
+      ? '#10b981'
+      : 'rgba(255, 255, 255, 0.15)'
+    : state.isCountingDown
+    ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+    : isCustomAccent
+    ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+    : isLightMode
+    ? '#000000'
+    : '#ffffff';
+  const playBtnColor = state.isLockedToLeader
+    ? '#ffffff'
+    : state.isCountingDown
+    ? '#ffffff'
+    : isCustomAccent
+    ? 'var(--studio-accent-contrast, #ffffff)'
+    : isLightMode
+    ? '#ffffff'
+    : '#000000';
+  const playBtnShadow = state.isLockedToLeader
+    ? autoPlay
+      ? '0 0 16px rgba(16, 185, 129, 0.4)'
+      : 'none'
+    : state.isCountingDown
+    ? '0 4px 16px #f59e0b66'
+    : isCustomAccent
+    ? `0 4px 16px ${accent.from}66`
+    : isLightMode
+    ? '0 4px 16px rgba(0, 0, 0, 0.2)'
+    : '0 4px 16px rgba(255, 255, 255, 0.15)';
 
   const currentLine = teleprompterLines[currentLineIdx];
   const currentLineRole = currentLine?.line.vocalRole || currentLine?.sectionVocalRole;
@@ -2495,22 +2555,12 @@ export function HybridLiveView({ state }: { state: LiveModeState }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: state.isLockedToLeader
-              ? autoPlay
-                ? '#10b981'
-                : 'rgba(255, 255, 255, 0.15)'
-              : state.isCountingDown
-              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-              : `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-            color: '#fff',
+            background: playBtnBg,
+            color: playBtnColor,
             border: state.isLockedToLeader ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
             cursor: state.isLockedToLeader ? 'not-allowed' : 'pointer',
             opacity: state.isLockedToLeader && !autoPlay ? 0.7 : 1,
-            boxShadow: state.isLockedToLeader
-              ? autoPlay
-                ? '0 0 16px rgba(16, 185, 129, 0.4)'
-                : 'none'
-              : `0 4px 16px ${state.isCountingDown ? '#f59e0b66' : accent.from + '66'}`,
+            boxShadow: playBtnShadow,
           }}
           title={
             state.isLockedToLeader
@@ -2660,6 +2710,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     isTeleprompterMode,
     accent,
   } = state;
+
+  const isLightMode = useSettingsStore((s) => s.settings.theme === 'light');
+  const accentColorSetting = useSettingsStore((s) => s.settings.accentColor);
+  const isCustomAccent = Boolean(accentColorSetting && accentColorSetting !== 'monochrome');
+  const activePillBg = isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff');
+  const activePillColor = isCustomAccent ? 'var(--studio-accent-contrast, #ffffff)' : (isLightMode ? '#ffffff' : '#000000');
 
   const [isEditingDuration, setIsEditingDuration] = useState(false);
   const [durationInputVal, setDurationInputVal] = useState('');
@@ -2875,8 +2931,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   padding: '10px 4px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isChordsActive ? accent.from : 'transparent',
-                  color: isChordsActive ? '#ffffff' : hasChords ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  background: isChordsActive ? activePillBg : 'transparent',
+                  color: isChordsActive ? activePillColor : hasChords ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                   opacity: !hasChords ? 0.4 : 1,
                   cursor: !hasChords ? 'not-allowed' : 'pointer',
                   fontWeight: 700,
@@ -2901,8 +2957,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   padding: '10px 4px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isLyricsActive ? accent.from : 'transparent',
-                  color: isLyricsActive ? '#ffffff' : hasLyrics ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  background: isLyricsActive ? activePillBg : 'transparent',
+                  color: isLyricsActive ? activePillColor : hasLyrics ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                   opacity: !hasLyrics ? 0.4 : 1,
                   cursor: !hasLyrics ? 'not-allowed' : 'pointer',
                   fontWeight: 700,
@@ -2927,8 +2983,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   padding: '10px 4px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isBothActive ? accent.from : 'transparent',
-                  color: isBothActive ? '#ffffff' : (hasChords && hasLyrics) ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  background: isBothActive ? activePillBg : 'transparent',
+                  color: isBothActive ? activePillColor : (hasChords && hasLyrics) ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                   opacity: (!hasChords || !hasLyrics) ? 0.4 : 1,
                   cursor: (!hasChords || !hasLyrics) ? 'not-allowed' : 'pointer',
                   fontWeight: 700,
@@ -3019,8 +3075,10 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     style={{
                       padding: '12px 6px',
                       borderRadius: '1rem',
-                      background: isSelected ? `${accent.from}22` : 'var(--surface-container-low, rgba(255,255,255,0.04))',
-                      border: `1px solid ${isSelected ? accent.from + '66' : 'var(--c-border, rgba(255,255,255,0.08))'}`,
+                      background: isSelected
+                        ? (isCustomAccent ? `${accent.from}22` : (isLightMode ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)'))
+                        : 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                      border: `1px solid ${isSelected ? (isCustomAccent ? accent.from + '66' : (isLightMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.25)')) : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -3033,7 +3091,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       className="material-symbols-outlined"
                       style={{
                         fontSize: '20px',
-                        color: isSelected ? accent.from : 'var(--c-text-secondary)',
+                        color: isSelected ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff')) : 'var(--c-text-secondary)',
                         fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
                       }}
                     >
@@ -3086,7 +3144,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 </p>
                 <span
                   style={{
-                    color: accent.from,
+                    color: isCustomAccent ? accent.from : 'var(--c-text-primary)',
                     fontSize: '10.5px',
                     fontWeight: 700,
                     textTransform: 'capitalize',
@@ -3120,8 +3178,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                         padding: '8px 4px',
                         borderRadius: '10px',
                         border: 'none',
-                        background: isCurrent ? accent.from : 'transparent',
-                        color: isCurrent ? '#ffffff' : 'var(--c-text-primary)',
+                        background: isCurrent ? activePillBg : 'transparent',
+                        color: isCurrent ? activePillColor : 'var(--c-text-primary)',
                         fontWeight: 700,
                         fontSize: '11px',
                         fontFamily: 'var(--studio-font-body)',
@@ -3204,8 +3262,10 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     style={{
                       padding: '12px 6px',
                       borderRadius: '1rem',
-                      background: isSelected ? `${accent.from}22` : 'var(--surface-container-low, rgba(255,255,255,0.04))',
-                      border: `1px solid ${isSelected ? accent.from + '66' : 'var(--c-border, rgba(255,255,255,0.08))'}`,
+                      background: isSelected
+                        ? (isCustomAccent ? `${accent.from}22` : (isLightMode ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)'))
+                        : 'var(--surface-container-low, rgba(255,255,255,0.04))',
+                      border: `1px solid ${isSelected ? (isCustomAccent ? accent.from + '66' : (isLightMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.25)')) : 'var(--c-border, rgba(255,255,255,0.08))'}`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -3219,7 +3279,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       className="material-symbols-outlined"
                       style={{
                         fontSize: '20px',
-                        color: isSelected ? accent.from : 'var(--c-text-secondary)',
+                        color: isSelected ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff')) : 'var(--c-text-secondary)',
                         fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
                       }}
                     >
@@ -3267,7 +3327,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
               </p>
               <p
                 style={{
-                  color: accent.from,
+                  color: isCustomAccent ? accent.from : 'var(--c-text-primary)',
                   fontFamily: 'var(--studio-font-body)',
                   fontWeight: 800,
                   fontSize: '14px',
@@ -3306,7 +3366,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                 step={1}
                 value={state.speed || state.bpmOverride}
                 onChange={(state.setSpeed || state.setBpmOverride) as any}
-                accentColor={accent.from}
+                accentColor={isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff')}
                 style={{ flex: 1 }}
               />
               <button
@@ -3498,7 +3558,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     className="material-symbols-outlined"
                     style={{
                       fontSize: '18px',
-                      color: accent.from,
+                      color: isCustomAccent ? accent.from : 'var(--c-text-primary)',
                     }}
                   >
                     timer
@@ -3584,15 +3644,15 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       padding: '8px 2px',
                       borderRadius: '10px',
                       background: isSelected
-                        ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                        ? (isCustomAccent ? `linear-gradient(135deg, ${accent.from}, ${accent.to})` : activePillBg)
                         : 'var(--surface-container-low, rgba(255, 255, 255, 0.06))',
-                      color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                      color: isSelected ? activePillColor : 'var(--c-text-secondary)',
                       fontFamily: 'var(--studio-font-body)',
                       fontWeight: 700,
                       fontSize: '11px',
                       border: isSelected ? 'none' : '1px solid var(--c-border, transparent)',
                       cursor: 'pointer',
-                      boxShadow: isSelected ? `0 2px 10px ${accent.to}33` : 'none',
+                      boxShadow: isSelected ? (isCustomAccent ? `0 2px 10px ${accent.to}33` : 'none') : 'none',
                       transition: 'all 0.15s ease',
                     }}
                   >
@@ -3673,8 +3733,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       padding: '8px 2px',
                       borderRadius: '10px',
                       border: 'none',
-                      background: isSelected ? accent.from : 'transparent',
-                      color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                      background: isSelected ? activePillBg : 'transparent',
+                      color: isSelected ? activePillColor : 'var(--c-text-secondary)',
                       fontWeight: isSelected ? 800 : 600,
                       fontSize: '11px',
                       fontFamily: 'var(--studio-font-body)',
@@ -3731,8 +3791,8 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                           padding: '8px 4px',
                           borderRadius: '10px',
                           border: 'none',
-                          background: isSelected ? accent.from : 'transparent',
-                          color: isSelected ? '#ffffff' : 'var(--c-text-secondary)',
+                          background: isSelected ? activePillBg : 'transparent',
+                          color: isSelected ? activePillColor : 'var(--c-text-secondary)',
                           fontWeight: isSelected ? 800 : 600,
                           fontSize: '10.5px',
                           fontFamily: 'var(--studio-font-body)',
@@ -3804,7 +3864,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   width: '42px',
                   height: '24px',
                   borderRadius: '12px',
-                  background: state.metronomeEnabled ? accent.from : 'rgba(255,255,255,0.15)',
+                  background: state.metronomeEnabled
+                    ? (isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'))
+                    : 'rgba(255,255,255,0.15)',
                   border: 'none',
                   position: 'relative',
                   cursor: 'pointer',
@@ -3818,7 +3880,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: '#ffffff',
+                    background: state.metronomeEnabled
+                      ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#ffffff' : '#000000'))
+                      : '#ffffff',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                     transform: state.metronomeEnabled ? 'translateX(18px)' : 'translateX(0)',
                     transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -3843,7 +3907,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     onChange={(e) => state.setMetronomeVolume(Number(e.target.value))}
                     style={{
                       flex: 1,
-                      accentColor: accent.from,
+                      accentColor: isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff'),
                       height: '16px',
                       cursor: 'pointer',
                     }}
@@ -3871,9 +3935,15 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                           padding: '7px 2px',
                           borderRadius: '8px',
                           border: 'none',
-                          background: isSoundSel ? `${accent.from}33` : 'rgba(255,255,255,0.05)',
-                          borderBottom: isSoundSel ? `2px solid ${accent.from}` : 'none',
-                          color: isSoundSel ? '#ffffff' : 'var(--c-text-secondary)',
+                          background: isSoundSel
+                            ? (isCustomAccent ? `${accent.from}33` : (isLightMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)'))
+                            : 'rgba(255,255,255,0.05)',
+                          borderBottom: isSoundSel
+                            ? `2px solid ${isCustomAccent ? accent.from : (isLightMode ? '#000000' : '#ffffff')}`
+                            : 'none',
+                          color: isSoundSel
+                            ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#000000' : '#ffffff'))
+                            : 'var(--c-text-secondary)',
                           fontSize: '10.5px',
                           fontWeight: isSoundSel ? 800 : 600,
                           cursor: 'pointer',
@@ -4518,12 +4588,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     height: '28px',
                     borderRadius: '9999px',
                     background: teleprompterMirror
-                      ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                      ? (isCustomAccent ? `linear-gradient(135deg, ${accent.from}, ${accent.to})` : (isLightMode ? '#000000' : '#ffffff'))
                       : 'var(--surface-container-high, rgba(255,255,255,0.12))',
                     position: 'relative',
                     flexShrink: 0,
                     transition: 'background 300ms ease',
-                    boxShadow: teleprompterMirror ? `0 2px 10px ${accent.to}44` : 'none',
+                    boxShadow: teleprompterMirror ? (isCustomAccent ? `0 2px 10px ${accent.to}44` : 'none') : 'none',
                     border: 'none',
                     cursor: 'pointer',
                   }}
@@ -4536,7 +4606,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                       width: '22px',
                       height: '22px',
                       borderRadius: '50%',
-                      background: '#fff',
+                      background: teleprompterMirror
+                        ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#ffffff' : '#000000'))
+                        : '#ffffff',
                       transition: 'left 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                     }}
@@ -4576,12 +4648,12 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                   height: '28px',
                   borderRadius: '9999px',
                   background: showContext
-                    ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                    ? (isCustomAccent ? `linear-gradient(135deg, ${accent.from}, ${accent.to})` : (isLightMode ? '#000000' : '#ffffff'))
                     : 'var(--surface-container-high, rgba(255,255,255,0.12))',
                   position: 'relative',
                   flexShrink: 0,
                   transition: 'background 300ms ease',
-                  boxShadow: showContext ? `0 2px 10px ${accent.to}44` : 'none',
+                  boxShadow: showContext ? (isCustomAccent ? `0 2px 10px ${accent.to}44` : 'none') : 'none',
                   border: 'none',
                   cursor: 'pointer',
                 }}
@@ -4594,7 +4666,9 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
                     width: '22px',
                     height: '22px',
                     borderRadius: '50%',
-                    background: '#fff',
+                    background: showContext
+                      ? (isCustomAccent ? '#ffffff' : (isLightMode ? '#ffffff' : '#000000'))
+                      : '#ffffff',
                     transition: 'left 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                   }}

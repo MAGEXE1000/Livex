@@ -164,7 +164,9 @@ export function TimeSignatureModal({
                   }}
                   className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-50/80 dark:bg-blue-950/40 border-[#007aff] text-slate-900 dark:text-zinc-100 shadow-sm'
+                      ? isAmoled
+                        ? 'bg-white/10 border-white text-white shadow-sm'
+                        : 'bg-black/5 dark:bg-white/10 border-black dark:border-white text-black dark:text-white shadow-sm'
                       : isAmoled
                         ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/5'
                         : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
@@ -174,7 +176,9 @@ export function TimeSignatureModal({
                     <div
                       className={`w-11 h-11 rounded-xl flex items-center justify-center font-manrope font-extrabold text-sm border ${
                         isSelected
-                          ? 'bg-[#007aff] text-white border-blue-600 shadow-xs'
+                          ? isAmoled
+                            ? 'bg-white text-black font-extrabold border-white'
+                            : 'bg-black dark:bg-white text-white dark:text-black font-extrabold border-black dark:border-white'
                           : isAmoled
                             ? 'bg-black text-white border-white/10'
                             : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
@@ -193,7 +197,7 @@ export function TimeSignatureModal({
                   </div>
 
                   {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-[#007aff] text-white flex items-center justify-center text-[11px] font-bold">
+                    <span className="w-5 h-5 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] font-bold">
                       ✓
                     </span>
                   )}
@@ -211,7 +215,7 @@ export function TimeSignatureModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3 rounded-2xl bg-[#007aff] hover:bg-blue-600 text-white font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
+              className="w-full py-3 rounded-2xl bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
             >
               Done
             </button>
@@ -382,7 +386,9 @@ export function SubdivisionModal({
                   }}
                   className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-50/80 dark:bg-blue-950/40 border-[#007aff] text-slate-900 dark:text-zinc-100 shadow-sm'
+                      ? isAmoled
+                        ? 'bg-white/10 border-white text-white shadow-sm'
+                        : 'bg-black/5 dark:bg-white/10 border-black dark:border-white text-black dark:text-white shadow-sm'
                       : isAmoled
                         ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/5'
                         : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
@@ -392,7 +398,9 @@ export function SubdivisionModal({
                     <div
                       className={`w-11 h-11 rounded-xl flex items-center justify-center font-manrope font-extrabold text-xs border ${
                         isSelected
-                          ? 'bg-[#007aff] text-white border-blue-600 shadow-xs'
+                          ? isAmoled
+                            ? 'bg-white text-black font-extrabold border-white'
+                            : 'bg-black dark:bg-white text-white dark:text-black font-extrabold border-black dark:border-white'
                           : isAmoled
                             ? 'bg-black text-white border-white/10'
                             : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
@@ -411,7 +419,7 @@ export function SubdivisionModal({
                   </div>
 
                   {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-[#007aff] text-white flex items-center justify-center text-[11px] font-bold">
+                    <span className="w-5 h-5 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] font-bold">
                       ✓
                     </span>
                   )}
@@ -429,7 +437,7 @@ export function SubdivisionModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3 rounded-2xl bg-[#007aff] hover:bg-blue-600 text-white font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
+              className="w-full py-3 rounded-2xl bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
             >
               Done
             </button>
@@ -629,13 +637,23 @@ export function TempoRampModal({
                 aria-checked={enabled}
                 onClick={() => setEnabled(!enabled)}
                 className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer flex items-center px-0.5 ${
-                  enabled ? 'bg-[#007aff]' : 'bg-slate-300 dark:bg-zinc-700'
+                  enabled
+                    ? isAmoled
+                      ? 'bg-white'
+                      : 'bg-black dark:bg-white'
+                    : 'bg-slate-300 dark:bg-zinc-700'
                 }`}
               >
                 <motion.div
                   animate={{ x: enabled ? 20 : 2 }}
                   transition={prefersReduced ? { duration: 0 } : SpringPresets.snappy}
-                  className="w-6 h-6 rounded-full bg-white shadow-sm"
+                  className={`w-6 h-6 rounded-full shadow-sm ${
+                    enabled
+                      ? isAmoled
+                        ? 'bg-black'
+                        : 'bg-white dark:bg-black'
+                      : 'bg-white'
+                  }`}
                 />
               </button>
             </div>
@@ -658,8 +676,8 @@ export function TempoRampModal({
                   className={`py-2 rounded-xl text-xs font-bold font-manrope transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     mode === 'bars'
                       ? isAmoled
-                        ? 'bg-black text-[#007aff] shadow-xs border border-white/10'
-                        : 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
+                        ? 'bg-white text-black font-extrabold shadow-xs border border-white'
+                        : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -672,8 +690,8 @@ export function TempoRampModal({
                   className={`py-2 rounded-xl text-xs font-bold font-manrope transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     mode === 'time'
                       ? isAmoled
-                        ? 'bg-black text-[#007aff] shadow-xs border border-white/10'
-                        : 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
+                        ? 'bg-white text-black font-extrabold shadow-xs border border-white'
+                        : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -726,7 +744,7 @@ export function TempoRampModal({
                 <button
                   type="button"
                   onClick={() => setStartBpm(currentBpm)}
-                  className="text-[10px] font-semibold text-[#007aff] hover:underline mt-1 cursor-pointer"
+                  className="text-[10px] font-semibold text-slate-500 hover:text-black dark:text-zinc-400 dark:hover:text-white mt-1 cursor-pointer"
                 >
                   Set to {currentBpm}
                 </button>
@@ -773,7 +791,7 @@ export function TempoRampModal({
                 <button
                   type="button"
                   onClick={() => setTargetBpm(Math.min(280, startBpm + 20))}
-                  className="text-[10px] font-semibold text-[#007aff] hover:underline mt-1 cursor-pointer"
+                  className="text-[10px] font-semibold text-slate-500 hover:text-black dark:text-zinc-400 dark:hover:text-white mt-1 cursor-pointer"
                 >
                   +20 BPM
                 </button>
@@ -786,7 +804,7 @@ export function TempoRampModal({
                 <span className="text-xs font-bold font-manrope text-slate-700 dark:text-zinc-300">
                   BPM Increment
                 </span>
-                <span className="text-xs font-mono font-bold text-[#007aff]">+{stepBpm} BPM</span>
+                <span className="text-xs font-mono font-bold text-black dark:text-white">+{stepBpm} BPM</span>
               </div>
               <div className="flex gap-1.5">
                 {STEP_PRESETS.map((step) => (
@@ -796,7 +814,9 @@ export function TempoRampModal({
                     onClick={() => setStepBpm(step)}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       stepBpm === step
-                        ? 'bg-[#007aff] text-white shadow-xs'
+                        ? isAmoled
+                          ? 'bg-white text-black font-extrabold shadow-xs'
+                          : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                         : isAmoled
                           ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
                           : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
@@ -829,7 +849,9 @@ export function TempoRampModal({
                         onClick={() => setIntervalBars(bars)}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           intervalBars === bars
-                            ? 'bg-[#007aff] text-white shadow-xs'
+                            ? isAmoled
+                              ? 'bg-white text-black font-extrabold shadow-xs'
+                              : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                             : isAmoled
                               ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
                               : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
@@ -859,7 +881,9 @@ export function TempoRampModal({
                         onClick={() => setStartDelayBars(bars)}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           startDelayBars === bars
-                            ? 'bg-[#007aff] text-white shadow-xs'
+                            ? isAmoled
+                              ? 'bg-white text-black font-extrabold shadow-xs'
+                              : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                             : isAmoled
                               ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
                               : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
@@ -891,7 +915,9 @@ export function TempoRampModal({
                         onClick={() => setIntervalSec(sec)}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           intervalSec === sec
-                            ? 'bg-[#007aff] text-white shadow-xs'
+                            ? isAmoled
+                              ? 'bg-white text-black font-extrabold shadow-xs'
+                              : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                             : isAmoled
                               ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
                               : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
@@ -923,7 +949,9 @@ export function TempoRampModal({
                         onClick={() => setStartDelaySec(sec)}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           startDelaySec === sec
-                            ? 'bg-[#007aff] text-white shadow-xs'
+                            ? isAmoled
+                              ? 'bg-white text-black font-extrabold shadow-xs'
+                              : 'bg-black dark:bg-white text-white dark:text-black font-extrabold shadow-xs'
                             : isAmoled
                               ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
                               : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
@@ -959,13 +987,23 @@ export function TempoRampModal({
                 aria-checked={holdFinalBpm}
                 onClick={() => setHoldFinalBpm(!holdFinalBpm)}
                 className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer flex items-center px-0.5 ${
-                  holdFinalBpm ? 'bg-[#007aff]' : 'bg-slate-300 dark:bg-zinc-700'
+                  holdFinalBpm
+                    ? isAmoled
+                      ? 'bg-white'
+                      : 'bg-black dark:bg-white'
+                    : 'bg-slate-300 dark:bg-zinc-700'
                 }`}
               >
                 <motion.div
                   animate={{ x: holdFinalBpm ? 16 : 2 }}
                   transition={prefersReduced ? { duration: 0 } : SpringPresets.snappy}
-                  className="w-5 h-5 rounded-full bg-white shadow-sm"
+                  className={`w-5 h-5 rounded-full shadow-sm ${
+                    holdFinalBpm
+                      ? isAmoled
+                        ? 'bg-black'
+                        : 'bg-white dark:bg-black'
+                      : 'bg-white'
+                  }`}
                 />
               </button>
             </div>
@@ -975,10 +1013,10 @@ export function TempoRampModal({
               className={`p-3.5 rounded-2xl ${
                 isAmoled
                   ? 'bg-[#0a0a0c] border border-white/10 text-zinc-300'
-                  : 'bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-blue-950 dark:text-blue-200'
+                  : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-slate-800 dark:text-zinc-200'
               } text-xs flex items-start gap-2.5`}
             >
-              <span className="material-symbols-outlined text-[#007aff] text-[18px] shrink-0 mt-0.5">
+              <span className="material-symbols-outlined text-black dark:text-white text-[18px] shrink-0 mt-0.5">
                 info
               </span>
               <p className="leading-relaxed">{liveSummaryText}</p>
@@ -1005,7 +1043,7 @@ export function TempoRampModal({
             <button
               type="button"
               onClick={handleSave}
-              className="flex-1 py-3 rounded-2xl bg-[#007aff] hover:bg-blue-600 text-white font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
+              className="flex-1 py-3 rounded-2xl bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
             >
               Save Progression
             </button>
@@ -1103,8 +1141,8 @@ export function CountInModal({
               <div
                 className={`w-8 h-8 rounded-xl ${
                   isAmoled
-                    ? 'bg-[#007aff]/15 text-[#007aff]'
-                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    ? 'bg-white/10 text-white'
+                    : 'bg-black/5 dark:bg-white/10 text-black dark:text-white'
                 } flex items-center justify-center`}
               >
                 <span className="material-symbols-outlined text-[19px]">timelapse</span>
@@ -1153,8 +1191,8 @@ export function CountInModal({
                       className={`p-2.5 rounded-2xl flex flex-col items-center justify-center transition tap-press cursor-pointer border ${
                         isSelected
                           ? isAmoled
-                            ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff] shadow-xs'
-                            : 'bg-blue-50 dark:bg-blue-950/50 border-[#007aff] text-[#007aff] shadow-xs'
+                            ? 'bg-white text-black font-extrabold border-white shadow-xs'
+                            : 'bg-black dark:bg-white text-white dark:text-black font-extrabold border-black dark:border-white shadow-xs'
                           : isAmoled
                             ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:border-white/20'
                             : 'bg-slate-50 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700/80 text-slate-700 dark:text-zinc-300 hover:border-slate-300'
@@ -1181,8 +1219,8 @@ export function CountInModal({
                   <div
                     className={`w-8 h-8 rounded-xl ${
                       isAmoled
-                        ? 'bg-purple-950/40 text-purple-400 border border-purple-900/30'
-                        : 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400'
+                        ? 'bg-white/10 text-white border border-white/15'
+                        : 'bg-black/5 dark:bg-white/10 text-black dark:text-white border border-black/10 dark:border-white/15'
                     } flex items-center justify-center shrink-0`}
                   >
                     <span className="material-symbols-outlined text-[18px]">record_voice_over</span>
@@ -1205,15 +1243,21 @@ export function CountInModal({
                   onClick={() => onToggleVoice(!countInVoiceEnabled)}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                     countInVoiceEnabled
-                      ? 'bg-[#007aff]'
+                      ? isAmoled
+                        ? 'bg-white'
+                        : 'bg-black dark:bg-white'
                       : isAmoled
                         ? 'bg-zinc-800'
                         : 'bg-slate-200 dark:bg-zinc-700'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      countInVoiceEnabled ? 'translate-x-5' : 'translate-x-0'
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${
+                      countInVoiceEnabled
+                        ? isAmoled
+                          ? 'bg-black translate-x-5'
+                          : 'bg-white dark:bg-black translate-x-5'
+                        : 'bg-white translate-x-0'
                     }`}
                   />
                 </button>
@@ -1232,8 +1276,8 @@ export function CountInModal({
                 <div
                   className={`w-8 h-8 rounded-xl ${
                     isAmoled
-                      ? 'bg-pink-950/40 text-pink-400 border border-pink-900/30'
-                      : 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400'
+                      ? 'bg-white/10 text-white border border-white/15'
+                      : 'bg-black/5 dark:bg-white/10 text-black dark:text-white border border-black/10 dark:border-white/15'
                   } flex items-center justify-center shrink-0`}
                 >
                   <span className="material-symbols-outlined text-[18px]">face_3</span>
@@ -1254,8 +1298,8 @@ export function CountInModal({
                   onClick={onPreviewVoice}
                   className={`px-2.5 py-1.5 rounded-xl ${
                     isAmoled
-                      ? 'bg-black hover:bg-white/10 border-white/15 text-[#007aff]'
-                      : 'bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 border-slate-200 dark:border-zinc-600 text-[#007aff] dark:text-blue-400'
+                      ? 'bg-black hover:bg-white/10 border-white/15 text-white'
+                      : 'bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 border-slate-200 dark:border-zinc-600 text-slate-900 dark:text-white'
                   } border font-manrope font-bold text-xs flex items-center gap-1 transition tap-press cursor-pointer shadow-xs`}
                 >
                   <span className="material-symbols-outlined text-[15px]">volume_up</span>
@@ -1274,7 +1318,7 @@ export function CountInModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3 rounded-2xl bg-[#007aff] hover:bg-blue-600 text-white font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
+              className="w-full py-3 rounded-2xl bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
             >
               Done
             </button>

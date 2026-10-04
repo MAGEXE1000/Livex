@@ -42,7 +42,7 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
     () => ({
       foh: {
         label: riderTr?.typeFoh || 'FOH PROTOCOL',
-        color: '#2563eb',
+        color: 'var(--c-text-primary)',
         icon: 'graphic_eq',
         defaultPlaceholder:
           riderTr?.placeholderFoh || 'e.g. Dante Primary/Secondary @ 96kHz, Cat6 homerun',
@@ -378,7 +378,7 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span
-                    className="text-[9.5px] font-black uppercase tracking-widest block text-blue-600 dark:text-blue-400"
+                    className="text-[9.5px] font-black uppercase tracking-widest block text-black dark:text-white"
                     style={{ letterSpacing: '0.12em' }}
                   >
                     {riderTr?.specTitle || 'TECHNICAL RIDER & STAGE SPECIFICATION'}
@@ -903,9 +903,9 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
             <span
               className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
               style={{
-                backgroundColor: isLight ? 'rgba(37, 99, 235, 0.08)' : 'rgba(59, 130, 246, 0.15)',
-                color: isLight ? '#2563eb' : '#60a5fa',
-                borderColor: isLight ? 'rgba(37, 99, 235, 0.2)' : 'rgba(59, 130, 246, 0.3)',
+                backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                color: isLight ? '#000000' : '#ffffff',
+                borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.2)',
               }}
             >
               {riderConfig.contactName
@@ -1286,7 +1286,10 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
                 >
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0"
-                    style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+                    style={{
+                      backgroundColor: m.color || (isLight ? '#000000' : '#ffffff'),
+                      color: m.color ? '#ffffff' : (isLight ? '#ffffff' : '#000000'),
+                    }}
                   >
                     {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
                   </div>
