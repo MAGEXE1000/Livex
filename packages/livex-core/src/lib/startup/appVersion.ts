@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.98';
-export const NATIVE_VERSION_CODE = 40698;
-export const WEB_VERSION = '4.6.98';
+export const NATIVE_VERSION = '4.6.99';
+export const NATIVE_VERSION_CODE = 40699;
+export const WEB_VERSION = '4.6.99';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -99,19 +99,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Fixed',
     items: [
-      'Universal Export Normalization: Standardized all export routines across the application (Songs, Setlists, Drumex patterns, PDF charts, audio takes) to output clean files using sanitized titles and universal standards (`.json`, `.pdf`, `.wav`, etc.), while completely eliminating `.livex` export generation and maintaining resilient schema-tolerant import ingestion.',
-      'Cross-Platform Filename Sanitizer: Implemented `sanitizeFilename` utility with comprehensive test suite covering invalid filesystem characters, leading dots, and whitespace collapsing.',
-    ],
-  },
-  {
-    heading: 'Improved',
-    items: [
-      'Settings Cards Elevation & Material Parity: Redesigned all Hub Settings navigation cards, profile status cards, setting sections, and setting rows to match the exact size, touch geometry, materials, and typography of Livex Module cards (`sc-module-card`), with `clamp(54px, 8.0vh, 72px)` min-height, layered glass materials, AMOLED pure black support, and 38x38px icon containers.',
-      'iOS Search Bar Input Transparency: Eradicated residual white/gray inner rectangle borders inside iOS-style search bars, ensuring input backgrounds are 100% transparent and flush.',
-      'Button Typography Contrast Polish: Enforced high-contrast `text-black font-semibold` typography on all solid white and light-surface buttons across sheets, pins, and modals.',
-      'Decoupled Navigation Back Stack: Isolated the global Android back button history stack, preventing Stagex and sub-modules from trapping or corrupting navigation history and ensuring clean return from Hub subpages.',
+      'Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.',
+      'Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.',
+      'Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.',
+      'Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent.',
     ],
   },
 ];
@@ -126,6 +119,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.99',
+    date: '2026-10-04',
+    highlights: [
+      'Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.',
+      'Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.',
+      'Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.',
+      'Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent.',
+    ],
+  },
   {
     version: '4.6.98',
     date: '2026-10-04',
@@ -221,18 +224,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
     highlights: [
       'Samsung IME Multi-Line Insert Interception: Added native DOM beforeinput interception in SongLyricsEditor for multi-line text streams, seamlessly normalizing and splicing Samsung Keyboard clipboard pastes into song lyrics and ensuring song content registers immediately for playback.',
       'Synchronous Focus Restoration on Line Deletion: Relocated caret restoration to synchronous useLayoutEffect during line deletion and merge operations, preventing Android WebView focus loss and keeping the virtual keyboard open during rapid Backspace or word deletion.',
-    ],
-  },
-  {
-    version: '4.6.88',
-    date: '2026-10-03',
-    highlights: [
-      "DOM Placeholder Crash Eradication: Completely eliminated React-managed placeholder elements in `SongLyricsEditor` in favor of CSS-only `:empty` pseudo-elements on the canvas container, resolving `NotFoundError: Failed to execute 'removeChild' on 'Node'` crashes when typing initial characters on new or blank songs.",
-      'Lyric Formatting Span Reconciliation: Implemented `reconcileSpansOnTextEdit` engine to accurately preserve, shift, and adjust formatting spans (bold, italic, underline, vocal colors) across character insertions, deletions, and replacements.',
-      'Scoped Canvas Deletion Interception: Scoped Backspace and `beforeinput` selection event handlers strictly to the active lyric canvas DOM element, preventing accidental deletion interception in the chord picker, modal inputs, and search fields.',
-      'State Synchronization & Echo Guard: Hardened lyrics state synchronization with structural deep equality checks and an echo guard (`lastEmittedRef`) to prevent in-flight typing from being overwritten by pending debounced store updates.',
-      'Schedule-Authoritative Live Timing: Updated Live mode teleprompter timing to synchronize against per-line schedule durations (`timingSchedule.lines`) with drift compensation, and gracefully halting playback on the final line without wrapping.',
-      'Interruptible Smooth Scrolling: Introduced touch- and wheel-interruptible smooth scrolling (`animateScrollTop`) for teleprompter and practice views.',
     ],
   },
 ];
