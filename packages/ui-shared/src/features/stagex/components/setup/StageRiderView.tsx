@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStagexStore, type RiderNeed } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { StageSetupEmptyState } from './StageSetupEmptyState';
-import { useSettingsStore, useT, EasingPresets, useBackHandler } from '@workspace/livex-core';
+import { useSettingsStore, useT, EasingPresets, useBackHandler, NavigationDispatcher } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 
@@ -242,11 +242,9 @@ export const StageRiderView: React.FC<StageRiderViewProps> = ({
   useBackHandler(
     'modal',
     () => {
-      if (isAdding) {
-        setIsAdding(false);
-        return true;
-      }
-      return false;
+      if (NavigationDispatcher.currentApp() !== 'stagex' || !isAdding) return false;
+      setIsAdding(false);
+      return true;
     },
     [isAdding]
   );

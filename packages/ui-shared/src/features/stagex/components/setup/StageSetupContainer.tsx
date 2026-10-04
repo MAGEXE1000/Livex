@@ -77,7 +77,7 @@ export const StageSetupContainer: React.FC<StageSetupContainerProps> = ({
   useBackHandler(
     'nested',
     () => {
-      if (!isActive) return false;
+      if (NavigationDispatcher.currentApp() !== 'stagex' || !isActive) return false;
 
       // 1. If inside a Setup subsection (rider, setlist, gear, members), back returns to Setup Hub
       if (activeSubView !== 'hub') {

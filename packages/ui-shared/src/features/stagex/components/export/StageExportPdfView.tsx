@@ -107,7 +107,7 @@ export const StageExportPdfView: React.FC<StageExportPdfViewProps> = ({
   useBackHandler(
     'nested',
     () => {
-      if (!isActive) return false;
+      if (NavigationDispatcher.currentApp() !== 'stagex' || !isActive) return false;
       if (isSaveModalOpen) {
         setIsSaveModalOpen(false);
         return true;

@@ -176,6 +176,7 @@ export default function StagexPanel() {
   }, []);
 
   const handleBackToStage = useCallback(() => {
+    if (NavigationDispatcher.currentApp() !== 'stagex') return;
     useStagexStore.getState().setSetupSubView('hub');
     const store = useNavigationStore.getState();
     const history = store.history;
@@ -247,7 +248,7 @@ export default function StagexPanel() {
                     {viewId === 'Setup' && (
                       <div className="w-full h-full">
                         <StageSetupContainer
-                          isActive={curView === 'Setup'}
+                          isActive={curView === 'Setup' && currentRoute.app === 'stagex'}
                           initialSubView={
                             ['rider', 'setlist', 'gear', 'members'].includes(
                               (currentRoute.subView || currentRoute.page || '').toLowerCase()
@@ -270,6 +271,7 @@ export default function StagexPanel() {
                     {viewId === 'Preferences' && (
                       <div className="w-full h-full">
                         <StagePreferencesView
+                          isActive={curView === 'Preferences' && currentRoute.app === 'stagex'}
                           isLight={isLight}
                           isAmoled={isAmoled}
                           onBack={handleBackToStage}
@@ -281,7 +283,7 @@ export default function StagexPanel() {
                     {viewId === 'Export' && (
                       <div className="w-full h-full">
                         <StageExportPdfView
-                          isActive={curView === 'Export'}
+                          isActive={curView === 'Export' && currentRoute.app === 'stagex'}
                           onBack={() => navigate('Editor')}
                           isLight={isLight}
                           isAmoled={isAmoled}

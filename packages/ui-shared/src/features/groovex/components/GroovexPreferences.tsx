@@ -13,6 +13,7 @@ import { useGroovexStore } from '../state/useGroovexStore';
 import { SONG_CATALOG } from '../services/songCatalog';
 import { Dialog } from '../../../shared/design-system/dialogs';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
+import { Switch } from '../../../components/ui/Switch';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 
@@ -1117,46 +1118,9 @@ function StitchToggleRow({
           {subtitle}
         </p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={value}
-        onClick={() => onChange(!value)}
-        data-toggle="switch"
-        style={{
-          position: 'relative',
-          display: 'inline-flex',
-          height: 28,
-          width: 48,
-          flexShrink: 0,
-          cursor: 'pointer',
-          borderRadius: 9999,
-          border: '2px solid transparent',
-          backgroundColor: value
-            ? 'var(--studio-accent, #ffffff)'
-            : isLight
-              ? 'rgba(0, 0, 0, 0.12)'
-              : 'rgba(255, 255, 255, 0.15)',
-          transition: 'background-color 200ms ease-in-out',
-          outline: 'none',
-          padding: 0,
-        }}
-      >
-        <span className="sr-only">Toggle {label}</span>
-        <span
-          style={{
-            pointerEvents: 'none',
-            display: 'inline-block',
-            height: 24,
-            width: 24,
-            borderRadius: '50%',
-            backgroundColor: '#ffffff',
-            boxShadow: '0 2px 5px rgba(0, 0, 0, 0.25)',
-            transform: value ? 'translateX(20px)' : 'translateX(0px)',
-            transition: 'transform 200ms ease-in-out',
-          }}
-        />
-      </button>
+      <Switch checked={value} onCheckedChange={onChange} aria-label={`Toggle ${label}`} />
     </div>
   );
 }
+
+

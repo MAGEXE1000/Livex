@@ -3,7 +3,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react'
 import { SlidersHorizontal } from 'lucide-react';
 import { useStagexStore, type SetlistSong, type SetlistPreset } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT, useShallow, useBackHandler } from '@workspace/livex-core';
+import { useSettingsStore, useT, useShallow, useBackHandler, NavigationDispatcher } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 
 interface StageSetlistViewProps {
@@ -648,6 +648,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
   useBackHandler(
     'modal',
     () => {
+      if (NavigationDispatcher.currentApp() !== 'stagex') return false;
       if (isPresetModalOpen) {
         setIsPresetModalOpen(false);
         return true;

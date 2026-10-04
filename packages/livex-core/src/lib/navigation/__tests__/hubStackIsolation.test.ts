@@ -48,6 +48,19 @@ describe('Hub stack isolation (Stagex back-loop regression)', () => {
     expect(apps()).toEqual(['hub']);
   });
 
+  it('Hub -> Stagex -> Hub -> Settings -> Updater: Back goes Settings -> Hub, never Stagex', () => {
+    NavigationDispatcher.openApp('stagex');
+    NavigationDispatcher.openApp('hub');
+    NavigationDispatcher.push({ app: 'hub', page: 'main', tab: 'settings' });
+    NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'updater' });
+
+    NavigationDispatcher.pop();
+    expect(NavigationDispatcher.currentRoute()).toMatchObject({ app: 'hub', tab: 'settings' });
+    NavigationDispatcher.pop();
+    expect(NavigationDispatcher.currentRoute()).toMatchObject({ app: 'hub', tab: 'home' });
+    expect(apps()).toEqual(['hub']);
+  });
+
   it('closeApp resets to a clean hub root', () => {
     NavigationDispatcher.openApp('stagex');
     NavigationDispatcher.closeApp();

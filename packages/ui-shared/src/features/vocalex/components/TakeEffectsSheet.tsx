@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Switch } from '../../../components/ui/Switch';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   type TakeRecord,
@@ -590,43 +591,7 @@ export default function TakeEffectsSheet({
                   </div>
 
                   {/* Enable / Disable Switch */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleEffect(effect.type)}
-                    role="switch"
-                    aria-checked={isEnabled}
-                    aria-label={`${meta.label} ${isEnabled ? 'on' : 'off'}`}
-                    style={{
-                      width: 44,
-                      height: 26,
-                      borderRadius: 13,
-                      background: isEnabled
-                        ? 'var(--studio-accent, #ffffff)'
-                        : 'rgba(255, 255, 255, 0.15)',
-                      border: 'none',
-                      padding: 2,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      position: 'relative',
-                      transition: 'background 200ms ease',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <motion.div
-                      animate={{ x: isEnabled ? 18 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: isEnabled
-                          ? 'var(--studio-accent-contrast, #000000)'
-                          : '#ffffff',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                  </button>
+                  <Switch checked={isEnabled} onClick={() => handleToggleEffect(effect.type)} aria-label={`${meta.label} ${isEnabled ? 'on' : 'off'}`} />
                 </div>
 
                 {/* Sliders Area (Collapsible when enabled) */}
@@ -731,3 +696,4 @@ export default function TakeEffectsSheet({
     </div>
   );
 }
+

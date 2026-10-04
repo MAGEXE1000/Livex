@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStagexStore, type GearItem } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
-import { useSettingsStore, useT, useShallow, useBackHandler } from '@workspace/livex-core';
+import { useSettingsStore, useT, useShallow, useBackHandler, NavigationDispatcher } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../../hooks/useAppReducedMotion';
 import { IosSearchBar } from '../../../../components/ui/IosSearchBar';
 
@@ -119,11 +119,9 @@ export const StageGearView: React.FC<StageGearViewProps> = ({
   useBackHandler(
     'modal',
     () => {
-      if (isAdding) {
-        setIsAdding(false);
-        return true;
-      }
-      return false;
+      if (NavigationDispatcher.currentApp() !== 'stagex' || !isAdding) return false;
+      setIsAdding(false);
+      return true;
     },
     [isAdding]
   );

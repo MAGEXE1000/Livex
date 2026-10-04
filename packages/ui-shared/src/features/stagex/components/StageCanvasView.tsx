@@ -10,6 +10,7 @@ import {
   useBackHandler,
   useBottomNavigationStore,
   useSettingsStore,
+  NavigationDispatcher,
 } from '@workspace/livex-core';
 import { StageToolbar } from './StageToolbar';
 import { StageLibraryPanel } from './StageLibraryPanel';
@@ -368,7 +369,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   useBackHandler(
     'overlay',
     () => {
-      if (!isActive) return false;
+      if (NavigationDispatcher.currentApp() !== 'stagex' || !isActive) return false;
       if (layersOpen) {
         setLayersOpen(false);
         return true;

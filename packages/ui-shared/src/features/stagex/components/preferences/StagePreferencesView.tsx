@@ -23,12 +23,14 @@ import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSyst
 import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpring';
 
 export interface StagePreferencesViewProps {
+  isActive?: boolean;
   isLight?: boolean;
   isAmoled?: boolean;
   onBack?: () => void;
 }
 
 export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
+  isActive,
   isLight: isLightProp,
   isAmoled: isAmoledProp,
   onBack,
@@ -52,13 +54,15 @@ export const StagePreferencesView: React.FC<StagePreferencesViewProps> = ({
   useBackHandler(
     'nested',
     () => {
+      if (NavigationDispatcher.currentApp() !== 'stagex') return false;
+      if (isActive !== undefined && !isActive) return false;
       if (onBack) {
         onBack();
         return true;
       }
       return false;
     },
-    [onBack]
+    [isActive, onBack]
   );
 
   const t = useT();

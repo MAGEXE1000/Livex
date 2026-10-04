@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Switch } from '../../../components/ui/Switch';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   useMetronomeStore,
@@ -2138,38 +2139,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                       Play lead-in beat sequence before starting
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={presetFormData.countInEnabled}
-                    onClick={() =>
+                  <Switch checked={presetFormData.countInEnabled} onClick={() =>
                       setPresetFormData({
                         ...presetFormData,
                         countInEnabled: !presetFormData.countInEnabled,
                       })
-                    }
-                    className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer flex items-center px-0.5 ${
-                      presetFormData.countInEnabled
-                        ? isAmoled
-                          ? 'bg-white'
-                          : 'bg-black dark:bg-white'
-                        : isAmoled
-                          ? 'bg-zinc-800'
-                          : 'bg-slate-300 dark:bg-zinc-700'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full ${
-                        presetFormData.countInEnabled
-                          ? isAmoled
-                            ? 'bg-black'
-                            : 'bg-white dark:bg-black'
-                          : 'bg-white'
-                      } shadow-sm transform transition-transform ${
-                        presetFormData.countInEnabled ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
+                    } />
                 </div>
               </div>
 
@@ -2616,3 +2591,4 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 }
 
 export default MetronomePanel;
+

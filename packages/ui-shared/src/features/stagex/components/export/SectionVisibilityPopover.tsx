@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
+import { Switch } from '../../../../components/ui/Switch';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSettingsStore } from '@workspace/livex-core';
 import type {
@@ -451,37 +452,7 @@ export const SectionVisibilityContent: React.FC<SectionVisibilityContentProps> =
             </div>
           </div>
 
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showElementNames}
-            aria-label={isSpanish ? 'Mostrar nombres de elementos' : 'Show element names'}
-            data-testid="toggle-show-element-names"
-            onClick={() => onToggleShowElementNames(!showElementNames)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
-            style={{
-              backgroundColor: showElementNames
-                ? isLight
-                  ? '#000000'
-                  : '#ffffff'
-                : isLight
-                  ? 'rgba(0, 0, 0, 0.18)'
-                  : 'rgba(255, 255, 255, 0.2)',
-            }}
-          >
-            <span
-              className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full shadow-md ring-0 transition duration-200 ease-in-out mt-[3px] ${
-                showElementNames ? 'translate-x-[18px]' : 'translate-x-[3px]'
-              }`}
-              style={{
-                backgroundColor: showElementNames
-                  ? isLight
-                    ? '#ffffff'
-                    : '#000000'
-                  : '#ffffff',
-              }}
-            />
-          </button>
+          <Switch checked={showElementNames} onClick={() => onToggleShowElementNames(!showElementNames)} aria-label={isSpanish ? 'Mostrar nombres de elementos' : 'Show element names'} data-testid="toggle-show-element-names" />
         </div>
       )}
 
@@ -511,4 +482,5 @@ export const SectionVisibilityPopover: React.FC<SectionVisibilityPopoverProps> =
     <SectionVisibilityContent {...props} />
   );
 };
+
 
