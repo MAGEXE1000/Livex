@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.97';
-export const NATIVE_VERSION_CODE = 40697;
-export const WEB_VERSION = '4.6.97';
+export const NATIVE_VERSION = '4.6.98';
+export const NATIVE_VERSION_CODE = 40698;
+export const WEB_VERSION = '4.6.98';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '709af91f';
+export const APP_COMMIT_SHA = 'e71d433f';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/4/2026, 1:46:18 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/4/2026, 12:08:32 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,17 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Local Stage Sync Rooms (P2P / QR): Architected an instant, zero-cloud offline stage synchronization engine operating over local network, Wi-Fi hotspot, or Bluetooth with sub-15ms baseline latency. Features vector SVG QR code generation, 4-character join code (`LX-408`), camera QR scanner, and real-time beat/playback state broadcasts.',
-      'Stage Sync Delay Calibration Tool: Tactile millisecond latency calibration (`-250ms ... 0ms ... +250ms`) with fine-tuning steppers and visual metronome alignment blink test (Host Reference vs Local Output) for zero acoustic/optical delay across wireless in-ear headphones and stage monitors.',
-      'Setlist Preset Drawer: Bottom drawer component allowing 1-tap switching, inline new setlist creation, renaming, duplicating, and deleting.',
-      'Cloud Band Decoupling: Decoupled cloud Band workspaces into an informative "Coming Soon" modal with direct link to Local Stage Rooms, bypassing broken remote calls.',
+      'Universal Export Normalization: Standardized all export routines across the application (Songs, Setlists, Drumex patterns, PDF charts, audio takes) to output clean files using sanitized titles and universal standards (`.json`, `.pdf`, `.wav`, etc.), while completely eliminating `.livex` export generation and maintaining resilient schema-tolerant import ingestion.',
+      'Cross-Platform Filename Sanitizer: Implemented `sanitizeFilename` utility with comprehensive test suite covering invalid filesystem characters, leading dots, and whitespace collapsing.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Setlist TopBar Overhaul: Eradicated the oversized stacked `Main Show 0 + Manage` chrome and giant `[🎵 Main Show ⌵]` pill across `StageSetlistView` and `SetlistDetailView`. Replaced with a sleek, single-row AMOLED header featuring back navigation, track count and runtime metrics, and a compact 36x36px preset selector icon button.',
+      'Settings Cards Elevation & Material Parity: Redesigned all Hub Settings navigation cards, profile status cards, setting sections, and setting rows to match the exact size, touch geometry, materials, and typography of Livex Module cards (`sc-module-card`), with `clamp(54px, 8.0vh, 72px)` min-height, layered glass materials, AMOLED pure black support, and 38x38px icon containers.',
+      'iOS Search Bar Input Transparency: Eradicated residual white/gray inner rectangle borders inside iOS-style search bars, ensuring input backgrounds are 100% transparent and flush.',
+      'Button Typography Contrast Polish: Enforced high-contrast `text-black font-semibold` typography on all solid white and light-surface buttons across sheets, pins, and modals.',
+      'Decoupled Navigation Back Stack: Isolated the global Android back button history stack, preventing Stagex and sub-modules from trapping or corrupting navigation history and ensuring clean return from Hub subpages.',
     ],
   },
 ];
@@ -125,6 +126,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.98',
+    date: '2026-10-04',
+    highlights: [
+      'Universal Export Normalization: Standardized all export routines across the application (Songs, Setlists, Drumex patterns, PDF charts, audio takes) to output clean files using sanitized titles and universal standards (`.json`, `.pdf`, `.wav`, etc.), while completely eliminating `.livex` export generation and maintaining resilient schema-tolerant import ingestion.',
+      'Cross-Platform Filename Sanitizer: Implemented `sanitizeFilename` utility with comprehensive test suite covering invalid filesystem characters, leading dots, and whitespace collapsing.',
+      'Settings Cards Elevation & Material Parity: Redesigned all Hub Settings navigation cards, profile status cards, setting sections, and setting rows to match the exact size, touch geometry, materials, and typography of Livex Module cards (`sc-module-card`), with `clamp(54px, 8.0vh, 72px)` min-height, layered glass materials, AMOLED pure black support, and 38x38px icon containers.',
+      'iOS Search Bar Input Transparency: Eradicated residual white/gray inner rectangle borders inside iOS-style search bars, ensuring input backgrounds are 100% transparent and flush.',
+      'Button Typography Contrast Polish: Enforced high-contrast `text-black font-semibold` typography on all solid white and light-surface buttons across sheets, pins, and modals.',
+      'Decoupled Navigation Back Stack: Isolated the global Android back button history stack, preventing Stagex and sub-modules from trapping or corrupting navigation history and ensuring clean return from Hub subpages.',
+    ],
+  },
   {
     version: '4.6.97',
     date: '2026-10-04',
@@ -220,15 +233,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'State Synchronization & Echo Guard: Hardened lyrics state synchronization with structural deep equality checks and an echo guard (`lastEmittedRef`) to prevent in-flight typing from being overwritten by pending debounced store updates.',
       'Schedule-Authoritative Live Timing: Updated Live mode teleprompter timing to synchronize against per-line schedule durations (`timingSchedule.lines`) with drift compensation, and gracefully halting playback on the final line without wrapping.',
       'Interruptible Smooth Scrolling: Introduced touch- and wheel-interruptible smooth scrolling (`animateScrollTop`) for teleprompter and practice views.',
-    ],
-  },
-  {
-    version: '4.6.87',
-    date: '2026-10-02',
-    highlights: [
-      'Canvas Touch Focus & Soft Keyboard Activation: Resolved empty canvas collapse on Android WebView by inserting a `<br />` inside the empty `.lyric-line-content` span, establishing a valid DOM caret anchor so tapping empty lyric space immediately focuses and opens the Android virtual keyboard.',
-      "Empty-State Banner Touch Isolation: Isolated the `[NO LYRICS]` banner inside `<main contentEditable>` in Both mode with `contentEditable={false}`, `userSelect: 'none'`, and `select-none` to permanently prevent WebView from targeting banner text nodes or intercepting cursor placement.",
-      'Lyrics & Both Mode Parity: Ensured seamless touch-to-type capability across both Lyrics and Both workspaces with clean caret positioning and zero placeholder interference.',
     ],
   },
 ];
