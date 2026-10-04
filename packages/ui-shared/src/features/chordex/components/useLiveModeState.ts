@@ -48,6 +48,7 @@ import {
   resolveSchedulePosition,
   createScheduledPlayAnchor,
   type PlaybackPositionAnchor,
+  useLocalStageSyncStore,
 } from '@workspace/livex-core';
 import { animateScrollTop } from '../../../lib/animatedScroll';
 
@@ -2026,6 +2027,14 @@ export function useLiveModeState(
 
       setActiveMetronomeBeat(ev.beatIndex);
       setCurrentBeat(ev.beatIndex);
+
+      // Broadcast beat to local stage room peers if hosting
+      try {
+        const stageSync = useLocalStageSyncStore.getState();
+        if (stageSync.role === 'host') {
+          stageSync.broadcastBeat(currentBarRef.current, ev.beatIndex + 1);
+        }
+      } catch (_) {}
 
       if (isTeleprompterModeRef.current) {
         const lineIdx = currentLineIdxRef.current;

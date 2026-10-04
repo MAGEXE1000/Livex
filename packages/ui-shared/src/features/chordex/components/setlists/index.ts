@@ -6,3 +6,4 @@ export * from './SetlistCreateModal';
 export * from './SetlistSongPickerModal';
 export * from './SetlistShareModal';
 export * from './ImportSetlistModal';
+export * from './SetlistPresetDrawer';

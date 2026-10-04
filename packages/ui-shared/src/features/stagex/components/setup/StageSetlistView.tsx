@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useStagexStore, type SetlistSong, type SetlistPreset } from '../../state/useStagexStore';
 import { StageSetupDetailLayout } from './StageSetupDetailLayout';
 import { useSettingsStore, useT, useShallow, useBackHandler } from '@workspace/livex-core';
@@ -788,46 +789,51 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
 
   return (
     <StageSetupDetailLayout
-      title={setlistTr?.title || tr.stagex?.setlistTitle || 'Setlist'}
+      title={
+        <span
+          className="font-extrabold text-[17px] tracking-tight truncate max-w-[210px] block"
+          style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
+        >
+          {activePreset?.name || (isSpanish ? 'Show Principal' : 'Main Show')}
+        </span>
+      }
+      subtitle={
+        <span className="flex items-center gap-1.5 justify-center tracking-normal font-semibold text-xs opacity-60">
+          <span>{setlist.length} {setlist.length === 1 ? (isSpanish ? 'canción' : 'track') : (isSpanish ? 'canciones' : 'tracks')}</span>
+          <span>•</span>
+          <span>{totalDuration}</span>
+        </span>
+      }
       onBack={onBack}
       isLight={isLight}
       isAmoled={isAmoled}
       toolbarActions={
         <div className="flex items-center gap-2">
-          {/* Preset Selector Pill */}
+          {/* Compact Preset Selector Icon Button (Stagex Style) */}
           <button
             type="button"
             onClick={() => setIsPresetModalOpen(true)}
-            className="h-9 px-3 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 border"
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer border active:scale-95 shadow-sm"
             style={{
-              backgroundColor: innerBg,
-              borderColor: innerBorder,
+              backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+              borderColor: isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)',
               color: textPrimary,
             }}
             title={isSpanish ? 'Gestionar repertorios' : 'Manage setlist presets'}
             aria-label={isSpanish ? 'Gestionar repertorios' : 'Manage setlist presets'}
             data-testid="btn-preset-selector"
           >
-            <svg className="w-3.5 h-3.5 opacity-70 shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-            <span className="text-xs font-bold max-w-[95px] sm:max-w-[140px] truncate">
-              {activePreset?.name || (isSpanish ? 'Show Principal' : 'Main Show')}
-            </span>
-            <svg className="w-3 h-3 opacity-50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <SlidersHorizontal className="w-4 h-4 opacity-80" />
           </button>
 
           {/* Add Track Button */}
           <button
             type="button"
             onClick={() => setIsAdding((prev) => !prev)}
-            className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90"
+            className="relative z-10 w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 hover:opacity-90 border"
             style={{
               backgroundColor: 'var(--c-text-primary)',
+              borderColor: 'transparent',
               color: 'var(--app-bg)',
             }}
             title={isAdding ? setlistTr?.cancel || 'Cancel' : setlistTr?.addTrack || 'Add Track'}
@@ -835,12 +841,12 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
             data-testid="btn-toggle-add-track"
           >
             <svg
-              className="w-5 h-5 transition-transform duration-200"
+              className="w-4 h-4 transition-transform duration-200"
               style={{ transform: isAdding ? 'rotate(45deg)' : 'rotate(0deg)' }}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -852,20 +858,17 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
       }
     >
       <div className="space-y-3.5 pb-8">
-        {/* ── 1. CURRENT ARRANGEMENT SUBHEADER (STITCH PARITY) ────────── */}
+        {/* ── 1. ARRANGEMENT ACTION BAR ────────── */}
         <section
-          className="flex flex-col gap-2.5 px-1 pt-1"
+          className="flex items-center justify-between px-1 pt-1"
           data-testid="arrangement-header"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2
-                className="font-extrabold text-[22px] tracking-tight leading-none"
-                style={{ color: textPrimary, fontFamily: 'var(--studio-font-display)' }}
-              >
-                {activePreset?.name || setlistTr?.currentArrangement || (isSpanish ? 'Repertorio Actual' : 'Current Arrangement')}
-              </h2>
-            </div>
+          <span
+            className="text-xs font-bold tracking-wider uppercase opacity-60"
+            style={{ fontFamily: 'var(--studio-font-display)', color: textSecondary }}
+          >
+            {isSpanish ? 'Canciones del Repertorio' : 'Arrangement Tracks'}
+          </span>
 
           <div className="flex items-center space-x-2">
             {/* Sort / Filter Button */}
@@ -938,60 +941,7 @@ export const StageSetlistView: React.FC<StageSetlistViewProps> = ({
               </span>
             </button>
           </div>
-        </div>
-
-        {/* Preset Fast Tabs for Instant 1-Tap Switching */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {setlistPresets.map((preset) => {
-            const isSelected = preset.id === activePresetId;
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => selectPreset(preset.id)}
-                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer active:scale-95"
-                style={{
-                  backgroundColor: isSelected ? 'var(--c-text-primary)' : innerBg,
-                  color: isSelected ? 'var(--app-bg)' : textSecondary,
-                  border: isSelected ? 'none' : `1px solid var(--c-border)`,
-                  boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-                }}
-                data-testid={`preset-tab-${preset.id}`}
-              >
-                <span>{preset.name}</span>
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-full font-mono"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : 'var(--c-border)',
-                    color: isSelected ? 'var(--app-bg)' : textSecondary,
-                  }}
-                >
-                  {preset.songs?.length || 0}
-                </span>
-              </button>
-            );
-          })}
-
-          <button
-            type="button"
-            onClick={() => setIsPresetModalOpen(true)}
-            className="px-2.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer opacity-70 hover:opacity-100 border"
-            style={{
-              backgroundColor: innerBg,
-              borderColor: innerBorder,
-              color: textSecondary,
-            }}
-            title={isSpanish ? 'Gestionar Repertorios' : 'Manage Presets'}
-            data-testid="btn-manage-presets"
-          >
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>{isSpanish ? 'Gestionar' : 'Manage'}</span>
-          </button>
-        </div>
-      </section>
+        </section>
 
         {/* ── 2. INLINE ADD TRACK FORM ─────────────────────────────────── */}
         <AnimatePresence>

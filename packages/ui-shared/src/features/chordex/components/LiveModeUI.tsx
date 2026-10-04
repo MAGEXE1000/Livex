@@ -28,6 +28,8 @@ import {
 } from '@workspace/livex-core';
 import { PlayTogetherQrModal } from './PlayTogetherQrModal';
 import { PlayTogetherScannerModal } from './PlayTogetherScannerModal';
+import { LocalStageRoomModal } from './LocalStageRoomModal';
+import { StageSyncOffsetCalibration } from './StageSyncOffsetCalibration';
 
 /* ── STYLES & KEYFRAMES INJECTION ────────────────────────────── */
 const liveModeStyles = `
@@ -2723,6 +2725,7 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
 
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
+  const [isLocalStageRoomOpen, setIsLocalStageRoomOpen] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
 
   const startDurationEdit = () => {
@@ -4368,6 +4371,87 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
             </div>
           )}
 
+          {/* ── LOCAL STAGE ROOMS & CALIBRATION ───────────────────── */}
+          <div
+            style={{
+              padding: '14px',
+              borderRadius: '16px',
+              background: 'var(--surface-container-lowest, rgba(255, 255, 255, 0.03))',
+              border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: '17px', color: '#ffffff' }}>
+                    sensors
+                  </span>
+                  <p
+                    style={{
+                      color: 'var(--c-text-primary, #ffffff)',
+                      fontFamily: 'var(--studio-font-body)',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                    }}
+                  >
+                    {state.isSpanish ? 'Salas de Escenario Local (QR)' : 'Local Stage Rooms (QR)'}
+                  </p>
+                </div>
+                <p
+                  style={{
+                    color: 'var(--c-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'Inter',
+                    marginTop: '2px',
+                  }}
+                >
+                  {state.isSpanish
+                    ? 'Sincronización P2P sin nube por Wi-Fi o Hotspot'
+                    : 'Zero-cloud P2P sync over Wi-Fi or Hotspot'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                data-testid="open-local-stage-room-btn"
+                onClick={() => setIsLocalStageRoomOpen(true)}
+                className="btn-smooth"
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.16)',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                  qr_code_2
+                </span>
+                <span>{state.isSpanish ? 'Abrir Salas' : 'Open Rooms'}</span>
+              </button>
+            </div>
+
+            {/* Embedded Stage Sync Offset & Latency Calibration Tool */}
+            <StageSyncOffsetCalibration compact={false} showPulseTest={true} />
+          </div>
+
           {/* ── 5. VIEW & TELEPROMPTER OPTIONS ─────────────────────── */}
           {isTeleprompterMode ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -4687,6 +4771,11 @@ export function LiveModeSettings({ state }: { state: LiveModeState }) {
     <PlayTogetherScannerModal
       isOpen={isScannerModalOpen}
       onClose={() => setIsScannerModalOpen(false)}
+    />
+    <LocalStageRoomModal
+      isOpen={isLocalStageRoomOpen}
+      onClose={() => setIsLocalStageRoomOpen(false)}
+      preset={state.preset}
     />
   </>
 );

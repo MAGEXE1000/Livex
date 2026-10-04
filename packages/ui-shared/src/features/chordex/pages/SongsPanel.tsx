@@ -56,6 +56,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { SongViewModeSelector, type SongViewMode } from '../components/SongViewModeSelector';
 import { SongDurationModal } from '../components/SongDurationModal';
+import { LocalStageRoomModal } from '../components/LocalStageRoomModal';
+import { BandComingSoonModal } from '../../hub/components/BandComingSoonModal';
 import AnimatedActionButton from '../../../shared/animata/container/animated-border-trail';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 
@@ -3972,6 +3974,9 @@ export default function SongsPanel() {
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [exportModalPreset, setExportModal] = useState<SongPreset | null>(null);
   const [shareModalPreset, setShareModalPreset] = useState<SongPreset | null>(null);
+  const [bandComingSoonOpen, setBandComingSoonOpen] = useState(false);
+  const [localStageRoomOpen, setLocalStageRoomOpen] = useState(false);
+  const [stageRoomPreset, setStageRoomPreset] = useState<SongPreset | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showLyricsComposer, setShowLyricsComposer] = useState(false);
   const [composerSongId, setComposerSongId] = useState<string | null>(null);
@@ -6362,6 +6367,7 @@ export default function SongsPanel() {
                     onBack={() => setActiveSetlistId(null)}
                     onPlayLiveSetlist={handlePlayLiveSetlist}
                     onOpenSongInEditor={(songId) => setActivePreset(songId)}
+                    onSwitchSetlist={(id) => setActiveSetlistId(id)}
                   />
                 </div>
               );
@@ -6846,23 +6852,13 @@ export default function SongsPanel() {
               <span className="font-bold text-[var(--c-text-primary)]">{shareModalPreset.name}</span>:
             </p>
 
-            {/* 1. Share with Band */}
+            {/* 1. Share with Band (Coming Soon) */}
             <button
               type="button"
               data-testid="share-option-band"
               onClick={() => {
-                if (!currentBand) {
-                  toast.error('No active band selected. Join or create a band first.');
-                  return;
-                }
-                shareSongFromPreset(
-                  shareModalPreset,
-                  currentBand.id,
-                  currentUserId || 'local-user',
-                  currentUserName || 'Band Leader'
-                );
-                toast.success(`Song "${shareModalPreset.name}" shared to ${currentBand.name}!`);
                 setShareModalPreset(null);
+                setBandComingSoonOpen(true);
               }}
               className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
               style={{
@@ -6873,18 +6869,66 @@ export default function SongsPanel() {
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  backgroundColor: 'color-mix(in srgb, var(--c-accent-from, #ffffff) 15%, transparent)',
-                  color: 'var(--c-accent-from, #ffffff)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  color: '#ffffff',
                 }}
               >
                 <span className="material-symbols-rounded text-xl">groups</span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
-                  Share with Band
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
+                    Share with Band
+                  </span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-neutral-400">
+                    Soon
+                  </span>
                 </div>
                 <div className="text-xs text-[var(--c-text-secondary)] truncate">
-                  {currentBand ? `Sync to ${currentBand.name} repertoire` : 'Send song to active band repertoire'}
+                  Cloud band workspace sync (coming in future update)
+                </div>
+              </div>
+              <span className="material-symbols-rounded text-lg text-[var(--c-text-muted)]">
+                chevron_right
+              </span>
+            </button>
+
+            {/* 2. Stage Sync (Local QR Room) */}
+            <button
+              type="button"
+              data-testid="share-option-stage-sync"
+              onClick={() => {
+                const target = shareModalPreset;
+                setShareModalPreset(null);
+                setStageRoomPreset(target);
+                setLocalStageRoomOpen(true);
+              }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-[0.98]"
+              style={{
+                backgroundColor: 'var(--c-surface-high, rgba(255, 255, 255, 0.05))',
+                borderColor: 'var(--c-border, rgba(255, 255, 255, 0.1))',
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                  color: '#ffffff',
+                }}
+              >
+                <span className="material-symbols-rounded text-xl">sensors</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold tracking-tight text-[var(--c-text-primary)]">
+                    Stage Sync (Local QR Room)
+                  </span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                    Instant
+                  </span>
+                </div>
+                <div className="text-xs text-[var(--c-text-secondary)] truncate">
+                  Offline gig sync with bandmates via QR code
                 </div>
               </div>
               <span className="material-symbols-rounded text-lg text-[var(--c-text-muted)]">
@@ -6973,6 +7017,23 @@ export default function SongsPanel() {
           </div>
         )}
       </Dialog>
+
+      {/* Band Coming Soon Modal */}
+      <BandComingSoonModal
+        isOpen={bandComingSoonOpen}
+        onClose={() => setBandComingSoonOpen(false)}
+        onOpenStageRooms={() => setLocalStageRoomOpen(true)}
+      />
+
+      {/* Local Stage Room Modal */}
+      <LocalStageRoomModal
+        isOpen={localStageRoomOpen}
+        onClose={() => {
+          setLocalStageRoomOpen(false);
+          setStageRoomPreset(null);
+        }}
+        preset={stageRoomPreset || activePreset}
+      />
     </div>
   );
 }

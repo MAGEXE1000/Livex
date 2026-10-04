@@ -5,7 +5,8 @@ import { useOverscrollSpring } from '../../../../shared/layout/useOverscrollSpri
 import { useSettingsStore } from '@workspace/livex-core';
 
 export interface StageSetupDetailLayoutProps {
-  title: string;
+  title: string | React.ReactNode;
+  subtitle?: React.ReactNode;
   onBack: () => void;
   toolbarActions?: React.ReactNode;
   isLight?: boolean;
@@ -15,6 +16,7 @@ export interface StageSetupDetailLayoutProps {
 
 export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
   title,
+  subtitle,
   onBack,
   toolbarActions,
   isLight: isLightProp,
@@ -51,6 +53,7 @@ export const StageSetupDetailLayout: React.FC<StageSetupDetailLayoutProps> = ({
       {/* Canonical Stagex Detail Floating Topbar */}
       <SharedFloatingHeader
         title={title}
+        subtitle={subtitle}
         onBack={onBack}
         hideBack={false}
         backBtnTestId="stage-setup-back-btn"

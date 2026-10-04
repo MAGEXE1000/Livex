@@ -158,3 +158,7 @@ export * from './lib/qr/sessionToken';
 // Play Together Session Synchronization & Clock Offset
 export * from './lib/clock/clockSync';
 export * from './lib/band/sessionAnchor';
+
+// Local Stage Room Synchronization & Offset Calibration
+export * from './lib/sync/localStageSync';
+export * from './store/useLocalStageSyncStore';

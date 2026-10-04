@@ -14,6 +14,8 @@ import { SetlistSongPickerModal } from './SetlistSongPickerModal';
 import { SetlistCreateModal } from './SetlistCreateModal';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/StudioDesignSystem';
+import { SlidersHorizontal } from 'lucide-react';
+import { SetlistPresetDrawer } from './SetlistPresetDrawer';
 
 interface SetlistDetailViewProps {
   setlistId: string;
@@ -22,6 +24,7 @@ interface SetlistDetailViewProps {
   onBack: () => void;
   onPlayLiveSetlist: (setlist: Setlist, startingSongIndex?: number) => void;
   onOpenSongInEditor?: (songId: string) => void;
+  onSwitchSetlist?: (id: string) => void;
 }
 
 interface SetlistSongRowProps {
@@ -239,9 +242,12 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   onBack,
   onPlayLiveSetlist,
   onOpenSongInEditor,
+  onSwitchSetlist,
 }) => {
   const setlist = useChordStore((s) => (s.setlists || []).find((st: Setlist) => st.id === setlistId));
+  const allSetlists = useChordStore((s) => s.setlists || []);
   const isLight = useSettingsStore((s) => s.settings.theme === 'light');
+  const createSetlist = useChordStore((s) => s.createSetlist);
   const updateSetlist = useChordStore((s) => s.updateSetlist);
   const deleteSetlist = useChordStore((s) => s.deleteSetlist);
   const duplicateSetlist = useChordStore((s) => s.duplicateSetlist);
@@ -257,6 +263,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
   const [showPickerModal, setShowPickerModal] = useState(false);
   const [showEditInfoModal, setShowEditInfoModal] = useState(false);
+  const [showPresetDrawer, setShowPresetDrawer] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionName, setEditingSectionName] = useState('');
   const [showNewSectionDialog, setShowNewSectionDialog] = useState(false);
@@ -357,31 +364,50 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
         onBack={onBack}
         backBtnTestId="setlist-detail-back-btn"
         toolbarActions={
-          stats.totalSongs > 0 ? (
-            <motion.button
-              whileTap={{ scale: 0.92 }}
+          <div className="flex items-center gap-2">
+            {/* Compact Preset Icon Button (Stagex Style) */}
+            <button
               type="button"
-              data-testid="setlist-start-live-btn"
-              onClick={() => onPlayLiveSetlist(setlist, 0)}
-              title="Start live setlist rehearsal"
-              aria-label="Start live rehearsal"
-              className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
+              onClick={() => setShowPresetDrawer(true)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer border active:scale-95 shadow-sm"
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: isLight ? '#000000' : '#FFFFFF',
+                backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                borderColor: isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)',
+                color: 'var(--c-text-primary)',
               }}
+              title="Setlist Presets"
+              aria-label="Setlist Presets"
+              data-testid="setlist-preset-btn"
             >
-              <span
-                className="material-symbols-rounded text-[22px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+              <SlidersHorizontal className="w-4 h-4 opacity-80" />
+            </button>
+
+            {stats.totalSongs > 0 && (
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                type="button"
+                data-testid="setlist-start-live-btn"
+                onClick={() => onPlayLiveSetlist(setlist, 0)}
+                title="Start live setlist rehearsal"
+                aria-label="Start live rehearsal"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer border shadow-sm active:scale-95"
+                style={{
+                  background: 'var(--c-text-primary)',
+                  borderColor: 'transparent',
+                  color: 'var(--app-bg)',
+                }}
               >
-                play_arrow
-              </span>
-            </motion.button>
-          ) : undefined
+                <span
+                  className="material-symbols-rounded text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  play_arrow
+                </span>
+              </motion.button>
+            )}
+          </div>
         }
-        sideClearance={stats.totalSongs > 0 ? 80 : 52}
+        sideClearance={stats.totalSongs > 0 ? 116 : 88}
       />
 
       {/* Main Content Area */}
@@ -808,6 +834,28 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
           <span className="material-symbols-rounded text-2xl font-bold">add</span>
         </motion.button>
       </aside>
+
+      <SetlistPresetDrawer
+        isOpen={showPresetDrawer}
+        onClose={() => setShowPresetDrawer(false)}
+        setlists={allSetlists}
+        activeSetlistId={setlist.id}
+        onSelectSetlist={(id) => {
+          onSwitchSetlist?.(id);
+          setShowPresetDrawer(false);
+        }}
+        onCreateSetlist={(name) => {
+          createSetlist({ title: name });
+        }}
+        onRenameSetlist={(id, name) => updateSetlist(id, { title: name })}
+        onDeleteSetlist={(id) => {
+          deleteSetlist(id);
+          if (id === setlist.id) {
+            onBack();
+          }
+        }}
+        onDuplicateSetlist={(id) => duplicateSetlist(id)}
+      />
     </div>
   );
 };

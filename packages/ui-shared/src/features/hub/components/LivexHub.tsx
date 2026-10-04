@@ -92,6 +92,8 @@ import { SpotlightLogo } from '../../../components/spotlight-logo';
 const HubSettings = lazy(() => import('../settings/HubSettings'));
 const HubHelp = lazy(() => import('./HubHelp'));
 import { BandHubModal } from './BandHubModal';
+import { BandComingSoonModal } from './BandComingSoonModal';
+import { LocalStageRoomModal } from '../../chordex/components/LocalStageRoomModal';
 import {
   Toggle,
   SectionHeader,
@@ -869,6 +871,8 @@ export default function LivexHub() {
   const currentBand = useBandStore((s) => s.currentBand);
   const bandMembers = useBandStore((s) => s.members);
   const [bandModalOpen, setBandModalOpen] = useState(false);
+  const [bandComingSoonOpen, setBandComingSoonOpen] = useState(false);
+  const [localStageRoomOpen, setLocalStageRoomOpen] = useState(false);
 
   // Drag-to-reorder state variables
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1405,12 +1409,12 @@ export default function LivexHub() {
                             <button
                               type="button"
                               data-testid="home-band-pill"
-                              onClick={() => setBandModalOpen(true)}
+                              onClick={() => setBandComingSoonOpen(true)}
                               className="active:scale-[0.95] md:hover:scale-[1.03] transition-transform duration-200 cursor-pointer"
                               style={{
                                 background: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
                                 border: isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.10)',
-                                color: currentBand ? accent.from : 'var(--c-text-primary, #ffffff)',
+                                color: 'var(--c-text-primary, #ffffff)',
                                 fontFamily: 'Inter, sans-serif',
                                 fontSize: '11px',
                                 fontWeight: 650,
@@ -1418,18 +1422,17 @@ export default function LivexHub() {
                                 padding: '3px 10px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4.5px',
+                                gap: '5px',
                                 backdropFilter: 'var(--surface-pill-backdrop, blur(12px))',
                                 WebkitBackdropFilter: 'var(--surface-pill-backdrop, blur(12px))',
                               }}
-                              aria-label={lang === 'es' ? 'Banda y Equipo' : 'Band & Team'}
-                              title={currentBand ? currentBand.name : (lang === 'es' ? 'Banda y Equipo' : 'Band & Team')}
+                              aria-label={lang === 'es' ? 'Banda y Equipo (Próximamente)' : 'Band & Team (Coming Soon)'}
+                              title={lang === 'es' ? 'Banda y Equipo (Próximamente)' : 'Band & Team (Coming Soon)'}
                             >
                               <StudioIcon name="groups" size={14} />
-                              <span>
-                                {currentBand
-                                  ? (bandMembers.length > 0 ? `${currentBand.name} • ${bandMembers.length}` : currentBand.name)
-                                  : (lang === 'es' ? 'Banda' : 'Band')}
+                              <span>{lang === 'es' ? 'Banda' : 'Band'}</span>
+                              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-neutral-400 border border-white/5">
+                                {lang === 'es' ? 'Próx.' : 'Soon'}
                               </span>
                             </button>
 
@@ -2370,17 +2373,32 @@ export default function LivexHub() {
 
       {devToast && renderDevToast()}
 
-      {/* ── 👥 Band & Team Hub Modal ── */}
-      <BandHubModal
-        isOpen={bandModalOpen}
-        onClose={() => setBandModalOpen(false)}
-        isLight={isLight}
-        isAmoled={!!useSettingsStore.getState().settings.amoledMode}
-        accent={accent}
-        lang={lang}
-        currentUserName={authUser?.displayName || hubUserName}
-        currentUserId={authUser?.uid}
+      {/* ── 👥 Band & Team Coming Soon Modal ── */}
+      <BandComingSoonModal
+        isOpen={bandComingSoonOpen}
+        onClose={() => setBandComingSoonOpen(false)}
+        onOpenStageRooms={() => setLocalStageRoomOpen(true)}
       />
+
+      {/* ── ⚡ Local Stage Room Modal ── */}
+      <LocalStageRoomModal
+        isOpen={localStageRoomOpen}
+        onClose={() => setLocalStageRoomOpen(false)}
+      />
+
+      {/* ── 👥 Legacy Band Modal (Kept for compatibility) ── */}
+      {bandModalOpen && (
+        <BandHubModal
+          isOpen={bandModalOpen}
+          onClose={() => setBandModalOpen(false)}
+          isLight={isLight}
+          isAmoled={!!useSettingsStore.getState().settings.amoledMode}
+          accent={accent}
+          lang={lang}
+          currentUserName={authUser?.displayName || hubUserName}
+          currentUserId={authUser?.uid}
+        />
+      )}
     </div>
   );
 }
