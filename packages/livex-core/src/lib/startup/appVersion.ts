@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.96';
-export const NATIVE_VERSION_CODE = 40696;
-export const WEB_VERSION = '4.6.96';
+export const NATIVE_VERSION = '4.6.97';
+export const NATIVE_VERSION_CODE = 40697;
+export const WEB_VERSION = '4.6.97';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '7f3cb3fd';
+export const APP_COMMIT_SHA = '709af91f';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/3/2026, 5:43:05 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/4/2026, 1:46:18 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -101,16 +101,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'EasyUI iOS-Style Search Bar Modernization: Integrated the unified AMOLED `IosSearchBar` component across all workspaces, modules, panels, and modals (`SongsPanel`, `SetlistsPanel`, `DrumBeatsPanel`, `DrumPatternsPanel`, `MetronomePanel`, `DrumEditor`, `GroovexLibrary`, `StageLibraryPanel`, `StagexRightSidebar`, `StageGearView`, and diagnostics consoles), featuring spring-animated Cancel dismissal, minimum 44x44px touch targets, and pure black frosted glass styling.',
-      'Interactive Header Title View Switcher: Made the top header title in SongsPanel interactively toggle between Songs and Setlists with an integrated chevron indicator (`ChevronsUpDown`), eliminating redundant tab switchers and maximizing vertical viewport real estate.',
+      'Local Stage Sync Rooms (P2P / QR): Architected an instant, zero-cloud offline stage synchronization engine operating over local network, Wi-Fi hotspot, or Bluetooth with sub-15ms baseline latency. Features vector SVG QR code generation, 4-character join code (`LX-408`), camera QR scanner, and real-time beat/playback state broadcasts.',
+      'Stage Sync Delay Calibration Tool: Tactile millisecond latency calibration (`-250ms ... 0ms ... +250ms`) with fine-tuning steppers and visual metronome alignment blink test (Host Reference vs Local Output) for zero acoustic/optical delay across wireless in-ear headphones and stage monitors.',
+      'Setlist Preset Drawer: Bottom drawer component allowing 1-tap switching, inline new setlist creation, renaming, duplicating, and deleting.',
+      'Cloud Band Decoupling: Decoupled cloud Band workspaces into an informative "Coming Soon" modal with direct link to Local Stage Rooms, bypassing broken remote calls.',
     ],
   },
   {
     heading: 'Improved',
     items: [
-      'Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.',
-      'Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.',
-      'Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.',
+      'Setlist TopBar Overhaul: Eradicated the oversized stacked `Main Show 0 + Manage` chrome and giant `[🎵 Main Show ⌵]` pill across `StageSetlistView` and `SetlistDetailView`. Replaced with a sleek, single-row AMOLED header featuring back navigation, track count and runtime metrics, and a compact 36x36px preset selector icon button.',
     ],
   },
 ];
@@ -125,6 +125,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.6.97',
+    date: '2026-10-04',
+    highlights: [
+      'Local Stage Sync Rooms (P2P / QR): Architected an instant, zero-cloud offline stage synchronization engine operating over local network, Wi-Fi hotspot, or Bluetooth with sub-15ms baseline latency. Features vector SVG QR code generation, 4-character join code (`LX-408`), camera QR scanner, and real-time beat/playback state broadcasts.',
+      'Stage Sync Delay Calibration Tool: Tactile millisecond latency calibration (`-250ms ... 0ms ... +250ms`) with fine-tuning steppers and visual metronome alignment blink test (Host Reference vs Local Output) for zero acoustic/optical delay across wireless in-ear headphones and stage monitors.',
+      'Setlist Preset Drawer: Bottom drawer component allowing 1-tap switching, inline new setlist creation, renaming, duplicating, and deleting.',
+      'Cloud Band Decoupling: Decoupled cloud Band workspaces into an informative "Coming Soon" modal with direct link to Local Stage Rooms, bypassing broken remote calls.',
+      'Setlist TopBar Overhaul: Eradicated the oversized stacked `Main Show 0 + Manage` chrome and giant `[🎵 Main Show ⌵]` pill across `StageSetlistView` and `SetlistDetailView`. Replaced with a sleek, single-row AMOLED header featuring back navigation, track count and runtime metrics, and a compact 36x36px preset selector icon button.',
+    ],
+  },
   {
     version: '4.6.96',
     date: '2026-10-03',
@@ -218,15 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Canvas Touch Focus & Soft Keyboard Activation: Resolved empty canvas collapse on Android WebView by inserting a `<br />` inside the empty `.lyric-line-content` span, establishing a valid DOM caret anchor so tapping empty lyric space immediately focuses and opens the Android virtual keyboard.',
       "Empty-State Banner Touch Isolation: Isolated the `[NO LYRICS]` banner inside `<main contentEditable>` in Both mode with `contentEditable={false}`, `userSelect: 'none'`, and `select-none` to permanently prevent WebView from targeting banner text nodes or intercepting cursor placement.",
       'Lyrics & Both Mode Parity: Ensured seamless touch-to-type capability across both Lyrics and Both workspaces with clean caret positioning and zero placeholder interference.',
-    ],
-  },
-  {
-    version: '4.6.86',
-    date: '2026-10-02',
-    highlights: [
-      'Decouple Canvas Placeholder & Enforce Clean Buffer Initialization: Replaced pseudo-element data-placeholder and lyric-line-content:empty::before mechanism with a decoupled, non-interactive sibling overlay rendered strictly when the document is empty.',
-      'Clean Document State & Selection Capture: The editable DOM containers never hold synthetic placeholder strings or attributes, preventing selection captures, input desynchronization, and clipboard concatenation errors.',
-      'Pseudo-Element Pruning: Cleaned out obsolete lyric-line-content:empty::before CSS rules across shared tokens, Android, and Web styles to prevent browser caret misalignments and unexpected DOM injections.',
     ],
   },
 ];

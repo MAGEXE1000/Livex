@@ -1,12 +1,12 @@
-# Version 4.6.96
+# Version 4.6.97
 
-Release Date: 2026-10-03
+Release Date: 2026-10-04
 
 ### Added
-- EasyUI iOS-Style Search Bar Modernization: Integrated the unified AMOLED `IosSearchBar` component across all workspaces, modules, panels, and modals (`SongsPanel`, `SetlistsPanel`, `DrumBeatsPanel`, `DrumPatternsPanel`, `MetronomePanel`, `DrumEditor`, `GroovexLibrary`, `StageLibraryPanel`, `StagexRightSidebar`, `StageGearView`, and diagnostics consoles), featuring spring-animated Cancel dismissal, minimum 44x44px touch targets, and pure black frosted glass styling.
-- Interactive Header Title View Switcher: Made the top header title in SongsPanel interactively toggle between Songs and Setlists with an integrated chevron indicator (`ChevronsUpDown`), eliminating redundant tab switchers and maximizing vertical viewport real estate.
+- Local Stage Sync Rooms (P2P / QR): Architected an instant, zero-cloud offline stage synchronization engine operating over local network, Wi-Fi hotspot, or Bluetooth with sub-15ms baseline latency. Features vector SVG QR code generation, 4-character join code (`LX-408`), camera QR scanner, and real-time beat/playback state broadcasts.
+- Stage Sync Delay Calibration Tool: Tactile millisecond latency calibration (`-250ms ... 0ms ... +250ms`) with fine-tuning steppers and visual metronome alignment blink test (Host Reference vs Local Output) for zero acoustic/optical delay across wireless in-ear headphones and stage monitors.
+- Setlist Preset Drawer: Bottom drawer component allowing 1-tap switching, inline new setlist creation, renaming, duplicating, and deleting.
+- Cloud Band Decoupling: Decoupled cloud Band workspaces into an informative "Coming Soon" modal with direct link to Local Stage Rooms, bypassing broken remote calls.
 
 ### Improved
-- Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.
-- Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.
-- Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.
+- Setlist TopBar Overhaul: Eradicated the oversized stacked `Main Show 0 + Manage` chrome and giant `[🎵 Main Show ⌵]` pill across `StageSetlistView` and `SetlistDetailView`. Replaced with a sleek, single-row AMOLED header featuring back navigation, track count and runtime metrics, and a compact 36x36px preset selector icon button.
