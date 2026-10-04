@@ -324,27 +324,6 @@
   --app-bg: var(--c-background, #000000);
   --app-surface-lowest: var(--c-surface-lowest, #09090b);
   --app-surface-low: var(--c-surface-low, #121215);
-}
-
-.dark, [data-theme="dark"], [data-theme="amoled"] {
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --accent: 0 0% 15%;
-  --accent-foreground: 0 0% 98%;
-}
-
-.light, [data-theme="light"] {
-  --primary: 0 0% 9%;
-  --primary-foreground: 0 0% 98%;
-  --accent: 0 0% 96%;
-  --accent-foreground: 0 0% 9%;
-  --studio-accent-from: var(--accent-from, #18181b);
-  --studio-accent-to: var(--accent-to, #09090b);
-  --studio-accent-mid: var(--accent-mid, #27272a);
-  --studio-accent: var(--accent-to, #09090b);
-  --studio-accent-rgb: var(--accent-to-rgb, 9, 9, 11);
-  --studio-accent-contrast: #ffffff;
-}
   --app-surface: var(--c-surface-mid, #1e1e1e);
   --app-surface-high: var(--c-surface-high, #262626);
   --app-surface-highest: var(--c-surface-highest, #2e2e2e);
@@ -505,6 +484,26 @@
   --btn-surface-bg: var(--c-surface-high);
   --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.16);
+}
+
+.dark, [data-theme="dark"], [data-theme="amoled"] {
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
+}
+
+.light, [data-theme="light"] {
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 9%;
+  --studio-accent-from: var(--accent-from, #18181b);
+  --studio-accent-to: var(--accent-to, #09090b);
+  --studio-accent-mid: var(--accent-mid, #27272a);
+  --studio-accent: var(--accent-to, #09090b);
+  --studio-accent-rgb: var(--accent-to-rgb, 9, 9, 11);
+  --studio-accent-contrast: #ffffff;
 }
 
 /* ── Canonical Studio Base Heading Styles ──
