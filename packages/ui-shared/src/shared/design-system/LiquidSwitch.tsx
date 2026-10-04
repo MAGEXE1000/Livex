@@ -48,17 +48,34 @@ export const LiquidSwitch = memo(function LiquidSwitch({
   // Dimensions
   const isSm = size === 'sm';
 
-  const handleToggle = useCallback(() => {
-    if (disabled) return;
-    const next = !isChecked;
-    onChange?.(next);
-    onValueChange?.(next);
-  }, [disabled, isChecked, onChange, onValueChange]);
+  const handleToggle = useCallback(
+    (next: boolean) => {
+      if (disabled) return;
+      onChange?.(next);
+      onValueChange?.(next);
+    },
+    [disabled, onChange, onValueChange]
+  );
+
+  const switchButton = (
+    <Switch
+      checked={isChecked}
+      disabled={disabled}
+      onCheckedChange={handleToggle}
+      aria-label={ariaLabel || label || 'Toggle switch'}
+      data-testid={resolvedTestId ? `${resolvedTestId}-track` : undefined}
+      className={className}
+    />
+  );
+
+  if (!label && !description) {
+    return switchButton;
+  }
 
   return (
     <div
       data-testid={resolvedTestId}
-      onClick={handleToggle}
+      onClick={() => handleToggle(!isChecked)}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -73,51 +90,41 @@ export const LiquidSwitch = memo(function LiquidSwitch({
       }}
       className={`sc-liquid-switch-container ${className}`}
     >
-      {(label || description) && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: 8 }}>
-          {label && (
-            <span
-              style={{
-                fontSize: isSm ? '13.5px' : '15px',
-                lineHeight: '20px',
-                fontWeight: 500,
-                color: 'var(--c-text-primary, #ffffff)',
-                fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
-                letterSpacing: '0.2px',
-              }}
-            >
-              {label}
-            </span>
-          )}
-          {description && (
-            <span
-              style={{
-                fontSize: '12px',
-                lineHeight: '16px',
-                fontWeight: 400,
-                color: 'var(--c-text-secondary, var(--muted, #9ca3af))',
-                marginTop: 2,
-              }}
-            >
-              {description}
-            </span>
-          )}
-        </div>
-      )}
-      <Switch
-        checked={isChecked}
-        disabled={disabled}
-        aria-label={ariaLabel || label || 'Toggle switch'}
-        data-testid={resolvedTestId ? `${resolvedTestId}-track` : undefined}
-        onClick={(e) => {
-          // Wrapper owns the toggle so label taps and switch taps behave identically.
-          e.preventDefault();
-        }}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: 8 }}>
+        {label && (
+          <span
+            style={{
+              fontSize: isSm ? '13.5px' : '15px',
+              lineHeight: '20px',
+              fontWeight: 500,
+              color: 'var(--c-text-primary, #ffffff)',
+              fontFamily: 'var(--type-body-font, var(--studio-font-body, inherit))',
+              letterSpacing: '0.2px',
+            }}
+          >
+            {label}
+          </span>
+        )}
+        {description && (
+          <span
+            style={{
+              fontSize: '12px',
+              lineHeight: '16px',
+              fontWeight: 400,
+              color: 'var(--c-text-secondary, var(--muted, #9ca3af))',
+              marginTop: 2,
+            }}
+          >
+            {description}
+          </span>
+        )}
+      </div>
+      {switchButton}
     </div>
   );
 });
 
 export default LiquidSwitch;
+
 
 

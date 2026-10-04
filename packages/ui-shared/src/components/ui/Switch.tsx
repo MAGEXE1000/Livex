@@ -35,7 +35,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
         'peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors',
         'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:bg-white data-[state=unchecked]:bg-neutral-800 dark:data-[state=unchecked]:bg-neutral-800/80',
-        'data-[state=checked]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]',
+        'data-[state=checked]:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)] dark:data-[state=checked]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]',
         className
       )}
       {...props}

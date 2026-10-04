@@ -101,10 +101,39 @@ await shot('groovex-toggles');
 await openApp('hub');
 await openApp('vocalex');
 await nav({ app: 'vocalex', tab: 'preferences', page: 'preferences' });
+await sleep(800);
+// Scroll down to Audio Hardware & DSP in Vocalex
+await page.evaluate(() => {
+  const container = document.querySelector('[data-purpose="vocalex-preferences-scroll-container"]');
+  if (container) container.scrollTop = 450;
+});
+await sleep(400);
+// Explicitly activate Noise Suppression if not already on
+await page.evaluate(() => {
+  const noiseSwitch = document.querySelector('[data-testid="vocalex-toggle-noise-track"]') ||
+    document.querySelector('[data-testid="vocalex-toggle-noise"]') ||
+    [...document.querySelectorAll('[role="switch"]')].find((s) => s.getAttribute('aria-label')?.includes('Noise'));
+  if (noiseSwitch && noiseSwitch.getAttribute('aria-checked') !== 'true') {
+    noiseSwitch.click();
+  }
+});
 await shot('vocalex-toggles');
 
 await openApp('hub');
 await nav({ app: 'hub', tab: 'settings', page: 'appearance' });
+await sleep(800);
+// Scroll down to Accessibility in Appearance settings
+await page.evaluate(() => {
+  window.scrollTo(0, 300);
+});
+await sleep(400);
+// Explicitly activate High Contrast toggle
+await page.evaluate(() => {
+  const sws = [...document.querySelectorAll('[role="switch"]')];
+  if (sws.length > 0 && sws[0].getAttribute('aria-checked') !== 'true') {
+    sws[0].click();
+  }
+});
 await shot('settings-accessibility-toggles');
 
 await openApp('hub');
