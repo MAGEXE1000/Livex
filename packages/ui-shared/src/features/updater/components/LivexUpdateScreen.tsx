@@ -8,6 +8,7 @@ import {
   sanitizeUTF8String,
   extractStructuredReleaseNotes,
   useSettingsStore,
+  resolveAccent,
 } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../../../hooks/useAppReducedMotion';
 
@@ -570,10 +571,16 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       ? 'bg-[#121214] hover:bg-[#1a1a1e] active:bg-[#0c0c0e] border border-[#26262b] text-[#dedee3]'
       : 'bg-[#1e1e21] hover:bg-[#26262a] active:bg-[#18181a] border border-[#2c2c30] text-[#dedee3]';
 
+  const userAccentSetting = useSettingsStore((s) => s.settings.accentColor);
+  const accent = useMemo(
+    () => resolveAccent(userAccentSetting, resolvedIsLight),
+    [userAccentSetting, resolvedIsLight]
+  );
+
   const customStyles = useMemo(
     () => `
     .progress-bar-glow {
-      box-shadow: 0 0 12px rgba(66, 142, 255, 0.35);
+      box-shadow: 0 0 12px ${accent.soft};
     }
     .custom-scroll::-webkit-scrollbar {
       width: 4px;
@@ -586,7 +593,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
       border-radius: 9999px;
     }
   `,
-    [resolvedIsLight]
+    [resolvedIsLight, accent.soft]
   );
 
   return (
@@ -721,7 +728,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
               className={`w-full h-1.5 ${progressTrackBg} rounded-full overflow-hidden relative mt-4`}
             >
               <motion.div
-                className="h-full bg-gradient-to-r from-[#4d94ff] to-[#5ea2ff] rounded-full progress-bar-glow"
+                className="h-full rounded-full progress-bar-glow"
                 animate={
                   prefersReduced
                     ? { opacity: [0.4, 1, 0.4] }
@@ -732,7 +739,10 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                     ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
                     : { duration: 1.4, repeat: Infinity, ease: [0.4, 0, 0.2, 1] }
                 }
-                style={{ width: '45%' }}
+                style={{
+                  width: '45%',
+                  background: `linear-gradient(to right, ${accent.from}, ${accent.to})`,
+                }}
               />
             </motion.div>
           )}
@@ -783,7 +793,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                 <span className={`text-[11.5px] font-medium ${textDim} tracking-wide`}>
                   New Version
                 </span>
-                <div className="w-full max-w-[124px] py-2 px-3 bg-[#387ff5] hover:bg-[#347ff8] text-white text-[15px] font-bold rounded-full text-center shadow-sm transition-colors">
+                <div
+                  className="w-full max-w-[124px] py-2 px-3 text-[15px] font-bold rounded-full text-center shadow-sm transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                    color: accent.contrast,
+                  }}
+                >
                   {toVersion ? (toVersion.startsWith('v') ? toVersion : `v${toVersion}`) : 'Latest'}
                 </div>
               </div>
@@ -847,9 +863,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                 <button
                   type="button"
                   onClick={onRetry || handleUpdate}
-                  className="flex-1 h-[44px] bg-[#6ca0ff] hover:bg-[#5b94fd] active:scale-[0.985] text-[#001736] font-semibold text-[14.5px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md"
+                  className="flex-1 h-[44px] active:scale-[0.985] font-semibold text-[14.5px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md hover:opacity-95"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                    color: accent.contrast,
+                  }}
                 >
-                  Retry
+                  {updaterTr?.retry || 'Retry'}
                 </button>
                 <button
                   type="button"
@@ -882,9 +902,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                   <button
                     type="button"
                     onClick={onRetry || handleUpdate}
-                    className="w-full h-[52px] bg-[#6ca0ff] hover:bg-[#5b94fd] active:scale-[0.985] text-[#001736] font-semibold text-[16px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md"
+                    className="w-full h-[52px] active:scale-[0.985] font-semibold text-[16px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md hover:opacity-95"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                      color: accent.contrast,
+                    }}
                   >
-                    Retry
+                    {updaterTr?.retry || 'Retry'}
                   </button>
                   <button
                     type="button"
@@ -953,7 +977,7 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                           : resolvedIsAmoled
                             ? '#0c0c0e'
                             : '#171719'
-                        : '#6ca0ff',
+                        : accent.from,
                       borderColor: isProgressState
                         ? resolvedIsLight
                           ? 'rgba(0, 0, 0, 0.06)'
@@ -970,8 +994,13 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                     className={`relative flex-1 flex flex-col justify-center overflow-hidden border transition-colors select-none ${
                       isProgressState
                         ? 'p-4 cursor-default'
-                        : 'hover:bg-[#5b94fd] active:scale-[0.985] cursor-pointer items-center shadow-md'
+                        : 'active:scale-[0.985] cursor-pointer items-center shadow-md hover:opacity-95'
                     }`}
+                    style={{
+                      background: !isProgressState
+                        ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
+                        : undefined,
+                    }}
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       {!isProgressState ? (
@@ -982,9 +1011,10 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                           animate={{ opacity: 1, y: 0 }}
                           exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
                           transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                          className="text-[16px] font-semibold text-[#001736] tracking-tight leading-none"
+                          className="text-[16px] font-semibold tracking-tight leading-none"
+                          style={{ color: accent.contrast }}
                         >
-                          Download &amp; Install
+                          {updaterTr?.downloadAndInstall || 'Download & Install'}
                         </motion.span>
                       ) : (
                         /* State 2 & 4: Download / Installing Progress */
@@ -1026,7 +1056,8 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                               </AnimatePresence>
                             </div>
                             <span
-                              className="text-[15px] font-semibold text-[#5ea2ff] tracking-tight tabular-nums"
+                              className="text-[15px] font-semibold tracking-tight tabular-nums"
+                              style={{ color: accent.from }}
                               role="status"
                               aria-live="polite"
                             >
@@ -1042,12 +1073,16 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                             className={`w-full h-2 ${progressTrackBg} rounded-full overflow-hidden relative`}
                             role="progressbar"
                           >
-                            {/* Blue Active Progress Bar with GPU ScaleX */}
+                            {/* Active Progress Bar with GPU ScaleX */}
                             <motion.div
-                              className="h-full bg-gradient-to-r from-[#4d94ff] to-[#5ea2ff] rounded-full progress-bar-glow"
+                              className="h-full rounded-full progress-bar-glow"
                               initial={false}
                               animate={{ scaleX: Math.max(0.01, progressPercent / 100) }}
-                              style={{ width: '100%', transformOrigin: 'left' }}
+                              style={{
+                                width: '100%',
+                                transformOrigin: 'left',
+                                background: `linear-gradient(to right, ${accent.from}, ${accent.to})`,
+                              }}
                               transition={
                                 prefersReduced
                                   ? { duration: 0 }
@@ -1087,7 +1122,8 @@ export const LivexUpdateScreen = memo(function LivexUpdateScreen({
                                         : { opacity: 0, filter: 'blur(2px)' }
                                     }
                                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                                    className="text-[11.5px] text-[#5ea2ff] font-medium"
+                                    className="text-[11.5px] font-medium"
+                                    style={{ color: accent.from }}
                                   >
                                     Verifying package
                                   </motion.span>

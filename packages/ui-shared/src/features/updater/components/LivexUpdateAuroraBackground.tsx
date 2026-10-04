@@ -27,9 +27,9 @@ export default function LivexUpdateAuroraBackground({
     return () => mediaQuery.removeEventListener('change', listener);
   }, []);
 
-  // Soft purple-blue neutral fallbacks for the aurora color bands
-  const c1 = accentFrom || '#3b82f6';
-  const c2 = accentTo || '#8b5cf6';
+  // Theme-aware dynamic neutral fallbacks for the aurora color bands
+  const c1 = accentFrom || 'var(--studio-accent-from, #ffffff)';
+  const c2 = accentTo || 'var(--studio-accent-to, #f4f4f5)';
   const c3 = 'var(--app-surface-high, rgba(128,128,128,0.14))';
 
   return (

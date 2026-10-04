@@ -23,6 +23,7 @@ import {
   extractStructuredReleaseNotes,
   sanitizeUTF8String,
   useT,
+  resolveAccent,
 } from '@workspace/livex-core';
 import {
   applyUpdateDirect,
@@ -294,10 +295,10 @@ export default function UpdateIndicator({
   accentTo,
 }: {
   /** Boot-frame fallback only — actual color comes from --accent-from. */
-  accentFrom: string;
+  accentFrom?: string;
   /** Boot-frame fallback only — actual color comes from --accent-to. */
-  accentTo: string;
-}) {
+  accentTo?: string;
+} = {}) {
   const updater = useAppUpdate();
 
   // Record state change of UpdateIndicator during active install states
@@ -354,6 +355,14 @@ export default function UpdateIndicator({
     }
     return false;
   })();
+
+  const userAccentSetting = useSettingsStore((s) => s.settings.accentColor);
+  const resolvedAccent = useMemo(
+    () => resolveAccent(userAccentSetting, isLight),
+    [userAccentSetting, isLight]
+  );
+  const effectiveAccentFrom = accentFrom || resolvedAccent.from;
+  const effectiveAccentTo = accentTo || resolvedAccent.to;
 
   const [successNotificationVersion, setSuccessNotificationVersion] = useState<string | null>(null);
   const [showChangelogSheet, setShowChangelogSheet] = useState(false);
@@ -662,8 +671,8 @@ export default function UpdateIndicator({
   // has written them. Wrapping in `var(--name, fallback)` makes the
   // swap atomic and cross-fades correctly when the user changes their
   // accent in Studio settings.
-  const cFrom = `var(--accent-from, ${accentFrom})`;
-  const cTo = `var(--accent-to, ${accentTo})`;
+  const cFrom = `var(--studio-accent-from, var(--accent-from, ${effectiveAccentFrom}))`;
+  const cTo = `var(--studio-accent-to, var(--accent-to, ${effectiveAccentTo}))`;
   // For tinted backgrounds we need an alpha-mixed version. color-mix
   // is supported on every Android Chrome WebView ≥ 111 (we ship Updater
   // on a far newer baseline) so we can mix the live CSS var directly.
@@ -1203,9 +1212,9 @@ function UpdateModal({
 
   const isApkFlow = updater.updateType === 'apk' || updater.updateType === 'both';
 
-  // Signature purple/pink colors override
-  const purpleFrom = '#b57bee';
-  const purpleTo = '#db2777';
+  // Theme-aware accent colors
+  const purpleFrom = accentFrom;
+  const purpleTo = accentTo;
 
   const handleStartUpdate = useCallback(async () => {
     try {

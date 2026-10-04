@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { type AppKey } from '@workspace/livex-core';
+import { type AppKey, useSettingsStore, resolveAccent } from '@workspace/livex-core';
 import { Loader } from '../../components/motion/loader';
 import {
   LivexLogo,
@@ -19,6 +19,9 @@ interface SmartLoadingProps {
 }
 
 export function AppLoadingScreen({ app }: { app?: AppKey | string }) {
+  const userAccent = useSettingsStore((s) => s.settings.accentColor);
+  const livexAccentColor = resolveAccent(userAccent).from;
+
   const logos: Record<
     string,
     { Logo: React.ComponentType<{ size?: number }>; name: string; desc: string; color: string }
@@ -75,7 +78,7 @@ export function AppLoadingScreen({ app }: { app?: AppKey | string }) {
       Logo: LivexLogo,
       name: 'Livex Hub',
       desc: 'Loading Livex...',
-      color: '#3b82f6',
+      color: livexAccentColor,
     },
   };
 
@@ -83,7 +86,7 @@ export function AppLoadingScreen({ app }: { app?: AppKey | string }) {
     Logo: LivexLogo,
     name: 'Livex',
     desc: 'Loading workspace...',
-    color: '#3b82f6',
+    color: livexAccentColor,
   };
 
   const config = (app && logos[app]) || defaultLivexConfig;

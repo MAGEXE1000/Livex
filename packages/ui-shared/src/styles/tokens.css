@@ -3553,8 +3553,8 @@ body.amoled .sc-morphing-trigger,
   color: #22c55e;
 }
 .alert-dialog__icon--accent {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  background: var(--studio-accent-soft, rgba(255, 255, 255, 0.14));
+  color: var(--studio-accent-from, #ffffff);
 }
 .alert-dialog__icon--default {
   background: rgba(128, 128, 128, 0.12);
@@ -4143,7 +4143,7 @@ html.light .button--secondary {
 }
 
 .t-acc-trigger:focus-visible {
-  outline: 2px solid var(--accent-color, #3b82f6);
+  outline: 2px solid var(--studio-accent-from, var(--accent-color, #ffffff));
   outline-offset: -2px;
 }
 

@@ -13,7 +13,7 @@ interface AccountProfileHeaderProps {
 export function AccountProfileHeader({
   user,
   customPhoto,
-  accentFrom = '#3b82f6',
+  accentFrom = 'var(--studio-accent-from, #ffffff)',
 }: AccountProfileHeaderProps) {
   const photo = customPhoto || user?.photoURL;
   const name = user?.displayName || 'Studio User';

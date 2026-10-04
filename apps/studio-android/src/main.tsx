@@ -107,7 +107,7 @@ function GlobalOverlays() {
   if (!ready) return null;
   return (
     <Suspense fallback={null}>
-      <UpdateIndicator accentFrom="#7c3aed" accentTo="#a855f7" />
+      <UpdateIndicator />
     </Suspense>
   );
 }

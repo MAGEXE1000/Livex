@@ -774,7 +774,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
                       );
                       setMovingSong(null);
                     }}
-                    className="w-full p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold text-left hover:border-blue-400 bg-white/5 transition-colors cursor-pointer"
+                    className="w-full p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold text-left hover:border-[var(--studio-accent-from,white)] bg-white/5 transition-colors cursor-pointer"
                   >
                     <span>{sec.name}</span>
                     <span className="text-[10px] text-slate-400">{sec.songIds.length} songs</span>

@@ -190,6 +190,8 @@ export function applyThemeTokens(settings: any) {
     root.style.setProperty('--studio-accent-active', accent.active);
 
     // Sync alias variables
+    root.style.setProperty('--accent-from', accent.from);
+    root.style.setProperty('--accent-to', accent.to);
     root.style.setProperty('--c-accent-from', accent.from);
     root.style.setProperty('--c-accent-to', accent.to);
     root.style.setProperty('--c-accent-mid', accent.mid);
