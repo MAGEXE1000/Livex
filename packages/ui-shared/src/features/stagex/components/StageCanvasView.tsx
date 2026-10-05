@@ -27,6 +27,7 @@ import {
 } from '../services/StageBridgeService';
 import { useStagexStore } from '../state/useStagexStore';
 import { resolveAccent } from '@workspace/livex-core';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
 
 export interface StageCanvasViewProps {
   isActive?: boolean;
@@ -280,6 +281,19 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
+
+  // Coordinate Stagex overlay state (drawer, specs, live mode) with global bottom navigation
+  useEffect(() => {
+    if (!isActive) return undefined;
+    const isOverlayActive = panelOpen || liveMode || specsOpen;
+    if (isOverlayActive) {
+      activeOverlaysRegistry.register('sheet', 'stagex-overlay');
+      return () => {
+        activeOverlaysRegistry.unregister('sheet', 'stagex-overlay');
+      };
+    }
+    return undefined;
+  }, [isActive, panelOpen, liveMode, specsOpen]);
 
   // Ensure bottom navigation reflects landscape, inspection mode, element picker drawer, specs editor, and drag state
   useEffect(() => {
@@ -766,6 +780,8 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   return (
     <div
+      data-stagex-overlay={panelOpen || liveMode || specsOpen ? 'true' : undefined}
+      data-stagex-drawer={panelOpen ? 'true' : undefined}
       className="w-full h-full flex flex-col relative overflow-hidden"
       style={{ background: stageBg }}
     >

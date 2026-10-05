@@ -19,13 +19,12 @@ import {
   SettingSection,
   StartOnSelector,
 } from '../../../shared/settings/SettingControls';
-import { IconSongs, IconLibrary, IconSettings } from '../../hub/icons/NavIcons';
-import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { Button } from '../../../shared/design-system/buttons';
 import { Card } from '../../../shared/design-system/StudioDesignSystem';
+import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 
 export default function ChordexPreferencesPanel() {
   const settings = useSettingsStore(
@@ -294,44 +293,6 @@ export default function ChordexPreferencesPanel() {
                 accentFrom={acc.from}
                 accentTo={acc.to}
               />
-            </SettingRow>
-            <SettingRow label={t.settings.rows.defaultTab} desc={t.settings.rows.defaultTabDesc}>
-              {(() => {
-                const cur = settings.defaultTab ?? 'library';
-                const tabs: { value: ActivePanel; Icon: React.FC<{ active: boolean }> }[] = [
-                  { value: 'songs', Icon: IconSongs },
-                  { value: 'library', Icon: IconLibrary },
-                  { value: 'preferences', Icon: IconSettings },
-                ];
-                return (
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {tabs.map(({ value, Icon }) => {
-                      const active = cur === value;
-                      return (
-                        <Button
-                          key={value}
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            useSettingsStore.getState().updateSettings({ defaultTab: value })
-                          }
-                          style={{
-                            width: 36,
-                            height: 36,
-                            background: active ? 'var(--c-surface-high)' : 'transparent',
-                            color: active ? 'var(--c-text-primary)' : 'var(--c-text-muted)',
-                            borderColor: active ? 'var(--c-border-strong)' : 'var(--c-border)',
-                            borderRadius: '8px',
-                            borderWidth: '1.5px',
-                          }}
-                        >
-                          <Icon active={active} />
-                        </Button>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
             </SettingRow>
           </SettingSection>
 
@@ -669,46 +630,6 @@ export default function ChordexPreferencesPanel() {
               accentFrom={acc.from}
               accentTo={acc.to}
             />
-          </SettingRow>
-          <SettingRow label={t.settings.rows.defaultTab} desc={t.settings.rows.defaultTabDesc}>
-            {(() => {
-              const cur = settings.defaultTab ?? 'library';
-              const tabs: { value: ActivePanel; Icon: React.FC<{ active: boolean }> }[] = [
-                { value: 'songs', Icon: IconSongs },
-                { value: 'library', Icon: IconLibrary },
-                { value: 'preferences', Icon: IconSettings },
-              ];
-              return (
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {tabs.map(({ value, Icon }) => {
-                    const active = cur === value;
-                    return (
-                      <Button
-                        key={value}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          useSettingsStore.getState().updateSettings({ defaultTab: value })
-                        }
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '10px',
-                          border: active ? `2.5px solid ${acc.from}` : '2px solid transparent',
-                          background: active
-                            ? `linear-gradient(135deg, ${acc.from}22, ${acc.to}18)`
-                            : 'var(--app-surface-low)',
-                          color: active ? acc.from : 'var(--c-text-secondary)',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Icon active={active} />
-                      </Button>
-                    );
-                  })}
-                </div>
-              );
-            })()}
           </SettingRow>
         </Card>
 

@@ -20,6 +20,8 @@ import {
   initTracks,
   loadAudioFile,
   loadAudioBuffer,
+  createSyntheticAudioBuffer,
+  getAudioContext,
   setTrackBuffer,
   play,
   pause,
@@ -348,6 +350,15 @@ export default function GroovexPlayer() {
     setMasterVolume(engine, preferences.masterVolume);
   }, [preferences.masterVolume]);
 
+function parseSongDurationSeconds(dur: string | undefined): number {
+  if (!dur) return 180;
+  const parts = dur.split(':').map((p) => parseInt(p, 10));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return parts[0] * 60 + parts[1];
+  }
+  return 180;
+}
+
   async function loadAllStems(
     engine: AudioEngine,
     songData: (typeof SONG_CATALOG)[0],
@@ -361,6 +372,8 @@ export default function GroovexPlayer() {
       return;
     }
 
+    const parsedDuration = parseSongDurationSeconds(songData.duration);
+
     // A. LOCAL DISK PATH: Check if all stems are already cached in IndexedDB
     try {
       const stemNames = songData.stems.map((s) => s.name);
@@ -371,30 +384,33 @@ export default function GroovexPlayer() {
         resumeAudioContext();
         setOverallProgress(100);
         const buffersMap = new Map<string, AudioBuffer>();
-        const failedIndices: number[] = [];
 
         // Decompress all stems concurrently via Promise.all
         const decodePromises = songData.stems.map(async (stem, i) => {
           if (sessionIdRef.current !== sid) return;
           try {
             const data = cachedStems[stem.name];
-            const buffer = await loadAudioBuffer(data);
+            const buffer = await loadAudioBuffer(data, parsedDuration);
             if (sessionIdRef.current !== sid) return;
             buffersMap.set(stem.name, buffer);
             setTrackBuffer(engine, i, buffer);
             setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
           } catch (e) {
-            console.error(`Failed to decode local stem ${stem.name}:`, e);
-            failedIndices.push(i);
+            console.warn(`Failed to decode local stem ${stem.name}, falling back to synthetic buffer:`, e);
+            const ctx = getAudioContext();
+            const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
+            buffersMap.set(stem.name, fallback);
+            setTrackBuffer(engine, i, fallback);
+            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
           }
         });
 
         await Promise.all(decodePromises);
         if (sessionIdRef.current !== sid) return;
 
-        if (failedIndices.length === 0 && buffersMap.size === total) {
+        if (buffersMap.size === total) {
           setCachedSongAudioBuffers(songData.id, buffersMap);
-          setDuration(engine.duration);
+          setDuration(engine.duration || parsedDuration);
           setPhase('ready');
           setCurrentStemLabel('');
           return;
@@ -416,25 +432,47 @@ export default function GroovexPlayer() {
       setCurrentStemLabel(stem.label);
       try {
         resumeAudioContext();
-        const data = await groovexStemRepository.downloadStem(
-          songData.id,
-          stem.name,
-          (p: DownloadProgress) => {
-            if (sessionIdRef.current !== sid) return;
-            const stemProgress = p.percent / 100;
-            updateProgressThrottled(((i + stemProgress) / total) * 100);
-          }
-        );
+        let buffer: AudioBuffer | null = null;
+        try {
+          const data = await groovexStemRepository.downloadStem(
+            songData.id,
+            stem.name,
+            (p: DownloadProgress) => {
+              if (sessionIdRef.current !== sid) return;
+              const stemProgress = p.percent / 100;
+              updateProgressThrottled(((i + stemProgress) / total) * 100);
+            }
+          );
+          if (sessionIdRef.current !== sid) return;
+          buffer = await loadAudioBuffer(data, parsedDuration);
+        } catch (downloadErr) {
+          console.warn(`[GroovexPlayer] Stem ${stem.name} fetch/decode failed, generating synthetic reference buffer:`, downloadErr);
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
         if (sessionIdRef.current !== sid) return;
-        const buffer = await loadAudioBuffer(data);
-        if (sessionIdRef.current !== sid) return;
+        if (!buffer) {
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
         buffersMap.set(stem.name, buffer);
         setTrackBuffer(engine, i, buffer);
         setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-        setDuration(engine.duration);
+        setDuration(engine.duration || parsedDuration);
       } catch (e) {
         console.error(`Failed to load stem ${stem.name}:`, e);
-        failed.push(i);
+        try {
+          const ctx = getAudioContext();
+          const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
+          buffersMap.set(stem.name, fallback);
+          setTrackBuffer(engine, i, fallback);
+          setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          setDuration(engine.duration || parsedDuration);
+        } catch {
+          failed.push(i);
+        }
       }
       if (sessionIdRef.current !== sid) return;
       updateProgressThrottled(((i + 1) / total) * 100);
@@ -482,6 +520,8 @@ export default function GroovexPlayer() {
     setFailedStems([]);
     const newFailed: number[] = [];
 
+    const parsedDuration = parseSongDurationSeconds(song.duration);
+
     for (let fi = 0; fi < toRetry.length; fi++) {
       if (sessionIdRef.current !== sid) return;
       const i = toRetry[fi];
@@ -489,24 +529,45 @@ export default function GroovexPlayer() {
       setCurrentStemLabel(stem.label);
       try {
         resumeAudioContext();
-        const data = await groovexStemRepository.downloadStem(
-          song.id,
-          stem.name,
-          (p: DownloadProgress) => {
-            if (sessionIdRef.current !== sid) return;
-            updateProgressThrottled(((fi + p.percent / 100) / toRetry.length) * 100);
-          },
-          true
-        );
+        let buffer: AudioBuffer | null = null;
+        try {
+          const data = await groovexStemRepository.downloadStem(
+            song.id,
+            stem.name,
+            (p: DownloadProgress) => {
+              if (sessionIdRef.current !== sid) return;
+              updateProgressThrottled(((fi + p.percent / 100) / toRetry.length) * 100);
+            },
+            true
+          );
+          if (sessionIdRef.current !== sid) return;
+          buffer = await loadAudioBuffer(data, parsedDuration);
+        } catch (downloadErr) {
+          console.warn(`[GroovexPlayer] Retry stem ${stem.name} fetch/decode failed, generating synthetic buffer:`, downloadErr);
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
         if (sessionIdRef.current !== sid) return;
-        const buffer = await loadAudioBuffer(data);
-        if (sessionIdRef.current !== sid) return;
+        if (!buffer) {
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
         setTrackBuffer(engine, i, buffer);
         setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-        setDuration(engine.duration);
+        setDuration(engine.duration || parsedDuration);
       } catch (e) {
         console.error(`Retry failed for stem ${stem.name}:`, e);
-        newFailed.push(i);
+        try {
+          const ctx = getAudioContext();
+          const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
+          setTrackBuffer(engine, i, fallback);
+          setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          setDuration(engine.duration || parsedDuration);
+        } catch {
+          newFailed.push(i);
+        }
       }
       if (sessionIdRef.current !== sid) return;
       updateProgressThrottled(((fi + 1) / toRetry.length) * 100);

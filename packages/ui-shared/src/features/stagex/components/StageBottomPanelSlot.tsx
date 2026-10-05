@@ -29,9 +29,10 @@ export const StageBottomPanelSlot: React.FC<StageBottomPanelSlotProps> = ({
       {isOpen && (
         <div
           data-testid="stagex-drawer-backdrop"
-          className="fixed inset-0 z-30"
+          className="fixed inset-0 z-30 sheet-backdrop"
           onClick={onClose}
           aria-hidden="true"
+          data-dialog="true"
         />
       )}
 
@@ -40,6 +41,7 @@ export const StageBottomPanelSlot: React.FC<StageBottomPanelSlotProps> = ({
         data-testid={testId}
         role={role}
         aria-label={ariaLabel}
+        data-dialog="true"
         className="fixed z-40 flex flex-col pointer-events-auto"
         style={{
           bottom: 'calc(max(10px, env(safe-area-inset-bottom, 0px)) + 4px)',

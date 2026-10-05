@@ -875,13 +875,14 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           <button
             type="button"
             onClick={listening ? stopListening : startListening}
+            className="hover:bg-neutral-200 active:scale-95 transition-all shadow-md"
             style={{
               height: 'clamp(42px, 5.5vh, 48px)',
               borderRadius: 9999,
               padding: '0 22px',
-              background: listening ? '#ef4444' : accent.from,
+              background: listening ? '#ef4444' : '#ffffff',
               border: 'none',
-              color: '#ffffff',
+              color: listening ? '#ffffff' : '#000000',
               fontFamily: 'var(--studio-font-display)',
               fontWeight: 700,
               fontSize: 'clamp(14px, 1.8vh, 15px)',
@@ -893,14 +894,14 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               cursor: 'pointer',
               boxShadow: listening
                 ? '0 4px 18px rgba(239, 68, 68, 0.35)'
-                : 'var(--shadow-control-raised), 0 4px 16px rgba(0, 122, 255, 0.25)',
+                : '0 4px 16px rgba(0, 0, 0, 0.25)',
               transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
               {listening ? 'mic_off' : 'mic'}
             </span>
-            <span>
+            <span style={{ color: listening ? '#ffffff' : '#000000', fontWeight: 700 }}>
               {listening
                 ? t.vocalex.tunerStop || (language === 'es' ? 'Detener Monitor' : 'Stop Monitoring')
                 : t.vocalex.tunerStart ||

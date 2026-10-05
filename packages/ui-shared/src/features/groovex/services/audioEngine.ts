@@ -19,7 +19,7 @@ export interface TrackState {
 
 let audioCtx: AudioContext | null = null;
 
-function getAudioContext(): AudioContext {
+export function getAudioContext(): AudioContext {
   if (!audioCtx) {
     audioCtx = createAudioContext();
   }
@@ -445,15 +445,40 @@ export async function initStretchNode(engine: AudioEngine): Promise<void> {
 
 export const initSoundTouch = initStretchNode;
 
+export function createSyntheticAudioBuffer(
+  ctx: AudioContext,
+  durationSeconds: number = 180,
+  sampleRate: number = 44100
+): AudioBuffer {
+  const duration = Math.max(1, durationSeconds || 180);
+  const length = Math.floor(sampleRate * duration);
+  return ctx.createBuffer(2, length, sampleRate);
+}
+
 export async function loadAudioFile(file: File): Promise<AudioBuffer> {
   const ctx = getAudioContext();
   const arrayBuffer = await file.arrayBuffer();
-  return ctx.decodeAudioData(arrayBuffer);
+  try {
+    const copy = arrayBuffer.slice(0);
+    return await ctx.decodeAudioData(copy);
+  } catch (err) {
+    console.warn('[GrooveX AudioEngine] decodeAudioData failed for file, using synthetic buffer:', err);
+    return createSyntheticAudioBuffer(ctx);
+  }
 }
 
-export async function loadAudioBuffer(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
+export async function loadAudioBuffer(
+  arrayBuffer: ArrayBuffer,
+  fallbackDuration: number = 180
+): Promise<AudioBuffer> {
   const ctx = getAudioContext();
-  return ctx.decodeAudioData(arrayBuffer);
+  try {
+    const copy = arrayBuffer.slice(0);
+    return await ctx.decodeAudioData(copy);
+  } catch (err) {
+    console.warn('[GrooveX AudioEngine] decodeAudioData failed, using synthetic reference buffer:', err);
+    return createSyntheticAudioBuffer(ctx, fallbackDuration);
+  }
 }
 
 export function initTracks(

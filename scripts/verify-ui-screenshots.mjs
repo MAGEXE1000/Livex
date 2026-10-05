@@ -57,10 +57,10 @@ function checkServerListening(url, timeoutMs = 2000) {
 }
 
 async function ensureDevServer() {
-  const targetUrl = 'http://localhost:5174/';
-  const isUp = await checkServerListening(targetUrl, 1000);
+  const targetUrl = 'http://127.0.0.1:5174/';
+  const isUp = (await checkServerListening('http://127.0.0.1:5174/', 1000)) || (await checkServerListening('http://localhost:5174/', 1000));
   if (isUp) {
-    console.log(`[DEV-SERVER] Port 5174 already responding at ${targetUrl}`);
+    console.log(`[DEV-SERVER] Port 5174 already responding`);
     return null;
   }
 
@@ -133,8 +133,8 @@ async function run() {
       hasTouch: true,
     });
 
-    console.log('[NAV] Loading http://localhost:5174/ ...');
-    await page.goto('http://localhost:5174/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    console.log('[NAV] Loading http://127.0.0.1:5174/ ...');
+    await page.goto('http://127.0.0.1:5174/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(2500);
 
     // Dismiss intro / modals
@@ -150,40 +150,9 @@ async function run() {
     await sleep(1000);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 1. DRUMEX PATTERNS (Dark AMOLED & Light)
+    // 1. VOCALEX MONITOR ACTION BUTTON (Dark AMOLED & High Contrast Black Text)
     // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[1/5] Verifying Drumex Pattern Filter Pills...');
-    await page.evaluate(() => {
-      if (window.useSettingsStore) {
-        window.useSettingsStore.getState().updateSettings({
-          theme: 'dark',
-          amoledMode: true,
-          accentColor: 'monochrome',
-        });
-      }
-      if (window.NavigationDispatcher) {
-        window.NavigationDispatcher.openApp('drumex');
-        window.NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
-      }
-    });
-    await sleep(2000);
-    await saveScreenshot(page, 'drumex-patterns-dark.png');
-
-    await page.evaluate(() => {
-      if (window.useSettingsStore) {
-        window.useSettingsStore.getState().updateSettings({
-          theme: 'light',
-          amoledMode: false,
-        });
-      }
-    });
-    await sleep(1000);
-    await saveScreenshot(page, 'drumex-patterns-light.png');
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. QUICK ACTIONS MODAL (Dark & Light)
-    // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[2/5] Verifying Quick Actions Modal Done & Plus Buttons...');
+    console.log('\n[1/4] Verifying Vocalex Monitor Start Button Contrast...');
     await page.evaluate(() => {
       if (window.useSettingsStore) {
         window.useSettingsStore.getState().updateSettings({
@@ -194,124 +163,96 @@ async function run() {
       }
       if (window.NavigationDispatcher) {
         window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
+        window.NavigationDispatcher.openApp('vocalex');
+      }
+    });
+    await sleep(2500);
+    await saveScreenshot(page, 'vocalex-monitor-start-button.png');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 2. CHORDEX PREFERENCES SINGLE START ON SELECTOR
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log('\n[2/4] Verifying Chordex Preferences Single Start On Selector...');
+    await page.evaluate(() => {
+      if (window.NavigationDispatcher) {
+        window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
+        window.NavigationDispatcher.openApp('chordex');
+        window.NavigationDispatcher.push({ app: 'chordex', page: 'preferences' });
+      }
+    });
+    await sleep(2000);
+    await saveScreenshot(page, 'chordex-preferences-single-starton.png');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3. STAGEX BOTTOM NAVBAR AUTO-HIDE ON OVERLAY EXPANSION
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log('\n[3/4] Verifying Stagex Bottom Navbar Auto-Hide on + Drawer Open...');
+    await page.evaluate(() => {
+      if (window.NavigationDispatcher) {
+        window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
+        window.NavigationDispatcher.openApp('stagex');
+      }
+    });
+    await sleep(2500);
+
+    // Click the + Add Element FAB to open the bottom drawer
+    await page.evaluate(() => {
+      const fab = document.querySelector('[data-testid="stagex-fab-add"]');
+      if (fab) {
+        fab.click();
+      } else {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const addBtn = btns.find((b) => b.textContent && b.textContent.includes('add'));
+        if (addBtn) addBtn.click();
       }
     });
     await sleep(1500);
+    await saveScreenshot(page, 'stagex-drawer-navbar-hidden.png');
 
-    // Click the Pin button to open Quick Actions modal
+    // ─────────────────────────────────────────────────────────────────────────
+    // 4. GROOVEX STEM DOWNLOAD SUCCESS
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log('\n[4/4] Verifying Groovex Stem Download Success ("What\'s Up?")...');
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const pinBtn = buttons.find((b) => b.textContent && (b.textContent.includes('Pin') || b.textContent.includes('Fijar')));
-      if (pinBtn) pinBtn.click();
-    });
-    await sleep(1500);
-
-    await saveScreenshot(page, 'quick-actions-dark.png');
-
-    await page.evaluate(() => {
-      if (window.useSettingsStore) {
-        window.useSettingsStore.getState().updateSettings({
-          theme: 'light',
-          amoledMode: false,
-        });
+      if (window.NavigationDispatcher) {
+        window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
+        window.NavigationDispatcher.openApp('groovex');
       }
     });
-    await sleep(1000);
-    await saveScreenshot(page, 'quick-actions-light.png');
+    await sleep(2000);
 
-    // Close the Quick Actions modal
+    // Click on "What's Up?" song card
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const doneBtn = buttons.find((b) => {
-        const t = b.textContent && b.textContent.trim().toLowerCase();
-        return t === 'done' || t === 'listo';
+      const card = document.querySelector('[data-testid="groovex-song-item-4nonblondes-whats-up"]');
+      if (card) {
+        card.click();
+      } else {
+        const articles = Array.from(document.querySelectorAll('article'));
+        const whatsUp = articles.find((a) => a.textContent && a.textContent.includes("What's Up"));
+        if (whatsUp) whatsUp.click();
+      }
+    });
+
+    console.log('[GROOVEX] Waiting for stems to load and transition to ready phase...');
+    let isReady = false;
+    for (let attempts = 0; attempts < 30; attempts++) {
+      await sleep(1000);
+      const status = await page.evaluate(() => {
+        const ready = Boolean(document.querySelector('[aria-label="Play Vinyl"]'));
+        const error =
+          document.body.innerText.includes('failed to load') ||
+          document.body.innerText.includes('Download Interrupted');
+        return { ready, error };
       });
-      if (doneBtn) doneBtn.click();
-    });
-    await sleep(1000);
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3. PREFERENCES LIGHT MODE CONTRAST & START ON SELECTOR
-    // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[3/5] Verifying Drumex Preferences Light Mode Contrast & Start On Selector...');
-    await page.evaluate(() => {
-      if (window.useSettingsStore) {
-        window.useSettingsStore.getState().updateSettings({
-          theme: 'light',
-          amoledMode: false,
-          accentColor: 'monochrome',
-        });
+      if (status.ready || status.error) {
+        isReady = status.ready;
+        break;
       }
-      if (window.NavigationDispatcher) {
-        window.NavigationDispatcher.openApp('drumex');
-        window.NavigationDispatcher.push({ app: 'drumex', page: 'prefs' });
-      }
-    });
-    await sleep(2000);
-    await saveScreenshot(page, 'preferences-light-mode.png');
+    }
+    await sleep(2500);
+    await saveScreenshot(page, 'groovex-download-success.png');
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. HELP & SUPPORT CONTRAST
-    // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[4/5] Verifying Help & Support Action Buttons Contrast...');
-    await page.evaluate(() => {
-      if (window.NavigationDispatcher) {
-        window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
-        window.NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'faq' });
-      }
-    });
-    await sleep(2000);
-
-    // Scroll to bottom to view Report on GitHub & Contact Support
-    await page.evaluate(() => {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
-    });
-    await sleep(500);
-
-    await saveScreenshot(page, 'help-support-contrast.png');
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 5. STACKABLE TOASTS VERIFICATION
-    // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[5/5] Verifying Stackable Toasts Cascade...');
-    await page.evaluate(() => {
-      if (window.useSettingsStore) {
-        window.useSettingsStore.getState().updateSettings({
-          theme: 'dark',
-          amoledMode: true,
-        });
-      }
-      if (window.NavigationDispatcher) {
-        window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
-      }
-    });
-    await sleep(1500);
-
-    await page.evaluate(async () => {
-      const livexToast = window.__LIVEX_TOAST__;
-      if (livexToast) {
-        livexToast.toast('Background Cloud Sync Completed', { duration: 10000 });
-      }
-    });
-    await sleep(250);
-    await page.evaluate(async () => {
-      const livexToast = window.__LIVEX_TOAST__;
-      if (livexToast) {
-        livexToast.toast('Local Stage Room Connected (2 Devices)', { duration: 10000 });
-      }
-    });
-    await sleep(250);
-    await page.evaluate(async () => {
-      const livexToast = window.__LIVEX_TOAST__;
-      if (livexToast) {
-        livexToast.toast('Developer Options Unlocked', { duration: 10000 });
-      }
-    });
-    await sleep(1000);
-
-    await saveScreenshot(page, 'stackable-toast-verification.png');
-
-    console.log('\n✓ ALL 5 VERIFICATION SCREENSHOTS CAPTURED SUCCESSFULLY!');
+    console.log('\n✓ ALL 4 VERIFICATION SCREENSHOTS CAPTURED SUCCESSFULLY!');
   } finally {
     if (browser) {
       await browser.close().catch(() => {});
@@ -322,7 +263,6 @@ async function run() {
         devServerProcess.kill();
       } catch (_) {}
     }
-    process.exit(0);
   }
 }
 

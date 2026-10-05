@@ -317,8 +317,15 @@ export function BottomNavigationController() {
       const isModalOpen =
         activeOverlaysRegistry.modals.size > 0 ||
         activeOverlaysRegistry.sheets.size > 0;
+
+      const isStageOverlay =
+        isStageEditor &&
+        (Boolean(document.querySelector('[data-stagex-overlay="true"]')) ||
+          Boolean(document.querySelector('[data-testid="stagex-element-drawer"]')) ||
+          Boolean(document.querySelector('[data-testid="stagex-drawer-backdrop"]')));
+
       setHasDOMHiddenIndicator(
-        isFullscreen || isModalOpen || isPdfExport || (isStageEditor && isLandscape)
+        isFullscreen || isModalOpen || isPdfExport || (isStageEditor && (isLandscape || isStageOverlay))
       );
     };
 
