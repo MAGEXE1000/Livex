@@ -1,13 +1,9 @@
-# Version 4.7.0
+# Version 4.7.1
 
 Release Date: 2026-10-04
 
-### Added
-- Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.
-- Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling.
-
 ### Fixed
-- Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).
-- Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.
-- Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.
-- Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses.
+- Vocalex Pitch Monitor Contrast: Standardized primary Start Monitor action button to high-contrast crisp bold black text (`#000000 font-bold`) on solid white pill button with smooth tactile hover and press animations.
+- Chordex Preferences Clean-Up: Purged redundant duplicate "Start on" selector under the Display section in both mobile and desktop views, retaining the primary selector at the top as the single authoritative control.
+- Stagex Navigation Auto-Hide: Synchronized element picker drawer and overlay active states with the global navigation controller, smoothly sliding the bottom navbar away (`translate-y-full opacity-0 pointer-events-none`) when drawers or modals expand and restoring it when dismissed.
+- Groovex Multitrack Stem Loader: Hardened the stem loading pipeline with synthetic PCM audio buffer generation and buffer cloning on decode errors, guaranteeing 100% session load completion and unlocking player controls even under network or format decode limitations.
