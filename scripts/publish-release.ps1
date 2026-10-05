@@ -34,10 +34,13 @@ if (-not $SkipBump) {
     Write-Host "3. Committing and pushing version changes to Git..."
     git add -u
 
+    $versionCode = (node -e "import('./scripts/parse-version.mjs').then(m => console.log(m.getAppVersionInfo().nativeVersionCode))").Trim()
+    $commitMsg = if ($versionCode) { "chore(release): bump version to ${VersionName} (versionCode ${versionCode})" } else { "chore(release): bump version to ${VersionName}" }
+
     if (git diff --staged --quiet) {
         Write-Host "No changes to commit."
     } else {
-        git commit -m "Release v${VersionName} - ${ReleaseNote}" --no-verify
+        git commit -m $commitMsg --no-verify
     }
 
     Write-Host "Pushing HEAD to origin/$BranchName..."

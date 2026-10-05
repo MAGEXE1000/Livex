@@ -1,21 +1,25 @@
 {
   "platform": "android",
-  "version": "4.6.99",
-  "versionName": "4.6.99",
-  "versionCode": 40699,
-  "version_code": 40699,
-  "commit": "169a3754",
-  "releasedAt": "10/4/2026, 4:49:14 PM CST",
-  "buildTimestamp": "10/4/2026, 4:49:14 PM CST",
+  "version": "4.7.0",
+  "versionName": "4.7.0",
+  "versionCode": 40700,
+  "version_code": 40700,
+  "commit": "f33df728",
+  "releasedAt": "10/4/2026, 6:22:53 PM CST",
+  "buildTimestamp": "10/4/2026, 6:22:53 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.\n• Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.\n• Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.\n• Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent.",
-  "whatsNew": "• Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.\n• Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.\n• Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.\n• Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent.",
+  "changelog": "• Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.\n• Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling.\n• Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).\n• Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.\n• Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.\n• Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses.",
+  "whatsNew": "• Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.\n• Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling.\n• Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).\n• Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.\n• Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.\n• Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses.",
   "releaseNotes": {
+    "added": [
+      "Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.",
+      "Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling."
+    ],
     "fixed": [
-      "Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.",
-      "Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.",
-      "Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.",
-      "Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent."
+      "Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).",
+      "Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.",
+      "Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.",
+      "Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses."
     ]
   },
   "mandatory": false

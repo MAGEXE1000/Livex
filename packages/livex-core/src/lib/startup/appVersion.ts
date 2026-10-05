@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.6.99';
-export const NATIVE_VERSION_CODE = 40699;
-export const WEB_VERSION = '4.6.99';
+export const NATIVE_VERSION = '4.7.0';
+export const NATIVE_VERSION_CODE = 40700;
+export const WEB_VERSION = '4.7.0';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'e71d433f';
+export const APP_COMMIT_SHA = 'f33df728';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/4/2026, 12:08:32 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/4/2026, 6:22:53 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -99,12 +99,19 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.',
+      'Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Dynamic Theme Accent Eradication of Hardcoded Blue Highlights: Completely eliminated all hardcoded blue hex codes across the Native Updater dialog and indicators (`LivexUpdateScreen`, `UpdateIndicator`, `LivexUpdateAuroraBackground`), dynamically binding the action button, progress bars, percent counters, new version pill, and progress glow to the active user accent preset or monochrome.',
-      'Global Accent Token Synchronization: Synchronized `--accent-from` and `--accent-to` root CSS variables across the theme engine, eliminating styling fallbacks in dialogs, sliders, and interactive surfaces.',
-      'Accordion & Alert Accent Unification: Replaced residual hardcoded `#3b82f6` in tokens.css for `.alert-dialog__icon--accent` and `.t-acc-trigger:focus-visible` with dynamic semantic accent tokens.',
-      'Smart Loading & Setlist Detail Polish: Dynamically bound Livex Hub loading animations and setlist moving song hover borders to the user theme accent.',
+      'Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).',
+      'Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.',
+      'Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.',
+      'Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses.',
     ],
   },
 ];
@@ -119,6 +126,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.7.0',
+    date: '2026-10-04',
+    highlights: [
+      'Emil Kowalski Skills Suite: Ingested all 14 official design engineering skill modules (`ask-sonner`, `apple-design`, `emil-design-eng`, `break-ui`, `mobile-native`, etc.) into `.agents/skills/` to standardize animations, tactile feedback, and component architecture.',
+      'Stackable Toasts Engine via Sonner: Deployed a docked, 3-card stackable notification architecture anchored above the bottom navigation dock with spring entrances, drag-to-dismiss, and dark/AMOLED glass styling.',
+      'Unification of Switch Primitive: Standardized `Switch.tsx` across all modules with tactile spring curve `cubic-bezier(0.32, 0.72, 0, 1)`, active-touch scale feedback, and strict AMOLED parity (solid white track with black `#000000` thumb when active; dark translucent track with neutral thumb when inactive).',
+      'Eradication of Ad-Hoc Notifications: Replaced fragmented and conflicting floating divs in Hub Settings, Livex Hub, Vocalex Preferences, and Updater Diagnostics with canonical Sonner toasts.',
+      'Break-UI Layout Resilience: Protected Song cards, Setlist cards, and Lyrics Editor line bar badges with `min-w-0 flex-1 truncate shrink-0 whitespace-nowrap`, eliminating horizontal overflow and badge squashing under extreme string lengths.',
+      'Stagex Navigation Decoupling: Prevented Stagex from polluting the global Android back button history stack and trapping users on back presses.',
+    ],
+  },
   {
     version: '4.6.99',
     date: '2026-10-04',
@@ -216,14 +235,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Native Android Intent Filters for Direct File Ingestion: Registered `VIEW` and `SEND` intent filters in `AndroidManifest.xml` with deep-link resolution in `MainActivity.kt` and `SharedAppShell.tsx`, allowing users to open and import `.livex` files directly from WhatsApp, file managers, and cloud drives.',
       'Export MIME Type Normalization & .bin Attachment Corruption: Overhauled `.livex` bundle sharing via custom native `LivexFileProvider` mapping `.livex` directly to `application/json`, eliminating Android `application/octet-stream` fallbacks that caused WhatsApp and file managers to rename shared setlists to `DOC-xxxx.bin`.',
       'Resilient & Tolerant Bundle Import Pipeline: Expanded file input criteria and implemented schema-tolerant parser in `livexBundleService` supporting `.livex`, `.json`, `.bin`, and legacy raw arrays with 1-tap instant validation preview and clear error reporting.',
-    ],
-  },
-  {
-    version: '4.6.89',
-    date: '2026-10-03',
-    highlights: [
-      'Samsung IME Multi-Line Insert Interception: Added native DOM beforeinput interception in SongLyricsEditor for multi-line text streams, seamlessly normalizing and splicing Samsung Keyboard clipboard pastes into song lyrics and ensuring song content registers immediately for playback.',
-      'Synchronous Focus Restoration on Line Deletion: Relocated caret restoration to synchronous useLayoutEffect during line deletion and merge operations, preventing Android WebView focus loss and keeping the virtual keyboard open during rapid Backspace or word deletion.',
     ],
   },
 ];
