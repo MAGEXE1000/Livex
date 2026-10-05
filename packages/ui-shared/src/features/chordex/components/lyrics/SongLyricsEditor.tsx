@@ -4202,7 +4202,7 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
                             triggerChange(nextDoc, true);
                           }
                         }}
-                        className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[11px] font-semibold font-mono select-none transition-all duration-300 cursor-pointer active:scale-95"
+                        className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[11px] font-semibold font-mono select-none transition-all duration-300 cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
                         style={{
                           backgroundColor: isLineFlashed
                             ? (isEffectiveLight ? '#000000' : '#ffffff')

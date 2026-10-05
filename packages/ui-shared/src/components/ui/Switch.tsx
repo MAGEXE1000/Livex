@@ -32,7 +32,8 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
         if (!e.defaultPrevented) onCheckedChange?.(!checked);
       }}
       className={cn(
-        'peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors',
+        'peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent',
+        'transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 motion-reduce:transition-none',
         'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:bg-white data-[state=unchecked]:bg-neutral-800 dark:data-[state=unchecked]:bg-neutral-800/80',
         'data-[state=checked]:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)] dark:data-[state=checked]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]',
@@ -43,7 +44,8 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
       <span
         data-state={state}
         className={cn(
-          'pointer-events-none block h-5 w-5 rounded-full shadow-lg ring-0 transition-transform',
+          'pointer-events-none block h-5 w-5 rounded-full shadow-lg ring-0',
+          'transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
           'data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
           'data-[state=checked]:bg-black data-[state=unchecked]:bg-neutral-400 dark:data-[state=unchecked]:bg-neutral-300'
         )}

@@ -21,6 +21,7 @@ import {
   type BouncyAccordionItem,
 } from '../../../components/motion/bouncy-accordion';
 import { IosSearchBar } from '../../../components/ui/IosSearchBar';
+import { toast } from '../../../components/ui/sonner';
 
 // Simple reactive state hook to poll mutable arrays/objects
 function useForceUpdate() {
@@ -34,7 +35,6 @@ export const UpdaterDiagnosticsPage: React.FC<{ onBack?: () => void; hideHeader?
   hideHeader,
 }) => {
   const forceUpdate = useForceUpdate();
-  const [toast, setToast] = useState<string | null>(null);
   const [logSearch, setLogSearch] = useState('');
   const [logFilter, setLogFilter] = useState<'ALL' | 'INFO' | 'DEBUG' | 'ERROR'>('ALL');
 
@@ -72,12 +72,10 @@ export const UpdaterDiagnosticsPage: React.FC<{ onBack?: () => void; hideHeader?
     const report = generateReport();
     copyToClipboard(report, 'Updater')
       .then((msg) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 2500);
+        toast.success(msg);
       })
-      .catch(() => {
-        setToast('Copy failed');
-        setTimeout(() => setToast(null), 2500);
+      .catch((err) => {
+        toast.error(`Copy failed: ${err.message || String(err)}`);
       });
   };
 
@@ -160,12 +158,10 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
   const handleCopySection = (title: string, text: string) => {
     copyToClipboard(text, title)
       .then((msg) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 2500);
+        toast.success(msg);
       })
-      .catch(() => {
-        setToast('Copy failed');
-        setTimeout(() => setToast(null), 2500);
+      .catch((err) => {
+        toast.error(`Copy failed: ${err.message || String(err)}`);
       });
   };
 
@@ -375,26 +371,7 @@ Platform Detected: ${updateDebugLogs.platformDetected || 'None'}
           boxSizing: 'border-box',
         }}
       >
-        {/* Status Toast Notification */}
-        {toast && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: '24px',
-              right: '24px',
-              zIndex: 99999,
-              background: '#10b981',
-              color: '#000',
-              fontWeight: 700,
-              fontSize: '13px',
-              padding: '10px 16px',
-              borderRadius: '10px',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-            }}
-          >
-            {toast}
-          </div>
-        )}
+
 
         {/* Current Status Grid */}
         <section

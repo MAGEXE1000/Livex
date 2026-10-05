@@ -627,8 +627,6 @@ export function HubSettings({
   }
 
   // ── Hidden Developer Options 10-tap Unlock Gesture ──
-  const [localDevToast, setLocalDevToast] = useState<string | null>(null);
-  const localToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aboutTapCountRef = useRef(0);
   const lastAboutTapTimeRef = useRef(0);
   const aboutTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -638,25 +636,19 @@ export function HubSettings({
       if (aboutTapTimerRef.current) {
         clearTimeout(aboutTapTimerRef.current);
       }
-      if (localToastTimerRef.current) {
-        clearTimeout(localToastTimerRef.current);
-      }
     };
   }, []);
 
   const triggerDevToast = useCallback(
     (msg: string) => {
       try {
-        toast(msg);
-      } catch (_) {}
-      showDevToast?.(msg);
-      if (localToastTimerRef.current) {
-        clearTimeout(localToastTimerRef.current);
+        toast.success(msg);
+      } catch (_) {
+        try {
+          toast(msg);
+        } catch (_) {}
       }
-      setLocalDevToast(msg);
-      localToastTimerRef.current = setTimeout(() => {
-        setLocalDevToast(null);
-      }, 2500);
+      showDevToast?.(msg);
     },
     [showDevToast]
   );
@@ -715,39 +707,7 @@ export function HubSettings({
     }
   }, [handleLogoTap, settings.developerMode, updateSettings, triggerDevToast, lang]);
 
-  const activeDevToast = devToast || localDevToast;
-
-  const renderToastElement = () => {
-    if (!activeDevToast) return null;
-    if (devToast && renderDevToast && renderDevToast()) {
-      return renderDevToast();
-    }
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 'calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: isLight ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.90)',
-          color: isLight ? '#fff' : '#000',
-          padding: '8px 18px',
-          borderRadius: '20px',
-          fontSize: '12.5px',
-          fontFamily: 'var(--studio-font-body, "Inter", sans-serif)',
-          fontWeight: 600,
-          zIndex: 999999,
-          pointerEvents: 'none',
-          backdropFilter: 'var(--surface-float-blur)',
-          WebkitBackdropFilter: 'var(--surface-float-blur)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.30)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {activeDevToast}
-      </div>
-    );
-  };
+  const renderToastElement = () => null;
 
   const activePageId = page === 'main' ? 'general' : page;
 

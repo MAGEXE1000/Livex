@@ -88,6 +88,7 @@ import {
 } from '../../chordex/icons/ChordexLogo';
 import { TuningForkIcon } from '../../chordex/components/tuner/TuningForkIcon';
 import { SpotlightLogo } from '../../../components/spotlight-logo';
+import { toast } from '../../../components/ui/sonner';
 
 const HubSettings = lazy(() => import('../settings/HubSettings'));
 const HubHelp = lazy(() => import('./HubHelp'));
@@ -1111,40 +1112,14 @@ export default function LivexHub() {
   }, []);
 
   const showDevToast = (msg: string) => {
-    if (devToastTimer) {
-      window.clearTimeout(devToastTimer);
-    }
-    setDevToast(msg);
-    const id = window.setTimeout(() => setDevToast(null), 2000);
-    setDevToastTimer(id);
+    try {
+      toast(msg);
+    } catch (_) {}
   };
 
   const handleLogoTap = () => {};
 
-  const renderDevToast = () => (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '32px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: isHubLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-        color: isHubLight ? '#fff' : '#000',
-        padding: '8px 18px',
-        borderRadius: '20px',
-        fontSize: '12.5px',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 600,
-        zIndex: 99999,
-        pointerEvents: 'none',
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.20)',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {devToast}
-    </div>
-  );
+  const renderDevToast = () => null;
 
   useEffect(() => {
     return authRepository.subscribeAuth((user) => {

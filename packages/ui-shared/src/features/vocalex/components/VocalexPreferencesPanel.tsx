@@ -19,6 +19,7 @@ import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
 import { useOverscrollSpring } from '../../../shared/layout/useOverscrollSpring';
 import { clearTakeCache } from '../services/harmonyEngine';
+import { toast } from '../../../components/ui/sonner';
 
 export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => void } = {}) {
   const prefsScrollRef = useRef<HTMLDivElement>(null);
@@ -44,15 +45,9 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
   const isWebDesktop = useIsWebDesktop();
 
   const [takeCount, setTakeCount] = useState<number>(0);
-  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showFeedback = useCallback((msg: string) => {
-    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
-    setFeedbackMsg(msg);
-    feedbackTimerRef.current = setTimeout(() => {
-      setFeedbackMsg(null);
-    }, 2800);
+    toast.success(msg);
   }, []);
 
   useEffect(() => {
@@ -67,7 +62,6 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
       });
     return () => {
       cancelled = true;
-      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     };
   }, []);
 
@@ -162,32 +156,7 @@ export default function VocalexPreferencesPanel({ onBack }: { onBack?: () => voi
           }}
         >
 
-        {/* Transient Feedback Banner */}
-        {feedbackMsg && (
-          <div
-            style={{
-              marginBottom: 12,
-              padding: '8px 14px',
-              borderRadius: 12,
-              background: 'rgba(16, 185, 129, 0.14)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
-              color: '#10b981',
-              fontFamily: 'var(--studio-font-body)',
-              fontSize: 12.5,
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              transition: 'all 200ms ease',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              check_circle
-            </span>
-            <span>{feedbackMsg}</span>
-          </div>
-        )}
+
 
         {/* ── 1. Launch & Defaults ── */}
         <SettingSection

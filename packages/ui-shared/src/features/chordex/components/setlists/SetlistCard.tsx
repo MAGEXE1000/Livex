@@ -116,9 +116,9 @@ export const SetlistCard: React.FC<SetlistCardProps> = React.memo(
 
           {/* Center Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <h3
-                className="text-base font-extrabold tracking-tight truncate leading-tight"
+                className="text-base font-extrabold tracking-tight truncate leading-tight min-w-0 flex-1"
                 style={{
                   fontFamily: 'var(--font-headline)',
                   color: 'var(--c-text-primary, #FFFFFF)',
