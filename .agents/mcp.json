@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "command": "stitch-cli",
+      "args": ["mcp", "start"],
+      "env": {
+        "STITCH_ENVIRONMENT": "local"
+      }
+    }
+  }
+}

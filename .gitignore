@@ -94,6 +94,11 @@ id_rsa.pub
 id_ed25519
 id_ed25519.pub
 
+# ── Android Local Config & SDK Paths ──────────────────────────────────────────
+local.properties
+**/local.properties
+
+
 # ── Cloud Credentials & Service Accounts ──────────────────────────────────────
 *serviceAccount*.json
 *service-account*.json
