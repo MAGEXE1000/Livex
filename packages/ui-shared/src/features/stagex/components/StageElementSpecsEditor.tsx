@@ -443,7 +443,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
             {/* Tap Outside Backdrop */}
             <motion.div
               data-testid="stagex-specs-backdrop"
-              className="fixed inset-0 z-30"
+              className="fixed inset-0 z-[10000]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -464,7 +464,7 @@ export const StageElementSpecsEditor: React.FC<StageElementSpecsEditorProps> = (
               data-testid="stagex-specs-editor"
               role="dialog"
               aria-label="Element Specs Editor"
-              className="fixed z-40 flex flex-col pointer-events-auto overflow-hidden"
+              className="fixed z-[10001] flex flex-col pointer-events-auto overflow-hidden"
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.98 }}

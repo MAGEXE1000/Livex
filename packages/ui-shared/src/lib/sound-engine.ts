@@ -1,9 +1,11 @@
+import { createAudioContext } from '@workspace/livex-core';
+
 let audioContext: AudioContext | null = null;
 const bufferCache = new Map<string, AudioBuffer>();
 
 export function getAudioContext(): AudioContext {
   if (!audioContext) {
-    audioContext = new AudioContext();
+    audioContext = createAudioContext();
   }
   return audioContext;
 }
@@ -57,6 +59,10 @@ export async function playSound(
   gain.connect(ctx.destination);
 
   source.onended = () => {
+    try {
+      source.disconnect();
+      gain.disconnect();
+    } catch {}
     onEnd?.();
   };
 
@@ -69,6 +75,10 @@ export async function playSound(
       } catch {
         // No-op if already stopped.
       }
+      try {
+        source.disconnect();
+        gain.disconnect();
+      } catch {}
     },
   };
 }

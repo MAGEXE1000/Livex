@@ -415,6 +415,15 @@ export default function TakeDetailView({
   }, [take.audioBlob, take.durationMs]);
 
   useEffect(() => {
+    return () => {
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!take.audioBlob || take.audioBlob.size === 0 || take.durationMs === 0) {
       setAnalyzing(false);
       setAnalysis(null);

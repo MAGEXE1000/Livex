@@ -282,20 +282,20 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Coordinate Stagex overlay state (drawer, specs, live mode) with global bottom navigation
+  // Coordinate Stagex drawer/specs overlay state with global bottom navigation
   useEffect(() => {
     if (!isActive) return undefined;
-    const isOverlayActive = panelOpen || liveMode || specsOpen;
+    const isOverlayActive = panelOpen || specsOpen;
     if (isOverlayActive) {
-      activeOverlaysRegistry.register('sheet', 'stagex-overlay');
+      activeOverlaysRegistry.register('sheet', 'stagex-drawer');
       return () => {
-        activeOverlaysRegistry.unregister('sheet', 'stagex-overlay');
+        activeOverlaysRegistry.unregister('sheet', 'stagex-drawer');
       };
     }
     return undefined;
-  }, [isActive, panelOpen, liveMode, specsOpen]);
+  }, [isActive, panelOpen, specsOpen]);
 
-  // Ensure bottom navigation reflects landscape, inspection mode, element picker drawer, specs editor, and drag state
+  // Ensure bottom navigation reflects landscape or gig mode without permanently locking dock
   useEffect(() => {
     if (isWebDesktop) return;
     if (!isActive) {
@@ -308,14 +308,14 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
       }
       return;
     }
-    const shouldHide = isLandscape || liveMode || panelOpen || specsOpen || isCanvasDragging;
-    setNavLocked(shouldHide);
+    const shouldHide = isLandscape || liveMode;
     setNavHidden(shouldHide);
-    useBottomNavigationStore.getState().setLocked(shouldHide);
     if (!shouldHide) {
+      setNavLocked(false);
+      useBottomNavigationStore.getState().setLocked(false);
       useBottomNavigationStore.getState().setVisible(true);
     }
-  }, [isActive, isLandscape, liveMode, panelOpen, specsOpen, isCanvasDragging, isWebDesktop]);
+  }, [isActive, isLandscape, liveMode, isWebDesktop]);
 
   // Clean up orientation lock and navigation state on unmount
   useEffect(() => {
@@ -604,11 +604,13 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
     if (panelOpen) setPanelOpen(false);
     if (specsOpen) setSpecsOpen(false);
     const shouldHide = next || isLandscape;
-    setNavLocked(shouldHide);
     setNavHidden(shouldHide);
     callIframe('toggleGigMode');
     if (!next) {
       callIframe('resetView');
+      setNavLocked(false);
+      useBottomNavigationStore.getState().setLocked(false);
+      useBottomNavigationStore.getState().setVisible(true);
     }
   }, [liveMode, isLandscape, panelOpen, specsOpen, setLiveMode, callIframe]);
 
@@ -780,7 +782,6 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   return (
     <div
-      data-stagex-overlay={panelOpen || liveMode || specsOpen ? 'true' : undefined}
       data-stagex-drawer={panelOpen ? 'true' : undefined}
       className="w-full h-full flex flex-col relative overflow-hidden"
       style={{ background: stageBg }}

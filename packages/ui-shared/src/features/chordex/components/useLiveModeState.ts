@@ -763,6 +763,7 @@ export function useLiveModeState(
   const [speed, setSpeedState] = useState(initialSpeed);
   const [currentBeat, setCurrentBeat] = useState(0);
   const [totalLineBeats, setTotalLineBeats] = useState<number>(0);
+  const totalLineBeatsRef = useRef<number>(0);
   const [lineBeatsElapsed, setLineBeatsElapsed] = useState<number>(0);
   const [currentBar, setCurrentBar] = useState(1);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -2059,7 +2060,10 @@ export function useLiveModeState(
           totalLineBeats = resolveLineBars(activeLine?.line, sec as any, barsPerLineRef.current || 1) * beatsPerMeasure;
         }
         
-        setTotalLineBeats(totalLineBeats);
+        if (totalLineBeatsRef.current !== totalLineBeats) {
+          totalLineBeatsRef.current = totalLineBeats;
+          setTotalLineBeats(totalLineBeats);
+        }
 
         const { nextElapsed, shouldAdvanceLine } = advanceLineClock(
           lineBeatsElapsedRef.current,

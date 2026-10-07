@@ -320,9 +320,11 @@ export function BottomNavigationController() {
 
       const isStageOverlay =
         isStageEditor &&
-        (Boolean(document.querySelector('[data-stagex-overlay="true"]')) ||
-          Boolean(document.querySelector('[data-testid="stagex-element-drawer"]')) ||
-          Boolean(document.querySelector('[data-testid="stagex-drawer-backdrop"]')));
+        Boolean(
+          document.querySelector(
+            '[data-testid="stagex-drawer-backdrop"], [data-testid="stagex-specs-backdrop"]'
+          )
+        );
 
       setHasDOMHiddenIndicator(
         isFullscreen || isModalOpen || isPdfExport || (isStageEditor && (isLandscape || isStageOverlay))

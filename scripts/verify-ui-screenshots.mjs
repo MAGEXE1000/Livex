@@ -184,9 +184,9 @@ async function run() {
     await saveScreenshot(page, 'chordex-preferences-single-starton.png');
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 3. STAGEX BOTTOM NAVBAR AUTO-HIDE ON OVERLAY EXPANSION
+    // 3. STAGEX BOTTOM NAVBAR PERSISTENCE & OVERLAY LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[3/4] Verifying Stagex Bottom Navbar Auto-Hide on + Drawer Open...');
+    console.log('\n[3/4] Verifying Stagex Bottom Navbar Persistence & Overlay Lifecycle...');
     await page.evaluate(() => {
       if (window.NavigationDispatcher) {
         window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
@@ -194,8 +194,11 @@ async function run() {
       }
     });
     await sleep(2500);
+    // 3A. Persistent bottom navbar on stage canvas
+    await saveScreenshot(page, 'stagex-canvas-navbar-persistent.png');
 
-    // Click the + Add Element FAB to open the bottom drawer
+    // 3B. Open Element Drawer (+)
+    console.log('[STAGEX] Opening + Drawer...');
     await page.evaluate(() => {
       const fab = document.querySelector('[data-testid="stagex-fab-add"]');
       if (fab) {
@@ -207,7 +210,34 @@ async function run() {
       }
     });
     await sleep(1500);
+    await saveScreenshot(page, 'stagex-plus-drawer-open.png');
     await saveScreenshot(page, 'stagex-drawer-navbar-hidden.png');
+
+    // 3C. Dismiss Element Drawer (tap backdrop)
+    console.log('[STAGEX] Dismissing + Drawer...');
+    await page.evaluate(() => {
+      const backdrop = document.querySelector('[data-testid="stagex-drawer-backdrop"]');
+      if (backdrop) {
+        backdrop.click();
+      }
+    });
+    await sleep(1500);
+    await saveScreenshot(page, 'stagex-plus-drawer-dismissed.png');
+
+    // 3D. Toggle Eye Tool (Gig Mode -> Regular Mode)
+    console.log('[STAGEX] Toggling Eye tool...');
+    await page.evaluate(() => {
+      const eyeBtn = document.querySelector('[data-testid="stagex-eye-btn"]');
+      if (eyeBtn) eyeBtn.click();
+    });
+    await sleep(1200);
+    // Toggle back to regular mode
+    await page.evaluate(() => {
+      const eyeBtn = document.querySelector('[data-testid="stagex-eye-btn"]');
+      if (eyeBtn) eyeBtn.click();
+    });
+    await sleep(1500);
+    await saveScreenshot(page, 'stagex-eye-tool-toggle.png');
 
     // ─────────────────────────────────────────────────────────────────────────
     // 4. GROOVEX STEM DOWNLOAD SUCCESS
