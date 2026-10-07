@@ -26,6 +26,7 @@
     "android:run": "cd apps/studio-android && npx cap run android",
     "android:emulator:deploy": "node scripts/android-verify/deploy-emulator.mjs",
     "android:emulator:screenshot": "node scripts/android-verify/capture-screenshot.mjs",
+    "android:emulator:interact": "node scripts/android-verify/interact.mjs",
     "android:verify": "node scripts/android-verify/deploy-emulator.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",

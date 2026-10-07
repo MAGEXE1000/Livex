@@ -221,3 +221,140 @@ export function launchApp(adbPath, deviceId, packageId = 'com.chordex.app', acti
     throw new Error(`Failed to launch app ${packageId}: ${err.message}`);
   }
 }
+
+/**
+ * Sends a tap input event at specific (x, y) coordinates.
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @param {number} x
+ * @param {number} y
+ */
+export function tapDevice(adbPath, deviceId, x, y) {
+  try {
+    execFileSync(adbPath, ['-s', deviceId, 'shell', 'input', 'tap', String(Math.round(x)), String(Math.round(y))]);
+  } catch (err) {
+    throw new Error(`Failed to tap device at (${x}, ${y}): ${err.message}`);
+  }
+}
+
+/**
+ * Sends a swipe gesture from (x1, y1) to (x2, y2).
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @param {number} durationMs
+ */
+export function swipeDevice(adbPath, deviceId, x1, y1, x2, y2, durationMs = 300) {
+  try {
+    execFileSync(adbPath, [
+      '-s',
+      deviceId,
+      'shell',
+      'input',
+      'swipe',
+      String(Math.round(x1)),
+      String(Math.round(y1)),
+      String(Math.round(x2)),
+      String(Math.round(y2)),
+      String(Math.round(durationMs)),
+    ]);
+  } catch (err) {
+    throw new Error(`Failed to swipe device from (${x1},${y1}) to (${x2},${y2}): ${err.message}`);
+  }
+}
+
+/**
+ * Sends a hardware key event (e.g. 4 for BACK, 3 for HOME).
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @param {number|string} keyCode
+ */
+export function sendKey(adbPath, deviceId, keyCode) {
+  try {
+    execFileSync(adbPath, ['-s', deviceId, 'shell', 'input', 'keyevent', String(keyCode)]);
+  } catch (err) {
+    throw new Error(`Failed to send keycode ${keyCode}: ${err.message}`);
+  }
+}
+
+/**
+ * Presses the Android system hardware BACK button (KEYCODE_BACK = 4).
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ */
+export function pressBack(adbPath, deviceId) {
+  sendKey(adbPath, deviceId, 4);
+}
+
+/**
+ * Presses the Android system HOME button (KEYCODE_HOME = 3).
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ */
+export function pressHome(adbPath, deviceId) {
+  sendKey(adbPath, deviceId, 3);
+}
+
+/**
+ * Types text onto the device's currently focused input element.
+ * Spaces are converted to '%s' for ADB shell compatibility.
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @param {string} text
+ */
+export function inputText(adbPath, deviceId, text) {
+  try {
+    const formatted = text.replace(/ /g, '%s');
+    execFileSync(adbPath, ['-s', deviceId, 'shell', 'input', 'text', formatted]);
+  } catch (err) {
+    throw new Error(`Failed to input text "${text}": ${err.message}`);
+  }
+}
+
+/**
+ * Retrieves the device screen resolution.
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @returns {{ width: number, height: number }}
+ */
+export function getDeviceScreenSize(adbPath, deviceId) {
+  try {
+    const raw = execFileSync(adbPath, ['-s', deviceId, 'shell', 'wm', 'size'], { encoding: 'utf8' });
+    const match = raw.match(/Physical size:\s*(\d+)x(\d+)/) || raw.match(/(\d+)x(\d+)/);
+    if (match) {
+      return {
+        width: parseInt(match[1], 10),
+        height: parseInt(match[2], 10),
+      };
+    }
+    throw new Error(`Unrecognized wm size output: ${raw}`);
+  } catch (err) {
+    throw new Error(`Failed to get device screen size: ${err.message}`);
+  }
+}
+
+/**
+ * Taps at a relative percentage of the screen width and height (0-100).
+ *
+ * @param {string} adbPath
+ * @param {string} deviceId
+ * @param {number} xPct 0 to 100
+ * @param {number} yPct 0 to 100
+ */
+export function tapPercent(adbPath, deviceId, xPct, yPct) {
+  const { width, height } = getDeviceScreenSize(adbPath, deviceId);
+  const x = (width * xPct) / 100;
+  const y = (height * yPct) / 100;
+  tapDevice(adbPath, deviceId, x, y);
+}
+
