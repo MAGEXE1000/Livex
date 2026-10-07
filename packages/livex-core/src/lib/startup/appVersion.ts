@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.7.1';
-export const NATIVE_VERSION_CODE = 40701;
-export const WEB_VERSION = '4.7.1';
+export const NATIVE_VERSION = '4.7.2';
+export const NATIVE_VERSION_CODE = 40702;
+export const WEB_VERSION = '4.7.2';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'cc7e33cf';
+export const APP_COMMIT_SHA = '876b9367';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/4/2026, 9:56:45 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/7/2026, 12:04:00 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -99,12 +99,19 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Fixed',
+    heading: 'Added',
     items: [
-      'Vocalex Pitch Monitor Contrast: Standardized primary Start Monitor action button to high-contrast crisp bold black text (`#000000 font-bold`) on solid white pill button with smooth tactile hover and press animations.',
-      'Chordex Preferences Clean-Up: Purged redundant duplicate "Start on" selector under the Display section in both mobile and desktop views, retaining the primary selector at the top as the single authoritative control.',
-      'Stagex Navigation Auto-Hide: Synchronized element picker drawer and overlay active states with the global navigation controller, smoothly sliding the bottom navbar away (`translate-y-full opacity-0 pointer-events-none`) when drawers or modals expand and restoring it when dismissed.',
-      'Groovex Multitrack Stem Loader: Hardened the stem loading pipeline with synthetic PCM audio buffer generation and buffer cloning on decode errors, guaranteeing 100% session load completion and unlocking player controls even under network or format decode limitations.',
+      'Groovex Immersive Full-Screen Player: Overhauled the player UI into a full-screen AMOLED experience with enlarged 320px album cover artwork, dynamic ambient backdrop color glow, and elevated concentric rounded surfaces.',
+      'Dynamic Waveform Spectrum & Laser Progress Scrubber: Integrated a 44-bar interactive audio frequency spectrum visualizer with harmonic pulse animation, a glowing gradient progress track with laser shimmer sweep, and a dual-ring neon aura playhead thumb.',
+      'Automatic Online High-Res Album Art Service: Deployed album cover art engine with instant in-memory and persistent caching.',
+    ],
+  },
+  {
+    heading: 'Improved',
+    items: [
+      'Top Header Track Title Display: Displays "NOW PLAYING" with dynamic, cleanly centered and truncated song title.',
+      'Multitrack Stem Audio Engine Acceleration: Eliminated playback lockups through concurrent stem downloading/decoding with aggregate throttled progress reporting.',
+      'Purged Skeuomorphic Sound Artifacts: Removed platter deceleration delay and synthetic vinyl crackle from transport controls.',
     ],
   },
 ];
@@ -119,6 +126,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.7.2',
+    date: '2026-10-06',
+    highlights: [
+      'Groovex Immersive Full-Screen Player: Overhauled the player UI into a full-screen AMOLED experience with enlarged 320px album cover artwork, dynamic ambient backdrop color glow, and elevated concentric rounded surfaces.',
+      'Dynamic Waveform Spectrum & Laser Progress Scrubber: Integrated a 44-bar interactive audio frequency spectrum visualizer with harmonic pulse animation, a glowing gradient progress track with laser shimmer sweep, and a dual-ring neon aura playhead thumb.',
+      'Automatic Online High-Res Album Art Service: Deployed album cover art engine with instant in-memory and persistent caching.',
+      'Top Header Track Title Display: Displays "NOW PLAYING" with dynamic, cleanly centered and truncated song title.',
+      'Multitrack Stem Audio Engine Acceleration: Eliminated playback lockups through concurrent stem downloading/decoding with aggregate throttled progress reporting.',
+      'Purged Skeuomorphic Sound Artifacts: Removed platter deceleration delay and synthetic vinyl crackle from transport controls.',
+    ],
+  },
   {
     version: '4.7.1',
     date: '2026-10-04',
@@ -215,18 +234,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Multi-Line Range Selection Engine: Implemented `useLineRangeSelection` with drag-to-select support, requestAnimationFrame frame coalescing, and non-blocking canvas interactions.',
       'Bulk Timing Pacing Allocator: Added `applyBarsToLines` immutable helper to assign measures to multiple lines in a single atomic undoable document change, skipping timed interludes and cleaning redundant section overrides.',
       'Automated Navigation Test Debounce Stabilization: Resolved a 280ms back-dispatcher debounce collision in `run-navigation-core-tests.mjs`, ensuring repeatable clean passes across automated test and CI suites.',
-    ],
-  },
-  {
-    version: '4.6.92',
-    date: '2026-10-03',
-    highlights: [
-      'Bar-Based Musical Timing Engine (Bars per Line): Replaced flat linear time division with an authoritative musical progression architecture. Songs now support section-level default durations (`barsPerLine`, e.g. 4 bars for slow intros, 1 bar for rapid verses) alongside granular line-level overrides (`bars`), guaranteeing teleprompter line dwell times match real musical arrangements (such as "Venezia" by Hombres G).',
-      'In-App Custom Bars Stepper Sheet: Introduced an AMOLED-styled `CustomBarsSheet` with a tactile `[-] [1-32] [+]` bounded stepper, numeric keypad input, and Confirm/Cancel controls, replacing native browser dialogs.',
-      'In-App Text Input Dialog: Integrated `TextInputDialog` for section creation and renaming across `SongLyricsEditor` and `SongsPanel`, preventing Android WebView focus loss and soft-keyboard dismissal glitches.',
-      "Dynamic Beat-Dot Visualizer & Quantized Seeking: Live teleprompter active lines now display sequential beat dots (`• • • •`) with `bar k/N` progress labels. Tapping any line in Live mode immediately seeks to that line's downbeat and realigns the metronome phase with zero drift.",
-      'Single-Clock Master Lead-In Architecture: Eliminated the double countdown glitch (8 clicks instead of 4) by routing count-in strictly through `MetronomeAudioEngine.setCountIn()` without redundant engine start invocations or double audio scheduling.',
-      'Strict Cross-Module Metronome Mutex: Added global instance tracking in `MetronomeAudioEngine` so starting any metronome (Live mode, Hub, Settings) automatically silences all other active instances, preventing concurrent audio contexts.',
     ],
   },
 ];

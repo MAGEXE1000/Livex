@@ -1,9 +1,13 @@
-# Version 4.7.1
+# Version 4.7.2
 
-Release Date: 2026-10-04
+Release Date: 2026-10-06
 
-### Fixed
-- Vocalex Pitch Monitor Contrast: Standardized primary Start Monitor action button to high-contrast crisp bold black text (`#000000 font-bold`) on solid white pill button with smooth tactile hover and press animations.
-- Chordex Preferences Clean-Up: Purged redundant duplicate "Start on" selector under the Display section in both mobile and desktop views, retaining the primary selector at the top as the single authoritative control.
-- Stagex Navigation Auto-Hide: Synchronized element picker drawer and overlay active states with the global navigation controller, smoothly sliding the bottom navbar away (`translate-y-full opacity-0 pointer-events-none`) when drawers or modals expand and restoring it when dismissed.
-- Groovex Multitrack Stem Loader: Hardened the stem loading pipeline with synthetic PCM audio buffer generation and buffer cloning on decode errors, guaranteeing 100% session load completion and unlocking player controls even under network or format decode limitations.
+### Added
+- Groovex Immersive Full-Screen Player: Overhauled the player UI into a full-screen AMOLED experience with enlarged 320px album cover artwork, dynamic ambient backdrop color glow, and elevated concentric rounded surfaces.
+- Dynamic Waveform Spectrum & Laser Progress Scrubber: Integrated a 44-bar interactive audio frequency spectrum visualizer with harmonic pulse animation, a glowing gradient progress track with laser shimmer sweep, and a dual-ring neon aura playhead thumb.
+- Automatic Online High-Res Album Art Service: Deployed album cover art engine with instant in-memory and persistent caching.
+
+### Improved
+- Top Header Track Title Display: Displays "NOW PLAYING" with dynamic, cleanly centered and truncated song title.
+- Multitrack Stem Audio Engine Acceleration: Eliminated playback lockups through concurrent stem downloading/decoding with aggregate throttled progress reporting.
+- Purged Skeuomorphic Sound Artifacts: Removed platter deceleration delay and synthetic vinyl crackle from transport controls.
