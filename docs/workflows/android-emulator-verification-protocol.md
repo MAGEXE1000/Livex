@@ -99,3 +99,14 @@ A UI task is complete ONLY when:
   - Safe-area insets respected (notch, status bar, navigation pill).
   - No element clipping, font truncation, or touch boundary overlaps.
 - The artifact is explicitly referenced in the task's final report.
+
+---
+
+## 6. Deprecation of Desktop Browser Mocks
+
+Desktop headless browser verification tools (Puppeteer / Playwright) are permanently deprecated for visual verification in Livex.
+
+- **Single Standard**: The Android Studio ADB Emulator pipeline (`scripts/android-verify/`) is the sole authoritative visual verification standard across the entire repository.
+- **No Dual Pipelines**: Bypassing the native Android WebView via desktop browser emulation is prohibited.
+- **Evidence Mandatory**: Agents must never claim visual fidelity without citing an actual PNG artifact generated via `adb exec-out screencap -p` into `.artifacts/verification/`.
+
