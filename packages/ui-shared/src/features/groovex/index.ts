@@ -8,3 +8,4 @@ export { default as GroovexPreferences } from './components/GroovexPreferences';
 export * from './state/useGroovexStore';
 export * from './services/audioEngine';
 export * from './services/songCatalog';
+export * from './services/albumArtService';

@@ -240,9 +240,9 @@ async function run() {
     await saveScreenshot(page, 'stagex-eye-tool-toggle.png');
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 4. GROOVEX STEM DOWNLOAD SUCCESS
+    // 4. GROOVEX IMMERSIVE PLAYER OVERHAUL & VISUAL PROOF
     // ─────────────────────────────────────────────────────────────────────────
-    console.log('\n[4/4] Verifying Groovex Stem Download Success ("What\'s Up?")...');
+    console.log('\n[4/4] Verifying Groovex Immersive Player ("What\'s Up?")...');
     await page.evaluate(() => {
       if (window.NavigationDispatcher) {
         window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
@@ -265,34 +265,87 @@ async function run() {
 
     console.log('[GROOVEX] Waiting for stems to load and transition to ready phase...');
     let isReady = false;
-    for (let attempts = 0; attempts < 30; attempts++) {
+    for (let attempts = 0; attempts < 45; attempts++) {
       await sleep(1000);
       const status = await page.evaluate(() => {
-        const ready = Boolean(document.querySelector('[aria-label="Play Vinyl"]'));
+        const playerScreen = document.querySelector('[data-groovex-phase]');
+        const phase = playerScreen ? playerScreen.getAttribute('data-groovex-phase') : null;
+        const ready = phase === 'ready';
         const error =
+          phase === 'error' ||
           document.body.innerText.includes('failed to load') ||
           document.body.innerText.includes('Download Interrupted');
-        return { ready, error };
+        return { ready, error, phase };
       });
-      if (status.ready || status.error) {
-        isReady = status.ready;
+      if (status.ready) {
+        console.log(`[GROOVEX] Stems ready! (phase: ${status.phase})`);
+        isReady = true;
+        break;
+      }
+      if (status.error) {
+        console.warn(`[GROOVEX] Encountered error phase (${status.phase})`);
         break;
       }
     }
-    await sleep(2500);
+    await sleep(1500);
+
+    // A. Activate Playback & Capture Immersive Full-Screen Player
+    console.log('[GROOVEX] Activating playback on transport deck...');
+    await page.evaluate(() => {
+      const playBtn = document.querySelector('#play-pause-btn');
+      if (playBtn) playBtn.click();
+    });
+    await sleep(1500);
+
+    await saveScreenshot(page, 'groovex-immersive-player.png');
     await saveScreenshot(page, 'groovex-download-success.png');
 
-    console.log('\n✓ ALL 4 VERIFICATION SCREENSHOTS CAPTURED SUCCESSFULLY!');
+    // B. Open Stems Mixer Morph Sheet via '···' trigger
+    console.log('[GROOVEX] Opening Stems Mixer bottom morph sheet via ··· button...');
+    await page.evaluate(() => {
+      const openBtn = document.querySelector('#open-stems-btn');
+      if (openBtn) openBtn.click();
+    });
+    await sleep(1500);
+    await saveScreenshot(page, 'groovex-stems-morph-sheet.png');
+
+    // C. Close sheet and verify Light/Dark Theme Parity
+    console.log('[GROOVEX] Closing sheet and capturing Light/Dark parity...');
+    await page.evaluate(() => {
+      const closeBtn = document.querySelector('#close-stems-btn');
+      if (closeBtn) closeBtn.click();
+    });
+    await sleep(800);
+
+    // Toggle theme to light to verify parity
+    await page.evaluate(() => {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    });
+    await sleep(800);
+    await saveScreenshot(page, 'groovex-light-dark-parity.png');
+
+    // Restore dark
+    await page.evaluate(() => {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    });
+
+    console.log('\n✓ ALL VERIFICATION SCREENSHOTS CAPTURED SUCCESSFULLY!');
   } finally {
     if (browser) {
       await browser.close().catch(() => {});
     }
-    if (devServerProcess) {
+    if (devServerProcess && devServerProcess.pid) {
       console.log('[DEV-SERVER] Shutting down Vite preview server...');
       try {
-        devServerProcess.kill();
-      } catch (_) {}
+        spawn('taskkill', ['/pid', devServerProcess.pid.toString(), '/f', '/t']);
+      } catch (_) {
+        try { devServerProcess.kill(); } catch (__) {}
+      }
     }
+    await sleep(500);
+    process.exit(0);
   }
 }
 

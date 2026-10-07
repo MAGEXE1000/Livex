@@ -5,13 +5,11 @@ import {
   NavigationDispatcher,
   useSettingsStore,
   mediaSessionCoordinator,
+  groovexStemRepository,
+  type DownloadProgress,
 } from '@workspace/livex-core';
 import { useShallow } from 'zustand/react/shallow';
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-import VinylLottie from '../../../shared/lottie/VinylLottie';
-import { Loader } from '../../../components/motion/loader';
-import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SONG_CATALOG } from '../services/songCatalog';
 import { useGroovexStore } from '../state/useGroovexStore';
 import {
@@ -27,14 +25,10 @@ import {
   pause,
   stop,
   seek,
-  startScrub,
-  scrubSeek,
-  endScrub,
   setTrackVolume,
   toggleMute,
   toggleSolo,
   setMasterVolume,
-  setPitch,
   getCurrentTime,
   destroyEngine,
   resumeAudioContext,
@@ -43,50 +37,34 @@ import {
   evictCachedSongAudioBuffers,
   type AudioEngine,
 } from '../services/audioEngine';
-import { groovexStemRepository, type DownloadProgress } from '@workspace/livex-core';
-import StudioProgressBar from '../../../shared/progress/StudioProgressBar';
-import StudioCountUpPercentage from '../../../shared/progress/StudioCountUpPercentage';
+import {
+  fetchSongCoverArt,
+  getCachedSongCoverArt,
+} from '../services/albumArtService';
 
 type PlayerPhase = 'loading' | 'ready' | 'error';
-type PracticePreset = 'full' | 'minus-vox' | 'minus-drum' | 'bass-drum';
-
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const FLAT_MAP: Record<string, string> = {
-  Db: 'C#',
-  Eb: 'D#',
-  Fb: 'E',
-  Gb: 'F#',
-  Ab: 'G#',
-  Bb: 'A#',
-  Cb: 'B',
-};
-
-function transposeKey(key: string, semitones: number): string {
-  if (!key || semitones === 0) return key;
-  const match = key.match(/^([A-G][b#]?)(.*)/);
-  if (!match) return key;
-  const [, root, suffix] = match;
-  const normalized = FLAT_MAP[root] || root;
-  const idx = NOTE_NAMES.indexOf(normalized);
-  if (idx < 0) return key;
-  const newIdx = (((idx + semitones) % 12) + 12) % 12;
-  return NOTE_NAMES[newIdx] + suffix;
-}
+type PracticePreset = 'full' | 'minus-vox' | 'minus-drum' | 'bass-drum' | 'a-cappella';
 
 const STEM_COLOR_MAP: Record<string, string> = {
   drums: '#f59e0b',
   kick: '#f59e0b',
   snare: '#f59e0b',
   cymbals: '#f59e0b',
-  bass: '#6366f1',
+  bass: '#3b82f6',
   guitar: '#10b981',
   vocals: '#f43f5e',
   vox: '#f43f5e',
   backing: '#a855f7',
-  crowd: '#06b6d4',
+  crowd: '#22d3ee',
   keys: '#ec4899',
   other: '#64748b',
 };
+
+const WAVEFORM_HEIGHTS = [
+  28, 38, 55, 32, 65, 80, 48, 92, 60, 36, 75, 96, 72, 45, 88, 62, 40, 68,
+  82, 58, 98, 78, 52, 88, 70, 38, 62, 84, 94, 48, 68, 88, 58, 78, 98, 68,
+  42, 58, 82, 72, 48, 86, 60, 34,
+];
 
 function getStemColor(name: string): string {
   const lower = name.toLowerCase();
@@ -96,13 +74,13 @@ function getStemColor(name: string): string {
   return '#71717a';
 }
 
-function getSectionName(pct: number): string {
-  if (pct < 0.12) return 'Intro';
-  if (pct < 0.32) return 'Verse 1';
-  if (pct < 0.52) return 'Chorus';
-  if (pct < 0.76) return 'Verse 2';
-  if (pct < 0.9) return 'Bridge';
-  return 'Outro';
+function parseSongDurationSeconds(dur: string | undefined): number {
+  if (!dur) return 180;
+  const parts = dur.split(':').map((p) => parseInt(p, 10));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return parts[0] * 60 + parts[1];
+  }
+  return 180;
 }
 
 export default function GroovexPlayer() {
@@ -112,12 +90,12 @@ export default function GroovexPlayer() {
       amoledMode: s.settings.amoledMode,
     }))
   );
+
   const isLight =
     settings.theme === 'light' ||
     (settings.theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: light)').matches);
-  const isAmoled = settings.amoledMode;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollHide(scrollRef);
@@ -134,38 +112,19 @@ export default function GroovexPlayer() {
   const engineRef = useRef<AudioEngine | null>(null);
   const rafRef = useRef<number>(0);
   const sessionIdRef = useRef(0);
-
-  // Turntable Vinyl Physics
-  const vinylRef = useRef<HTMLDivElement>(null);
-  const currentAngleRef = useRef(35);
-  const currentVelocityRef = useRef(0);
-  const lastTimestampRef = useRef<number | null>(null);
   const lastProgressUpdateRef = useRef(0);
   const lastTimeUpdateRef = useRef(0);
 
-  // Musical BPM -> RPM calculation
-  // One full vinyl revolution = one 4/4 musical measure (4 beats)
-  // RPM = BPM / 4
-  // Angular velocity omega = 1.5 * BPM (deg/s)
-  // Target velocity in degrees per millisecond:
-  const songBpm = song?.bpm && song.bpm > 0 ? song.bpm : 120;
-  const effectiveBpm = Math.min(200, Math.max(60, songBpm));
-  const targetVelocity = (1.5 * effectiveBpm) / 1000;
-  const targetVelocityRef = useRef(targetVelocity);
-  targetVelocityRef.current = targetVelocity;
-
   const [phase, setPhase] = useState<PlayerPhase>('loading');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tonearmState, setTonearmState] = useState<'parked' | 'playing' | 'disengaged'>('parked');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
   const [currentStemLabel, setCurrentStemLabel] = useState('');
   const [failedStems, setFailedStems] = useState<number[]>([]);
-  const [pitchShift, setPitchShift] = useState(0);
-  const [activePreset, setActivePreset] = useState<PracticePreset | null>('full');
-  const [isScrubbing, setIsScrubbing] = useState(false);
-  const [scrubVisualTime, setScrubVisualTime] = useState(0);
+  const [activePreset, setActivePreset] = useState<PracticePreset>('full');
+  const [isStemsSheetOpen, setIsStemsSheetOpen] = useState(false);
+  const [coverArtUrl, setCoverArtUrl] = useState<string | null>(null);
 
   const [tracks, setTracks] = useState<
     {
@@ -179,6 +138,34 @@ export default function GroovexPlayer() {
     }[]
   >([]);
 
+  // Automatic high-resolution album cover fetching
+  useEffect(() => {
+    if (!song) {
+      setCoverArtUrl(null);
+      return;
+    }
+
+    let active = true;
+    const cached = getCachedSongCoverArt(song.id);
+    if (cached) {
+      setCoverArtUrl(cached);
+    } else {
+      setCoverArtUrl(null);
+    }
+
+    fetchSongCoverArt(song.id, song.title, song.artist)
+      .then((url) => {
+        if (active && url) {
+          setCoverArtUrl(url);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [song]);
+
   const updateProgressThrottled = useCallback((val: number) => {
     const clamped = Math.min(100, Math.max(0, val));
     const now = performance.now();
@@ -188,57 +175,140 @@ export default function GroovexPlayer() {
     }
   }, []);
 
-  // Physics-based Rotational Animation loop (Smooth acceleration & graceful ~650ms inertia spin-down)
-  useEffect(() => {
-    let animId: number;
-
-    function updateVinylRotation(timestamp: number) {
-      if (!lastTimestampRef.current) lastTimestampRef.current = timestamp;
-      const deltaTime = Math.min(timestamp - lastTimestampRef.current, 50);
-      lastTimestampRef.current = timestamp;
-
-      const targetVel = targetVelocityRef.current;
-      // Spin-up: direct-drive motor accelerates to operating speed in ~400ms
-      const accelRate = (targetVel / 400) * deltaTime;
-      // Spin-down: platter inertia / magnetic brake coasts down gracefully in ~650ms
-      const decelRate = (targetVel / 650) * deltaTime;
-
-      if (isPlaying) {
-        if (currentVelocityRef.current < targetVel) {
-          currentVelocityRef.current = Math.min(targetVel, currentVelocityRef.current + accelRate);
-        } else if (currentVelocityRef.current > targetVel) {
-          currentVelocityRef.current = Math.max(targetVel, currentVelocityRef.current - decelRate);
-        }
-      } else {
-        if (currentVelocityRef.current > 0) {
-          currentVelocityRef.current = Math.max(0, currentVelocityRef.current - decelRate);
-          if (currentVelocityRef.current === 0) {
-            // Platter reached complete rest: normalize angle to [0, 360)
-            currentAngleRef.current = ((currentAngleRef.current % 360) + 360) % 360;
-          }
-        }
-      }
-
-      if (currentVelocityRef.current > 0) {
-        // Continuous cumulative angle without modulo jump during active rotation
-        currentAngleRef.current += currentVelocityRef.current * deltaTime;
-        if (vinylRef.current) {
-          vinylRef.current.style.transform = `rotate(${currentAngleRef.current.toFixed(2)}deg)`;
-        }
-      }
-
-      if (isPlaying || currentVelocityRef.current > 0) {
-        animId = requestAnimationFrame(updateVinylRotation);
-      }
+  // Concurrent fast stem loader
+  async function loadAllStems(
+    engine: AudioEngine,
+    songData: (typeof SONG_CATALOG)[0],
+    sid: number
+  ) {
+    setPhase('loading');
+    setFailedStems([]);
+    const total = songData.stems.length;
+    if (total === 0) {
+      setPhase('ready');
+      return;
     }
 
-    lastTimestampRef.current = null;
-    animId = requestAnimationFrame(updateVinylRotation);
+    const parsedDuration = parseSongDurationSeconds(songData.duration);
 
-    return () => {
-      cancelAnimationFrame(animId);
-    };
-  }, [isPlaying]);
+    // A. FAST-PATH: IndexedDB local cache check
+    try {
+      const stemNames = songData.stems.map((s) => s.name);
+      const cachedStems = await groovexStemRepository.getCachedSongStems(songData.id, stemNames);
+
+      if (cachedStems && sessionIdRef.current === sid) {
+        resumeAudioContext();
+        setOverallProgress(100);
+        const buffersMap = new Map<string, AudioBuffer>();
+
+        const decodePromises = songData.stems.map(async (stem, i) => {
+          if (sessionIdRef.current !== sid) return;
+          try {
+            const data = cachedStems[stem.name];
+            const buffer = await loadAudioBuffer(data, parsedDuration);
+            if (sessionIdRef.current !== sid) return;
+            buffersMap.set(stem.name, buffer);
+            setTrackBuffer(engine, i, buffer);
+            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          } catch (e) {
+            console.warn(`Local stem ${stem.name} decode failed, using synthetic buffer:`, e);
+            const ctx = getAudioContext();
+            const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
+            buffersMap.set(stem.name, fallback);
+            setTrackBuffer(engine, i, fallback);
+            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          }
+        });
+
+        await Promise.all(decodePromises);
+        if (sessionIdRef.current !== sid) return;
+
+        if (buffersMap.size === total) {
+          setCachedSongAudioBuffers(songData.id, buffersMap);
+          setDuration(engine.duration || parsedDuration);
+          setPhase('ready');
+          setCurrentStemLabel('');
+          return;
+        }
+      }
+    } catch {}
+
+    if (sessionIdRef.current !== sid) return;
+
+    // B. ACCELERATED CONCURRENT DOWNLOAD PATH: Download and decode all stems simultaneously
+    const failed: number[] = [];
+    const buffersMap = new Map<string, AudioBuffer>();
+    const stemProgressArray = new Array(total).fill(0);
+
+    const downloadPromises = songData.stems.map(async (stem, i) => {
+      if (sessionIdRef.current !== sid) return;
+      setCurrentStemLabel(stem.label);
+      try {
+        resumeAudioContext();
+        let buffer: AudioBuffer | null = null;
+        try {
+          const data = await groovexStemRepository.downloadStem(
+            songData.id,
+            stem.name,
+            (p: DownloadProgress) => {
+              if (sessionIdRef.current !== sid) return;
+              stemProgressArray[i] = p.percent / 100;
+              const aggregate =
+                (stemProgressArray.reduce((acc, curr) => acc + curr, 0) / total) * 100;
+              updateProgressThrottled(aggregate);
+            }
+          );
+          if (sessionIdRef.current !== sid) return;
+          buffer = await loadAudioBuffer(data, parsedDuration);
+        } catch (downloadErr) {
+          console.warn(
+            `[GroovexPlayer] Stem ${stem.name} fetch/decode failed, generating synthetic buffer:`,
+            downloadErr
+          );
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
+        if (sessionIdRef.current !== sid) return;
+        if (!buffer) {
+          const ctx = getAudioContext();
+          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
+        }
+
+        buffersMap.set(stem.name, buffer);
+        setTrackBuffer(engine, i, buffer);
+        setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+        setDuration(engine.duration || parsedDuration);
+      } catch (e) {
+        console.error(`Failed to load stem ${stem.name}:`, e);
+        try {
+          const ctx = getAudioContext();
+          const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
+          buffersMap.set(stem.name, fallback);
+          setTrackBuffer(engine, i, fallback);
+          setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
+          setDuration(engine.duration || parsedDuration);
+        } catch {
+          failed.push(i);
+        }
+      }
+    });
+
+    await Promise.all(downloadPromises);
+
+    if (sessionIdRef.current !== sid) return;
+    if (failed.length > 0) {
+      setFailedStems(failed);
+      setPhase('error');
+    } else {
+      if (buffersMap.size === total) {
+        setCachedSongAudioBuffers(songData.id, buffersMap);
+      }
+      setOverallProgress(100);
+      setPhase('ready');
+      setCurrentStemLabel('');
+    }
+  }
 
   // Audio Engine Lifecycle
   useEffect(() => {
@@ -255,20 +325,13 @@ export default function GroovexPlayer() {
     setMasterVolume(engine, preferences.masterVolume);
     initSoundTouch(engine).catch(() => {});
     setIsPlaying(false);
-    setTonearmState('parked');
     setCurrentStemLabel('');
     setFailedStems([]);
-    setPitchShift(0);
     setActivePreset('full');
-    currentAngleRef.current = 35;
-    currentVelocityRef.current = 0;
     lastTimeUpdateRef.current = 0;
-    if (vinylRef.current) {
-      vinylRef.current.style.transform = 'rotate(35deg)';
-    }
     cancelAnimationFrame(rafRef.current);
 
-    // 1. FAST-PATH: Check in-memory decoded AudioBuffer cache
+    // 1. IN-MEMORY LRU CACHE CHECK (Instant 0ms retrieval)
     const inMemoryBuffers = getCachedSongAudioBuffers(song.id);
     if (
       inMemoryBuffers &&
@@ -306,7 +369,7 @@ export default function GroovexPlayer() {
       };
     }
 
-    // 2. DISK / DOWNLOAD PATH: Initialize loading state
+    // 2. DISK / NETWORK CONCURRENT BUFFERING
     setTracks(
       trackStates.map((t) => ({
         name: t.name,
@@ -350,167 +413,6 @@ export default function GroovexPlayer() {
     setMasterVolume(engine, preferences.masterVolume);
   }, [preferences.masterVolume]);
 
-function parseSongDurationSeconds(dur: string | undefined): number {
-  if (!dur) return 180;
-  const parts = dur.split(':').map((p) => parseInt(p, 10));
-  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-    return parts[0] * 60 + parts[1];
-  }
-  return 180;
-}
-
-  async function loadAllStems(
-    engine: AudioEngine,
-    songData: (typeof SONG_CATALOG)[0],
-    sid: number
-  ) {
-    setPhase('loading');
-    setFailedStems([]);
-    const total = songData.stems.length;
-    if (total === 0) {
-      setPhase('ready');
-      return;
-    }
-
-    const parsedDuration = parseSongDurationSeconds(songData.duration);
-
-    // A. LOCAL DISK PATH: Check if all stems are already cached in IndexedDB
-    try {
-      const stemNames = songData.stems.map((s) => s.name);
-      const cachedStems = await groovexStemRepository.getCachedSongStems(songData.id, stemNames);
-
-      if (cachedStems && sessionIdRef.current === sid) {
-        // All stems exist in local IndexedDB and pass integrity check (>= 1000 bytes)
-        resumeAudioContext();
-        setOverallProgress(100);
-        const buffersMap = new Map<string, AudioBuffer>();
-
-        // Decompress all stems concurrently via Promise.all
-        const decodePromises = songData.stems.map(async (stem, i) => {
-          if (sessionIdRef.current !== sid) return;
-          try {
-            const data = cachedStems[stem.name];
-            const buffer = await loadAudioBuffer(data, parsedDuration);
-            if (sessionIdRef.current !== sid) return;
-            buffersMap.set(stem.name, buffer);
-            setTrackBuffer(engine, i, buffer);
-            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-          } catch (e) {
-            console.warn(`Failed to decode local stem ${stem.name}, falling back to synthetic buffer:`, e);
-            const ctx = getAudioContext();
-            const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
-            buffersMap.set(stem.name, fallback);
-            setTrackBuffer(engine, i, fallback);
-            setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-          }
-        });
-
-        await Promise.all(decodePromises);
-        if (sessionIdRef.current !== sid) return;
-
-        if (buffersMap.size === total) {
-          setCachedSongAudioBuffers(songData.id, buffersMap);
-          setDuration(engine.duration || parsedDuration);
-          setPhase('ready');
-          setCurrentStemLabel('');
-          return;
-        }
-      }
-    } catch {
-      // Fall through to standard download pipeline if local retrieval fails
-    }
-
-    if (sessionIdRef.current !== sid) return;
-
-    // B. NETWORK DOWNLOAD PATH: Sequential download & decode for missing/new stems
-    const failed: number[] = [];
-    const buffersMap = new Map<string, AudioBuffer>();
-
-    for (let i = 0; i < total; i++) {
-      if (sessionIdRef.current !== sid) return;
-      const stem = songData.stems[i];
-      setCurrentStemLabel(stem.label);
-      try {
-        resumeAudioContext();
-        let buffer: AudioBuffer | null = null;
-        try {
-          const data = await groovexStemRepository.downloadStem(
-            songData.id,
-            stem.name,
-            (p: DownloadProgress) => {
-              if (sessionIdRef.current !== sid) return;
-              const stemProgress = p.percent / 100;
-              updateProgressThrottled(((i + stemProgress) / total) * 100);
-            }
-          );
-          if (sessionIdRef.current !== sid) return;
-          buffer = await loadAudioBuffer(data, parsedDuration);
-        } catch (downloadErr) {
-          console.warn(`[GroovexPlayer] Stem ${stem.name} fetch/decode failed, generating synthetic reference buffer:`, downloadErr);
-          const ctx = getAudioContext();
-          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
-        }
-
-        if (sessionIdRef.current !== sid) return;
-        if (!buffer) {
-          const ctx = getAudioContext();
-          buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
-        }
-
-        buffersMap.set(stem.name, buffer);
-        setTrackBuffer(engine, i, buffer);
-        setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-        setDuration(engine.duration || parsedDuration);
-      } catch (e) {
-        console.error(`Failed to load stem ${stem.name}:`, e);
-        try {
-          const ctx = getAudioContext();
-          const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
-          buffersMap.set(stem.name, fallback);
-          setTrackBuffer(engine, i, fallback);
-          setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-          setDuration(engine.duration || parsedDuration);
-        } catch {
-          failed.push(i);
-        }
-      }
-      if (sessionIdRef.current !== sid) return;
-      updateProgressThrottled(((i + 1) / total) * 100);
-    }
-
-    if (sessionIdRef.current !== sid) return;
-    if (failed.length > 0) {
-      setFailedStems(failed);
-      setPhase('error');
-    } else {
-      if (buffersMap.size === total) {
-        setCachedSongAudioBuffers(songData.id, buffersMap);
-      }
-      setOverallProgress(100);
-      setPhase('ready');
-      setCurrentStemLabel('');
-    }
-  }
-
-  async function handleDownload() {
-    const engine = engineRef.current;
-    if (!engine || !song) return;
-    await loadAllStems(engine, song, sessionIdRef.current);
-  }
-
-  async function handleRedownload() {
-    const engine = engineRef.current;
-    if (!engine || !song) return;
-    evictCachedSongAudioBuffers(song.id);
-    const sid = ++sessionIdRef.current;
-    stop(engine);
-    setIsPlaying(false);
-    cancelAnimationFrame(rafRef.current);
-    setCurrentTime(0);
-    setTracks((prev) => prev.map((t) => ({ ...t, loaded: false })));
-    await loadAllStems(engine, song, sid);
-  }
-
   async function handleRetryFailed() {
     const engine = engineRef.current;
     if (!engine || !song) return;
@@ -519,31 +421,19 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     setPhase('loading');
     setFailedStems([]);
     const newFailed: number[] = [];
-
     const parsedDuration = parseSongDurationSeconds(song.duration);
 
-    for (let fi = 0; fi < toRetry.length; fi++) {
+    const retryPromises = toRetry.map(async (i) => {
       if (sessionIdRef.current !== sid) return;
-      const i = toRetry[fi];
       const stem = song.stems[i];
-      setCurrentStemLabel(stem.label);
       try {
         resumeAudioContext();
         let buffer: AudioBuffer | null = null;
         try {
-          const data = await groovexStemRepository.downloadStem(
-            song.id,
-            stem.name,
-            (p: DownloadProgress) => {
-              if (sessionIdRef.current !== sid) return;
-              updateProgressThrottled(((fi + p.percent / 100) / toRetry.length) * 100);
-            },
-            true
-          );
+          const data = await groovexStemRepository.downloadStem(song.id, stem.name, undefined, true);
           if (sessionIdRef.current !== sid) return;
           buffer = await loadAudioBuffer(data, parsedDuration);
-        } catch (downloadErr) {
-          console.warn(`[GroovexPlayer] Retry stem ${stem.name} fetch/decode failed, generating synthetic buffer:`, downloadErr);
+        } catch {
           const ctx = getAudioContext();
           buffer = createSyntheticAudioBuffer(ctx, parsedDuration);
         }
@@ -557,84 +447,39 @@ function parseSongDurationSeconds(dur: string | undefined): number {
         setTrackBuffer(engine, i, buffer);
         setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
         setDuration(engine.duration || parsedDuration);
-      } catch (e) {
-        console.error(`Retry failed for stem ${stem.name}:`, e);
-        try {
-          const ctx = getAudioContext();
-          const fallback = createSyntheticAudioBuffer(ctx, parsedDuration);
-          setTrackBuffer(engine, i, fallback);
-          setTracks((prev) => prev.map((t, idx) => (idx === i ? { ...t, loaded: true } : t)));
-          setDuration(engine.duration || parsedDuration);
-        } catch {
-          newFailed.push(i);
-        }
+      } catch {
+        newFailed.push(i);
       }
-      if (sessionIdRef.current !== sid) return;
-      updateProgressThrottled(((fi + 1) / toRetry.length) * 100);
-    }
+    });
+
+    await Promise.all(retryPromises);
 
     if (sessionIdRef.current !== sid) return;
     if (newFailed.length > 0) {
       setFailedStems(newFailed);
       setPhase('error');
     } else {
-      if (engine.tracks.every((t) => t.buffer !== null)) {
-        const buffersMap = new Map<string, AudioBuffer>();
-        engine.tracks.forEach((t) => {
-          if (t.buffer) buffersMap.set(t.name, t.buffer);
-        });
-        setCachedSongAudioBuffers(song.id, buffersMap);
-      }
       setOverallProgress(100);
       setPhase('ready');
-      setCurrentStemLabel('');
     }
-  }
-
-  async function handleLoadFromFile(idx: number) {
-    const engine = engineRef.current;
-    if (!engine) return;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'audio/*';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        resumeAudioContext();
-        const buffer = await loadAudioFile(file);
-        setTrackBuffer(engine, idx, buffer);
-        setTracks((prev) => prev.map((t, i) => (i === idx ? { ...t, loaded: true } : t)));
-        setDuration(engine.duration);
-        setFailedStems((prev) => prev.filter((fi) => fi !== idx));
-        if (phase !== 'ready') setPhase('ready');
-      } catch (e) {
-        console.error('Failed to load audio:', e);
-      }
-    };
-    input.click();
   }
 
   const updateTime = useCallback(() => {
     const engine = engineRef.current;
     if (!engine) return;
     if (!engine.isScrubbing) {
-      const t = getCurrentTime(engine);
+      const cur = getCurrentTime(engine);
       const now = performance.now();
-      // Throttle React state updates to ~40ms (~25fps) to maintain 60fps compositor budget on Android
       if (now - lastTimeUpdateRef.current > 40 || !engine.isPlaying) {
         lastTimeUpdateRef.current = now;
-        setCurrentTime(t);
+        setCurrentTime(cur);
         setDuration(engine.duration);
       }
-    } else {
-      setDuration(engine.duration);
     }
-    if (engine.isPlaying || engine.vinylTransitionState !== 'idle') {
+    if (engine.isPlaying) {
       rafRef.current = requestAnimationFrame(updateTime);
     } else if (isPlaying) {
       setIsPlaying(false);
-      setTonearmState('parked');
     }
   }, [isPlaying]);
 
@@ -644,19 +489,14 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     resumeAudioContext();
     if (isPlaying) {
       setIsPlaying(false);
-      setTonearmState('disengaged');
       pause(engine, () => {
-        setTonearmState('parked');
         if (engineRef.current) {
           setCurrentTime(getCurrentTime(engineRef.current));
         }
       });
     } else {
       setIsPlaying(true);
-      setTonearmState('playing');
-      play(engine, () => {
-        // Steady operating speed reached
-      });
+      play(engine);
       rafRef.current = requestAnimationFrame(updateTime);
     }
   }
@@ -666,7 +506,6 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     if (!engine) return;
     stop(engine);
     setIsPlaying(false);
-    setTonearmState('parked');
     setCurrentTime(0);
     cancelAnimationFrame(rafRef.current);
     mediaSessionCoordinator.stopSession('groovex');
@@ -705,62 +544,12 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     }
   }
 
-  function handleScrubStart() {
-    const engine = engineRef.current;
-    if (!engine || !isPlaying) return;
-    startScrub(engine);
-  }
-
-  function handleScrubSeek(pct: number, delta: number) {
-    const engine = engineRef.current;
-    if (!engine || !isPlaying) return;
-    scrubSeek(engine, delta);
-    setCurrentTime(pct * engine.duration);
-  }
-
-  function handleScrubEnd(pct: number) {
-    const engine = engineRef.current;
-    if (!engine) return;
-    const t = pct * engine.duration;
-    if (isPlaying) {
-      endScrub(engine, t);
-    } else {
-      engine.pauseOffset = Math.max(0, Math.min(t, engine.duration));
-    }
-    setCurrentTime(t);
-    if (isPlaying) {
-      rafRef.current = requestAnimationFrame(updateTime);
-    }
-  }
-
-  function handlePitchChange(delta: number) {
-    setPitchShift((prev) => {
-      const newPitch = Math.max(-6, Math.min(6, prev + delta));
-      const engine = engineRef.current;
-      if (engine) {
-        setPitch(engine, newPitch);
-      }
-      return newPitch;
-    });
-  }
-
-  function handleSkip(delta: number) {
-    const engine = engineRef.current;
-    if (!engine) return;
-    const newTime = Math.max(0, Math.min(getCurrentTime(engine) + delta, engine.duration));
-    seek(engine, newTime);
-    setCurrentTime(newTime);
-    if (isPlaying) {
-      rafRef.current = requestAnimationFrame(updateTime);
-    }
-  }
-
   function handleVolumeChange(idx: number, vol: number) {
     const engine = engineRef.current;
     if (!engine) return;
     setTrackVolume(engine, idx, vol);
     setTracks((prev) => prev.map((t, i) => (i === idx ? { ...t, volume: vol } : t)));
-    setActivePreset(null);
+    setActivePreset('full');
   }
 
   function handleMute(idx: number) {
@@ -769,7 +558,6 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     toggleMute(engine, idx);
     const track = engine.tracks[idx];
     setTracks((prev) => prev.map((t, i) => (i === idx ? { ...t, muted: track.muted } : t)));
-    setActivePreset(null);
   }
 
   function handleSolo(idx: number) {
@@ -778,17 +566,14 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     toggleSolo(engine, idx);
     const track = engine.tracks[idx];
     setTracks((prev) => prev.map((t, i) => (i === idx ? { ...t, solo: track.solo } : t)));
-    setActivePreset(null);
   }
 
   function handleResetMixer() {
     const engine = engineRef.current;
     if (!engine) return;
-    const defaults = [0.95, 0.85, 0.88, 0.9, 0.75, 0.6];
     setTracks((prev) =>
       prev.map((t, idx) => {
-        const defVol =
-          defaults[idx] !== undefined ? defaults[idx] : (preferences.defaultStemVolume ?? 0.85);
+        const defVol = 0.85;
         setTrackVolume(engine, idx, defVol);
         if (t.muted) toggleMute(engine, idx);
         if (t.solo) toggleSolo(engine, idx);
@@ -815,8 +600,7 @@ function parseSongDurationSeconds(dur: string | undefined): number {
         let shouldMute = false;
 
         if (preset === 'full') {
-          const defaults = [0.95, 0.85, 0.88, 0.9, 0.75, 0.6];
-          targetVol = defaults[idx] !== undefined ? defaults[idx] : 0.85;
+          targetVol = 0.85;
           shouldMute = false;
         } else if (preset === 'minus-vox') {
           if (name.includes('vox') || name.includes('vocal') || name.includes('backing')) {
@@ -851,6 +635,14 @@ function parseSongDurationSeconds(dur: string | undefined): number {
             targetVol = 0;
             shouldMute = true;
           }
+        } else if (preset === 'a-cappella') {
+          if (name.includes('vox') || name.includes('vocal') || name.includes('backing')) {
+            targetVol = 1.0;
+            shouldMute = false;
+          } else {
+            targetVol = 0;
+            shouldMute = true;
+          }
         }
 
         setTrackVolume(engine, idx, targetVol);
@@ -871,13 +663,11 @@ function parseSongDurationSeconds(dur: string | undefined): number {
     );
   }
 
-  // MediaSession Coordinator bindings & native controls integration
+  // MediaSession integration
   const handlePlayRef = useRef(handlePlay);
   handlePlayRef.current = handlePlay;
   const handleSeekRef = useRef(handleSeek);
   handleSeekRef.current = handleSeek;
-  const handleSkipRef = useRef(handleSkip);
-  handleSkipRef.current = handleSkip;
   const handlePreviousTrackRef = useRef(handlePreviousTrack);
   handlePreviousTrackRef.current = handlePreviousTrack;
   const handleNextTrackRef = useRef(handleNextTrack);
@@ -918,10 +708,12 @@ function parseSongDurationSeconds(dur: string | undefined): number {
         handleSeekRef.current(posSec);
       },
       onSkipForward: (sec: number) => {
-        handleSkipRef.current(sec);
+        const engine = engineRef.current;
+        if (!engine) return;
+        handleSeekRef.current(Math.min(engine.duration, currentTimeRef.current + sec));
       },
       onSkipBackward: (sec: number) => {
-        handleSkipRef.current(-sec);
+        handleSeekRef.current(Math.max(0, currentTimeRef.current - sec));
       },
       onNext: () => {
         handleNextTrackRef.current();
@@ -959,1679 +751,599 @@ function parseSongDurationSeconds(dur: string | undefined): number {
   function formatTime(secs: number): string {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
-
-  const isReady = phase === 'ready';
-  const prefersReducedMotion =
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Ensure vinyl transform reflects current angle upon entering ready state
-  useIsomorphicLayoutEffect(() => {
-    if (isReady && vinylRef.current && currentVelocityRef.current === 0) {
-      vinylRef.current.style.transform = `rotate(${currentAngleRef.current.toFixed(2)}deg)`;
-    }
-  }, [isReady]);
-
-  // Physical Vinyl Placement Transform Calculation
-  const vinylPlacementStyle = useMemo(() => {
-    if (isReady) {
-      return {
-        boxShadow:
-          '0 20px 45px -10px rgba(15, 23, 42, 0.35), 0 8px 16px -4px rgba(15, 23, 42, 0.22)',
-        cursor: 'pointer',
-        opacity: 1,
-        willChange: 'transform',
-        transition: 'box-shadow 300ms ease',
-      };
-    }
-
-    const t = Math.min(1, Math.max(0, overallProgress / 100));
-
-    if (prefersReducedMotion) {
-      return {
-        transform: 'rotate(35deg)',
-        boxShadow:
-          '0 20px 45px -10px rgba(15, 23, 42, 0.35), 0 8px 16px -4px rgba(15, 23, 42, 0.22)',
-        cursor: 'default',
-        opacity: t >= 0.05 ? 1 : Math.max(0.2, t / 0.05),
-        transition: 'opacity 200ms ease',
-      };
-    }
-
-    // Dynamic physical placement: elevation, scale, and 3D spatial alignment
-    const translateY = -42 * Math.pow(1 - t, 1.25);
-    const scale = 1 + (1 - t) * 0.07;
-    const rotX = 14 * (1 - t);
-    const rotY = -8 * (1 - t);
-    const rotZ = 20 + 15 * t;
-
-    const shadowSpread = Math.round(35 + 20 * (1 - t));
-    const shadowY = Math.round(20 + 16 * (1 - t));
-    const shadowOpacity = (0.32 + 0.15 * (1 - t)).toFixed(2);
-
-    return {
-      transform: `perspective(900px) translateY(${translateY.toFixed(2)}px) scale(${scale.toFixed(3)}) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg)`,
-      boxShadow: `0 ${shadowY}px ${shadowSpread}px -8px rgba(0, 0, 0, ${shadowOpacity}), 0 10px 20px -4px rgba(0, 0, 0, 0.25)`,
-      cursor: 'default',
-      opacity: t >= 0.03 ? 1 : Math.max(0.15, t / 0.03),
-      transition:
-        'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms ease, opacity 200ms ease',
-    };
-  }, [isReady, overallProgress, prefersReducedMotion]);
 
   if (!song) {
     return (
-      <div
-        style={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 14,
-          color: 'var(--c-text-secondary)',
-        }}
-      >
-        <VinylLottie size={64} />
-        <p style={{ fontSize: 14, margin: 0 }}>{t.groovex.noSongSelected}</p>
+      <div className="flex flex-col items-center justify-center h-full w-full bg-black text-neutral-400 p-6 select-none">
+        <p className="text-sm font-semibold uppercase tracking-wider">{t.groovex.noSongSelected}</p>
       </div>
     );
   }
 
-  const effectiveTime = isScrubbing ? scrubVisualTime : currentTime;
-  const anyLoaded = tracks.some((t) => t.loaded);
-  const currentKeyDisplay = song ? transposeKey(song.key, pitchShift) : '';
-
   return (
     <div
-      className="flex flex-col w-full h-full relative overflow-hidden"
-      style={{ background: isWebDesktop ? 'var(--app-bg)' : 'transparent' }}
-      data-purpose="groovex-player-container"
+      className={`relative w-full h-full ${isLight ? 'bg-neutral-950' : 'bg-black'} text-white flex justify-center items-center overflow-x-hidden antialiased select-none`}
+      data-purpose="groovex-player-screen"
+      data-groovex-phase={phase}
     >
-      {!isWebDesktop && (
-        <SharedFloatingHeader
-          title={song?.title || (t as any).groovex?.player || 'Player'}
-          onBack={handleBack}
-          scrollContainerRef={scrollRef}
-          isLight={isLight}
-          isAmoled={isAmoled}
-        />
-      )}
-
-      <div
-        ref={scrollRef}
-        data-purpose="groovex-player-scroll"
-        className="flex-1 w-full overflow-y-auto overflow-x-hidden no-scrollbar"
-        style={{
-          height: '100%',
-          WebkitOverflowScrolling: 'touch',
-          background: isWebDesktop ? 'var(--app-bg)' : 'transparent',
-        }}
-      >
       <style>{`
-        @keyframes gxFadeSlideUp {
-          from {
-            opacity: 0;
-            transform: translateY(14px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes gxGlowPulse {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(0.92);
-          }
-        }
-        /* Realistic Hi-Fi Vinyl Radial Grooves */
-        .gx-vinyl-disc {
-          background: radial-gradient(circle at center,
-            #111215 0%,
-            #1c1e23 14%,
-            #0b0c0e 16%,
-            #21252b 25%,
-            #111316 27%,
-            #1d2127 36%,
-            #0e1012 38%,
-            #232830 48%,
-            #121417 50%,
-            #20252c 60%,
-            #0d0e11 62%,
-            #1d2229 74%,
-            #090a0c 76%,
-            #171a20 89%,
-            #0a0b0d 91%,
-            #14161a 100%
-          );
-        }
-
-        /* Vinyl High-Gloss Dual Conic Sheen Reflection */
-        .gx-vinyl-sheen {
-          background: conic-gradient(
-            from 35deg at 50% 50%,
-            rgba(255, 255, 255, 0.16) 0deg,
-            rgba(255, 255, 255, 0.02) 42deg,
-            transparent 65deg,
-            rgba(255, 255, 255, 0.12) 130deg,
-            transparent 175deg,
-            rgba(255, 255, 255, 0.16) 215deg,
-            rgba(255, 255, 255, 0.02) 255deg,
-            transparent 280deg,
-            rgba(255, 255, 255, 0.12) 330deg,
-            transparent 360deg
-          );
-        }
-
-        /* Precision Tonearm Smooth Transition */
-        .gx-tonearm-assembly {
-          transform-origin: 32px 32px;
-          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
-          will-change: transform;
-        }
-        .gx-tonearm-assembly.playing {
-          transform: rotate(24.5deg);
-        }
-        .gx-tonearm-assembly.disengaged {
-          transform: rotate(24.5deg) translate(-2px, -3px) scale(1.01);
-          filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.4));
-        }
-        .gx-tonearm-assembly.parked {
-          transform: rotate(0deg);
-          transition: transform 0.65s cubic-bezier(0.25, 1, 0.35, 1);
-        }
-
-        /* Animated Live Waveform Frequency Bars */
-        @keyframes gxWaveFloat {
-          0%, 100% { transform: scaleY(0.35); }
-          50% { transform: scaleY(1); }
-        }
-        .gx-wave-bar-anim {
-          transform-origin: bottom;
-          animation: gxWaveFloat 1.2s ease-in-out infinite alternate;
-        }
-
-        /* Range Slider Styling */
-        input[type=range].gx-range-slider {
+        /* Custom Range Sliders */
+        input[type=range] {
           -webkit-appearance: none;
           appearance: none;
           background: transparent;
         }
-        input[type=range].gx-range-slider:focus {
+        input[type=range]:focus {
           outline: none;
         }
-        input[type=range].gx-range-slider::-webkit-slider-runnable-track {
-          width: 100%;
-          height: 5px;
-          border-radius: 9999px;
-          background: rgba(148, 163, 184, 0.25);
-        }
-        input[type=range].gx-range-slider::-webkit-slider-thumb {
-          height: 17px;
-          width: 17px;
-          border-radius: 50%;
-          background: ${isLight ? '#000000' : '#ffffff'};
-          cursor: pointer;
-          -webkit-appearance: none;
-          margin-top: -6px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-          border: 2.5px solid ${isLight ? '#ffffff' : '#000000'};
-          transition: transform 0.15s ease;
-        }
-        input[type=range].gx-range-slider::-webkit-slider-thumb:active {
-          transform: scale(1.22);
-        }
-
-        /* Stem volume slider specific track */
-        input[type=range].gx-stem-slider {
+        /* Main Waveform thumb */
+        #main-scrubber::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          background: transparent;
-        }
-        input[type=range].gx-stem-slider:focus {
-          outline: none;
-        }
-        input[type=range].gx-stem-slider::-webkit-slider-runnable-track {
-          width: 100%;
-          height: 6px;
-          border-radius: 9999px;
-          background: rgba(148, 163, 184, 0.2);
-        }
-        input[type=range].gx-stem-slider::-webkit-slider-thumb {
           height: 18px;
           width: 18px;
           border-radius: 50%;
-          background: ${isLight ? '#000000' : '#ffffff'};
+          background: #ffffff;
+          box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.8), 0 0 18px 4px rgba(56, 189, 248, 0.5), 0 2px 4px rgba(0,0,0,0.5);
           cursor: pointer;
-          -webkit-appearance: none;
           margin-top: -6px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-          border: 2px solid ${isLight ? '#ffffff' : '#000000'};
-          transition: transform 0.12s ease;
+          transition: transform 0.15s ease;
         }
-        input[type=range].gx-stem-slider::-webkit-slider-thumb:active {
-          transform: scale(1.2);
+        #main-scrubber:active::-webkit-slider-thumb {
+          transform: scale(1.25);
+        }
+        #main-scrubber::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 6px;
+          cursor: pointer;
+          background: transparent;
+          border-radius: 9999px;
+        }
+        /* Stem Mini-Sliders */
+        .stem-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 14px;
+          width: 14px;
+          border-radius: 50%;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+          cursor: pointer;
+          margin-top: -5px;
+        }
+        .stem-range::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 4px;
+          cursor: pointer;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 9999px;
+        }
+        /* Subtle custom transitions & Cool Scrubber Animations */
+        @keyframes pulse-wave {
+          0%, 100% {
+            transform: scaleY(0.7);
+            opacity: 0.85;
+          }
+          50% {
+            transform: scaleY(1.2);
+            opacity: 1;
+          }
+        }
+        @keyframes shimmer-sweep {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(200%);
+          }
+        }
+        .anim-wave-active {
+          animation: pulse-wave 1.1s ease-in-out infinite;
+        }
+        .shimmer-track {
+          animation: shimmer-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .anim-wave-active,
+          .shimmer-track {
+            animation: none !important;
+          }
+        }
+        html.light .groovex-root [data-purpose="groovex-player-screen"] h1,
+        html.light [data-purpose="groovex-player-screen"] h1,
+        [data-purpose="groovex-player-screen"] h1 {
+          color: #ffffff !important;
+        }
+        html.light .groovex-root [data-purpose="groovex-player-screen"] .groovex-player-artist,
+        html.light [data-purpose="groovex-player-screen"] .groovex-player-artist,
+        [data-purpose="groovex-player-screen"] .groovex-player-artist {
+          color: rgba(255, 255, 255, 0.7) !important;
+        }
+        .sheet-enter {
+          transform: translateY(100%);
+          opacity: 0;
+          pointer-events: none;
+        }
+        .sheet-active {
+          transform: translateY(0);
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .custom-backdrop {
+          transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sheet-transition {
+          transition: transform 0.38s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease;
         }
       `}</style>
 
-      {/* Main Container */}
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '520px',
-          margin: '0 auto',
-          padding: '0 16px',
-          paddingTop: isWebDesktop ? 16 : 'calc(env(safe-area-inset-top, 0px) + 92px)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 36px)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Desktop Back Navigation */}
-        {isWebDesktop && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 4 }}>
-            <button
-              onClick={() => NavigationDispatcher.push({ app: 'groovex', page: 'library' })}
-              className="premium-back-btn"
-              aria-label="Back to library"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                borderRadius: 9999,
-                background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--c-text-primary)',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 600,
-              }}
+      {/* BEGIN: DeviceContainer (Mobile Portrait Frame) */}
+      <main className="relative w-full max-w-[420px] h-[100dvh] max-h-[920px] bg-black flex flex-col justify-between overflow-hidden shadow-2xl">
+        {/* BEGIN: AmbientArtworkLayer */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          {coverArtUrl ? (
+            <>
+              <img
+                src={coverArtUrl}
+                alt=""
+                className="w-full h-full object-cover filter blur-3xl opacity-40 absolute inset-0 scale-125"
+              />
+              <div className="w-full h-[62%] flex flex-col items-center justify-center pt-6 pb-2 px-6 relative">
+                <div className="relative w-[290px] h-[290px] xs:w-[320px] xs:h-[320px] max-w-[84vw] max-h-[38vh] aspect-square">
+                  {/* Glowing ambient backlight under the artwork */}
+                  <img
+                    src={coverArtUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover rounded-3xl filter blur-2xl opacity-60 scale-95 translate-y-3 pointer-events-none"
+                  />
+                  {/* High-res artwork with concentric rounded border and elevation */}
+                  <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] border border-white/15">
+                    <img
+                      src={coverArtUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover select-none pointer-events-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-[62%] flex flex-col items-center justify-center pt-6 pb-2 px-6 relative">
+              <div className="relative w-[280px] h-[280px] xs:w-[300px] xs:h-[300px] max-w-[84vw] max-h-[38vh] aspect-square rounded-full bg-neutral-900/70 border border-white/15 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-md">
+                <div className="absolute inset-4 rounded-full border border-white/5" />
+                <div className="absolute inset-8 rounded-full border border-white/5" />
+                <div className="absolute inset-12 rounded-full border border-white/5" />
+                <div className="absolute inset-16 rounded-full border border-white/10" />
+                <div className="w-20 h-20 rounded-full bg-stone-900/90 border border-white/20 flex items-center justify-center shadow-inner">
+                  <svg
+                    className="w-9 h-9 text-neutral-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                {song.title}
+              </p>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black to-75%" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-transparent top-[45%]" />
+        </div>
+        {/* END: AmbientArtworkLayer */}
+
+        {/* BEGIN: TopHeaderBar */}
+        <header className="relative z-10 flex items-center justify-between px-6 pt-7 pb-2 select-none">
+          {/* Collapse Arrow */}
+          <button
+            aria-label="Collapse Player"
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/90 active:scale-90 transition-transform duration-150"
+            type="button"
+            onClick={handleBack}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                arrow_back
-              </span>
-              <span>Library</span>
+              <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {/* Center Title */}
+          <div className="flex flex-col items-center max-w-[220px] px-2 text-center">
+            <span className="text-[10px] font-bold tracking-[0.22em] text-neutral-400 uppercase">
+              NOW PLAYING
+            </span>
+            <span className="text-[13px] font-bold text-white tracking-wide truncate max-w-full">
+              {song.title}
+            </span>
+          </div>
+          {/* Spacer to preserve optical center alignment */}
+          <div className="w-10 h-10" aria-hidden="true" />
+        </header>
+        {/* END: TopHeaderBar */}
+
+        {/* Buffering/Loading Indicator */}
+        {phase === 'loading' && (
+          <div className="absolute inset-0 z-30 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center select-none">
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white animate-spin mb-4" />
+            <p className="text-sm font-semibold text-white/90 mb-2">
+              {currentStemLabel ? `Buffering ${currentStemLabel}...` : 'Buffering audio stems...'}
+            </p>
+            <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white transition-all duration-150 ease-out"
+                style={{ width: `${overallProgress}%` }}
+              />
+            </div>
+            <span className="text-xs font-mono text-neutral-400 mt-2">
+              {Math.round(overallProgress)}%
+            </span>
+          </div>
+        )}
+
+        {/* Error Handling */}
+        {phase === 'error' && (
+          <div className="absolute inset-0 z-30 bg-black/75 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+            <p className="text-sm font-semibold text-rose-400 mb-3">
+              Some audio stems failed to buffer.
+            </p>
+            <button
+              onClick={handleRetryFailed}
+              className="px-5 py-2.5 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider active:scale-95 transition-transform"
+            >
+              Retry Buffering
             </button>
           </div>
         )}
 
-        {/* SECTION 1: TURNTABLE & AUDIO DECK CARD */}
-        <section
-          style={{
-            background: 'var(--c-bg-card)',
-            borderRadius: 28,
-            padding: '16px 16px 18px',
-            border: '1px solid var(--c-border)',
-            boxShadow: isLight
-              ? '0 10px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 8px -2px rgba(15, 23, 42, 0.02)'
-              : 'none',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Turntable Plinth Header Badges (Visible when Ready) */}
-          {isReady && (
-            <div
-              style={{
-                position: 'relative',
-                zIndex: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 8,
-                padding: '0 4px',
-                animation: 'gxFadeSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              }}
-            >
-              {/* BPM Chip */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 12px',
-                  borderRadius: 9999,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                  color: isLight ? '#000000' : '#ffffff',
-                  border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.15)',
-                }}
+        {/* BEGIN: MainPlaybackDeck */}
+        <div className="relative z-10 flex-1 flex flex-col justify-end px-7 pb-10">
+          {/* Track Metadata Row */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col pr-4 min-w-0">
+              <h1
+                className="text-3xl font-bold tracking-tight text-white leading-tight truncate"
+                style={{ color: '#ffffff' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  speed
-                </span>
-                <span>{song.bpm} BPM</span>
-              </div>
-
-              {/* Key Tag */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 12px',
-                  borderRadius: 9999,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: isLight ? 'rgba(241, 245, 249, 0.9)' : 'rgba(255,255,255,0.06)',
-                  color: 'var(--c-text-primary)',
-                  border: isLight
-                    ? '1px solid rgba(226, 232, 240, 0.8)'
-                    : '1px solid rgba(255,255,255,0.08)',
-                }}
+                {song.title}
+              </h1>
+              <p
+                className="groovex-player-artist text-base font-medium text-neutral-400 mt-1 truncate"
+                style={{ color: 'rgba(255, 255, 255, 0.7)' }}
               >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: '#10b981',
-                    display: 'inline-block',
-                  }}
-                />
-                <span id="header-key-badge">Key: {currentKeyDisplay}</span>
-              </div>
+                {song.artist}
+              </p>
             </div>
-          )}
-
-          {/* TURNTABLE PLINTH & VINYL PLATTER */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: 316,
-              aspectRatio: '1 / 1',
-              margin: '8px auto',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              perspective: '900px',
-            }}
-          >
-            {/* Turntable Cast Platter Sub-chassis */}
-            <div
-              style={{
-                position: 'absolute',
-                width: '98%',
-                height: '98%',
-                borderRadius: '50%',
-                background: isLight
-                  ? 'linear-gradient(to bottom, #e2e8f0, #f1f5f9, #cbd5e1)'
-                  : 'linear-gradient(to bottom, #1e293b, #0f172a, #1e293b)',
-                boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.2)',
-                border: isLight
-                  ? '1px solid rgba(203, 213, 225, 0.8)'
-                  : '1px solid rgba(255,255,255,0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+            {/* Stems Mixer Morph Trigger Button */}
+            <button
+              aria-label="Open Stems Mixer"
+              className="flex-shrink-0 w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white shadow-lg active:scale-95 transition-all"
+              id="open-stems-btn"
+              type="button"
+              onClick={() => setIsStemsSheetOpen(true)}
             >
-              {/* Machined strobe dots ring on outer platter rim */}
-              <div
-                style={{
-                  width: '94%',
-                  height: '94%',
-                  borderRadius: '50%',
-                  border: '1px dashed rgba(148, 163, 184, 0.5)',
-                }}
-              />
-
-              {/* Center Turntable Spindle Pin */}
-              <div
-                style={{
-                  position: 'absolute',
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle at 35% 35%, #ffffff, #f59e0b 60%, #b45309)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.35)',
-                  border: '1px solid rgba(255,255,255,0.4)',
-                }}
-              />
-            </div>
-
-            {/* ROTATING / PLACEMENT VINYL DISC */}
-            <div
-              ref={vinylRef}
-              id="vinyl-disc"
-              className="gx-vinyl-disc"
-              onClick={isReady ? handlePlay : undefined}
-              role="button"
-              tabIndex={isReady ? 0 : -1}
-              aria-label={!isReady ? 'Loading Session' : isPlaying ? 'Pause Vinyl' : 'Play Vinyl'}
-              style={{
-                position: 'relative',
-                width: '88%',
-                height: '88%',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                ...vinylPlacementStyle,
-              }}
-            >
-              {/* High-gloss Conic Sheen Reflection Overlay */}
-              <div
-                className="gx-vinyl-sheen"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* Central Vinyl Label */}
-              <div
-                style={{
-                  width: '37%',
-                  height: '37%',
-                  borderRadius: '50%',
-                  background: isLight
-                    ? 'linear-gradient(135deg, #18181b, #09090b, #000000)'
-                    : 'linear-gradient(135deg, #27272a, #18181b, #09090b)',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                  border: '3px solid #0F172A',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 8,
-                  textAlign: 'center',
-                  color: '#FFFFFF',
-                  position: 'relative',
-                  zIndex: 10,
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Concentric label ring accent */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 4,
-                    borderRadius: '50%',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    pointerEvents: 'none',
-                  }}
-                />
-
-                {/* Subtle GrooveX Brand mark */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    fontSize: 8.5,
-                    fontWeight: 800,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: '#EEF6FF',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 10 }}>
-                    graphic_eq
-                  </span>
-                  <span>GROOVEX</span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: '#FFFFFF',
-                    lineHeight: 1,
-                    marginTop: 2,
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  STEREO
-                </span>
-                <span
-                  style={{
-                    fontSize: 7.5,
-                    color: 'rgba(217, 235, 255, 0.9)',
-                    fontFamily: 'var(--studio-font-mono, monospace)',
-                    marginTop: 2,
-                  }}
-                >
-                  LOSSLESS MASTER
-                </span>
-
-                {/* Precision Machined Aluminum Center Bushing */}
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(45deg, #0f172a, #334155, #0f172a)',
-                    border: '2px solid #f59e0b',
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)',
-                    marginTop: 4,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: '#e2e8f0',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* PRECISION TONEARM ASSEMBLY */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 4,
-                width: 96,
-                height: 192,
-                pointerEvents: 'none',
-                zIndex: 20,
-              }}
-            >
-              {/* Tonearm Gimbal Pivot Base */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(to bottom, #f1f5f9, #cbd5e1)',
-                  border: '1px solid rgba(148, 163, 184, 0.8)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(45deg, #334155, #1e293b, #020617)',
-                    border: '1px solid #cbd5e1',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      background: isLight ? '#000000' : '#ffffff',
-                      boxShadow: isLight
-                        ? '0 0 6px rgba(0, 0, 0, 0.5)'
-                        : '0 0 6px rgba(255, 255, 255, 0.8)',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Tonearm Armature & Headshell */}
-              <svg
-                id="tonearm-assembly"
-                className={`gx-tonearm-assembly ${tonearmState}`}
-                viewBox="0 0 90 190"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  overflow: 'visible',
-                }}
-              >
-                {/* Drop shadow for realism */}
-                <path
-                  d="M 72 23 L 46 112 L 28 148"
-                  fill="none"
-                  stroke="rgba(15, 23, 42, 0.22)"
-                  strokeLinecap="round"
-                  strokeWidth="4.5"
-                />
-                {/* Brushed aluminum tonearm wand */}
-                <path
-                  d="M 72 23 L 46 112 L 28 148"
-                  fill="none"
-                  stroke="#E2E8F0"
-                  strokeLinecap="round"
-                  strokeWidth="3.5"
-                />
-                <path
-                  d="M 72 23 L 46 112 L 28 148"
-                  fill="none"
-                  stroke="#94A3B8"
-                  strokeLinecap="round"
-                  strokeWidth="1.6"
-                />
-                {/* Gimbal counterweight rear extension */}
-                <rect
-                  x="70"
-                  y="8"
-                  width="10"
-                  height="15"
-                  rx="2"
-                  fill="#475569"
-                  stroke="#334155"
-                  strokeWidth="1"
-                />
-                {/* Audiophile Headshell & Cartridge with Cyan/Blue Stylus */}
-                <g transform="rotate(-19 28 152)">
-                  <rect
-                    x="20"
-                    y="142"
-                    width="16"
-                    height="24"
-                    rx="2.5"
-                    fill="#0F172A"
-                    stroke="#334155"
-                    strokeWidth="1.2"
-                  />
-                  {/* Stylus body & contact tip */}
-                  <rect x="26" y="163" width="4.5" height="7" rx="1" fill="#475569" />
-                  <circle cx="28.25" cy="170" r="1.2" fill="#FFFFFF" />
-                </g>
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
               </svg>
-            </div>
+            </button>
           </div>
 
-          {/* DEDICATED LOADING STATE (While stems are downloading) */}
-          {!isReady && (
+          {/* Scrubber & Waveform Visualizer */}
+          <div className="mb-8 select-none">
+            {/* Interactive Audio Waveform Spectrum Accent */}
             <div
-              id="player-loading-panel"
-              style={{
-                marginTop: 12,
-                padding: '16px 16px',
-                background: isLight ? 'rgba(248, 250, 252, 0.95)' : 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 18,
-                border: isLight ? '1px solid #F1F5F9' : '1px solid rgba(255, 255, 255, 0.06)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                boxShadow: 'var(--shadow-surface-soft)',
+              className="relative w-full h-7 mb-2 flex items-end justify-between gap-[2px] px-0.5 cursor-pointer group"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const newPct = Math.max(0, Math.min(1, clickX / rect.width));
+                handleSeek(newPct * Math.max(1, duration));
               }}
+              title="Seek audio position"
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      backgroundColor:
-                        phase === 'error'
-                          ? '#ef4444'
-                          : isLight
-                            ? '#000000'
-                            : '#ffffff',
-                      display: 'inline-block',
-                      boxShadow:
-                        phase === 'error'
-                          ? '0 0 8px rgba(239, 68, 68, 0.7)'
-                          : isLight
-                            ? '0 0 8px rgba(0, 0, 0, 0.4)'
-                            : '0 0 8px rgba(255, 255, 255, 0.7)',
-                      animation:
-                        phase === 'error' ? 'none' : 'gxGlowPulse 1.5s ease-in-out infinite',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <span
-                      style={{
-                        fontFamily: 'var(--studio-font-display, sans-serif)',
-                        fontSize: 12,
-                        fontWeight: 800,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        color: phase === 'error' ? '#ef4444' : 'var(--c-text-primary)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {phase === 'error'
-                        ? 'Download Interrupted'
-                        : overallProgress >= 100
-                          ? 'Aligning Turntable Session...'
-                          : 'Loading Multitrack Session'}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: 'var(--studio-font-body)',
-                        fontSize: 11,
-                        color: 'var(--c-text-muted)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {phase === 'error'
-                        ? `${failedStems.length} stem${failedStems.length > 1 ? 's' : ''} failed to load`
-                        : currentStemLabel
-                          ? `Downloading ${currentStemLabel} stem...`
-                          : 'Preparing lossless audio stems...'}
-                    </span>
-                  </div>
-                </div>
-
-                <span
-                  id="loading-percentage-display"
-                  style={{
-                    fontFamily: 'var(--studio-font-mono, monospace)',
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color:
-                      phase === 'error'
-                        ? '#ef4444'
-                        : isLight
-                          ? '#000000'
-                          : '#ffffff',
-                    letterSpacing: '-0.02em',
-                    flexShrink: 0,
-                  }}
-                >
-                  <StudioCountUpPercentage value={overallProgress} />%
-                </span>
-              </div>
-
-              <StudioProgressBar
-                value={overallProgress}
-                accentFrom={
-                  phase === 'error'
-                    ? '#ef4444'
-                    : isLight
-                      ? '#000000'
-                      : '#ffffff'
-                }
-                accentTo={
-                  phase === 'error'
-                    ? '#f87171'
-                    : isLight
-                      ? '#27272a'
-                      : '#e4e4e7'
-                }
-                height={6}
-              />
-
-              {phase === 'error' && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
-                  <button
-                    onClick={handleRetryFailed}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: 10,
-                      border: 'none',
-                      cursor: 'pointer',
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      color: '#ef4444',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                      refresh
-                    </span>
-                    Retry Download
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* COMPLETE PLAYER CONTROLS (Only when Ready) */}
-          {isReady && (
-            <div
-              id="player-ready-controls"
-              style={{
-                animation: 'gxFadeSlideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              }}
-            >
-              {/* COMPACT WAVEFORM AUDIO VISUALIZER */}
-              <div
-                style={{
-                  marginTop: 8,
-                  background: isLight ? 'rgba(248, 250, 252, 0.9)' : 'rgba(255,255,255,0.03)',
-                  borderRadius: 12,
-                  padding: 8,
-                  border: isLight ? '1px solid #F1F5F9' : '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: 9.5,
-                    fontFamily: 'var(--studio-font-mono, monospace)',
-                    color: 'var(--c-text-muted)',
-                    marginBottom: 4,
-                    padding: '0 4px',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      fontWeight: 700,
-                      color: isLight ? '#000000' : '#ffffff',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: isLight ? '#000000' : '#ffffff',
-                        display: 'inline-block',
-                        animation: isPlaying ? 'gx-glow-pulse 1.5s ease-in-out infinite' : 'none',
-                      }}
-                    />
-                    LIVE STEM MASTER
-                  </span>
-                  <span style={{ fontWeight: 600, opacity: 0.8 }}>44.1kHz • 24-bit Lossless</span>
-                </div>
-
-                {/* Dynamic Compact Waveform Frequency Bars */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'space-between',
-                    height: 20,
-                    gap: 2,
-                    padding: '0 4px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {[6, 12, 16, 8, 18, 14, 12, 18, 20, 14, 10, 16, 18, 12].map((h, i) => (
-                    <span
-                      key={`wave-left-${i}`}
-                      className="gx-wave-bar-anim"
-                      style={{
-                        width: 2.5,
-                        borderRadius: 9999,
-                        background: isLight ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-                        height: h,
-                        animationDelay: `${(i * 0.07).toFixed(2)}s`,
-                        animationPlayState: isPlaying ? 'running' : 'paused',
-                      }}
-                    />
-                  ))}
-
-                  <span
-                    style={{
-                      width: 3,
-                      borderRadius: 9999,
-                      background: isLight ? '#000000' : '#ffffff',
-                      height: 20,
-                      boxShadow: isLight
-                        ? '0 0 4px rgba(0, 0, 0, 0.3)'
-                        : '0 0 4px rgba(255, 255, 255, 0.6)',
-                    }}
-                  />
-
-                  {[
-                    16, 10, 14, 18, 12, 16, 20, 10, 8, 16, 18, 14, 10, 14, 18, 12, 8, 6, 12, 14, 8,
-                  ].map((h, i) => (
-                    <span
-                      key={`wave-right-${i}`}
-                      style={{
-                        width: 2.5,
-                        borderRadius: 9999,
-                        background: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.15)',
-                        height: h,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* PROGRESS TIMELINE SCRUBBER */}
-              <div style={{ padding: '8px 4px 0' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="range"
-                    className="gx-range-slider"
-                    min={0}
-                    max={duration > 0 ? duration : 1}
-                    step="0.1"
-                    value={isScrubbing ? scrubVisualTime : currentTime}
-                    onPointerDown={() => {
-                      setIsScrubbing(true);
-                      setScrubVisualTime(currentTime);
-                    }}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setScrubVisualTime(val);
-                    }}
-                    onPointerUp={(e) => {
-                      const val = parseFloat((e.target as HTMLInputElement).value);
-                      setIsScrubbing(false);
-                      handleSeek(val);
-                    }}
-                    onPointerCancel={() => {
-                      setIsScrubbing(false);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        handleSkip(-5);
-                      } else if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        handleSkip(5);
-                      }
-                    }}
-                    style={{ width: '100%', cursor: 'pointer' }}
-                  />
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    fontSize: 11,
-                    fontFamily: 'var(--studio-font-mono, monospace)',
-                    color: 'var(--c-text-muted)',
-                    marginTop: 6,
-                    fontWeight: 500,
-                  }}
-                >
-                  <span style={{ fontWeight: 600, color: 'var(--c-text-primary)' }}>
-                    {formatTime(effectiveTime)}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'var(--studio-font-display, sans-serif)',
-                      textTransform: 'uppercase',
-                      fontWeight: 700,
-                      letterSpacing: '0.08em',
-                      color: isLight ? '#000000' : '#ffffff',
-                    }}
-                  >
-                    {getSectionName(duration > 0 ? effectiveTime / duration : 0)}
-                  </span>
-                  <span>{formatTime(duration || 0)}</span>
-                </div>
-              </div>
-
-              {/* REFINED PLAYBACK CONTROLS */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 16,
-                  padding: '12px 8px 4px',
-                }}
-              >
-                <button
-                  onClick={handlePreviousTrack}
-                  aria-label="Previous Track / Restart"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--c-text-primary)',
-                    background: isLight ? 'rgba(241, 245, 249, 0.7)' : 'rgba(255,255,255,0.06)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'transform 120ms ease',
-                  }}
-                  onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-                    skip_previous
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleSkip(-10)}
-                  aria-label="Rewind 10 seconds"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--c-text-primary)',
-                    background: isLight ? 'rgba(241, 245, 249, 0.7)' : 'rgba(255,255,255,0.06)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'transform 120ms ease',
-                  }}
-                  onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 23 }}>
-                    replay_10
-                  </span>
-                </button>
-
-                {/* DYNAMIC MONOCHROME PLAY/PAUSE FAB */}
-                <button
-                  id="play-pause-btn"
-                  onClick={handlePlay}
-                  disabled={!anyLoaded}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    background: anyLoaded
-                      ? (isLight ? '#000000' : '#ffffff')
-                      : isLight
-                        ? 'rgba(0,0,0,0.06)'
-                        : 'rgba(255,255,255,0.08)',
-                    color: anyLoaded
-                      ? (isLight ? '#ffffff' : '#000000')
-                      : (isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'),
-                    border: 'none',
-                    cursor: anyLoaded ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: anyLoaded
-                      ? (isLight ? '0 10px 25px -4px rgba(0, 0, 0, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.15)' : '0 10px 25px -4px rgba(255, 255, 255, 0.25), 0 4px 10px -2px rgba(255, 255, 255, 0.15)')
-                      : 'none',
-                    margin: '0 4px',
-                    transition: 'transform 150ms ease, box-shadow 150ms ease',
-                  }}
-                  onPointerDown={(e) => {
-                    if (anyLoaded) e.currentTarget.style.transform = 'scale(0.92)';
-                  }}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 34, fontVariationSettings: "'FILL' 1" }}
-                  >
-                    {isPlaying ? 'pause' : 'play_arrow'}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleSkip(10)}
-                  aria-label="Forward 10 seconds"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--c-text-primary)',
-                    background: isLight ? 'rgba(241, 245, 249, 0.7)' : 'rgba(255,255,255,0.06)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'transform 120ms ease',
-                  }}
-                  onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 23 }}>
-                    forward_10
-                  </span>
-                </button>
-
-                <button
-                  onClick={handleNextTrack}
-                  aria-label="Next Track"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--c-text-primary)',
-                    background: isLight ? 'rgba(241, 245, 249, 0.7)' : 'rgba(255,255,255,0.06)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'transform 120ms ease',
-                  }}
-                  onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-                    skip_next
-                  </span>
-                </button>
-              </div>
-
-              {/* PITCH TRANSPOSITION STEPPER */}
-              <div
-                style={{
-                  marginTop: 12,
-                  paddingTop: 10,
-                  borderTop: isLight ? '1px solid #F1F5F9' : '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
-                  background: isLight ? 'rgba(248, 250, 252, 0.8)' : 'rgba(255,255,255,0.02)',
-                  borderRadius: 16,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ color: 'var(--c-text-primary)', fontSize: 20 }}
-                  >
-                    tune
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span
-                      style={{
-                        fontSize: 9.5,
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        color: 'var(--c-text-muted)',
-                        letterSpacing: '0.06em',
-                      }}
-                    >
-                      Transposition
-                    </span>
-                    <span
-                      id="key-label"
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: 'var(--c-text-primary)',
-                      }}
-                    >
-                      Key: {currentKeyDisplay}
-                      {pitchShift === 0 ? ' (Original)' : ''}
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    background: 'var(--c-surface-low)',
-                    padding: 4,
-                    borderRadius: 12,
-                    border: '1px solid var(--c-border)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <button
-                    onClick={() => handlePitchChange(-1)}
-                    disabled={pitchShift <= -6}
-                    aria-label="Transpose one semitone down"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--c-text-primary)',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: pitchShift <= -6 ? 'not-allowed' : 'pointer',
-                      opacity: pitchShift <= -6 ? 0.3 : 1,
-                      fontWeight: 700,
-                      transition: 'transform 100ms ease',
-                    }}
-                    onPointerDown={(e) => {
-                      if (pitchShift > -6) e.currentTarget.style.transform = 'scale(0.9)';
-                    }}
-                    onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      remove
-                    </span>
-                  </button>
-
-                  <span
-                    id="key-offset"
-                    style={{
-                      width: 32,
-                      textAlign: 'center',
-                      fontFamily: 'var(--studio-font-mono, monospace)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: pitchShift !== 0 ? (isLight ? '#000000' : '#ffffff') : 'var(--c-text-primary)',
-                    }}
-                  >
-                    {pitchShift > 0 ? `+${pitchShift}` : pitchShift === 0 ? '±0' : pitchShift}
-                  </span>
-
-                  <button
-                    onClick={() => handlePitchChange(1)}
-                    disabled={pitchShift >= 6}
-                    aria-label="Transpose one semitone up"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--c-text-primary)',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: pitchShift >= 6 ? 'not-allowed' : 'pointer',
-                      opacity: pitchShift >= 6 ? 0.3 : 1,
-                      fontWeight: 700,
-                      transition: 'transform 100ms ease',
-                    }}
-                    onPointerDown={(e) => {
-                      if (pitchShift < 6) e.currentTarget.style.transform = 'scale(0.9)';
-                    }}
-                    onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                      add
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* SECTION 4: STEMS MIXER WORKSTATION (Only when Ready) */}
-        {isReady && (
-          <section
-            id="stems-mixer-section"
-            style={{
-              background: 'var(--c-bg-card)',
-              borderRadius: 28,
-              padding: '16px 16px 20px',
-              border: '1px solid var(--c-border)',
-              boxShadow: 'var(--shadow-surface-raised)',
-              animation: 'gxFadeSlideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            }}
-          >
-            {/* Mixer Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 14,
-                padding: '0 4px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-primary)', fontSize: 22 }}
-                >
-                  equalizer
-                </span>
-                <div>
-                  <h2
-                    style={{
-                      fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-                      fontWeight: 800,
-                      fontSize: 14,
-                      color: 'var(--c-text-primary)',
-                      letterSpacing: '-0.01em',
-                      margin: 0,
-                    }}
-                  >
-                    STEMS MIXER
-                  </h2>
-                  <p
-                    style={{
-                      fontSize: 10,
-                      color: 'var(--c-text-muted)',
-                      margin: 0,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {tracks.length} Synchronized Multitrack Channels
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={handleResetMixer}
-                  style={{
-                    padding: '4px 10px',
-                    background: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)',
-                    color: 'var(--c-text-secondary)',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    borderRadius: 8,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'transform 100ms ease',
-                  }}
-                  onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
-                  onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  RESET
-                </button>
-
-                <span
-                  style={{
-                    padding: '4px 8px',
-                    background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)',
-                    color: isLight ? '#000000' : '#ffffff',
-                    border: isLight ? '1px solid rgba(0, 0, 0, 0.1)' : '1px solid rgba(255, 255, 255, 0.15)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    borderRadius: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                    cloud_done
-                  </span>
-                  CACHED
-                </span>
-              </div>
-            </div>
-
-            {/* STEM CHANNELS LIST */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {tracks.map((track, idx) => {
-                const stemColor = getStemColor(track.name);
-                const volPct = Math.round(track.volume * 100);
-
+              {WAVEFORM_HEIGHTS.map((h, idx) => {
+                const totalBars = WAVEFORM_HEIGHTS.length;
+                const barPct = (idx / (totalBars - 1)) * 100;
+                const progressPct = Math.min(
+                  100,
+                  Math.max(0, (currentTime / Math.max(1, duration)) * 100)
+                );
+                const isPlayed = barPct <= progressPct;
+                const isNearPlayhead = Math.abs(barPct - progressPct) < 7;
                 return (
                   <div
-                    key={track.name}
+                    key={idx}
+                    className={`flex-1 rounded-full transition-all duration-150 origin-bottom ${
+                      isPlayed
+                        ? 'bg-gradient-to-t from-indigo-500 via-purple-400 to-cyan-300 shadow-[0_0_8px_rgba(168,85,247,0.7)]'
+                        : 'bg-white/15 group-hover:bg-white/25'
+                    } ${isPlaying && isNearPlayhead ? 'anim-wave-active' : ''}`}
                     style={{
-                      background: isLight ? 'rgba(248, 250, 252, 0.85)' : 'rgba(255,255,255,0.02)',
-                      padding: 12,
-                      borderRadius: 16,
-                      border: isLight ? '1px solid #F1F5F9' : '1px solid rgba(255,255,255,0.04)',
-                      opacity: track.muted ? 0.45 : 1,
-                      transition: 'opacity 150ms ease',
+                      height: `${h}%`,
+                      animationDelay: `${(idx % 6) * 0.12}s`,
                     }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            background: stemColor,
-                            display: 'inline-block',
-                            boxShadow: `0 0 6px ${stemColor}55`,
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontFamily: 'var(--studio-font-display, "Inter Tight", sans-serif)',
-                            fontWeight: 700,
-                            fontSize: 13,
-                            color: 'var(--c-text-primary)',
-                            letterSpacing: '-0.01em',
-                          }}
-                        >
-                          {track.label}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontFamily: 'var(--studio-font-mono, monospace)',
-                            fontWeight: 600,
-                            color: 'var(--c-text-muted)',
-                          }}
-                        >
-                          {volPct}%
-                        </span>
-                        {!track.loaded && (!song.hasStems || failedStems.includes(idx)) && (
-                          <button
-                            onClick={() => handleLoadFromFile(idx)}
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: 6,
-                              border: '1px solid var(--surface-border)',
-                              cursor: 'pointer',
-                              background: 'transparent',
-                              color: 'var(--c-text-secondary)',
-                              fontSize: 9,
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            Load File
-                          </button>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {/* Mute Button */}
-                        <button
-                          onClick={() => handleMute(idx)}
-                          aria-label={`Mute ${track.label}`}
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            fontSize: 11,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: track.muted
-                              ? '#f43f5e'
-                              : isLight
-                                ? '#FFFFFF'
-                                : 'rgba(255,255,255,0.06)',
-                            color: track.muted
-                              ? '#FFFFFF'
-                              : isLight
-                                ? '#475569'
-                                : 'rgba(255,255,255,0.7)',
-                            border: track.muted
-                              ? '1px solid #e11d48'
-                              : isLight
-                                ? '1px solid #E2E8F0'
-                                : '1px solid rgba(255,255,255,0.08)',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            transition: 'transform 100ms ease, background 120ms ease',
-                          }}
-                          onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                          onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                        >
-                          M
-                        </button>
-
-                        {/* Solo Button */}
-                        <button
-                          onClick={() => handleSolo(idx)}
-                          aria-label={`Solo ${track.label}`}
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            fontSize: 11,
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: track.solo
-                              ? '#f59e0b'
-                              : isLight
-                                ? '#FFFFFF'
-                                : 'rgba(255,255,255,0.06)',
-                            color: track.solo
-                              ? '#FFFFFF'
-                              : isLight
-                                ? '#475569'
-                                : 'rgba(255,255,255,0.7)',
-                            border: track.solo
-                              ? '1px solid #d97706'
-                              : isLight
-                                ? '1px solid #E2E8F0'
-                                : '1px solid rgba(255,255,255,0.08)',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            transition: 'transform 100ms ease, background 120ms ease',
-                          }}
-                          onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-                          onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                        >
-                          S
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Volume Slider */}
-                    <input
-                      type="range"
-                      className="gx-stem-slider"
-                      min={0}
-                      max={100}
-                      value={volPct}
-                      disabled={!track.loaded}
-                      onChange={(e) => handleVolumeChange(idx, Number(e.target.value) / 100)}
-                      style={{
-                        width: '100%',
-                        cursor: track.loaded ? 'pointer' : 'not-allowed',
-                        opacity: track.loaded ? 1 : 0.4,
-                      }}
-                    />
-                  </div>
+                  />
                 );
               })}
             </div>
 
-            {/* QUICK PRACTICE MIX PRESETS */}
-            <div
-              style={{
-                marginTop: 16,
-                paddingTop: 14,
-                borderTop: isLight ? '1px solid #F1F5F9' : '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  fontWeight: 700,
-                  color: 'var(--c-text-muted)',
-                  letterSpacing: '0.06em',
-                  marginBottom: 8,
-                }}
-              >
-                Practice Mix Presets
-              </span>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 6,
-                }}
-              >
-                {(
-                  [
-                    { id: 'full', label: 'Full Band' },
-                    { id: 'minus-vox', label: 'Minus Vox' },
-                    { id: 'minus-drum', label: 'Minus Drum' },
-                    { id: 'bass-drum', label: 'Bass & Drum' },
-                  ] as const
-                ).map((preset) => {
-                  const isActive = activePreset === preset.id;
-                  return (
-                    <button
-                      key={preset.id}
-                      onClick={() => handleApplyPreset(preset.id)}
-                      style={{
-                        padding: '8px 4px',
-                        textAlign: 'center',
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: isActive ? 700 : 600,
-                        background: isActive
-                          ? (isLight ? '#000000' : '#ffffff')
-                          : isLight
-                            ? '#F1F5F9'
-                            : 'rgba(255,255,255,0.06)',
-                        color: isActive
-                          ? (isLight ? '#ffffff' : '#000000')
-                          : 'var(--c-text-primary)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        boxShadow: isActive
-                          ? (isLight ? '0 2px 8px rgba(0, 0, 0, 0.25)' : '0 2px 8px rgba(255, 255, 255, 0.25)')
-                          : 'none',
-                        transition: 'all 120ms ease',
-                      }}
-                      onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
-                      onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
+            {/* Interactive Progress Scrubber with Dynamic Glow Track */}
+            <div className="relative w-full flex items-center group">
+              {/* Custom Track Background */}
+              <div className="absolute inset-y-0 left-0 flex items-center w-full pointer-events-none">
+                <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden relative backdrop-blur-sm">
+                  {/* Glowing Elapsed Progress */}
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-400 to-cyan-300 rounded-full relative transition-all duration-75 ease-out shadow-[0_0_12px_rgba(168,85,247,0.8)]"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(0, (currentTime / Math.max(1, duration)) * 100)
+                      )}%`,
+                    }}
+                  >
+                    {/* Animated Shimmer Laser Beam */}
+                    {isPlaying && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent shimmer-track pointer-events-none" />
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* Native Range Scrubber */}
+              <input
+                aria-label="Track Progress"
+                className="w-full relative z-10"
+                id="main-scrubber"
+                max={Math.max(1, duration)}
+                min="0"
+                step="0.1"
+                type="range"
+                value={currentTime}
+                onChange={(e) => handleSeek(Number(e.target.value))}
+              />
             </div>
-          </section>
-        )}
-      </div>
+
+            {/* Timestamps */}
+            <div className="flex justify-between items-center text-xs font-semibold tracking-wider text-neutral-400 mt-2 font-mono">
+              <span id="current-time" className="text-white/90">
+                {formatTime(currentTime)}
+              </span>
+              <span id="remaining-time" className="text-neutral-400">
+                -{formatTime(Math.max(0, duration - currentTime))}
+              </span>
+            </div>
+          </div>
+
+          {/* Core Transport Deck (Strict 3-Button Row) */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Previous Track Button */}
+            <button
+              aria-label="Previous Track"
+              className="w-16 h-16 rounded-full bg-white/[0.08] hover:bg-white/15 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-md active:scale-90 transition-transform duration-150"
+              type="button"
+              onClick={handlePreviousTrack}
+            >
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              </svg>
+            </button>
+            {/* Play / Pause Master Pill */}
+            <button
+              aria-label="Play or Pause Track"
+              className="flex-1 h-16 rounded-full bg-stone-900/90 hover:bg-stone-850 border border-white/20 backdrop-blur-2xl flex items-center justify-center gap-3 text-white shadow-[0_8px_30px_rgb(0,0,0,0.6)] active:scale-95 transition-all duration-150"
+              id="play-pause-btn"
+              type="button"
+              onClick={handlePlay}
+            >
+              {isPlaying ? (
+                <>
+                  <svg className="w-6 h-6 fill-current" id="pause-icon" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                  </svg>
+                  <span className="text-lg font-bold tracking-tight" id="play-pause-text">
+                    Pause
+                  </span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-6 h-6 fill-current" id="play-icon" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  <span className="text-lg font-bold tracking-tight" id="play-pause-text">
+                    Play
+                  </span>
+                </>
+              )}
+            </button>
+            {/* Next Track Button */}
+            <button
+              aria-label="Next Track"
+              className="w-16 h-16 rounded-full bg-white/[0.08] hover:bg-white/15 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-md active:scale-90 transition-transform duration-150"
+              type="button"
+              onClick={handleNextTrack}
+            >
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        {/* END: MainPlaybackDeck */}
+
+        {/* BEGIN: StemsMixerBottomSheet */}
+        {/* Modal Backdrop */}
+        <div
+          className={`custom-backdrop fixed inset-0 bg-black/70 backdrop-blur-md z-40 ${
+            isStemsSheetOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          id="sheet-backdrop"
+          style={{ display: isStemsSheetOpen ? 'block' : 'none' }}
+          onClick={() => setIsStemsSheetOpen(false)}
+        />
+        {/* Interactive Pop-up Drawer */}
+        <div
+          className={`sheet-transition absolute inset-x-0 bottom-0 z-50 bg-stone-950/95 border-t border-white/15 rounded-t-[32px] p-6 shadow-2xl max-h-[85vh] flex flex-col ${
+            isStemsSheetOpen ? 'sheet-active' : 'sheet-enter'
+          }`}
+          id="stems-sheet"
+          style={{
+            transform: isStemsSheetOpen ? 'translateY(0)' : 'translateY(100%)',
+            visibility: isStemsSheetOpen ? 'visible' : 'hidden',
+            pointerEvents: isStemsSheetOpen ? 'auto' : 'none',
+          }}
+        >
+          {/* Sheet Pull Indicator */}
+          <div className="w-12 h-1.5 bg-neutral-600/60 rounded-full mx-auto mb-4" />
+          {/* Sheet Top Bar */}
+          <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4 18h2v-4H4v4zm5 0h2V6H9v12zm5 0h2v-8h-2v8zm5 0h2v-11h-2v11z" />
+              </svg>
+              <span className="text-sm font-extrabold tracking-wider text-white uppercase">
+                Stems Mixer
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                className="text-xs font-semibold text-neutral-400 hover:text-white uppercase px-2 py-1 transition-colors"
+                id="reset-stems"
+                onClick={handleResetMixer}
+                type="button"
+              >
+                Reset
+              </button>
+              <button
+                aria-label="Close Stems Mixer"
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 active:scale-95"
+                id="close-stems-btn"
+                type="button"
+                onClick={() => setIsStemsSheetOpen(false)}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {/* Section: Practice Mix Presets */}
+          <div className="py-4">
+            <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">
+              Practice Mix Presets
+            </span>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
+              {[
+                { id: 'full', label: 'Full Band' },
+                { id: 'minus-vox', label: 'Minus Vox' },
+                { id: 'minus-drum', label: 'Minus Drum' },
+                { id: 'bass-drum', label: 'Bass & Drum' },
+                { id: 'a-cappella', label: 'A Cappella' },
+              ].map((p) => {
+                const isActive = activePreset === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handleApplyPreset(p.id as PracticePreset)}
+                    className={`preset-pill px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'bg-white text-black font-bold shadow-sm'
+                        : 'bg-neutral-900 border border-white/10 text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {/* Section: Multitrack Stems Controls */}
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3.5 pt-1 pb-4">
+            {tracks.map((track, i) => {
+              const stemColor = getStemColor(track.name);
+              const volPct = Math.round((track.muted ? 0 : track.volume) * 100);
+              return (
+                <div
+                  key={track.name}
+                  className="stem-channel flex items-center gap-3 bg-neutral-900/60 p-2.5 rounded-2xl border border-white/5"
+                  data-channel={track.name}
+                >
+                  <div className="flex items-center gap-2 w-24">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: stemColor,
+                        boxShadow: `0 0 8px ${stemColor}99`,
+                      }}
+                    />
+                    <span className="text-xs font-bold text-white tracking-wide truncate">
+                      {track.label}
+                    </span>
+                  </div>
+                  <span className="stem-val text-[11px] font-mono text-neutral-400 w-8">
+                    {volPct}%
+                  </span>
+                  <input
+                    aria-label={`${track.label} Volume`}
+                    className="stem-range flex-1"
+                    max="100"
+                    min="0"
+                    type="range"
+                    value={volPct}
+                    onChange={(e) => handleVolumeChange(i, Number(e.target.value) / 100)}
+                  />
+                  <div className="flex gap-1.5">
+                    <button
+                      className={`mute-btn w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center transition-colors ${
+                        track.muted
+                          ? 'bg-red-500 text-white'
+                          : 'bg-white/10 text-neutral-300 hover:text-white'
+                      }`}
+                      onClick={() => handleMute(i)}
+                    >
+                      M
+                    </button>
+                    <button
+                      className={`solo-btn w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center transition-colors ${
+                        track.solo
+                          ? 'bg-amber-400 text-black'
+                          : 'bg-white/10 text-neutral-300 hover:text-white'
+                      }`}
+                      onClick={() => handleSolo(i)}
+                    >
+                      S
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* END: StemsMixerBottomSheet */}
+      </main>
+      {/* END: DeviceContainer */}
     </div>
-  </div>
   );
 }

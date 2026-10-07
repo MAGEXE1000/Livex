@@ -4,3 +4,4 @@ export * from './supabaseClient';
 export * from './permissions';
 export * from '../accountStatus';
 export * from './adminConfig';
+export * from './albumArtService';
