@@ -226,8 +226,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@capacitor/core@8.4.1)(firebase@12.16.0)
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^8.4.3
+        version: 8.4.3(@capacitor/core@8.4.1)
       '@capacitor/app':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.4.1)
@@ -450,8 +450,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@capacitor/core@8.4.1)(firebase@12.16.0)
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^8.4.3
+        version: 8.4.3(@capacitor/core@8.4.1)
       '@capacitor/app':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.4.1)
@@ -553,8 +553,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@capacitor/core@8.4.1)(firebase@12.16.0)
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^8.4.3
+        version: 8.4.3(@capacitor/core@8.4.1)
       '@capacitor/app':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.4.1)
@@ -662,8 +662,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@capacitor/core@8.4.1)(firebase@12.16.0)
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^8.4.3
+        version: 8.4.3(@capacitor/core@8.4.1)
       '@capacitor/app':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.4.1)
@@ -786,8 +786,8 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@capacitor/core@8.4.1)(firebase@12.16.0)
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^8.4.3
+        version: 8.4.3(@capacitor/core@8.4.1)
       '@capacitor/app':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.4.1)
@@ -1033,8 +1033,8 @@ packages:
       firebase:
         optional: true
 
-  '@capacitor/android@8.4.1':
-    resolution: {integrity: sha512-igtDCJ7QQn0P2qHFD9p4KXaa6V1b2PRNt+MxjVwtjTm/BJvqmiazOJq6rPjwFSZnfHm6iFoZk8TfzHd44pyBGw==}
+  '@capacitor/android@8.4.3':
+    resolution: {integrity: sha512-VICd1+E2u5uPvCb5hseoZr84u7/wi334BqayKyXvSLeqURn/iw7nCFEWK29RQNW2rxiW5l1vTVHQ2K6tAJkpTQ==}
     peerDependencies:
       '@capacitor/core': ^8.4.0
 
@@ -5526,7 +5526,7 @@ snapshots:
     optionalDependencies:
       firebase: 12.16.0
 
-  '@capacitor/android@8.4.1(@capacitor/core@8.4.1)':
+  '@capacitor/android@8.4.3(@capacitor/core@8.4.1)':
     dependencies:
       '@capacitor/core': 8.4.1
 
