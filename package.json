@@ -35,6 +35,8 @@
     "marketing:video": "node scripts/marketing/generate-promo-clip.mjs",
     "promo:film": "node scripts/marketing/film/render.mjs",
     "promo:stills": "node scripts/marketing/film/render.mjs --preview-stills",
+    "promo:apple": "node scripts/marketing/film/render-apple.mjs",
+    "promo:apple:stills": "node scripts/marketing/film/render-apple.mjs --preview-stills",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

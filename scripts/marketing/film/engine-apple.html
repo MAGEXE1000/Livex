@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #000; overflow: hidden; width: 1440px; height: 1080px; }
+    canvas { display: block; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="c" width="1440" height="1080"></canvas>
+<script>
+'use strict';
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const W = 1440, H = 1080;
+const DURATION = 20; // seconds total
+
+// Apple colour palette — nothing cheap, nothing extra
+const C = {
+  black:    '#000000',
+  white:    '#F5F5F7',    // Apple system white
+  gray1:    '#86868B',    // Apple secondary label
+  gray2:    '#3A3A3C',    // Apple tertiary fill
+  gray3:    '#1C1C1E',    // Apple card surface
+  red:      '#E63B2E',    // Livex red
+  yellow:   '#F4C542',    // Livex yellow
+  phoneDark:'#1A1A1C',    // Pixel body
+  phoneEdge:'#2C2C2E',    // Pixel highlight
+};
+
+// ─── EASING ───────────────────────────────────────────────────────────────────
+const ease = {
+  outCubic:    t => 1 - Math.pow(1 - t, 3),
+  outQuart:    t => 1 - Math.pow(1 - t, 4),
+  outQuint:    t => 1 - Math.pow(1 - t, 5),
+  inCubic:     t => t * t * t,
+  inOutCubic:  t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2,
+  // Spring: overshoots 8%, settles at 1.0
+  spring: t => {
+    const o = ease.outCubic(t);
+    return o + 0.08 * Math.sin(t * Math.PI * 3.2) * Math.exp(-t * 5) * (1 - t);
+  },
+};
+
+// Clamp t into [start, end] and return 0→1 progress through that window
+function prog(t, start, end, fn = ease.outCubic) {
+  if (t <= start) return 0;
+  if (t >= end)   return 1;
+  return fn((t - start) / (end - start));
+}
+
+// ─── CANVAS UTILITIES ─────────────────────────────────────────────────────────
+function rr(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// ─── PHONE FRAME ─────────────────────────────────────────────────────────────
+// Google Pixel 9 Pro proportions drawn in canvas 2D
+function drawPhone(ctx, cx, cy, scale, screenFn, { alpha = 1, offsetY = 0 } = {}) {
+  const s = scale;
+  const PW = 264 * s;   // body width
+  const PH = 562 * s;   // body height
+  const BR = 38 * s;    // body corner radius
+  const BL = 8 * s;     // side bezel
+  const BT = 14 * s;    // top bezel
+  const BB = 24 * s;    // bottom chin
+  const SR = 22 * s;    // screen corner radius
+  const SW = PW - BL * 2;
+  const SH = PH - BT - BB;
+
+  ctx.save();
+  ctx.translate(cx, cy + offsetY);
+  ctx.globalAlpha = alpha;
+
+  // ── drop shadow ──
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.75)';
+  ctx.shadowBlur = 80 * s;
+  ctx.shadowOffsetY = 40 * s;
+  rr(ctx, -PW/2, -PH/2, PW, PH, BR);
+  ctx.fillStyle = C.phoneDark;
+  ctx.fill();
+  ctx.restore();
+
+  // ── body ──
+  rr(ctx, -PW/2, -PH/2, PW, PH, BR);
+  const bg = ctx.createLinearGradient(-PW/2, -PH/2, PW/2, PH/2);
+  bg.addColorStop(0,   '#2E2E32');
+  bg.addColorStop(0.45,'#1A1A1C');
+  bg.addColorStop(1,   '#111113');
+  ctx.fillStyle = bg;
+  ctx.fill();
+  // thin edge highlight
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── screen clip + fill ──
+  ctx.save();
+  rr(ctx, -SW/2, -PH/2 + BT, SW, SH, SR);
+  ctx.fillStyle = '#000';
+  ctx.fill();
+  ctx.clip();
+
+  // draw app screenshot inside screen coords
+  ctx.translate(-SW/2, -PH/2 + BT);
+  if (typeof screenFn === 'function') screenFn(ctx, SW, SH);
+  ctx.restore();
+
+  // ── screen specular gloss ──
+  const gloss = ctx.createLinearGradient(-SW/2, -PH/2+BT, SW/2, -PH/2+BT+SH*0.28);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.055)');
+  gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  rr(ctx, -SW/2, -PH/2+BT, SW, SH, SR);
+  ctx.fillStyle = gloss;
+  ctx.fill();
+
+  // ── punch-hole camera ──
+  ctx.beginPath();
+  ctx.arc(0, -PH/2 + BT*0.55, 4.5*s, 0, Math.PI*2);
+  ctx.fillStyle = '#060608';
+  ctx.fill();
+
+  // ── side buttons ──
+  ctx.fillStyle = '#252528';
+  // Volume Up
+  rr(ctx, -PW/2 - 3.5*s, -PH*0.17, 4*s, 26*s, 2*s);
+  ctx.fill();
+  // Volume Down
+  rr(ctx, -PW/2 - 3.5*s, PH*0.04, 4*s, 26*s, 2*s);
+  ctx.fill();
+  // Power/Lock (right)
+  rr(ctx, PW/2 - 0.5*s, -PH*0.07, 4.5*s, 38*s, 2.5*s);
+  ctx.fill();
+
+  // ── Pixel camera bar (back visible at edge — subtle top strip) ──
+  const barH = 6*s;
+  rr(ctx, -PW/2 + 16*s, -PH/2, PW - 32*s, barH, 3*s);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ─── APP SCREEN RENDERERS ─────────────────────────────────────────────────────
+// Each draws into a [0, 0, sw, sh] coordinate space
+
+// App screenshots injected by render.mjs
+let _shots = { hub: null, groovex: null, live: null };
+
+window.injectScreenshots = function(hubDataUrl, groovexDataUrl, liveDataUrl) {
+  const load = (url) => {
+    const img = new Image();
+    img.src = url;
+    return img;
+  };
+  _shots.hub     = load(hubDataUrl);
+  _shots.groovex = load(groovexDataUrl);
+  _shots.live    = load(liveDataUrl);
+};
+
+function drawScreenshot(ctx, sw, sh, img) {
+  if (img && img.complete && img.naturalWidth > 0) {
+    // Fit + crop to fill the screen rect (object-fit: cover)
+    const ir = img.naturalWidth / img.naturalHeight;
+    const sr = sw / sh;
+    let sx = 0, sy = 0, sW = img.naturalWidth, sH = img.naturalHeight;
+    if (ir > sr) {
+      sW = img.naturalHeight * sr;
+      sx = (img.naturalWidth - sW) / 2;
+    } else {
+      sH = img.naturalWidth / sr;
+      sy = (img.naturalHeight - sH) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sW, sH, 0, 0, sw, sh);
+  } else {
+    // Fallback: minimal dark placeholder
+    ctx.fillStyle = '#0D0D0F';
+    ctx.fillRect(0, 0, sw, sh);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fillRect(sw*0.1, sh*0.4, sw*0.8, 2);
+    ctx.fillRect(sw*0.1, sh*0.55, sw*0.6, 2);
+    ctx.fillRect(sw*0.1, sh*0.7, sw*0.7, 2);
+  }
+}
+
+// ─── TYPOGRAPHY HELPERS ───────────────────────────────────────────────────────
+function drawLabel(ctx, text, x, y, {
+  size = 80, weight = 600, color = C.white,
+  alpha = 1, drift = 0, align = 'left',
+  tracking = -0.02,
+} = {}) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px Geist, -apple-system, system-ui`;
+  ctx.textAlign = align;
+  ctx.letterSpacing = `${tracking * size}px`;
+  ctx.fillText(text, x, y + drift);
+  ctx.restore();
+}
+
+// ─── BACKGROUND ───────────────────────────────────────────────────────────────
+function drawBackground(ctx, t) {
+  // Always black — Apple's product video canvas
+  ctx.fillStyle = C.black;
+  ctx.fillRect(0, 0, W, H);
+
+  // Scenes 2-4: very subtle dark vignette to add depth without competing
+  const sceneAlpha = prog(t, 4.0, 5.5) * (1 - prog(t, 16.5, 17.5));
+  if (sceneAlpha > 0) {
+    const vig = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.85);
+    vig.addColorStop(0, 'rgba(6,6,8,0)');
+    vig.addColorStop(1, `rgba(0,0,0,${0.55 * sceneAlpha})`);
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+// ─── SCENE DEFINITIONS ────────────────────────────────────────────────────────
+//
+//  Act 1  0.0 – 4.5s   Brand intro
+//  Act 2  4.5 – 9.5s   Hub Library feature
+//  Act 3  9.5 – 13.5s  Groovex feature
+//  Act 4  13.5 – 17.5s Live mode feature
+//  Act 5  17.5 – 20.0s Outro
+//
+
+// ─── ACT 1: Brand intro ───────────────────────────────────────────────────────
+function drawAct1(ctx, t) {
+  // "Livex." — large, white, centered
+  const titleAlpha  = prog(t, 1.2, 2.8, ease.outQuart) * (1 - prog(t, 3.8, 4.4, ease.inCubic));
+  const titleDrift  = (1 - prog(t, 1.2, 2.8, ease.outQuart)) * 32;
+  const titleScale  = 0.94 + 0.06 * prog(t, 1.2, 2.8, ease.outQuart);
+
+  if (titleAlpha > 0) {
+    ctx.save();
+    ctx.translate(W/2, H/2 - 40);
+    ctx.scale(titleScale, titleScale);
+    drawLabel(ctx, 'Livex.', 0, 0, {
+      size: 108, weight: 700, color: C.white,
+      alpha: titleAlpha, drift: titleDrift, align: 'center',
+      tracking: -0.03,
+    });
+    ctx.restore();
+  }
+
+  // Subtitle: "Next-gen musician studio."
+  const subAlpha = prog(t, 2.8, 4.0, ease.outCubic) * (1 - prog(t, 3.8, 4.4, ease.inCubic));
+  const subDrift = (1 - prog(t, 2.8, 4.0, ease.outCubic)) * 22;
+  drawLabel(ctx, 'Next-gen musician studio.', W/2, H/2 + 68, {
+    size: 28, weight: 300, color: C.gray1,
+    alpha: subAlpha, drift: subDrift, align: 'center',
+    tracking: 0,
+  });
+}
+
+// ─── ACT 2: Hub Library ───────────────────────────────────────────────────────
+function drawAct2(ctx, t) {
+  // Phone: enters at t=4.5 (spring from below), exits at t=9.5
+  const phoneEnterP = prog(t, 4.5, 6.2, ease.spring);
+  const phoneExitP  = prog(t, 16.8, 17.6, ease.inCubic);
+  const phoneAlpha  = phoneEnterP * (1 - phoneExitP);
+  const phoneOffsetY = (1 - prog(t, 4.5, 6.2, ease.outQuart)) * 180;
+  // Subtle ambient float
+  const floatY = Math.sin(t * 0.6) * 5;
+
+  if (phoneAlpha > 0) {
+    // Cross-fade between screens based on scene time
+    const showHub     = 1 - prog(t, 9.0, 9.6);
+    const showGroovex = prog(t, 9.0, 9.6) * (1 - prog(t, 13.0, 13.6));
+    const showLive    = prog(t, 13.0, 13.6);
+
+    // Draw phone with blended screen
+    if (showHub > 0.01) {
+      drawPhone(ctx, W * 0.62, H/2, 1.38,
+        (c, sw, sh) => { ctx.globalAlpha = showHub; drawScreenshot(c, sw, sh, _shots.hub); ctx.globalAlpha = 1; },
+        { alpha: phoneAlpha * showHub, offsetY: phoneOffsetY + floatY });
+    }
+    if (showGroovex > 0.01) {
+      drawPhone(ctx, W * 0.62, H/2, 1.38,
+        (c, sw, sh) => { ctx.globalAlpha = showGroovex; drawScreenshot(c, sw, sh, _shots.groovex); ctx.globalAlpha = 1; },
+        { alpha: phoneAlpha * showGroovex, offsetY: phoneOffsetY + floatY });
+    }
+    if (showLive > 0.01) {
+      drawPhone(ctx, W * 0.62, H/2, 1.38,
+        (c, sw, sh) => { ctx.globalAlpha = showLive; drawScreenshot(c, sw, sh, _shots.live); ctx.globalAlpha = 1; },
+        { alpha: phoneAlpha * showLive, offsetY: phoneOffsetY + floatY });
+    }
+  }
+
+  // Act 2 text: "Everything" + "you need."
+  const a2In    = prog(t, 5.8, 7.2, ease.outQuart);
+  const a2Out   = prog(t, 8.8, 9.4, ease.inCubic);
+  const a2Alpha = a2In * (1 - a2Out);
+  const a2Drift = (1 - a2In) * 28;
+
+  if (a2Alpha > 0.01) {
+    drawLabel(ctx, 'Everything', 108, H/2 - 50, {
+      size: 86, weight: 700, color: C.white,
+      alpha: a2Alpha, drift: a2Drift, tracking: -0.03,
+    });
+    const subIn = prog(t, 6.8, 8.0, ease.outQuart);
+    const subDrift = (1 - subIn) * 22;
+    drawLabel(ctx, 'you need.', 108, H/2 + 58, {
+      size: 86, weight: 700, color: C.gray1,
+      alpha: a2Alpha * subIn, drift: subDrift, tracking: -0.03,
+    });
+  }
+
+  // Act 3 text: "Practice" + "perfectly."
+  const a3In    = prog(t, 9.8, 11.2, ease.outQuart);
+  const a3Out   = prog(t, 12.8, 13.4, ease.inCubic);
+  const a3Alpha = a3In * (1 - a3Out);
+  const a3Drift = (1 - a3In) * 28;
+
+  if (a3Alpha > 0.01) {
+    drawLabel(ctx, 'Practice', 108, H/2 - 50, {
+      size: 86, weight: 700, color: C.white,
+      alpha: a3Alpha, drift: a3Drift, tracking: -0.03,
+    });
+    const s3In = prog(t, 10.8, 12.0, ease.outQuart);
+    drawLabel(ctx, 'perfectly.', 108, H/2 + 58, {
+      size: 86, weight: 700, color: C.gray1,
+      alpha: a3Alpha * s3In, drift: (1 - s3In) * 22, tracking: -0.03,
+    });
+  }
+
+  // Act 4 text: "Perform" + "live."
+  const a4In    = prog(t, 13.8, 15.2, ease.outQuart);
+  const a4Out   = prog(t, 16.8, 17.4, ease.inCubic);
+  const a4Alpha = a4In * (1 - a4Out);
+  const a4Drift = (1 - a4In) * 28;
+
+  if (a4Alpha > 0.01) {
+    drawLabel(ctx, 'Perform', 108, H/2 - 50, {
+      size: 86, weight: 700, color: C.white,
+      alpha: a4Alpha, drift: a4Drift, tracking: -0.03,
+    });
+    const s4In = prog(t, 14.8, 16.0, ease.outQuart);
+    drawLabel(ctx, 'live.', 108, H/2 + 58, {
+      size: 86, weight: 700, color: C.red,
+      alpha: a4Alpha * s4In, drift: (1 - s4In) * 22, tracking: -0.03,
+    });
+  }
+}
+
+// ─── ACT 5: Outro ─────────────────────────────────────────────────────────────
+function drawAct5(ctx, t) {
+  // "Livex." — clean centered resolve
+  const outroA = prog(t, 17.8, 19.0, ease.outQuart) * (1 - prog(t, 19.5, 20.0, ease.inCubic));
+  if (outroA > 0.01) {
+    drawLabel(ctx, 'Livex.', W/2, H/2 - 28, {
+      size: 80, weight: 700, color: C.white,
+      alpha: outroA, drift: (1 - prog(t, 17.8, 19.0, ease.outQuart)) * 24, align: 'center',
+      tracking: -0.03,
+    });
+  }
+
+  // "livex.app"
+  const tagA = prog(t, 18.6, 19.4, ease.outCubic) * (1 - prog(t, 19.5, 20.0, ease.inCubic));
+  if (tagA > 0.01) {
+    drawLabel(ctx, 'livex.app', W/2, H/2 + 38, {
+      size: 22, weight: 400, color: C.gray1,
+      alpha: tagA, drift: (1 - prog(t, 18.6, 19.4, ease.outCubic)) * 14, align: 'center',
+      tracking: 0.02,
+    });
+  }
+}
+
+// ─── DIVIDER LINE (Acts 2-4) ──────────────────────────────────────────────────
+function drawDivider(ctx, t) {
+  const a = prog(t, 5.2, 6.0, ease.outCubic) * (1 - prog(t, 16.8, 17.5, ease.inCubic));
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = a * 0.18;
+  ctx.strokeStyle = C.white;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.05, H / 2 - 130);
+  ctx.lineTo(W * 0.05, H / 2 + 130);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─── FEATURE TAG (small uppercase label, acts 2-4) ────────────────────────────
+function drawTag(ctx, t) {
+  // Tiny uppercase category above headline text
+  let label = '';
+  let alpha = 0;
+
+  if (t >= 5.0 && t < 9.4) {
+    label = 'Hub & Library';
+    alpha = prog(t, 5.8, 7.0, ease.outCubic) * (1 - prog(t, 8.8, 9.4, ease.inCubic));
+  } else if (t >= 9.4 && t < 13.4) {
+    label = 'Groovex';
+    alpha = prog(t, 9.8, 11.0, ease.outCubic) * (1 - prog(t, 12.8, 13.4, ease.inCubic));
+  } else if (t >= 13.4 && t < 17.5) {
+    label = 'Live Mode';
+    alpha = prog(t, 13.8, 15.0, ease.outCubic) * (1 - prog(t, 16.8, 17.4, ease.inCubic));
+  }
+
+  if (alpha > 0.01 && label) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = C.red;
+    ctx.font = `500 13px Geist, system-ui`;
+    ctx.letterSpacing = '0.12em';
+    ctx.fillText(label.toUpperCase(), 108, H/2 - 102);
+    ctx.restore();
+  }
+}
+
+// ─── MAIN seek() ──────────────────────────────────────────────────────────────
+window.seek = function(t, _fi) {
+  t = Math.max(0, Math.min(DURATION, t));
+  const ctx = document.getElementById('c').getContext('2d');
+
+  drawBackground(ctx, t);
+  drawAct1(ctx, t);
+  drawAct2(ctx, t);   // phone + feature scenes run inside act2
+  drawDivider(ctx, t);
+  drawTag(ctx, t);
+  drawAct5(ctx, t);
+};
+
+// ─── BLUR ACCUMULATOR ─────────────────────────────────────────────────────────
+let _blurCanvas = null;
+
+window.renderBlurredFrame = function(frameIndex, fps, duration) {
+  const SUBS = 4;
+  const dt = 1 / fps;
+  const t0 = (frameIndex / fps);
+
+  if (!_blurCanvas) {
+    _blurCanvas = document.createElement('canvas');
+    _blurCanvas.width  = W;
+    _blurCanvas.height = H;
+  }
+  const bc  = _blurCanvas.getContext('2d');
+  const src = document.getElementById('c');
+
+  bc.clearRect(0, 0, W, H);
+  for (let s = 0; s < SUBS; s++) {
+    const st = Math.min(duration, t0 + (s / SUBS) * dt);
+    window.seek(st, frameIndex);
+    bc.globalAlpha = 1 / SUBS;
+    bc.drawImage(src, 0, 0);
+  }
+
+  return _blurCanvas.toDataURL('image/jpeg', 0.94);
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.initEngine = function() {
+  // Pre-warm font
+  const ctx = document.getElementById('c').getContext('2d');
+  ctx.font = '700 108px Geist, system-ui';
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  ctx.fillText('Livex.', 0, 0);
+  ctx.font = '300 28px Geist, system-ui';
+  ctx.fillText('Next-gen', 0, 0);
+  return true;
+};
+
+window.getDuration = () => DURATION;
+</script>
+</body>
+</html>
