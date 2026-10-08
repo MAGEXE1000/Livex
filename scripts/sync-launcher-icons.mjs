@@ -354,8 +354,8 @@ async function runGenerate() {
           .png()
           .toFile(t.absPath);
       } else if (t.isForeground) {
-        // Safe zone: 66dp / 108dp = 0.61111
-        const safeDim = Math.round(t.width * (66 / 108));
+        // Safe zone: 48dp on 108dp canvas (66% of the 72dp visible masked region, 27.8% outer padding)
+        const safeDim = Math.round(t.width * (48 / 108));
         const meta = await sharp(t.source).metadata();
         const aspect = (meta.width || 1) / (meta.height || 1);
         let drawW, drawH;
@@ -414,7 +414,7 @@ async function runGenerate() {
       '        $g.DrawImage($src, 0, 0, $w, $h)',
       '        $path.Dispose()',
       '    } elseif ($foreground) {',
-      '        $safeDim = [int]($w * (66.0 / 108.0))',
+      '        $safeDim = [int]($w * (48.0 / 108.0))',
       '        $aspect = $src.Width / [double]$src.Height',
       '        if ($aspect -ge 1.0) { $drawW = $safeDim; $drawH = [int]($safeDim / $aspect) } else { $drawH = $safeDim; $drawW = [int]($safeDim * $aspect) }',
       '        $offX = [int](($w - $drawW) / 2)',

@@ -1,6 +1,6 @@
 {
   "manifestVersion": "1.0.0",
-  "generatedAt": "2026-09-14T18:29:15.746Z",
+  "generatedAt": "2026-10-08T17:02:51.805Z",
   "generator": "sharp v0.35.4",
   "masterBadge": {
     "path": "packages/ui-shared/src/assets/livex-logo.png",
@@ -16,19 +16,19 @@
   },
   "fileHashes": {
     "apps/studio-android/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": "ffe466d2d23be5394cd7cff3e40169d8d6357739c8d85850c3c7f50e7ef35696",
-    "apps/studio-android/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": "dbef68358ca2e0bc807c630b268b8935af27bfb593ff674db541de200e310b99",
+    "apps/studio-android/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": "f8be2b466cf38057988f637aa03a87e354084f7242293cd1bcc4555ccbd818a2",
     "apps/studio-android/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": "0b6e5f6df0868888dc00de3006ea18865977c0a6222d16e65d4ebc32cca616df",
-    "apps/studio-android/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": "be24e6aec1498150eb24ccaa1909eff12e0907037fc12f88cc083581c425a718",
+    "apps/studio-android/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": "8671305bd2041dc69370efdc509ac057e59fd4bddbd2c2c0d8b7344ac61f5a3d",
     "apps/studio-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": "6f9e921a16a5e4502406f133792658bef621fe1b52e6dd6e8c4324ac6de4259c",
-    "apps/studio-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": "0b25554066d195ed04adf49fb1063d1884afb5b6eace1fc375c645f4375f4b78",
+    "apps/studio-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": "4f1f62076098e3052426b6484fde64d7bb004d3c8bbb369ba4f5ffbfd6601659",
     "apps/studio-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": "e4c3dc4d6c64e732bbce76238ec5af2154a6e68492ed5c8e222d8a260974c474",
-    "apps/studio-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": "c26830dee4184e416fdaf2ada6cad104902d498d6616127c5aededc0961ee234",
+    "apps/studio-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": "481b5f047e4f5088e5d69c3898134c59bf53743494d96f7b980572c3eca7e0e7",
     "apps/studio-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": "ad173077003cfc5f4bdf9d0e118c841ce142228c435c34f91e246d8788265d12",
-    "apps/studio-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": "288585f0a149994c619ed017531c75ddc02a63aa35dd9b185c4d2a299af4f1df",
+    "apps/studio-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": "da4ad46e113a9d769504a8f60aa484ba1390ee63be77acb054a014ba14e6e466",
     "apps/studio-android/public/icon-192.png": "ad173077003cfc5f4bdf9d0e118c841ce142228c435c34f91e246d8788265d12",
     "apps/studio-android/public/icon-512.png": "d91a7fb62be0c270706d00a852be59686ce3551c0f3efa078425dd3b3bff62c1",
     "apps/studio-android/public/studio-icon-1024.png": "6dd92eef2d33214262c9d97b68c7703dd052950d133c864fe17ed942562eaa21",
     "apps/studio-android/public/studio-icon-android.png": "d91a7fb62be0c270706d00a852be59686ce3551c0f3efa078425dd3b3bff62c1",
-    "apps/studio-android/public/studio-icon-foreground.png": "288585f0a149994c619ed017531c75ddc02a63aa35dd9b185c4d2a299af4f1df"
+    "apps/studio-android/public/studio-icon-foreground.png": "da4ad46e113a9d769504a8f60aa484ba1390ee63be77acb054a014ba14e6e466"
   }
 }
