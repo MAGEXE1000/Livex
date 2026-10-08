@@ -58,6 +58,7 @@ import {
 import { DeferredSkeleton } from '../loading/SmartLoading';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
 import { useAnimationSpeed } from '../../shared/animation';
+import { GuestWaitingRoomView } from '../../features/sync/GuestWaitingRoomView';
 import { SubAppScaffold, ScreenScaffold } from './StudioLayoutSystem';
 import { SharedNavigationContainer } from '../../navigation/SharedNavigationContainer';
 import { ApplicationTransitionEngine, resetIntroSignal } from '../../shared/animation';
@@ -589,6 +590,7 @@ export function SharedAppShell({
       </ErrorBoundary>
       <Toaster />
       <BandLiveSyncToast />
+      <GuestWaitingRoomView />
       {renderLaunchOverlay?.()}
       <AnimatePresence>
         {!isWebDesktop && launchingApp && launchingApp !== 'hub' && (

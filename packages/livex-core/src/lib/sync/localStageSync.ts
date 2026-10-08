@@ -3,17 +3,25 @@
  * Operates offline via local BroadcastChannel / P2P without requiring external cloud servers.
  */
 
+export type StageRoomStatus = 'WAITING_FOR_SONG' | 'IN_SESSION';
+
 export interface LocalStageRoom {
   roomId: string; // e.g. "LX-408"
   hostName: string;
+  status: StageRoomStatus;
   activeSongId: string | null;
   activeSongTitle: string;
+  activeSetlistId?: string | null;
+  activeSetlistTitle?: string;
+  activeTrackIndex?: number;
   activeBar: number;
   activeBeat: number;
+  activeLineIndex?: number;
   isPlaying: boolean;
   bpm: number;
   timeSignature: [number, number];
   serverTimestamp: number;
+  songPayload?: any;
 }
 
 export interface LocalStagePeer {
@@ -23,7 +31,41 @@ export interface LocalStagePeer {
   lastPingMs?: number;
 }
 
+export type StageSyncMessageType =
+  | 'ROOM_STATE'
+  | 'SONG_SELECTED'
+  | 'SETLIST_TRACK_CHANGE'
+  | 'PLAY'
+  | 'PAUSE'
+  | 'SEEK'
+  | 'BEAT_TICK';
+
+export interface StageSyncPayload {
+  songId?: string;
+  songTitle?: string;
+  songPayload?: any;
+  setlistId?: string;
+  setlistTitle?: string;
+  trackIndex?: number;
+  currentBar?: number;
+  currentBeat?: number;
+  bpm?: number;
+  isPlaying?: boolean;
+  userOffsetMs?: number;
+  lineIndex?: number;
+  status?: StageRoomStatus;
+}
+
+export interface StageSyncMessage {
+  type: StageSyncMessageType;
+  roomId: string;
+  senderId: string;
+  timestamp: number;
+  payload: StageSyncPayload;
+}
+
 export type LocalStageSyncMessage =
+  | StageSyncMessage
   | { type: 'ROOM_ANNOUNCE'; room: LocalStageRoom }
   | { type: 'ROOM_HEARTBEAT'; room: LocalStageRoom }
   | { type: 'STATE_CHANGE'; room: LocalStageRoom }

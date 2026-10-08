@@ -141,5 +141,82 @@ describe('Local Stage Sync Room Engine', () => {
       expect(state.lastBeat?.bar).toBe(4);
       expect(state.lastBeat?.beat).toBe(2);
     });
+
+    it('initializes room in WAITING_FOR_SONG status when hosted without active song', () => {
+      const store = useLocalStageSyncStore.getState();
+      store.startHosting({ hostName: 'Leader' });
+
+      const state = useLocalStageSyncStore.getState();
+      expect(state.room?.status).toBe('WAITING_FOR_SONG');
+      expect(state.room?.activeSongId).toBeNull();
+    });
+
+    it('selectSong transitions room status to IN_SESSION and records lastAction', () => {
+      const store = useLocalStageSyncStore.getState();
+      store.startHosting({ hostName: 'Leader' });
+      expect(useLocalStageSyncStore.getState().room?.status).toBe('WAITING_FOR_SONG');
+
+      const mockSongPayload = { id: 'song-venezia', name: 'Venezia', bpm: 172, chords: [] };
+      store.selectSong('song-venezia', 'Venezia', 172, mockSongPayload);
+
+      const state = useLocalStageSyncStore.getState();
+      expect(state.room?.status).toBe('IN_SESSION');
+      expect(state.room?.activeSongId).toBe('song-venezia');
+      expect(state.room?.activeSongTitle).toBe('Venezia');
+      expect(state.room?.bpm).toBe(172);
+      expect(state.room?.songPayload).toEqual(mockSongPayload);
+      expect(state.lastAction?.type).toBe('SONG_SELECTED');
+      expect(state.lastAction?.payload.songId).toBe('song-venezia');
+    });
+
+    it('changeSetlistTrack updates track queue index and setlist details', () => {
+      const store = useLocalStageSyncStore.getState();
+      store.startHosting({ hostName: 'Leader' });
+
+      const mockSongPayload = { id: 'song-2', name: 'Track 2', bpm: 130, chords: [] };
+      store.changeSetlistTrack('setlist-live-1', 'Tour 2026', 1, 'song-2', 'Track 2', 130, mockSongPayload);
+
+      const state = useLocalStageSyncStore.getState();
+      expect(state.room?.status).toBe('IN_SESSION');
+      expect(state.room?.activeSetlistId).toBe('setlist-live-1');
+      expect(state.room?.activeSetlistTitle).toBe('Tour 2026');
+      expect(state.room?.activeTrackIndex).toBe(1);
+      expect(state.room?.activeSongId).toBe('song-2');
+      expect(state.room?.activeSongTitle).toBe('Track 2');
+      expect(state.lastAction?.type).toBe('SETLIST_TRACK_CHANGE');
+      expect(state.lastAction?.payload.trackIndex).toBe(1);
+    });
+
+    it('broadcasts play, pause, and seek commands updating room and lastAction', () => {
+      const store = useLocalStageSyncStore.getState();
+      store.startHosting({ hostName: 'Leader', songTitle: 'Venezia', bpm: 172 });
+
+      // Play
+      store.broadcastPlay(1, 1, 0);
+      let state = useLocalStageSyncStore.getState();
+      expect(state.room?.isPlaying).toBe(true);
+      expect(state.room?.activeBar).toBe(1);
+      expect(state.room?.activeBeat).toBe(1);
+      expect(state.room?.activeLineIndex).toBe(0);
+      expect(state.lastAction?.type).toBe('PLAY');
+
+      // Seek
+      store.broadcastSeek(5, 1, 2);
+      state = useLocalStageSyncStore.getState();
+      expect(state.room?.activeBar).toBe(5);
+      expect(state.room?.activeBeat).toBe(1);
+      expect(state.room?.activeLineIndex).toBe(2);
+      expect(state.lastAction?.type).toBe('SEEK');
+      expect(state.lastAction?.payload.currentBar).toBe(5);
+      expect(state.lastAction?.payload.trackIndex).toBe(2);
+
+      // Pause
+      store.broadcastPause(5, 2, 2);
+      state = useLocalStageSyncStore.getState();
+      expect(state.room?.isPlaying).toBe(false);
+      expect(state.room?.activeBar).toBe(5);
+      expect(state.room?.activeBeat).toBe(2);
+      expect(state.lastAction?.type).toBe('PAUSE');
+    });
   });
 });

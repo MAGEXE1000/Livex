@@ -1267,6 +1267,12 @@ export function useLiveModeState(
       setAutoPlay(false);
       liveMetronomeRef.current?.stop();
       setActiveMetronomeBeat(-1);
+      try {
+        const stageSync = useLocalStageSyncStore.getState();
+        if (stageSync.role === 'host') {
+          stageSync.broadcastPause({ currentBar: currentBarRef.current, currentBeat: currentBeatRef.current });
+        }
+      } catch (_) {}
       return;
     }
 
@@ -1278,6 +1284,12 @@ export function useLiveModeState(
     if (countdownMode === 'off' || isMidSong) {
       if (engine) engine.setCountIn(false);
       setAutoPlay(true);
+      try {
+        const stageSync = useLocalStageSyncStore.getState();
+        if (stageSync.role === 'host') {
+          stageSync.broadcastPlay({ currentBar: currentBarRef.current, currentBeat: currentBeatRef.current, bpm: effectiveBpm });
+        }
+      } catch (_) {}
       return;
     }
 
@@ -1791,6 +1803,13 @@ export function useLiveModeState(
         }
         setSeekToken((t) => t + 1);
 
+        try {
+          const stageSync = useLocalStageSyncStore.getState();
+          if (stageSync.role === 'host') {
+            stageSync.broadcastSeek({ currentBar: 1, currentBeat: 1, lineIndex: idx });
+          }
+        } catch (_) {}
+
         if (isBroadcasting) {
           emitLiveSync('SEEK', { currentLineIdx: idx, currentBeat: 0, currentBar: 1 });
         }
@@ -2018,6 +2037,16 @@ export function useLiveModeState(
             engine.setMuted(!metronomeEnabledRef.current);
             engine.setCountInVoice(false);
           }
+          try {
+            const stageSync = useLocalStageSyncStore.getState();
+            if (stageSync.role === 'host') {
+              stageSync.broadcastPlay({
+                currentBar: 1,
+                currentBeat: 1,
+                bpm: speedRef.current || 120,
+              });
+            }
+          } catch (_) {}
         }
       }
 
@@ -2463,6 +2492,84 @@ export function useLiveModeState(
     setActiveLiveSession,
     emitLiveSync,
   ]);
+
+  // ── Local Stage Room Follower Synchronization ─────────────────────
+  useEffect(() => {
+    const handleStageSyncTransport = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+      const stageRole = useLocalStageSyncStore.getState().role;
+      if (stageRole !== 'follower') return;
+
+      if (detail.action === 'PLAY') {
+        if (!autoPlayRef.current) {
+          setAutoPlayState(true);
+        }
+        if (detail.bpm && detail.bpm !== speedRef.current) {
+          setSpeedState(detail.bpm);
+          liveMetronomeRef.current?.setBpm(detail.bpm);
+        }
+        if (typeof detail.currentBar === 'number') {
+          setCurrentBar(detail.currentBar);
+          currentBarRef.current = detail.currentBar;
+        }
+        if (typeof detail.currentBeat === 'number') {
+          setCurrentBeat(detail.currentBeat);
+          currentBeatRef.current = detail.currentBeat;
+          setActiveMetronomeBeat(detail.currentBeat - 1);
+        }
+      } else if (detail.action === 'PAUSE') {
+        if (autoPlayRef.current) {
+          setAutoPlayState(false);
+          liveMetronomeRef.current?.stop();
+          setActiveMetronomeBeat(-1);
+        }
+        if (typeof detail.currentBar === 'number') {
+          setCurrentBar(detail.currentBar);
+          currentBarRef.current = detail.currentBar;
+        }
+        if (typeof detail.currentBeat === 'number') {
+          setCurrentBeat(detail.currentBeat);
+          currentBeatRef.current = detail.currentBeat;
+        }
+      } else if (detail.action === 'SEEK') {
+        if (typeof detail.lineIndex === 'number') {
+          goToLine(detail.lineIndex);
+        }
+      }
+    };
+
+    const handleSetlistTrackChange = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+      const stageRole = useLocalStageSyncStore.getState().role;
+      if (stageRole !== 'follower') return;
+
+      if (setlistContext && typeof detail.trackIndex === 'number') {
+        setlistContext.onSelectIndex(detail.trackIndex);
+      }
+    };
+
+    window.addEventListener('livex:stage-sync-transport', handleStageSyncTransport);
+    window.addEventListener('livex:stage-sync-setlist-track-change', handleSetlistTrackChange);
+
+    // Also subscribe directly to lastBeat from useLocalStageSyncStore for sub-15ms beat dots advance
+    const unsubSync = useLocalStageSyncStore.subscribe((state) => {
+      if (state.role !== 'follower' || !state.lastBeat) return;
+      const { bar, beat } = state.lastBeat;
+      setCurrentBar(bar);
+      currentBarRef.current = bar;
+      setCurrentBeat(beat);
+      currentBeatRef.current = beat;
+      setActiveMetronomeBeat(beat - 1);
+    });
+
+    return () => {
+      window.removeEventListener('livex:stage-sync-transport', handleStageSyncTransport);
+      window.removeEventListener('livex:stage-sync-setlist-track-change', handleSetlistTrackChange);
+      unsubSync();
+    };
+  }, [goToLine, setlistContext]);
 
   // ── Animated Chord Phase Transitions (Chords Mode) ──────────────
   useEffect(() => {

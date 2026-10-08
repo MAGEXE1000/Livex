@@ -12,6 +12,7 @@ import {
   useApplicationTransitionStore,
   useChordStore,
   useBandStore,
+  useLocalStageSyncStore,
 } from '@workspace/livex-core';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
@@ -36,6 +37,8 @@ if (
   window.useChordStore = useChordStore;
   // @ts-ignore
   window.useBandStore = useBandStore;
+  // @ts-ignore
+  window.useLocalStageSyncStore = useLocalStageSyncStore;
 }
 const LazyEmergencyOverlay = import.meta.env.DEV
   ? lazy(() => import('./EmergencyDebugOverlay'))

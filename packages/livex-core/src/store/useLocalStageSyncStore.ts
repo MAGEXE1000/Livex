@@ -3,6 +3,9 @@ import {
   type LocalStageRoom,
   type LocalStagePeer,
   type LocalStageSyncMessage,
+  type StageSyncMessage,
+  type StageSyncMessageType,
+  type StageSyncPayload,
   generateStageRoomCode,
   calculateEffectiveBeatTime,
   clampOffsetMs,
@@ -23,6 +26,11 @@ export interface LocalStageSyncState {
     effectiveTime: number;
     localReceivedTime: number;
   } | null;
+  lastAction: {
+    type: StageSyncMessageType;
+    timestamp: number;
+    payload: StageSyncPayload;
+  } | null;
   isCalibrating: boolean;
 
   // Actions
@@ -32,9 +40,46 @@ export interface LocalStageSyncState {
     songTitle?: string;
     bpm?: number;
     timeSignature?: [number, number];
+    songPayload?: any;
+    setlistId?: string;
+    setlistTitle?: string;
   }) => string;
   joinRoom: (roomId: string, peerName?: string) => boolean;
   leaveRoom: () => void;
+  selectSong: (songId: string, songTitle: string, bpm?: number, songPayload?: any) => void;
+  changeSetlistTrack: (
+    params:
+      | {
+          setlistId?: string;
+          setlistTitle?: string;
+          trackIndex: number;
+          songId: string;
+          songTitle: string;
+          bpm?: number;
+          songPayload?: any;
+        }
+      | string,
+    setlistTitle?: string,
+    trackIndex?: number,
+    songId?: string,
+    songTitle?: string,
+    bpm?: number,
+    songPayload?: any
+  ) => void;
+  broadcastPlay: (
+    paramsOrBar: { currentBar: number; currentBeat: number; bpm?: number } | number,
+    beat?: number,
+    bpm?: number
+  ) => void;
+  broadcastPause: (
+    paramsOrBar: { currentBar: number; currentBeat: number } | number,
+    beat?: number
+  ) => void;
+  broadcastSeek: (
+    paramsOrBar: { currentBar: number; currentBeat: number; lineIndex?: number } | number,
+    beat?: number,
+    lineIndex?: number
+  ) => void;
   updatePlayback: (updates: Partial<LocalStageRoom>) => void;
   broadcastBeat: (bar: number, beat: number) => void;
   setClientOffset: (offsetMs: number) => void;
@@ -61,6 +106,7 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
   clientOffsetMs: getStoredOffsetMs(),
   estimatedLatencyMs: 8, // ~8ms typical local WiFi baseline
   lastBeat: null,
+  lastAction: null,
   isCalibrating: false,
 
   startHosting: (params = {}) => {
@@ -70,17 +116,24 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
     const roomId = generateStageRoomCode();
     const hostName = params.hostName || 'Stage Host';
     const now = Date.now();
+    const hasSong = !!params.songId;
 
     const newRoom: LocalStageRoom = {
       roomId,
       hostName,
+      status: hasSong ? 'IN_SESSION' : 'WAITING_FOR_SONG',
       activeSongId: params.songId || null,
-      activeSongTitle: params.songTitle || 'Current Song',
+      activeSongTitle: params.songTitle || (hasSong ? 'Current Song' : ''),
+      activeSetlistId: params.setlistId || null,
+      activeSetlistTitle: params.setlistTitle || '',
+      activeTrackIndex: 0,
       activeBar: 1,
       activeBeat: 1,
+      activeLineIndex: 0,
       isPlaying: false,
       bpm: params.bpm || 120,
       timeSignature: params.timeSignature || [4, 4],
+      songPayload: params.songPayload,
       serverTimestamp: now,
     };
 
@@ -88,7 +141,7 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
     if (ch) {
       _activeChannel = ch;
       ch.onmessage = (event) => {
-        const msg = event.data as LocalStageSyncMessage;
+        const msg = event.data as any;
         if (!msg || typeof msg !== 'object') return;
 
         if (msg.type === 'PEER_JOIN') {
@@ -101,10 +154,30 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
               ],
             });
           }
+          const activeRoom = get().room || newRoom;
           // Respond with state immediately
           ch.postMessage({
+            type: 'ROOM_STATE',
+            roomId,
+            senderId: hostName,
+            timestamp: Date.now(),
+            payload: {
+              songId: activeRoom.activeSongId || undefined,
+              songTitle: activeRoom.activeSongTitle || undefined,
+              status: activeRoom.status,
+              bpm: activeRoom.bpm,
+              currentBar: activeRoom.activeBar,
+              currentBeat: activeRoom.activeBeat,
+              isPlaying: activeRoom.isPlaying,
+              songPayload: activeRoom.songPayload,
+              setlistId: activeRoom.activeSetlistId || undefined,
+              setlistTitle: activeRoom.activeSetlistTitle || undefined,
+              trackIndex: activeRoom.activeTrackIndex,
+            },
+          } as StageSyncMessage);
+          ch.postMessage({
             type: 'ROOM_ANNOUNCE',
-            room: get().room || newRoom,
+            room: activeRoom,
           } as LocalStageSyncMessage);
         } else if (msg.type === 'PEER_LEAVE') {
           set({ peers: get().peers.filter((p) => p.peerId !== msg.peerId) });
@@ -139,6 +212,8 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
       role: 'host',
       room: newRoom,
       peers: [],
+      lastBeat: null,
+      lastAction: null,
     });
 
     return roomId;
@@ -155,15 +230,142 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
     const peerId = `peer-${Math.random().toString(36).substring(2, 8)}`;
 
     ch.onmessage = (event) => {
-      const msg = event.data as LocalStageSyncMessage;
+      const msg = event.data as any;
       if (!msg || typeof msg !== 'object') return;
 
       if (msg.type === 'ROOM_ANNOUNCE' || msg.type === 'ROOM_HEARTBEAT' || msg.type === 'STATE_CHANGE') {
-        set({ room: msg.room });
-      } else if (msg.type === 'BEAT_TICK') {
-        const now = Date.now();
-        const effective = calculateEffectiveBeatTime(
-          msg.hostTimestamp,
+        const incomingRoom = msg.room as LocalStageRoom;
+        const currentRoom = get().room;
+        const hasSong = !!incomingRoom.activeSongId;
+        const status = incomingRoom.status || (hasSong ? 'IN_SESSION' : 'WAITING_FOR_SONG');
+        set({ room: { ...incomingRoom, status } });
+
+        // If newly received an active song and we weren't in live mode, trigger auto-routing
+        if (incomingRoom.activeSongId && (!currentRoom || currentRoom.activeSongId !== incomingRoom.activeSongId)) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('livex:stage-sync-song-selected', {
+                detail: {
+                  songId: incomingRoom.activeSongId,
+                  songTitle: incomingRoom.activeSongTitle,
+                  bpm: incomingRoom.bpm,
+                  songPayload: incomingRoom.songPayload,
+                  status: 'IN_SESSION',
+                },
+              })
+            );
+          }
+        }
+      } else if (msg.type === 'ROOM_STATE') {
+        const payload = msg.payload as StageSyncPayload;
+        const hasSong = !!payload.songId;
+        const status = payload.status || (hasSong ? 'IN_SESSION' : 'WAITING_FOR_SONG');
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                status,
+                activeSongId: payload.songId || null,
+                activeSongTitle: payload.songTitle || '',
+                activeSetlistId: payload.setlistId || null,
+                activeSetlistTitle: payload.setlistTitle || '',
+                activeTrackIndex: payload.trackIndex ?? 0,
+                bpm: payload.bpm || s.room.bpm,
+                activeBar: payload.currentBar || s.room.activeBar,
+                activeBeat: payload.currentBeat || s.room.activeBeat,
+                isPlaying: payload.isPlaying ?? s.room.isPlaying,
+                songPayload: payload.songPayload || s.room.songPayload,
+                serverTimestamp: msg.timestamp || Date.now(),
+              }
+            : null,
+          lastAction: {
+            type: 'ROOM_STATE',
+            timestamp: msg.timestamp || Date.now(),
+            payload,
+          },
+        }));
+
+        if (payload.songId) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('livex:stage-sync-song-selected', {
+                detail: payload,
+              })
+            );
+          }
+        }
+      } else if (msg.type === 'SONG_SELECTED') {
+        const payload = msg.payload as StageSyncPayload;
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                status: 'IN_SESSION',
+                activeSongId: payload.songId || null,
+                activeSongTitle: payload.songTitle || '',
+                bpm: payload.bpm || s.room.bpm || 120,
+                songPayload: payload.songPayload || s.room.songPayload,
+                isPlaying: false,
+                activeBar: 1,
+                activeBeat: 1,
+                activeLineIndex: 0,
+                serverTimestamp: msg.timestamp,
+              }
+            : null,
+          lastAction: {
+            type: 'SONG_SELECTED',
+            timestamp: msg.timestamp,
+            payload,
+          },
+        }));
+
+        // Fire auto-navigation event
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('livex:stage-sync-song-selected', {
+              detail: payload,
+            })
+          );
+        }
+      } else if (msg.type === 'SETLIST_TRACK_CHANGE') {
+        const payload = msg.payload as StageSyncPayload;
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                status: 'IN_SESSION',
+                activeSetlistId: payload.setlistId || null,
+                activeSetlistTitle: payload.setlistTitle || '',
+                activeTrackIndex: payload.trackIndex ?? 0,
+                activeSongId: payload.songId || null,
+                activeSongTitle: payload.songTitle || '',
+                bpm: payload.bpm || s.room.bpm || 120,
+                songPayload: payload.songPayload || s.room.songPayload,
+                isPlaying: false,
+                activeBar: 1,
+                activeBeat: 1,
+                activeLineIndex: 0,
+                serverTimestamp: msg.timestamp,
+              }
+            : null,
+          lastAction: {
+            type: 'SETLIST_TRACK_CHANGE',
+            timestamp: msg.timestamp,
+            payload,
+          },
+        }));
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('livex:stage-sync-setlist-track-change', {
+              detail: payload,
+            })
+          );
+        }
+      } else if (msg.type === 'PLAY') {
+        const payload = msg.payload as StageSyncPayload;
+        const effectiveTime = calculateEffectiveBeatTime(
+          msg.timestamp,
           get().estimatedLatencyMs,
           get().clientOffsetMs
         );
@@ -171,15 +373,113 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
           room: s.room
             ? {
                 ...s.room,
-                activeBar: msg.bar,
-                activeBeat: msg.beat,
-                serverTimestamp: msg.hostTimestamp,
+                isPlaying: true,
+                activeBar: payload.currentBar || s.room.activeBar || 1,
+                activeBeat: payload.currentBeat || s.room.activeBeat || 1,
+                bpm: payload.bpm || s.room.bpm,
+                serverTimestamp: msg.timestamp,
+              }
+            : null,
+          lastAction: {
+            type: 'PLAY',
+            timestamp: msg.timestamp,
+            payload,
+          },
+        }));
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('livex:stage-sync-transport', {
+              detail: {
+                action: 'PLAY',
+                effectivePlaybackTime: effectiveTime,
+                ...payload,
+              },
+            })
+          );
+        }
+      } else if (msg.type === 'PAUSE') {
+        const payload = msg.payload as StageSyncPayload;
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                isPlaying: false,
+                activeBar: payload.currentBar || s.room.activeBar || 1,
+                activeBeat: payload.currentBeat || s.room.activeBeat || 1,
+                serverTimestamp: msg.timestamp,
+              }
+            : null,
+          lastAction: {
+            type: 'PAUSE',
+            timestamp: msg.timestamp,
+            payload,
+          },
+        }));
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('livex:stage-sync-transport', {
+              detail: {
+                action: 'PAUSE',
+                ...payload,
+              },
+            })
+          );
+        }
+      } else if (msg.type === 'SEEK') {
+        const payload = msg.payload as StageSyncPayload;
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                activeBar: payload.currentBar || 1,
+                activeBeat: payload.currentBeat || 1,
+                activeLineIndex: payload.lineIndex,
+                serverTimestamp: msg.timestamp,
+              }
+            : null,
+          lastAction: {
+            type: 'SEEK',
+            timestamp: msg.timestamp,
+            payload,
+          },
+        }));
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('livex:stage-sync-transport', {
+              detail: {
+                action: 'SEEK',
+                ...payload,
+              },
+            })
+          );
+        }
+      } else if (msg.type === 'BEAT_TICK') {
+        const now = Date.now();
+        const hostTimestamp =
+          msg.payload?.timestamp || msg.timestamp || msg.hostTimestamp || now;
+        const bar = msg.payload?.currentBar || msg.bar || 1;
+        const beat = msg.payload?.currentBeat || msg.beat || 1;
+        const effective = calculateEffectiveBeatTime(
+          hostTimestamp,
+          get().estimatedLatencyMs,
+          get().clientOffsetMs
+        );
+        set((s) => ({
+          room: s.room
+            ? {
+                ...s.room,
+                activeBar: bar,
+                activeBeat: beat,
+                serverTimestamp: hostTimestamp,
               }
             : null,
           lastBeat: {
-            bar: msg.bar,
-            beat: msg.beat,
-            hostTimestamp: msg.hostTimestamp,
+            bar,
+            beat,
+            hostTimestamp,
             effectiveTime: effective,
             localReceivedTime: now,
           },
@@ -227,8 +527,9 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
       room: {
         roomId: cleanRoomId,
         hostName: 'Connecting...',
+        status: 'WAITING_FOR_SONG',
         activeSongId: null,
-        activeSongTitle: 'Connecting...',
+        activeSongTitle: '',
         activeBar: 1,
         activeBeat: 1,
         isPlaying: false,
@@ -236,6 +537,8 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
         timeSignature: [4, 4],
         serverTimestamp: Date.now(),
       },
+      lastBeat: null,
+      lastAction: null,
     });
 
     return true;
@@ -276,7 +579,267 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
       room: null,
       peers: [],
       lastBeat: null,
+      lastAction: null,
     });
+  },
+
+  selectSong: (songId: string, songTitle: string, bpm = 120, songPayload?: any) => {
+    const currentRoom = get().room;
+    if (!currentRoom || get().role !== 'host') return;
+    const now = Date.now();
+    const nextRoom: LocalStageRoom = {
+      ...currentRoom,
+      status: 'IN_SESSION',
+      activeSongId: songId,
+      activeSongTitle: songTitle,
+      activeBar: 1,
+      activeBeat: 1,
+      activeLineIndex: 0,
+      isPlaying: false,
+      bpm,
+      songPayload,
+      serverTimestamp: now,
+    };
+    set({
+      room: nextRoom,
+      lastAction: {
+        type: 'SONG_SELECTED',
+        timestamp: now,
+        payload: {
+          songId,
+          songTitle,
+          bpm,
+          songPayload,
+          status: 'IN_SESSION',
+        },
+      },
+    });
+    if (_activeChannel) {
+      const msg: StageSyncMessage = {
+        type: 'SONG_SELECTED',
+        roomId: currentRoom.roomId,
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          songId,
+          songTitle,
+          bpm,
+          songPayload,
+          status: 'IN_SESSION',
+        },
+      };
+      _activeChannel.postMessage(msg);
+      _activeChannel.postMessage({ type: 'STATE_CHANGE', room: nextRoom } as LocalStageSyncMessage);
+    }
+  },
+
+  changeSetlistTrack: (
+    paramsOrSetlistId,
+    setlistTitleArg,
+    trackIndexArg,
+    songIdArg,
+    songTitleArg,
+    bpmArg,
+    songPayloadArg
+  ) => {
+    const currentRoom = get().room;
+    if (!currentRoom || get().role !== 'host') return;
+    const now = Date.now();
+    const p =
+      typeof paramsOrSetlistId === 'object'
+        ? paramsOrSetlistId
+        : {
+            setlistId: paramsOrSetlistId,
+            setlistTitle: setlistTitleArg,
+            trackIndex: trackIndexArg ?? 0,
+            songId: songIdArg || '',
+            songTitle: songTitleArg || '',
+            bpm: bpmArg,
+            songPayload: songPayloadArg,
+          };
+    const nextRoom: LocalStageRoom = {
+      ...currentRoom,
+      status: 'IN_SESSION',
+      activeSetlistId: p.setlistId || null,
+      activeSetlistTitle: p.setlistTitle || '',
+      activeTrackIndex: p.trackIndex,
+      activeSongId: p.songId,
+      activeSongTitle: p.songTitle,
+      activeBar: 1,
+      activeBeat: 1,
+      activeLineIndex: 0,
+      isPlaying: false,
+      bpm: p.bpm || currentRoom.bpm || 120,
+      songPayload: p.songPayload,
+      serverTimestamp: now,
+    };
+    set({
+      room: nextRoom,
+      lastAction: {
+        type: 'SETLIST_TRACK_CHANGE',
+        timestamp: now,
+        payload: {
+          setlistId: p.setlistId,
+          setlistTitle: p.setlistTitle,
+          trackIndex: p.trackIndex,
+          songId: p.songId,
+          songTitle: p.songTitle,
+          bpm: nextRoom.bpm,
+          songPayload: p.songPayload,
+          status: 'IN_SESSION',
+        },
+      },
+    });
+    if (_activeChannel) {
+      const msg: StageSyncMessage = {
+        type: 'SETLIST_TRACK_CHANGE',
+        roomId: currentRoom.roomId,
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          setlistId: p.setlistId,
+          setlistTitle: p.setlistTitle,
+          trackIndex: p.trackIndex,
+          songId: p.songId,
+          songTitle: p.songTitle,
+          bpm: nextRoom.bpm,
+          songPayload: p.songPayload,
+          status: 'IN_SESSION',
+        },
+      };
+      _activeChannel.postMessage(msg);
+      _activeChannel.postMessage({ type: 'STATE_CHANGE', room: nextRoom } as LocalStageSyncMessage);
+    }
+  },
+
+  broadcastPlay: (paramsOrBar, beatArg, bpmArg) => {
+    const currentRoom = get().room;
+    if (!currentRoom || get().role !== 'host') return;
+    const now = Date.now();
+    const currentBar = typeof paramsOrBar === 'object' ? paramsOrBar.currentBar : paramsOrBar;
+    const currentBeat = typeof paramsOrBar === 'object' ? paramsOrBar.currentBeat : (beatArg ?? 1);
+    const bpm = typeof paramsOrBar === 'object' ? paramsOrBar.bpm : bpmArg;
+    const nextRoom: LocalStageRoom = {
+      ...currentRoom,
+      isPlaying: true,
+      activeBar: currentBar,
+      activeBeat: currentBeat,
+      bpm: bpm || currentRoom.bpm,
+      serverTimestamp: now,
+    };
+    set({
+      room: nextRoom,
+      lastAction: {
+        type: 'PLAY',
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          bpm: bpm || currentRoom.bpm,
+          isPlaying: true,
+        },
+      },
+    });
+    if (_activeChannel) {
+      const msg: StageSyncMessage = {
+        type: 'PLAY',
+        roomId: currentRoom.roomId,
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          bpm,
+          isPlaying: true,
+        },
+      };
+      _activeChannel.postMessage(msg);
+    }
+  },
+
+  broadcastPause: (paramsOrBar, beatArg) => {
+    const currentRoom = get().room;
+    if (!currentRoom || get().role !== 'host') return;
+    const now = Date.now();
+    const currentBar = typeof paramsOrBar === 'object' ? paramsOrBar.currentBar : paramsOrBar;
+    const currentBeat = typeof paramsOrBar === 'object' ? paramsOrBar.currentBeat : (beatArg ?? 1);
+    const nextRoom: LocalStageRoom = {
+      ...currentRoom,
+      isPlaying: false,
+      activeBar: currentBar,
+      activeBeat: currentBeat,
+      serverTimestamp: now,
+    };
+    set({
+      room: nextRoom,
+      lastAction: {
+        type: 'PAUSE',
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          isPlaying: false,
+        },
+      },
+    });
+    if (_activeChannel) {
+      const msg: StageSyncMessage = {
+        type: 'PAUSE',
+        roomId: currentRoom.roomId,
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          isPlaying: false,
+        },
+      };
+      _activeChannel.postMessage(msg);
+    }
+  },
+
+  broadcastSeek: (paramsOrBar, beatArg, lineIndexArg) => {
+    const currentRoom = get().room;
+    if (!currentRoom || get().role !== 'host') return;
+    const now = Date.now();
+    const currentBar = typeof paramsOrBar === 'object' ? paramsOrBar.currentBar : paramsOrBar;
+    const currentBeat = typeof paramsOrBar === 'object' ? paramsOrBar.currentBeat : (beatArg ?? 1);
+    const lineIndex = typeof paramsOrBar === 'object' ? paramsOrBar.lineIndex : lineIndexArg;
+    const nextRoom: LocalStageRoom = {
+      ...currentRoom,
+      activeBar: currentBar,
+      activeBeat: currentBeat,
+      activeLineIndex: lineIndex,
+      serverTimestamp: now,
+    };
+    set({
+      room: nextRoom,
+      lastAction: {
+        type: 'SEEK',
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          trackIndex: lineIndex,
+          lineIndex,
+        },
+      },
+    });
+    if (_activeChannel) {
+      const msg: StageSyncMessage = {
+        type: 'SEEK',
+        roomId: currentRoom.roomId,
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          currentBar,
+          currentBeat,
+          trackIndex: lineIndex,
+          lineIndex,
+        },
+      };
+      _activeChannel.postMessage(msg);
+    }
   },
 
   updatePlayback: (updates: Partial<LocalStageRoom>) => {
@@ -323,13 +886,17 @@ export const useLocalStageSyncStore = create<LocalStageSyncState>((set, get) => 
     });
 
     if (_activeChannel) {
-      _activeChannel.postMessage({
+      const msg: StageSyncMessage = {
         type: 'BEAT_TICK',
         roomId: currentRoom.roomId,
-        bar,
-        beat,
-        hostTimestamp: now,
-      } as LocalStageSyncMessage);
+        senderId: currentRoom.hostName,
+        timestamp: now,
+        payload: {
+          currentBar: bar,
+          currentBeat: beat,
+        },
+      };
+      _activeChannel.postMessage(msg);
     }
   },
 

@@ -96,6 +96,7 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
     const success = joinRoom(parsed.roomId);
     if (success) {
       setManualCode('');
+      onClose();
     } else {
       setJoinError('Could not connect to room. Verify both devices are on the same Wi-Fi or hotspot.');
     }

@@ -3855,6 +3855,7 @@ export default function SongsPanel() {
   const createSetlist = useChordStore((s) => s.createSetlist);
   const isLight = useSettingsStore((s) => s.settings.theme === 'light');
   const stageRole = useLocalStageSyncStore((s) => s.role);
+  const stageRoom = useLocalStageSyncStore((s) => s.room);
   const isStageRoomActive = stageRole === 'host' || stageRole === 'follower';
 
   // Live Setlist Playback State
@@ -3936,6 +3937,20 @@ export default function SongsPanel() {
     if (targetPreset) {
       setActivePreset(targetPreset.id);
     }
+    try {
+      const stageSync = useLocalStageSyncStore.getState();
+      if (stageSync.role === 'host') {
+        stageSync.changeSetlistTrack(
+          setlist.id,
+          setlist.title,
+          safeIndex,
+          targetPreset?.id || '',
+          targetPreset?.name || '',
+          targetPreset?.bpm || targetPreset?.speed || 120,
+          targetPreset
+        );
+      }
+    } catch (_) {}
     setShowLive(true);
   }, [presets, setActivePreset]);
 
@@ -3953,6 +3968,20 @@ export default function SongsPanel() {
           if (nextPreset) {
             setActivePreset(nextPreset.id);
           }
+          try {
+            const stageSync = useLocalStageSyncStore.getState();
+            if (stageSync.role === 'host') {
+              stageSync.changeSetlistTrack(
+                liveSetlistId,
+                liveSetlistTitle,
+                index,
+                nextPreset?.id || '',
+                nextPreset?.name || '',
+                nextPreset?.bpm || nextPreset?.speed || 120,
+                nextPreset
+              );
+            }
+          } catch (_) {}
         }
       },
     };
@@ -4299,6 +4328,19 @@ export default function SongsPanel() {
 
   const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
 
+  const handleOpenLiveMode = useCallback((targetPreset?: SongPreset | null) => {
+    const p = targetPreset || activePreset;
+    if (p) {
+      try {
+        const stageSync = useLocalStageSyncStore.getState();
+        if (stageSync.role === 'host') {
+          stageSync.selectSong(p.id, p.name, p.bpm || p.speed || 120, p);
+        }
+      } catch (_) {}
+    }
+    setShowLive(true);
+  }, [activePreset]);
+
   const hasLyrics = useMemo(() => {
     return Boolean(
       activePreset?.lyrics?.sections &&
@@ -4399,10 +4441,11 @@ export default function SongsPanel() {
     }
   }, [activePreset]);
 
-  // Handle auto-opening Live mode when joining a live band rehearsal from top toast
+  // Handle auto-opening Live mode when joining a live band rehearsal or local stage sync room
   useEffect(() => {
     const handleAutoOpen = (e?: any) => {
       let targetSongId = e?.detail?.songId;
+      const songPayload = e?.detail?.songPayload;
       if (!targetSongId) {
         try {
           targetSongId = sessionStorage.getItem('livex_auto_open_live');
@@ -4415,16 +4458,24 @@ export default function SongsPanel() {
         const p = presets.find((pr) => pr.id === targetSongId);
         if (p) {
           setActivePreset(p.id);
+        } else if (songPayload) {
+          try {
+            useBandStore.getState().setSessionPreset(songPayload);
+          } catch (_) {}
         }
         setShowLive(true);
       }
     };
 
     window.addEventListener('livex:open-live-spectator', handleAutoOpen);
+    window.addEventListener('livex:stage-sync-song-selected', handleAutoOpen);
+    window.addEventListener('livex:stage-sync-setlist-track-change', handleAutoOpen);
     handleAutoOpen();
 
     return () => {
       window.removeEventListener('livex:open-live-spectator', handleAutoOpen);
+      window.removeEventListener('livex:stage-sync-song-selected', handleAutoOpen);
+      window.removeEventListener('livex:stage-sync-setlist-track-change', handleAutoOpen);
     };
   }, [presets, setActivePreset]);
 
@@ -4781,12 +4832,12 @@ export default function SongsPanel() {
             key={
               (isLockedToLeader && sessionPreset)
                 ? sessionPreset.id
-                : (activePreset?.id || sessionPreset?.id || 'live-mode')
+                : (activePreset?.id || sessionPreset?.id || stageRoom?.activeSongId || 'live-mode')
             }
             preset={
               (isLockedToLeader && sessionPreset)
                 ? sessionPreset
-                : (activePreset || sessionPreset)
+                : (activePreset || sessionPreset || (stageRoom?.songPayload as any))
             }
             initialMode={editorViewMode}
             onClose={() => {
@@ -4953,7 +5004,7 @@ export default function SongsPanel() {
                   <motion.button
                     whileTap={{ scale: 0.92 }}
                     aria-label="Live Mode"
-                    onClick={() => setShowLive(true)}
+                    onClick={() => handleOpenLiveMode()}
                     data-testid="enter-live-mode"
                     className="w-9 h-9 flex items-center justify-center transition-all cursor-pointer"
                     style={{
@@ -5043,7 +5094,7 @@ export default function SongsPanel() {
                       <Button
                         variant="secondary"
                         size="icon"
-                        onClick={() => setShowLive(true)}
+                        onClick={() => handleOpenLiveMode()}
                         data-testid="enter-live-mode"
                         title={t.songs.liveMode}
                         style={{
@@ -5064,7 +5115,7 @@ export default function SongsPanel() {
 
                       <Button
                         variant="primary"
-                        onClick={() => setShowLive(true)}
+                        onClick={() => handleOpenLiveMode()}
                         data-testid="enter-live-mode"
                         style={{
                           height: '34px',

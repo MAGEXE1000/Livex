@@ -19,6 +19,7 @@ import {
   useShallow,
   useChordStore,
   useAssistantStore,
+  useLocalStageSyncStore,
   resetNav,
   recoverNavVisibility,
 } from '@workspace/livex-core';
@@ -585,6 +586,10 @@ export function BottomNavigationController() {
     typeof document !== 'undefined' &&
     Boolean(document.querySelector('[data-purpose="pdf-export-modal"]'));
 
+  const isStageWaitingRoom = useLocalStageSyncStore(
+    (s) => s.role === 'follower' && s.room?.status === 'WAITING_FOR_SONG'
+  );
+
   const isExpectedVisible =
     !isDrumexEditor &&
     !isDrumexMetronome &&
@@ -592,7 +597,8 @@ export function BottomNavigationController() {
     !isGroovexSong &&
     !isAssistantScreen &&
     !isStageExport &&
-    !isPdfExport;
+    !isPdfExport &&
+    !isStageWaitingRoom;
 
   const visible =
     isExpectedVisible &&
