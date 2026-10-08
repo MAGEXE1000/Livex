@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Livex Film Engine</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1440px; height: 1080px; overflow: hidden; background: #050505; }
+  canvas { display: block; width: 1440px; height: 1080px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="c" width="1440" height="1080"></canvas>
+<script>
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+const W = 1440, H = 1080;
+const FPS = 60;
+const DURATION = 15.0;
+
+const C = {
+  paper:   '#F6F5F2',
+  black:   '#050505',
+  red:     '#E63B2E',
+  amber:   '#F4C542',
+  dark:    '#27272A',
+  mid:     '#52525B',
+  light:   '#A1A1AA',
+  white:   '#F6F5F2',
+};
+
+// Scene time boundaries (seconds)
+const S1_END = 3.2;
+const S2_END = 7.5;
+const S3_END = 11.8;
+const S4_END = 15.0;
+
+// ─────────────────────────────────────────────
+// MATH UTILITIES
+// ─────────────────────────────────────────────
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function smoothstep(a, b, t) {
+  t = clamp((t - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+function easeOut(t, p) { return 1 - Math.pow(1 - t, p); }
+function easeIn(t, p) { return Math.pow(t, p); }
+
+// Layered sine noise — deterministic, no random
+function handheld(t) {
+  const amp = W * 0.0015; // ~0.15% of width
+  const x = Math.sin(t * 0.31) * amp
+           + Math.sin(t * 0.73 + 1.2) * amp * 0.5
+           + Math.sin(t * 1.17 + 2.8) * amp * 0.3;
+  const y = Math.sin(t * 0.41 + 0.6) * amp * 0.8
+           + Math.sin(t * 0.89 + 3.1) * amp * 0.4
+           + Math.sin(t * 1.43 + 1.5) * amp * 0.2;
+  return { x, y };
+}
+
+// Slow inward push — zoom from 1.0 to 1.035 over full 15s
+function globalZoom(t) {
+  return 1.0 + (t / DURATION) * 0.035;
+}
+
+// ─────────────────────────────────────────────
+// PALETTE & SPRITE DATA
+// ─────────────────────────────────────────────
+const PALETTE = {
+  R: '#E63B2E', Y: '#F4C542', W: '#F6F5F2',
+  K: '#09090B', D: '#27272A', G: '#52525B',
+  L: '#A1A1AA', O: '#D97706',
+};
+
+const SPRITES_RAW = {
+  guitar: [
+    '............LL..','...........LDY..','..........LGD...','.........LGD....','........LGD.....','        LGD.....','......RRDD......',
+    '....RRRRRDD.....','...RRYRRRRDD....','..RRRYKRRRRDD...','..RRRRKRRRRDD...','...RRRRYRRDD....','....RRRRRDD.....','.....RRRDD......','......RDD.......','................',
+  ],
+  metronome: [
+    '.......D........','......DDD.......','......DGD.......','.....DDGDD......','.....D.R.D......','....DD.R.DD.....','....D..R..D.....','...DD..R..DD....',
+    '...D..YYY..D....','..DD...R...DD...','..D....R....D...','.DD....R....DD..','.D....WWW....D..','DDDDDDDDDDDDDDDD','.KKKKKKKKKKKKKK.','................',
+  ],
+  fader: [
+    '.......G........','.......G........','.......G........','......DDD.......','.....DYYYD......','....DYYYYYD.....','....DYYKYYD.....','....DYYKYYD.....',
+    '.....DYYYD......','......DDD.......','.......G........','.......G........','.......G........','.......G........','.....GGGGGG.....','................',
+  ],
+  mic: [
+    '.....GGGGG......','....GLLLLLG.....','....GLGLGLG.....','....GLLLLLG.....','....GLGLGLG.....','....GLLLLLG.....','    .DDDDD......','.....DYYYD......','.....DDDDD......',
+    '......DDD.......','......DDD.......','......DDD.......','.....DDDDD......','....DD.D.DD.....','...DD..D..DD....','..DDDDDDDDDDD...',
+  ],
+  vinyl: [
+    '.....KKKKKK.....','...KKDDDDDDKK...','..KDDLLLLLLDDK..','.KDLKKKKKKKKLDK.','.KDLK.RRRR.KLDK.','KDLK.RRRRYR.KLDK','KDLK.RRYYYR.KLDK','KDLK.RYYYYR.KLDK',
+    'KDLK.RRRYRR.KLDK','KDLK.RRRRRR.KLDK','.KDLK.RRRR.KLDK.','.KDLKKKKKKKKLDK.','..KDDLLLLLLDDK..','...KKDDDDDDKK...','.....KKKKKK.....','................',
+  ],
+  piano: [
+    '.DDDDDDDDDDDDDD.','.DWWWWWWWWWWWWD.','.DWKWKWWDWKWKWD.','.DWKWKWWDWKWKWD.','.DWKWKWWDWKWKWD.','.DWKWKWWDWKWKWD.','.DWKWKWWDWKWKWD.','.DWKWKWWDWKWKWD.',
+    '.DWWWWWWWWWWWWD.','.DW.W.WW.W.W.WD.','.DW.W.WW.W.W.WD.','.DW.W.WW.W.W.WD.','.DW.W.WW.W.W.WD.','.DDDDDDDDDDDDDD.','..KKKKKKKKKKKK..','................',
+  ],
+  wave: [
+    '................','........Y.......','       .YY.......','.......YY.......','......YYYY......','......YYYY......','..R...YYYY...R..','    .RR...YYYY..RR..',
+    '.RR.R.YYYY.RRR..','RRRRR.YYYYRRRRR.','RRRRRRRYYYRRRRRR','.RRRRR.YYY.RRRR.','..RRR...Y...RR..','...R.........R..','................','................',
+  ],
+  heart: [
+    '................','..RRRR...RRRR...','.RRRRRR.RRRRRR..','RRRRRRRRRRRRRRR.','RRRRRRRRRRRRRRR.','RRRYRRRRRRRRRRR.','RRYYYRRRRRRRRRR.',
+    '.RRYRRRRRRRRRR..','.RRRRRRRRRRRRR..','..RRRRRRRRRRR...','...RRRRRRRRR....','....RRRRRRR.....','     .....RRRRR......','......RRR.......','       ..........R........','................',
+  ],
+  synth: [
+    'DDDDDDDDDDDDDDDD','DGGGGGGGGGGGGGGD','D.R.R.Y.Y.G.G..D','D.R.R.Y.Y.G.G..D','DGGGGGGGGGGGGGGD','DWWWWWWWWWWWWWWD','DWKWKWWDWKWKWKWD','DWKWKWWDWKWKWKWD',
+    'DWKWKWWDWKWKWKWD','DWWWWWWWWWWWWWWD','DW.W.WW.W.W.W.WD','DW.W.WW.W.W.W.WD','DDDDDDDDDDDDDDDD','.KKKKKKKKKKKKKK.','................','................',
+  ],
+};
+
+// Pre-render all sprites to offscreen canvases (16x16)
+const SPRITE_CACHE = {};
+function buildSpriteCache() {
+  for (const [name, rows] of Object.entries(SPRITES_RAW)) {
+    const sc = document.createElement('canvas');
+    sc.width = 16; sc.height = 16;
+    const sctx = sc.getContext('2d');
+    rows.forEach((row, y) => {
+      for (let x = 0; x < 16; x++) {
+        const ch = (row[x] || '.').trim() || '.';
+        if (ch === '.' || ch === ' ') continue;
+        sctx.fillStyle = PALETTE[ch] || '#ffffff';
+        sctx.fillRect(x, y, 1, 1);
+      }
+    });
+    SPRITE_CACHE[name] = sc;
+  }
+}
+
+// ─────────────────────────────────────────────
+// FILM GRAIN (deterministic seeded noise)
+// ─────────────────────────────────────────────
+let grainCanvas = null;
+const GRAIN_FRAMES = 8; // pre-generate N grain frames, cycle them
+const grainFrames = [];
+
+function buildGrain() {
+  // Build pool of grain frames for cycling
+  for (let g = 0; g < GRAIN_FRAMES; g++) {
+    const gc = document.createElement('canvas');
+    gc.width = W; gc.height = H;
+    const gctx = gc.getContext('2d');
+    const imgData = gctx.createImageData(W, H);
+    const data = imgData.data;
+    // Deterministic LCG seeded per frame
+    let seed = g * 747796405 + 2891336453;
+    for (let i = 0; i < data.length; i += 4) {
+      seed = (seed ^ (seed >>> 21)) >>> 0;
+      seed = (seed ^ (seed << 35)) >>> 0;
+      seed = (seed ^ (seed >>> 4)) >>> 0;
+      const noise = (seed >>> 24) % 256;
+      data[i] = data[i + 1] = data[i + 2] = noise;
+      data[i + 3] = 22; // grain opacity ~8%
+    }
+    gctx.putImageData(imgData, 0, 0);
+    grainFrames.push(gc);
+  }
+}
+
+// ─────────────────────────────────────────────
+// VIGNETTE
+// ─────────────────────────────────────────────
+let vignetteCanvas = null;
+function buildVignette() {
+  vignetteCanvas = document.createElement('canvas');
+  vignetteCanvas.width = W; vignetteCanvas.height = H;
+  const vctx = vignetteCanvas.getContext('2d');
+  const grad = vctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.82);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(0.6, 'rgba(0,0,0,0.08)');
+  grad.addColorStop(1.0, 'rgba(0,0,0,0.55)');
+  vctx.fillStyle = grad;
+  vctx.fillRect(0, 0, W, H);
+}
+
+// ─────────────────────────────────────────────
+// DRAW 3D-EXTRUDED PIXEL SPRITE
+// ─────────────────────────────────────────────
+function drawSprite(ctx, name, cx, cy, size, angle, elevation) {
+  const src = SPRITE_CACHE[name];
+  if (!src) return;
+  const sc = size / 16;
+  const ext = elevation * sc; // extrusion depth
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.translate(-size / 2, -size / 2);
+
+  // Draw extrusion shadow rows (bottom-right offset)
+  if (ext > 0) {
+    for (const [name2, rows] of Object.entries({ [name]: SPRITES_RAW[name] })) {
+      for (let depth = Math.floor(ext); depth >= 1; depth--) {
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.drawImage(src, depth, depth, size, size);
+        ctx.restore();
+      }
+    }
+  }
+
+  // Draw main sprite
+  ctx.drawImage(src, 0, 0, size, size);
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────
+// BRAND ASSETS (injected by render.mjs)
+// ─────────────────────────────────────────────
+let symbolImg = null;
+let logoImg = null;
+
+window.injectAssets = function(symbolDataUrl, logoDataUrl) {
+  symbolImg = new Image();
+  symbolImg.src = symbolDataUrl;
+  logoImg = new Image();
+  logoImg.src = logoDataUrl;
+};
+
+// ─────────────────────────────────────────────
+// SCENE HELPERS
+// ─────────────────────────────────────────────
+
+// Draw text with precise letter-spacing
+function drawText(ctx, text, x, y, opts = {}) {
+  const {
+    size = 80,
+    weight = '700',
+    family = 'Geist',
+    color = C.black,
+    align = 'left',
+    letterSpacing = 0,
+    alpha = 1,
+  } = opts;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `${weight} ${size}px ${family}, sans-serif`;
+
+  if (letterSpacing !== 0) {
+    // Manual letter-spacing
+    const chars = [...text];
+    let cx = x;
+    if (align === 'center') {
+      let totalW = 0;
+      chars.forEach(ch => { totalW += ctx.measureText(ch).width + letterSpacing; });
+      cx = x - totalW / 2;
+    } else if (align === 'right') {
+      let totalW = 0;
+      chars.forEach(ch => { totalW += ctx.measureText(ch).width + letterSpacing; });
+      cx = x - totalW;
+    }
+    chars.forEach(ch => {
+      ctx.fillText(ch, cx, y);
+      cx += ctx.measureText(ch).width + letterSpacing;
+    });
+  } else {
+    ctx.fillText(text, x, y);
+  }
+  ctx.restore();
+}
+
+// Thin horizontal rule
+function drawRule(ctx, x, y, w, color, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────
+// SCENE 1 — 0.0s – 3.2s
+// Typographic hook on off-white paper → wipe to dark
+// ─────────────────────────────────────────────
+function scene1(ctx, t) {
+  const lT = t; // local time 0..3.2
+  const wipeStart = 2.5;
+  const wipeEnd   = 3.2;
+
+  // Wipe factor (paper → black)
+  const wipe = smoothstep(wipeStart, wipeEnd, lT);
+
+  // Background: paper-to-black vertical wipe from left
+  const wipeX = W * wipe;
+  if (wipeX < W) {
+    ctx.fillStyle = C.paper;
+    ctx.fillRect(wipeX, 0, W - wipeX, H);
+  }
+  if (wipeX > 0) {
+    ctx.fillStyle = C.black;
+    ctx.fillRect(0, 0, wipeX, H);
+  }
+
+  // Typography — reveal stagger
+  const lineData = [
+    { text: 'stage.', delay: 0.0 },
+    { text: 'studio.', delay: 0.3 },
+    { text: 'perfected.', delay: 0.6 },
+  ];
+
+  lineData.forEach(({ text, delay }, i) => {
+    const revealT = smoothstep(delay, delay + 0.55, lT);
+    const slideY  = lerp(30, 0, easeOut(revealT, 3));
+    const color = wipeX > W / 2 + i * 100 ? C.paper : C.black;
+    const alpha = revealT;
+
+    drawText(ctx, text, 148, 400 + i * 140 + slideY, {
+      size: 112, weight: '800', color, alpha, letterSpacing: -3,
+    });
+  });
+
+  // Thin accent line (red) — slides in after words
+  const lineReveal = smoothstep(0.9, 1.3, lT);
+  const lineW = 64 * lineReveal;
+  ctx.save();
+  ctx.globalAlpha = lineReveal * (1 - wipe);
+  ctx.fillStyle = C.red;
+  ctx.fillRect(148, 352, lineW, 3);
+  ctx.restore();
+
+  // Mono label top-left
+  const labelAlpha = smoothstep(0.1, 0.6, lT) * (1 - smoothstep(2.3, 2.8, lT));
+  drawText(ctx, 'LIVEX STUDIO', 148, 108, {
+    size: 12, weight: '500', family: 'Geist Mono', color: C.mid,
+    alpha: labelAlpha, letterSpacing: 3,
+  });
+}
+
+// ─────────────────────────────────────────────
+// SCENE 2 — 3.2s – 7.5s
+// Rotating ring of pixel-art objects on AMOLED dark
+// ─────────────────────────────────────────────
+const RING_OBJECTS = ['guitar','vinyl','mic','synth','piano','fader','metronome','wave','heart'];
+
+function scene2(ctx, t) {
+  const lT = t - S1_END; // 0..4.3
+  const dur = S2_END - S1_END;
+
+  // Background
+  ctx.fillStyle = C.black;
+  ctx.fillRect(0, 0, W, H);
+
+  // Ambient warm glow center
+  const glowR = smoothstep(0, 0.8, lT);
+  if (glowR > 0) {
+    const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 480);
+    g.addColorStop(0,   `rgba(244,197,66,${0.06 * glowR})`);
+    g.addColorStop(0.4, `rgba(230,59,46,${0.04 * glowR})`);
+    g.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Rotating ring of sprites
+  const ringR   = 320;
+  const spriteSize = 88;
+  const rotSpeed = 0.18; // rad/s
+  const ringRot = lT * rotSpeed;
+
+  RING_OBJECTS.forEach((name, i) => {
+    const baseAngle = (i / RING_OBJECTS.length) * Math.PI * 2;
+    const angle = baseAngle + ringRot;
+    const cx = W/2 + Math.cos(angle) * ringR;
+    const cy = H/2 + Math.sin(angle) * ringR * 0.65; // slight oval
+
+    // Reveal stagger from scene start
+    const enterT = smoothstep(i * 0.06, i * 0.06 + 0.4, lT);
+    const spriteAlpha = enterT * (0.55 + 0.45 * Math.abs(Math.cos(angle)));
+
+    ctx.save();
+    ctx.globalAlpha = spriteAlpha;
+    drawSprite(ctx, name, cx, cy, spriteSize, angle * 0.3, 4);
+    ctx.restore();
+  });
+
+  // Center: hero word reveal
+  const wordIn   = smoothstep(0.6, 1.4, lT);
+  const wordOut  = smoothstep(3.4, 4.2, lT);
+  const wordAlpha = wordIn * (1 - wordOut);
+
+  if (wordAlpha > 0.01) {
+    const heroWords = ['stage', 'studio', 'perfected'];
+    const heroIdx   = Math.floor(lT / (dur / 3)) % heroWords.length;
+    const heroT     = (lT % (dur / 3)) / (dur / 3);
+
+    drawText(ctx, heroWords[heroIdx].toUpperCase(), W/2, H/2 + 28, {
+      size: 96, weight: '900', color: C.white, align: 'center',
+      alpha: wordAlpha * (heroT < 0.85 ? 1 : easeOut(1 - (heroT - 0.85) / 0.15, 2)),
+      letterSpacing: 8,
+    });
+
+    // Accent dash under word
+    const dashW = 48;
+    ctx.save();
+    ctx.globalAlpha = wordAlpha * 0.8;
+    ctx.fillStyle = C.red;
+    ctx.fillRect(W/2 - dashW/2, H/2 + 52, dashW, 2);
+    ctx.restore();
+  }
+
+  // Corner label
+  const labelAlpha = smoothstep(0.3, 0.9, lT);
+  drawText(ctx, 'FOR MUSICIANS', W - 148, H - 80, {
+    size: 11, weight: '400', family: 'Geist Mono', color: C.light,
+    align: 'right', alpha: labelAlpha * 0.7, letterSpacing: 3,
+  });
+}
+
+// ─────────────────────────────────────────────
+// SCENE 3 — 7.5s – 11.8s
+// High-contrast typography burst + instrument close-ups
+// ─────────────────────────────────────────────
+function scene3(ctx, t) {
+  const lT = t - S2_END; // 0..4.3
+  const dur = S3_END - S2_END;
+
+  ctx.fillStyle = C.black;
+  ctx.fillRect(0, 0, W, H);
+
+  // Split-panel: amber left strip
+  const stripW = smoothstep(0, 0.5, lT) * 8;
+  ctx.fillStyle = C.amber;
+  ctx.fillRect(0, 0, stripW, H);
+
+  // Red accent strip (right)
+  const rStripW = smoothstep(0.3, 0.8, lT) * 5;
+  ctx.fillStyle = C.red;
+  ctx.fillRect(W - rStripW, 0, rStripW, H);
+
+  // Manifesto lines stagger in
+  const manifesto = [
+    { text: 'Every bar.',        y: 260, delay: 0.0, size: 100, weight: '800' },
+    { text: 'Every note.',       y: 390, delay: 0.2, size: 100, weight: '800' },
+    { text: 'Every take.',       y: 520, delay: 0.4, size: 100, weight: '800' },
+    { text: 'Livex Studio.',     y: 700, delay: 0.8, size: 72,  weight: '300' },
+  ];
+
+  manifesto.forEach(({ text, y, delay, size, weight }) => {
+    const reveal = smoothstep(delay, delay + 0.45, lT);
+    const slideX = lerp(-60, 0, easeOut(reveal, 3));
+    ctx.save();
+    ctx.translate(slideX, 0);
+    drawText(ctx, text, 148, y, {
+      size, weight, color: C.white, alpha: reveal, letterSpacing: -1,
+    });
+    ctx.restore();
+  });
+
+  // Floating sprites — 3 instruments, larger, offset
+  const floatObjs = ['guitar', 'vinyl', 'synth'];
+  floatObjs.forEach((name, i) => {
+    const t0 = 0.6 + i * 0.25;
+    const enterT = smoothstep(t0, t0 + 0.5, lT);
+    const floatY = Math.sin(lT * 0.8 + i * 2.1) * 14;
+    const angle  = Math.sin(lT * 0.4 + i) * 0.08;
+
+    ctx.save();
+    ctx.globalAlpha = enterT * 0.72;
+    drawSprite(ctx, name,
+      W - 280 + i * 12,
+      H/2 - 60 + i * 130 + floatY,
+      120, angle, 6);
+    ctx.restore();
+  });
+
+  // Horizontal rule
+  const ruleReveal = smoothstep(1.0, 1.5, lT);
+  drawRule(ctx, 148, 240, W - 296, C.dark, ruleReveal);
+
+  // Outro fade down
+  const fadeOut = smoothstep(3.6, 4.3, lT);
+  if (fadeOut > 0) {
+    ctx.save();
+    ctx.globalAlpha = fadeOut;
+    ctx.fillStyle = C.black;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+// ─────────────────────────────────────────────
+// SCENE 4 — 11.8s – 15.0s
+// Brand resolve: Livex symbol + logotype settle on AMOLED
+// ─────────────────────────────────────────────
+function scene4(ctx, t) {
+  const lT = t - S3_END; // 0..3.2
+  const dur = S4_END - S3_END;
+
+  ctx.fillStyle = C.black;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle warm paper strip at bottom
+  const stripH = H * 0.006 * smoothstep(0.8, 1.6, lT);
+  ctx.fillStyle = C.paper;
+  ctx.fillRect(0, H - stripH, W, stripH);
+
+  // Symbol — scale + fade in from center
+  const symReveal = smoothstep(0.2, 1.0, lT);
+  const symScale  = lerp(0.75, 1.0, easeOut(symReveal, 3));
+  const symSize   = 180 * symScale;
+
+  if (symbolImg && symbolImg.complete && symReveal > 0) {
+    ctx.save();
+    ctx.globalAlpha = symReveal;
+    ctx.drawImage(symbolImg,
+      W/2 - symSize/2, H/2 - symSize/2 - 60,
+      symSize, symSize);
+    ctx.restore();
+  } else if (symReveal > 0) {
+    // Fallback: draw "L" glyph if image not loaded
+    drawText(ctx, 'L', W/2, H/2 + 20, {
+      size: 140, weight: '900', color: C.red, align: 'center',
+      alpha: symReveal,
+    });
+  }
+
+  // Logo wordmark — slides in from below
+  const wordReveal = smoothstep(0.7, 1.5, lT);
+  const wordSlideY = lerp(24, 0, easeOut(wordReveal, 3));
+
+  if (logoImg && logoImg.complete && wordReveal > 0) {
+    const logoW = 240;
+    const logoH = logoW * (logoImg.naturalHeight / (logoImg.naturalWidth || 1));
+    ctx.save();
+    ctx.globalAlpha = wordReveal;
+    ctx.drawImage(logoImg,
+      W/2 - logoW/2,
+      H/2 + 80 + wordSlideY,
+      logoW, logoH);
+    ctx.restore();
+  } else if (wordReveal > 0) {
+    drawText(ctx, 'LIVEX', W/2, H/2 + 140 + wordSlideY, {
+      size: 48, weight: '700', color: C.white, align: 'center',
+      alpha: wordReveal, letterSpacing: 12,
+    });
+  }
+
+  // Tagline
+  const tagReveal = smoothstep(1.4, 2.0, lT);
+  drawText(ctx, 'The future of live performance.', W/2, H/2 + 220 + lerp(12, 0, easeOut(tagReveal, 3)), {
+    size: 18, weight: '300', family: 'Geist', color: C.light,
+    align: 'center', alpha: tagReveal * 0.8, letterSpacing: 1,
+  });
+
+  // Red accent dot
+  const dotReveal = smoothstep(1.8, 2.4, lT);
+  if (dotReveal > 0) {
+    const dotR = 3 * dotReveal;
+    ctx.save();
+    ctx.globalAlpha = dotReveal * 0.9;
+    ctx.fillStyle = C.red;
+    ctx.beginPath();
+    ctx.arc(W/2, H/2 + 265, dotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ─────────────────────────────────────────────
+// MASTER SEEK FUNCTION
+// ─────────────────────────────────────────────
+const mainCanvas = document.getElementById('c');
+const ctx = mainCanvas.getContext('2d');
+
+window.seek = function(tSeconds, frameIndex) {
+  ctx.clearRect(0, 0, W, H);
+
+  // ── 1. Camera transform (global layer) ──
+  const drift = handheld(tSeconds);
+  const zoom  = globalZoom(tSeconds);
+
+  ctx.save();
+  ctx.translate(W/2, H/2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W/2 + drift.x, -H/2 + drift.y);
+
+  // ── 2. Scene dispatch ──
+  if (tSeconds < S1_END) {
+    scene1(ctx, tSeconds);
+  } else if (tSeconds < S2_END) {
+    scene2(ctx, tSeconds);
+  } else if (tSeconds < S3_END) {
+    scene3(ctx, tSeconds);
+  } else {
+    scene4(ctx, tSeconds);
+  }
+
+  ctx.restore();
+
+  // ── 3. Vignette (after camera, before grain) ──
+  if (vignetteCanvas) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(vignetteCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  // ── 4. Film grain (cycle through pre-built frames) ──
+  const grainIdx = frameIndex % GRAIN_FRAMES;
+  if (grainFrames[grainIdx]) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.drawImage(grainFrames[grainIdx], 0, 0);
+    ctx.restore();
+  }
+};
+
+// ─────────────────────────────────────────────
+// INIT (called once by render.mjs after load)
+// ─────────────────────────────────────────────
+window.initEngine = function() {
+  buildSpriteCache();
+  buildGrain();
+  buildVignette();
+  // Pre-warm fonts by drawing invisible text
+  ctx.save();
+  ctx.globalAlpha = 0;
+  ctx.font = '900 120px Geist, sans-serif';
+  ctx.fillText('stage.', 0, 0);
+  ctx.font = '400 14px Geist Mono, monospace';
+  ctx.fillText('LIVEX', 0, 0);
+  ctx.restore();
+  return true;
+};
+</script>
+</body>
+</html>
