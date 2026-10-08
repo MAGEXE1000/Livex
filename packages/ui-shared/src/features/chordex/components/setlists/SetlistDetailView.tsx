@@ -8,13 +8,14 @@ import {
   useSettingsStore,
   calculateSetlistStats,
   formatDurationMmSs,
+  useLocalStageSyncStore,
 } from '@workspace/livex-core';
 import { SharedFloatingHeader } from '../../../../shared/layout/StudioLayoutSystem';
 import { SetlistSongPickerModal } from './SetlistSongPickerModal';
 import { SetlistCreateModal } from './SetlistCreateModal';
 import { Dialog } from '../../../../shared/design-system/dialogs';
 import { Button } from '../../../../shared/design-system/StudioDesignSystem';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Radio } from 'lucide-react';
 import { SetlistPresetDrawer } from './SetlistPresetDrawer';
 
 interface SetlistDetailViewProps {
@@ -25,6 +26,7 @@ interface SetlistDetailViewProps {
   onPlayLiveSetlist: (setlist: Setlist, startingSongIndex?: number) => void;
   onOpenSongInEditor?: (songId: string) => void;
   onSwitchSetlist?: (id: string) => void;
+  onOpenStageRoom?: () => void;
 }
 
 interface SetlistSongRowProps {
@@ -243,10 +245,13 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
   onPlayLiveSetlist,
   onOpenSongInEditor,
   onSwitchSetlist,
+  onOpenStageRoom,
 }) => {
   const setlist = useChordStore((s) => (s.setlists || []).find((st: Setlist) => st.id === setlistId));
   const allSetlists = useChordStore((s) => s.setlists || []);
   const isLight = useSettingsStore((s) => s.settings.theme === 'light');
+  const stageRole = useLocalStageSyncStore((s) => s.role);
+  const isStageRoomActive = stageRole === 'host' || stageRole === 'follower';
   const createSetlist = useChordStore((s) => s.createSetlist);
   const updateSetlist = useChordStore((s) => s.updateSetlist);
   const deleteSetlist = useChordStore((s) => s.deleteSetlist);
@@ -382,6 +387,35 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
               <SlidersHorizontal className="w-4 h-4 opacity-80" />
             </button>
 
+            {onOpenStageRoom && (
+              <button
+                type="button"
+                onClick={onOpenStageRoom}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer border active:scale-95 shadow-sm relative"
+                style={{
+                  backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                  borderColor: isStageRoomActive ? '#10b981' : (isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)'),
+                  color: isStageRoomActive ? '#10b981' : 'var(--c-text-primary)',
+                }}
+                title="Local Stage Rooms"
+                aria-label="Local Stage Rooms"
+                data-testid="setlist-stage-room-btn"
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    inset: '-4px',
+                    pointerEvents: 'auto',
+                    borderRadius: '12px',
+                  }}
+                />
+                <Radio className="w-4 h-4 opacity-80" />
+                {isStageRoomActive && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </button>
+            )}
+
             {stats.totalSongs > 0 && (
               <motion.button
                 whileTap={{ scale: 0.92 }}
@@ -407,7 +441,7 @@ export const SetlistDetailView: React.FC<SetlistDetailViewProps> = ({
             )}
           </div>
         }
-        sideClearance={stats.totalSongs > 0 ? 116 : 88}
+        sideClearance={stats.totalSongs > 0 ? (onOpenStageRoom ? 152 : 116) : (onOpenStageRoom ? 124 : 88)}
       />
 
       {/* Main Content Area */}

@@ -43,6 +43,7 @@ import {
   flattenSetlistToQueue,
   parseLivexBundle,
   sanitizeFilename,
+  useLocalStageSyncStore,
 } from '@workspace/livex-core';
 import {
   SetlistLibraryView,
@@ -51,7 +52,7 @@ import {
   ImportSetlistContent,
   ImportSetlistModal,
 } from '../components/setlists';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, Radio } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -3853,6 +3854,8 @@ export default function SongsPanel() {
   const setSongsSubTab = useChordStore((s) => s.setSongsSubTab);
   const createSetlist = useChordStore((s) => s.createSetlist);
   const isLight = useSettingsStore((s) => s.settings.theme === 'light');
+  const stageRole = useLocalStageSyncStore((s) => s.role);
+  const isStageRoomActive = stageRole === 'host' || stageRole === 'follower';
 
   // Live Setlist Playback State
   const [liveSetlistQueue, setLiveSetlistQueue] = useState<SetlistQueueItem[] | null>(null);
@@ -6371,6 +6374,7 @@ export default function SongsPanel() {
                     onPlayLiveSetlist={handlePlayLiveSetlist}
                     onOpenSongInEditor={(songId) => setActivePreset(songId)}
                     onSwitchSetlist={(id) => setActiveSetlistId(id)}
+                    onOpenStageRoom={() => setLocalStageRoomOpen(true)}
                   />
                 </div>
               );
@@ -6408,6 +6412,40 @@ export default function SongsPanel() {
                   }
                   hideBack={true}
                   scrollContainerRef={listScrollRef}
+                  toolbarActions={
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        data-testid="stage-room-header-btn"
+                        onClick={() => setLocalStageRoomOpen(true)}
+                        title="Local Stage Rooms"
+                        aria-label="Local Stage Rooms"
+                        className="relative flex items-center justify-center rounded-xl cursor-pointer transition-all border active:scale-95 shadow-sm"
+                        style={{
+                          width: 36,
+                          height: 36,
+                          backgroundColor: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                          borderColor: isStageRoomActive ? '#10b981' : (isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.15)'),
+                          color: isStageRoomActive ? '#10b981' : 'var(--c-text-primary)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            inset: '-4px',
+                            pointerEvents: 'auto',
+                            borderRadius: '12px',
+                          }}
+                        />
+                        <Radio className="w-4 h-4" />
+                        {isStageRoomActive && (
+                          <span
+                            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                          />
+                        )}
+                      </button>
+                    </div>
+                  }
                 />
 
                 {/* Main scrollable viewport */}

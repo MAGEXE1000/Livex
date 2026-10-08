@@ -11,6 +11,8 @@ import {
 } from '@workspace/livex-core';
 import { StageSyncOffsetCalibration } from './StageSyncOffsetCalibration';
 
+export type StageRoomTab = 'host' | 'join' | 'calibration';
+
 export interface LocalStageRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,7 +31,7 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
   const joinRoom = useLocalStageSyncStore((s: LocalStageSyncState) => s.joinRoom);
   const leaveRoom = useLocalStageSyncStore((s: LocalStageSyncState) => s.leaveRoom);
 
-  const [activeTab, setActiveTab] = useState<'host' | 'join'>('host');
+  const [activeTab, setActiveTab] = useState<StageRoomTab>('host');
   const [manualCode, setManualCode] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -41,10 +43,14 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
 
-  // Auto-switch tab to match current active role
+  // Auto-switch tab only on initial active role transitions
+  const prevRoleRef = useRef(role);
   useEffect(() => {
-    if (role === 'host') setActiveTab('host');
-    else if (role === 'follower') setActiveTab('join');
+    if (prevRoleRef.current !== role) {
+      prevRoleRef.current = role;
+      if (role === 'host') setActiveTab('host');
+      else if (role === 'follower') setActiveTab('join');
+    }
   }, [role]);
 
   // Clean camera stop
@@ -226,35 +232,103 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
             </button>
           </div>
 
-          {/* Mode Selector Tabs (only when idle) */}
-          {role === 'idle' && (
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-white/5 border border-white/10">
-              <button
-                type="button"
-                data-testid="stage-tab-host"
-                onClick={() => setActiveTab('host')}
-                className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'host'
-                    ? 'bg-white text-black shadow-md'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Host Session (Leader)
-              </button>
-              <button
-                type="button"
-                data-testid="stage-tab-join"
-                onClick={() => setActiveTab('join')}
-                className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'join'
-                    ? 'bg-white text-black shadow-md'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Join Session (Bandmate)
-              </button>
-            </div>
-          )}
+          {/* Mode & Settings Selector Tabs */}
+          <div className={`grid p-1 rounded-2xl bg-white/5 border border-white/10 ${role === 'idle' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {role === 'idle' ? (
+              <>
+                <button
+                  type="button"
+                  data-testid="stage-tab-host"
+                  onClick={() => setActiveTab('host')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'host'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Host Session
+                </button>
+                <button
+                  type="button"
+                  data-testid="stage-tab-join"
+                  onClick={() => setActiveTab('join')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'join'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Join Session
+                </button>
+                <button
+                  type="button"
+                  data-testid="stage-tab-calibration"
+                  onClick={() => setActiveTab('calibration')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'calibration'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Calibration
+                </button>
+              </>
+            ) : role === 'host' ? (
+              <>
+                <button
+                  type="button"
+                  data-testid="stage-tab-host"
+                  onClick={() => setActiveTab('host')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'host'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Host Room
+                </button>
+                <button
+                  type="button"
+                  data-testid="stage-tab-calibration"
+                  onClick={() => setActiveTab('calibration')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'calibration'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Calibration
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  data-testid="stage-tab-join"
+                  onClick={() => setActiveTab('join')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'join'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Joined Session
+                </button>
+                <button
+                  type="button"
+                  data-testid="stage-tab-calibration"
+                  onClick={() => setActiveTab('calibration')}
+                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'calibration'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Calibration
+                </button>
+              </>
+            )}
+          </div>
 
           {/* ── TAB 1: HOST SESSION ────────────────────────────────────── */}
           {activeTab === 'host' && (
@@ -495,12 +569,20 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
             </div>
           )}
 
-          {/* ── EMBEDDED DELAY CALIBRATION TOOL ───────────────────────── */}
-          <div className="mt-1 pt-2 border-t border-white/10">
-            <StageSyncOffsetCalibration compact={false} showPulseTest={true} />
-          </div>
+          {/* ── TAB 3: DELAY CALIBRATION ─────────────────────────────── */}
+          {activeTab === 'calibration' && (
+            <div className="flex flex-col gap-3 py-1">
+              <div className="px-1 text-xs text-neutral-400">
+                Fine-tune acoustic latency and stage monitor alignment across wireless headphones and in-ear systems.
+              </div>
+              <StageSyncOffsetCalibration compact={false} showPulseTest={true} />
+            </div>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>
   );
 };
+
+export const StageRoomPortalModal = LocalStageRoomModal;
+export type StageRoomPortalModalProps = LocalStageRoomModalProps;
