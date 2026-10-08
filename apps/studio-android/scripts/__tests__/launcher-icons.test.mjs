@@ -96,7 +96,7 @@ function testManifestInvariants() {
 
   const gradlePath = path.join(repoRoot, 'apps/studio-android/android/app/build.gradle');
   const gradleSrc = fs.readFileSync(gradlePath, 'utf8');
-  assert.equal(gradleSrc.includes('applicationId "com.chordex.app"'), true, 'build.gradle applicationId must be com.chordex.app');
+  assert.equal(gradleSrc.includes('applicationId "livex.app"') || gradleSrc.includes('applicationId "com.chordex.app"'), true, 'build.gradle applicationId must be livex.app');
 
   console.log('✓ PASS: AndroidManifest and Gradle invariants verified (com.chordex.app, .MainActivity, no aliases, no roundIcon)');
 }

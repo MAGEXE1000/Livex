@@ -122,8 +122,11 @@ public final class SafeContentResolver {
                 // Fallback
             }
         } else {
-            if (authority.equals("com.chordex.app") ||
+            if (authority.equals("livex.app") ||
+                authority.startsWith("livex.app.") ||
+                authority.equals("com.chordex.app") ||
                 authority.startsWith("com.chordex.app.") ||
+                authority.equals("livex.app.fileprovider") ||
                 authority.equals("com.chordex.app.fileprovider") ||
                 authority.endsWith(".fileprovider")) {
                 return false;

@@ -49,6 +49,51 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:355186993352:android:46ce8c309cf0b0b1d1ddfd",
+        "android_client_info": {
+          "package_name": "livex.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "355186993352-5qjsibeopmbs9tttb23nh85qla72smlg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "livex.app",
+            "certificate_hash": "d03bfad2e5e7113cc1237c46d5c2bf0daf0bd6e1"
+          }
+        },
+        {
+          "client_id": "355186993352-5qjsibeopmbs9tttb23nh85qla72smlg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "livex.app",
+            "certificate_hash": "9ed36d19dedf725a6d9881d15268fafe9b37f6d1"
+          }
+        },
+        {
+          "client_id": "355186993352-p1kkmo4rrr9hs13lotqr2hl2g6f0chm8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-RgfD6No4R9D5AXMNcYrnnZBUe5AUSOw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "355186993352-p1kkmo4rrr9hs13lotqr2hl2g6f0chm8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

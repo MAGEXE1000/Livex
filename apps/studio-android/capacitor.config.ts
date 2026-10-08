@@ -6,7 +6,7 @@ const isProd = process.env.LIVEX_PRODUCTION_RELEASE === 'true' || process.env.ST
 const isLiveReload = !!devServerUrl && !isProd;
 
 const config: CapacitorConfig = {
-  appId: 'com.chordex.app',
+  appId: 'livex.app',
   appName: 'Livex',
   webDir: '../../dist/android-web',
   android: {
