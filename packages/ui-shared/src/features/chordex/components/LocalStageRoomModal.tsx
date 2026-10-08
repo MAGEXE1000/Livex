@@ -10,6 +10,7 @@ import {
   requestCameraPermission,
 } from '@workspace/livex-core';
 import { StageSyncOffsetCalibration } from './StageSyncOffsetCalibration';
+import { ScanSessionQRModal } from '../../sync/ScanSessionQRModal';
 
 export type StageRoomTab = 'host' | 'join' | 'calibration';
 
@@ -36,12 +37,8 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // Camera scanner states
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const scanIntervalRef = useRef<any>(null);
+  // Scan modal state
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
 
   // Auto-switch tab only on initial active role transitions
   const prevRoleRef = useRef(role);
@@ -53,89 +50,13 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
     }
   }, [role]);
 
-  // Clean camera stop
-  const stopCamera = useCallback(() => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch (_) {}
-      });
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  }, []);
-
-  // Stop camera on unmount or modal close
+  // Reset errors on close
   useEffect(() => {
     if (!isOpen) {
-      stopCamera();
       setJoinError(null);
-      setCameraError(null);
+      setIsScanModalOpen(false);
     }
-  }, [isOpen, stopCamera]);
-
-  // Start Camera QR Scanner
-  const startCamera = useCallback(async () => {
-    setCameraError(null);
-
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      setCameraError('Camera permission denied. Please allow camera access or use the 4-character join code below.');
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera access not supported on this browser/device. Please use the 4-character join code below.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        await videoRef.current.play().catch(() => {});
-      }
-      setCameraActive(true);
-
-      if ('BarcodeDetector' in window) {
-        try {
-          const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-          scanIntervalRef.current = setInterval(async () => {
-            if (!videoRef.current || videoRef.current.readyState < 2) return;
-            try {
-              const barcodes = await detector.detect(videoRef.current);
-              if (barcodes.length > 0 && barcodes[0].rawValue) {
-                const detected = barcodes[0].rawValue;
-                const parsed = parseStageRoomToken(detected);
-                if (parsed) {
-                  stopCamera();
-                  const ok = joinRoom(parsed.roomId);
-                  if (!ok) setJoinError('Failed to join room');
-                }
-              }
-            } catch (_) {}
-          }, 300);
-        } catch (_) {}
-      }
-    } catch (err: any) {
-      setCameraError(
-        err.name === 'NotAllowedError'
-          ? 'Camera permission denied. Please allow camera access or use the 4-character join code below.'
-          : 'Could not start camera stream.'
-      );
-    }
-  }, [joinRoom, stopCamera]);
+  }, [isOpen]);
 
   // Generate SVG QR Code for current active room
   const qrSvg = useMemo(() => {
@@ -164,16 +85,17 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
   const handleManualJoin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setJoinError(null);
-    const parsed = parseStageRoomToken(manualCode);
+    if (!manualCode.trim()) return;
+
+    const parsed = parseStageRoomToken(manualCode.trim());
     if (!parsed) {
-      setJoinError('Invalid room code. Format: LX-XXX or 3-4 letters/numbers.');
+      setJoinError('Invalid room code. Format: LX-XXX or 3-8 characters.');
       return;
     }
 
     const success = joinRoom(parsed.roomId);
     if (success) {
       setManualCode('');
-      stopCamera();
     } else {
       setJoinError('Could not connect to room. Verify both devices are on the same Wi-Fi or hotspot.');
     }
@@ -486,50 +408,15 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
               ) : (
                 /* Join Form & Camera Scan */
                 <div className="flex flex-col gap-3.5">
-                  {/* Camera Scanner View */}
-                  {cameraActive ? (
-                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-white/15 flex items-center justify-center">
-                      <video
-                        ref={videoRef}
-                        className="w-full h-full object-cover"
-                        playsInline
-                        muted
-                      />
-                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                        <div className="w-48 h-48 rounded-2xl border-2 border-white/80 shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={stopCamera}
-                        className="absolute top-2 right-2 px-3 py-1 rounded-lg bg-black/70 border border-white/20 text-xs font-bold text-white"
-                      >
-                        Cancel Camera
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      data-testid="btn-scan-qr"
-                      onClick={startCamera}
-                      className="min-h-[48px] w-full rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs tracking-tight transition-colors flex items-center justify-center gap-2"
-                    >
-                      <span className="material-symbols-rounded text-lg">qr_code_scanner</span>
-                      <span>Scan Host's QR Code</span>
-                    </button>
-                  )}
-
-                  {cameraError && (
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex flex-col gap-2">
-                      <span>{cameraError}</span>
-                      <button
-                        type="button"
-                        onClick={startCamera}
-                        className="self-start px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold transition-colors cursor-pointer"
-                      >
-                        Retry Camera
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    data-testid="btn-scan-qr"
+                    onClick={() => setIsScanModalOpen(true)}
+                    className="min-h-[48px] w-full rounded-2xl bg-white/10 hover:bg-white/15 active:scale-[0.99] border border-white/15 text-white font-bold text-xs tracking-tight transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span className="material-symbols-rounded text-lg">qr_code_scanner</span>
+                    <span>Scan QR to Join</span>
+                  </button>
 
                   <div className="flex items-center gap-2.5 my-1">
                     <div className="flex-1 h-px bg-white/10" />
@@ -546,14 +433,15 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
                       data-testid="input-stage-room-code"
                       value={manualCode}
                       onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                      placeholder="LX-408"
-                      maxLength={8}
+                      placeholder="LX-7M8"
+                      maxLength={12}
                       className="flex-1 min-h-[44px] px-3.5 rounded-xl bg-white/5 border border-white/15 font-mono text-sm uppercase font-bold text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                     />
                     <button
                       type="submit"
                       data-testid="btn-join-room-code"
-                      className="min-h-[44px] px-5 rounded-xl bg-white text-black hover:bg-neutral-200 active:scale-95 font-bold text-xs tracking-tight transition-all shrink-0"
+                      disabled={!manualCode.trim()}
+                      className="min-h-[44px] px-5 rounded-xl bg-white text-black hover:bg-neutral-200 active:scale-95 font-bold text-xs tracking-tight transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       Join
                     </button>
@@ -564,6 +452,13 @@ export const LocalStageRoomModal: React.FC<LocalStageRoomModalProps> = ({
                       {joinError}
                     </div>
                   )}
+
+                  {/* Dedicated Hardware QR Scanner Modal */}
+                  <ScanSessionQRModal
+                    isOpen={isScanModalOpen}
+                    onClose={() => setIsScanModalOpen(false)}
+                    onSuccess={() => setIsScanModalOpen(false)}
+                  />
                 </div>
               )}
             </div>

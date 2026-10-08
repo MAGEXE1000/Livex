@@ -49,8 +49,17 @@ describe('Local Stage Sync Room Engine', () => {
       expect(parseStageRoomToken('408')?.roomId).toBe('LX-408');
       expect(parseStageRoomToken('LX-7B2')?.roomId).toBe('LX-7B2');
       expect(parseStageRoomToken('7B2')?.roomId).toBe('LX-7B2');
-      expect(parseStageRoomToken('invalid-too-long-code')).toBeNull();
+      expect(parseStageRoomToken('LX-7M8')?.roomId).toBe('LX-7M8');
+      expect(parseStageRoomToken('7M8')?.roomId).toBe('LX-7M8');
+      expect(parseStageRoomToken('invalid-too-long-code-over-8-chars')).toBeNull();
       expect(parseStageRoomToken('')).toBeNull();
+    });
+
+    it('parses livex://room/ URL scheme and JSON room payloads', () => {
+      expect(parseStageRoomToken('livex://room/LX-7M8')?.roomId).toBe('LX-7M8');
+      expect(parseStageRoomToken('livex://room/7M8')?.roomId).toBe('LX-7M8');
+      expect(parseStageRoomToken('{"roomId":"LX-7M8"}')?.roomId).toBe('LX-7M8');
+      expect(parseStageRoomToken('{"r":"LX-7M8","h":"Lead"}')?.roomId).toBe('LX-7M8');
     });
   });
 

@@ -163,8 +163,7 @@ try {
 }
 
 // 8. Wait for UI stabilization
-console.log('\n[WAIT] Waiting 4 seconds for UI rendering and initialization...');
-execSync(process.platform === 'win32' ? 'timeout /t 4 /nobreak >nul' : 'sleep 4', { stdio: 'ignore' });
+Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 4000);
 
 // 9. Automated Screenshot Verification (unless --no-screenshot)
 if (!noScreenshot) {

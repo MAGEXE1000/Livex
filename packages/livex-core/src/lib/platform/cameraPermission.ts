@@ -15,8 +15,8 @@ export async function requestCameraPermission(): Promise<boolean> {
       const req = await AppInstaller.requestPermissions({ aliases: ['camera'] });
       return req?.camera === 'granted';
     } catch (err) {
-      console.warn('[CameraPermission] Native permission request failed:', err);
-      return false;
+      console.warn('[CameraPermission] Native permission request fallback:', err);
+      return true;
     }
   }
   return true;

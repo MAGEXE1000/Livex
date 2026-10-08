@@ -68,13 +68,37 @@ export function parseStageRoomToken(input: string): { roomId: string; hostName?:
   if (!input || typeof input !== 'string') return null;
   const clean = input.trim();
 
-  // If directly a 3-6 character join code like "LX-408" or "408"
-  if (/^(LX-)?[0-9A-Z]{3,4}$/i.test(clean)) {
+  // If directly a 3-8 character join code like "LX-408", "LX-7M8" or "408"
+  if (/^(LX-)?[0-9A-Z]{3,8}$/i.test(clean)) {
     const code = clean.toUpperCase();
     return { roomId: code.startsWith('LX-') ? code : `LX-${code}` };
   }
 
-  // Handle URL scheme
+  // Handle URL scheme livex://room/LX-7M8 or livex://room?id=LX-7M8
+  if (clean.startsWith('livex://room/')) {
+    const raw = clean.replace('livex://room/', '').split(/[?#/]/)[0].trim().toUpperCase();
+    if (raw) {
+      return { roomId: raw.startsWith('LX-') ? raw : `LX-${raw}` };
+    }
+  }
+
+  // Handle direct JSON payload: { "roomId": "LX-7M8" } or { "r": "LX-7M8" }
+  if (clean.startsWith('{') && clean.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(clean);
+      const rId = parsed.roomId || parsed.r || parsed.id;
+      if (rId && typeof rId === 'string') {
+        const code = rId.trim().toUpperCase();
+        return {
+          roomId: code.startsWith('LX-') ? code : `LX-${code}`,
+          hostName: parsed.hostName || parsed.h,
+          songTitle: parsed.songTitle || parsed.t,
+        };
+      }
+    } catch (_) {}
+  }
+
+  // Handle URL scheme livex://stage-room
   if (clean.startsWith('livex://stage-room')) {
     try {
       const url = new URL(clean);

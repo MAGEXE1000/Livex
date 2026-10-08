@@ -12,6 +12,7 @@ import {
   requestCameraPermission,
 } from '@workspace/livex-core';
 import { StudioIcon } from '../../../shared/icons/StudioIcon';
+import { startScanningLoop } from '../../sync/services/qrScannerService';
 
 interface PlayTogetherScannerModalProps {
   isOpen: boolean;
@@ -55,7 +56,11 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
+      if (typeof scanIntervalRef.current === 'function') {
+        scanIntervalRef.current();
+      } else {
+        clearInterval(scanIntervalRef.current);
+      }
       scanIntervalRef.current = null;
     }
     if (streamRef.current) {
@@ -65,6 +70,9 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
         } catch (_) {}
       });
       streamRef.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject = null;
     }
   }, []);
 
@@ -192,25 +200,18 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('webkit-playsinline', 'true');
+          videoRef.current.muted = true;
           await videoRef.current.play().catch(() => {});
         }
 
         setCameraState('active');
 
-        // Setup BarcodeDetector scanner loop if available
-        if ('BarcodeDetector' in window) {
-          try {
-            const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-            scanIntervalRef.current = setInterval(async () => {
-              if (!videoRef.current || videoRef.current.readyState < 2) return;
-              try {
-                const barcodes = await detector.detect(videoRef.current);
-                if (barcodes.length > 0 && barcodes[0].rawValue) {
-                  handleSuccessfulTokenScan(barcodes[0].rawValue);
-                }
-              } catch (_) {}
-            }, 300);
-          } catch (_) {}
+        // Setup hardware-accelerated QR scanning loop with jsQR
+        if (videoRef.current) {
+          scanIntervalRef.current = startScanningLoop(videoRef.current, (detected) => {
+            handleSuccessfulTokenScan(detected);
+          });
         }
       } catch (err: any) {
         if (!isMounted) return;
@@ -342,32 +343,32 @@ export const PlayTogetherScannerModal: React.FC<PlayTogetherScannerModalProps> =
               justifyContent: 'center',
             }}
           >
+            <video
+              ref={videoRef}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: cameraState === 'active' ? 'block' : 'none',
+              }}
+              autoPlay
+              playsInline
+              muted
+            />
+
+            {/* Aiming Reticle Overlay */}
             {cameraState === 'active' && (
-              <>
-                <video
-                  ref={videoRef}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                  autoPlay
-                  playsInline
-                  muted
-                />
-                {/* Aiming Reticle Overlay */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    width: '160px',
-                    height: '160px',
-                    border: `2px solid ${accent.from}`,
-                    borderRadius: '16px',
-                    boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 16px ${accent.from}66`,
-                    pointerEvents: 'none',
-                  }}
-                />
-              </>
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '160px',
+                  height: '160px',
+                  border: `2px solid ${accent.from}`,
+                  borderRadius: '16px',
+                  boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 16px ${accent.from}66`,
+                  pointerEvents: 'none',
+                }}
+              />
             )}
 
             {cameraState === 'requesting' && (
