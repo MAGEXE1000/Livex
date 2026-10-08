@@ -59,9 +59,9 @@
             } catch (_) {}
           }
 
-          // 3. Clean fallback default
+          // 3. Clean fallback default (always start AMOLED black to avoid white flash)
           if (!theme) {
-            theme = 'light';
+            theme = 'amoled';
           }
 
           var isLight = (theme === 'light');
@@ -257,10 +257,19 @@
           var alreadyShown = false;
           try {
             var isLocalDev =
-              window.location.hostname === 'localhost' ||
-              window.location.hostname === '127.0.0.1' ||
-              window.location.port === '5174';
-            alreadyShown = isLocalDev || !!sessionStorage.getItem('livex-intro-shown') || !!sessionStorage.getItem('studio-intro-shown');
+              (window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1' ||
+                window.location.port === '5174' ||
+                window.location.port === '5173') &&
+              !(
+                window.Capacitor &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform()
+              );
+            alreadyShown =
+              isLocalDev ||
+              !!sessionStorage.getItem('livex-intro-shown') ||
+              !!sessionStorage.getItem('studio-intro-shown');
           } catch (e) {}
 
           document.documentElement.classList.add('app-route');
@@ -268,6 +277,11 @@
           if (!isApp || alreadyShown || appMode !== 'hub') {
             window.__introReturnedEarly = true;
             try {
+              var earlyIntro = document.getElementById('intro');
+              if (earlyIntro) {
+                earlyIntro.style.display = 'none';
+                if (earlyIntro.parentNode) earlyIntro.parentNode.removeChild(earlyIntro);
+              }
               if (
                 window.Capacitor &&
                 window.Capacitor.Plugins &&
@@ -342,7 +356,8 @@
       html,
       body,
       #root {
-        background: var(--intro-bg);
+        background-color: #000000;
+        background: var(--intro-bg, #000000);
         margin: 0;
         padding: 0;
         height: 100%;
@@ -426,8 +441,21 @@
       // ── Instant Handshake to React LaunchAnimationEngine ────────────────
       (function () {
         var intro = document.getElementById('intro');
-        if (window.__introReturnedEarly || !intro) {
-          window.__introReturnedEarly = true;
+        var dismissIntro = function () {
+          if (!intro) return;
+          intro.style.transition = 'opacity 220ms cubic-bezier(0.16, 1, 0.3, 1)';
+          intro.style.opacity = '0';
+          setTimeout(function () {
+            intro.classList.add('dismissed');
+            if (intro.parentNode) intro.parentNode.removeChild(intro);
+          }, 240);
+        };
+
+        if (window.__introReturnedEarly) {
+          if (intro) {
+            intro.style.display = 'none';
+            if (intro.parentNode) intro.parentNode.removeChild(intro);
+          }
           try {
             if (
               window.Capacitor &&
@@ -440,7 +468,7 @@
           return;
         }
 
-        // Safety watchdog: ensure native splash screen is dismissed even if React encounters a boot error
+        // Safety watchdog 1: ensure native splash screen is dismissed even if React encounters a boot error
         setTimeout(function () {
           try {
             if (
@@ -451,28 +479,29 @@
               window.Capacitor.Plugins.AppInstaller.notifyAppReady();
             }
           } catch (e) {}
-        }, 2000);
+        }, 1500);
+
+        // Safety watchdog 2: ensure #intro overlay NEVER blocks the screen indefinitely (max 3s)
+        setTimeout(function () {
+          dismissIntro();
+        }, 3000);
 
         var handleReactReady = function () {
           window.removeEventListener('livex-hub-ready', handleReactReady);
           window.removeEventListener('studio-hub-ready', handleReactReady);
           window.removeEventListener('livex:hub-ready', handleReactReady);
           window.removeEventListener('studio:hub-ready', handleReactReady);
-          if (intro) {
-            intro.style.transition = 'opacity 220ms cubic-bezier(0.16, 1, 0.3, 1)';
-            intro.style.opacity = '0';
-            setTimeout(function () {
-              intro.classList.add('dismissed');
-              if (intro.parentNode) intro.parentNode.removeChild(intro);
-            }, 240);
-          }
+          window.removeEventListener('livex-intro-done', handleReactReady);
+          window.removeEventListener('studio-intro-done', handleReactReady);
+          dismissIntro();
         };
 
         if (
           window.__livexHubReady ||
           window.__livexStartupComplete ||
           window.__studioHubReady ||
-          window.__studioStartupComplete
+          window.__studioStartupComplete ||
+          window.__introDone
         ) {
           handleReactReady();
         } else {
@@ -480,6 +509,8 @@
           window.addEventListener('studio-hub-ready', handleReactReady);
           window.addEventListener('livex:hub-ready', handleReactReady);
           window.addEventListener('studio:hub-ready', handleReactReady);
+          window.addEventListener('livex-intro-done', handleReactReady);
+          window.addEventListener('studio-intro-done', handleReactReady);
         }
       })();
 

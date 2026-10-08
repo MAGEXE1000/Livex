@@ -15,6 +15,7 @@ import {
   useLocalStageSyncStore,
 } from '@workspace/livex-core';
 import { Capacitor } from '@capacitor/core';
+import { ErrorBoundary } from '@workspace/ui-shared';
 import './index.css';
 
 if (
@@ -141,11 +142,11 @@ if (typeof window !== 'undefined' && (window as any).__bootTimings) {
 
 // Mount React immediately (native splash screen takes care of hiding visual load transitions)
 createRoot(document.getElementById('root')!).render(
-  <>
+  <ErrorBoundary moduleName="RootApp">
     <RootAppContainer />
     <GlobalOverlays />
     <EmergencyDebugOverlayWrapper />
-  </>
+  </ErrorBoundary>
 );
 
 // Defer cache migration and service worker unregistration by 6 seconds to prevent I/O blocking during startup

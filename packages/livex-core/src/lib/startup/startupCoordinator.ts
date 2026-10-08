@@ -315,10 +315,13 @@ class StartupCoordinatorClass {
           document.getElementById('hub-root')
         );
       if (!this.isHubMounted && !isDomMounted) {
-        await this.hubMountedPromise;
+        await Promise.race([
+          this.hubMountedPromise,
+          new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+        ]);
         if (import.meta.env.DEV) {
           console.log(
-            `[STARTUP-TRACE] Phase 5: hubMountedPromise RESOLVED at ${performance.now().toFixed(0)}ms`
+            `[STARTUP-TRACE] Phase 5: hubMountedPromise or watchdog timeout RESOLVED at ${performance.now().toFixed(0)}ms`
           );
         }
       } else {

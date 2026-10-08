@@ -100,9 +100,7 @@ if (apiKey) {
 
 export const tolgee = Tolgee().use(DevTools()).use(FormatSimple()).init(tolgeeConfig);
 
-// Defer running tolgee active listeners/translators to clear JS thread during start
-setTimeout(() => {
-  void tolgee.run();
-}, 4000);
+// Run tolgee immediately so translation listeners and providers are ready without blanking fallback
+void tolgee.run();
 
 export default i18n;

@@ -176,7 +176,7 @@ export default function App() {
     <SharedAppShell
       isWeb={false}
       wrapProviders={(children) => (
-        <TolgeeProvider tolgee={tolgee} fallback={null}>
+        <TolgeeProvider tolgee={tolgee} fallback={children}>
           {children}
         </TolgeeProvider>
       )}

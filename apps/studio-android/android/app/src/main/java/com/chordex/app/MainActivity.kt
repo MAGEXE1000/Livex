@@ -179,10 +179,10 @@ class MainActivity : BridgeActivity() {
                 savedTheme
             } else {
                 val isSystemNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-                if (isSystemNight) "dark" else "light"
+                if (isSystemNight) "amoled" else "dark"
             }
         } catch (e: Exception) {
-            "light"
+            "amoled"
         }
     }
 
